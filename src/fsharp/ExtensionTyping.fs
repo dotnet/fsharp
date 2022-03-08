@@ -63,8 +63,11 @@ module internal ExtensionTyping =
                 let filtered = 
                     [ for t in exportedTypes do 
                           let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
-                          if ca <> null && ca.Length > 0 then 
-                              yield t ]
+                          match ca with 
+                          | Null -> ()
+                          | NonNull ca -> 
+                              if ca.Length > 0 then 
+                                  yield t ]
                 filtered
             with e ->
                 let folder = Path.GetDirectoryName loadedDesignTimeAssembly.Location
@@ -82,9 +85,9 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-        |   :? TargetInvocationException as e -> e.InnerException
-        |   :? TypeInitializationException as e -> e.InnerException
-        |   _ -> e
+        | :? TargetInvocationException as e -> e.InnerException
+        | :? TypeInitializationException as e -> e.InnerException
+        | _ -> e
 
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
@@ -165,10 +168,10 @@ module internal ExtensionTyping =
                                 CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                     isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
-                            | null -> ()
+                            | Null -> ()
                             | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
 
-                      |   None, _ -> 
+                      | None, _ -> 
                           () ]
 
                 with :? TypeProviderError as tpe ->
@@ -182,7 +185,7 @@ module internal ExtensionTyping =
     let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 
     /// Try to access a member on a provided type, catching and reporting errors
-    let TryTypeMember(st: Tainted<_>, fullName, memberName, m, recover, f) =
+    let TryTypeMember<'T,'U>(st: Tainted<'T>, fullName, memberName, m, recover, f: 'T -> 'U) : Tainted<'U> =
         try
             st.PApply (f, m)
         with :? TypeProviderError as tpe -> 
@@ -191,24 +194,19 @@ module internal ExtensionTyping =
 
     /// Try to access a member on a provided type, where the result is an array of values, catching and reporting errors
     let TryTypeMemberArray (st: Tainted<_>, fullName, memberName, m, f) =
-        let result =
-            try
-                st.PApplyArray(f, memberName, m)
-            with :? TypeProviderError as tpe ->
-                tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName, memberName, e.ContextualErrorMessage), m)))
-                [||]
-
-        match result with 
-        | null -> error(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); [||]
-        | r -> r
+        try
+            st.PApplyArray(f, memberName, m)
+        with :? TypeProviderError as tpe ->
+            tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName, memberName, e.ContextualErrorMessage), m)))
+            [||]
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-    let TryTypeMemberNonNull (st: Tainted<_>, fullName, memberName, m, recover, f) =
+    let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
         match TryTypeMember(st, fullName, memberName, m, recover, f) with 
         | Tainted.Null -> 
             errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
             st.PApplyNoFailure(fun _ -> recover)
-        | r -> r
+        | Tainted.NonNull r -> r
 
     /// Try to access a property or method on a provided member, catching and reporting errors
     let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
@@ -224,7 +222,9 @@ module internal ExtensionTyping =
 
     /// Validate a provided namespace name
     let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string) =
-        if nsp<>null then // Null namespace designates the global namespace.
+        match nsp with 
+        | Null -> ()
+        | NonNull nsp -> 
             if String.IsNullOrWhiteSpace nsp then
                 // Empty namespace is not allowed
                 errorR(Error(FSComp.SR.etEmptyNamespaceOfTypeNotAllowed(name, typeProvider.PUntaint((fun tp -> tp.GetType().Name), m)), m))
@@ -255,7 +255,10 @@ module internal ExtensionTyping =
     // to preserve object identity when presenting the types to the F# compiler.
 
     type ProvidedTypeComparer() = 
-        let key (ty: ProvidedType) = (ty.Assembly.FullName, ty.FullName)
+        let key (ty: ProvidedType) =
+            match ty.Assembly with
+            | Null -> ("", ty.FullName)
+            | NonNull a -> (a.FullName, ty.FullName)
         static member val Instance = ProvidedTypeComparer()
         interface IEqualityComparer<ProvidedType> with
             member _.GetHashCode(ty: ProvidedType) = hash (key ty)
@@ -784,15 +787,17 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
 
         let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
+
         let rec declaringTypes (st: Tainted<ProvidedType>) accu =
             match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
-            |   Tainted.Null -> accu
-            |   dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name") :: accu)
+            | Tainted.Null -> accu
+            | dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name") :: accu)
+
         let path = 
-            [|  match namespaceName with 
-                | null -> ()
-                | _ -> yield! namespaceName.Split([|'.'|])
-                yield! declaringTypes st [] |]
+            [| match namespaceName with 
+               | null -> ()
+               | _ -> yield! namespaceName.Split([|'.'|])
+               yield! declaringTypes st [] |]
         
         if path <> expectedPath then
             let expectedPath = String.Join(".", expectedPath)
@@ -856,22 +861,22 @@ module internal ExtensionTyping =
                         let isGenericMethod = TryMemberMember(mi, fullName, memberName, "IsGenericMethod", m, true, fun mi->mi.IsGenericMethod) |> unmarshal
                         if not isPublic || isGenericMethod then
                             errorR(Error(FSComp.SR.etMethodHasRequirements(fullName, memberName), m))   
-                    |   None ->
+                    | None ->
                     match mi.OfType<ProvidedType>() with
-                    |   Some subType -> ValidateAttributesOfProvidedType(m, subType)
-                    |   None ->
+                    | Some subType -> ValidateAttributesOfProvidedType(m, subType)
+                    | None ->
                     match mi.OfType<ProvidedPropertyInfo>() with
                     | Some pi ->
                         // Property must have a getter or setter
                         // TODO: Property must be public etc.
                         let expectRead =
                              match TryMemberMember(pi, fullName, memberName, "GetGetMethod", m, null, fun pi -> pi.GetGetMethod()) with 
-                             |  Tainted.Null -> false 
+                             | Tainted.Null -> false 
                              | _ -> true
                         let expectWrite = 
                             match TryMemberMember(pi, fullName, memberName, "GetSetMethod", m, null, fun pi-> pi.GetSetMethod()) with 
-                            |   Tainted.Null -> false 
-                            |   _ -> true
+                            | Tainted.Null -> false 
+                            | _ -> true
                         let canRead = TryMemberMember(pi, fullName, memberName, "CanRead", m, expectRead, fun pi-> pi.CanRead) |> unmarshal
                         let canWrite = TryMemberMember(pi, fullName, memberName, "CanWrite", m, expectWrite, fun pi-> pi.CanWrite) |> unmarshal
                         match expectRead, canRead with
@@ -941,8 +946,8 @@ module internal ExtensionTyping =
             if displayName = providedNamespaceName then
                 let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.CreateNoContext(providedNamespace.ResolveTypeName typeName)), range=m) 
                 match resolvedType with
-                |   Tainted.Null -> None
-                |   result -> 
+                | Tainted.Null -> None
+                | Tainted.NonNull result -> 
                     ValidateProvidedTypeDefinition(m, result, moduleOrNamespace, typeName)
                     Some result
             else
@@ -964,7 +969,7 @@ module internal ExtensionTyping =
         try 
             match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
             | Tainted.Null -> None
-            | ty -> Some ty
+            | Tainted.NonNull ty -> Some ty
         with e -> 
             errorRecovery e m
             None
@@ -975,8 +980,8 @@ module internal ExtensionTyping =
             match st.PApply((fun st -> st.DeclaringType), m) with 
             | Tainted.Null -> 
                match st.PUntaint((fun st -> st.Namespace), m) with 
-               | null -> typeName
-               | ns -> ns + "." + typeName
+               | Null  -> typeName
+               | NonNull ns -> ns + "." + typeName
             | _ -> typeName
 
         let rec encContrib (st: Tainted<ProvidedType>) = 
@@ -1006,7 +1011,7 @@ module internal ExtensionTyping =
  
             match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)), range=m) with 
             | Tainted.Null -> None
-            | methWithArguments -> 
+            | Tainted.NonNull methWithArguments -> 
                 let actualName = methWithArguments.PUntaint((fun x -> x.Name), m)
                 if actualName <> mangledName then 
                     error(Error(FSComp.SR.etProvidedAppliedMethodHadWrongName(methWithArguments.TypeProviderDesignation, mangledName, actualName), m))
@@ -1033,7 +1038,7 @@ module internal ExtensionTyping =
  
             match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgs)), range=m) with 
             | Tainted.Null -> None
-            | typeWithArguments -> 
+            | Tainted.NonNull typeWithArguments -> 
                 let actualName = typeWithArguments.PUntaint((fun x -> x.Name), m)
                 let checkTypeName() = 
                     let expectedTypeNameAfterArguments = fullTypePathAfterArguments.[fullTypePathAfterArguments.Length-1]
@@ -1099,8 +1104,8 @@ module internal ExtensionTyping =
                       | _ ->
                           if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
                               match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
-                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                              | v -> v
+                              | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                              | NonNull v -> v
                           else
                               error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
                     
@@ -1113,16 +1118,20 @@ module internal ExtensionTyping =
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
     let GetPartsOfNamespaceRecover(namespaceName: string) = 
-        if namespaceName=null then []
-        elif  namespaceName.Length = 0 then ["<NonExistentNamespace>"]
-        else splitNamespace namespaceName
+        match namespaceName with 
+        | Null -> [] 
+        | NonNull namespaceName -> 
+            if namespaceName.Length = 0 then ["<NonExistentNamespace>"]
+            else splitNamespace (nonNull namespaceName)
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
     let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName: string) = 
-        if namespaceName<>null && namespaceName.Length = 0 then
-            errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  
-
-        GetPartsOfNamespaceRecover namespaceName
+        match namespaceName with 
+        | Null -> [] 
+        | NonNull namespaceName -> 
+            if namespaceName.Length = 0 then
+                errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  
+            GetPartsOfNamespaceRecover namespaceName
 
     /// Get the parts of the name that encloses the .NET type including nested types. 
     let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, range) = 
@@ -1132,7 +1141,7 @@ module internal ExtensionTyping =
         let rec walkUpNestedClasses(st: Tainted<ProvidedType>, soFar) =
             match st with
             | Tainted.Null -> soFar
-            | st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), soFar) @ [st.PUntaint((fun st -> st.Name), range)]
+            | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), soFar) @ [st.PUntaint((fun st -> st.Name), range)]
 
         walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), namespaceParts)
 

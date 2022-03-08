@@ -76,6 +76,9 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
+    // Shim to match nullness checking library support
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
 type ErrorReportType =
@@ -287,16 +290,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
+type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
 
     // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
-    let assemblyResolveHandler = 
-        match assemblyProbingPaths with 
-        | null -> { new IDisposable with member _.Dispose() = () }
-        | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
+    let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Service.dll
     let assemblySearchPaths = lazy (
@@ -355,9 +355,11 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     let cache = ConcurrentDictionary<_,Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
 
-    new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(null, nativeProbingRoots)
+    new (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots)
 
-    new () = new DependencyProvider(null, null)
+    new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(None, Some nativeProbingRoots)
+
+    new () = new DependencyProvider(None, None)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member _.GetRegisteredDependencyManagerHelpText (compilerTools, outputDir, errorReport) = [|
@@ -382,31 +384,31 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                 | None ->
                     let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, path.Split(':').[0], reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
-                    null, Unchecked.defaultof<IDependencyManagerProvider>
+                    null, null
 
                 | Some kv -> path, kv.Value
             else
-                path, Unchecked.defaultof<IDependencyManagerProvider>
+                path, null
         with 
         | e ->
             let e = stripTieWrapper e
             let err, msg = FSComp.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            null, Unchecked.defaultof<IDependencyManagerProvider>
+            null, null
 
     /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
-            |> Option.defaultValue Unchecked.defaultof<IDependencyManagerProvider>
+            |> Option.toObj
 
         with
         | e ->
             let e = stripTieWrapper e
             let err, msg = FSComp.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            Unchecked.defaultof<IDependencyManagerProvider>
+            null
 
     /// Resolve reference for a list of package manager lines
     member _.Resolve (packageManager:IDependencyManagerProvider,
@@ -426,10 +428,9 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             cache.GetOrAdd(key, System.Func<_,_>(fun _ -> 
                 try
                     let executionRid =
-                        if isNull executionRid then
-                            RidHelpers.platformRid
-                        else
-                            executionRid
+                        match executionRid with
+                        | Null -> RidHelpers.platformRid
+                        | NonNull executionRid -> executionRid
                     Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid, timeout))
 
                 with e ->
