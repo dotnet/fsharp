@@ -2925,8 +2925,8 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
 ///  Checks, warnings and constraint assertions for downcasts 
 let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
     let g = cenv.g
-    if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then 
-      warning (TypeTestUnnecessary m)
+    if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
+      warning(TypeTestUnnecessary m)
 
     if isTyparTy g srcTy && not (destTyparTy g srcTy).IsCompatFlex then
         error(IndeterminateRuntimeCoercion(denv, srcTy, tgtTy, m))
@@ -3995,10 +3995,10 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
         tpenv
 
     | SynTypeConstraint.WhereTyparSupportsNull(tp, m) ->
-        TcSimpleTyparConstraint cenv env newOk tpenv  tp m AddCxTypeDefnSupportsNull
+        TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnSupportsNull
 
     | SynTypeConstraint.WhereTyparNotSupportsNull(tp, m) ->
-        TcSimpleTyparConstraint cenv env newOk tpenv  tp m AddCxTypeDefnNotSupportsNull
+        TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeDefnNotSupportsNull
 
     | SynTypeConstraint.WhereTyparIsComparable(tp, m) ->
         TcSimpleTyparConstraint cenv env newOk tpenv tp m AddCxTypeMustSupportComparison
@@ -4606,14 +4606,14 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.Int32 n when typeEquiv g g.int32_ty kind -> record(g.int32_ty); box (n: int)
             | SynConst.Int64 n when typeEquiv g g.int64_ty kind -> record(g.int64_ty); box (n: int64)
             | SynConst.SByte n when typeEquiv g g.sbyte_ty kind -> record(g.sbyte_ty); box (n: sbyte)
-            | SynConst.UInt16 n when typeEquiv g g.uint16_ty kind  -> record(g.uint16_ty); box (n: uint16)
-            | SynConst.UInt32 n when typeEquiv g g.uint32_ty kind  -> record(g.uint32_ty); box (n: uint32)
-            | SynConst.UInt64 n when typeEquiv g g.uint64_ty kind  -> record(g.uint64_ty); box (n: uint64)
+            | SynConst.UInt16 n when typeEquiv g g.uint16_ty kind -> record(g.uint16_ty); box (n: uint16)
+            | SynConst.UInt32 n when typeEquiv g g.uint32_ty kind -> record(g.uint32_ty); box (n: uint32)
+            | SynConst.UInt64 n when typeEquiv g g.uint64_ty kind -> record(g.uint64_ty); box (n: uint64)
             | SynConst.Decimal n when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n: decimal)
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
             | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
             | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
-            | SynConst.String (s, _, _) 
+            | SynConst.String (s, _, _)
             | SynConst.SourceIdentifier (_, s, _) when typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
@@ -4645,7 +4645,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
                 | Const.Char n -> record(g.char_ty); box (n: char)
                 | Const.String s -> record(g.string_ty); box (s: string)
                 | Const.Bool b -> record(g.bool_ty); box (b: bool)
-                | _ ->  fail()
+                | _ -> fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
         v, tpenv'
 
@@ -4840,7 +4840,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
 
     match ty with
-    | TType_app(tcref, _, _nullness) -> 
+    | TType_app(tcref, _, _nullness) ->
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -7299,7 +7299,7 @@ and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mO
 // TcConstStringExpr
 //-------------------------------------------------------------------------
 
-/// Check a constant string expression. It might be a 'printf' format string 
+/// Check a constant string expression. It might be a 'printf' format string
 and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) =
 
     let g = cenv.g
@@ -10242,9 +10242,9 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
         let elemPtrTy = mkNativePtrTy g elemTy
         UnifyTypes cenv env mBinding elemPtrTy overallPatTy
 
-        // let ptr : nativeptr<elem> = 
-        //   let tmpArray : elem[] = arr
-        //   if notNull tmpArray then
+        // let ptr: nativeptr<elem> =
+        //   let tmpArray: elem[] = arr
+        //   if nonNull tmpArray then
         //      if tmpArray.Length <> 0 then
         //         let pinned tmpArrayByref: byref<elem> = &arr.[0]
         //         (nativeint) tmpArrayByref

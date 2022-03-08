@@ -77,11 +77,6 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
-#if NO_CHECKNULLS
-    // Shim to match nullness checking library support in preview
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#endif
-
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
 type ErrorReportType =

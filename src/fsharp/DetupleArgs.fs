@@ -808,7 +808,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          let rebinds = List.concat (List.map2 transRebind transformedFormals x1ps)
          // fCBody - rebuild 
          // fCBody = TLambda tps. Lam formals. let rebinds in body 
-         let rbody, rt = mkLetsBind m rebinds body, rty   
+         let rbody, rt = mkLetsBind m rebinds body, rty
          let bind = mkMultiLambdaBind g transformedVal letSeqPtOpt m tps formals (rbody, rt)
          // result 
          bind

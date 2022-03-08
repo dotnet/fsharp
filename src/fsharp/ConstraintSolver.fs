@@ -91,13 +91,13 @@ let NewAnonTypar (kind, m, rigid, var, dyn) =
 let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
     Construct.NewTypar(TyparKind.Measure, rigid, SynTypar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
 
-let NewInferenceMeasurePar () = 
+let NewInferenceMeasurePar () =
     NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, false)
 
-let NewErrorTypar () = 
+let NewErrorTypar () =
     NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
 
-let NewErrorMeasureVar () = 
+let NewErrorMeasureVar () =
     NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, TyparStaticReq.None, TyparDynamicReq.No, true)
 
 let NewInferenceType (g: TcGlobals) = 
@@ -2614,7 +2614,7 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
             elif TypeHasDefaultValueOld g m ty then
                 CompleteD
             else
-                failwith "unreachable" // ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
+                ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)

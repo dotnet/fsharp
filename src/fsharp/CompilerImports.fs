@@ -1406,7 +1406,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     member tcImportsStrong.ImportTypeProviderExtensions
                (ctok, tcConfig: TcConfig,
-                fileNameOfRuntimeAssembly: string,
+                fileNameOfRuntimeAssembly,
                 ilScopeRefOfRuntimeAssembly,
                 runtimeAssemblyAttributes: ILAttribute list,
                 entityToInjectInto, invalidateCcu: Event<_>, m) =
