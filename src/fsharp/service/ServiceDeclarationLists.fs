@@ -167,7 +167,7 @@ module DeclarationListHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -682,7 +682,7 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let rtyL = NicePrint.layoutType denv rty
             prettyParams, rtyL
 

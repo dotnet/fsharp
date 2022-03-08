@@ -625,13 +625,16 @@ type CalledMeth<'T>
                         match epinfos with 
                         | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
-                            let pminst = match minfo with
-                                         | MethInfo.FSMeth(_, TType.TType_app(_, types), _, _) -> types
-                                         | _ -> freshenMethInfo m pminfo
+                            let pminst =
+                                match minfo with
+                                | MethInfo.FSMeth(_, TType.TType_app(_, types), _, _) -> types
+                                | _ -> freshenMethInfo m pminfo
 
-                            let pminst = match tyargsOpt with
-                                         | Some(TType.TType_app(_, types)) -> types
-                                         | _ -> pminst
+                            let pminst =
+                                match tyargsOpt with
+                                | Some(TType.TType_app(_, types)) -> types
+                                | _ -> pminst
+
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
@@ -1175,7 +1178,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
         match objArgs, ad with 
         | [objArg], AccessibleFrom(paths, Some tcref) -> 
             let objArgTy = tyOfExpr g objArg 
-            let ty = generalizedTyconRef tcref
+            let ty = generalizedTyconRef g tcref
             // We get to keep our rights if the type we're in subsumes the object argument type
             if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
                 ad
@@ -1882,7 +1885,7 @@ module ProvidedMethodCalls =
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
                 List.iter removeVar vs
-                let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
+                let lambdaExpr = mkLambdas g m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)
                 let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
@@ -2199,7 +2202,7 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 
-        Choice2Of2 (mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr))
+        Choice2Of2 (mkMemberLambdas g m [] None None vsl (expr, tyOfExpr g expr))
     | None -> 
         Choice1Of2 traitInfo
 

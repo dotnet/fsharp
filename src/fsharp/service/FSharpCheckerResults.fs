@@ -456,7 +456,7 @@ type internal TypeCheckInfo
               let ad =
                 match vref.BaseOrThisInfo, ad with
                 | ValBaseOrThisInfo.NormalVal, AccessibleFrom(paths, Some tcref) ->
-                    let tcref = generalizedTyconRef tcref
+                    let tcref = generalizedTyconRef g tcref
                     // check that type of value is the same or subtype of tcref
                     // yes - allow access to protected members
                     // no - strip ability to access protected members
