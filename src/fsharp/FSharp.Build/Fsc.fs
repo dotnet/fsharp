@@ -130,12 +130,6 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-<<<<<<< HEAD
-        if embedAllSources then
-            builder.AppendSwitch("--embed+")
-        for item in embeddedFiles do
-            builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
-=======
 
         if embedAllSources then
             builder.AppendSwitch("--embed+")
@@ -143,7 +137,6 @@ type public Fsc () as this =
         for item in embeddedFiles do
             builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
 
->>>>>>> a9cb7dadedf48aa2084e8dddd794556e9c580790
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
 
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
@@ -158,10 +151,7 @@ type public Fsc () as this =
         // DefineConstants
         for item in defineConstants do
             builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
-<<<<<<< HEAD
-=======
 
->>>>>>> a9cb7dadedf48aa2084e8dddd794556e9c580790
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
 
