@@ -585,16 +585,18 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
+        let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
-            [ for ty in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef cenv.g entity) do 
-                 yield FSharpType(cenv, ty) ])
+            [ for ity in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 ty do 
+                 yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
 
     member x.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
+        let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
-            [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef cenv.g entity) do 
-                 yield FSharpType(cenv, ty) ])
+            [ for ity in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes ty do 
+                 yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
     
     member x.IsAttributeType =
@@ -611,7 +613,8 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.BaseType = 
         checkIsResolved()        
-        GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef cenv.g entity) 
+        let ty = generalizedTyconRef cenv.g entity
+        GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
         
     member _.UsesPrefixDisplay = 

@@ -34,9 +34,17 @@ module internal PervasiveAutoOpens =
         | [_] -> true
         | _ -> false
 
-    let inline isNonNull x = not (isNull x)
+    let inline isNotNull x = not (isNull x)
 
-    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+    type MaybeNull<'T when 'T : null> = 'T
+
+    let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline nonNull<'T when 'T : null> (x: 'T) = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+
+    let inline nullArgCheck paramName (x: MaybeNull<'T>) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
