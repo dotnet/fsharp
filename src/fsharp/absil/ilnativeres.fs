@@ -16,6 +16,7 @@ open System.Reflection.Metadata
 open System.Reflection.PortableExecutable
 open System.Runtime.CompilerServices
 open System.Text
+open Internal.Utilities.Library
 
 open Checked
 
@@ -29,7 +30,7 @@ let inline DWORD s = uint32 s
 let inline WCHAR s = char s
 let inline BYTE s = byte s
 
-type ResourceException(name: string, ?inner: Exception) =
+type ResourceException(name: string, ?inner: Exception MaybeNull) =
     inherit Exception (name, Option.toObj inner)
 
 type RESOURCE_STRING () =

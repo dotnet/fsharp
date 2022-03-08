@@ -812,21 +812,22 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
     st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
   let st2 =
-   { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
-     oscope=scope
-     occus= Table<_>.Create "occus (fake)"
-     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
-     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
-     ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-     oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
-     ostrings=Table<_>.Create "ostrings (fake)"
-     opubpaths=Table<_>.Create "opubpaths (fake)"
-     onlerefs=Table<_>.Create "onlerefs (fake)"
-     osimpletys=Table<_>.Create "osimpletys (fake)"
-     oglobals=g
-     ofile=file
-     oInMem=inMem
-     isStructThisArgPos = false }
+     { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+       oscope=scope
+       occus= Table<_>.Create "occus (fake)"
+       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+       ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+       ostrings=Table<_>.Create "ostrings (fake)"
+       opubpaths=Table<_>.Create "opubpaths (fake)"
+       onlerefs=Table<_>.Create "onlerefs (fake)"
+       osimpletys=Table<_>.Create "osimpletys (fake)"
+       oglobals=g
+       ofile=file
+       oInMem=inMem
+       isStructThisArgPos = false }
+
   let phase2bytes =
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
     // Add a 4th integer indicated by a negative 1st integer
@@ -908,11 +909,9 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              ifile=file
              iILModule = ilModule }
         let res = u st1
-#if !LAZY_UNPICKLE
         check viewedScope st1.ientities
         check viewedScope st1.ivals
         check viewedScope st1.itypars
-#endif
         res
 
     {RawData=data; FixupThunks=ccuTab.itbl_rows }

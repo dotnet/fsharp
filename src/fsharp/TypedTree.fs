@@ -3147,7 +3147,7 @@ type NonLocalEntityRef =
             let rec tryResolveNestedTypeOf(parentEntity: Entity, resolutionEnvironment, st: Tainted<ProvidedType>, i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]), m) with
                 | Tainted.Null -> ValueNone
-                | st -> 
+                | Tainted.NonNull st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
                     if i = path.Length-1 then ValueSome newEntity
@@ -3178,12 +3178,15 @@ type NonLocalEntityRef =
                 assert (j <= path.Length - 1)
                 let matched = 
                     [ for resolver in resolvers do
-                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
+                        let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
                         let typename = path.[j]
                         let resolution = TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some Tainted.Null -> ()
-                        | Some st -> yield (resolver, st) ]
+                        | None -> ()
+                        | Some st ->
+                            match st with
+                            | Tainted.Null -> ()
+                            | Tainted.NonNull st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
                     // 'entity' is at position i in the dereference chain. We resolved to position 'j'.

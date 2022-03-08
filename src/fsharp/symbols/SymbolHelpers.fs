@@ -560,8 +560,8 @@ module internal SymbolHelpers =
               | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
                   (tcRefs1, tcRefs2)
                   ||> List.forall2 (fun tcRef1 tcRef2 -> tyconRefEq g tcRef1 tcRef2)
-              | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
-              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
+              | Item.Types(_, [TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
+              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
               
           member x.GetHashCode item =
