@@ -1502,7 +1502,7 @@ module InfoMemberPrinting =
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
         let rty = pinfo.GetPropertyType(amap, m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
+        let rty = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty else  rty 
         let rty, _ = PrettyTypes.PrettifyType g rty
         let nameL = ConvertValNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
         let getterSetter =
@@ -1662,7 +1662,7 @@ module TastDefinitionPrinting =
         let tycon = tcref.Deref
         let repr = tycon.TypeReprInfo
         let isMeasure = (tycon.TypeOrMeasureKind = TyparKind.Measure)
-        let _, ty = generalizeTyconRef tcref 
+        let ty = generalizedTyconRef g tcref 
 
         let start, tagger =
             if isStructTy g ty then

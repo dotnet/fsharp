@@ -1114,9 +1114,9 @@ let unionCaseRefOrder =
 // Make some common types
 //---------------------------------------------------------------------------
 
-let mkFunTy d r = TType_fun (d, r)
-
-let (-->) d r = mkFunTy d r
+let mkFunTy (g: TcGlobals) d r =
+    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
+    TType_fun (d, r)
 
 let mkForallTy d r = TType_forall (d, r)
 
@@ -1124,7 +1124,9 @@ let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
 
 let (+->) d r = mkForallTyIfNeeded d r
 
-let mkIteratedFunTy dl r = List.foldBack (-->) dl r
+let mkIteratedFunTy g dl r = List.foldBack (mkFunTy g) dl r
+
+let mkLambdaTy g tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy g tys rty)
 
 let mkLambdaArgTy m tys = 
     match tys with 
@@ -1133,8 +1135,8 @@ let mkLambdaArgTy m tys =
     | _ -> mkRawRefTupleTy tys
 
 let typeOfLambdaArg m vs = mkLambdaArgTy m (typesOfVals vs)
-let mkMultiLambdaTy m vs rty = mkFunTy (typeOfLambdaArg m vs) rty 
-let mkLambdaTy tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy tys rty)
+
+let mkMultiLambdaTy g m vs rty = mkFunTy g (typeOfLambdaArg m vs) rty 
 
 /// When compiling FSharp.Core.dll we have to deal with the non-local references into
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these
@@ -1246,29 +1248,29 @@ let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
     Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
 
-let mkLambdas m tps (vs: Val list) (b, rty) = 
-    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
+let mkLambdas g m tps (vs: Val list) (b, rty) = 
+    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), mkFunTy g v.Type ty) vs (b, rty))
 
-let mkMultiLambdasCore m vsl (b, rty) = 
-    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), typeOfLambdaArg m v --> ty) vsl (b, rty)
+let mkMultiLambdasCore g m vsl (b, rty) = 
+    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), mkFunTy g (typeOfLambdaArg m v) ty) vsl (b, rty)
 
-let mkMultiLambdas m tps vsl (b, rty) = 
-    mkTypeLambda m tps (mkMultiLambdasCore m vsl (b, rty) )
+let mkMultiLambdas g m tps vsl (b, rty) = 
+    mkTypeLambda m tps (mkMultiLambdasCore g m vsl (b, rty) )
 
-let mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
+let mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
     let expr = 
         match ctorThisValOpt, baseValOpt with
-        | None, None -> mkMultiLambdasCore m vsl (b, rty)
+        | None, None -> mkMultiLambdasCore g m vsl (b, rty)
         | _ -> 
             match vsl with 
             | [] -> error(InternalError("mk_basev_multi_lambdas_core: can't attach a basev to a non-lambda expression", m))
             | h :: t -> 
-                let b, rty = mkMultiLambdasCore m t (b, rty)
-                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (typeOfLambdaArg m h --> rty))
+                let b, rty = mkMultiLambdasCore g m t (b, rty)
+                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (mkFunTy g (typeOfLambdaArg m h) rty))
     mkTypeLambda m tps expr
 
-let mkMultiLambdaBind v letSeqPtOpt m tps vsl (b, rty) = 
-    TBind(v, mkMultiLambdas m tps vsl (b, rty), letSeqPtOpt)
+let mkMultiLambdaBind g v letSeqPtOpt m tps vsl (b, rty) = 
+    TBind(v, mkMultiLambdas g m tps vsl (b, rty), letSeqPtOpt)
 
 let mkBind seqPtOpt v e = TBind(v, e, seqPtOpt)
 
@@ -2501,13 +2503,18 @@ let ArgInfosOfPropertyVal g (v: Val) =
 // Generalize type constructors to types
 //---------------------------------------------------------------------------
 
-let generalTyconRefInst (tc: TyconRef) = generalizeTypars tc.TyparsNoRange
+let generalTyconRefInst (tcref: TyconRef) = 
+    generalizeTypars tcref.TyparsNoRange
 
-let generalizeTyconRef tc = 
-    let tinst = generalTyconRefInst tc
-    tinst, TType_app(tc, tinst)
+let generalizeTyconRef (g: TcGlobals) tcref = 
+    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
+    let tinst = generalTyconRefInst tcref
+    tinst, TType_app(tcref, tinst)
 
-let generalizedTyconRef tc = TType_app(tc, generalTyconRefInst tc)
+let generalizedTyconRef (g: TcGlobals) tcref = 
+    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
+    let tinst = generalTyconRefInst tcref
+    TType_app(tcref, tinst)
 
 let isTTyparSupportsStaticMethod = function TyparConstraint.MayResolveMember _ -> true | _ -> false
 let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
@@ -6069,7 +6076,7 @@ let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
-let mkMethodTy g argtys rty = mkIteratedFunTy (List.map (mkRefTupledTy g) argtys) rty 
+let mkMethodTy g argtys rty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) rty 
 
 let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty])
 
@@ -6109,7 +6116,7 @@ let rec tyOfExpr g expr =
     | Expr.Const (_, _, ty) -> ty
     | Expr.Val (vref, _, _) -> vref.Type
     | Expr.Sequential (a, b, k, _) -> tyOfExpr g (match k with NormalSeq -> b | ThenDoSeq -> a)
-    | Expr.Lambda (_, _, _, vs, _, _, rty) -> (mkRefTupledVarsTy g vs --> rty)
+    | Expr.Lambda (_, _, _, vs, _, _, rty) -> mkFunTy g (mkRefTupledVarsTy g vs) rty
     | Expr.TyLambda (_, tyvs, _, _, rty) -> (tyvs +-> rty)
     | Expr.Let (_, e, _, _) 
     | Expr.TyChoose (_, e, _)
@@ -7866,7 +7873,7 @@ let AdjustValForExpectedArity g m (vref: ValRef) flags topValInfo =
     let call = MakeApplicationAndBetaReduce g (Expr.Val (vref, flags, m), vref.Type, [tyargs'], (List.map (mkRefTupledVars g m) vsl), m)
     let tauexpr, tauty = 
         List.foldBack 
-            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkRefTupledVarsTy g vs --> ty))
+            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkFunTy g (mkRefTupledVarsTy g vs) ty))
             vsl
             (call, rty')
     // Build a type-lambda expression for the toplevel value if needed... 
@@ -8095,8 +8102,8 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                         
                         let inpsAsVars, inpsAsExprs = inpArgTys |> List.mapi (fun j ty -> mkCompGenLocal appm ("arg" + string i + string j) ty) |> List.unzip
                         let inpsAsActualArg = CoerceDetupled inpArgTys inpsAsExprs actualArgTys
-                        let inpCloVarType = (mkFunTy (mkRefTupledTy g actualArgTys) cloVar.Type)
-                        let newResTy = mkFunTy inpArgTy resTy
+                        let inpCloVarType = mkFunTy g (mkRefTupledTy g actualArgTys) cloVar.Type
+                        let newResTy = mkFunTy g inpArgTy resTy
                         let inpCloVar, inpCloVarAsExpr = mkCompGenLocal appm ("clo" + string i) inpCloVarType
                         let newRes = 
                             // For the final arg we can skip introducing the dummy variable
@@ -8522,7 +8529,7 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-// The non-inferring counter-part to SolveTypeSupportsNull
+// The non-inferring counter-part to SolveTypeUseSupportsNull
 let TypeSatisfiesNullConstraint g m ty = 
     TypeNullIsExtraValue g m ty  
 
@@ -8793,7 +8800,7 @@ type ActivePatternInfo with
         else mkOptionTy g choicety
     
     member apinfo.OverallType g m dty rtys isStruct = 
-        mkFunTy dty (apinfo.ResultType g m rtys isStruct)
+        mkFunTy g dty (apinfo.ResultType g m rtys isStruct)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

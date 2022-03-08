@@ -215,7 +215,7 @@ type LowerStateMachine(g: TcGlobals) =
                 None
             else
                 let macroParams = List.concat macroParamsCurried
-                let macroVal2 = mkLambdas m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
+                let macroVal2 = mkLambdas g m macroTypars macroParams (macroBody, tyOfExpr g macroBody)
                 if args.Length < macroParams.Length then 
                     //warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
                     None
@@ -232,7 +232,7 @@ type LowerStateMachine(g: TcGlobals) =
         | NewDelegateExpr g (_, macroParamsCurried, macroBody, _, _) -> 
             let m = expr.Range
             let macroParams = List.concat macroParamsCurried
-            let macroVal2 = mkLambdas m [] macroParams (macroBody, tyOfExpr g macroBody)
+            let macroVal2 = mkLambdas g m [] macroParams (macroBody, tyOfExpr g macroBody)
             if args.Length < macroParams.Length then 
                 //warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
                 None
