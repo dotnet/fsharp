@@ -772,6 +772,7 @@ module IncrClassChecking =
         // just a type variable. The type and typars get fixed-up after inference 
         let ctorValScheme, ctorVal = 
             let argty = mkRefTupledTy g (typesOfVals ctorArgs)
+
             // Initial type has known information 
             let ctorTy = mkFunTy g argty objTy    
 

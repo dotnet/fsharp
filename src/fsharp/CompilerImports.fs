@@ -1055,12 +1055,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | _ -> None
 
 #if !NO_EXTENSIONTYPING
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) =
-        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
-        match anameOpt with
-        | None -> false, None
-        | Some aname ->
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly MaybeNull>) =
+        match assembly with
+        | Tainted.Null -> false,None
+        | Tainted.NonNull assembly ->
+        let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
+
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with
         | ResolvedCcu ccu ->
             if ccu.IsProviderGenerated then
@@ -1218,27 +1219,30 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | ILScopeRef.Assembly a -> a.Name = nm
             | _ -> false)
 
-    member tcImports.DependencyProvider =
+    member _.DependencyProvider =
         CheckDisposed()
         match dependencyProviderOpt with
         | None ->
             Debug.Assert(false, "this should never be called on FrameworkTcImports")
-            new DependencyProvider(null, null)
+            new DependencyProvider()
         | Some dependencyProvider -> dependencyProvider
 
     member tcImports.GetImportMap() =
         CheckDisposed()
         let loaderInterface =
             { new AssemblyLoader with
-                 member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
+                 member _.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
 
-                 member x.TryFindXmlDocumentationInfo assemblyName =
+                 member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
 
 #if !NO_EXTENSIONTYPING
-                 member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
-                 member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
+                 member _.GetProvidedAssemblyInfo (ctok, m, assembly) =
+                     tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
+
+                 member _.RecordGeneratedTypeRoot root =
+                     tcImports.RecordGeneratedTypeRoot root
 #endif
              }
         ImportMap(tcImports.GetTcGlobals(), loaderInterface)
@@ -1329,7 +1333,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             runtimeAssemblyAttributes
             |> List.choose TryDecodeTypeProviderAssemblyAttr
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            |> List.map (function Null -> fileNameOfRuntimeAssembly | NonNull s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension s with _ -> s)
