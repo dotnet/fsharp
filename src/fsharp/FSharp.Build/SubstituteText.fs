@@ -10,15 +10,9 @@ open Microsoft.Build.Utilities
 
 type SubstituteText () =
 
-#if NO_CHECKNULLS
-    let mutable _buildEngine : IBuildEngine = null
-    let mutable _hostObject : ITaskHost = null
-    let mutable embeddedResources : ITaskItem[] = [||]
-#else
-    let mutable _buildEngine : IBuildEngine? = null
-    let mutable _hostObject : ITaskHost? = null
-    let mutable embeddedResources : ITaskItem[]? = [||]
-#endif
+    let mutable _buildEngine : IBuildEngine MaybeNull = null
+    let mutable _hostObject : ITaskHost MaybeNull = null
+    let mutable embeddedResources : ITaskItem[] MaybeNull = [||]
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
 

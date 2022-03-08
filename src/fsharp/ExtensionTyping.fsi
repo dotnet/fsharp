@@ -95,20 +95,12 @@ module internal ExtensionTyping =
         member IsSuppressRelocate : bool
         member IsErased : bool
         member IsGenericType : bool
-#if NO_CHECKNULLS
-        member Namespace : string
-#else
-        member Namespace : string?
-#endif
+        member Namespace : string MaybeNull
         member FullName : string
         member IsArray : bool
         member GetInterfaces : unit -> ProvidedType[]
         member Assembly : ProvidedAssembly
-#if NO_CHECKNULLS
-        member BaseType : ProvidedType
-#else
-        member BaseType : ProvidedType?
-#endif
+        member BaseType : ProvidedType MaybeNull
         member GetNestedType : string -> ProvidedType
         member GetNestedTypes : unit -> ProvidedType[]
         member GetAllNestedTypes : unit -> ProvidedType[]
@@ -162,11 +154,7 @@ module internal ExtensionTyping =
 #endif
         IProvidedCustomAttributeProvider =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
-#if NO_CHECKNULLS
-        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
-#else
-        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string? * int * int) option 
-#endif
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string MaybeNull * int * int) option 
         abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
         
@@ -186,11 +174,7 @@ module internal ExtensionTyping =
 #endif
         ProvidedMemberInfo = 
         member Name :string
-#if NO_CHECKNULLS
-        member DeclaringType : ProvidedType
-#else
-        member DeclaringType : ProvidedType?
-#endif
+        member DeclaringType : ProvidedType MaybeNull
         interface IProvidedCustomAttributeProvider 
 
     and [<AbstractClass>] 
@@ -265,15 +249,9 @@ module internal ExtensionTyping =
         ProvidedPropertyInfo = 
         inherit ProvidedMemberInfo
 
-#if NO_CHECKNULLS
-        member GetGetMethod : unit -> ProvidedMethodInfo
+        member GetGetMethod : unit -> ProvidedMethodInfo MaybeNull
 
-        member GetSetMethod : unit -> ProvidedMethodInfo
-#else
-        member GetGetMethod : unit -> ProvidedMethodInfo?
-
-        member GetSetMethod : unit -> ProvidedMethodInfo?
-#endif
+        member GetSetMethod : unit -> ProvidedMethodInfo MaybeNull
 
         member GetIndexParameters : unit -> ProvidedParameterInfo[]
 

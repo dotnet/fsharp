@@ -11,13 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if NO_CHECKNULLS
-[<AutoOpen>]
-// Shim to match nullness checking library support in preview
-module UtilsFsi = 
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#endif
-
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.
 //The goal is to have the most common/important flags available via the Fsi class, and the
@@ -28,61 +21,45 @@ type public Fsi () as this =
 
     inherit ToolTask ()
 
-    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
-    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable commandLineArgs : ITaskItem list = []
-    let mutable defineConstants : ITaskItem[] = [||]
+    let mutable capturedArguments: string list = []  // list of individual args, to pass to HostObject Compile()
+    let mutable capturedFilenames: string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable commandLineArgs: ITaskItem list = []
+    let mutable defineConstants: ITaskItem[] = [||]
     let mutable fsiExec = false
     let mutable noFramework = false
     let mutable optimize = true
     let mutable provideCommandLineArgs = false
-    let mutable references : ITaskItem[] = [||]
-    let mutable resources : ITaskItem[] = [||]
+    let mutable references: ITaskItem[] = [||]
+    let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
-    let mutable sources : ITaskItem[] = [||]
-    let mutable loadSources : ITaskItem[] = [||]
-    let mutable useSources : ITaskItem[] = [||]
-    let mutable tailcalls : bool = true
-    let mutable toolExe : string = "fsi.exe"
-    let mutable toolPath : string =
+    let mutable sources: ITaskItem[] = [||]
+    let mutable loadSources: ITaskItem[] = [||]
+    let mutable useSources: ITaskItem[] = [||]
+    let mutable tailcalls: bool = true
+    let mutable toolExe: string = "fsi.exe"
+    let mutable toolPath: string =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
             with _ -> None
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
-    let mutable treatWarningsAsErrors : bool = false
-    let mutable utf8output : bool = false
+    let mutable treatWarningsAsErrors: bool = false
+    let mutable utf8output: bool = false
 
-#if NO_CHECKNULLS
-    let mutable codePage : string = null
-    let mutable disabledWarnings : string = null
-    let mutable dotnetFsiCompilerPath : string = null
-    let mutable otherFlags : string = null
-    let mutable langVersion : string = null
-    let mutable preferredUILang : string = null
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
-    let mutable referencePath : string = null
-    let mutable warningsAsErrors : string = null
-    let mutable warningsNotAsErrors : string = null
-    let mutable warningLevel : string = null
-    let mutable vslcid : string = null
-#else
-    let mutable codePage : string? = null
-    let mutable disabledWarnings : string? = null
-    let mutable dotnetFsiCompilerPath : string? = null
-    let mutable otherFlags : string? = null
-    let mutable langVersion : string? = null
-    let mutable preferredUILang : string? = null
-    let mutable targetProfile : string? = null
-    let mutable targetType : string? = null
-    let mutable referencePath : string? = null
-    let mutable warningsAsErrors : string? = null
-    let mutable warningsNotAsErrors : string? = null
-    let mutable warningLevel : string? = null
-    let mutable vslcid : string? = null
-#endif
+    let mutable codePage: string MaybeNull = null
+    let mutable disabledWarnings: string MaybeNull = null
+    let mutable dotnetFsiCompilerPath: string MaybeNull = null
+    let mutable otherFlags: string MaybeNull = null
+    let mutable langVersion: string MaybeNull = null
+    let mutable preferredUILang: string MaybeNull = null
+    let mutable targetProfile: string MaybeNull = null
+    let mutable targetType: string MaybeNull = null
+    let mutable referencePath: string MaybeNull = null
+    let mutable warningsAsErrors: string MaybeNull = null
+    let mutable warningsNotAsErrors: string MaybeNull = null
+    let mutable warningLevel: string MaybeNull = null
+    let mutable vslcid: string MaybeNull = null
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true

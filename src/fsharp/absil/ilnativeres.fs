@@ -29,11 +29,7 @@ let inline DWORD s = uint32 s
 let inline WCHAR s = char s
 let inline BYTE s = byte s
 
-#if NO_CHECKNULLS
-type ResourceException(name: string, ?inner: Exception) =
-#else
-type ResourceException(name: string, ?inner: Exception?) =
-#endif
+type ResourceException(name: string, ?inner: Exception MaybeNull) =
     inherit Exception (name, Option.toObj inner)
 
 type RESOURCE_STRING () =

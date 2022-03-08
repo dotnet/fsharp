@@ -45,20 +45,12 @@ type internal History() =
 
     member x.Clear() = list.Clear(); current <- -1
 
-#if NO_CHECKNULLS
-    member x.Add (line: string) =
-#else
-    member x.Add (line: string?) = 
-#endif
+    member x.Add (line: string MaybeNull) = 
         match line with 
         | Null | "" -> ()
         | NonNull line -> list.Add(line)
 
-#if NO_CHECKNULLS
-    member x.AddLast (line: string) =
-#else
-    member x.AddLast (line: string?) =  
-#endif
+    member x.AddLast (line: string MaybeNull) =  
         match line with 
         | Null | "" -> ()
         | NonNull line ->

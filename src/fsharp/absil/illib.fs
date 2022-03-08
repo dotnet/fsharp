@@ -37,10 +37,17 @@ module internal PervasiveAutoOpens =
     let inline isNotNull x = not (isNull x)
 
 #if NO_CHECKNULLS
+    type MaybeNull<'T when 'T : null> = 'T
+#else
+    type MaybeNull<'T when 'T : not null> = 'T?
+#endif
+
+#if NO_CHECKNULLS
     // Shim to match nullness checking library support in preview
     let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
     let inline nonNull<'T when 'T : null> (x: 'T) = x
     let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+    let inline nullArgCheck paramName (x: 'T MaybeNull) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
 #endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -110,11 +117,7 @@ module internal PervasiveAutoOpens =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
-#if NO_CHECKNULLS
-    val mutable func : Func<'T>
-#else
-    val mutable func : Func<'T> ?
-#endif
+    val mutable func : Func<'T> MaybeNull
     member x.Value = 
         match x.func with 
         | null -> x.store 

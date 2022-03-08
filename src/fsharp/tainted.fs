@@ -132,11 +132,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         Tainted(context, u)
 
     member this.PApplyArray(f, methodName, range:range) =        
-#if NO_CHECKNULLS
-        let a : 'U[] = this.Protect f range
-#else
-        let a : 'U[]? = this.Protect f range
-#endif
+        let a : 'U[] MaybeNull = this.Protect f range
         match a with 
         | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
@@ -169,10 +165,10 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 module internal Tainted =
 
 #if NO_CHECKNULLS
-    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null and 'T : not struct =
+    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 #else
-    let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit,Tainted<'T>> when 'T : not null =
+    let (|Null|NonNull|) (p:Tainted<'T?>) : Choice<unit, Tainted<'T>> when 'T : not null =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
 #endif
 

@@ -48,21 +48,13 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let outputList = ResizeArray()
             let mutable errorslock = obj
             let mutable outputlock = obj
-#if NO_CHECKNULLS
-            let outputDataReceived (message: string) =
-#else
-            let outputDataReceived (message: string?) =
-#endif
+            let outputDataReceived (message: string MaybeNull) =
                 match message with
                 | Null -> ()
                 | NonNull message ->
                     lock outputlock (fun () -> outputList.Add(message))
 
-#if NO_CHECKNULLS
-            let errorDataReceived (message: string) =
-#else
-            let errorDataReceived (message: string?) =
-#endif
+            let errorDataReceived (message: string MaybeNull) =
                 match message with
                 | Null -> ()
                 | NonNull message ->

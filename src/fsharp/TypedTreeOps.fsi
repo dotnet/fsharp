@@ -2175,11 +2175,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-#if NO_CHECKNULLS
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
-#else
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string? option
-#endif
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool

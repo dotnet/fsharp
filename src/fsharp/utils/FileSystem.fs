@@ -533,29 +533,17 @@ type DefaultFileSystem() as this =
 
     abstract IsInvalidPathShim: path: string -> bool
     default _.IsInvalidPathShim(path: string) =
-#if NO_CHECKNULLS
-        let isInvalidPath(p: string) = 
-#else
-        let isInvalidPath(p: string?) = 
-#endif
+        let isInvalidPath(p: string MaybeNull) = 
             match p with
             | Null | "" -> true
             | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-#if NO_CHECKNULLS
-        let isInvalidFilename(p: string) = 
-#else
-        let isInvalidFilename(p: string?) = 
-#endif
+        let isInvalidFilename(p: string MaybeNull) = 
             match p with
             | Null | "" -> true
             | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
-#if NO_CHECKNULLS
-        let isInvalidDirectory(d: string) = 
-#else
-        let isInvalidDirectory(d: string?) = 
-#endif
+        let isInvalidDirectory(d: string MaybeNull) = 
             match d with
             | Null -> true
             | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1

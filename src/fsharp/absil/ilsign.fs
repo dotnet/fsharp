@@ -150,11 +150,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
     let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] = 
 
-#if NO_CHECKNULLS
-        let validateRSAField (field: byte[]) expected (name: string) =
-#else
-        let validateRSAField (field: byte[]?) expected (name: string) =
-#endif
+        let validateRSAField (field: byte[] MaybeNull) expected (name: string) =
             match field with 
             | Null -> ()
             | NonNull field ->

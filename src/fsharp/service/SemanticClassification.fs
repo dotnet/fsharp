@@ -251,7 +251,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, (TType_measure _ :: _), _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _, _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->

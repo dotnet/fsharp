@@ -12,6 +12,16 @@ open Internal.Utilities
 [<assembly: System.CLSCompliant(true)>]
 do()
 
+// Shim to match nullness checking library support in preview
+[<AutoOpen>]
+module Utils = 
+#if NO_CHECKNULLS
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+    type MaybeNull<'T when 'T : null> = 'T
+#else
+    type MaybeNull<'T when 'T : not null> = 'T?
+#endif
+
 type FSharpCommandLineBuilder () =
 
     // In addition to generating a command-line that will be handed to cmd.exe, we also generate
@@ -32,7 +42,7 @@ type FSharpCommandLineBuilder () =
     /// Return a full command line (with quoting for the cmd.exe shell)
     override x.ToString() = builder.ToString()
 
-    member x.AppendFileNamesIfNotNull(filenames:ITaskItem[], sep:string) =
+    member x.AppendFileNamesIfNotNull(filenames:ITaskItem[], sep: string) =
         builder.AppendFileNamesIfNotNull(filenames, sep)
         // do not update "args", not used
         for item in filenames do
@@ -42,7 +52,7 @@ type FSharpCommandLineBuilder () =
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs
 
-    member x.AppendSwitchesIfNotNull(switch:string, values:string[], sep:string) =
+    member x.AppendSwitchesIfNotNull(switch: string, values: string[], sep: string) =
         builder.AppendSwitchIfNotNull(switch, values, sep)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
@@ -50,11 +60,7 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
-#if NO_CHECKNULLS
-    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string[]) =
-#else
-    member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string[]) =
-#endif
+    member x.AppendSwitchIfNotNull(switch: string, value: string MaybeNull, ?metadataNames: string[]) =
         let metadataNames = defaultArg metadataNames [||]
         builder.AppendSwitchIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
@@ -69,14 +75,10 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
-#if NO_CHECKNULLS
-    member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string) =
-#else
-    member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string?) =
-#endif
+    member x.AppendSwitchUnquotedIfNotNull(switch: string, value: string MaybeNull) =
         assert(switch = "")  // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
-        let ParseCommandLineArgs(commandLine:string) = // returns list in reverse order
+        let ParseCommandLineArgs(commandLine: string) = // returns list in reverse order
             let mutable args = []
             let mutable i = 0 // index into commandLine
             let len = commandLine.Length
@@ -103,7 +105,7 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- ParseCommandLineArgs(s) @ args
 
-    member x.AppendSwitch(switch:string) =
+    member x.AppendSwitch(switch: string) =
         builder.AppendSwitch(switch)
         args <- switch :: args
 

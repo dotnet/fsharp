@@ -1145,18 +1145,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | _ -> None
 
 #if !NO_EXTENSIONTYPING
-#if NO_CHECKNULLS
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) =
-#else
-    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly?>) =
-#endif
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly MaybeNull>) =
         match assembly with
         | Tainted.Null -> false,None
-#if NO_CHECKNULLS
-        | assembly ->
-#else
         | Tainted.NonNull assembly ->
-#endif
         let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with

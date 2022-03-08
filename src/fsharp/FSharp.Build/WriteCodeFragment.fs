@@ -12,25 +12,11 @@ open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
-#if NO_CHECKNULLS
-[<AutoOpen>]
-// Shim to match nullness checking library support in preview
-module UtilsWriteCodeFragment = 
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#endif
-
 type WriteCodeFragment() =
-#if NO_CHECKNULLS
-    let mutable _buildEngine : IBuildEngine = null
-    let mutable _hostObject : ITaskHost = null
-    let mutable _outputDirectory : ITaskItem = null
-    let mutable _outputFile : ITaskItem = null
-#else
-    let mutable _buildEngine : IBuildEngine? = null
-    let mutable _hostObject : ITaskHost? = null
-    let mutable _outputDirectory : ITaskItem? = null
-    let mutable _outputFile : ITaskItem? = null
-#endif
+    let mutable _buildEngine : IBuildEngine MaybeNull = null
+    let mutable _hostObject : ITaskHost MaybeNull = null
+    let mutable _outputDirectory : ITaskItem MaybeNull = null
+    let mutable _outputFile : ITaskItem MaybeNull = null
     let mutable _language : string = ""
     let mutable _assemblyAttributes : ITaskItem[] = [||]
 
@@ -139,15 +125,6 @@ type WriteCodeFragment() =
 
                 if _language.ToLowerInvariant() = "f#" then code.AppendLine("do()") |> ignore
 
-#if NO_CHECKNULLS
-                let fileName = _outputFile.ItemSpec
-
-                let outputFileItem =
-                    if not (isNull _outputFile) && not (isNull _outputDirectory) && not (Path.IsPathRooted(fileName)) then
-                        TaskItem(Path.Combine(_outputDirectory.ItemSpec, fileName)) :> ITaskItem
-                    else
-                        _outputFile
-#else
                 let fileName = outputFile.ItemSpec
 
                 let outputFileItem =
@@ -158,7 +135,6 @@ type WriteCodeFragment() =
                             outputFile
                         else
                             TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
-#endif
 
                 let codeText = code.ToString()
                 File.WriteAllText(fileName, codeText)

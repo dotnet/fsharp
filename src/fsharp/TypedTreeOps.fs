@@ -7660,11 +7660,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-#if NO_CHECKNULLS
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string option = 
-#else
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string? option = 
-#endif
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.

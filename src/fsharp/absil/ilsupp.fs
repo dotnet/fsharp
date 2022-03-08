@@ -802,11 +802,7 @@ type ISymUnmanagedWriter2 =
     abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
                           cData: int *
                           pcData: int byref *
-#if NO_CHECKNULLS
-                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[] -> unit
-#else
-                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[]? -> unit
-#endif
+                          [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[] MaybeNull -> unit
     abstract DefineSequencePoints: document: ISymUnmanagedDocumentWriter *
                                   spCount: int *
                                   [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]offsets: int [] *

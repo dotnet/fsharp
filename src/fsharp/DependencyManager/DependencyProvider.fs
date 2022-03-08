@@ -379,11 +379,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-#if NO_CHECKNULLS
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
-#else
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string? * IDependencyManagerProvider? =
-#endif
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string MaybeNull * IDependencyManagerProvider MaybeNull =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -406,11 +402,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
             null, null
 
     /// Fetch a dependencymanager that supports a specific key
-#if NO_CHECKNULLS
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
-#else
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider? =
-#endif
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider MaybeNull =
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -430,11 +422,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                        packageManagerTextLines: (string * string) seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
-#if NO_CHECKNULLS
-                       [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
-#else
-                       [<Optional;DefaultParameterValue(null:string?)>]executionRid: string?,
-#endif
+                       [<Optional;DefaultParameterValue(null:string MaybeNull)>]executionRid: string MaybeNull,
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string,

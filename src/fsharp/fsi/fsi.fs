@@ -2270,11 +2270,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
-#if NO_CHECKNULLS
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly = 
-#else
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly? = 
-#endif
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly MaybeNull = 
 
            try
                // Grab the name of the assembly
@@ -2403,11 +2399,7 @@ type internal FsiStdinLexerProvider
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
-#if NO_CHECKNULLS
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string) =
-#else
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string?) =
-#endif
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string MaybeNull) =
         UnicodeLexing.FunctionAsLexbuf
           (true, tcConfigB.langVersion, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
@@ -2417,11 +2409,7 @@ type internal FsiStdinLexerProvider
             |  Some(Null) | None ->
                  if progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-#if NO_CHECKNULLS
-            | Some input ->
-#else
             | Some (NonNull input) ->
-#endif
                 let input  = input + "\n"
                 let ninput = input.Length
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
@@ -2435,11 +2423,7 @@ type internal FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-#if NO_CHECKNULLS
-    let removeZeroCharsFromString (str:string) =
-#else
-    let removeZeroCharsFromString (str:string?) : string? =
-#endif
+    let removeZeroCharsFromString (str:string MaybeNull) : string MaybeNull =
         match str with 
         | Null -> str
         | NonNull str -> 

@@ -11,13 +11,6 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if NO_CHECKNULLS
-// Shim to match nullness checking library support in preview
-[<AutoOpen>]
-module Utils = 
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#endif
-
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
 //The goal is to have the most common/important flags available via the Fsc class, and the
@@ -28,28 +21,28 @@ type public Fsc () as this =
 
     inherit ToolTask ()
 
-    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
-    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable commandLineArgs : ITaskItem list = []
+    let mutable capturedArguments: string list = []  // list of individual args, to pass to HostObject Compile()
+    let mutable capturedFilenames: string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
-    let mutable defineConstants : ITaskItem[] = [||]
-    let mutable delaySign : bool = false
-    let mutable deterministic : bool = false
+    let mutable defineConstants: ITaskItem[] = [||]
+    let mutable delaySign: bool = false
+    let mutable deterministic: bool = false
     let mutable embedAllSources = false
-    let mutable embeddedFiles : ITaskItem[] = [||]
-    let mutable highEntropyVA : bool = false
+    let mutable embeddedFiles: ITaskItem[] = [||]
+    let mutable highEntropyVA: bool = false
     let mutable noFramework = false
-    let mutable optimize  : bool = true
-    let mutable prefer32bit : bool = false
-    let mutable publicSign : bool = false
-    let mutable provideCommandLineArgs : bool = false
-    let mutable references : ITaskItem[] = [||]
-    let mutable resources : ITaskItem[] = [||]
-    let mutable skipCompilerExecution : bool  = false
-    let mutable sources : ITaskItem[] = [||]
-    let mutable tailcalls : bool = true
-    let mutable toolExe : string = "fsc.exe"
+    let mutable optimize: bool = true
+    let mutable prefer32bit: bool = false
+    let mutable publicSign: bool = false
+    let mutable provideCommandLineArgs: bool = false
+    let mutable references: ITaskItem[] = [||]
+    let mutable resources: ITaskItem[] = [||]
+    let mutable skipCompilerExecution: bool  = false
+    let mutable sources: ITaskItem[] = [||]
+    let mutable tailcalls: bool = true
+    let mutable toolExe: string = "fsc.exe"
     let defaultToolPath =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
@@ -57,78 +50,44 @@ type public Fsc () as this =
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
-    let mutable treatWarningsAsErrors : bool = false
-    let mutable useStandardResourceNames : bool = false
-    let mutable vserrors : bool = false
-    let mutable utf8output : bool = false
+    let mutable treatWarningsAsErrors: bool = false
+    let mutable useStandardResourceNames: bool = false
+    let mutable vserrors: bool = false
+    let mutable utf8output: bool = false
 
-#if NO_CHECKNULLS
-    let mutable baseAddress : string = null
-    let mutable codePage : string = null
-    let mutable debugType : string = null
-    let mutable disabledWarnings : string = null
-    let mutable documentationFile : string = null
-    let mutable dotnetFscCompilerPath : string = null
-    let mutable generateInterfaceFile : string = null
-    let mutable keyFile : string = null
-    let mutable langVersion : string = null
-    let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null 
-    let mutable pathMap : string = null
-    let mutable pdbFile : string = null
-    let mutable platform : string = null
-    let mutable preferredUILang : string = null
-    let mutable referencePath : string = null
-    let mutable sourceLink : string = null
-    let mutable subsystemVersion : string = null
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
-    let mutable warningsAsErrors : string = null
-    let mutable warningsNotAsErrors : string = null
-    let mutable versionFile : string = null
-    let mutable warningLevel : string = null
-    let mutable warnOn : string = null
-    let mutable win32icon: string = null
-    let mutable win32res : string = null
-    let mutable win32manifest : string = null
-    let mutable vslcid : string = null
-    let mutable checksumAlgorithm: string = null
-    let mutable codePage : string = null
-#else
-    let mutable baseAddress : string? = null
-    let mutable codePage : string? = null
-    let mutable debugType : string? = null
-    let mutable disabledWarnings : string? = null
-    let mutable documentationFile : string? = null
-    let mutable dotnetFscCompilerPath : string? = null
-    let mutable generateInterfaceFile : string? = null
-    let mutable keyFile : string? = null
-    let mutable langVersion : string? = null
-    let mutable otherFlags : string? = null
-    let mutable outputAssembly : string? = null 
-    let mutable pathMap : string? = null
-    let mutable pdbFile : string? = null
-    let mutable platform : string? = null
-    let mutable preferredUILang : string? = null
-    let mutable referencePath : string? = null
-    let mutable sourceLink : string? = null
-    let mutable subsystemVersion : string? = null
-    let mutable targetProfile : string? = null
-    let mutable targetType : string? = null
-    let mutable warnOn: string? = null
-    let mutable warningsAsErrors : string? = null
-    let mutable warningsNotAsErrors : string? = null
-    let mutable versionFile : string? = null
-    let mutable warningLevel : string? = null
-    let mutable win32icon: string? = null
-    let mutable win32res : string? = null
-    let mutable win32manifest : string? = null
-    let mutable vslcid : string? = null
-    let mutable checksumAlgorithm: string? = null
-    let mutable codePage : string? = null
-#endif
+    let mutable baseAddress: string MaybeNull = null
+    let mutable codePage: string MaybeNull = null
+    let mutable debugType: string MaybeNull = null
+    let mutable disabledWarnings: string MaybeNull = null
+    let mutable documentationFile: string MaybeNull = null
+    let mutable dotnetFscCompilerPath: string MaybeNull = null
+    let mutable generateInterfaceFile: string MaybeNull = null
+    let mutable keyFile: string MaybeNull = null
+    let mutable langVersion: string MaybeNull = null
+    let mutable otherFlags: string MaybeNull = null
+    let mutable outputAssembly: string MaybeNull = null 
+    let mutable pathMap: string MaybeNull = null
+    let mutable pdbFile: string MaybeNull = null
+    let mutable platform: string MaybeNull = null
+    let mutable preferredUILang: string MaybeNull = null
+    let mutable referencePath: string MaybeNull = null
+    let mutable sourceLink: string MaybeNull = null
+    let mutable subsystemVersion: string MaybeNull = null
+    let mutable targetProfile: string MaybeNull = null
+    let mutable targetType: string MaybeNull = null
+    let mutable warnOn: string MaybeNull = null
+    let mutable warningsAsErrors: string MaybeNull = null
+    let mutable warningsNotAsErrors: string MaybeNull = null
+    let mutable versionFile: string MaybeNull = null
+    let mutable warningLevel: string MaybeNull = null
+    let mutable win32icon: string MaybeNull = null
+    let mutable win32res: string MaybeNull = null
+    let mutable win32manifest: string MaybeNull = null
+    let mutable vslcid: string MaybeNull = null
+    let mutable checksumAlgorithm: string MaybeNull = null
+    let mutable codePage: string MaybeNull = null
 
-    let mutable toolPath : string =
+    let mutable toolPath: string =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
             with _ -> None
@@ -139,11 +98,7 @@ type public Fsc () as this =
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
-#if NO_CHECKNULLS
-    let splitAndWsTrim (s:string) =
-#else
-    let splitAndWsTrim (s:string?) =
-#endif
+    let splitAndWsTrim (s: string MaybeNull) =
         match s with
         | Null -> [||]
         | NonNull s ->
@@ -207,12 +162,10 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
 // Platform
         builder.AppendSwitchIfNotNull("--platform:",
-#if NO_CHECKNULLS
-            let ToUpperInvariant (s:string) =
-#else
-            let ToUpperInvariant (s:string?) =
-#endif
+
+            let ToUpperInvariant (s: string MaybeNull) =
                 match s with Null -> null | NonNull s -> s.ToUpperInvariant()
+
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
@@ -220,6 +173,7 @@ type public Fsc () as this =
                 | "X86",  _, _  -> "x86"
                 | "X64",  _, _  -> "x64"
                 | _ -> null)
+
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull("--checksumalgorithm:",
             match checksumAlgorithm with

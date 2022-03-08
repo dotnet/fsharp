@@ -5380,15 +5380,10 @@ type CcuThunk =
     {
       /// ccu.target is null when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs.
-#if NO_CHECKNULLS
       mutable target: CcuData
-#else
-      mutable target: CcuData?
-#endif
       name: CcuReference
     }
 
-#if NO_CHECKNULLS
     /// Dereference the assembly reference 
     member ccu.Deref = 
         if isNull (box ccu.target) then 
@@ -5397,14 +5392,6 @@ type CcuThunk =
    
     /// Indicates if this assembly reference is unresolved
     member ccu.IsUnresolvedReference = isNull (box ccu.target)
-#else
-    member ccu.Deref = 
-        match ccu.target with 
-        | null -> raise(UnresolvedReferenceNoRange ccu.name)
-        | NonNullQuick tg -> tg
-
-    member ccu.IsUnresolvedReference = isNull ccu.target
-#endif
    
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 

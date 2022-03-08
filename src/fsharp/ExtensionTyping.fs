@@ -226,11 +226,7 @@ module internal ExtensionTyping =
         resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
     /// Validate a provided namespace name
-#if NO_CHECKNULLS
-    let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp:string) =
-#else
-    let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp:string?) =
-#endif
+    let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string MaybeNull) =
         match nsp with 
         | Null -> ()
         | NonNull nsp -> 
@@ -349,18 +345,10 @@ module internal ExtensionTyping =
         member _.IsSuppressRelocate = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.SuppressRelocate)) <> enum 0  
         member _.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0  
         member _.IsGenericType = x.IsGenericType
-#if NO_CHECKNULLS
-        member _.Namespace : string = x.Namespace
-#else
-        member _.Namespace : string? = x.Namespace
-#endif
+        member _.Namespace : string MaybeNull = x.Namespace
         member _.FullName = x.FullName
         member _.IsArray = x.IsArray
-#if NO_CHECKNULLS
-        member _.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
-#else
-        member _.Assembly: ProvidedAssembly? = x.Assembly |> ProvidedAssembly.Create
-#endif
+        member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
         member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member _.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member _.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
@@ -378,11 +366,7 @@ module internal ExtensionTyping =
         member _.GetGenericTypeDefinition() = x.GetGenericTypeDefinition() |> ProvidedType.CreateWithNullCheck ctxt "GenericTypeDefinition"
         /// Type.BaseType can be null when Type is interface or object
         member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
-#if NO_CHECKNULLS
-        member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
-#else
-        member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[]? = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
-#endif
+        member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] MaybeNull = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
         /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
         member _.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
         member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
@@ -419,11 +403,7 @@ module internal ExtensionTyping =
 
         member _.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Quotations.Var(name, x))
 
-#if NO_CHECKNULLS
-        static member Create ctxt x : ProvidedType = 
-#else
-        static member Create ctxt x : ProvidedType? = 
-#endif
+        static member Create ctxt x : ProvidedType MaybeNull = 
             match x with 
             | Null -> null 
             | NonNull t -> ProvidedType (t, ctxt)
@@ -435,11 +415,7 @@ module internal ExtensionTyping =
             | Null -> nullArg name 
             | t -> ProvidedType (t, ctxt)
 
-#if NO_CHECKNULLS
-        static member CreateArray ctxt (xs: Type[]) : ProvidedType[] = 
-#else
-        static member CreateArray ctxt (xs: Type[]?) : ProvidedType[]? = 
-#endif
+        static member CreateArray ctxt (xs: Type[] MaybeNull) : ProvidedType[] MaybeNull = 
             match xs with
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
@@ -464,11 +440,7 @@ module internal ExtensionTyping =
         [<AllowNullLiteral>]
 #endif
         IProvidedCustomAttributeProvider =
-#if NO_CHECKNULLS
-        abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string * int * int) option 
-#else
-        abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string? * int * int) option 
-#endif
+        abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string MaybeNull * int * int) option 
 
         abstract GetXmlDocAttributes : provider: ITypeProvider -> string[]
 
@@ -550,22 +522,14 @@ module internal ExtensionTyping =
         /// ParameterInfo.ParameterType cannot be null
         member _.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType
         
-#if NO_CHECKNULLS
-        static member Create ctxt (x: ParameterInfo) : ProvidedParameterInfo = 
-#else
-        static member Create ctxt (x: ParameterInfo?) : ProvidedParameterInfo? = 
-#endif
+        static member Create ctxt (x: ParameterInfo MaybeNull) : ProvidedParameterInfo MaybeNull = 
             match x with 
             | Null -> null 
             | NonNull x -> ProvidedParameterInfo (x, ctxt)
 
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
         
-#if NO_CHECKNULLS
-        static member CreateArray ctxt (xs: ParameterInfo[]) : ProvidedParameterInfo[] = 
-#else
-        static member CreateArray ctxt (xs: ParameterInfo[]?) : ProvidedParameterInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: ParameterInfo[] MaybeNull) : ProvidedParameterInfo[] MaybeNull = 
             match xs with 
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
@@ -597,11 +561,7 @@ module internal ExtensionTyping =
 
         member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
 
-#if NO_CHECKNULLS
-        static member Create x : ProvidedAssembly = match x with null -> null | t -> ProvidedAssembly (t)
-#else
-        static member Create x : ProvidedAssembly? = match x with null -> null | t -> ProvidedAssembly (t)
-#endif
+        static member Create x : ProvidedAssembly MaybeNull = match x with null -> null | t -> ProvidedAssembly (t)
 
         member _.Handle = x
 
@@ -699,20 +659,12 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedFieldInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member Create ctxt x : ProvidedFieldInfo = 
-#else
-        static member Create ctxt x : ProvidedFieldInfo? = 
-#endif
+        static member Create ctxt x : ProvidedFieldInfo MaybeNull = 
             match x with 
             | Null -> null 
             | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member CreateArray ctxt (xs: FieldInfo[]) : ProvidedFieldInfo[] = 
-#else
-        static member CreateArray ctxt (xs: FieldInfo[]?) : ProvidedFieldInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: FieldInfo[] MaybeNull) : ProvidedFieldInfo[] MaybeNull = 
             match xs with 
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
@@ -747,20 +699,12 @@ module internal ExtensionTyping =
         static member CreateNonNull ctxt (x: MethodInfo) : ProvidedMethodInfo = 
             ProvidedMethodInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member Create ctxt (x: MethodInfo) : ProvidedMethodInfo = 
-#else
-        static member Create ctxt (x: MethodInfo?) : ProvidedMethodInfo? = 
-#endif
+        static member Create ctxt (x: MethodInfo MaybeNull) : ProvidedMethodInfo MaybeNull = 
             match x with 
             | Null -> null
             | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member CreateArray ctxt (xs: MethodInfo[]) : ProvidedMethodInfo[] = 
-#else
-        static member CreateArray ctxt (xs: MethodInfo[]?) : ProvidedMethodInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: MethodInfo[] MaybeNull) : ProvidedMethodInfo[] MaybeNull = 
             match xs with 
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
@@ -786,20 +730,12 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedPropertyInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member Create ctxt x : ProvidedPropertyInfo = 
-#else
-        static member Create ctxt x : ProvidedPropertyInfo? = 
-#endif
+        static member Create ctxt x : ProvidedPropertyInfo MaybeNull =
             match x with 
             | Null -> null 
             | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member CreateArray ctxt xs : ProvidedPropertyInfo[] = 
-#else
-        static member CreateArray ctxt (xs: PropertyInfo[]?) : ProvidedPropertyInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: PropertyInfo[] MaybeNull) : ProvidedPropertyInfo[] MaybeNull = 
             match xs with
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
@@ -831,20 +767,12 @@ module internal ExtensionTyping =
         
         static member CreateNonNull ctxt x = ProvidedEventInfo (x, ctxt)
         
-#if NO_CHECKNULLS
-        static member Create ctxt x : ProvidedEventInfo = 
-#else
-        static member Create ctxt x : ProvidedEventInfo? = 
-#endif
+        static member Create ctxt x : ProvidedEventInfo MaybeNull = 
             match x with 
             | Null -> null 
             | NonNull x -> ProvidedEventInfo (x, ctxt)
         
-#if NO_CHECKNULLS
-        static member CreateArray ctxt xs : ProvidedEventInfo[] = 
-#else
-        static member CreateArray ctxt (xs: EventInfo[]?) : ProvidedEventInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: EventInfo[] MaybeNull) : ProvidedEventInfo[] MaybeNull = 
             match xs with 
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
@@ -872,20 +800,12 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedConstructorInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member Create ctxt (x: ConstructorInfo) : ProvidedConstructorInfo = 
-#else
-        static member Create ctxt (x: ConstructorInfo?) : ProvidedConstructorInfo? = 
-#endif
+        static member Create ctxt (x: ConstructorInfo MaybeNull) : ProvidedConstructorInfo MaybeNull = 
             match x with 
             | Null -> null 
             | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
-#if NO_CHECKNULLS
-        static member CreateArray ctxt xs : ProvidedConstructorInfo[] = 
-#else
-        static member CreateArray ctxt (xs: ConstructorInfo[]?) : ProvidedConstructorInfo[]? = 
-#endif
+        static member CreateArray ctxt (xs: ConstructorInfo[] MaybeNull) : ProvidedConstructorInfo[] MaybeNull = 
             match xs with 
             | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
@@ -976,11 +896,7 @@ module internal ExtensionTyping =
             | Quotations.Patterns.Var v ->
                 Some (ProvidedVarExpr (ProvidedVar.CreateNonNull ctxt v))
             | _ -> None
-#if NO_CHECKNULLS
-        static member Create ctxt t : ProvidedExpr = 
-#else
-        static member Create ctxt t : ProvidedExpr? = 
-#endif
+        static member Create ctxt t : ProvidedExpr MaybeNull = 
             match box t with 
             | Null -> null 
             | _ -> ProvidedExpr (t, ctxt)
@@ -1202,11 +1118,7 @@ module internal ExtensionTyping =
         | -1 -> ()
         | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName.[n], expectedName), m))  
 
-#if NO_CHECKNULLS
-        let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
-#else
-        let staticParameters : Tainted<ProvidedParameterInfo[]?> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
-#endif
+        let staticParameters : Tainted<ProvidedParameterInfo[] MaybeNull> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
         if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
             ValidateProvidedTypeAfterStaticInstantiation(m, st, expectedPath, expectedName)
 
@@ -1214,11 +1126,7 @@ module internal ExtensionTyping =
     /// Resolve a (non-nested) provided type given a full namespace name and a type name. 
     /// May throw an exception which will be turned into an error message by one of the 'Try' function below.
     /// If resolution is successful the type is then validated.
-#if NO_CHECKNULLS
-    let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType> =
-#else
-    let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType?> =
-#endif
+    let ResolveProvidedType (resolver: Tainted<ITypeProvider>, m, moduleOrNamespace: string[], typeName) : Tainted<ProvidedType MaybeNull> =
         let displayName = String.Join(".", moduleOrNamespace)
 
         // Try to find the type in the given provided namespace
@@ -1402,11 +1310,7 @@ module internal ExtensionTyping =
             | None -> None
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-#if NO_CHECKNULLS
-    let GetPartsOfNamespaceRecover(namespaceName: string) = 
-#else
-    let GetPartsOfNamespaceRecover(namespaceName: string?) = 
-#endif
+    let GetPartsOfNamespaceRecover(namespaceName: string MaybeNull) = 
         match namespaceName with 
         | Null -> [] 
         | NonNull namespaceName -> 
@@ -1414,11 +1318,7 @@ module internal ExtensionTyping =
             else splitNamespace (nonNull namespaceName)
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-#if NO_CHECKNULLS
-    let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string) = 
-#else
-    let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string?) = 
-#endif
+    let GetProvidedNamespaceAsPath (m, resolver: Tainted<ITypeProvider>, namespaceName:string MaybeNull) =
         match namespaceName with 
         | Null -> [] 
         | NonNull namespaceName -> 
@@ -1431,11 +1331,7 @@ module internal ExtensionTyping =
         // Can't use st.Fullname because it may be like IEnumerable<Something>
         // We want [System;Collections;Generic]
         let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), range))
-#if NO_CHECKNULLS
-        let rec walkUpNestedClasses(st: Tainted<ProvidedType>, soFar) =
-#else
-        let rec walkUpNestedClasses(st: Tainted<ProvidedType?>, soFar) =
-#endif
+        let rec walkUpNestedClasses(st: Tainted<ProvidedType MaybeNull>, soFar) =
             match st with
             | Tainted.Null -> soFar
             | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), soFar) @ [st.PUntaint((fun st -> st.Name), range)]

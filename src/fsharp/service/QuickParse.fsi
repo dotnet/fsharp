@@ -71,26 +71,14 @@ module public QuickParse =
     /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
-#if NO_CHECKNULLS
-    val GetCompleteIdentifierIsland : tolerateJustAfter: bool -> lineStr: string -> index: int -> (string * int * bool) option
-#else
-    val GetCompleteIdentifierIsland : tolerateJustAfter: bool -> lineStr: string? -> index: int -> (string * int * bool) option
-#endif
+    val GetCompleteIdentifierIsland : tolerateJustAfter: bool -> lineStr: string MaybeNull -> index: int -> (string * int * bool) option
     
     /// Get the partial long name of the identifier to the left of index.
-#if NO_CHECKNULLS
-    val GetPartialLongName : lineStr: string * index: int -> string list * string
-#else
-    val GetPartialLongName : lineStr: string? * index: int -> string list * string
-#endif
+    val GetPartialLongName : lineStr: string MaybeNull * index: int -> string list * string
     
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-#if NO_CHECKNULLS
-    val GetPartialLongNameEx : lineStr: string * index: int -> PartialLongName
-#else
-    val GetPartialLongNameEx : lineStr: string? * index: int -> PartialLongName
-#endif
+    val GetPartialLongNameEx : lineStr: string MaybeNull * index: int -> PartialLongName
     
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
     val TestMemberOrOverrideDeclaration : tokens: FSharpTokenInfo[] -> bool

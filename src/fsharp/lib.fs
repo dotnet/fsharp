@@ -472,11 +472,7 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still.
                         List.rev savedConts)
-#if NO_CHECKNULLS
-            let postOrQueue (sc: SynchronizationContext, cont) =
-#else
-            let postOrQueue (sc: SynchronizationContext?, cont) =
-#endif
+            let postOrQueue (sc: SynchronizationContext MaybeNull, cont) =
                 match sc with
                 | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
                 | NonNullQuick sc ->

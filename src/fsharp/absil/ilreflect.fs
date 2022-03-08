@@ -388,11 +388,7 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-#if NO_CHECKNULLS
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type, typB, typeDef) =
-#else
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type?, typB, typeDef) =
-#endif
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type MaybeNull, typB, typeDef) =
     match typT with
     | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
     | NonNull typT ->
@@ -765,11 +761,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic,
                                 null,
                                 argTs,
-#if NO_CHECKNULLS
-                                (null: ParameterModifier[]))
-#else
-                                (null:ParameterModifier[]?))
-#endif
+                                (null:ParameterModifier[] MaybeNull))
             // This can fail if there is an ambiguity w.r.t. return type
             with _ -> null
         if (isNotNull methInfo && equalTypes resT methInfo.ReturnType) then
@@ -779,11 +771,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-#if NO_CHECKNULLS
-let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo =
-#else
-let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo? =
-#endif
+let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo MaybeNull =
     if (parentTI.IsGenericType &&
         not (equalTypes parentTI (getTypeConstructor parentTI)))
     then TypeBuilder.GetMethod(parentTI, methInfo )
@@ -839,11 +827,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) :
     | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
     | NonNull res -> res
 
-#if NO_CHECKNULLS
-let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo =
-#else
-let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo? =
-#endif
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo MaybeNull =
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI, consInfo) else consInfo
 
 /// convConstructorSpec (like convMethodSpec)
