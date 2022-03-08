@@ -584,7 +584,7 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (NicePrint.stringOfTy denv  meth.ApparentEnclosingType) meth.LogicalName)), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod (sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) meth.LogicalName), m))
                     | _ -> ()
 
     /// Get the slots of a type that can or must be implemented. This depends
