@@ -4028,11 +4028,11 @@ namespace Microsoft.FSharp.Core
         let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
-        let inline defaultArg arg defaultValue = 
+        let defaultArg arg defaultValue = 
             match arg with None -> defaultValue | Some v -> v
         
         [<CompiledName("DefaultValueArg")>]
-        let inline defaultValueArg arg defaultValue = 
+        let defaultValueArg arg defaultValue = 
             match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<CompiledName("DefaultIfNone")>]

@@ -3108,7 +3108,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("DefaultArg")>]
-        val inline defaultArg: arg: 'T option -> defaultValue: 'T -> 'T 
+        val defaultArg: arg: 'T option -> defaultValue: 'T -> 'T 
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
