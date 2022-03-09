@@ -39,10 +39,9 @@ module internal PervasiveAutoOpens =
 #if NO_CHECKNULLS
     type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
-    // Shim to match nullness checking library support in preview
     let inline (|NonNullQuick|) (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
 
-    let inline nonNull (x: 'T MaybeNull) = x
+    let inline nonNull (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
 
     let inline (|Null|NonNull|) (x: 'T MaybeNull) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 

@@ -732,11 +732,7 @@ type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag 
 
 let mkCacheInt32 lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
-#if NO_CHECKNULLS
-    let mutable cache = null
-#else
-    let mutable cache : ConcurrentDictionary<int32, _>? = null // TODO NULLNESS: this explicit annotation should not be needed
-#endif
+    let mutable cache : ConcurrentDictionary<int32, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
     let mutable count = 0
 #if STATISTICS
     addReport (fun oc -> if count <> 0 then oc.WriteLine ((_inbase + string count + " "+ _nm + " cache hits"): string))

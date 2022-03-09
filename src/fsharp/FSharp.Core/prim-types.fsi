@@ -3126,7 +3126,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("DefaultValueArg")>]
-        val inline defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
+        val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
@@ -3428,7 +3428,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull : value:'T -> bool when 'T : null
+        val inline internal isNotNull: value:'T -> bool when 'T : null
 
 #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         /// <summary>Get the null value for a value type.</summary>
@@ -3545,7 +3545,7 @@ namespace Microsoft.FSharp.Core
 #endif
 
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
-        /// 
+        ///
         /// <param name="message">The exception message.</param>
         ///
         /// <returns>The result value.</returns>
@@ -3718,7 +3718,7 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        /// 
+        ///
         /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">

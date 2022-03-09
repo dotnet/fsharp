@@ -4134,19 +4134,19 @@ type TType =
 
     override x.ToString() =  
         match x with 
-        | TType_forall (_tps, ty) -> "forall ...  " + ty.ToString()
+        | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
         | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
-        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_anon (anonInfo, tinst) -> 
             (match anonInfo.TupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
+        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var (tp, _) -> 
             match tp.Solution with 
@@ -5383,7 +5383,7 @@ type CcuThunk =
    
     /// Indicates if this assembly reference is unresolved
     member ccu.IsUnresolvedReference = isNull (box ccu.target)
-   
+
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
         if ccu.IsUnresolvedReference then 

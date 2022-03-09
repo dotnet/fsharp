@@ -650,7 +650,7 @@ let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo
     | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
     | NonNull res -> res
 
-let convFieldSpec cenv emEnv fspec : FieldInfo =
+let convFieldSpec cenv emEnv fspec =
     let fref = fspec.FieldRef
     let tref = fref.DeclaringTypeRef
     let parentTI = convType cenv emEnv fspec.DeclaringType
@@ -774,7 +774,7 @@ let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodIn
     then TypeBuilder.GetMethod(parentTI, methInfo )
     else methInfo
 
-let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) : MethodInfo =
+let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
     let parent = mref.DeclaringTypeRef
     let res =
         if isEmittedTypeRef emEnv parent then
@@ -811,9 +811,9 @@ let convMethodSpec cenv emEnv (mspec: ILMethodSpec) =
     methInfo
 
 /// Get a constructor on a non-TypeBuilder type
-let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) : ConstructorInfo =
-    let tyargTs  = getGenericArgumentsOfType parentT
-    let reqArgTs  =
+let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
+    let tyargTs = getGenericArgumentsOfType parentT
+    let reqArgTs =
         let emEnv = envPushTyvars emEnv tyargTs
         convTypesToArray cenv emEnv mref.ArgTypes
     let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)

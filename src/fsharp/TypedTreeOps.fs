@@ -208,7 +208,7 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       if tupInfo === tupInfo' && l === l' then ty else  
       TType_tuple (tupInfo', l')
 
-  | TType_fun (d, r, nullness) as ty      -> 
+  | TType_fun (d, r, nullness) as ty -> 
       let d' = remapTypeAux tyenv d
       let r' = remapTypeAux tyenv r
       if d === d' && r === r' then ty else
@@ -623,7 +623,7 @@ let mkByref2Ty (g: TcGlobals) ty1 ty2 =
     TType_app (g.byref2_tcr, [ty1; ty2], g.knownWithoutNull)
 
 let mkVoidPtrTy (g: TcGlobals) = 
-    assert g.voidptr_tcr.CanDeref // check we are using sufficient FSharp.Core , caller should check this
+    assert g.voidptr_tcr.CanDeref // check we are using sufficient FSharp.Core, caller should check this
     TType_app (g.voidptr_tcr, [], g.knownWithoutNull)
 
 let mkByrefTyWithInference (g: TcGlobals) ty1 ty2 = 
@@ -789,8 +789,13 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
         else
             ty
-    | TType_fun(a, b, nullness) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr, [ a; b], nullness)
-    | TType_tuple(tupInfo, l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+
+    | TType_fun(a, b, nullness) when eraseFuncAndTuple ->
+        TType_app(g.fastFunc_tcr, [ a; b], nullness)
+
+    | TType_tuple(tupInfo, l) when eraseFuncAndTuple ->
+        mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -931,9 +936,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTType g tt = 
     match tt with
-    | TType_app(a,b,nullness) ->
+    | TType_app(a, b, nullness) ->
         let b' = b |> List.filter (isMeasureTy g >> not)
-        TType_app(a, b',nullness)
+        TType_app(a, b', nullness)
     | _ -> tt
 
 //---------------------------------------------------------------------------
@@ -3054,8 +3059,8 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
-let fullDisplayTextOfTyconRef  r = 
-    fullNameOfEntityRef (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRef tcref = 
+    fullNameOfEntityRef (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
@@ -3084,20 +3089,19 @@ let fullNameOfParentOfValRefAsLayout vref =
     | VRefNonLocal nlr -> 
         ValueSome (fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
-
-let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
+let fullDisplayTextOfParentOfModRef eref = fullNameOfParentOfEntityRef eref
 
 let fullDisplayTextOfModRef r =
-    fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
+    fullNameOfEntityRef (fun eref -> eref.DemangledModuleOrNamespaceName) r
 
-let fullDisplayTextOfTyconRefAsLayout r =
-    fullNameOfEntityRefAsLayout (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
-let fullDisplayTextOfExnRef r =
-    fullNameOfEntityRef (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRef tcref =
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
-let fullDisplayTextOfExnRefAsLayout r =
-    fullNameOfEntityRefAsLayout (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
 let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) =
     fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName

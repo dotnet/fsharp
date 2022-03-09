@@ -565,7 +565,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                             fslib_MFRuntimeHelpers_nleref ] do
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
-                                               
+
   let tryDecodeTupleTy tupInfo l =
       match l with
       | [t1;t2;t3;t4;t5;t6;t7;marker] ->
@@ -995,26 +995,24 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.ilg = ilg
 
-  /// A table of all intrinsics that the compiler cares about
-  member _.knownIntrinsics                = v_knownIntrinsics
+  // A table of all intrinsics that the compiler cares about
+  member _.knownIntrinsics = v_knownIntrinsics
 
   member _.checkNullness = checkNullness
 
   member _.langFeatureNullness = v_langFeatureNullness
 
-  member _.langVersion = langVersion
-
   member _.knownWithoutNull = v_knownWithoutNull
 
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
-  member _.knownFSharpCoreModules         = v_knownFSharpCoreModules
-
-  member _.compilingFslib                 = compilingFslib
-  member _.mlCompatibility                = mlCompatibility
-  member _.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
-  member _.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+  member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+  member _.compilingFslib = compilingFslib
+  member _.mlCompatibility = mlCompatibility
+  member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
+  member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
   member _.pathMap = pathMap
+  member _.langVersion = langVersion
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member _.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member _.fslibCcu = fslibCcu

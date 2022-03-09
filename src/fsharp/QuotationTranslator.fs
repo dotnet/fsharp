@@ -994,7 +994,7 @@ and ConvType cenv env m ty =
         QP.mkArrayTy(rankOfArrayTyconRef g tcref, ConvType cenv env m tyarg)
 
     | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
-    | TType_app(tcref, tyargs, _) -> 
+    | TType_app(tcref, tyargs, _) ->
 #if !NO_EXTENSIONTYPING
         match TryElimErasableTyconRef cenv m tcref with
         | Some baseTy -> ConvType cenv env m baseTy

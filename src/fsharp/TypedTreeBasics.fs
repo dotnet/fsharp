@@ -190,7 +190,9 @@ let ccuOfTyconRef eref =
 let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
 
 let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
+
 let KnownWithNull = Nullness.Known NullnessInfo.WithNull
+
 let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
 
 let mkTyparTy (tp:Typar) = 
@@ -312,7 +314,7 @@ let replaceNullnessOfTy nullness (ty:TType) =
     | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
     | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
-    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_tuple _ -> None // TODO NULLNESS
     //| TType_anon _ -> None // TODO NULLNESS
     | sty -> sty
 
