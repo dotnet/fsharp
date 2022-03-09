@@ -933,19 +933,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           let t = Dictionary.newWithSize entries.Length
           for nm, tcref, builder in entries do
               t.Add(nm, 
-<<<<<<< HEAD
                      (fun tcref2 tinst2 nullness -> 
                          if tyconRefEq tcref tcref2 then 
                              builder tinst2 nullness 
                          else 
                              TType_app (tcref2, tinst2, nullness)))
-=======
-                     (fun tcref2 tinst2 -> 
-                         if tyconRefEq tcref tcref2 then 
-                             builder tinst2
-                         else 
-                             TType_app (tcref2, tinst2, v_knownWithoutNull)))
->>>>>>> b462169bc4b7c4875f2338f4e6bc58558427d375
           betterTypeDict1 <- t
           t
       | _ -> betterTypeDict1
