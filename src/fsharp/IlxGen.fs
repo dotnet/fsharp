@@ -1413,28 +1413,34 @@ and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
             for modul in openDecl.Modules do
                 if modul.IsNamespace then
                     ILDebugImport.ImportNamespace (fullDisplayTextOfModRef modul)
-                // Emit of 'open type' and 'open <module>' is causing problems
-                // See https://github.com/dotnet/fsharp/pull/12010#issuecomment-903339109
-                //
-                // It may be nested types/modules in particular
-                //else
-                //    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
+                else
+                    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
             //for t in openDecl.Types do
             //    let m = defaultArg openDecl.Range Range.range0
             //    ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
         |]
-        |> Array.distinctBy (function
-            | ILDebugImport.ImportNamespace nsp -> nsp
-            | ILDebugImport.ImportType t -> t.QualifiedName)
 
     if ilImports.Length = 0 then
         eenv
     else
+        // We flatten _all_ the import scopes, creating repetition, because C# debug engine doesn't seem to handle
+        // nesting of import scopes at all. This means every new "open" in, say, a nested module in F# causes 
+        // duplication of all the implicit/enclosing "open" in within the debug information. 
+        // However overall there are not very many "open" declarations and debug information can be large
+        // so this is not considered a problem.
         let imports =
-            { Parent = eenv.imports
-              Imports = ilImports }
+            [| match eenv.imports with 
+               | None -> ()
+               | Some parent -> yield! parent.Imports
+               yield! ilImports |]
+             |> Array.filter (function
+                | ILDebugImport.ImportNamespace _ -> true
+                | ILDebugImport.ImportType t -> t.IsNominal)
+             |> Array.distinctBy (function
+                | ILDebugImport.ImportNamespace nsp -> nsp
+                | ILDebugImport.ImportType t -> t.QualifiedName)
                 
-        { eenv with imports = Some imports }
+        { eenv with imports = Some { Parent = None; Imports = imports } }
 
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with
