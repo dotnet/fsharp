@@ -851,10 +851,15 @@ module internal ExtensionTyping =
 
     and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
         ProvidedExpr (x: Quotations.Expr, ctxt) =
+
         member _.Type = x.Type |> ProvidedType.Create ctxt
+
         member _.Handle = x
+
         member _.Context = ctxt
+
         member _.UnderlyingExpressionString = x.ToString()
+
         member _.GetExprType() =
             match x with
             | Quotations.Patterns.NewObject(ctor, args) ->
@@ -902,9 +907,13 @@ module internal ExtensionTyping =
             | Quotations.Patterns.Var v ->
                 Some (ProvidedVarExpr (ProvidedVar.Create ctxt v))
             | _ -> None
+
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedExpr (t, ctxt)
+
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedExpr.Create ctxt)
+
         override _.Equals y = match y with :? ProvidedExpr as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = x.GetHashCode()
 
     and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
