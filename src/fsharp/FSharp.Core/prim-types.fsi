@@ -3516,7 +3516,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>Throw a <see cref="T:System.ArgumentNullException"/> exception</summary>
         ///
         /// <param name="argumentName">The argument name.</param>
-        /// 
+        ///
         /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">

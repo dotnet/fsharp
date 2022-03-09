@@ -26,15 +26,15 @@ module internal ConsoleOptions =
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
       // Convert it to a Unicode char through the encoding.
       if 0 <= int c && int c <= 255 then
-        let chars = System.Console.InputEncoding.GetChars [| byte c |]
-        if chars.Length = 1 then
-          chars.[0] // fixed up char
-        else
-          assert("readKeyFixHook: InputEncoding.GetChars(single-byte) returned multiple chars" = "")
-          c // no fix up
+          let chars = System.Console.InputEncoding.GetChars [| byte c |]
+          if chars.Length = 1 then
+              chars.[0] // fixed up char
+          else
+              assert("readKeyFixHook: InputEncoding.GetChars(single-byte) returned multiple chars" = "")
+              c // no fix up
       else
-        assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
-        c
+          assert("readKeyFixHook: given char is outside the 0..255 byte range" = "")
+          c
 
 type internal Style = Prompt | Out | Error
 
@@ -43,18 +43,19 @@ type internal History() =
     let list  = new List<string>()
     let mutable current  = 0
 
-    member x.Count = list.Count
-    member x.Current =
+    member _.Count = list.Count
+
+    member _.Current =
         if current >= 0 && current < list.Count then list.[current] else String.Empty
 
-    member x.Clear() = list.Clear(); current <- -1
+    member _.Clear() = list.Clear(); current <- -1
 
-    member x.Add (line: string MaybeNull) = 
+    member _.Add (line: string MaybeNull) = 
         match line with 
         | Null | "" -> ()
         | NonNull line -> list.Add(line)
 
-    member x.AddLast (line: string MaybeNull) =  
+    member _.AddLast (line: string MaybeNull) =  
         match line with 
         | Null | "" -> ()
         | NonNull line ->
@@ -72,20 +73,16 @@ type internal History() =
         x.Current
 
 /// List of available optionsCache
-
 type internal Options() =
     inherit History()
+
     let mutable root = ""
-    member x.Root with get() = root and set(v) = (root <- v)
+
+    member _.Root with get() = root and set(v) = (root <- v)
 
 /// Cursor position management
 
 module internal Utils =
-
-    open System
-    open System.Reflection
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Collections
 
     let guard(f) =
         try f()
@@ -121,8 +118,11 @@ type internal Cursor =
 
 type internal Anchor =
     {top:int; left:int}
+
     static member Current(inset) = {top=Console.CursorTop;left= max inset Console.CursorLeft}
+
     static member Top(inset) = {top = 0; left = inset}
+
     member p.PlaceAt(inset, index) =
         //printf "p.top = %d, p.left = %d, inset = %d, index = %d\n" p.top p.left inset index
         let left = inset + (( (p.left - inset) + index) % (Console.BufferWidth - inset))
@@ -132,14 +132,17 @@ type internal Anchor =
 type internal ReadLineConsole() =
     let history = new History()
     let mutable complete : (string option * string -> seq<string>) = fun (_s1,_s2) -> Seq.empty
-    member x.SetCompletionFunction f = complete <- f
+
+    member _.SetCompletionFunction f = complete <- f
 
     /// Inset all inputs by this amount
-    member x.Prompt = "> "
-    member x.Prompt2 = "- "
+    member _.Prompt = "> "
+
+    member _.Prompt2 = "- "
+
     member x.Inset = x.Prompt.Length
 
-    member x.GetOptions(input:string) =
+    member _.GetOptions(input:string) =
         /// Tab optionsCache available in current context
         let optionsCache = new Options()
 
@@ -155,7 +158,7 @@ type internal ReadLineConsole() =
         let start = look 0 input.Length
 
         let name = input.Substring(start, input.Length - start)
-        if (name.Trim().Length > 0) then
+        if name.Trim().Length > 0 then
             let lastDot = name.LastIndexOf('.')
             let attr, pref, root =
                 if (lastDot < 0) then
@@ -164,34 +167,35 @@ type internal ReadLineConsole() =
                     Some(name.Substring(0, lastDot)),
                     name.Substring(lastDot + 1),
                     input.Substring(0, start + lastDot + 1)
-            //printf "attr, pref, root = %s\n" (any_to_string (attr, pref, root))
+
             try
                 complete(attr,pref)
                 |> Seq.filter(fun option -> option.StartsWith(pref,StringComparison.Ordinal))
                 |> Seq.iter (fun option -> optionsCache.Add(option))
-                 // engine.Evaluate(String.Format("dir({0})", attr)) as IEnumerable
                 optionsCache.Root <-root
-            with e ->
+            with _ ->
                 optionsCache.Clear()
+
             optionsCache,true
         else
             optionsCache,false
 
-    member x.MapCharacter(c) : string =
+    member _.MapCharacter(c) : string =
         match c with
         | '\x1A'-> "^Z"
         | _ -> "^?"
 
     member x.GetCharacterSize(c) =
-        if (Char.IsControl(c))
-        then x.MapCharacter(c).Length
-        else 1
+        if Char.IsControl(c) then
+            x.MapCharacter(c).Length
+        else
+            1
 
     static member TabSize = 4
 
     member x.ReadLine() =
 
-        let checkLeftEdge(prompt) =
+        let checkLeftEdge prompt =
             let currLeft = Console.CursorLeft
             if currLeft < x.Inset then
                 if currLeft = 0 then Console.Write (if prompt then x.Prompt2 else String(' ',x.Inset))
@@ -205,23 +209,27 @@ type internal ReadLineConsole() =
 
         /// Cursor anchor - position of !anchor when the routine was called
         let mutable anchor = Anchor.Current x.Inset
+
         /// Length of the output currently rendered on screen.
         let mutable rendered = 0
+
         /// Input has changed, therefore options cache is invalidated.
         let mutable changed = false
+
         /// Cache of optionsCache
         let mutable optionsCache = Options()
 
         let writeBlank() =
             Console.Write(' ')
             checkLeftEdge false
+
         let writeChar(c) =
             if Console.CursorTop = Console.BufferHeight - 1 && Console.CursorLeft = Console.BufferWidth - 1 then
                 //printf "bottom right!\n"
                 anchor <- { anchor with top = (anchor).top - 1 }
             checkLeftEdge true
-            if (Char.IsControl(c)) then
-                let s = x.MapCharacter(c)
+            if Char.IsControl(c) then
+                let s = x.MapCharacter c
                 Console.Write(s)
                 rendered <- rendered + s.Length
             else
@@ -231,6 +239,7 @@ type internal ReadLineConsole() =
 
         /// The console input buffer.
         let input = new StringBuilder()
+
         /// Current position - index into the input buffer
         let mutable current = 0
 
@@ -244,8 +253,8 @@ type internal ReadLineConsole() =
                 if (i = curr) then
                     position <- output.Length
                 let c = input.Chars(i)
-                if (Char.IsControl(c)) then
-                    output.Append(x.MapCharacter(c)) |> ignore
+                if (Char.IsControl c) then
+                    output.Append(x.MapCharacter c) |> ignore
                 else
                     output.Append(c) |> ignore
 
@@ -267,7 +276,7 @@ type internal ReadLineConsole() =
         render()
 
         let insertChar(c:char) =
-            if (current = input.Length)  then
+            if current = input.Length  then
                 current <- current + 1
                 input.Append(c) |> ignore
                 writeChar(c)
@@ -281,25 +290,25 @@ type internal ReadLineConsole() =
                 insertChar(' ')
 
         let moveLeft() =
-            if (current > 0 && (current - 1 < input.Length)) then
+            if current > 0 && (current - 1 < input.Length) then
                 current <- current - 1
                 let c = input.Chars(current)
-                Cursor.Move(x.Inset, - x.GetCharacterSize(c))
+                Cursor.Move(x.Inset, - x.GetCharacterSize c)
 
         let moveRight() =
-            if (current < input.Length) then
+            if current < input.Length then
                 let c = input.Chars(current)
                 current <- current + 1
-                Cursor.Move(x.Inset, x.GetCharacterSize(c))
+                Cursor.Move(x.Inset, x.GetCharacterSize c)
                 
         let moveWordLeft() =
-            if (current > 0 && (current - 1 < input.Length)) then
+            if current > 0 && (current - 1 < input.Length) then
                 let line = input.ToString()
                 current <- Utils.previousWordFromIdx line (current - 1, false)
                 anchor.PlaceAt(x.Inset, current)
                 
         let moveWordRight() =
-            if (current < input.Length) then
+            if current < input.Length then
                 let line = input.ToString()
                 let idxToMoveTo = Utils.nextWordFromIdx line (current + 1, false)
                 
@@ -374,6 +383,7 @@ type internal ReadLineConsole() =
                 input.Remove(current - 1, 1) |> ignore
                 current <- current - 1
                 render()
+
         let enter() = 
             Console.Write("\n")
             let line = input.ToString()
@@ -382,6 +392,7 @@ type internal ReadLineConsole() =
                 if (line.Length > 0) then 
                     history.AddLast(line)
                 line
+
         let clear() = 
             current <- input.Length
             let setPrompt prompt = 
@@ -396,7 +407,6 @@ type internal ReadLineConsole() =
                 setPrompt true
             else
                 setPrompt (previous.EndsWith(";;"))
-
             
         let home() =
             current <- 0
@@ -439,50 +449,51 @@ type internal ReadLineConsole() =
                 anchor.PlaceAt(x.Inset,rendered)
                 change()
             | _ ->
-            match (key.Modifiers, key.Key) with
-            | (ConsoleModifiers.Control, ConsoleKey.A) ->
+
+            match key.Modifiers, key.Key with
+            | ConsoleModifiers.Control, ConsoleKey.A ->
                 home()
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.E) ->
+            | ConsoleModifiers.Control, ConsoleKey.E ->
                 current <- input.Length
                 anchor.PlaceAt(x.Inset, rendered)
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.B) ->
+            | ConsoleModifiers.Control, ConsoleKey.B ->
                 moveLeft()
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.F) ->
+            | ConsoleModifiers.Control, ConsoleKey.F ->
                 moveRight()
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.LeftArrow) 
-            | (ConsoleModifiers.Alt, ConsoleKey.B) ->
+            | ConsoleModifiers.Control, ConsoleKey.LeftArrow
+            | ConsoleModifiers.Alt, ConsoleKey.B ->
                 moveWordLeft()
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.RightArrow) 
-            | (ConsoleModifiers.Alt, ConsoleKey.F) ->
+            | ConsoleModifiers.Control, ConsoleKey.RightArrow 
+            | ConsoleModifiers.Alt, ConsoleKey.F ->
                 moveWordRight()
                 change ()
-            | (ConsoleModifiers.Control, ConsoleKey.K) ->
+            | ConsoleModifiers.Control, ConsoleKey.K ->
                 deleteToEndOfLine()
                 change()
-            | (ConsoleModifiers.Control,ConsoleKey.P) ->
+            | ConsoleModifiers.Control,ConsoleKey.P ->
                 setInput(history.Previous())
                 change()
-            | (ConsoleModifiers.Control, ConsoleKey.N) ->
+            | ConsoleModifiers.Control, ConsoleKey.N ->
                 setInput(history.Next())
                 change()
-            | (ConsoleModifiers.Control, ConsoleKey.D) ->
+            | ConsoleModifiers.Control, ConsoleKey.D ->
                 if (input.Length = 0) then
                     exit 0 //quit
                 else
                     delete()
                     change()
-            | (ConsoleModifiers.Control, ConsoleKey.L) ->
+            | ConsoleModifiers.Control, ConsoleKey.L ->
                 clear()
                 change()
-            | (ConsoleModifiers.Control, ConsoleKey.U) ->
+            | ConsoleModifiers.Control, ConsoleKey.U ->
                 deleteFromStartOfLineToCursor()
                 change()
-            | (ConsoleModifiers.Control, ConsoleKey.W) ->
+            | ConsoleModifiers.Control, ConsoleKey.W ->
                 deleteWordLeadingToCursor()
                 change()
             | _ ->

@@ -3059,8 +3059,13 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
+<<<<<<< HEAD
 let fullDisplayTextOfTyconRef tcref = 
     fullNameOfEntityRef (fun (tcref:TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
+=======
+let fullDisplayTextOfTyconRef (tcref: TyconRef) = 
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
+>>>>>>> b462169bc4b7c4875f2338f4e6bc58558427d375
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
