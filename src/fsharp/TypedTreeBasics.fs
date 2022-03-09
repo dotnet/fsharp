@@ -308,9 +308,9 @@ let stripUnitEqns unt = stripUnitEqnsAux false unt
 
 let replaceNullnessOfTy nullness (ty:TType) =
     match stripTyparEqns ty with
-    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
-    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
-    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
+    | TType_var (tp, _) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _) -> TType_fun (d, r, nullness)
     //| TType_ucase _ -> None // TODO NULLNESS
     //| TType_tuple _ -> None // TODOTODO NULLNESS
     //| TType_anon _ -> None // TODO NULLNESS

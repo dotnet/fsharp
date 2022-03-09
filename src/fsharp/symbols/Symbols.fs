@@ -2371,7 +2371,7 @@ type FSharpType(cenv, ty:TType) =
         | TType_anon (_, tyargs) 
         | TType_app (_, tyargs, _) 
         | TType_tuple (_, tyargs) -> (tyargs |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection) 
-        | TType_fun(d, r, _nullness) -> [| FSharpType(cenv, d); FSharpType(cenv, r) |] |> makeReadOnlyCollection
+        | TType_fun(d, r, _) -> [| FSharpType(cenv, d); FSharpType(cenv, r) |] |> makeReadOnlyCollection
         | TType_measure (Measure.Con _) ->  [| |] |> makeReadOnlyCollection
         | TType_measure (Measure.Prod (t1, t2)) ->  [| FSharpType(cenv, TType_measure t1); FSharpType(cenv, TType_measure t2) |] |> makeReadOnlyCollection
         | TType_measure Measure.One ->  [| |] |> makeReadOnlyCollection
@@ -2423,7 +2423,7 @@ type FSharpType(cenv, ty:TType) =
     member _.GenericParameter = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_var (tp, _nullness) ->
+        | TType_var (tp, _) ->
             FSharpGenericParameter (cenv, tp)
         | TType_measure (Measure.Var tp) -> 
             FSharpGenericParameter (cenv, tp)
@@ -2462,11 +2462,11 @@ type FSharpType(cenv, ty:TType) =
             let ty = stripTyEqnsWrtErasure EraseNone cenv.g ty
             match ty with
             | TType_forall _ ->  10000
-            | TType_var (tp, _nullness)  -> 10100 + int32 tp.Stamp
+            | TType_var (tp, _)  -> 10100 + int32 tp.Stamp
             | TType_app (tc1, b1, _)  -> 10200 + int32 tc1.Stamp + List.sumBy hashType b1
             | TType_ucase _   -> 10300  // shouldn't occur in symbols
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1
-            | TType_fun (dty, rty, _nullness) -> 10500 + hashType dty + hashType rty
+            | TType_fun (dty, rty, _) -> 10500 + hashType dty + hashType rty
             | TType_measure _ -> 10600 
             | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
         hashType ty

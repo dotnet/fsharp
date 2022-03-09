@@ -652,7 +652,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+      | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
 
           let t = NicePrint.minimalStringOfType denv ty
           os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
@@ -660,7 +660,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverNonNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+      | ConstraintSolverNonNullnessWarningWithType(denv, ty, _, m, m2) ->
 
           let t = NicePrint.minimalStringOfType denv ty
           os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format (t)) |> ignore

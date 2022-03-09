@@ -546,13 +546,13 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     ignore voidOK
 #endif
     match stripTyEqnsAndMeasureEqns g ty with
-    | TType_app (tcref, tinst, _nullness) ->
+    | TType_app (tcref, tinst, _) ->
         GenNamedTyAppAux amap m tyenv ptrsOK tcref tinst
 
     | TType_tuple (tupInfo, args) ->
         GenTypeAux amap m tyenv VoidNotOK ptrsOK (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
 
-    | TType_fun (dty, returnTy, _nullness) ->
+    | TType_fun (dty, returnTy, _) ->
         EraseClosures.mkILFuncTy g.ilxPubCloEnv (GenTypeArgAux amap m tyenv dty) (GenTypeArgAux amap m tyenv returnTy)
 
     | TType_anon (anonInfo, tinst) ->
@@ -569,7 +569,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv
 
-    | TType_var (tp, _nullness) -> mkILTyvarTy tyenv.[tp, m]
+    | TType_var (tp, _) -> mkILTyvarTy tyenv.[tp, m]
 
     | TType_measure _ -> g.ilg.typ_Int32
 

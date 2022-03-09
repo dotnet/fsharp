@@ -374,7 +374,7 @@ let rec occursCheck g un ty =
     | TType_app (_, l, _) 
     | TType_anon(_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
-    | TType_fun (d, r, _nullness) -> occursCheck g un d || occursCheck g un r
+    | TType_fun (d, r, _) -> occursCheck g un d || occursCheck g un r
     | TType_var (r, _)   ->  typarEq un r 
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
@@ -854,7 +854,7 @@ let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as para
     | TType_anon (_, l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
-    | TType_fun (d, r, _nullness) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
+    | TType_fun (d, r, _) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
     | TType_var _   -> param
     | TType_forall (_, tau) -> SimplifyMeasuresInType g resultFirst param tau
     | TType_measure unt -> 
@@ -892,7 +892,7 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_anon (_, l)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
-    | TType_fun (d, r, _nullness) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
+    | TType_fun (d, r, _) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
@@ -1408,7 +1408,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         )
 
     // Special subsumption rule for byref tags
-    | TType_app (tc1, l1, _nullness1)  , TType_app (tc2, l2, _nullness2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
+    | TType_app (tc1, l1, _)  , TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
         match l1, l2 with 
         | [ h1; tag1 ], [ h2; tag2 ] -> trackErrors {
             do! SolveTypeEqualsType csenv ndeep m2 trace None h1 h2

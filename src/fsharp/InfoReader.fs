@@ -626,7 +626,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // a decent hash function for these.
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, [], _nullness) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false),
               
               keyComparer=
@@ -635,13 +635,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g typ1, stripTyEqns g typ2 with 
-                                    | TType_app(tcref1, [], _nullness1),TType_app(tcref2, [], _nullness2) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                    | TType_app(tcref1, [], _),TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false
                        member _.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, [], _nullness1) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
+                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                      | _ -> 0) })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 

@@ -746,7 +746,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
 
 let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
-    assert(not (typeIsNotQueryable(parentT)))
+    assert(not (typeIsNotQueryable parentT))
     if mref.GenericArity = 0 then
         let tyargTs = getGenericArgumentsOfType parentT
         let argTs, resT =

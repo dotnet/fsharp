@@ -1002,7 +1002,7 @@ and ConvType cenv env m ty =
 #endif
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
-    | TType_fun(a, b, _nullness) -> 
+    | TType_fun(a, b, _) -> 
         QP.mkFunTy(ConvType cenv env m a, ConvType cenv env m b)
 
     | TType_tuple(tupInfo, l)  -> 
@@ -1013,7 +1013,7 @@ and ConvType cenv env m ty =
         let tinstR = ConvTypes cenv env m tinst
         QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
 
-    | TType_var(tp, _nullness) ->
+    | TType_var(tp, _) ->
         QP.mkVarTy(ConvTyparRef cenv env m tp)
 
     | TType_forall(_spec, _ty) ->

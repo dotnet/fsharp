@@ -4132,7 +4132,7 @@ type TType =
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
         | TType_fun _ -> ""
         | TType_measure _ -> ""
-        | TType_var (tp, _nullness) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_var (tp, _) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4156,7 +4156,7 @@ type TType =
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var (tp, _nullness) -> 
+        | TType_var (tp, _) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"

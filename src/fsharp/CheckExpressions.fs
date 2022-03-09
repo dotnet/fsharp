@@ -1400,7 +1400,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, 
                 if MemberIsExplicitImpl g memberInfo then
                     let slotSig = List.head memberInfo.ImplementedSlotSigs
                     match slotSig.ImplementedType with
-                    | TType_app (tyconref, _, _nullness) -> Some tyconref.Accessibility
+                    | TType_app (tyconref, _, _) -> Some tyconref.Accessibility
                     | _ -> None
                 else
                     None
@@ -4840,7 +4840,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
 
     match ty with
-    | TType_app(tcref, _, _nullness) ->
+    | TType_app(tcref, _, _) ->
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 

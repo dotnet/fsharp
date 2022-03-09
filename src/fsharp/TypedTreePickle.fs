@@ -118,9 +118,9 @@ type NodeOutTable<'Data, 'Node> =
           Table = Table<_>.Create nm }
 
 [<NoEquality; NoComparison>]
-type WriterState = 
-  { os: ByteBuffer 
-    osB: ByteBuffer 
+type WriterState =
+  { os: ByteBuffer
+    osB: ByteBuffer
     oscope: CcuThunk
     occus: Table<CcuReference>
     oentities: NodeOutTable<EntityData, Entity>
@@ -152,8 +152,8 @@ type NodeInTable<'Data, 'Node> =
         { LinkNode = lnk; IsLinked = isLinked; Name = nm; Nodes = Array.init n (fun _i -> mkEmpty() ) }
 
 [<NoEquality; NoComparison>]
-type ReaderState = 
-  { is: ByteStream 
+type ReaderState =
+  { is: ByteStream
     // secondary stream of information for F# 5.0
     isB: ByteStream
     iilscope: ILScopeRef
@@ -312,7 +312,7 @@ type unpickler<'T> = ReaderState -> 'T
 let u_bool st = let b = u_byte st in (b = 1)
 
 /// Unpickle an uncompressed integer from the main stream
-let prim_u_int32 st = 
+let prim_u_int32 st =
     let b0 =  (u_byte st)
     let b1 =  (u_byte st)
     let b2 =  (u_byte st)
@@ -327,7 +327,7 @@ let prim_u_int32B st =
     let b3 = u_byteB st
     b0 ||| (b1 <<< 8) ||| (b2 <<< 16) ||| (b3 <<< 24)
 
-let u_int32 st = 
+let u_int32 st =
     let b0 = u_byte st
     if b0 <= 0x7F then b0
     else if b0 <= 0xbf then
@@ -684,7 +684,7 @@ let u_option f st =
     | 1 -> Some (f st)
     | n -> ufailwith st ("u_option: found number " + string n)
 
-let u_lazy u st = 
+let u_lazy u st =
 
     // Read the number of bytes in the record
     let len         = prim_u_int32 st // fixupPos1
@@ -799,7 +799,7 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 [<Literal>]
 let PickleBufferCapacity = 100000
 
-let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
+let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
       { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
@@ -824,10 +824,10 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
       st1.oentities.Size,
       st1.otypars.Size,
       st1.ovals.Size,
-      st1.oanoninfos.Size 
-    st1.occus, sizes, st1.ostrings, st1.opubpaths,st1.onlerefs, st1.osimpletys, st1.os.AsMemory(), st1.osB
+      st1.oanoninfos.Size
+    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory(), st1.osB
 
-  let st2 = 
+  let st2 =
      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        osB = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
        oscope=scope

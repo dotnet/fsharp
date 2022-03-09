@@ -554,8 +554,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       match l with
       | [t1;t2;t3;t4;t5;t6;t7;marker] ->
           match marker with
-          | TType_app(tcref, [t8], _nullness) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
-          | TType_app(tcref, [t8], _nullness) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
           | _ -> None
       | [] -> None
