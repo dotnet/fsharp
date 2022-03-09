@@ -3026,8 +3026,8 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
-let fullDisplayTextOfTyconRef (tc: TyconRef) = 
-    fullNameOfEntityRef (fun tc -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) tc
+let fullDisplayTextOfTyconRef (tcref: TyconRef) = 
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
@@ -3056,20 +3056,19 @@ let fullNameOfParentOfValRefAsLayout vref =
     | VRefNonLocal nlr -> 
         ValueSome (fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
-
-let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
+let fullDisplayTextOfParentOfModRef eref = fullNameOfParentOfEntityRef eref
 
 let fullDisplayTextOfModRef r =
-    fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
+    fullNameOfEntityRef (fun eref -> eref.DemangledModuleOrNamespaceName) r
 
-let fullDisplayTextOfTyconRefAsLayout r =
-    fullNameOfEntityRefAsLayout (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
-let fullDisplayTextOfExnRef r =
-    fullNameOfEntityRef (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRef tcref =
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
-let fullDisplayTextOfExnRefAsLayout r =
-    fullNameOfEntityRefAsLayout (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfExnRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
 let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) =
     fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName

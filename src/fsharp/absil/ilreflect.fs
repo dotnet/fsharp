@@ -821,7 +821,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
     | _ -> res
 
 
-let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo =
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo MaybeNull =
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI, consInfo) else consInfo
 
 /// convConstructorSpec (like convMethodSpec)

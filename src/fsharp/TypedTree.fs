@@ -4058,10 +4058,10 @@ type TType =
         match x with
         | TType_forall (_tps, ty) -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_tuple _ -> ""
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r, _) -> ""
-        | TType_measure _ms -> ""
+        | TType_fun _ -> ""
+        | TType_measure _ -> ""
         | TType_var (tp, _) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo

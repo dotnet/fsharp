@@ -391,7 +391,8 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypesDeep cenv f g env tys
 
     | TType_fun (s, t, _) ->
-        CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+        CheckTypeDeep cenv f g env true s
+        CheckTypeDeep cenv f g env true t
 
     | TType_var (tp, _) -> 
           if not tp.IsSolved then 

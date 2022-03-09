@@ -446,7 +446,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil"
 
-
   let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu FSharpLib.RootPathArray
   let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.CorePathArray
   let fslib_MFLinq_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.LinqPathArray
@@ -914,7 +913,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
           for nm, tcref, builder in entries do
-              t.Add(nm, fun tcref2 tinst2 -> if tyconRefEq tcref tcref2 then builder tinst2 else TType_app (tcref2, tinst2, v_knownWithoutNull))
+              t.Add(nm, 
+                     (fun tcref2 tinst2 -> 
+                         if tyconRefEq tcref tcref2 then 
+                             builder tinst2
+                         else 
+                             TType_app (tcref2, tinst2, v_knownWithoutNull)))
           betterTypeDict1 <- t
           t
       | _ -> betterTypeDict1

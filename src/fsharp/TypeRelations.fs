@@ -102,7 +102,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     match ty1, ty2 with 
     | TType_var _, _  | _, TType_var _ -> true
 
-    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->  
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
     | TType_tuple _, TType_tuple _
