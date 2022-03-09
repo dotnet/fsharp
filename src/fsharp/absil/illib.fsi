@@ -23,9 +23,24 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l:'a list -> bool
 
-    val inline isNonNull: x:'a -> bool when 'a: null
+    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
+    /// replacement for 'string?' for example for future FS-1060.
+    type MaybeNull<'T when 'T : null> = 'T
+ 
+    /// Returns true if the argument is non-null.
+    val inline isNotNull: x:MaybeNull<'T> -> bool
 
-    val inline nonNull: msg:string -> x:'a -> 'a when 'a: null
+    /// Asserts the argument is non-null and raises an exception if it is
+    val inline (|NonNullQuick|): MaybeNull<'T> -> 'T
+
+    /// Match on the nullness of an argument.
+    val inline (|Null|NonNull|): MaybeNull<'T> -> Choice<unit,'T> when 'T : null
+
+    /// Asserts the argument is non-null and raises an exception if it is
+    val inline nonNull: x:MaybeNull<'T> -> 'T when 'T : null
+
+    /// Checks the argument is non-null
+    val inline nullArgCheck: paramName: string -> x: MaybeNull<'T> -> 'T
 
     val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
 
@@ -241,9 +256,6 @@ module internal String =
     val lowerCaseFirstChar: str:string -> string
 
     val extractTrailingIndex: str:string -> string * int option
-
-    /// Remove all trailing and leading whitespace from the string, return null if the string is null
-    val trim: value:string -> string
 
     /// Splits a string into substrings based on the strings in the array separators
     val split : options:StringSplitOptions -> separator:string [] -> value:string -> string []
