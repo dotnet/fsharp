@@ -1872,14 +1872,14 @@ let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars
     origTy, freshTypars, renaming, freshTy
 
 let FreshenPossibleForallTy g m rigid ty = 
-    let tpsorig, tau = tryDestForallTy g ty
-    if isNil tpsorig then
+    let origTypars, tau = tryDestForallTy g ty
+    if isNil origTypars then
         [], [], [], tau
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
-        let tpsorig = NormalizeDeclaredTyparsForEquiRecursiveInference g tpsorig
-        let tps, renaming, tinst = CopyAndFixupTypars m rigid tpsorig
-        tpsorig, tps, tinst, instType renaming tau
+        let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars m rigid origTypars
+        origTypars, tps, tinst, instType renaming tau
 
 let FreshenTyconRef2 (g: TcGlobals) m (tcref: TyconRef) = 
     let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)

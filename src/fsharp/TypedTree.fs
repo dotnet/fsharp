@@ -4084,8 +4084,6 @@ type NullnessInfo =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
 
-    /// TType_forall(typars, bodyTy).
-    ///
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of typars: Typars * bodyTy: TType
 
@@ -4094,13 +4092,9 @@ type TType =
     /// Indicates the type is built from a named type and a number of type arguments
     | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * nullness: Nullness
 
-    /// TType_anon
-    ///
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
-    /// TType_tuple(elementTypes).
-    ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
 
@@ -4109,8 +4103,6 @@ type TType =
     /// Indicates the type is a function type 
     | TType_fun of domainType: TType * rangeType: TType * nullness: Nullness
 
-    /// TType_ucase(unionCaseRef, typeInstantiation)
-    ///
     /// Indicates the type is a non-F#-visible type representing a "proof" that a union value belongs to a particular union case
     /// These types are not user-visible and will never appear as an inferred type. They are the types given to
     /// the temporaries arising out of pattern matching on union values.
@@ -4126,7 +4118,7 @@ type TType =
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
-        | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
+        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
         | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
         | TType_tuple _ -> ""
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""

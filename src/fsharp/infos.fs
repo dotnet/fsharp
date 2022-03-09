@@ -109,7 +109,6 @@ let GetSuperTypeOfType g amap m ty =
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
     TType_app(g.tcref_System_Collections_Generic_IList, [ty], g.knownWithoutNull)
-        
 
 /// Indicates whether we can skip interface types that lie outside the reference set
 [<RequireQualifiedAccess>]
@@ -1584,9 +1583,10 @@ type MethInfo =
             let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars x.FormalMethodTypars
             let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+
             let formalRetTy, formalParams =
                 match x with
-                | ILMeth(_, ilminfo, _) -> 
+                | ILMeth(_, ilminfo, _) ->
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
                     let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type ilminfo.RawMetadata.Return.CustomAttrs ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
@@ -1610,6 +1610,7 @@ type MethInfo =
                     formalRetTy, formalParams
 #endif
                 | _ -> failwith "unreachable"
+
             MakeSlotSig(x.LogicalName, x.ApparentEnclosingType, formalEnclosingTypars, formalMethTypars, formalParams, formalRetTy)
 
     /// Get the ParamData objects for the parameters of a MethInfo

@@ -362,7 +362,8 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypeDeep cenv f g env isInner body           
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
-    | TType_measure _          -> ()
+    | TType_measure _ -> ()
+
     | TType_app (tcref, tinst, _) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef isInner tcref 

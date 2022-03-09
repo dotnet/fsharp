@@ -1144,7 +1144,7 @@ type internal TypeCheckInfo
                         items |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types (_,TType_app(tcref, _, _) :: _) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types (_, TType_app(tcref, _, _) :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                                 | Item.FakeInterfaceCtor (TType_app(tcref, _, _))
                                 | Item.DelegateCtor (TType_app(tcref, _, _)) -> 1000 + tcref.TyparsNoRange.Length

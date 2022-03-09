@@ -635,9 +635,6 @@ let TypeBuilderInstantiationT =
 
 let typeIsNotQueryable (ty: Type) =
     (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
-//----------------------------------------------------------------------------
-// convFieldSpec
-//----------------------------------------------------------------------------
 
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )

@@ -890,17 +890,17 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(),0,0) 
-         iilscope= viewedScope
-         iccus= new_itbl "iccus (fake)" [| |] 
-         ientities= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 
-         itypars= NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0) 
-         ivals  = NodeInTable<_,_>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ivals",0)
-         ianoninfos=NodeInTable<_,_>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ianoninfos",0)
+         iilscope = viewedScope
+         iccus = new_itbl "iccus (fake)" [| |] 
+         ientities = NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 
+         itypars = NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0) 
+         ivals = NodeInTable<_,_>.Create (Val.NewUnlinked , (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ivals",0)
+         ianoninfos = NodeInTable<_,_>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ianoninfos",0)
          istrings = new_itbl "istrings (fake)" [| |] 
          inlerefs = new_itbl "inlerefs (fake)" [| |] 
          ipubpaths = new_itbl "ipubpaths (fake)" [| |] 
          isimpletys = new_itbl "isimpletys (fake)" [| |] 
-         ifile=file
+         ifile = file
          iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
@@ -924,12 +924,12 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
         let st1 =
            { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length)
              isB = ByteStream.FromBytes (phase1bytesB, 0, phase1bytesB.Length) 
-             iccus=  ccuTab
-             iilscope= viewedScope
-             ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
-             itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
-             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
-             ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
+             iccus = ccuTab
+             iilscope = viewedScope
+             ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
+             ivals = NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
+             ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
              istrings = stringTab
              ipubpaths = pubpathTab
              inlerefs = nlerefTab
@@ -1819,9 +1819,14 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
         // Note, the "this" argument may be found in the body of a generic forall type, so propagate the isStructThisArgPos value
         p_ty2 isStructThisArgPos r st
 
-    | TType_measure unt -> p_byte 6 st; p_measure_expr unt st
+    | TType_measure unt ->
+        p_byte 6 st
+        p_measure_expr unt st
 
-    | TType_ucase (uc, tinst) -> p_byte 7 st; p_tup2 p_ucref p_tys (uc, tinst) st
+    | TType_ucase (uc, tinst) ->
+        p_byte 7 st
+        p_ucref uc st
+        p_tys tinst st
 
     // p_byte 8 taken by TType_tuple above
     | TType_anon (anonInfo, l) ->
@@ -1885,13 +1890,32 @@ let _ = fill_u_ty (fun st ->
         | 19 -> r.AsType KnownWithoutNull
         | 20 -> r.AsType KnownAmbivalentToNull
         | _ -> ufailwith st "u_ty - 4/B"
-    | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps,r)
-    | 6 -> let unt = u_measure_expr st                     in TType_measure unt
-    | 7 -> let uc = u_ucref st in let tinst = u_tys st    in TType_ucase (uc, tinst)
-    | 8 -> let l = u_tys st                               in TType_tuple (tupInfoStruct, l)
-    | 9 -> let anonInfo = u_anonInfo st in let l = u_tys st  in TType_anon (anonInfo, l)
-    | _ -> ufailwith st "u_typ")
 
+    | 5 ->
+        let tps = u_tyar_specs st
+        let r = u_ty st
+        TType_forall (tps, r)
+
+    | 6 ->
+        let unt = u_measure_expr st
+        TType_measure unt
+
+    | 7 ->
+        let uc = u_ucref st
+        let tinst = u_tys st
+        TType_ucase (uc, tinst)
+
+    | 8 ->
+        let l = u_tys st
+        TType_tuple (tupInfoStruct, l)
+
+    | 9 ->
+        let anonInfo = u_anonInfo st
+        let l = u_tys st
+        TType_anon (anonInfo, l)
+
+    | _ ->
+        ufailwith st "u_typ")
 
 let fill_p_binds, p_binds = p_hole()
 let fill_p_targets, p_targets = p_hole()

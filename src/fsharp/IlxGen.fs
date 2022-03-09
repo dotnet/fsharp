@@ -121,8 +121,16 @@ let mainMethName = CompilerGeneratedName "main"
 type AttributeDecoder(namedArgs) =
 
     let nameMap = namedArgs |> List.map (fun (AttribNamedArg(s, _, _, c)) -> s, c) |> NameMap.ofList
-    let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.Const (c, _, _))) -> Some c | _ -> None
-    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.App (_, _, [TType_app(tr, _, _)], _, _))) -> Some tr | _ -> None
+
+    let findConst x =
+        match NameMap.tryFind x nameMap with
+        | Some(AttribExpr(_, Expr.Const (c, _, _))) -> Some c
+        | _ -> None
+
+    let findTyconRef x =
+        match NameMap.tryFind x nameMap with
+        | Some(AttribExpr(_, Expr.App (_, _, [TType_app(tr, _, _)], _, _))) -> Some tr
+        | _ -> None
 
     member _.FindInt16 x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
 
@@ -132,7 +140,7 @@ type AttributeDecoder(namedArgs) =
 
     member _.FindString x dflt = match findConst x with | Some(Const.String x) -> x | _ -> dflt
 
-    member _.FindTypeName x dflt = match findAppTr x with | Some tr -> tr.DisplayName | _ -> dflt
+    member _.FindTypeName x dflt = match findTyconRef x with | Some tr -> tr.DisplayName | _ -> dflt
 
 //--------------------------------------------------------------------------
 // Statistics
@@ -569,9 +577,11 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv
 
-    | TType_var (tp, _) -> mkILTyvarTy tyenv.[tp, m]
+    | TType_var (tp, _) ->
+        mkILTyvarTy tyenv.[tp, m]
 
-    | TType_measure _ -> g.ilg.typ_Int32
+    | TType_measure _ ->
+        g.ilg.typ_Int32
 
 //--------------------------------------------------------------------------
 // Generate ILX references to closures, classunions etc. given a tyenv

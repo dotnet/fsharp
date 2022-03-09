@@ -1071,7 +1071,7 @@ module PrintTypes =
 
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
-            let typars = argInfos |> List.choose (function TType.TType_var (typar, _), _ -> Some typar | _ -> None)
+            let typars = argInfos |> List.choose (function TType_var (typar, _),_ -> Some typar | _ -> None)
             let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
 

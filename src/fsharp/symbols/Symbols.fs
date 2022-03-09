@@ -201,17 +201,17 @@ module Impl =
         | _ -> ""
 
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
-    member x.Contents g = denv g
+    member _.Contents g = denv g
 
     static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
 
-    member x.WithShortTypeNames shortNames =
+    member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
-    member x.WithPrefixGenericParameters () =
+    member _.WithPrefixGenericParameters () =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Prefix }  )
 
-    member x.WithSuffixGenericParameters () =
+    member _.WithSuffixGenericParameters () =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
 // delay the realization of 'item' in case it is unresolved
@@ -444,7 +444,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         | None -> invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
         | Some nm -> nm
     
-    member x.TryFullName = 
+    member _.TryFullName = 
         if isUnresolved() then None
 #if !NO_EXTENSIONTYPING
         elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
@@ -461,14 +461,14 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         checkIsResolved()
         entity.Range
 
-    member x.GenericParameters = 
+    member _.GenericParameters = 
         checkIsResolved()
         entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
 
     member _.IsMeasure = 
         isResolvedAndFSharp() && (entity.TypeOrMeasureKind = TyparKind.Measure)
 
-    member x.IsAbstractClass = 
+    member _.IsAbstractClass = 
         isResolved() && isAbstractTycon entity.Deref
 
     member _.IsFSharpModule = 
@@ -483,7 +483,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         isResolved() &&
         entity.IsStructOrEnumTycon 
 
-    member x.IsArrayType  = 
+    member _.IsArrayType  = 
         isResolved() &&
         isArrayTyconRef cenv.g entity
 
@@ -583,7 +583,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(entity.TypeReprAccessibility)
 
-    member x.DeclaredInterfaces = 
+    member _.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
@@ -591,7 +591,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                  yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
 
-    member x.AllInterfaces = 
+    member _.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
@@ -599,19 +599,19 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                  yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
     
-    member x.IsAttributeType =
+    member _.IsAttributeType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
-    member x.IsDisposableType =
+    member _.IsDisposableType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
-    member x.BaseType = 
+    member _.BaseType = 
         checkIsResolved()        
         let ty = generalizedTyconRef cenv.g entity
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
@@ -621,7 +621,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         if isUnresolved() then true else
         not (isResolvedAndFSharp()) || entity.Deref.IsPrefixDisplay
 
-    member x.IsNamespace =  entity.IsNamespace
+    member _.IsNamespace =  entity.IsNamespace
 
     member x.MembersFunctionsAndValues = 
       if isUnresolved() then makeReadOnlyCollection [] else
@@ -701,13 +701,13 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x))
         |> makeReadOnlyCollection
 
-    member x.UnionCases = 
+    member _.UnionCases = 
         if isUnresolved() then makeReadOnlyCollection [] else
         entity.UnionCasesAsRefList
         |> List.map (fun x -> FSharpUnionCase(cenv, x)) 
         |> makeReadOnlyCollection
 
-    member x.FSharpFields =
+    member _.FSharpFields =
         if isUnresolved() then makeReadOnlyCollection [] else
     
         if entity.IsILEnumTycon then
@@ -727,7 +727,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             |> List.map (fun x -> FSharpField(cenv, mkRecdFieldRef entity x.LogicalName))
             |> makeReadOnlyCollection
 
-    member x.AbbreviatedType   = 
+    member _.AbbreviatedType   = 
         checkIsResolved()
 
         match entity.TypeAbbrev with
@@ -1423,7 +1423,7 @@ type FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) =
 
     member _.MemberArgumentTypes = atys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
-    member x.MemberReturnType =
+    member _.MemberReturnType =
         match rty with 
         | None -> FSharpType(cenv, cenv.g.unit_ty) 
         | Some ty -> FSharpType(cenv, ty) 
@@ -1668,7 +1668,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
         | Parent p -> FSharpEntity(cenv, p)
 
-    member x.GenericParameters = 
+    member _.GenericParameters = 
         checkIsResolved()
         let tps = 
             match d with 
@@ -1678,7 +1678,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | V v -> v.Typars 
         tps |> List.map (fun tp -> FSharpGenericParameter(cenv, tp)) |> makeReadOnlyCollection
 
-    member x.FullType = 
+    member _.FullType = 
         checkIsResolved()
         let ty = 
             match d with 
@@ -1792,17 +1792,17 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> m.IsDispatchSlot
         | V v -> v.IsDispatchSlot
 
-    member x.IsProperty = 
+    member _.IsProperty = 
         match d with 
         | P _ -> true
         | _ -> false
 
-    member x.IsEvent = 
+    member _.IsEvent = 
         match d with 
         | E _ -> true
         | _ -> false
 
-    member x.EventForFSharpProperty = 
+    member _.EventForFSharpProperty = 
         match d with 
         | P p when p.IsFSharpEventProperty  ->
             let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+p.PropertyName), AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 p.ApparentEnclosingType 
@@ -2186,25 +2186,25 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
         | V v -> FSharpAccessibility(v.Accessibility)
 
-    member x.IsConstructor =
+    member _.IsConstructor =
         match d with
         | C _ -> true
         | V v -> v.IsConstructor
         | _ -> false
 
-    member x.Data = d
+    member _.Data = d
 
-    member x.IsValCompiledAsMethod =
+    member _.IsValCompiledAsMethod =
         match d with
         | V valRef -> IlxGen.IsFSharpValCompiledAsMethod cenv.g valRef.Deref
         | _ -> false
 
-    member x.IsValue =
+    member _.IsValue =
         match d with
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
         | _ -> false
 
-    member x.IsFunction =
+    member _.IsFunction =
         match d with
         | V valRef -> isForallFunctionTy cenv.g valRef.Type
         | _ -> false
@@ -2423,8 +2423,7 @@ type FSharpType(cenv, ty:TType) =
     member _.GenericParameter = 
        protect <| fun () -> 
         match stripTyparEqns ty with 
-        | TType_var (tp, _) ->
-            FSharpGenericParameter (cenv, tp)
+        | TType_var (tp, _) 
         | TType_measure (Measure.Var tp) -> 
             FSharpGenericParameter (cenv, tp)
         | _ -> invalidOp "not a generic parameter type"
@@ -2443,7 +2442,7 @@ type FSharpType(cenv, ty:TType) =
         let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty
         FSharpType(cenv, typI)
 
-    member x.Type = ty
+    member _.Type = ty
     member private x.cenv = cenv
 
     member private ty.AdjustType t = 

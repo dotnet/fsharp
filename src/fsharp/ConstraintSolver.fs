@@ -375,10 +375,9 @@ let rec occursCheck g un ty =
     | TType_anon(_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
     | TType_fun (d, r, _) -> occursCheck g un d || occursCheck g un r
-    | TType_var (r, _)   ->  typarEq un r 
+    | TType_var (r, _) ->  typarEq un r 
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
-
 
 //-------------------------------------------------------------------------
 // Predicates on types
@@ -851,12 +850,19 @@ let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as para
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
     | TType_app (_, l, _) 
-    | TType_anon (_, l)
+    | TType_anon (_,l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
-    | TType_fun (d, r, _) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
-    | TType_var _   -> param
+    | TType_fun (d, r, _) ->
+        if resultFirst then
+            SimplifyMeasuresInTypes g param [r;d]
+        else
+            SimplifyMeasuresInTypes g param [d;r]        
+
+    | TType_var _ -> param
+
     | TType_forall (_, tau) -> SimplifyMeasuresInType g resultFirst param tau
+
     | TType_measure unt -> 
         let generalizable', newlygeneralized = SimplifyMeasure g generalizable unt   
         match newlygeneralized with
@@ -1120,7 +1126,8 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     let m = csenv.m
     do! DepthCheck ndeep m
     match ty1 with 
-    | TType_var (r, _) | TType_measure (Measure.Var r) ->
+    | TType_var (r, _)
+    | TType_measure (Measure.Var r) ->
         do! SolveTyparEqualsTypePart1 csenv m2 trace ty1 r ty 
         do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
     | _ -> failwith "SolveTyparEqualsType"
