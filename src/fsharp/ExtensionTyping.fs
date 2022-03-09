@@ -39,7 +39,12 @@ module internal ExtensionTyping =
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
+    let GetTypeProviderImplementationTypes (
+            runTimeAssemblyFileName,
+            designTimeAssemblyNameString,
+            m:range,
+            compilerToolPaths:string list
+        ) =
 
         // Report an error, blaming the particular type provider component
         let raiseError designTimeAssemblyPathOpt (e: exn) =
@@ -91,14 +96,16 @@ module internal ExtensionTyping =
 
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
-    let CreateTypeProvider (typeProviderImplementationType: Type, 
-                            runtimeAssemblyPath, 
-                            resolutionEnvironment: ResolutionEnvironment, 
-                            isInvalidationSupported: bool, 
-                            isInteractive: bool, 
-                            systemRuntimeContainsType, 
-                            systemRuntimeAssemblyVersion, 
-                            m) =
+    let CreateTypeProvider (
+            typeProviderImplementationType: Type, 
+            runtimeAssemblyPath, 
+            resolutionEnvironment: ResolutionEnvironment, 
+            isInvalidationSupported: bool, 
+            isInteractive: bool, 
+            systemRuntimeContainsType, 
+            systemRuntimeAssemblyVersion, 
+            m
+        ) =
 
         // Protect a .NET reflection call as we load the type provider component into the host process, 
         // reporting errors.
@@ -112,14 +119,15 @@ module internal ExtensionTyping =
         if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
 
             // Create the TypeProviderConfig to pass to the type provider constructor
-            let e = TypeProviderConfig(systemRuntimeContainsType, 
-                                       ResolutionFolder=resolutionEnvironment.resolutionFolder, 
-                                       RuntimeAssembly=runtimeAssemblyPath, 
-                                       ReferencedAssemblies=Array.copy resolutionEnvironment.referencedAssemblies, 
-                                       TemporaryFolder=resolutionEnvironment.temporaryFolder, 
-                                       IsInvalidationSupported=isInvalidationSupported, 
-                                       IsHostedExecution= isInteractive, 
-                                       SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
+            let e =
+                TypeProviderConfig(systemRuntimeContainsType, 
+                    ResolutionFolder=resolutionEnvironment.resolutionFolder, 
+                    RuntimeAssembly=runtimeAssemblyPath, 
+                    ReferencedAssemblies=Array.copy resolutionEnvironment.referencedAssemblies, 
+                    TemporaryFolder=resolutionEnvironment.temporaryFolder, 
+                    IsInvalidationSupported=isInvalidationSupported, 
+                    IsHostedExecution= isInteractive, 
+                    SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
 
             protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
@@ -130,17 +138,18 @@ module internal ExtensionTyping =
             // No appropriate constructor found
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
-    let GetTypeProvidersOfAssembly
-            (runtimeAssemblyFilename: string, 
-             ilScopeRefOfRuntimeAssembly: ILScopeRef, 
-             designTimeName: string, 
-             resolutionEnvironment: ResolutionEnvironment, 
-             isInvalidationSupported: bool, 
-             isInteractive: bool, 
-             systemRuntimeContainsType: string -> bool, 
-             systemRuntimeAssemblyVersion: Version, 
-             compilerToolPaths: string list,
-             m:range) =
+    let GetTypeProvidersOfAssembly (
+            runtimeAssemblyFilename: string, 
+            ilScopeRefOfRuntimeAssembly: ILScopeRef, 
+            designTimeName: string, 
+            resolutionEnvironment: ResolutionEnvironment, 
+            isInvalidationSupported: bool, 
+            isInteractive: bool, 
+            systemRuntimeContainsType: string -> bool, 
+            systemRuntimeAssemblyVersion: Version, 
+            compilerToolPaths: string list,
+            m:range
+        ) =
 
         let providerSpecs = 
                 try
@@ -247,7 +256,9 @@ module internal ExtensionTyping =
         BindingFlags.Public
 
     type CustomAttributeData = System.Reflection.CustomAttributeData
+
     type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
+
     type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
 
     // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
@@ -265,7 +276,9 @@ module internal ExtensionTyping =
             match ty.Assembly with
             | Null -> ("", ty.FullName)
             | NonNull a -> (a.FullName, ty.FullName)
+
         static member val Instance = ProvidedTypeComparer()
+
         interface IEqualityComparer<ProvidedType> with
             member _.GetHashCode(ty: ProvidedType) = hash (key ty)
             member _.Equals(ty1: ProvidedType, ty2: ProvidedType) = (key ty1 = key ty2)
@@ -326,11 +339,14 @@ module internal ExtensionTyping =
 #endif
       ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
+
         let isMeasure = 
             lazy
                 x.CustomAttributes 
                 |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
+
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
+
         interface IProvidedCustomAttributeProvider with 
             member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
             member _.GetDefinitionLocationAttribute provider = provide().GetDefinitionLocationAttribute provider
@@ -344,60 +360,105 @@ module internal ExtensionTyping =
 
         // Suppress relocation of generated types
         member _.IsSuppressRelocate = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.SuppressRelocate)) <> enum 0  
+
         member _.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0  
+
         member _.IsGenericType = x.IsGenericType
+
         member _.Namespace : string MaybeNull = x.Namespace
+
         member _.FullName = x.FullName
+
         member _.IsArray = x.IsArray
+
         member _.Assembly: ProvidedAssembly MaybeNull = x.Assembly |> ProvidedAssembly.Create
+
         member _.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
+
         member _.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
+
         member _.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
+
         member _.GetEvent nm = x.GetEvent(nm, bindingFlags) |> ProvidedEventInfo.Create ctxt
+
         member _.GetProperties() = x.GetProperties bindingFlags |> ProvidedPropertyInfo.CreateArray ctxt
+
         member _.GetProperty nm = x.GetProperty(nm, bindingFlags) |> ProvidedPropertyInfo.Create ctxt
+
         member _.GetConstructors() = x.GetConstructors bindingFlags |> ProvidedConstructorInfo.CreateArray ctxt
+
         member _.GetFields() = x.GetFields bindingFlags |> ProvidedFieldInfo.CreateArray ctxt
+
         member _.GetField nm = x.GetField(nm, bindingFlags) |> ProvidedFieldInfo.Create ctxt
+
         member _.GetAllNestedTypes() = x.GetNestedTypes(bindingFlags ||| BindingFlags.NonPublic) |> ProvidedType.CreateArray ctxt
+
         member _.GetNestedTypes() = x.GetNestedTypes bindingFlags |> ProvidedType.CreateArray ctxt
+
         /// Type.GetNestedType(string) can return null if there is no nested type with given name
         member _.GetNestedType nm = x.GetNestedType (nm, bindingFlags) |> ProvidedType.Create ctxt
+
         /// Type.GetGenericTypeDefinition() either returns type or throws exception, null is not permitted
         member _.GetGenericTypeDefinition() = x.GetGenericTypeDefinition() |> ProvidedType.CreateWithNullCheck ctxt "GenericTypeDefinition"
+
         /// Type.BaseType can be null when Type is interface or object
         member _.BaseType = x.BaseType |> ProvidedType.Create ctxt
+
         member _.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] MaybeNull = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+
         /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
         member _.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
+
         member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
+
         member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
             provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
+
         member _.IsVoid = (typeof<Void>.Equals x || (x.Namespace = "System" && x.Name = "Void"))
+
         member _.IsGenericParameter = x.IsGenericParameter
+
         member _.IsValueType = x.IsValueType
+
         member _.IsByRef = x.IsByRef
+
         member _.IsPointer = x.IsPointer
+
         member _.IsPublic = x.IsPublic
+
         member _.IsNestedPublic = x.IsNestedPublic
+
         member _.IsEnum = x.IsEnum
+
         member _.IsClass = x.IsClass
+
         member _.IsMeasure = isMeasure.Value
+
         member _.IsSealed = x.IsSealed
+
         member _.IsAbstract = x.IsAbstract
+
         member _.IsInterface = x.IsInterface
+
         member _.GetArrayRank() = x.GetArrayRank()
+
         member _.GenericParameterPosition = x.GenericParameterPosition
+
         member _.RawSystemType = x
 
         /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
         member _.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
             |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"    
+
         member _.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
+
         member _.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
+
         member _.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
+
         member _.MakeArrayType rank = ProvidedType.CreateNoContext(x.MakeArrayType(rank))
+
         member _.MakeGenericType (args: ProvidedType[]) =
             let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
             ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
@@ -428,11 +489,17 @@ module internal ExtensionTyping =
         member _.Handle = x
 
         override _.Equals y = assert false; match y with :? ProvidedType as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = assert false; x.GetHashCode()
+
         member _.Context = ctxt
+
         member this.TryGetILTypeRef() = this.Context.TryGetILTypeRef this
+
         member this.TryGetTyconRef() = this.Context.TryGetTyconRef this
+
         static member ApplyContext (pt: ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
+
         static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
@@ -499,9 +566,12 @@ module internal ExtensionTyping =
 #endif
         ProvidedMemberInfo (x: MemberInfo, ctxt) = 
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
+
         member _.Name = x.Name
+
         /// DeclaringType can be null if MemberInfo belongs to Module, not to Type
         member _.DeclaringType = ProvidedType.Create ctxt x.DeclaringType
+
         interface IProvidedCustomAttributeProvider with 
             member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
             member _.GetDefinitionLocationAttribute provider = provide().GetDefinitionLocationAttribute provider
@@ -514,12 +584,19 @@ module internal ExtensionTyping =
 #endif
         ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
+
         member _.Name = let nm = x.Name in match box nm with null -> "" | _ -> nm
+
         member _.IsOut = x.IsOut
+
         member _.IsIn = x.IsIn
+
         member _.IsOptional = x.IsOptional
+
         member _.RawDefaultValue = x.RawDefaultValue
+
         member _.HasDefaultValue = x.Attributes.HasFlag(ParameterAttributes.HasDefault)
+
         /// ParameterInfo.ParameterType cannot be null
         member _.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType
         
@@ -545,9 +622,11 @@ module internal ExtensionTyping =
             member _.GetDefinitionLocationAttribute provider = provide().GetDefinitionLocationAttribute provider
             member _.GetXmlDocAttributes provider = provide().GetXmlDocAttributes provider
             member _.GetAttributeConstructorArgs (provider, attribName) = provide().GetAttributeConstructorArgs (provider, attribName)
-        
+
         member _.Handle = x
+
         override _.Equals y = assert false; match y with :? ProvidedParameterInfo as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and [<Sealed>] 
@@ -576,20 +655,35 @@ module internal ExtensionTyping =
 #endif
         ProvidedMethodBase (x: MethodBase, ctxt) = 
         inherit ProvidedMemberInfo(x, ctxt)
+
         member _.Context = ctxt
+
         member _.IsGenericMethod = x.IsGenericMethod
+
         member _.IsStatic  = x.IsStatic
+
         member _.IsFamily  = x.IsFamily
+
         member _.IsFamilyOrAssembly = x.IsFamilyOrAssembly
+
         member _.IsFamilyAndAssembly = x.IsFamilyAndAssembly
+
         member _.IsVirtual  = x.IsVirtual
+
         member _.IsFinal = x.IsFinal
+
         member _.IsPublic = x.IsPublic
+
         member _.IsAbstract  = x.IsAbstract
+
         member _.IsHideBySig = x.IsHideBySig
+
         member _.IsConstructor  = x.IsConstructor
+
         member _.GetParameters() = x.GetParameters() |> ProvidedParameterInfo.CreateArray ctxt 
+
         member _.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
+
         member _.Handle = x
 
         static member TaintedGetHashCode (x: Tainted<ProvidedMethodBase>) =            
@@ -671,20 +765,35 @@ module internal ExtensionTyping =
             | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
         member _.IsInitOnly = x.IsInitOnly
+
         member _.IsStatic = x.IsStatic
+
         member _.IsSpecialName = x.IsSpecialName
+
         member _.IsLiteral = x.IsLiteral
+
         member _.GetRawConstantValue() = x.GetRawConstantValue()
+
         /// FieldInfo.FieldType cannot be null
+
         member _.FieldType = x.FieldType |> ProvidedType.CreateWithNullCheck ctxt "FieldType" 
+
         member _.Handle = x
+
         member _.IsPublic = x.IsPublic
+
         member _.IsFamily = x.IsFamily
+
         member _.IsPrivate = x.IsPrivate
+
         member _.IsFamilyOrAssembly = x.IsFamilyOrAssembly
+
         member _.IsFamilyAndAssembly = x.IsFamilyAndAssembly
+
         override _.Equals y = assert false; match y with :? ProvidedFieldInfo as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = assert false; x.GetHashCode()
+
         static member TaintedEquals (pt1: Tainted<ProvidedFieldInfo>, pt2: Tainted<ProvidedFieldInfo>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
@@ -711,8 +820,11 @@ module internal ExtensionTyping =
             | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
         member _.Handle = x
+
         member _.MetadataToken = x.MetadataToken
+
         override _.Equals y = assert false; match y with :? ProvidedMethodInfo as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and [<Sealed>] 
@@ -721,11 +833,17 @@ module internal ExtensionTyping =
 #endif
         ProvidedPropertyInfo (x: PropertyInfo, ctxt) = 
         inherit ProvidedMemberInfo(x, ctxt)
+
         member _.GetGetMethod() = x.GetGetMethod() |> ProvidedMethodInfo.Create ctxt
+
         member _.GetSetMethod() = x.GetSetMethod() |> ProvidedMethodInfo.Create ctxt
+
         member _.CanRead = x.CanRead
+
         member _.CanWrite = x.CanWrite
+
         member _.GetIndexParameters() = x.GetIndexParameters() |> ProvidedParameterInfo.CreateArray ctxt
+
         /// PropertyInfo.PropertyType cannot be null
         member _.PropertyType = x.PropertyType |> ProvidedType.CreateWithNullCheck ctxt "PropertyType"
 
@@ -761,8 +879,11 @@ module internal ExtensionTyping =
 #endif
         ProvidedEventInfo (x: EventInfo, ctxt) = 
         inherit ProvidedMemberInfo(x, ctxt)
+
         member _.GetAddMethod() = x.GetAddMethod() |> ProvidedMethodInfo.Create  ctxt
+
         member _.GetRemoveMethod() = x.GetRemoveMethod() |> ProvidedMethodInfo.Create ctxt
+
         /// EventInfo.EventHandlerType cannot be null
         member _.EventHandlerType = x.EventHandlerType |> ProvidedType.CreateWithNullCheck ctxt "EventHandlerType"
         
@@ -812,7 +933,9 @@ module internal ExtensionTyping =
             | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
         member _.Handle = x
+
         override _.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
+
         override _.GetHashCode() = assert false; x.GetHashCode()
 
     and ProvidedExprType =

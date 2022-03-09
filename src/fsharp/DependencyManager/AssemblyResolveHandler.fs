@@ -18,7 +18,6 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
     let loadFromAssemblyPathMethod =
         assemblyLoadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
 
-/// Type that encapsulates AssemblyResolveHandler for managed packages
     let eventInfo, handler, defaultAssemblyLoadContext =
         let eventInfo = assemblyLoadContextType.GetEvent("Resolving")
         let mi =
@@ -86,7 +85,7 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
         member _x.Dispose() =
             AppDomain.CurrentDomain.remove_AssemblyResolve(handler)
 
-type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe option) =
+type AssemblyResolveHandler internal (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let handler =
         if isRunningOnCoreClr then
