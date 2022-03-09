@@ -1861,15 +1861,15 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 //-------------------------------------------------------------------------
 
 let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars = 
-    let tpsorig = declaredTyconTypars
-    let tps = copyTypars tpsorig
+    let origTypars = declaredTyconTypars
+    let freshTypars = copyTypars origTypars
     if rigid <> TyparRigidity.Rigid then
-      tps |> List.iter (fun tp -> tp.SetRigidity rigid)
+        freshTypars |> List.iter (fun tp -> tp.SetRigidity rigid)
 
-    let renaming, tinst = FixupNewTypars m [] [] tpsorig tps
-    let origObjTy = TType_app(tcref, List.map mkTyparTy tpsorig, g.knownWithoutNull)
+    let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
+    let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)
     let freshTy = TType_app(tcref, tinst, g.knownWithoutNull)
-    (origObjTy, tps, renaming, freshTy)
+    origTy, freshTypars, renaming, freshTy
 
 let FreshenPossibleForallTy g m rigid ty = 
     let tpsorig, tau = tryDestForallTy g ty
