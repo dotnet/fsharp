@@ -1829,7 +1829,7 @@ let mkSeqAppend (cenv: cenv) env m genTy e1 e2 =
     let e2 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e2) e2
     mkCallSeqAppend cenv.g m genResultTy e1 e2 
 
-let mkSeqGenerated (cenv: cenv) env m genTy e1 e2 =
+let mkSeqFromFunctions (cenv: cenv) env m genTy e1 e2 =
     let g = cenv.g
     let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
@@ -1947,7 +1947,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 | _ -> guardExprMark
 
             let innerDelayedExpr = mkSeqDelayedExpr mWhile innerExpr
-            Some(mkSeqGenerated cenv env guardExprMark genOuterTy guardLambdaExpr innerDelayedExpr, tpenv)
+            Some(mkSeqFromFunctions cenv env guardExprMark genOuterTy guardLambdaExpr innerDelayedExpr, tpenv)
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally, trivia) ->
             let env = { env with eIsControlFlow = true }

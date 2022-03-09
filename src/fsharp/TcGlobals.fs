@@ -242,6 +242,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
+  let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -690,7 +691,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
   let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
   let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
-  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None                 , Some "IsNotNull" , [vara],  ([[varaTy]], v_bool_ty))
   let v_raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                , None                 , Some "Raise"  , [vara],     ([[mkSysNonGenericTy sys "Exception"]], varaTy))
   let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None                 , Some "FailWith" , [vara],   ([[v_string_ty]], varaTy))
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None                 , Some "InvalidArg" , [vara], ([[v_string_ty]; [v_string_ty]], varaTy))
@@ -738,7 +738,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
-  let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
+  let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
@@ -869,13 +869,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let betterEntries = Array.append betterTyconEntries decompileTyconEntries
 
-  let mutable decompileTypeDict = null
-  let mutable betterTypeDict1 = null
-  let mutable betterTypeDict2 = null
+  let mutable decompileTypeDict = Unchecked.defaultof<_>
+  let mutable betterTypeDict1 = Unchecked.defaultof<_>
+  let mutable betterTypeDict2 = Unchecked.defaultof<_>
 
   /// This map is indexed by stamps and lazy to avoid dereferencing while setting up the base imports.
   let getDecompileTypeDict () =
-      match decompileTypeDict with
+      match box decompileTypeDict with
       | null ->
           let entries = decompileTyconEntries
           let t = Dictionary.newWithSize entries.Length
@@ -884,13 +884,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           decompileTypeDict <- t
           t
-      | t -> t
+      | _ -> decompileTypeDict
 
   /// This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
   /// the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
   /// So this dictionary is indexed by names. Make it lazy to avoid dereferencing while setting up the base imports.
   let getBetterTypeDict1 () =
-      match betterTypeDict1 with
+      match box betterTypeDict1 with
       | null ->
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
@@ -898,12 +898,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
               t.Add(nm, fun tcref2 tinst2 -> if tyconRefEq tcref tcref2 then builder tinst2 else TType_app (tcref2, tinst2))
           betterTypeDict1 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict1
 
   /// This map is for use in normal times (not building FSharp.Core.dll). It is indexed by stamps
   /// and lazy to avoid dereferencing while setting up the base imports.
   let getBetterTypeDict2 () =
-      match betterTypeDict2 with
+      match box betterTypeDict2 with
       | null ->
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
@@ -912,7 +912,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           betterTypeDict2 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict2
 
   /// For logical purposes equate some F# types with .NET types, e.g. TType_tuple == System.Tuple/ValueTuple.
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -950,16 +950,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override x.ToString() = "<TcGlobals>"
-  member _.ilg=ilg
-      // A table of all intrinsics that the compiler cares about
-  member _.knownIntrinsics                = v_knownIntrinsics
-      // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
-      // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
-  member _.knownFSharpCoreModules         = v_knownFSharpCoreModules
-  member _.compilingFslib                 = compilingFslib
-  member _.mlCompatibility                = mlCompatibility
-  member _.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
-  member _.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+
+  member _.ilg = ilg
+
+  // A table of all intrinsics that the compiler cares about
+  member _.knownIntrinsics = v_knownIntrinsics
+
+  // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
+  // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
+  member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+  member _.compilingFslib = compilingFslib
+  member _.mlCompatibility = mlCompatibility
+  member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
+  member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
   member _.pathMap = pathMap
   member _.langVersion = langVersion
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
@@ -1022,6 +1025,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.voidptr_tcr    = v_voidptr_tcr
   member _.ilsigptr_tcr   = v_ilsigptr_tcr
   member _.fastFunc_tcr = v_fastFunc_tcr
+  member _.MatchFailureException_tcr = v_mfe_tcr
   member _.tcref_IQueryable = v_tcref_IQueryable
   member _.tcref_IObservable      = v_tcref_IObservable
   member _.tcref_IObserver      = v_tcref_IObserver
@@ -1419,7 +1423,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.hash_info                  = v_hash_info
   member _.box_info                   = v_box_info
   member _.isnull_info                = v_isnull_info
-  member _.isnotnull_info             = v_isnotnull_info
   member _.raise_info                 = v_raise_info
   member _.failwith_info              = v_failwith_info
   member _.invalid_arg_info           = v_invalid_arg_info

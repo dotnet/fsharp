@@ -806,7 +806,6 @@ let ForNewConstructors tcSink (env: TcEnv) mObjTy methodName meths =
     | _ ->
         AfterResolution.RecordResolution (None, (fun tpinst -> callSink (origItem, tpinst)), (fun (minfo, _, minst) -> sendToSink minst [minfo]), (fun () -> callSink (origItem, emptyTyparInst)))
 
-
 /// Typecheck rational constant terms in units-of-measure exponents
 let rec TcSynRationalConst c =
   match c with
@@ -2913,17 +2912,16 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
     else
         let curriedFlexibleTypes =
             curriedActualTypes |> List.mapSquared (fun actualType ->
-                if isNonFlexibleType actualType
-                then actualType
+                if isNonFlexibleType actualType then
+                    actualType
                 else
-                   let flexibleType = NewInferenceType g
-                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType
-                   flexibleType)
+                    let flexibleType = NewInferenceType g
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType
+                    flexibleType)
 
         // Create a coercion to represent the expansion of the application
         let expr = mkCoerceExpr (expr, mkIteratedFunTy g (List.map (mkRefTupledTy g) curriedFlexibleTypes) retTy, m, exprTy)
         ApplicableExpr (cenv, expr, true)
-
 
 ///  Checks, warnings and constraint assertions for downcasts
 let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
@@ -4449,7 +4447,6 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
             NewErrorType (), tpenv
 
     | SynType.StaticConstantNamed (_, _, m)
-
     | SynType.StaticConstantExpr (_, m) ->
         errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m))
         NewErrorType (), tpenv
@@ -4665,8 +4662,8 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
                 | [] ->
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
-                         | v -> v
+                         | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
+                         | NonNull v -> v
                     else
                       error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
                  | ps ->
@@ -4809,7 +4806,6 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
     | TType_app(tcref, _) ->
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
-
 
 and TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
@@ -5240,8 +5236,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, emptyTyparInst, ItemOccurence.Pattern, ad)
 
                             match box result.[idx] with
-                            | null -> result.[idx] <- pat
-                            | _ ->
+                            | Null -> result.[idx] <- pat
+                            | NonNull _ ->
                                 extraPatterns.Add pat
                                 errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce id.idText, id.idRange))
 
@@ -5249,8 +5245,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                         if isNull (box result.[i]) then
                             result.[i] <- SynPat.Wild (m.MakeSynthetic())
 
-                    let extraPatterns =
-                        if isNull extraPatterns then [] else List.ofSeq extraPatterns
+                    let extraPatterns = List.ofSeq extraPatterns
 
                     let args = List.ofArray result
                     if result.Length = 1 then args, extraPatterns
@@ -7268,7 +7263,7 @@ and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mO
 //-------------------------------------------------------------------------
 
 /// Check a constant string expression. It might be a 'printf' format string
-and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv s =
+and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) =
 
     let g = cenv.g
 

@@ -103,7 +103,8 @@ let NewInferenceType (g: TcGlobals) =
 let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
 
-let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
+let NewErrorMeasure () =
+    Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 
     let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)

@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Reflection
 open System.Collections.Concurrent
@@ -75,9 +76,6 @@ module ReflectionHelper =
         | :? TargetInvocationException as e->
             e.InnerException
         | _ -> e
-
-    // Shim to match nullness checking library support
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
@@ -375,7 +373,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string MaybeNull * IDependencyManagerProvider MaybeNull =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -386,7 +384,8 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                     reportError.Invoke(ErrorReportType.Error, err, msg)
                     null, null
 
-                | Some kv -> path, kv.Value
+                | Some kv ->
+                    path, kv.Value
             else
                 path, null
         with 
@@ -397,7 +396,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
             null, null
 
     /// Fetch a dependencymanager that supports a specific key
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider MaybeNull =
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
@@ -416,7 +415,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                        packageManagerTextLines: (string * string) seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
-                       [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
+                       [<Optional;DefaultParameterValue(null:string MaybeNull)>]executionRid: string MaybeNull,
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string,

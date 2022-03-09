@@ -149,7 +149,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 |   Some name ->
                         match st.PApply((fun st -> st.GetProperty name), m) with
                         | Tainted.Null -> [||]
-                        | pi -> [|pi|]
+                        | Tainted.NonNull pi -> [|pi|]
                 |   None ->
                         st.PApplyArray((fun st -> st.GetProperties()), "GetProperties", m)
             matchingProps
@@ -307,7 +307,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetField name), m) with
                         | Tainted.Null -> []
-                        | fi -> [  ProvidedField(amap, fi, m) ]
+                        | Tainted.NonNull fi -> [  ProvidedField(amap, fi, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
@@ -331,8 +331,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                         [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents", m) -> ProvidedEvent(amap, ei, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetEvent name), m) with
-                        |   Tainted.Null -> []
-                        |   ei -> [  ProvidedEvent(amap, ei, m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull ei -> [  ProvidedEvent(amap, ei, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty

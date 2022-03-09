@@ -3,8 +3,9 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal FSharp.Compiler.AccessibilityLogic
 
-open FSharp.Compiler.AbstractIL.IL 
+open Internal.Utilities.Library
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -371,10 +372,12 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodBase) = 
+                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo MaybeNull) =
                     match mi with
-                    | null -> None
-                    | mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                    | Null -> None
+                    | NonNull mi -> 
+                        Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+
                 match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                 | x -> x), m)

@@ -522,7 +522,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="typeWithoutArguments">A type returned by GetTypes or ResolveTypeName</param>
         ///
         /// <returns></returns>
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[] 
+        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
 
         /// <summary>
         /// Apply static arguments to a provided type that accepts static arguments. 

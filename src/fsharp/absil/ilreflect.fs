@@ -420,14 +420,10 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
         emEnv
 
 let convTypeRef cenv emEnv preferCreated (tref: ILTypeRef) =
-    let res =
-        match Zmap.tryFind tref emEnv.emTypMap with
-        | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy
-        | Some (typT, _typB, _typeDef, _) -> typT
-        | None -> convTypeRefAux cenv tref
-    match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
-    | _ -> res
+    match Zmap.tryFind tref emEnv.emTypMap with
+    | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy
+    | Some (typT, _typB, _typeDef, _) -> typT
+    | None -> convTypeRefAux cenv tref
 
 let envBindConsRef emEnv (mref: ILMethodRef) consB =
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -528,8 +524,8 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
         | true, false -> typT
         | _, false -> null
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+    | NonNull res -> res
 
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
@@ -645,17 +641,16 @@ let typeIsNotQueryable (ty: Type) =
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
+    | NonNull res -> res
 
 let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo =
     let res =
         if parentTI.IsGenericType then TypeBuilder.GetField(parentTI, fieldInfo)
         else fieldInfo
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
-    | _ -> res
-
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
 let convFieldSpec cenv emEnv fspec =
     let fref = fspec.FieldRef
@@ -798,8 +793,8 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
             else
                 queryableTypeGetMethod cenv emEnv parentTI mref
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
 //----------------------------------------------------------------------------
 // convMethodSpec
@@ -849,8 +844,8 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
             else
                 queryableTypeGetConstructor cenv emEnv parentTI mref
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
 let emitLabelMark emEnv (ilG: ILGenerator) (label: ILCodeLabel) =
     let lab = envGetLabel emEnv label
@@ -1239,7 +1234,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Set", CallingConventions.HasThis, (null: Type), Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog (aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
@@ -1247,7 +1242,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", CallingConventions.HasThis, (null: Type), Array.create shape.Rank typeof<int>)
+            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
@@ -1378,10 +1373,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: MethodBody) =
     | MethodBody.NotAvailable -> failwith "emitMethodBody: metadata only"
 
 let convCustomAttr cenv emEnv (cattr: ILAttribute) =
-    let methInfo =
-       match convConstructorSpec cenv emEnv cattr.Method with
-       | null -> failwithf "convCustomAttr: %+A" cattr.Method
-       | res -> res
+    let methInfo = convConstructorSpec cenv emEnv cattr.Method
     let data = getCustomAttrData cattr
     (methInfo, data)
 
