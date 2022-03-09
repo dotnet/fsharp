@@ -3593,8 +3593,8 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        ///
-        /// <returns>The result value.</returns>
+        /// 
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
         /// <code lang="fsharp">

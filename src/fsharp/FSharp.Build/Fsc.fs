@@ -21,49 +21,49 @@ type public Fsc () as this =
 
     inherit ToolTask ()
 
-    let mutable baseAddress : string = null
-    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
-    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable checksumAlgorithm: string = null
-    let mutable codePage : string = null
-    let mutable commandLineArgs : ITaskItem list = []
+    let mutable baseAddress: string MaybeNull = null
+    let mutable capturedArguments: string list = []  // list of individual args, to pass to HostObject Compile()
+    let mutable capturedFilenames: string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable checksumAlgorithm: string MaybeNull = null
+    let mutable codePage: string MaybeNull = null
+    let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
-    let mutable debugType : string = null
-    let mutable defineConstants : ITaskItem[] = [||]
-    let mutable delaySign : bool = false
-    let mutable deterministic : bool = false
-    let mutable disabledWarnings : string = null
-    let mutable documentationFile : string = null
-    let mutable dotnetFscCompilerPath : string = null
+    let mutable debugType: string MaybeNull = null
+    let mutable defineConstants: ITaskItem[] = [||]
+    let mutable delaySign: bool = false
+    let mutable deterministic: bool = false
+    let mutable disabledWarnings: string MaybeNull = null
+    let mutable documentationFile: string MaybeNull = null
+    let mutable dotnetFscCompilerPath: string MaybeNull = null
     let mutable embedAllSources = false
-    let mutable embeddedFiles : ITaskItem[] = [||]
-    let mutable generateInterfaceFile : string = null
-    let mutable highEntropyVA : bool = false
-    let mutable keyFile : string = null
-    let mutable langVersion : string = null
+    let mutable embeddedFiles: ITaskItem[] = [||]
+    let mutable generateInterfaceFile: string MaybeNull = null
+    let mutable highEntropyVA: bool = false
+    let mutable keyFile: string MaybeNull = null
+    let mutable langVersion: string MaybeNull = null
     let mutable noFramework = false
-    let mutable optimize  : bool = true
-    let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null
-    let mutable pathMap : string = null
-    let mutable pdbFile : string = null
-    let mutable platform : string = null
-    let mutable prefer32bit : bool = false
-    let mutable preferredUILang : string = null
-    let mutable publicSign : bool = false
-    let mutable provideCommandLineArgs : bool = false
-    let mutable references : ITaskItem[] = [||]
-    let mutable referencePath : string = null
-    let mutable resources : ITaskItem[] = [||]
-    let mutable skipCompilerExecution : bool  = false
-    let mutable sources : ITaskItem[] = [||]
-    let mutable sourceLink : string = null
-    let mutable subsystemVersion : string = null
-    let mutable tailcalls : bool = true
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
-    let mutable toolExe : string = "fsc.exe"
+    let mutable optimize : bool = true
+    let mutable otherFlags: string MaybeNull = null
+    let mutable outputAssembly: string MaybeNull = null
+    let mutable pathMap: string MaybeNull = null
+    let mutable pdbFile: string MaybeNull = null
+    let mutable platform: string MaybeNull = null
+    let mutable prefer32bit: bool = false
+    let mutable preferredUILang: string MaybeNull = null
+    let mutable publicSign: bool = false
+    let mutable provideCommandLineArgs: bool = false
+    let mutable references: ITaskItem[] = [||]
+    let mutable referencePath: string MaybeNull = null
+    let mutable resources: ITaskItem[] = [||]
+    let mutable skipCompilerExecution: bool  = false
+    let mutable sources: ITaskItem[] = [||]
+    let mutable sourceLink: string MaybeNull = null
+    let mutable subsystemVersion: string MaybeNull = null
+    let mutable tailcalls: bool = true
+    let mutable targetProfile: string MaybeNull = null
+    let mutable targetType: string MaybeNull = null
+    let mutable toolExe: string = "fsc.exe"
     let defaultToolPath =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
@@ -71,27 +71,26 @@ type public Fsc () as this =
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
-    let mutable treatWarningsAsErrors : bool = false
-    let mutable useStandardResourceNames : bool = false
-    let mutable warningsAsErrors : string = null
-    let mutable warningsNotAsErrors : string = null
-    let mutable versionFile : string = null
-    let mutable warningLevel : string = null
-    let mutable warnOn : string = null
-    let mutable win32icon: string = null
-    let mutable win32res : string = null
-    let mutable win32manifest : string = null
-    let mutable vserrors : bool = false
-    let mutable vslcid : string = null
-    let mutable utf8output : bool = false
-
+    let mutable treatWarningsAsErrors: bool = false
+    let mutable useStandardResourceNames: bool = false
+    let mutable warningsAsErrors: string MaybeNull = null
+    let mutable warningsNotAsErrors: string MaybeNull = null
+    let mutable versionFile: string MaybeNull = null
+    let mutable warningLevel: string MaybeNull = null
+    let mutable warnOn: string MaybeNull = null
+    let mutable win32icon: string MaybeNull = null
+    let mutable win32res: string MaybeNull = null
+    let mutable win32manifest: string MaybeNull = null
+    let mutable vserrors: bool = false
+    let mutable vslcid: string MaybeNull = null
+    let mutable utf8output: bool = false
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
-    let splitAndWsTrim (s:string) =
+    let splitAndWsTrim (s: string MaybeNull) =
         match s with
-        | null -> [||]
-        | _ ->
+        | Null -> [||]
+        | NonNull s ->
             let array = s.Split([| ';'; ','; '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
             array |> Array.map(fun item -> item.Trim(wsCharsToTrim)) |> Array.filter(fun s -> not (String.IsNullOrEmpty s))
 
@@ -100,16 +99,22 @@ type public Fsc () as this =
 
     let generateCommandLineBuilder () =
         let builder = new FSharpCommandLineBuilder()
+
         // OutputAssembly
         builder.AppendSwitchIfNotNull("-o:", outputAssembly)
+
         // CodePage
         builder.AppendSwitchIfNotNull("--codepage:", codePage)
+
         // Debug
         if debugSymbols then
             builder.AppendSwitch("-g")
+
         // DebugType
         builder.AppendSwitchIfNotNull("--debug:",
-            if debugType = null then null else
+            match debugType with 
+            | Null -> null
+            | NonNull debugType -> 
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
                 | "PORTABLE" -> "portable"
@@ -117,41 +122,57 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then builder.AppendSwitch("--embed+")
-        if embeddedFiles <> null then 
-            for item in embeddedFiles do
-                builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
+
+        if embedAllSources then
+            builder.AppendSwitch("--embed+")
+
+        for item in embeddedFiles do
+            builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
+
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
+
         // NoFramework
         if noFramework then
             builder.AppendSwitch("--noframework")
+
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
+
         // DefineConstants
-        if defineConstants <> null then 
-            for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+        for item in defineConstants do
+            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
+
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
+
         // KeyFile
         builder.AppendSwitchIfNotNull("--keyfile:", keyFile)
         if delaySign then builder.AppendSwitch("--delaysign+")
         if publicSign then builder.AppendSwitch("--publicsign+")
+
         // Optimize
         if optimize then
             builder.AppendSwitch("--optimize+")
         else
             builder.AppendSwitch("--optimize-")
+
+        // Tailcalls
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
+
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
 // Platform
         builder.AppendSwitchIfNotNull("--platform:",
-            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+
+            let ToUpperInvariant (s: string MaybeNull) =
+                match s with Null -> null | NonNull s -> s.ToUpperInvariant()
+
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
@@ -159,6 +180,7 @@ type public Fsc () as this =
                 | "X86",  _, _  -> "x86"
                 | "X64",  _, _  -> "x64"
                 | _ -> null)
+
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull("--checksumalgorithm:",
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
@@ -166,33 +188,31 @@ type public Fsc () as this =
                 | "SHA1" -> "Sha1"
                 | "SHA256" -> "Sha256"
                 | _ -> null)
+
         // Resources
-        if resources <> null then 
-            for item in resources do
-                match useStandardResourceNames with
-                | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
-                | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
+        for item in resources do
+            match useStandardResourceNames with
+            | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
+            | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
 
         // CompilerTools
-        if compilerTools <> null then 
-            for item in compilerTools do
-                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+        for item in compilerTools do
+            builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
 
         // References
-        if references <> null then 
-            for item in references do
-                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+        for item in references do
+            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
 
-        match referencePath with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--lib:", referencePath |> splitAndWsTrim, ",")
+        builder.AppendSwitchesIfNotNull("--lib:", referencePath |> splitAndWsTrim, ",")
 
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
-            if targetType = null then null else
+            match targetType with 
+            | Null -> null
+            | NonNull targetType -> 
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
                 | "EXE" -> "exe"
@@ -201,30 +221,22 @@ type public Fsc () as this =
                 | _ -> null)
 
         // NoWarn
-        match disabledWarnings with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings |> splitAndWsTrim, ",")
+        builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings |> splitAndWsTrim, ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
 
-        match warnOn with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnon:", warnOn |> splitAndWsTrim, ",")
+        builder.AppendSwitchesIfNotNull("--warnon:", warnOn |> splitAndWsTrim, ",")
 
         // TreatWarningsAsErrors
         if treatWarningsAsErrors then
             builder.AppendSwitch("--warnaserror")
 
-        // WarnAsErrors
-        match warningsAsErrors with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrors |> splitAndWsTrim, ",")
+        // WarningsAsErrors
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrors |> splitAndWsTrim, ",")
 
         // WarningsNotAsErrors
-        match warningsNotAsErrors with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
 
         // Win32IconFile
         builder.AppendSwitchIfNotNull("--win32icon:", win32icon)
@@ -263,9 +275,7 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
         
-        match pathMap with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap |> splitAndWsTrim, ",")
+        builder.AppendSwitchesIfNotNull("--pathmap:", pathMap |> splitAndWsTrim, ",")   
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")
@@ -281,71 +291,71 @@ type public Fsc () as this =
         builder
 
     // --baseaddress
-    member fsc.BaseAddress
+    member _.BaseAddress
         with get() = baseAddress 
         and set(s) = baseAddress <- s
 
     // --checksumalgorithm
-    member fsc.ChecksumAlgorithm
+    member _.ChecksumAlgorithm
         with get() = checksumAlgorithm 
         and set(s) = checksumAlgorithm <- s
 
     // --codepage <int>: Specify the codepage to use when opening source files
-    member fsc.CodePage
+    member _.CodePage
         with get() = codePage
         and set(s) = codePage <- s
 
     // -r <string>: Reference an F# or .NET assembly.
-    member fsc.CompilerTools
+    member _.CompilerTools
         with get() = compilerTools
         and set(a) = compilerTools <- a
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
-    member fsc.DebugSymbols
+    member _.DebugSymbols
         with get() = debugSymbols
         and set(b) = debugSymbols <- b
 
     // --debug <none/portable/embedded/pdbonly/full>: Emit debugging information
-    member fsc.DebugType
+    member _.DebugType
         with get() = debugType
         and set(s) = debugType <- s
 
-    member fsc.Deterministic 
+    member _.Deterministic 
         with get() = deterministic
         and set(p) = deterministic <- p
 
-    member fsc.DelaySign
+    member _.DelaySign
         with get() = delaySign
         and set(s) = delaySign <- s
 
     // --nowarn <string>: Do not report the given specific warning.
-    member fsc.DisabledWarnings
+    member _.DisabledWarnings
         with get() = disabledWarnings
         and set(a) = disabledWarnings <- a
 
     // --define <string>: Define the given conditional compilation symbol.
-    member fsc.DefineConstants
+    member _.DefineConstants
         with get() = defineConstants
         and set(a) = defineConstants <- a
 
     // --doc <string>: Write the xmldoc of the assembly to the given file.
-    member fsc.DocumentationFile
+    member _.DocumentationFile
         with get() = documentationFile
         and set(s) = documentationFile <- s
 
-    member fsc.DotnetFscCompilerPath  
+    member _.DotnetFscCompilerPath  
         with get() = dotnetFscCompilerPath
         and set(p) = dotnetFscCompilerPath <- p
 
-    member fsc.EmbedAllSources
+    member _.EmbedAllSources
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
 
-    member fsc.Embed
+    member _.Embed
         with get() = embeddedFiles
         and set(e) = embeddedFiles <- e
 
-    member fsc.EmbeddedFiles
+    member _.EmbeddedFiles
         with get() = embeddedFiles
         and set(e) = embeddedFiles <- e
 
@@ -353,7 +363,7 @@ type public Fsc () as this =
     //     Print the inferred interface of the
     //     assembly to a file.
 
-    member fsc.GenerateInterfaceFile
+    member _.GenerateInterfaceFile
         with get() = generateInterfaceFile
         and set(s) = generateInterfaceFile <- s
 
@@ -363,51 +373,51 @@ type public Fsc () as this =
     //     an assembly with a strong name. This is only relevant if producing
     //     an assembly to be shared amongst programs from different
     //     directories, e.g. to be installed in the Global Assembly Cache.
-    member fsc.KeyFile
+    member _.KeyFile
         with get() = keyFile
         and set(s) = keyFile <- s
 
-    member fsc.LangVersion
+    member _.LangVersion
         with get() = langVersion
         and set(s) = langVersion <- s
 
-    member fsc.LCID
+    member _.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
 
     // --noframework
-    member fsc.NoFramework
+    member _.NoFramework
         with get() = noFramework 
         and set(b) = noFramework <- b
 
     // --optimize
-    member fsc.Optimize
+    member _.Optimize
         with get() = optimize
         and set(p) = optimize <- p
 
     // --tailcalls
-    member fsc.Tailcalls
+    member _.Tailcalls
         with get() = tailcalls
         and set(p) = tailcalls <- p
 
     // REVIEW: decide whether to keep this, for now is handy way to deal with as-yet-unimplemented features
-    member fsc.OtherFlags
+    member _.OtherFlags
         with get() = otherFlags
         and set(s) = otherFlags <- s
 
     // -o <string>: Name the output file
-    member fsc.OutputAssembly
+    member _.OutputAssembly
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
 
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
-    member fsc.PathMap
+    member _.PathMap
         with get() = pathMap
         and set(s) = pathMap <- s
 
     // --pdb <string>: 
     //     Name the debug output file
-    member fsc.PdbFile
+    member _.PdbFile
         with get() = pdbFile
         and set(s) = pdbFile <- s
 
@@ -416,58 +426,58 @@ type public Fsc () as this =
     //            x64
     //            anycpu
     //            anycpu32bitpreferred
-    member fsc.Platform
+    member _.Platform
         with get() = platform 
         and set(s) = platform <- s
 
     // indicator whether anycpu32bitpreferred is applicable or not
-    member fsc.Prefer32Bit
+    member _.Prefer32Bit
         with get() = prefer32bit 
         and set(s) = prefer32bit <- s
 
-    member fsc.PreferredUILang
+    member _.PreferredUILang
         with get() = preferredUILang 
         and set(s) = preferredUILang <- s
 
-    member fsc.ProvideCommandLineArgs
+    member _.ProvideCommandLineArgs
         with get() = provideCommandLineArgs
         and set(p) = provideCommandLineArgs <- p
 
-    member fsc.PublicSign
+    member _.PublicSign
         with get() = publicSign 
         and set(s) = publicSign <- s
 
     // -r <string>: Reference an F# or .NET assembly.
-    member fsc.References
+    member _.References
         with get() = references
         and set(a) = references <- a
 
     // --lib
-    member fsc.ReferencePath
+    member _.ReferencePath
         with get() = referencePath
         and set(s) = referencePath <- s
 
     // --resource <string>: Embed the specified managed resources (.resource).
     //   Produce .resource files from .resx files using resgen.exe or resxc.exe.
-    member fsc.Resources
+    member _.Resources
         with get() = resources
         and set(a) = resources <- a
 
-    member fsc.SkipCompilerExecution
+    member _.SkipCompilerExecution
         with get() = skipCompilerExecution
         and set(p) = skipCompilerExecution <- p
 
     // SourceLink
-    member fsc.SourceLink  
+    member _.SourceLink  
         with get() = sourceLink 
         and set(s) = sourceLink <- s
 
     // source files 
-    member fsc.Sources
+    member _.Sources
         with get() = sources
         and set(a) = sources <- a
 
-    member fsc.TargetProfile
+    member _.TargetProfile
         with get() = targetProfile
         and set(p) = targetProfile <- p
 
@@ -476,90 +486,95 @@ type public Fsc () as this =
     //      stdin/stdout/stderr
     // --target library: Produce a DLL
     // --target module: Produce a module that can be added to another assembly
-    member fsc.TargetType
+    member _.TargetType
         with get() = targetType
         and set(s) = targetType <- s
 
-    member fsc.TreatWarningsAsErrors
+    member _.TreatWarningsAsErrors
         with get() = treatWarningsAsErrors
         and set(p) = treatWarningsAsErrors <- p
 
     // When set to true, generate resource names in the same way as C# with root namespace and folder names
-    member fsc.UseStandardResourceNames
+    member _.UseStandardResourceNames
         with get() = useStandardResourceNames
         and set(s) = useStandardResourceNames <- s
 
     // --version-file <string>: 
-    member fsc.VersionFile
+    member _.VersionFile
         with get() = versionFile
         and set(s) = versionFile <- s
 
     // For specifying a win32 icon file (.ico)
-    member fsc.Win32IconFile
+    member _.Win32IconFile
         with get() = win32icon
         and set(s) = win32icon <- s
 
     // For specifying a win32 native resource file (.res)
-    member fsc.Win32ResourceFile
+    member _.Win32ResourceFile
         with get() = win32res
         and set(s) = win32res <- s
 
     // For specifying a win32 manifest file
-    member fsc.Win32ManifestFile
+    member _.Win32ManifestFile
         with get() = win32manifest
         and set(m) = win32manifest <- m
 
     // For specifying the warning level (0-4)
-    member fsc.WarningLevel
+    member _.WarningLevel
         with get() = warningLevel
         and set(s) = warningLevel <- s
 
-    member fsc.WarningsAsErrors 
+    member _.WarningsAsErrors 
         with get() = warningsAsErrors
         and set(s) = warningsAsErrors <- s
 
-    member fsc.WarningsNotAsErrors
+    member _.WarningsNotAsErrors
         with get() = warningsNotAsErrors
         and set(s) = warningsNotAsErrors <- s
 
-    member fsc.WarnOn 
+    member _.WarnOn 
         with get() = warnOn
         and set(s) = warnOn <- s
 
-    member fsc.VisualStudioStyleErrors
+    member _.VisualStudioStyleErrors
         with get() = vserrors
         and set(p) = vserrors <- p
 
-    member fsc.Utf8Output
+    member _.Utf8Output
         with get() = utf8output
         and set(p) = utf8output <- p
 
-    member fsc.SubsystemVersion
+    member _.SubsystemVersion
         with get() = subsystemVersion
         and set(p) = subsystemVersion <- p
 
-    member fsc.HighEntropyVA
+    member _.HighEntropyVA
         with get() = highEntropyVA
         and set(p) = highEntropyVA <- p
 
     [<Output>]
-    member fsc.CommandLineArgs
+    member _.CommandLineArgs
         with get() = List.toArray commandLineArgs
         and set(p) = commandLineArgs <- (List.ofArray p)
 
     // ToolTask methods
-    override fsc.ToolName = "fsc.exe" 
-    override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
-    override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
+    override _.ToolName = "fsc.exe" 
+
+    override _.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
+
+    override _.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
+
     override fsc.GenerateFullPathToTool() =
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)
+
     override fsc.LogToolCommand (message:string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
 
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool()             // expose for unit testing
-    member internal fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
+
+    member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
     /// Intercept the call to ExecuteTool to handle the host compile case.
@@ -601,12 +616,15 @@ type public Fsc () as this =
                     Debug.Fail("HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. " + (e.ToString()))
                     reraise()
 
-    override fsc.GenerateCommandLineCommands() =
+    override _.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then builder.AppendSwitch(dotnetFscCompilerPath)
+        match dotnetFscCompilerPath with
+        | Null | "" -> ()
+        | NonNull dotnetFscCompilerPath ->
+            builder.AppendSwitch(dotnetFscCompilerPath)
         builder.ToString()
 
-    override fsc.GenerateResponseFileCommands() =
+    override _.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 

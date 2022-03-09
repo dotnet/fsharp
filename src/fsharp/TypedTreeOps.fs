@@ -2966,13 +2966,23 @@ let fullNameOfParentOfValRefAsLayout vref =
 
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
-let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
-let fullDisplayTextOfTyconRefAsLayout r = fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRef r = fullNameOfEntityRef (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRefAsLayout r = fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfModRef r =
+    fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
 
-let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) = fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
-let fullDisplayTextOfRecdFieldRef (rfref: RecdFieldRef) = fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
+let fullDisplayTextOfTyconRefAsLayout r =
+    fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
+let fullDisplayTextOfExnRef r =
+    fullNameOfEntityRef (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
+let fullDisplayTextOfExnRefAsLayout r =
+    fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
+let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) =
+    fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
+
+let fullDisplayTextOfRecdFieldRef (rfref: RecdFieldRef) =
+    fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
 
 let fullDisplayTextOfValRef (vref: ValRef) = 
     match fullNameOfParentOfValRef vref with 
@@ -3597,15 +3607,26 @@ module DebugPrint =
         match stripTyparEqns ty with
         | TType_forall (typars, rty) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env rty) |> wrap
+
         | TType_ucase (UnionCaseRef(tcref, _), tinst)
+
         | TType_app (tcref, tinst) -> 
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
-        | TType_anon (anonInfo, tys) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
-        | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
-        | TType_fun (f, x) -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
-        | TType_var typar -> auxTyparWrapL env isAtomic typar 
+
+        | TType_tuple (_tupInfo, tys) ->
+            sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+
+        | TType_fun (f, x) ->
+            ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
+
+        | TType_var typar ->
+            auxTyparWrapL env isAtomic typar 
+
+        | TType_anon (anonInfo, tys) ->
+            braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
+
         | TType_measure unt -> 
 #if DEBUG
           leftL (tagText "{") ^^
@@ -3617,7 +3638,7 @@ module DebugPrint =
              let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
              let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
              let unparL (uv: Typar) = wordL (tagText ("'" + uv.DisplayName))
-             let unconL tc = layoutTyconRef tc
+             let unconL tcref = layoutTyconRef tcref
              let rationalL e = wordL (tagText(RationalToString e))
              let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
              let prefix =
@@ -4021,8 +4042,8 @@ module DebugPrint =
                 wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
             | Expr.Op (TOp.Tuple _, _, xs, _) -> 
                 tupleL (List.map exprL xs)
-            | Expr.Op (TOp.Recd (ctor, tc), _, xs, _) -> 
-                let fields = tc.TrueInstanceFieldsAsList
+            | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _) -> 
+                let fields = tcref.TrueInstanceFieldsAsList
                 let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
                 let ctorL = 
                     match ctor with
@@ -7337,8 +7358,6 @@ let mkCallBox (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.box
 
 let mkCallIsNull (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnull_info, [[ty]], [ e1 ], m)
 
-let mkCallIsNotNull (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
-
 let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.raise_info, [[ty]], [ e1 ], m)
 
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
@@ -7603,7 +7622,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.

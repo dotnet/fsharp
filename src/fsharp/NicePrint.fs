@@ -1057,11 +1057,13 @@ module PrintTypes =
     /// retTy: return type
     /// genParamTy: generic parameter types
     let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =
+
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
             let typars = argInfos |> List.choose (function TType.TType_var typar,_ -> Some typar | _ -> None)
             let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
+
         let retTy = instType typarInst retTy
         let argInfos = prettyArgInfos denv typarInst argInfos
         let argInfos,retTy,genParamTys, cxs =
@@ -2485,7 +2487,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
             let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
-            sprintf "%s%s" (stringOfTy denv t1) assemblyName
+            sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName t1, makeName t2, stringOfTyparConstraints denv tpcs)
     

@@ -456,11 +456,11 @@ type internal TypeCheckInfo
               let ad =
                 match vref.BaseOrThisInfo, ad with
                 | ValBaseOrThisInfo.NormalVal, AccessibleFrom(paths, Some tcref) ->
-                    let tcref = generalizedTyconRef g tcref
+                    let thisTy = generalizedTyconRef g tcref
                     // check that type of value is the same or subtype of tcref
                     // yes - allow access to protected members
                     // no - strip ability to access protected members
-                    if TypeRelations.TypeFeasiblySubsumesType 0 g amap m tcref TypeRelations.CanCoerce ty then
+                    if TypeRelations.TypeFeasiblySubsumesType 0 g amap m thisTy TypeRelations.CanCoerce ty then
                         ad
                     else
                         AccessibleFrom(paths, None)
@@ -1781,9 +1781,15 @@ module internal ParseAndCheckFile =
             // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
             loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
 
-            let fileOfBackgroundError err = (match GetRangeOfDiagnostic (fst err) with Some m-> m.FileName | None -> null)
+            let fileOfBackgroundError err =
+               match GetRangeOfDiagnostic (fst err) with
+               | Some m -> Some m.FileName
+               | None -> None
+
             let sameFile file hashLoadInFile =
-                (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
+                match file with
+                | None -> false
+                | Some file -> (0 = String.Compare(hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
             //  walk the list of #loads and keep the ones for this file.
             let hashLoadsInFile =

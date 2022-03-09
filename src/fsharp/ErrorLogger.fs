@@ -231,7 +231,6 @@ type PhasedDiagnostic =
         | BuildPhaseSubcategory.Parameter 
         | BuildPhaseSubcategory.Parse 
         | BuildPhaseSubcategory.TypeCheck -> true
-        | null 
         | BuildPhaseSubcategory.DefaultPhase 
         | BuildPhaseSubcategory.CodeGen 
         | BuildPhaseSubcategory.Optimize 
@@ -317,8 +316,7 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
-            | Null -> (* assert false; *) BuildPhase.DefaultPhase
+            | Null -> BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             

@@ -21,44 +21,44 @@ type public Fsi () as this =
 
     inherit ToolTask ()
 
-    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
-    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable codePage : string = null
-    let mutable commandLineArgs : ITaskItem list = []
-    let mutable defineConstants : ITaskItem[] = [||]
-    let mutable disabledWarnings : string = null
-    let mutable dotnetFsiCompilerPath : string = null
+    let mutable capturedArguments: string list = []  // list of individual args, to pass to HostObject Compile()
+    let mutable capturedFilenames: string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable codePage: string MaybeNull = null
+    let mutable commandLineArgs: ITaskItem list = []
+    let mutable defineConstants: ITaskItem[] = [||]
+    let mutable disabledWarnings: string MaybeNull = null
+    let mutable dotnetFsiCompilerPath: string MaybeNull = null
     let mutable fsiExec = false
-    let mutable langVersion : string = null
+    let mutable langVersion: string MaybeNull = null
     let mutable noFramework = false
     let mutable optimize = true
-    let mutable otherFlags : string = null
+    let mutable otherFlags: string MaybeNull = null
     let mutable preferredUILang = null
     let mutable provideCommandLineArgs = false
-    let mutable references : ITaskItem[] = [||]
-    let mutable referencePath : string = null
-    let mutable resources : ITaskItem[] = [||]
+    let mutable references: ITaskItem[] = [||]
+    let mutable referencePath: string MaybeNull = null
+    let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
-    let mutable sources : ITaskItem[] = [||]
-    let mutable loadSources : ITaskItem[] = [||]
-    let mutable useSources : ITaskItem[] = [||]
-    let mutable tailcalls : bool = true
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
-    let mutable toolExe : string = "fsi.exe"
-    let mutable toolPath : string =
+    let mutable sources: ITaskItem[] = [||]
+    let mutable loadSources: ITaskItem[] = [||]
+    let mutable useSources: ITaskItem[] = [||]
+    let mutable tailcalls: bool = true
+    let mutable targetProfile: string MaybeNull = null
+    let mutable targetType: string MaybeNull = null
+    let mutable toolExe: string = "fsi.exe"
+    let mutable toolPath: string =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
             with _ -> None
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
-    let mutable treatWarningsAsErrors : bool = false
-    let mutable warningsAsErrors : string = null
-    let mutable warningsNotAsErrors : string = null
-    let mutable warningLevel : string = null
-    let mutable vslcid : string = null
-    let mutable utf8output : bool = false
+    let mutable treatWarningsAsErrors: bool = false
+    let mutable warningsAsErrors: string MaybeNull = null
+    let mutable warningsNotAsErrors: string MaybeNull = null
+    let mutable warningLevel: string MaybeNull = null
+    let mutable vslcid: string MaybeNull = null
+    let mutable utf8output: bool = false
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
@@ -71,9 +71,8 @@ type public Fsi () as this =
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         if noFramework then builder.AppendSwitch("--noframework")
 
-        if defineConstants <> null then
-            for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+        for item in defineConstants do
+            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
 
         if optimize then builder.AppendSwitch("--optimize+")
         else builder.AppendSwitch("--optimize-")
@@ -81,19 +80,13 @@ type public Fsi () as this =
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
 
-        if references <> null then 
-            for item in references do
-                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
-
-        let referencePathArray = // create a array of strings
-            match referencePath with
-            | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+        for item in references do
+            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
 
         // NoWarn
         match disabledWarnings with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull disabledWarnings -> builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
 
@@ -102,14 +95,14 @@ type public Fsi () as this =
         // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [| "76" |]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | Null -> [| "76" |]
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         match warningsNotAsErrors with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull warningsNotAsErrors -> builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
 
@@ -122,13 +115,11 @@ type public Fsi () as this =
 
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
-        if loadSources <> null then
-            for item in loadSources do
-                builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
+        for item in loadSources do
+            builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
 
-        if useSources <> null then 
-            for item in useSources do
-                builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
+        for item in useSources do
+            builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -143,139 +134,144 @@ type public Fsi () as this =
         builder
 
     // --codepage <int>: Specify the codepage to use when opening source files
-    member fsc.CodePage
+    member _.CodePage
         with get() = codePage
         and set(s) = codePage <- s
 
     // --nowarn <string>: Do not report the given specific warning.
-    member fsi.DisabledWarnings
+    member _.DisabledWarnings
         with get() = disabledWarnings
         and set(a) = disabledWarnings <- a
 
     // --define <string>: Define the given conditional compilation symbol.
-    member fsi.DefineConstants
+    member _.DefineConstants
         with get() = defineConstants
         and set(a) = defineConstants <- a
 
-    member fsi.DotnetFsiCompilerPath  
+    member _.DotnetFsiCompilerPath  
         with get() = dotnetFsiCompilerPath
         and set(p) = dotnetFsiCompilerPath <- p
 
-    member fsi.FsiExec
+    member _.FsiExec
         with get() = fsiExec
         and set(p) = fsiExec <- p
 
-    member fsi.LCID
+    member _.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
 
-    member fsc.LangVersion
+    member _.LangVersion
         with get() = langVersion
         and set(s) = langVersion <- s
 
     // --noframework
-    member fsi.NoFramework
+    member _.NoFramework
         with get() = noFramework 
         and set(b) = noFramework <- b
 
     // --optimize
-    member fsi.Optimize
+    member _.Optimize
         with get() = optimize
         and set(p) = optimize <- p
 
     // --tailcalls
-    member fsi.Tailcalls
+    member _.Tailcalls
         with get() = tailcalls
         and set(p) = tailcalls <- p
 
-    member fsi.OtherFlags
+    member _.OtherFlags
         with get() = otherFlags
         and set(s) = otherFlags <- s
 
-    member fsi.PreferredUILang
+    member _.PreferredUILang
         with get() = preferredUILang 
         and set(s) = preferredUILang <- s
 
-    member fsi.ProvideCommandLineArgs
+    member _.ProvideCommandLineArgs
         with get() = provideCommandLineArgs
         and set(p) = provideCommandLineArgs <- p
 
     // -r <string>: Reference an F# or .NET assembly.
-    member fsi.References
+    member _.References
         with get() = references
         and set(a) = references <- a
 
     // --lib
-    member fsi.ReferencePath
+    member _.ReferencePath
         with get() = referencePath
         and set(s) = referencePath <- s
 
     // -load:<string>: load an F# source file
-    member fsi.LoadSources
+    member _.LoadSources
         with get() = loadSources
         and set(a) = loadSources <- a
 
-    member fsi.SkipCompilerExecution
+    member _.SkipCompilerExecution
         with get() = skipCompilerExecution
         and set(p) = skipCompilerExecution <- p
 
     // source files 
-    member fsi.Sources
+    member _.Sources
         with get() = sources
         and set(a) = sources <- a
 
-    member fsi.TargetProfile
+    member _.TargetProfile
         with get() = targetProfile
         and set(p) = targetProfile <- p
 
-    member fsi.TreatWarningsAsErrors
+    member _.TreatWarningsAsErrors
         with get() = treatWarningsAsErrors
         and set(p) = treatWarningsAsErrors <- p
         
     // For targeting other folders for "fsi.exe" (or ToolExe if different)
-    member fsi.ToolPath
+    member _.ToolPath
         with get() = toolPath
         and set(s) = toolPath <- s
 
     // --use:<string>: execute an F# source file on startup
-    member fsi.UseSources
+    member _.UseSources
         with get() = useSources
         and set(a) = useSources <- a
 
     // For specifying the warning level (0-4)
-    member fsi.WarningLevel
+    member _.WarningLevel
         with get() = warningLevel
         and set(s) = warningLevel <- s
 
-    member fsi.WarningsAsErrors 
+    member _.WarningsAsErrors 
         with get() = warningsAsErrors
         and set(s) = warningsAsErrors <- s
 
-    member fsi.WarningsNotAsErrors
+    member _.WarningsNotAsErrors
         with get() = warningsNotAsErrors
         and set(s) = warningsNotAsErrors <- s
 
-    member fsi.Utf8Output
+    member _.Utf8Output
         with get() = utf8output
         and set(p) = utf8output <- p
 
     [<Output>]
-    member fsi.CommandLineArgs
+    member _.CommandLineArgs
         with get() = List.toArray commandLineArgs
         and set(p) = commandLineArgs <- (List.ofArray p)
 
     // ToolTask methods
-    override fsi.ToolName = "fsi.exe" 
-    override fsi.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
-    override fsi.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
+    override _.ToolName = "fsi.exe" 
+
+    override _.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
+
+    override _.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
+
     override fsi.GenerateFullPathToTool() = 
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsi.ToolExe)
+
     override fsi.LogToolCommand (message:string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
 
     member internal fsi.InternalGenerateFullPathToTool() = fsi.GenerateFullPathToTool()             // expose for unit testing
-    member internal fsi.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
+
+    member internal _.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
     /// Intercept the call to ExecuteTool to handle the host compile case.
@@ -293,7 +289,6 @@ type public Fsi () as this =
             match host with
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
-                let sources = sources|>Array.map(fun i->i.ItemSpec)
                 let invokeCompiler baseCallDelegate =
                     try
                         let ret =
@@ -307,22 +302,24 @@ type public Fsi () as this =
                     | :? TargetInvocationException as tie when not (isNull tie.InnerException) && (tie.InnerException).GetType().FullName = "Microsoft.Build.Exceptions.BuildAbortedException" ->
                         fsi.Log.LogError(tie.InnerException.Message, [| |])
                         -1
-                    | e -> reraise()
+                    | _ -> reraise()
 
                 let baseCallDelegate = Func<int>(fun () -> fsi.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try
                     invokeCompiler baseCallDelegate
-                with
-                | e ->
-                        Debug.Assert(false, "HostObject received by Fsi task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
-                        reraise()
+                with e ->
+                    Debug.Assert(false, "HostObject received by Fsi task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
+                    reraise()
 
-    override fsi.GenerateCommandLineCommands() =
+    override _.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFsiCompilerPath)) then builder.AppendSwitch(dotnetFsiCompilerPath)
+        match dotnetFsiCompilerPath with
+        | Null | "" -> ()
+        | NonNull dotnetFsiCompilerPath ->
+            builder.AppendSwitch(dotnetFsiCompilerPath)
         builder.ToString()
 
-    override fsi.GenerateResponseFileCommands() =
+    override _.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
         builder.GetCapturedArguments() |> String.concat Environment.NewLine
 

@@ -627,12 +627,12 @@ type CalledMeth<'T>
                             let pminfo = pinfo.SetterMethod
                             let pminst =
                                 match minfo with
-                                | MethInfo.FSMeth(_, TType.TType_app(_, types), _, _) -> types
+                                | MethInfo.FSMeth(_, TType_app(_, types), _, _) -> types
                                 | _ -> freshenMethInfo m pminfo
 
                             let pminst =
                                 match tyargsOpt with
-                                | Some(TType.TType_app(_, types)) -> types
+                                | Some(TType_app(_, types)) -> types
                                 | _ -> pminst
 
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
@@ -1743,8 +1743,8 @@ module ProvidedMethodCalls =
                     let baseType = 
                         st.PApply((fun st -> 
                             match st.BaseType with 
-                            | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
-                            | st -> st), m)
+                            | Null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
+                            | NonNull st -> st), m)
                     loop baseType
                 else
                     if isGeneric then 
@@ -1786,7 +1786,7 @@ module ProvidedMethodCalls =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
-            |  _ ->
+            | Tainted.NonNull ea ->
             let exprType = ea.PApplyOption((fun x -> x.GetExprType()), m)
             let exprType = match exprType with | Some exprType -> exprType | None -> fail()
             match exprType.PUntaint(id, m) with
