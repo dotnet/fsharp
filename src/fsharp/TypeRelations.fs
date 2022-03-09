@@ -63,7 +63,7 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     | TType_var _, _  
     | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2 ->
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
@@ -76,8 +76,9 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) d1 d2 && (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) r1 r2
+    | TType_fun (d1, r1, _), TType_fun (d2, r2, _) -> 
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m d1 d2 &&
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m r1 r2
 
     | TType_measure _, TType_measure _ ->
         true
@@ -101,12 +102,13 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     match ty1, ty2 with 
     | TType_var _, _  | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->  
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
     | TType_tuple _, TType_tuple _
     | TType_anon _, TType_anon _
-    | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
+    | TType_fun _, TType_fun _ ->
+        TypesFeasiblyEquiv ndeep g amap m ty1 ty2
 
     | TType_measure _, TType_measure _ ->
         true

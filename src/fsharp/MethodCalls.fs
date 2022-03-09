@@ -627,12 +627,12 @@ type CalledMeth<'T>
                             let pminfo = pinfo.SetterMethod
                             let pminst =
                                 match minfo with
-                                | MethInfo.FSMeth(_, TType_app(_, types), _, _) -> types
+                                | MethInfo.FSMeth(_, TType_app(_, types, _), _, _) -> types
                                 | _ -> freshenMethInfo m pminfo
 
                             let pminst =
                                 match tyargsOpt with
-                                | Some(TType_app(_, types)) -> types
+                                | Some(TType_app(_, types, _)) -> types
                                 | _ -> pminst
 
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))

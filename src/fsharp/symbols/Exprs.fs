@@ -306,7 +306,7 @@ module FSharpExprConvert =
     let (|TTypeConvOp|_|) (cenv: SymbolEnv) ty = 
         let g = cenv.g
         match ty with
-        | TType_app (tcref,_) ->
+        | TType_app (tcref, _, _) ->
             match tcref with
             | _ when tyconRefEq g tcref g.sbyte_tcr      -> Some mkCallToSByteOperator
             | _ when tyconRefEq g tcref g.byte_tcr       -> Some mkCallToByteOperator
@@ -792,7 +792,7 @@ module FSharpExprConvert =
                 let op2 = convertOp2 g m ty2 op1
                 ConvExprPrim cenv env op2
 
-            | TOp.ILAsm ([ ILConvertOp convertOp ], [TType_app (tcref,_)]), _, [arg] -> 
+            | TOp.ILAsm ([ ILConvertOp convertOp ], [TType_app (tcref, _, _)]), _, [arg] -> 
                 let ty = tyOfExpr g arg
                 let op =
                     if tyconRefEq g tcref g.char_tcr then

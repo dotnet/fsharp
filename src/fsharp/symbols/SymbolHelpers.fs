@@ -433,7 +433,7 @@ module internal SymbolHelpers =
         | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
         | Item.NewDef _ -> FSharpXmlDoc.None
         | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
-        | Item.Types(_, TType_app(tcref, _) :: _) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.Types(_, TType_app(tcref, _, _) :: _) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
         | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
         | Item.TypeVar _  -> FSharpXmlDoc.None
         | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
@@ -557,11 +557,11 @@ module internal SymbolHelpers =
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   (meths1, meths2)
                   ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
-                  (tcRefs1, tcRefs2)
-                  ||> List.forall2 (fun tcRef1 tcRef2 -> tyconRefEq g tcRef1 tcRef2)
-              | Item.Types(_, [TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
-              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
+              | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
+                  (tcrefs1, tcrefs2)
+                  ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
+              | Item.Types(_, [TType_app(tcref1, _, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
+              | Item.UnqualifiedType([tcref1]), Item.Types(_, [TType_app(tcref2, _, _)]) -> tyconRefEq g tcref1 tcref2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -723,7 +723,7 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, minfo :: _, _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
-        | Item.Types(_, TType_app(tcref, _) :: _) -> 
+        | Item.Types(_, TType_app(tcref, _, _) :: _) -> 
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
 
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
@@ -767,7 +767,7 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, TType_app(tcref, _) :: _)
+            | Item.Types(_, TType_app(tcref, _, _) :: _)
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef g tcref
                 ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute

@@ -757,7 +757,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
               let retTy =
                   knownReturnType
-                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+                  |> Option.defaultValue (TType_var (Typar.NewUnlinked(), 0uy))
 
               let argRepr =
                   callerArgs.ArgumentNamesAndTypes
@@ -1326,7 +1326,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts ->
+                  | TType_app (maybeUnit, [], _) :: ts ->
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1334,7 +1334,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ ->

@@ -140,7 +140,7 @@ module internal PrintUtilities =
         elif xref.IsTypeAbbrev then
             let ty = xref.TypeAbbrev.Value
             match stripTyEqns denv.g ty with
-            | TType_app(tcref, _) when tcref.IsStructOrEnumTycon ->
+            | TType_app(tcref, _, _) when tcref.IsStructOrEnumTycon ->
                 tagStruct name
             | _ ->
                 tagAlias name
@@ -833,24 +833,24 @@ module PrintTypes =
         match stripTyparEqns ty with 
 
         // Always prefer to format 'byref<ty, ByRefKind.In>' as 'inref<ty>'
-        | ty when isInByrefTy g ty && (match ty with TType_app (tc, _) when g.inref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isInByrefTy g ty && (match ty with TType_app (tc, _, _) when g.inref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy g (destByrefTy g ty))
 
         // Always prefer to format 'byref<ty, ByRefKind.Out>' as 'outref<ty>'
-        | ty when isOutByrefTy g ty && (match ty with TType_app (tc, _) when g.outref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isOutByrefTy g ty && (match ty with TType_app (tc, _, _) when g.outref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy g (destByrefTy g ty))
 
         // Always prefer to format 'byref<ty, ByRefKind.InOut>' as 'byref<ty>'
-        | ty when isByrefTy g ty && (match ty with TType_app (tc, _) when g.byref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isByrefTy g ty && (match ty with TType_app (tc, _, _) when g.byref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkByrefTy g (destByrefTy g ty))
 
         // Always prefer 'float' to 'float<1>'
-        | TType_app (tc, args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
+        | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args)
-        | TType_app (tc, args) ->
+        | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
 
@@ -886,7 +886,7 @@ module PrintTypes =
             bracketIfL (prec <= 4) funcTyL
 
         // Layout a type variable . 
-        | TType_var r ->
+        | TType_var (r, _) ->
             layoutTyparRefWithInfo denv env r
 
         | TType_measure unt -> layoutMeasure denv unt
@@ -1060,7 +1060,7 @@ module PrintTypes =
 
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
-            let typars = argInfos |> List.choose (function TType.TType_var typar,_ -> Some typar | _ -> None)
+            let typars = argInfos |> List.choose (function TType_var (typar, _),_ -> Some typar | _ -> None)
             let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
 

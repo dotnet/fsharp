@@ -96,7 +96,7 @@ let GetSuperTypeOfType g amap m ty =
             None
 
 /// Make a type for System.Collections.Generic.IList<ty>
-let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList, [ty])
+let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList, [ty], 0uy)
 
 /// Indicates whether we can skip interface types that lie outside the reference set
 [<RequireQualifiedAccess>]
@@ -1566,7 +1566,7 @@ type MethInfo =
             let formalRetTy, formalParams =
                 match x with
                 | ILMeth(_, ilminfo, _) ->
-                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys))
+                    let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, 0uy))
                     let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type ilminfo.RawMetadata.Return.CustomAttrs ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
@@ -1825,7 +1825,7 @@ type RecdFieldInfo =
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type
-    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst)
+    member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, 0uy)
 
     override x.ToString() = x.TyconRef.ToString() + "::" + x.LogicalName
 

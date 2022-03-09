@@ -109,7 +109,7 @@ let NewErrorMeasure () =
 let NewByRefKindInferenceType (g: TcGlobals) m = 
     let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], 0uy), m)]
     mkTyparTy tp
 
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
@@ -358,14 +358,13 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 let rec occursCheck g un ty = 
     match stripTyEqns g ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_anon(_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
-    | TType_fun (d, r) -> occursCheck g un d || occursCheck g un r
-    | TType_var r   ->  typarEq un r 
+    | TType_fun (d, r, _) -> occursCheck g un d || occursCheck g un r
+    | TType_var (r, _) ->  typarEq un r 
     | TType_forall (_, tau) -> occursCheck g un tau
     | _ -> false 
-
 
 //-------------------------------------------------------------------------
 // Predicates on types
@@ -837,13 +836,20 @@ let SimplifyMeasure g vars ms =
 let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as param) ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_anon (_,l)
     | TType_tuple (_, l) -> SimplifyMeasuresInTypes g param l
 
-    | TType_fun (d, r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
-    | TType_var _   -> param
+    | TType_fun (d, r, _) ->
+        if resultFirst then
+            SimplifyMeasuresInTypes g param [r;d]
+        else
+            SimplifyMeasuresInTypes g param [d;r]        
+
+    | TType_var _ -> param
+
     | TType_forall (_, tau) -> SimplifyMeasuresInType g resultFirst param tau
+
     | TType_measure unt -> 
         let generalizable', newlygeneralized = SimplifyMeasure g generalizable unt   
         match newlygeneralized with
@@ -875,11 +881,11 @@ let rec SimplifyMeasuresInConstraints g param cs =
 let rec GetMeasureVarGcdInType v ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
-    | TType_app (_, l) 
+    | TType_app (_, l, _) 
     | TType_anon (_,l)
     | TType_tuple (_, l) -> GetMeasureVarGcdInTypes v l
 
-    | TType_fun (d, r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
+    | TType_fun (d, r, _) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
@@ -1039,7 +1045,8 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     let m = csenv.m
     do! DepthCheck ndeep m
     match ty1 with 
-    | TType_var r | TType_measure (Measure.Var r) ->
+    | TType_var (r, _)
+    | TType_measure (Measure.Var r) ->
         do! SolveTyparEqualsTypePart1 csenv m2 trace ty1 r ty 
         do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
     | _ -> failwith "SolveTyparEqualsType"
@@ -1049,12 +1056,19 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
 and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tptys tys = trackErrors {
     do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
             match tpty with 
-            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart1 csenv m2 trace tpty r ty 
-            | _ -> failwith "SolveTyparsEqualTypes")
+            | TType_var (r, _)
+            | TType_measure (Measure.Var r) ->
+                SolveTyparEqualsTypePart1 csenv m2 trace tpty r ty 
+            | _ ->
+                failwith "SolveTyparsEqualTypes")
+
     do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
             match tpty with 
-            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
-            | _ -> failwith "SolveTyparsEqualTypes")
+            | TType_var (r, _)
+            | TType_measure (Measure.Var r) ->
+                SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
+            | _ ->
+                failwith "SolveTyparsEqualTypes")
  }
 
 and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
@@ -1120,40 +1134,50 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     match sty1, sty2 with 
 
     // type vars inside forall-types may be alpha-equivalent 
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) ->
+    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) ->
         CompleteD
 
     // 'v1 = 'v2
-    | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 ->
+    | TType_var (tp1, _), TType_var (tp2, _) when PreferUnifyTypar tp1 tp2 ->
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
 
     // 'v1 = 'v2
-    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
+    | TType_var (tp1, _), TType_var (tp2, _) when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
         SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
-    | TType_var r, _ when not (IsRigid csenv r) ->
+    | TType_var (r, _), _ when not (IsRigid csenv r) ->
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
 
-    | _, TType_var r when not csenv.MatchingOnly && not (IsRigid csenv r) ->
+    | _, TType_var (r, _) when not csenv.MatchingOnly && not (IsRigid csenv r) ->
         SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
-    | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
-    | TType_app (tc2, [ms]), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
+    | _, TType_app (tc2, [ms], _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms])) ->
+        SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
-    | TType_app _, TType_app _   ->  localAbortD
-    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
+    | TType_app (tc2, [ms], _), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms])) ->
+        SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
+
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
+    | TType_app _, TType_app _ ->
+        localAbortD
+
+    | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2) -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
-    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> 
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2
-    | TType_measure ms1, TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
+
+    | TType_fun (d1, r1, _), TType_fun (d2, r2, _) ->
+        SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2
+
+    | TType_measure ms1, TType_measure ms2 ->
+        UnifyMeasures csenv trace ms1 ms2
+
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
         let aenv = aenv.BindEquivTypars tps1 tps2 
@@ -1213,16 +1237,17 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     let denv = csenv.DisplayEnv
 
     match sty1, sty2 with 
-    | TType_var tp1, _ ->
+    | TType_var (tp1, _), _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some v -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln v ty2
         | _ ->
         match sty2 with
-        | TType_var r2 when typarEq tp1 r2 -> CompleteD
-        | TType_var r when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
+        | TType_var (r2, _) when typarEq tp1 r2 -> CompleteD
+        | TType_var (r, _) when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
         | _ ->  SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
 
-    | _, TType_var r when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
+    | _, TType_var (r, _) when not csenv.MatchingOnly ->
+        SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
 
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
@@ -1232,31 +1257,33 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
+    | TType_fun (d1, r1, _), TType_fun (d2, r2, _) ->
+        SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
 
-    | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
+    | TType_measure ms1, TType_measure ms2 ->
+        UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
-    | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
+    | _, TType_app (tc2, [ms], _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms])) ->
+        SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
 
-    | TType_app (tc2, [ms]), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
-        -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
+    | TType_app (tc2, [ms], _), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms])) ->
+        SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
 
     // Special subsumption rule for byref tags
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
         match l1, l2 with 
         | [ h1; tag1 ], [ h2; tag2 ] -> trackErrors {
             do! SolveTypeEqualsType csenv ndeep m2 trace None h1 h2
             match stripTyEqnsA csenv.g canShortcut tag1, stripTyEqnsA csenv.g canShortcut tag2 with 
-            | TType_app(tagc1, []), TType_app(tagc2, []) 
+            | TType_app(tagc1, [], _), TType_app(tagc2, [], _) 
                 when (tyconRefEq g tagc2 g.byrefkind_InOut_tcr && 
                       (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> ()
             | _ -> return! SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2
            }
         | _ -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> 
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
 
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 

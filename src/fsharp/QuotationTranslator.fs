@@ -990,11 +990,11 @@ and FilterMeasureTyargs tys =
 and ConvType cenv env m ty =
     let g = cenv.g
     match stripTyEqnsAndMeasureEqns g ty with
-    | TType_app(tcref, [tyarg]) when isArrayTyconRef g tcref ->
+    | TType_app(tcref, [tyarg], _) when isArrayTyconRef g tcref ->
         QP.mkArrayTy(rankOfArrayTyconRef g tcref, ConvType cenv env m tyarg)
 
     | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
-    | TType_app(tcref, tyargs) ->
+    | TType_app(tcref, tyargs, _) ->
 #if !NO_EXTENSIONTYPING
         match TryElimErasableTyconRef cenv m tcref with
         | Some baseTy -> ConvType cenv env m baseTy
@@ -1002,7 +1002,7 @@ and ConvType cenv env m ty =
 #endif
         QP.mkILNamedTy(ConvTyconRef cenv tcref m, ConvTypes cenv env m tyargs)
 
-    | TType_fun(a, b) -> 
+    | TType_fun(a, b, _) -> 
         QP.mkFunTy(ConvType cenv env m a, ConvType cenv env m b)
 
     | TType_tuple(tupInfo, l)  -> 
@@ -1013,7 +1013,7 @@ and ConvType cenv env m ty =
         let tinstR = ConvTypes cenv env m tinst
         QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
 
-    | TType_var(tp) ->
+    | TType_var(tp, _) ->
         QP.mkVarTy(ConvTyparRef cenv env m tp)
 
     | TType_forall(_spec, _ty) ->

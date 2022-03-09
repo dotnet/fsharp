@@ -1400,7 +1400,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, 
                 if MemberIsExplicitImpl g memberInfo then
                     let slotSig = List.head memberInfo.ImplementedSlotSigs
                     match slotSig.ImplementedType with
-                    | TType_app (tyconref, _) -> Some tyconref.Accessibility
+                    | TType_app (tyconref, _, _) -> Some tyconref.Accessibility
                     | _ -> None
                 else
                     None
@@ -1868,7 +1868,9 @@ let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars
       tps |> List.iter (fun tp -> tp.SetRigidity rigid)
 
     let renaming, tinst = FixupNewTypars m [] [] tpsorig tps
-    (TType_app(tcref, List.map mkTyparTy tpsorig), tps, renaming, TType_app(tcref, tinst))
+    let origTy = TType_app(tcref, List.map mkTyparTy tpsorig, 0uy)
+    let instTy = TType_app(tcref, tinst, 0uy)
+    origTy, tps, renaming, instTy
 
 let FreshenPossibleForallTy g m rigid ty = 
     let tpsorig, tau = tryDestForallTy g ty
@@ -1883,8 +1885,7 @@ let FreshenPossibleForallTy g m rigid ty =
 let FreshenTyconRef2 (g: TcGlobals) m (tcref: TyconRef) = 
     ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
     let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)
-    tps, renaming, tinst, TType_app (tcref, tinst)
-
+    tps, renaming, tinst, TType_app (tcref, tinst, 0uy)
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation
 /// to apply it as a constraint to the method that implements the abstract slot
@@ -4803,7 +4804,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
 
     match ty with
-    | TType_app(tcref, _) ->
+    | TType_app(tcref, _, _) ->
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -8568,7 +8569,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                             (currentIndex <> SEEN_NAMED_ARGUMENT) &&
                             (currentIndex < numArgTys) &&
                             match stripTyEqns g argTys.[currentIndex] with
-                            | TType_app(tcref, _) -> tyconRefEq g g.bool_tcr tcref || tyconRefEq g g.system_Bool_tcref tcref
+                            | TType_app(tcref, _, _) -> tyconRefEq g g.bool_tcr tcref || tyconRefEq g g.system_Bool_tcref tcref
                             | TType_var _ -> true
                             | _ -> false
 
