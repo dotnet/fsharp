@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Functions to map real paths to paths to be written to PDB/IL
+// Functions to map real paths to paths to be written to PDB/IL
 namespace Internal.Utilities
 
 type internal PathMap

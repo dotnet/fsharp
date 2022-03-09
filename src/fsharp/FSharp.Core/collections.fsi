@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>This namespace contains some common collections in a style primarily designed for use from F#.</summary>
-
+// This namespace contains some common collections in a style primarily designed for use from F#.
 namespace Microsoft.FSharp.Collections
 
 open Microsoft.FSharp.Core

@@ -2319,7 +2319,7 @@ namespace Microsoft.FSharp.Core
         //      0oOOOOOOO
         //      -0oOOOOOOO
         // without leading/trailing spaces.
-        ///
+        //
         // Note: Parse defaults to NumberStyles.Integer =  AllowLeadingWhite ||| AllowTrailingWhite ||| AllowLeadingSign
         // However, that is not the required behaviour of 'int32', 'int64' etc. when used on string
         // arguments: we explicitly disallow AllowLeadingWhite ||| AllowTrailingWhite 

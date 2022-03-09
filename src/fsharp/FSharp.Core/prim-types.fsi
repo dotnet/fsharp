@@ -3,7 +3,7 @@
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
 
-/// <summary>Basic F# type definitions, functions and operators </summary>
+// Basic F# type definitions, functions and operators
 namespace Microsoft.FSharp.Core
 
     open System

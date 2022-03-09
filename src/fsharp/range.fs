@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Anything to do with special names of identifiers and other lexical rules
+// Anything to do with special names of identifiers and other lexical rules
 namespace FSharp.Compiler.Text
 
 open System
