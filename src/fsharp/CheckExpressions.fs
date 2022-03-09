@@ -1861,31 +1861,29 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 //-------------------------------------------------------------------------
 
 let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars = 
-    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
-    let tpsorig = declaredTyconTypars
-    let tps = copyTypars tpsorig
+    let origTypars = declaredTyconTypars
+    let freshTypars = copyTypars origTypars
     if rigid <> TyparRigidity.Rigid then
-      tps |> List.iter (fun tp -> tp.SetRigidity rigid)
+        freshTypars |> List.iter (fun tp -> tp.SetRigidity rigid)
 
-    let renaming, tinst = FixupNewTypars m [] [] tpsorig tps
-    let origTy = TType_app(tcref, List.map mkTyparTy tpsorig, 0uy)
-    let instTy = TType_app(tcref, tinst, 0uy)
-    origTy, tps, renaming, instTy
+    let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
+    let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)
+    let freshTy = TType_app(tcref, tinst, g.knownWithoutNull)
+    origTy, freshTypars, renaming, freshTy
 
 let FreshenPossibleForallTy g m rigid ty = 
-    let tpsorig, tau = tryDestForallTy g ty
-    if isNil tpsorig then
+    let origTypars, tau = tryDestForallTy g ty
+    if isNil origTypars then
         [], [], [], tau
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
-        let tpsorig = NormalizeDeclaredTyparsForEquiRecursiveInference g tpsorig
-        let tps, renaming, tinst = CopyAndFixupTypars m rigid tpsorig
-        tpsorig, tps, tinst, instType renaming tau
+        let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars m rigid origTypars
+        origTypars, tps, tinst, instType renaming tau
 
 let FreshenTyconRef2 (g: TcGlobals) m (tcref: TyconRef) = 
-    ignore g // included for future, minimizing code diffs, see https://github.com/dotnet/fsharp/pull/6804
     let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)
-    tps, renaming, tinst, TType_app (tcref, tinst, 0uy)
+    tps, renaming, tinst, TType_app (tcref, tinst, g.knownWithoutNull)
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation
 /// to apply it as a constraint to the method that implements the abstract slot

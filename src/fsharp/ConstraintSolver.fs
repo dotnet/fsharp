@@ -109,7 +109,7 @@ let NewErrorMeasure () =
 let NewByRefKindInferenceType (g: TcGlobals) m = 
     let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.HeadType, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
-        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], 0uy), m)]
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull), m)]
     mkTyparTy tp
 
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 

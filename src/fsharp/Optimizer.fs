@@ -2068,8 +2068,11 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy (TType_app(g.tcref_System_Collections_IEnumerable, [], 0uy)) resultExpr
-                    | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
+                    | Some resultElemTy, None ->
+                        let iety = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
+                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy iety resultExpr
+                    | None, Some (resultElemTy, qTy) ->
+                        mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 
                 None
