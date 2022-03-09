@@ -1002,11 +1002,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.langFeatureNullness = v_langFeatureNullness
 
-  member g.knownWithoutNull = v_knownWithoutNull
-
   member _.langVersion = langVersion
 
-  // empty flags
   member _.knownWithoutNull = v_knownWithoutNull
 
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the

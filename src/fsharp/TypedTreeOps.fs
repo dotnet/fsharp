@@ -872,6 +872,8 @@ let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _)
 
 let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
 
+let nullnessOfTy g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> g.knownWithoutNull) 
+
 let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
 
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> ValueSome v | _ -> ValueNone)
@@ -1780,12 +1782,14 @@ let isByrefTy g ty =
         | _ -> false) 
 
 let isInByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_In_tcr tcref | _ -> false) 
+
 let isInByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
         | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isInByrefTag g tag         
         | _ -> false) 
 
 let isOutByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_Out_tcr tcref | _ -> false) 
+
 let isOutByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
         | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tag         
@@ -3740,9 +3744,12 @@ module DebugPrint =
         | TType_forall (typars, rty) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env rty) |> wrap
 
-        | TType_ucase (UnionCaseRef(tcref, _), tinst)
+        | TType_ucase (UnionCaseRef(tcref, _), tinst) ->
+           let prefix = tcref.IsPrefixDisplay
+           let tcL = layoutTyconRef tcref
+           auxTyparsL env tcL prefix tinst
 
-        | TType_app (tcref, tinst, nullness)   -> 
+        | TType_app (tcref, tinst, nullness) -> 
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            let coreL = auxTyparsL env tcL prefix tinst
