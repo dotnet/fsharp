@@ -969,10 +969,15 @@ module internal ExtensionTyping =
     and [<RequireQualifiedAccess; Class; Sealed>]
 #endif
         ProvidedExpr (x: Quotations.Expr, ctxt) =
+
         member _.Type = x.Type |> ProvidedType.Create ctxt
+
         member _.Handle = x
+
         member _.Context = ctxt
+
         member _.UnderlyingExpressionString = x.ToString()
+
         member _.GetExprType() =
             match x with
             | Quotations.Patterns.NewObject(ctor, args) ->
