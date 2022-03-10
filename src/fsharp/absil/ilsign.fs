@@ -116,7 +116,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         val mutable _offset:int
         new (blob:byte[]) = { _blob = blob; _offset = 0; }
 
-        member x.ReadInt32:int =
+        member x.ReadInt32() : int =
             let offset = x._offset
             x._offset <- offset + 4
             int x._blob.[offset] ||| (int x._blob.[offset + 1] <<< 8) ||| (int x._blob.[offset + 2] <<< 16) ||| (int x._blob.[offset + 3] <<< 24)
@@ -129,11 +129,11 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
     let RSAParamatersFromBlob (blob:byte[]) keyType =
         let mutable reader = BlobReader blob
-        if reader.ReadInt32 <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(getResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
-        reader.ReadInt32 |>ignore                                                                                                       // ALG_ID
-        if reader.ReadInt32 <> RSA_PRIV_MAGIC then raise (CryptographicException(getResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
+        if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(getResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
+        reader.ReadInt32()                                                                                                        // ALG_ID
+        if reader.ReadInt32() <> RSA_PRIV_MAGIC then raise (CryptographicException(getResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
         let byteLen, halfLen =
-            let bitLen = reader.ReadInt32
+            let bitLen = reader.ReadInt32()
             match bitLen % 16 with
             | 0 -> (bitLen / 8, bitLen / 16)
             | _ -> raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidBitLen())))
@@ -255,10 +255,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let mutable reader = BlobReader pk
         reader.ReadBigInteger 12 |> ignore                                                     // Skip CLRHeader
         reader.ReadBigInteger 8  |> ignore                                                     // Skip BlobHeader
-        let magic = reader.ReadInt32                                                           // Read magic
+        let magic = reader.ReadInt32()                                                           // Read magic
         if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then                          // RSAPubKey.magic
             raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidPKBlob())))
-        let x = reader.ReadInt32 / 8
+        let x = reader.ReadInt32() / 8
         x
 
     // Returns a CLR Format Blob public key
