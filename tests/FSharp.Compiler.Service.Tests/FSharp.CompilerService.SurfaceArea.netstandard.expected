@@ -10773,3 +10773,34 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Symbols.FSharpType: Boolean HasNullAnnotation
+FSharp.Compiler.Symbols.FSharpType: Boolean IsNullAmbivalent
+FSharp.Compiler.Symbols.FSharpType: Boolean get_HasNullAnnotation()
+FSharp.Compiler.Symbols.FSharpType: Boolean get_IsNullAmbivalent()
+FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynType+StaticConstantNull: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynType+Tags: Int32 StaticConstantNull
+FSharp.Compiler.Syntax.SynType+Tags: Int32 WithNull
+FSharp.Compiler.Syntax.SynType+WithNull: Boolean ambivalent
+FSharp.Compiler.Syntax.SynType+WithNull: Boolean get_ambivalent()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType get_innerType()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Syntax.SynType innerType
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynType+WithNull: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynType: Boolean IsStaticConstantNull
+FSharp.Compiler.Syntax.SynType: Boolean IsWithNull
+FSharp.Compiler.Syntax.SynType: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.Syntax.SynType: Boolean get_IsWithNull()
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNull(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithNull(FSharp.Compiler.Syntax.SynType, Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+StaticConstantNull
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+WithNull
+FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparNotSupportsNull
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar genericName
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Syntax.SynTypar get_genericName()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereTyparNotSupportsNull(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparNotSupportsNull
