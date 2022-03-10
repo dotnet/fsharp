@@ -130,7 +130,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     let RSAParamatersFromBlob (blob:byte[]) keyType =
         let mutable reader = BlobReader blob
         if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(getResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
-        reader.ReadInt32()                                                                                                        // ALG_ID
+        reader.ReadInt32() |> ignore                                                                                                      // ALG_ID
         if reader.ReadInt32() <> RSA_PRIV_MAGIC then raise (CryptographicException(getResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
         let byteLen, halfLen =
             let bitLen = reader.ReadInt32()
