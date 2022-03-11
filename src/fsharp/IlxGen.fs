@@ -1406,7 +1406,7 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
 let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
     List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
-and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
+and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
     let ilImports =
         [| 
           for openDecl in openDecls do
@@ -1415,9 +1415,9 @@ and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
                     ILDebugImport.ImportNamespace (fullDisplayTextOfModRef modul)
                 else
                     ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
-            //for t in openDecl.Types do
-            //    let m = defaultArg openDecl.Range Range.range0
-            //    ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
+            for t in openDecl.Types do
+                let m = defaultArg openDecl.Range Range.range0
+                ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
         |]
 
     if ilImports.Length = 0 then
