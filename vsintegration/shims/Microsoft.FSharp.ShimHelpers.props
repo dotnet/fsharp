@@ -24,7 +24,7 @@
     <Fsc_DotNET_ToolExe>dotnet.exe</Fsc_DotNET_ToolExe>
     <Fsc_DotNET_DotnetFscCompilerPath>$(Fsc_DotNet_CompilerPath)fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
     <Fsc_DotNET__FSharpCoreLibraryPacksFolder>$(Fsc_DotNet_CompilerPath)library-packs</Fsc_DotNET__FSharpCoreLibraryPacksFolder>
-    <Fsc_DotNET_FSCorePreviewPackageVersionNumber>{{FSharpCorePreviewPackageVersionValue}}</Fsc_DotNET_FSCorePreviewPackageVersionNumber>
+    <Fsc_DotNET_FSCorePreviewPackageVersionNumber>6.0.3</Fsc_DotNET_FSCorePreviewPackageVersionNumber>
 
     <FSharpCompilerPath>$(Fsc_NetFramework_ToolPath)</FSharpCompilerPath>
   </PropertyGroup>
