@@ -182,13 +182,19 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
     let rec writeILType (ilty: ILType) =
         match ilty with
-        | ILType.TypeVar n -> writeString "!"; writeUInt16 n
-        | ILType.Modified (_, _, ty2) -> writeILType ty2
+        | ILType.TypeVar n ->
+            writeString "!"
+            writeUInt16 n
+
+        | ILType.Modified (_, _, ty2) ->
+            writeILType ty2
+
         | ILType.Array (ILArrayShape s, ty) ->
             writeILType ty
             writeString "["
             writeInt32 (s.Length-1)
             writeString "]"
+
         | ILType.Value tr
         | ILType.Boxed tr ->
             tr.TypeRef.Enclosing
@@ -197,16 +203,20 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeChar '.')
             writeChar '.'
             writeString tr.TypeRef.Name
+
         | ILType.Void ->
             writeString "void"
+
         | ILType.Ptr ty ->
             writeString "ptr<"
             writeILType ty
             writeChar '>'
+
         | ILType.Byref ty ->
             writeString "byref<"
             writeILType ty
             writeChar '>'
+
         | ILType.FunctionPointer mref ->
             mref.ArgTypes
             |> List.iter (fun x ->
@@ -217,25 +227,32 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match stripTyparEqns ty with
         | TType_forall (_, ty) ->
             writeType false ty
-        | TType_app (tcref, _) ->
+
+        | TType_app (tcref, _, _) ->
             writeEntityRef tcref
+
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple
             tinst |> List.iter (writeType false)
+
         | TType_anon (anonInfo, tinst) ->
             writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
-        | TType_fun (d, r) ->
+
+        | TType_fun (d, r, _) ->
             writeString ItemKeyTags.typeFunction
             writeType false d
             writeType false r
+
         | TType_measure ms ->
             if isStandalone then
                 writeString ItemKeyTags.typeMeasure
                 writeMeasure isStandalone ms
-        | TType_var tp ->
+
+        | TType_var (tp, _) ->
             writeTypar isStandalone tp
+
         | TType_ucase (uc, _) ->
             match uc with
             | UnionCaseRef.UnionCaseRef(tcref, nm) ->

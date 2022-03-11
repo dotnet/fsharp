@@ -3359,7 +3359,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="failwith-example">
         /// <code lang="fsharp">
@@ -3380,7 +3380,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="invalidarg-example">
         /// <code lang="fsharp">
@@ -3403,7 +3403,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">
         /// <code lang="fsharp">

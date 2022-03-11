@@ -6,6 +6,7 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
@@ -2165,7 +2166,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool

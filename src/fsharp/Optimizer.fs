@@ -825,190 +825,229 @@ module Unchecked = Microsoft.FSharp.Core.Operators
 /// in the core library used by the F# compiler will propagate to be a mistake in optimization. 
 /// The IL instructions appear in the tree through inlining.
 let mkAssemblyCodeValueInfo g instrs argvals tys =
-  match instrs, argvals, tys with
+    match instrs, argvals, tys with
     | [ AI_add ], [t1;t2], _ -> 
-         // Note: each use of Unchecked.(+) gets instantiated at a different type and inlined
-         match IntegerBinaryOp g Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) t1 t2 with 
-         | Some res -> res
-         | _ -> UnknownValue
+        // Note: each use of Unchecked.(+) gets instantiated at a different type and inlined
+        match IntegerBinaryOp g Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) Unchecked.(+) t1 t2 with 
+        | Some res -> res
+        | _ -> UnknownValue
+
     | [ AI_sub ], [t1;t2], _ -> 
          // Note: each use of Unchecked.(+) gets instantiated at a different type and inlined
          match IntegerBinaryOp g Unchecked.(-) Unchecked.(-) Unchecked.(-) Unchecked.(-) Unchecked.(-) Unchecked.(-) Unchecked.(-) Unchecked.(-) t1 t2 with 
          | Some res -> res
          | _ -> UnknownValue
-    | [ AI_mul ], [a;b], _ -> (match IntegerBinaryOp g Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) a b with Some res -> res | None -> UnknownValue)
-    | [ AI_and ], [a;b], _ -> (match IntegerBinaryOp g (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) a b with Some res -> res | None -> UnknownValue)
-    | [ AI_or ], [a;b], _ -> (match IntegerBinaryOp g (|||) (|||) (|||) (|||) (|||) (|||) (|||) (|||) a b with Some res -> res | None -> UnknownValue)
-    | [ AI_xor ], [a;b], _ -> (match IntegerBinaryOp g (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) a b with Some res -> res | None -> UnknownValue)
-    | [ AI_not ], [a], _ -> (match IntegerUnaryOp g (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) a with Some res -> res | None -> UnknownValue)
-    | [ AI_neg ], [a], _ -> (match SignedIntegerUnaryOp g (~-) (~-) (~-) (~-) a with Some res -> res | None -> UnknownValue)
+
+    | [ AI_mul ], [a;b], _ ->
+        match IntegerBinaryOp g Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) Unchecked.( * ) a b with
+        | Some res -> res
+        | None -> UnknownValue
+
+    | [ AI_and ], [a;b], _ ->
+        match IntegerBinaryOp g (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) (&&&) a b with
+        | Some res -> res
+        | None -> UnknownValue
+
+    | [ AI_or ], [a;b], _ ->
+        match IntegerBinaryOp g (|||) (|||) (|||) (|||) (|||) (|||) (|||) (|||) a b with
+        | Some res -> res
+        | None -> UnknownValue
+
+    | [ AI_xor ], [a;b], _ ->
+        match IntegerBinaryOp g (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) (^^^) a b with
+        | Some res -> res
+        | None -> UnknownValue
+
+    | [ AI_not ], [a], _ ->
+        match IntegerUnaryOp g (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) (~~~) a with
+        | Some res -> res
+        | None -> UnknownValue
+
+    | [ AI_neg ], [a], _ ->
+        match SignedIntegerUnaryOp g (~-) (~-) (~-) (~-) a with
+        | Some res -> res
+        | None -> UnknownValue
 
     | [ AI_ceq ], [a;b], _ -> 
-       match stripValue a, stripValue b with
-       | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 = a2)
-       | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 = a2)
-       | _ -> UnknownValue
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 = a2)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 = a2)
+        | _ -> UnknownValue
+
     | [ AI_clt ], [a;b], _ -> 
-       match stripValue a, stripValue b with
-       | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 < a2)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_U1))], [a], [ty] when typeEquiv g ty g.byte_ty -> 
-       match stripValue a with
-       | ConstValue(Const.SByte a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.Int16 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.Int32 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.Int64 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.Byte a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.UInt16 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.UInt32 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | ConstValue(Const.UInt64 a, _) -> mkUInt8Val g (Unchecked.byte a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_U2))], [a], [ty] when typeEquiv g ty g.uint16_ty -> 
-       match stripValue a with
-       | ConstValue(Const.SByte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.Int16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.Int32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.Int64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.Byte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.UInt16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.UInt32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | ConstValue(Const.UInt64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_U4))], [a], [ty] when typeEquiv g ty g.uint32_ty -> 
-       match stripValue a with
-       | ConstValue(Const.SByte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.Int16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.Int32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.Int64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.Byte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.UInt16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.UInt32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | ConstValue(Const.UInt64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_U8))], [a], [ty] when typeEquiv g ty g.uint64_ty -> 
-       match stripValue a with
-       | ConstValue(Const.SByte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.Int16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.Int32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.Int64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.Byte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.UInt16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.UInt32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | ConstValue(Const.UInt64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_I1))], [a], [ty] when typeEquiv g ty g.sbyte_ty -> 
-       match stripValue a with
-       | ConstValue(Const.SByte a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.Int16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.Int32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.Int64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.Byte a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.UInt16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.UInt32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | ConstValue(Const.UInt64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_I2))], [a], [ty] when typeEquiv g ty g.int16_ty -> 
-       match stripValue a with
-       | ConstValue(Const.Int32 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.Int16 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.SByte a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.Int64 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.UInt32 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.UInt16 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.Byte a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | ConstValue(Const.UInt64 a, _) -> mkInt16Val g (Unchecked.int16 a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_I4))], [a], [ty] when typeEquiv g ty g.int32_ty -> 
-       match stripValue a with
-       | ConstValue(Const.Int32 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.Int16 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.SByte a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.Int64 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.UInt32 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.UInt16 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.Byte a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | ConstValue(Const.UInt64 a, _) -> mkInt32Val g (Unchecked.int32 a)
-       | _ -> UnknownValue
-    | [ (AI_conv(DT_I8))], [a], [ty] when typeEquiv g ty g.int64_ty -> 
-       match stripValue a with
-       | ConstValue(Const.Int32 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.Int16 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.SByte a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.Int64 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.UInt32 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.UInt16 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.Byte a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | ConstValue(Const.UInt64 a, _) -> mkInt64Val g (Unchecked.int64 a)
-       | _ -> UnknownValue
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 < a2)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_U1 ], [a], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a with
+        | ConstValue(Const.SByte a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.Byte a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt8Val g (Unchecked.byte a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_U2 ], [a], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a with
+        | ConstValue(Const.SByte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt16Val g (Unchecked.uint16 a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_U4 ], [a], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a with
+        | ConstValue(Const.SByte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt32Val g (Unchecked.uint32 a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_U8 ], [a], [ty] when typeEquiv g ty g.uint64_ty -> 
+        match stripValue a with
+        | ConstValue(Const.SByte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.Int16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.Int32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.Int64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.Byte a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.UInt16 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.UInt32 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | ConstValue(Const.UInt64 a, _) -> mkUInt64Val g (Unchecked.uint64 a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_I1 ], [a], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a with
+        | ConstValue(Const.SByte a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.Int16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.Int32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.Int64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.Byte a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt8Val g (Unchecked.sbyte a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_I2 ], [a], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a with
+        | ConstValue(Const.Int32 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.SByte a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.Byte a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt16Val g (Unchecked.int16 a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_I4 ], [a], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a with
+        | ConstValue(Const.Int32 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.SByte a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.Byte a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt32Val g (Unchecked.int32 a)
+        | _ -> UnknownValue
+
+    | [ AI_conv DT_I8 ], [a], [ty] when typeEquiv g ty g.int64_ty -> 
+        match stripValue a with
+        | ConstValue(Const.Int32 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.Int16 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.SByte a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.Int64 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.UInt32 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.UInt16 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.Byte a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | ConstValue(Const.UInt64 a, _) -> mkInt64Val g (Unchecked.int64 a)
+        | _ -> UnknownValue
+
     | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
-       match stripValue a, stripValue b with
-       | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 < a2)
-       | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 < a2)
-       | _ -> UnknownValue
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 < a2)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 < a2)
+        | _ -> UnknownValue
+
     | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
-       match stripValue a, stripValue b with
-       | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 > a2)
-       | _ -> UnknownValue
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 > a2)
+        | _ -> UnknownValue
+
     | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
-       match stripValue a, stripValue b with
-       | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 > a2)
-       | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 > a2)
-       | _ -> UnknownValue
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 > a2)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 > a2)
+        | _ -> UnknownValue
+
     | [ AI_shl ], [a;n], _ -> 
-       match stripValue a, stripValue n with
-       | ConstValue(Const.Int64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> (mkInt64Val g (a <<< n))
-       | ConstValue(Const.Int32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> (mkInt32Val g (a <<< n))
-       | ConstValue(Const.Int16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> (mkInt16Val g (a <<< n))
-       | ConstValue(Const.SByte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> (mkInt8Val g (a <<< n))
-       | ConstValue(Const.UInt64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> (mkUInt64Val g (a <<< n))
-       | ConstValue(Const.UInt32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> (mkUInt32Val g (a <<< n))
-       | ConstValue(Const.UInt16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> (mkUInt16Val g (a <<< n))
-       | ConstValue(Const.Byte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> (mkUInt8Val g (a <<< n))
-       | _ -> UnknownValue
+        match stripValue a, stripValue n with
+        | ConstValue(Const.Int64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> mkInt64Val g (a <<< n)
+        | ConstValue(Const.Int32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> mkInt32Val g (a <<< n)
+        | ConstValue(Const.Int16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> mkInt16Val g (a <<< n)
+        | ConstValue(Const.SByte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> mkInt8Val g (a <<< n)
+        | ConstValue(Const.UInt64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> mkUInt64Val g (a <<< n)
+        | ConstValue(Const.UInt32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> mkUInt32Val g (a <<< n)
+        | ConstValue(Const.UInt16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> mkUInt16Val g (a <<< n)
+        | ConstValue(Const.Byte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> mkUInt8Val g (a <<< n)
+        | _ -> UnknownValue
 
     | [ AI_shr ], [a;n], _ -> 
-       match stripValue a, stripValue n with
-       | ConstValue(Const.SByte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> (mkInt8Val g (a >>> n))
-       | ConstValue(Const.Int16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> (mkInt16Val g (a >>> n))
-       | ConstValue(Const.Int32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> (mkInt32Val g (a >>> n))
-       | ConstValue(Const.Int64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> (mkInt64Val g (a >>> n))
-       | _ -> UnknownValue
+        match stripValue a, stripValue n with
+        | ConstValue(Const.SByte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> mkInt8Val g (a >>> n)
+        | ConstValue(Const.Int16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> mkInt16Val g (a >>> n)
+        | ConstValue(Const.Int32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> mkInt32Val g (a >>> n)
+        | ConstValue(Const.Int64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> mkInt64Val g (a >>> n)
+        | _ -> UnknownValue
+
     | [ AI_shr_un ], [a;n], _ -> 
-       match stripValue a, stripValue n with
-       | ConstValue(Const.Byte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> (mkUInt8Val g (a >>> n))
-       | ConstValue(Const.UInt16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> (mkUInt16Val g (a >>> n))
-       | ConstValue(Const.UInt32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> (mkUInt32Val g (a >>> n))
-       | ConstValue(Const.UInt64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> (mkUInt64Val g (a >>> n))
-       | _ -> UnknownValue
+        match stripValue a, stripValue n with
+        | ConstValue(Const.Byte a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 7 -> mkUInt8Val g (a >>> n)
+        | ConstValue(Const.UInt16 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 15 -> mkUInt16Val g (a >>> n)
+        | ConstValue(Const.UInt32 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 31 -> mkUInt32Val g (a >>> n)
+        | ConstValue(Const.UInt64 a, _), ConstValue(Const.Int32 n, _) when n >= 0 && n <= 63 -> mkUInt64Val g (a >>> n)
+        | _ -> UnknownValue
        
     // Retypings using IL asm "" are quite common in prim-types.fs
     // Sometimes these are only to get the primitives to pass the type checker.
     // Here we check for retypings from know values to known types.
     // We're conservative not to apply any actual data-changing conversions here.
     | [ ], [v], [ty] -> 
-       match stripValue v with
-       | ConstValue(Const.Bool a, _) ->
+        match stripValue v with
+        | ConstValue(Const.Bool a, _) ->
             if typeEquiv g ty g.bool_ty then v
             elif typeEquiv g ty g.sbyte_ty then mkInt8Val g (if a then 1y else 0y)
             elif typeEquiv g ty g.int16_ty then mkInt16Val g (if a then 1s else 0s)
@@ -1017,43 +1056,42 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
             elif typeEquiv g ty g.uint16_ty then mkUInt16Val g (if a then 1us else 0us)
             elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (if a then 1u else 0u)
             else UnknownValue
-       | ConstValue(Const.SByte a, _) ->
+         | ConstValue(Const.SByte a, _) ->
             if typeEquiv g ty g.sbyte_ty then v
             elif typeEquiv g ty g.int16_ty then mkInt16Val g (Unchecked.int16 a)
             elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
             else UnknownValue
-       | ConstValue(Const.Byte a, _) ->
+         | ConstValue(Const.Byte a, _) ->
             if typeEquiv g ty g.byte_ty then v
             elif typeEquiv g ty g.uint16_ty then mkUInt16Val g (Unchecked.uint16 a)
             elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
             else UnknownValue
-       | ConstValue(Const.Int16 a, _) ->
+         | ConstValue(Const.Int16 a, _) ->
             if typeEquiv g ty g.int16_ty then v
             elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
             else UnknownValue
-       | ConstValue(Const.UInt16 a, _) ->
+         | ConstValue(Const.UInt16 a, _) ->
             if typeEquiv g ty g.uint16_ty then v
             elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
             else UnknownValue
-       | ConstValue(Const.Int32 a, _) ->
+         | ConstValue(Const.Int32 a, _) ->
             if typeEquiv g ty g.int32_ty then v
             elif typeEquiv g ty g.uint32_ty then mkUInt32Val g (Unchecked.uint32 a)
             else UnknownValue
-       | ConstValue(Const.UInt32 a, _) ->
+         | ConstValue(Const.UInt32 a, _) ->
             if typeEquiv g ty g.uint32_ty then v
             elif typeEquiv g ty g.int32_ty then mkInt32Val g (Unchecked.int32 a)
             else UnknownValue
-       | ConstValue(Const.Int64 a, _) ->
+         | ConstValue(Const.Int64 a, _) ->
             if typeEquiv g ty g.int64_ty then v
             elif typeEquiv g ty g.uint64_ty then mkUInt64Val g (Unchecked.uint64 a)
             else UnknownValue
-       | ConstValue(Const.UInt64 a, _) ->
+         | ConstValue(Const.UInt64 a, _) ->
             if typeEquiv g ty g.uint64_ty then v
             elif typeEquiv g ty g.int64_ty then mkInt64Val g (Unchecked.int64 a)
             else UnknownValue
-       | _ -> UnknownValue
+         | _ -> UnknownValue
     | _ -> UnknownValue
-
 
 //-------------------------------------------------------------------------
 // Size constants and combinators
@@ -1076,11 +1114,11 @@ let NoExprs : Expr list * list<Summary<ExprValueInfo>> = [], []
 
 /// Common ways of building new value infos
 let CombineValueInfos einfos res = 
-      { TotalSize = AddTotalSizes einfos
-        FunctionSize = AddFunctionSizes einfos
-        HasEffect = OrEffects einfos 
-        MightMakeCriticalTailcall = OrTailcalls einfos 
-        Info = res }
+    { TotalSize = AddTotalSizes einfos
+      FunctionSize = AddFunctionSizes einfos
+      HasEffect = OrEffects einfos 
+      MightMakeCriticalTailcall = OrTailcalls einfos 
+      Info = res }
 
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
 
@@ -1180,14 +1218,14 @@ let AbstractOptimizationInfoToEssentials =
 
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
 let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
-  // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
-  // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
-  // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
-  let boundVars = boundVars |> List.filter (fun v -> not v.IsMemberOrModuleBinding)
+    // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
+    // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
+    // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
+    let boundVars = boundVars |> List.filter (fun v -> not v.IsMemberOrModuleBinding)
 
-  match boundVars, boundTyVars with 
-  | [], [] -> ivalue
-  | _ -> 
+    match boundVars, boundTyVars with 
+    | [], [] -> ivalue
+    | _ -> 
 
       let rec abstractExprInfo ivalue =
           match ivalue with 
@@ -1260,18 +1298,18 @@ let RemapOptimizationInfo g tmenv =
         | ConstExprValue (sz, expr) -> ConstExprValue (sz, remapExpr g CloneAll tmenv expr)
 
     let remapValInfo v = 
-         { ValExprInfo=remapExprInfo v.ValExprInfo
-           ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
+       { ValExprInfo=remapExprInfo v.ValExprInfo
+         ValMakesNoCriticalTailcalls=v.ValMakesNoCriticalTailcalls }
 
     let rec remapModulInfo ss =
-         { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map remapLazyModulInfo
-           ValInfos = 
-              ss.ValInfos.Map (fun (vref, vinfo) -> 
-                   let vrefR = remapValRef tmenv vref 
-                   let vinfo = remapValInfo vinfo
-                   // Propagate any inferred ValMakesNoCriticalTailcalls flag from implementation to signature information
-                   if vinfo.ValMakesNoCriticalTailcalls then vrefR.Deref.SetMakesNoCriticalTailcalls() 
-                   (vrefR, vinfo)) } 
+       { ModuleOrNamespaceInfos = ss.ModuleOrNamespaceInfos |> NameMap.map remapLazyModulInfo
+         ValInfos = 
+           ss.ValInfos.Map (fun (vref, vinfo) -> 
+               let vrefR = remapValRef tmenv vref 
+               let vinfo = remapValInfo vinfo
+               // Propagate any inferred ValMakesNoCriticalTailcalls flag from implementation to signature information
+               if vinfo.ValMakesNoCriticalTailcalls then vrefR.Deref.SetMakesNoCriticalTailcalls() 
+               (vrefR, vinfo)) } 
 
     and remapLazyModulInfo ss =
          ss |> Lazy.force |> remapModulInfo |> notlazy
@@ -1317,8 +1355,9 @@ let rec IsSmallConstExpr x =
 
 let ValueOfExpr expr = 
     if IsSmallConstExpr expr then 
-      ConstExprValue(0, expr)
-    else UnknownValue
+        ConstExprValue(0, expr)
+    else
+        UnknownValue
 
 let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
     vref.IsCompilerGenerated &&
@@ -2029,8 +2068,11 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy (TType_app(g.tcref_System_Collections_IEnumerable, [])) resultExpr
-                    | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
+                    | Some resultElemTy, None ->
+                        let iety = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
+                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy iety resultExpr
+                    | None, Some (resultElemTy, qTy) ->
+                        mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 
                 None

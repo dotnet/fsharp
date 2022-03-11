@@ -36,7 +36,7 @@ module internal PervasiveAutoOpens =
 
     type 'T MaybeNull when 'T : null and 'T: not struct = 'T
 
-    let inline isNotNull (x: 'T MaybeNull) = not (isNull x)
+    let inline isNotNull (x: 'T) = not (isNull x)
 
     let inline (|NonNullQuick|) (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
 

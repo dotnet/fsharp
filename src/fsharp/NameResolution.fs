@@ -132,7 +132,7 @@ let ActivePatternElemsOfModuleOrNamespace g (modref: ModuleOrNamespaceRef) : Nam
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
 let (|AbbrevOrAppTy|_|) (ty: TType) =
     match stripTyparEqns ty with
-    | TType_app (tcref, _) -> Some tcref
+    | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 
 /// Represents the item with which a named argument is associated.
@@ -1757,7 +1757,7 @@ let ItemsAreEffectivelyEqual g orig other =
         nm1 = nm2 &&
         (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) ||
          match stripTyparEqns (mkTyparTy tp1), stripTyparEqns (mkTyparTy tp2) with
-         | TType_var tp1, TType_var tp2 ->
+         | TType_var (tp1, _), TType_var (tp2, _) ->
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
             equals tp1.Range tp2.Range

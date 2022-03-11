@@ -634,9 +634,6 @@ let TypeBuilderInstantiationT =
 
 let typeIsNotQueryable (ty: Type) =
     (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
-//----------------------------------------------------------------------------
-// convFieldSpec
-//----------------------------------------------------------------------------
 
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )
@@ -744,7 +741,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
             failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
 
-let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
+let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
     assert(not (typeIsNotQueryable parentT))
     if mref.GenericArity = 0 then
         let tyargTs = getGenericArgumentsOfType parentT
@@ -770,7 +767,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo =
+let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo MaybeNull =
     if (parentTI.IsGenericType &&
         not (equalTypes parentTI (getTypeConstructor parentTI)))
     then TypeBuilder.GetMethod(parentTI, methInfo )
@@ -824,7 +821,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
     | _ -> res
 
 
-let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo =
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo MaybeNull =
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI, consInfo) else consInfo
 
 /// convConstructorSpec (like convMethodSpec)
@@ -1234,7 +1231,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog(aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
@@ -1242,7 +1239,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
