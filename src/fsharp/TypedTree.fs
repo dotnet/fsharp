@@ -2240,7 +2240,7 @@ type Typar =
         let ty = x.typar_astype
         match box ty with 
         | null -> 
-            let ty2 = TType_var x
+            let ty2 = TType_var (x, 0uy)
             x.typar_astype <- ty2
             ty2
         | _ -> ty
@@ -4020,40 +4020,34 @@ type RecdFieldRef =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
 
-    /// TType_forall(typars, bodyTy).
-    ///
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of typars: Typars * bodyTy: TType
 
-    /// TType_app(tyconRef, typeInstantiation).
+    /// Indicates the type is built from a named type and a number of type arguments.
     ///
-    /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst
+    /// 'flags' is a placeholder for future features, in particular nullness analysis
+    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * flags: byte
 
-    /// TType_anon
-    ///
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
     | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
-    /// TType_tuple(elementTypes).
-    ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
 
-    /// TType_fun(domainType, rangeType).
+    /// Indicates the type is a function type.
     ///
-    /// Indicates the type is a function type 
-    | TType_fun of domainType: TType * rangeType: TType
+    /// 'flags' is a placeholder for future features, in particular nullness analysis.
+    | TType_fun of domainType: TType * rangeType: TType * flags: byte
 
-    /// TType_ucase(unionCaseRef, typeInstantiation)
-    ///
     /// Indicates the type is a non-F#-visible type representing a "proof" that a union value belongs to a particular union case
     /// These types are not user-visible and will never appear as an inferred type. They are the types given to
     /// the temporaries arising out of pattern matching on union values.
     | TType_ucase of unionCaseRef: UnionCaseRef * typeInstantiation: TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of typar: Typar 
+    ///
+    /// 'flags' is a placeholder for future features, in particular nullness analysis
+    | TType_var of typar: Typar * flags: byte
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
@@ -4063,12 +4057,12 @@ type TType =
     member x.GetAssemblyName() =
         match x with
         | TType_forall (_tps, ty) -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_tuple _ -> ""
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r) -> ""
-        | TType_measure _ms -> ""
-        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_fun _ -> ""
+        | TType_measure _ -> ""
+        | TType_var (tp, _) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4079,7 +4073,7 @@ type TType =
     override x.ToString() =  
         match x with 
         | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_app (tcref, tinst, _) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
@@ -4090,9 +4084,9 @@ type TType =
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
-        | TType_fun (d, r) -> "(" + string d + " -> " + string r + ")"
+        | TType_fun (d, r, _) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> 
+        | TType_var (tp, _) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"

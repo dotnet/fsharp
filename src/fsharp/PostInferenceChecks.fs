@@ -336,7 +336,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     // In an ideal world we would, instead, record the solutions to these constraints as "witness variables" in expressions, 
     // rather than solely in types. 
     match ty with 
-    | TType_var tp when tp.Solution.IsSome ->
+    | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with 
             | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) -> 
@@ -350,7 +350,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         if g.compilingFslib then
             match stripTyparEqns ty with
             // When compiling FSharp.Core, do not strip type equations at this point if we can't dereference a tycon.
-            | TType_app (tcref, _) when not tcref.CanDeref -> ty
+            | TType_app (tcref, _, _) when not tcref.CanDeref -> ty
             | _ -> stripTyEqns g ty
         else 
             stripTyEqns g ty
@@ -362,8 +362,9 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypeDeep cenv f g env isInner body           
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
-    | TType_measure _          -> ()
-    | TType_app (tcref, tinst) -> 
+    | TType_measure _ -> ()
+
+    | TType_app (tcref, tinst, _) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef isInner tcref 
         | None -> ()
@@ -389,10 +390,11 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | TType_tuple (_, tys) ->
         CheckTypesDeep cenv f g env tys
 
-    | TType_fun (s, t) ->
-        CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+    | TType_fun (s, t, _) ->
+        CheckTypeDeep cenv f g env true s
+        CheckTypeDeep cenv f g env true t
 
-    | TType_var tp -> 
+    | TType_var (tp, _) -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
               | None -> ()

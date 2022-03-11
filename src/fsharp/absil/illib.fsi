@@ -23,21 +23,21 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l:'a list -> bool
 
+    /// Returns true if the argument is non-null.
+    val inline isNotNull: x:'T -> bool when 'T: null
+
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?' for example for future FS-1060.
     type 'T MaybeNull when 'T : null and 'T: not struct = 'T
  
-    /// Returns true if the argument is non-null.
-    val inline isNotNull: x: 'T MaybeNull -> bool
-
     /// Asserts the argument is non-null and raises an exception if it is
     val inline (|NonNullQuick|): 'T MaybeNull -> 'T
 
     /// Match on the nullness of an argument.
-    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit,'T> when 'T: null and 'T: not struct
+    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit,'T>
 
     /// Asserts the argument is non-null and raises an exception if it is
-    val inline nonNull: x: 'T MaybeNull -> 'T when 'T : null and 'T: not struct
+    val inline nonNull: x: 'T MaybeNull -> 'T
 
     /// Checks the argument is non-null
     val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
