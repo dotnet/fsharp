@@ -57,13 +57,11 @@ type MapSourceRoots () =
 
     static let (|NullOrEmpty|HasValue|) (s: string) = if String.IsNullOrEmpty s then NullOrEmpty else HasValue s
     static let ensureEndsWithSlash (path: string) =
-        if path.EndsWith "/"
-        then path
+        if path.EndsWith "/" then path
         else path + "/"
 
     static let endsWithDirectorySeparator (path: string) =
-        if path.Length = 0
-        then false
+        if path.Length = 0 then false
         else
             let endChar = path.[path.Length - 1]
             endChar = Path.DirectorySeparatorChar || endChar = Path.AltDirectorySeparatorChar
@@ -168,7 +166,7 @@ type MapSourceRoots () =
     /// </list>
     /// </summary>
     [<Required>]
-    member val SourceRoots: ITaskItem[] = null with get, set
+    member val SourceRoots: ITaskItem[] = [| |] with get, set
 
     /// <summary>
     /// True if the mapped paths should be deterministic.
@@ -180,7 +178,7 @@ type MapSourceRoots () =
     /// Items listed in <see cref="SourceRoots"/> that have the same ItemSpec will be merged into a single item in this list.
     /// </summary>
     [<Output>]
-    member val MappedSourceRoots: ITaskItem[] = null with get, set
+    member val MappedSourceRoots: ITaskItem[] = [| |] with get, set
 
     override this.Execute() =
         match MapSourceRoots.PerformMapping this.Log this.SourceRoots this.Deterministic with

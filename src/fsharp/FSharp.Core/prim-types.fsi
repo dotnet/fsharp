@@ -3365,7 +3365,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="failwith-example">
         /// <code lang="fsharp">
@@ -3386,7 +3386,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="invalidarg-example">
         /// <code lang="fsharp">
@@ -3409,7 +3409,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
@@ -3599,8 +3599,8 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        ///
-        /// <returns>The result value.</returns>
+        /// 
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
         /// <code lang="fsharp">

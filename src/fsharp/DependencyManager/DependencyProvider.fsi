@@ -4,6 +4,7 @@
 namespace FSharp.Compiler.DependencyManager
 
 open System.Runtime.InteropServices
+open Internal.Utilities.Library
 
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
@@ -88,10 +89,10 @@ type DependencyProvider =
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string MaybeNull)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
-    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider
+    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider MaybeNull
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
-    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string -> string * IDependencyManagerProvider
+    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string -> string MaybeNull * IDependencyManagerProvider MaybeNull
