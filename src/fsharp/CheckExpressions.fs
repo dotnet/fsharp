@@ -5289,7 +5289,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                             |> String.concat "\n"
                             |> fun s -> "\n"+s
 
-                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, missingArgs), m))
+                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
                     else
                         errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
                     args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns

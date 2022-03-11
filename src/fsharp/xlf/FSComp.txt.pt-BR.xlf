@@ -3598,8 +3598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form. The missing arguments are :{1}</source>
-        <target state="new">This union case expects {0} arguments in tupled form. The missing arguments are :{1}</target>
+        <source>This union case expects {0} arguments in tupled form, but was only given {1}. The missing arguments are:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was only given {1}. The missing arguments are:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
