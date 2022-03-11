@@ -351,7 +351,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release
+          - script: .\Build.cmd -c Release -pack
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
