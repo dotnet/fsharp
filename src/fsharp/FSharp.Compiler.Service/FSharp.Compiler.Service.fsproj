@@ -19,6 +19,9 @@
     <Tailcalls>true</Tailcalls>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
+    <!-- nullness checking isn't possible when using shipped FSHarp.Core package until it's updated -->
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);NO_CHECKNULLS</DefineConstants>
+    <CheckNulls Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">false</CheckNulls>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
