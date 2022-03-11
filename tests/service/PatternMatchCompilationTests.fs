@@ -96,7 +96,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,10): This union case expects 3 arguments in tupled form"        
+        "(7,2--7,10): This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of: Item3"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -233,7 +233,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form"
+        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field Item2"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
