@@ -571,7 +571,7 @@ tcCouldNotFindIDisposable,"Couldn't find Dispose on IDisposable, or it was overl
 724,tcInvalidIndexIntoActivePatternArray,"Internal error. Invalid index into active pattern array"
 725,tcUnionCaseDoesNotTakeArguments,"This union case does not take arguments"
 726,tcUnionCaseRequiresOneArgument,"This union case takes one argument"
-727,tcUnionCaseExpectsTupledArguments,"This union case expects %d arguments in tupled form"
+727,tcUnionCaseExpectsTupledArguments,"This union case expects %d arguments in tupled form. The missing arguments are :%s"
 728,tcFieldIsNotStatic,"Field '%s' is not static"
 729,tcFieldNotLiteralCannotBeUsedInPattern,"This field is not a literal and cannot be used in a pattern"
 730,tcRequireVarConstRecogOrLiteral,"This is not a variable, constant, active recognizer or literal"

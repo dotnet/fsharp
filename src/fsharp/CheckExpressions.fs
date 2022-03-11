@@ -5283,7 +5283,13 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 elif numArgs < numArgTys then
                     if numArgTys > 1 then
                         // Expects tuple without enough args
-                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                        let missingArgs = 
+                            argNames.[numArgs..numArgTys - 1]
+                            |> List.map (fun id -> id.idText)
+                            |> String.concat "\n"
+                            |> fun s -> "\n"+s
+
+                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, missingArgs), m))
                     else
                         errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
                     args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
