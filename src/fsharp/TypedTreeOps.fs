@@ -1787,7 +1787,6 @@ let isByrefTy g ty =
         | _ -> false) 
 
 let isInByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_In_tcr tcref | _ -> false) 
-
 let isInByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
         | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isInByrefTag g tag         
