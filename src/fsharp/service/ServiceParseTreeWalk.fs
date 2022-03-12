@@ -458,7 +458,7 @@ module SyntaxTraversal =
 
                 | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
-                     yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
+                     yield! synMatchClauseList |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))]
                     |> pick expr
 
                 | SynExpr.Do (synExpr, _range) -> traverseSynExpr synExpr
@@ -603,7 +603,7 @@ module SyntaxTraversal =
 
                 | SynExpr.MatchBang (expr=synExpr; clauses=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
-                     yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
+                     yield! synMatchClauseList |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))]
                     |> pick expr
 
                 | SynExpr.DoBang (synExpr, _range) -> traverseSynExpr synExpr
