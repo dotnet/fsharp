@@ -53,10 +53,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <_FSharpCoreLibraryPacksFolder Condition="'$(_FSharpCoreLibraryPacksFolder)' == ''">$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))library-packs</_FSharpCoreLibraryPacksFolder>
-  </PropertyGroup>
-
   <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
     <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
   </PropertyGroup>
