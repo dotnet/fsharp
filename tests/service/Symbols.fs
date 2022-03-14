@@ -11,6 +11,7 @@ open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FsUnit
 open NUnit.Framework
 
@@ -3299,5 +3300,29 @@ async {
             assertRange (4, 4) (4, 24) mAndBang1
             assertRange (4, 25) (4, 27) mIn
             assertRange (5, 4) (5, 24) mAndBang2
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+module ConditionalDirectives =
+    [<Test>]
+    let ``single #if / #endif`` () =
+        let ast =
+            getParseResults """
+let v =
+    #if DEBUG
+    ()
+    #endif
+    42
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { ConditionalDirectives = [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, mIf)
+                                                                                        ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif ] })) ->
+            assertRange (3, 0) (3, 13) mIf
+            assertRange (5, 0) (5, 10) mEndif
+            
+            match expr with
+            | IfDirectiveExpression.IfdefId "DEBUG" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr}"
         | _ ->
             Assert.Fail "Could not get valid AST"

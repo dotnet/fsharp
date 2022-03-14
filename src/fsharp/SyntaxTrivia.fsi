@@ -4,6 +4,26 @@ namespace FSharp.Compiler.SyntaxTrivia
 
 open FSharp.Compiler.Text
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ConditionalDirectiveTrivia =
+    | IfDirectiveTrivia of expr:IfDirectiveExpression * range:range
+    | ElseDirectiveTrivia of range:range
+    | EndIfDirectiveTrivia of range:range
+
+and IfDirectiveExpression =
+    | IfdefAnd of IfDirectiveExpression * IfDirectiveExpression
+    | IfdefOr of IfDirectiveExpression * IfDirectiveExpression
+    | IfdefNot of IfDirectiveExpression
+    | IfdefId of string
+
+/// Represents additional information for ParsedImplFileInput
+[<NoEquality; NoComparison>]
+type ParsedImplFileInputTrivia =
+    {
+        /// Preprocessor directives of type #if, #else or #endif
+        ConditionalDirectives: ConditionalDirectiveTrivia list
+    }
+
 /// Represents additional information for SynExpr.TryWith
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =

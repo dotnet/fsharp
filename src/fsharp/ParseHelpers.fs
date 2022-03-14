@@ -6,6 +6,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
@@ -87,7 +88,6 @@ type IParseState with
 //------------------------------------------------------------------------
 
 /// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.
-/// This is the only use of the lexer BufferLocalStore in the codebase.
 module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
@@ -176,6 +176,48 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
     | IfdefOr (l, r)     -> (LexerIfdefEval lookup l) || (LexerIfdefEval lookup r)
     | IfdefNot e        -> not (LexerIfdefEval lookup e)
     | IfdefId id        -> lookup id
+
+/// Ifdef F# lexer/parser state, held in the BufferLocalStore for the lexer.
+/// Used to capture #if, #else and #endif as syntax trivia.
+module LexbufIfdefStore =
+    // The key into the BufferLocalStore used to hold the compiler directives
+    let private ifDefKey = "Ifdef"
+
+    let private getStore (lexbuf: Lexbuf): ResizeArray<ConditionalDirectiveTrivia> =
+        match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
+        | true, store -> store
+        | _ ->
+            let store = box (ResizeArray<ConditionalDirectiveTrivia>())
+            lexbuf.BufferLocalStore.[ifDefKey] <- store
+            store
+        |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
+
+    let SaveIfHash (lexbuf: Lexbuf, expr: LexerIfdefExpression, range: range) =
+        let store = getStore lexbuf
+
+        let expr =
+            let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
+                match expr with
+                | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.IfdefAnd(visit l, visit r)
+                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.IfdefOr(visit l, visit r)
+                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.IfdefNot(visit e)
+                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.IfdefId id
+            
+            visit expr
+
+        store.Add(ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, range))
+
+    let SaveElseHash (lexbuf: Lexbuf, range: range) =
+        let store = getStore lexbuf
+        store.Add(ConditionalDirectiveTrivia.ElseDirectiveTrivia(range))
+
+    let SaveEndIfHash (lexbuf: Lexbuf, range: range) =
+        let store = getStore lexbuf
+        store.Add(ConditionalDirectiveTrivia.EndIfDirectiveTrivia(range))
+
+    let GetTrivia (lexbuf: Lexbuf): ConditionalDirectiveTrivia list =
+        let store = getStore lexbuf
+        Seq.toList store
 
 //------------------------------------------------------------------------
 // Parsing: continuations for whitespace tokens

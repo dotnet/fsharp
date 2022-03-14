@@ -355,13 +355,13 @@ module ScriptPreprocessClosure =
                 match List.frontAndBack closureFiles with
                 | rest, ClosureFile
                            (filename, m,
-                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))),
+                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia))),
                             parseDiagnostics, metaDiagnostics, nowarns) ->
 
                     let isLastCompiland = (true, tcConfig.target.IsExe)
                     rest @ [ClosureFile
                                 (filename, m,
-                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))),
+                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia))),
                                  parseDiagnostics, metaDiagnostics, nowarns)]
 
                 | _ -> closureFiles
