@@ -110,6 +110,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
   file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.xml"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.Portable.FSharp.Targets"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Core.NetSdk.props"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.props"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.targets"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"
