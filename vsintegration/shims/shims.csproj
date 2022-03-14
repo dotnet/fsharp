@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
     <None Include="Microsoft.FSharp.NetSdk.Shim.props" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.Overrides.NetSdk.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
