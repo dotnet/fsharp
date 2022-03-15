@@ -4,7 +4,7 @@
 #nowarn "61" // The containing type can use <c>null</c> as a representation value for its nullary union case. This member will be compiled as a static member.
 #nowarn "62" // This construct is for ML compatibility. The syntax <c>module ... : sig .. end</c> is deprecated unless OCaml compatibility is enabled. Consider using <c>module ... = begin .. end'.
 
-/// <summary>Basic F# type definitions, functions and operators.</summary> 
+// Basic F# type definitions, functions and operators.
 namespace Microsoft.FSharp.Core
 
     open System

@@ -680,7 +680,7 @@ let u_lazy u st =
     let res =
         lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
               u st)
-    /// Force the reading of the data as a "tripwire" for each of the OSGN thunks
+    // Force the reading of the data as a "tripwire" for each of the OSGN thunks
     for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get i) res done
     for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get i)   res done
     for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get i) res done

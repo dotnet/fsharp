@@ -76,7 +76,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     // Note this also means that when compiling (command-line or background IncrementalBuilder in the IDE
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
-    ///
+    //
     let fmt, fragments = 
 
         //printfn "--------------------" 
