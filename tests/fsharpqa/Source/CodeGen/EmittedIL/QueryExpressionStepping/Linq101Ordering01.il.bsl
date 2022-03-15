@@ -40,13 +40,13 @@
   // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {61FD32BA-649A-6956-A745-0383BA32FD61}
+// MVID: {6220E157-649A-6956-A745-038357E12062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x051E0000
+// Image base: 0x072B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -183,7 +183,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -267,16 +267,14 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #1 input at line 10@11'::Close
 
     .method public strict virtual instance bool 
@@ -517,7 +515,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -601,16 +599,14 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #2 input at line 17@18'::Close
 
     .method public strict virtual instance bool 
@@ -972,7 +968,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1056,16 +1052,14 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #4 input at line 43@44'::Close
 
     .method public strict virtual instance bool 
@@ -1308,7 +1302,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1392,16 +1386,14 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #5 input at line 51@52'::Close
 
     .method public strict virtual instance bool 

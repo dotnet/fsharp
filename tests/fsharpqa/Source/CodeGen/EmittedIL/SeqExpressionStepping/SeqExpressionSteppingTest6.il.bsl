@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-// MVID: {61FD4A6D-2432-94A2-A745-03836D4AFD61}
+// MVID: {6220E157-2432-94A2-A745-038357E12062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F10000
+// Image base: 0x06B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -252,7 +252,7 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       167 (0xa7)
+        // Code size       164 (0xa4)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [mscorlib]System.Exception e)
@@ -359,16 +359,14 @@
 
         .line 100001,100001 : 0,0 ''
         IL_009e:  ldloc.0
-        IL_009f:  ldnull
-        IL_00a0:  cgt.un
-        IL_00a2:  brfalse.s  IL_00a6
+        IL_009f:  brfalse.s  IL_00a3
 
         .line 100001,100001 : 0,0 ''
-        IL_00a4:  ldloc.0
-        IL_00a5:  throw
+        IL_00a1:  ldloc.0
+        IL_00a2:  throw
 
         .line 100001,100001 : 0,0 ''
-        IL_00a6:  ret
+        IL_00a3:  ret
       } // end of method f7@6::Close
 
       .method public strict virtual instance bool 

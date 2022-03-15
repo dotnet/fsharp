@@ -899,7 +899,6 @@ and EmitType cenv env bb ty =
         bb.EmitByte (if req then et_CMOD_REQD else et_CMOD_OPT)
         emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Enclosing, tref.Name)
         EmitType cenv env bb ty
-     | _ -> failwith "EmitType"
 
 and EmitLocalInfo cenv env (bb: ByteBuffer) (l: ILLocal) =
     if l.IsPinned then
