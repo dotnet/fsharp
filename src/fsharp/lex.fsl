@@ -1018,6 +1018,10 @@ and ifdefSkip n m args skip = parse
        if not skip then INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m))
        else ifdefSkip n m args skip lexbuf
      else
+       let lexed = lexeme lexbuf
+       let lookup id = List.contains id args.defines
+       let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
+       LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
        if not skip then tok else endline (LexerEndlineContinuation.Skip(n+1, m)) args skip lexbuf }
 
@@ -1035,10 +1039,12 @@ and ifdefSkip n m args skip = parse
          | (IfDefElse,_) :: _rest -> LEX_FAILURE (FSComp.SR.lexHashEndifRequiredForElse())
          | (IfDefIf,_) :: rest ->
            let m = lexbuf.LexemeRange
+           LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
            args.ifdefStack <- (IfDefElse,m) :: rest
            if not skip then HASH_ELSE(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
            else endline LexerEndlineContinuation.Token args skip lexbuf
        else
+         LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
          if not skip then INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n, m)))
          else endline (LexerEndlineContinuation.Skip(n, m)) args skip lexbuf }
 
@@ -1059,6 +1065,7 @@ and ifdefSkip n m args skip = parse
               if not skip then HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
               else endline LexerEndlineContinuation.Token args skip lexbuf
        else
+           LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
            let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n-1, m)))
            let tok = shouldStartLine args lexbuf m (FSComp.SR.lexWrongNestedHashEndif()) tok
            if not skip then tok else endline (LexerEndlineContinuation.Skip(n-1, m)) args skip lexbuf }
