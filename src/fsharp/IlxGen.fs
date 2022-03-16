@@ -1447,7 +1447,11 @@ and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
                yield! ilImports |]
              |> Array.filter (function
                 | ILDebugImport.ImportNamespace _ -> true
-                | ILDebugImport.ImportType t -> t.IsNominal)
+                | ILDebugImport.ImportType t ->
+                    t.IsNominal &&
+                    // We filter out FSI_NNNN types (dynamic modules), since we don't really need them in the import tables.
+                    not (t.QualifiedName.StartsWithOrdinal FsiDynamicModulePrefix
+                         && t.TypeRef.Scope = ILScopeRef.Local ))
              |> Array.distinctBy (function
                 | ILDebugImport.ImportNamespace nsp -> nsp
                 | ILDebugImport.ImportType t -> t.QualifiedName)
