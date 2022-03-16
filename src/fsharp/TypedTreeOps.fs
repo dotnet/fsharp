@@ -8719,8 +8719,7 @@ let (|SpecialNotEquatableHeadType|_|) g ty =
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
-     not (TypeNullIsTrueValue g ty) && 
-     not (TypeNullNever g ty)
+     not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
 let canUseUnboxFast g m ty = 
@@ -8738,7 +8737,7 @@ let canUseUnboxFast g m ty =
 // used for compiler-generated code.
 let mkIsInstConditional g m tgty vinpe v e2 e3 = 
     
-    if canUseTypeTestFast g tgty then 
+    if canUseTypeTestFast g tgty && isRefTy g tgty then 
 
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2)

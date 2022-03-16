@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>Pervasives: Additional bindings available at the top level</summary>
+// Pervasives: Additional bindings available at the top level
 namespace Microsoft.FSharp.Core
 
 /// <summary>A set of extra operators and functions. This module is automatically opened in all F# code.</summary>

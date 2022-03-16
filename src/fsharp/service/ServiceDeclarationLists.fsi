@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// API for declaration lists and method overload lists
+// API for declaration lists and method overload lists
 namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.NameResolution

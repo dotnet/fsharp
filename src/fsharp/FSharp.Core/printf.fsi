@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>This namespace contains types and modules for generating and formatting text with F#</summary>
+// This namespace contains types and modules for generating and formatting text with F#
 namespace Microsoft.FSharp.Core
 
 open Microsoft.FSharp.Core

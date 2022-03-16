@@ -17,7 +17,7 @@ module internal DetailedExceptions =
     val invalidArgDifferentArrayLength: arg1:string -> len1:int -> arg2:string -> len2:int -> _
     val invalidArg3ArraysDifferent: arg1:string -> arg2:string -> arg3:string -> len1:int -> len2:int -> len3:int -> _
 
-/// Definitions internal for this library.
+// Definitions internal for this library.
 namespace Microsoft.FSharp.Primitives.Basics 
 
 open Microsoft.FSharp.Core

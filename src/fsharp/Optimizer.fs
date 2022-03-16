@@ -3807,6 +3807,17 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
 
 /// Optimize/analyze a switch construct from pattern matching 
 and OptimizeSwitch cenv env (e, cases, dflt, m) =
+    let g = cenv.g
+
+    // Replace IsInst tests by calls to the helper for type tests, which may then get optimized
+    let e, cases =
+        match cases with
+        | [ TCase(DecisionTreeTest.IsInst (_srcTy, tgTy), success)] ->
+            let testExpr = mkCallTypeTest g m tgTy e
+            let testCases = [TCase(DecisionTreeTest.Const(Const.Bool true), success)]
+            testExpr, testCases
+        | _ -> e, cases
+
     let eR, einfo = OptimizeExpr cenv env e 
 
     let cases, dflt = 
@@ -3820,7 +3831,8 @@ and OptimizeSwitch cenv env (e, cases, dflt, m) =
                 dflt
         else
             cases, dflt 
-    // OK, see what weRre left with and continue
+
+    // OK, see what we are left with and continue
     match cases, dflt with 
     | [], Some case -> OptimizeDecisionTree cenv env m case
     | _ -> OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m)
