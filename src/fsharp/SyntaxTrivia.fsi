@@ -24,6 +24,14 @@ type ParsedImplFileInputTrivia =
         ConditionalDirectives: ConditionalDirectiveTrivia list
     }
 
+/// Represents additional information for ParsedSigFileInputTrivia
+[<NoEquality; NoComparison>]
+type ParsedSigFileInputTrivia =
+    {
+        /// Preprocessor directives of type #if, #else or #endif
+        ConditionalDirectives: ConditionalDirectiveTrivia list
+    }
+
 /// Represents additional information for SynExpr.TryWith
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =

@@ -21,6 +21,10 @@ type ParsedImplFileInputTrivia =
     { ConditionalDirectives: ConditionalDirectiveTrivia list }
 
 [<NoEquality; NoComparison>]
+type ParsedSigFileInputTrivia =
+    { ConditionalDirectives: ConditionalDirectiveTrivia list }
+
+[<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =
     { TryKeyword: range
       TryToWithRange: range

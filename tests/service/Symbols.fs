@@ -3304,16 +3304,16 @@ async {
             Assert.Fail "Could not get valid AST"
 
 module ConditionalDirectives =
-    let private getDirectiveTrivia source =
-        let ast = getParseResults source
+    let private getDirectiveTrivia isSignatureFile source =
+        let ast = (if isSignatureFile then getParseResultsOfSignatureFile else getParseResults) source
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { ConditionalDirectives = trivia })) -> trivia
-        | ParsedInput.SigFile _ -> []
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { ConditionalDirectives = trivia }))
+        | ParsedInput.SigFile(ParsedSigFileInput(trivia = { ConditionalDirectives = trivia })) -> trivia
 
     [<Test>]
     let ``single #if / #endif`` () =
         let trivia =
-            getDirectiveTrivia """
+            getDirectiveTrivia false """
 let v =
     #if DEBUG
     ()
@@ -3336,7 +3336,7 @@ let v =
     [<Test>]
     let ``single #if / #else / #endif`` () =
         let trivia =
-            getDirectiveTrivia """
+            getDirectiveTrivia false """
 let v =
     #if DEBUG
     30
@@ -3362,7 +3362,7 @@ let v =
     [<Test>]
     let ``nested #if / #else / #endif`` () =
         let trivia =
-            getDirectiveTrivia """
+            getDirectiveTrivia false """
 let v =
     #if FOO
         #if MEH
@@ -3400,9 +3400,9 @@ let v =
             Assert.Fail $"Unexpected trivia, got {trivia}"
 
     [<Test>]
-    let ``nested #if / ##endif with complex expressions`` () =
+    let ``nested #if / #endif with complex expressions`` () =
         let trivia =
-            getDirectiveTrivia """
+            getDirectiveTrivia false """
 let v =
     #if !DEBUG
         #if FOO && BAR
@@ -3444,7 +3444,7 @@ let v =
     [<Test>]
     let ``directives in multiline comment are not reported as trivia`` () =
         let trivia =
-            getDirectiveTrivia """
+            getDirectiveTrivia false """
 let v =
 (*
     #if DEBUG
@@ -3462,8 +3462,187 @@ let v =
     [<Test>]
     let ``directives in multiline string are not reported as trivia`` () =
         let trivia =
-            getDirectiveTrivia "
+            getDirectiveTrivia false "
 let v = \"\"\"
+    #if DEBUG
+    ()
+    #endif
+    42
+\"\"\"
+"
+
+        match trivia with
+        | [] -> Assert.Pass()
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``single #if / #endif, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true """
+namespace Foobar
+
+val v: int =
+    #if DEBUG
+    1
+    #endif
+    42
+"""
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, mIf)
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif ] ->
+            assertRange (5, 4) (5, 13) mIf
+            assertRange (7, 4) (7, 10) mEndif
+            
+            match expr with
+            | IfDirectiveExpression.IfdefId "DEBUG" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr}"
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``single #if / #else / #endif, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true """
+namespace Foobar
+
+val v : int =
+    #if DEBUG
+    30
+    #else
+    42
+    #endif
+"""
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, mIf)
+            ConditionalDirectiveTrivia.ElseDirectiveTrivia mElse
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif ] ->
+            assertRange (5, 4) (5, 13) mIf
+            assertRange (7, 4) (7, 9) mElse
+            assertRange (9, 4) (9, 10) mEndif
+            
+            match expr with
+            | IfDirectiveExpression.IfdefId "DEBUG" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr}"
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``nested #if / #else / #endif, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true """
+namespace Foobar
+
+val v : int =
+    #if FOO
+        #if MEH
+        1
+        #else
+        2
+        #endif
+    #else
+        3
+    #endif
+"""
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr1, mIf1)
+            ConditionalDirectiveTrivia.IfDirectiveTrivia(expr2, mIf2)
+            ConditionalDirectiveTrivia.ElseDirectiveTrivia mElse1
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif1
+            ConditionalDirectiveTrivia.ElseDirectiveTrivia mElse2
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif2 ] ->
+            assertRange (5, 4) (5, 11) mIf1
+            assertRange (6, 8) (6, 15) mIf2
+            assertRange (8, 8) (8, 13) mElse1
+            assertRange (10, 8) (10, 14) mEndif1
+            assertRange (11, 4) (11, 9) mElse2
+            assertRange (13, 4) (13, 10) mEndif2
+            
+            match expr1 with
+            | IfDirectiveExpression.IfdefId "FOO" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr1}"
+
+            match expr2 with
+            | IfDirectiveExpression.IfdefId "MEH" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr2}"
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``nested #if / #endif with complex expressions, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true """
+namespace Foobar
+
+val v : int =
+    #if !DEBUG
+        #if FOO && BAR
+            #if MEH || HMM
+                9
+            #endif
+        #endif
+    #endif
+    10
+"""
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr1, mIf1)
+            ConditionalDirectiveTrivia.IfDirectiveTrivia(expr2, mIf2)
+            ConditionalDirectiveTrivia.IfDirectiveTrivia(expr3, mIf3)
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif1
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif2
+            ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif3 ] ->
+            assertRange (5, 4) (5, 14) mIf1
+            assertRange (6, 8) (6, 22) mIf2
+            assertRange (7, 12) (7, 26) mIf3
+            assertRange (9, 12) (9, 18) mEndif1
+            assertRange (10, 8) (10, 14) mEndif2
+            assertRange (11, 4) (11, 10) mEndif3
+            
+            match expr1 with
+            | IfDirectiveExpression.IfdefNot (IfDirectiveExpression.IfdefId "DEBUG") -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr1}"
+
+            match expr2 with
+            | IfDirectiveExpression.IfdefAnd(IfDirectiveExpression.IfdefId "FOO", IfDirectiveExpression.IfdefId "BAR") -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr2}"
+
+            match expr3 with
+            | IfDirectiveExpression.IfdefOr(IfDirectiveExpression.IfdefId "MEH", IfDirectiveExpression.IfdefId "HMM") -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr3}"
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``directives in multiline comment are not reported as trivia, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true """
+namespace Foobar
+
+val v : int =
+(*
+    #if DEBUG
+    ()
+    #endif
+*)
+    42
+"""
+
+        match trivia with
+        | [] -> Assert.Pass()
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``directives in multiline string are not reported as trivia, signature file`` () =
+        let trivia =
+            getDirectiveTrivia true "
+namespace Foobar
+
+let v : string = \"\"\"
     #if DEBUG
     ()
     #endif
