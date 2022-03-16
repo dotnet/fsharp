@@ -3440,3 +3440,38 @@ let v =
             | _ -> Assert.Fail $"Expected different expression, got {expr3}"
         | _ ->
             Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``directives in multiline comment are not reported as trivia`` () =
+        let trivia =
+            getDirectiveTrivia """
+let v =
+(*
+    #if DEBUG
+    ()
+    #endif
+*)
+    42
+"""
+
+        match trivia with
+        | [] -> Assert.Pass()
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``directives in multiline string are not reported as trivia`` () =
+        let trivia =
+            getDirectiveTrivia "
+let v = \"\"\"
+    #if DEBUG
+    ()
+    #endif
+    42
+\"\"\"
+"
+
+        match trivia with
+        | [] -> Assert.Pass()
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
