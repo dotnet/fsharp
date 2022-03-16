@@ -9132,9 +9132,6 @@ FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefAnd
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefId
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefNot
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefOr
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean Equals(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean Equals(System.Object)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefAnd
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefId
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefNot
@@ -9152,11 +9149,6 @@ FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefNot
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 CompareTo(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 CompareTo(System.Object)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 GetHashCode()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: System.String ToString()

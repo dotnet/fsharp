@@ -10,7 +10,7 @@ type ConditionalDirectiveTrivia =
     | ElseDirectiveTrivia of range:range
     | EndIfDirectiveTrivia of range:range
 
-and IfDirectiveExpression =
+and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
     | IfdefAnd of IfDirectiveExpression * IfDirectiveExpression
     | IfdefOr of IfDirectiveExpression * IfDirectiveExpression
     | IfdefNot of IfDirectiveExpression
