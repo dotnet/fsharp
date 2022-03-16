@@ -192,7 +192,11 @@ module LexbufIfdefStore =
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
 
-    let SaveIfHash (lexbuf: Lexbuf, expr: LexerIfdefExpression, range: range) =
+    let private mkRangeWithoutLeadingWhitespace (lexed:string) (m:range): range =
+         let startColumn = lexed.Length - lexed.TrimStart().Length
+         mkFileIndexRange m.FileIndex (mkPos m.StartLine startColumn) m.End
+    
+    let SaveIfHash (lexbuf: Lexbuf, lexed:string, expr: LexerIfdefExpression, range: range) =
         let store = getStore lexbuf
 
         let expr =
@@ -205,15 +209,19 @@ module LexbufIfdefStore =
             
             visit expr
 
-        store.Add(ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, range))
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        
+        store.Add(ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, m))
 
-    let SaveElseHash (lexbuf: Lexbuf, range: range) =
+    let SaveElseHash (lexbuf: Lexbuf, lexed:string, range: range) =
         let store = getStore lexbuf
-        store.Add(ConditionalDirectiveTrivia.ElseDirectiveTrivia(range))
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        store.Add(ConditionalDirectiveTrivia.ElseDirectiveTrivia(m))
 
-    let SaveEndIfHash (lexbuf: Lexbuf, range: range) =
+    let SaveEndIfHash (lexbuf: Lexbuf, lexed:string, range: range) =
         let store = getStore lexbuf
-        store.Add(ConditionalDirectiveTrivia.EndIfDirectiveTrivia(range))
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        store.Add(ConditionalDirectiveTrivia.EndIfDirectiveTrivia(m))
 
     let GetTrivia (lexbuf: Lexbuf): ConditionalDirectiveTrivia list =
         let store = getStore lexbuf

@@ -945,7 +945,7 @@ rule token args skip = parse
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
-     LexbufIfdefStore.SaveIfHash(lexbuf, expr, m)
+     LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
 
      // Get the token; make sure it starts at zero position & return
      let cont, f =
@@ -969,7 +969,7 @@ rule token args skip = parse
      | (IfDefIf,_) :: rest ->
        let m = lexbuf.LexemeRange
        args.ifdefStack <- (IfDefElse,m) :: rest
-       LexbufIfdefStore.SaveElseHash(lexbuf, m)
+       LexbufIfdefStore.SaveElseHash(lexbuf, lexed, m)
        let tok = HASH_ELSE(m, lexed, LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(0, m)))
        let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashElseMustBeFirst()) tok
        if not skip then tok else endline (LexerEndlineContinuation.Skip(0, m)) args skip lexbuf }
@@ -981,7 +981,7 @@ rule token args skip = parse
      | []->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
      | _ :: rest ->
         args.ifdefStack <- rest
-        LexbufIfdefStore.SaveEndIfHash(lexbuf, m)
+        LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
         let tok = HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
         let tok = shouldStartLine args lexbuf m (FSComp.SR.lexHashEndifMustBeFirst()) tok
         if not skip then tok else endline LexerEndlineContinuation.Token args skip lexbuf }
@@ -1054,6 +1054,7 @@ and ifdefSkip n m args skip = parse
           match args.ifdefStack with
           | [] ->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
           | _ :: rest ->
+              LexbufIfdefStore.SaveEndIfHash(lexbuf, lexed, m)
               args.ifdefStack <- rest
               if not skip then HASH_ENDIF(m,lexed,LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Token))
               else endline LexerEndlineContinuation.Token args skip lexbuf

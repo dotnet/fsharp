@@ -76,11 +76,11 @@ val LexerIfdefEval: lookup:(string -> bool) -> _arg1:LexerIfdefExpression -> boo
 
 module LexbufIfdefStore =
 
-    val SaveIfHash: lexbuf:UnicodeLexing.Lexbuf * expr: LexerIfdefExpression * range: range -> unit
+    val SaveIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * expr: LexerIfdefExpression * range: range -> unit
 
-    val SaveElseHash: lexbuf:UnicodeLexing.Lexbuf * range: range -> unit
+    val SaveElseHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
 
-    val SaveEndIfHash: lexbuf:UnicodeLexing.Lexbuf * range: range -> unit
+    val SaveEndIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
 
     val GetTrivia: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
 

@@ -3318,8 +3318,34 @@ let v =
         match ast with
         | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { ConditionalDirectives = [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, mIf)
                                                                                         ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif ] })) ->
-            assertRange (3, 0) (3, 13) mIf
-            assertRange (5, 0) (5, 10) mEndif
+            assertRange (3, 4) (3, 13) mIf
+            assertRange (5, 4) (5, 10) mEndif
+            
+            match expr with
+            | IfDirectiveExpression.IfdefId "DEBUG" -> ()
+            | _ -> Assert.Fail $"Expected different expression, got {expr}"
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``single #if / #else / #endif`` () =
+        let ast =
+            getParseResults """
+let v =
+    #if DEBUG
+    30
+    #else
+    42
+    #endif
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { ConditionalDirectives = [ ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, mIf)
+                                                                                        ConditionalDirectiveTrivia.ElseDirectiveTrivia mElse
+                                                                                        ConditionalDirectiveTrivia.EndIfDirectiveTrivia mEndif ] })) ->
+            assertRange (3, 4) (3, 13) mIf
+            assertRange (5, 4) (5, 9) mElse
+            assertRange (7, 4) (7, 10) mEndif
             
             match expr with
             | IfDirectiveExpression.IfdefId "DEBUG" -> ()
