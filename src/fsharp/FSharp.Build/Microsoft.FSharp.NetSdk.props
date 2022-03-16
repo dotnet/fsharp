@@ -72,9 +72,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
   </ItemGroup>
 
+  <Import Project="Microsoft.FSharp.Core.NetSdk.props" />                       <!-- Sets initial value of FSharp.Core -->
+
   <PropertyGroup>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
-    <FSCorePackageVersion>{{FSCorePackageVersionValue}}</FSCorePackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

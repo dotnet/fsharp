@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The Range and Pos types form part of the public API of FSharp.Compiler.Service
+// The Range and Pos types form part of the public API of FSharp.Compiler.Service
 namespace FSharp.Compiler.Text
 
 open System.Collections.Generic

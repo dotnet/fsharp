@@ -1924,12 +1924,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let primaryScopeRef =
             match primaryAssem with
               | _, [ResolvedImportedAssembly ccu] -> ccu.FSharpViewOfMetadata.ILScopeRef
-              | _ -> failwith "unexpected"
+              | _ -> failwith "primaryScopeRef - unexpected"
 
         let primaryAssemblyResolvedPath =
             match primaryAssemblyResolution with
             | [primaryAssemblyResolution] -> primaryAssemblyResolution.resolvedPath
-            | _ -> failwith "unexpected"
+            | _ -> failwith "primaryAssemblyResolvedPath - unexpected"
 
         let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
 

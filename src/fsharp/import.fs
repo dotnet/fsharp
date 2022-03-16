@@ -428,15 +428,19 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
          |  None ->
             match mbase.OfType<ProvidedConstructorInfo>() with
             | Some _  -> mbase.PApply((fun _ -> ProvidedType.Void), m)
-            | _ -> failwith "unexpected"
+            | _ -> failwith "ImportProvidedMethodBaseAsILMethodRef - unexpected"
+
      let genericArity = 
         if mbase.PUntaint((fun x -> x.IsGenericMethod), m) then 
             mbase.PUntaint((fun x -> x.GetGenericArguments().Length), m)
         else 0
+
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)
+
      let parameters = 
          [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
               yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m)) ]
+
      mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name), m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
 #endif
 

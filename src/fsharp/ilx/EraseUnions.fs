@@ -406,7 +406,7 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @  [ AI_ldnull; AI_ceq ]
             | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un  ]
-            | _ -> failwith "unexpected"
+            | _ -> failwith "mkIsData - unexpected"
 
 type ICodeGen<'Mark> = 
     abstract CodeLabel: 'Mark -> ILCodeLabel
@@ -454,7 +454,7 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
             | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (pos,tg)]
-            | _ -> failwith "unexpected"
+            | _ -> failwith "mkBrIsData - unexpected"
 
 
 let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 

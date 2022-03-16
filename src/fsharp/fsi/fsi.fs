@@ -2603,9 +2603,6 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed None
 
-            | _, _ ->
-                istate,Completed None
-
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with
             | ParsedScriptInteraction.Definitions ([], _) ->

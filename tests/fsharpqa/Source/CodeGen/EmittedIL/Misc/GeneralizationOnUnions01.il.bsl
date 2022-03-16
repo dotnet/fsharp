@@ -36,13 +36,13 @@
   // Offset: 0x00000690 Length: 0x000001F4
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {61E07031-4CA2-8CD1-A745-03833170E061}
+// MVID: {6220E156-4CA2-8CD1-A745-038356E12062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x070E0000
+// Image base: 0x07190000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -145,42 +145,36 @@
             instance int32  CompareTo(class GeneralizationOnUnions01/Weirdo obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       26 (0x1a)
+      // Code size       17 (0x11)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\GeneralizationOnUnions01.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0010
+      IL_0001:  brfalse.s  IL_000a
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  ldnull
-      IL_0008:  cgt.un
-      IL_000a:  brfalse.s  IL_000e
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_0008
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldc.i4.0
-      IL_000d:  ret
+      IL_0006:  ldc.i4.0
+      IL_0007:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_000e:  ldc.i4.1
-      IL_000f:  ret
+      IL_0008:  ldc.i4.1
+      IL_0009:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0010:  ldarg.1
-      IL_0011:  ldnull
-      IL_0012:  cgt.un
-      IL_0014:  brfalse.s  IL_0018
+      IL_000a:  ldarg.1
+      IL_000b:  brfalse.s  IL_000f
 
       .line 100001,100001 : 0,0 ''
-      IL_0016:  ldc.i4.m1
-      IL_0017:  ret
+      IL_000d:  ldc.i4.m1
+      IL_000e:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0018:  ldc.i4.0
-      IL_0019:  ret
+      IL_000f:  ldc.i4.0
+      IL_0010:  ret
     } // end of method Weirdo::CompareTo
 
     .method public hidebysig virtual final 
@@ -201,7 +195,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       43 (0x2b)
+      // Code size       34 (0x22)
       .maxstack  3
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
       .line 100001,100001 : 0,0 ''
@@ -210,65 +204,57 @@
       IL_0006:  stloc.0
       .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
-      IL_0008:  ldnull
-      IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_001c
+      IL_0008:  brfalse.s  IL_0016
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  unbox.any  GeneralizationOnUnions01/Weirdo
-      IL_0013:  ldnull
-      IL_0014:  cgt.un
-      IL_0016:  brfalse.s  IL_001a
+      IL_000a:  ldarg.1
+      IL_000b:  unbox.any  GeneralizationOnUnions01/Weirdo
+      IL_0010:  brfalse.s  IL_0014
 
       .line 100001,100001 : 0,0 ''
-      IL_0018:  ldc.i4.0
-      IL_0019:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_001a:  ldc.i4.1
-      IL_001b:  ret
+      IL_0014:  ldc.i4.1
+      IL_0015:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_001c:  ldarg.1
-      IL_001d:  unbox.any  GeneralizationOnUnions01/Weirdo
-      IL_0022:  ldnull
-      IL_0023:  cgt.un
-      IL_0025:  brfalse.s  IL_0029
+      IL_0016:  ldarg.1
+      IL_0017:  unbox.any  GeneralizationOnUnions01/Weirdo
+      IL_001c:  brfalse.s  IL_0020
 
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldc.i4.m1
-      IL_0028:  ret
+      IL_001e:  ldc.i4.m1
+      IL_001f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0029:  ldc.i4.0
-      IL_002a:  ret
+      IL_0020:  ldc.i4.0
+      IL_0021:  ret
     } // end of method Weirdo::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       14 (0xe)
+      // Code size       11 (0xb)
       .maxstack  3
       .locals init ([0] int32 V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_000c
+      IL_0001:  brfalse.s  IL_0009
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldc.i4.0
-      IL_0007:  stloc.0
-      IL_0008:  ldarg.0
-      IL_0009:  pop
-      IL_000a:  ldc.i4.0
-      IL_000b:  ret
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  ldarg.0
+      IL_0006:  pop
+      IL_0007:  ldc.i4.0
+      IL_0008:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldc.i4.0
-      IL_000d:  ret
+      IL_0009:  ldc.i4.0
+      IL_000a:  ret
     } // end of method Weirdo::GetHashCode
 
     .method public hidebysig virtual final 
@@ -288,68 +274,64 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       30 (0x1e)
+      // Code size       27 (0x1b)
       .maxstack  4
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0,
                [1] class GeneralizationOnUnions01/Weirdo V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0016
+      IL_0001:  brfalse.s  IL_0013
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  isinst     GeneralizationOnUnions01/Weirdo
-      IL_000c:  stloc.0
+      IL_0003:  ldarg.1
+      IL_0004:  isinst     GeneralizationOnUnions01/Weirdo
+      IL_0009:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_000a:  ldloc.0
+      IL_000b:  brfalse.s  IL_0011
+
       .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
-      IL_000e:  brfalse.s  IL_0014
+      IL_000e:  stloc.1
+      IL_000f:  ldc.i4.1
+      IL_0010:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0010:  ldloc.0
-      IL_0011:  stloc.1
-      IL_0012:  ldc.i4.1
-      IL_0013:  ret
+      IL_0011:  ldc.i4.0
+      IL_0012:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0014:  ldc.i4.0
-      IL_0015:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0016:  ldarg.1
-      IL_0017:  ldnull
-      IL_0018:  cgt.un
-      IL_001a:  ldc.i4.0
-      IL_001b:  ceq
-      IL_001d:  ret
+      IL_0013:  ldarg.1
+      IL_0014:  ldnull
+      IL_0015:  cgt.un
+      IL_0017:  ldc.i4.0
+      IL_0018:  ceq
+      IL_001a:  ret
     } // end of method Weirdo::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(class GeneralizationOnUnions01/Weirdo obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       19 (0x13)
+      // Code size       16 (0x10)
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_000b
+      IL_0001:  brfalse.s  IL_0008
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  ldnull
-      IL_0008:  cgt.un
-      IL_000a:  ret
+      IL_0003:  ldarg.1
+      IL_0004:  ldnull
+      IL_0005:  cgt.un
+      IL_0007:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_000b:  ldarg.1
-      IL_000c:  ldnull
-      IL_000d:  cgt.un
-      IL_000f:  ldc.i4.0
-      IL_0010:  ceq
-      IL_0012:  ret
+      IL_0008:  ldarg.1
+      IL_0009:  ldnull
+      IL_000a:  cgt.un
+      IL_000c:  ldc.i4.0
+      IL_000d:  ceq
+      IL_000f:  ret
     } // end of method Weirdo::Equals
 
     .method public hidebysig virtual final 
