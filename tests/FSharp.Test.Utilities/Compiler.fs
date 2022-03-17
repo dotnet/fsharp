@@ -19,6 +19,7 @@ open System.Text
 open System.Text.RegularExpressions
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
+open System.Reflection.Metadata
 
 module rec Compiler =
     type BaselineFile = { FilePath: string; Content: string option }
@@ -278,6 +279,9 @@ module rec Compiler =
     /// Turns on checks that force the documentation of all parameters
     let withXmlCommentStrictParamChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3391" ] "withXmlCommentChecking is only supported for F#" cUnit
+
+    let withPortablePdb (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--debug:portable"] "withPortablePdb is only supported for F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -686,6 +690,42 @@ module rec Compiler =
         cUnit
 
     let verifyBaselines = verifyBaseline >> verifyILBaseline
+
+
+    let private verifyPortablePdb (result: Output) : unit =
+        match result.OutputPath with
+        | Some assemblyPath ->
+            let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+            if not (FileSystem.FileExistsShim pdbPath) then
+                failwith $"PDB file does not exists: {pdbPath}"
+
+            use fileStream = File.OpenRead pdbPath;
+            use provider = MetadataReaderProvider.FromPortablePdbStream fileStream
+            let reader = provider.GetMetadataReader()
+
+            if reader.MetadataVersion <> "PDB v1.0" then
+                failwith $"Invalid PDB file version. Expected: \"PDB v1.0\"; Got {reader.MetadataVersion}"
+
+            if reader.MetadataKind <> MetadataKind.Ecma335 then
+                failwith $"Invalid metadata kind detected. Expected {MetadataKind.Ecma335}; Got {reader.MetadataKind}"
+
+            // This should not happen, just a sanity check:
+            if reader.IsAssembly then
+                failwith $"Unexpected PDB type, `IsAssembly` should be `false`."
+
+            // TODO (sanity check):
+            // assert (reader.DebugMetadataHeader.EntryPoint.IsNil = false) // Pass to this function, whether we are building Exe or Library, and check that there's no EntryPoint for Library
+        
+        | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+
+        ()
+
+    let verifyPdb (result: TestResult) : TestResult =
+        match result with
+        | Success r -> verifyPortablePdb r
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
+
+        result
 
     [<AutoOpen>]
     module Assertions =
