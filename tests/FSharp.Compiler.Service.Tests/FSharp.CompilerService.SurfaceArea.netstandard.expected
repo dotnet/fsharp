@@ -9090,66 +9090,66 @@ FSharp.Compiler.Syntax.TyparStaticReq: Int32 Tag
 FSharp.Compiler.Syntax.TyparStaticReq: Int32 get_Tag()
 FSharp.Compiler.Syntax.TyparStaticReq: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+ElseDirectiveTrivia: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+ElseDirectiveTrivia: FSharp.Compiler.Text.Range range
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIfDirectiveTrivia: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIfDirectiveTrivia: FSharp.Compiler.Text.Range range
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+IfDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression expr
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+IfDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_expr()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+IfDirectiveTrivia: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+IfDirectiveTrivia: FSharp.Compiler.Text.Range range
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 ElseDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 EndIfDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 IfDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsElseDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsEndIfDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsIfDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsElseDirectiveTrivia()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsEndIfDirectiveTrivia()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsIfDirectiveTrivia()
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewElseDirectiveTrivia(FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewEndIfDirectiveTrivia(FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewIfDirectiveTrivia(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+ElseDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIfDirectiveTrivia
-FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+IfDirectiveTrivia
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Else: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Else: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIf: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIf: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+If: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression expr
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+If: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_expr()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+If: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+If: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 Else
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 EndIf
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags: Int32 If
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsElse
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsEndIf
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean IsIf
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsElse()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsEndIf()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Boolean get_IsIf()
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewElse(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewEndIf(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia NewIf(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Else
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+EndIf
+FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+If
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Tags
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefAnd: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item1
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefAnd: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item2
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefAnd: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item1()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefAnd: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item2()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefId: System.String Item
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefId: System.String get_Item()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefNot: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefNot: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item1
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item2
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item1()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item2()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefAnd
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefId
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefNot
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 IfdefOr
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefAnd
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefId
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefNot
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIfdefOr
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsIfdefAnd()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsIfdefId()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsIfdefNot()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsIfdefOr()
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewIfdefAnd(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewIfdefId(System.String)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewIfdefNot(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewIfdefOr(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefAnd
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefId
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefNot
-FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+IfdefOr
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+And: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item1
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+And: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item2
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+And: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item1()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+And: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item2()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Ident: System.String Item
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Ident: System.String get_Item()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Not: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Not: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Or: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item1
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Or: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression Item2
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Or: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item1()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Or: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression get_Item2()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 And
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 Ident
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 Not
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags: Int32 Or
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsAnd
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsIdent
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsNot
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean IsOr
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsAnd()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsIdent()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsNot()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Boolean get_IsOr()
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewAnd(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewIdent(System.String)
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewNot(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression NewOr(FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression, FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression)
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+And
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Ident
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Not
+FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Or
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression+Tags
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 get_Tag()

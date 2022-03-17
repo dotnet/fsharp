@@ -202,26 +202,26 @@ module LexbufIfdefStore =
         let expr =
             let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
                 match expr with
-                | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.IfdefAnd(visit l, visit r)
-                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.IfdefOr(visit l, visit r)
-                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.IfdefNot(visit e)
-                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.IfdefId id
+                | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.And(visit l, visit r)
+                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
+                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
+                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
             
             visit expr
 
         let m = mkRangeWithoutLeadingWhitespace lexed range
         
-        store.Add(ConditionalDirectiveTrivia.IfDirectiveTrivia(expr, m))
+        store.Add(ConditionalDirectiveTrivia.If(expr, m))
 
     let SaveElseHash (lexbuf: Lexbuf, lexed:string, range: range) =
         let store = getStore lexbuf
         let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.ElseDirectiveTrivia(m))
+        store.Add(ConditionalDirectiveTrivia.Else(m))
 
     let SaveEndIfHash (lexbuf: Lexbuf, lexed:string, range: range) =
         let store = getStore lexbuf
         let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.EndIfDirectiveTrivia(m))
+        store.Add(ConditionalDirectiveTrivia.EndIf(m))
 
     let GetTrivia (lexbuf: Lexbuf): ConditionalDirectiveTrivia list =
         let store = getStore lexbuf

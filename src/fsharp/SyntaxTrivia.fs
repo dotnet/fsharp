@@ -6,15 +6,15 @@ open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
-    | IfDirectiveTrivia of expr:IfDirectiveExpression * range:range
-    | ElseDirectiveTrivia of range:range
-    | EndIfDirectiveTrivia of range:range
+    | If of expr:IfDirectiveExpression * range:range
+    | Else of range:range
+    | EndIf of range:range
 
 and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
-    | IfdefAnd of IfDirectiveExpression * IfDirectiveExpression
-    | IfdefOr of IfDirectiveExpression * IfDirectiveExpression
-    | IfdefNot of IfDirectiveExpression
-    | IfdefId of string
+    | And of IfDirectiveExpression * IfDirectiveExpression
+    | Or of IfDirectiveExpression * IfDirectiveExpression
+    | Not of IfDirectiveExpression
+    | Ident of string
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInputTrivia =

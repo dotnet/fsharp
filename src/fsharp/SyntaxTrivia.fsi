@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SyntaxTrivia
+namespace rec FSharp.Compiler.SyntaxTrivia
 
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
-    | IfDirectiveTrivia of expr:IfDirectiveExpression * range:range
-    | ElseDirectiveTrivia of range:range
-    | EndIfDirectiveTrivia of range:range
+    | If of expr:IfDirectiveExpression * range:range
+    | Else of range:range
+    | EndIf of range:range
 
-and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
-    | IfdefAnd of IfDirectiveExpression * IfDirectiveExpression
-    | IfdefOr of IfDirectiveExpression * IfDirectiveExpression
-    | IfdefNot of IfDirectiveExpression
-    | IfdefId of string
+type [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
+    | And of IfDirectiveExpression * IfDirectiveExpression
+    | Or of IfDirectiveExpression * IfDirectiveExpression
+    | Not of IfDirectiveExpression
+    | Ident of string
 
 /// Represents additional information for ParsedImplFileInput
 [<NoEquality; NoComparison>]
