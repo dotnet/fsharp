@@ -246,9 +246,17 @@ module LexbufCommentStore =
         let m = unionRanges startRange endRange
         store.Add(CommentTrivia.LineComment(m))
 
+    let SaveBlockComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
+        let store = getStore lexbuf
+        let m = unionRanges startRange endRange
+        store.Add(CommentTrivia.BlockComment(m))
+
     let GetComments (lexbuf: Lexbuf): CommentTrivia list =
         let store = getStore lexbuf
         Seq.toList store
+
+    let ClearComments (lexbuf: Lexbuf): unit =
+        lexbuf.BufferLocalStore.Remove(commentKey) |> ignore
 
 //------------------------------------------------------------------------
 // Parsing: continuations for whitespace tokens

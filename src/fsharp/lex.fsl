@@ -1495,7 +1495,9 @@ and comment cargs skip = parse
       else
           LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
           if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-          else token args skip lexbuf }
+          else
+              LexbufCommentStore.SaveBlockComment(lexbuf, m, lexbuf.LexemeRange) 
+              token args skip lexbuf }
 
  | anywhite+
  | [^ '\'' '(' '*' '\n' '\r' '"' ')' '@' ' ' '\t' ]+

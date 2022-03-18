@@ -3718,3 +3718,31 @@ val foo : int // comment!
             assertRange (4, 14) (4, 25) mComment
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``block comment in source code`` () =
+        let trivia =
+            getCommentTrivia false """
+let a (* b *)  c = c + 42
+"""
+
+        match trivia with
+        | [ CommentTrivia.BlockComment mComment ] ->
+            assertRange (2, 6) (2, 13) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``block comment in source code, signature file`` () =
+        let trivia =
+            getCommentTrivia true """
+namespace Meh
+
+val a (* b *) : int
+"""
+
+        match trivia with
+        | [ CommentTrivia.BlockComment mComment ] ->
+            assertRange (4, 6) (4, 13) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
