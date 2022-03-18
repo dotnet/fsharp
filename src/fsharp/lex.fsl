@@ -679,7 +679,7 @@ rule token args skip = parse
        let m = lexbuf.LexemeRange
        LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
-       else singleLineComment (None,1,m,args) skip lexbuf }
+       else singleLineComment (None,1,m,m,args) skip lexbuf }
 
  | "///" op_char*
      { // Match exactly 3 slash, 4+ slash caught by preceding rule
@@ -687,14 +687,14 @@ rule token args skip = parse
        let doc = lexemeTrimLeft lexbuf 3
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
-       else singleLineComment (Some (m, sb),1,m,args) skip lexbuf }
+       else singleLineComment (Some (m, sb),1,m,m,args) skip lexbuf }
 
  | "//" op_char*
      { // Need to read all operator symbols too, otherwise it might be parsed by a rule below
        let m = lexbuf.LexemeRange
        LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
-       else singleLineComment (None,1,m,args) skip lexbuf }
+       else singleLineComment (None,1,m,m,args) skip lexbuf }
 
  | newline
      { newline lexbuf
@@ -917,7 +917,7 @@ rule token args skip = parse
        let m = lexbuf.LexemeRange
        let tok = LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
        let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) tok
-       if not skip then tok else singleLineComment (None,1,m,args) skip lexbuf }
+       if not skip then tok else singleLineComment (None,1,m,m,args) skip lexbuf }
 
  | "#light" anywhite*
  | ("#indent" | "#light") anywhite+ "\"on\""
@@ -1421,28 +1421,30 @@ and tripleQuoteString sargs skip = parse
 // Parsing single-line comment - we need to split it into words for Visual Studio IDE
 and singleLineComment cargs skip = parse
  | newline
-     { let buff,_n, _m, args = cargs
+     { let buff,_n, mStart, mEnd, args = cargs
        trySaveXmlDoc lexbuf buff
        newline lexbuf
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-       else token args skip lexbuf }
+       else
+           LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
+           token args skip lexbuf }
 
  | eof
-     { let _, _n, _m, args = cargs
+     { let _, _n, _mStart, _mEnd, args = cargs
        // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token
        EOF (LexCont.Token(args.ifdefStack, args.stringNest)) }
 
  | [^ ' ' '\n' '\r' ]+
  | anywhite+
-     { let buff, n, m, args = cargs
+     { let buff, n, m, _, args = cargs
        // Append the current token to the XML documentation if we're collecting it
        tryAppendXmlDoc buff (lexeme lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, n, m))
-       else singleLineComment (buff, n, m, args) skip lexbuf  }
+       else singleLineComment (buff, n, m, lexbuf.LexemeRange, args) skip lexbuf  }
 
  | surrogateChar surrogateChar
- | _ { let _, _n, _m, args = cargs
+ | _ { let _, _n, _mStart, _mEnd, args = cargs
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 

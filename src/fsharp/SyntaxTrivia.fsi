@@ -16,12 +16,19 @@ type [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression 
     | Not of IfDirectiveExpression
     | Ident of string
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type CommentTrivia =
+    | LineComment of range: range
+    | BlockComment of range: range
+
 /// Represents additional information for ParsedImplFileInput
 [<NoEquality; NoComparison>]
 type ParsedImplFileInputTrivia =
     {
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
+        /// Represent code comments found in the source file
+        CodeComments: CommentTrivia list
     }
 
 /// Represents additional information for ParsedSigFileInputTrivia
@@ -30,6 +37,8 @@ type ParsedSigFileInputTrivia =
     {
         /// Preprocessor directives of type #if, #else or #endif
         ConditionalDirectives: ConditionalDirectiveTrivia list
+        /// Represent code comments found in the source file
+        CodeComments: CommentTrivia list
     }
 
 /// Represents additional information for SynExpr.TryWith
