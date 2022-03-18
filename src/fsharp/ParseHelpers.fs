@@ -192,40 +192,72 @@ module LexbufIfdefStore =
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
 
+    let removeKey (key:string) (lexbuf: Lexbuf) : unit =
+        lexbuf.BufferLocalStore.Remove(key) |> ignore
+    
+    // The key to store whether a string is being lexed
+    let private lexingStringKey = "LexingString"
+    let private lexingBlockCommentKey = "LexingBlockComment"
+    
+    let private isLexingStringOrBlockComment (lexbuf: Lexbuf) : bool =
+        (fst (lexbuf.BufferLocalStore.TryGetValue lexingStringKey))
+        || (fst (lexbuf.BufferLocalStore.TryGetValue lexingBlockCommentKey))
+
     let private mkRangeWithoutLeadingWhitespace (lexed:string) (m:range): range =
          let startColumn = lexed.Length - lexed.TrimStart().Length
          mkFileIndexRange m.FileIndex (mkPos m.StartLine startColumn) m.End
-    
+
     let SaveIfHash (lexbuf: Lexbuf, lexed:string, expr: LexerIfdefExpression, range: range) =
-        let store = getStore lexbuf
+        if not (isLexingStringOrBlockComment lexbuf) then
+            let store = getStore lexbuf
 
-        let expr =
-            let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
-                match expr with
-                | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.And(visit l, visit r)
-                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
-                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
-                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
+            let expr =
+                let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
+                    match expr with
+                    | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.And(visit l, visit r)
+                    | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
+                    | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
+                    | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
+                
+                visit expr
+
+            let m = mkRangeWithoutLeadingWhitespace lexed range
             
-            visit expr
-
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        
-        store.Add(ConditionalDirectiveTrivia.If(expr, m))
+            store.Add(ConditionalDirectiveTrivia.If(expr, m))
 
     let SaveElseHash (lexbuf: Lexbuf, lexed:string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.Else(m))
+        if not (isLexingStringOrBlockComment lexbuf) then
+            let store = getStore lexbuf
+            let m = mkRangeWithoutLeadingWhitespace lexed range
+            store.Add(ConditionalDirectiveTrivia.Else(m))
 
     let SaveEndIfHash (lexbuf: Lexbuf, lexed:string, range: range) =
-        let store = getStore lexbuf
-        let m = mkRangeWithoutLeadingWhitespace lexed range
-        store.Add(ConditionalDirectiveTrivia.EndIf(m))
+        if not (isLexingStringOrBlockComment lexbuf) then
+            let store = getStore lexbuf
+            let m = mkRangeWithoutLeadingWhitespace lexed range
+            store.Add(ConditionalDirectiveTrivia.EndIf(m))
 
     let GetTrivia (lexbuf: Lexbuf): ConditionalDirectiveTrivia list =
         let store = getStore lexbuf
         Seq.toList store
+
+    let SetLexingString (lexbuf: Lexbuf) =
+        lexbuf.BufferLocalStore.Add(lexingStringKey, null)
+
+    let ClearLexingString (lexbuf: Lexbuf) =
+        lexbuf.BufferLocalStore.Remove(lexingStringKey) |> ignore
+
+    let SetLexingBlockComment (lexbuf: Lexbuf) =
+        lexbuf.BufferLocalStore.Add(lexingBlockCommentKey, null)
+
+    let ClearLexingBlockComment (lexbuf: Lexbuf) =
+        lexbuf.BufferLocalStore.Remove(lexingBlockCommentKey) |> ignore
+
+    let ClearTrivia (lexbuf: Lexbuf) =
+        removeKey ifDefKey lexbuf
+        // These should be removed already, clearing again for safety
+        removeKey lexingStringKey lexbuf
+        removeKey lexingBlockCommentKey lexbuf
 
 //------------------------------------------------------------------------
 // Parsing: continuations for whitespace tokens

@@ -3654,3 +3654,58 @@ let v : string = \"\"\"
         | [] -> Assert.Pass()
         | _ ->
             Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``nested directives in non active multiline string are not reported as trivia `` () =
+        let trivia =
+            getDirectiveTrivia true "
+#if FOO
+    \"\"\"
+    #if BAR
+    #endif
+    \"\"\"
+#else
+    \"\"\"
+    #if BAR
+    #endif
+    \"\"\"
+#endif
+"
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.If(IfDirectiveExpression.Ident "FOO", mIf)
+            ConditionalDirectiveTrivia.Else mElse
+            ConditionalDirectiveTrivia.EndIf mEndIf ] ->
+            assertRange (2, 0) (2, 7) mIf
+            assertRange (7, 0) (7, 5) mElse
+            assertRange (12, 0) (12, 6) mEndIf
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"
+
+    [<Test>]
+    let ``nested directives in block comments are not reported as trivia `` () =
+        let trivia =
+            getDirectiveTrivia true "
+#if FOO
+    (*
+        #if BAR
+        #endif
+    *)
+    ()
+#else
+    (*
+        #if MEH
+        #endif
+    *)
+#endif
+"
+
+        match trivia with
+        | [ ConditionalDirectiveTrivia.If(IfDirectiveExpression.Ident "FOO", mIf)
+            ConditionalDirectiveTrivia.Else mElse
+            ConditionalDirectiveTrivia.EndIf mEndIf ] ->
+            assertRange (2, 0) (2, 7) mIf
+            assertRange (8, 0) (8, 5) mElse
+            assertRange (13, 0) (13, 6) mEndIf
+        | _ ->
+            Assert.Fail $"Unexpected trivia, got {trivia}"

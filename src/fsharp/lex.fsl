@@ -136,8 +136,11 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let buf = ByteBuffer.Create StringCapacity
     let m = lexbuf.LexemeRange
     let startp = lexbuf.StartPos
+    LexbufIfdefStore.SetLexingString(lexbuf)
     let fin =
         LexerStringFinisher (fun buf kind context cont ->
+            LexbufIfdefStore.ClearLexingString(lexbuf)
+        
             // Adjust the start-of-token mark back to the true start of the token
             lexbuf.StartPos <- startp
             let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
@@ -588,7 +591,9 @@ rule token args skip = parse
  | "(*"
      { let m = lexbuf.LexemeRange
        if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, 1, m))
-       else comment (1,m,args) skip lexbuf }
+       else
+           LexbufIfdefStore.SetLexingBlockComment(lexbuf)
+           comment (1,m,args) skip lexbuf }
 
  | "(*IF-CAML*)" |  "(*IF-OCAML*)"
      { let m = lexbuf.LexemeRange
@@ -1073,6 +1078,30 @@ and ifdefSkip n m args skip = parse
   | newline
     { newline lexbuf; ifdefSkip n m args skip lexbuf }
 
+  | '"' '"' '"'
+    { // Even though this string isn't active, capture it anyway to avoid that any #if directives inside the string
+      // are mistaken for actual directives
+      let buf, fin, m = startString args lexbuf
+
+      // Single quote in triple quote ok, others disallowed
+      match args.stringNest with
+      | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+      | _ -> ()
+
+      if skip then
+          tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf
+      else
+          INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m)) }
+
+  | "(*"
+    { // Similar to multiline string, #if directives inside code comments are to be avoided
+      let m = lexbuf.LexemeRange
+      if skip then
+          LexbufIfdefStore.SetLexingBlockComment(lexbuf)
+          comment (1,m,args) skip lexbuf
+      else
+          INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, args.stringNest, n, m)) }
+
   | [^ ' ' '\n' '\r' ]+
 
   | anywhite+
@@ -1493,7 +1522,9 @@ and comment cargs skip = parse
       else
           LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
           if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
-          else token args skip lexbuf }
+          else
+              LexbufIfdefStore.ClearLexingBlockComment(lexbuf)
+              token args skip lexbuf }
 
  | anywhite+
  | [^ '\'' '(' '*' '\n' '\r' '"' ')' '@' ' ' '\t' ]+

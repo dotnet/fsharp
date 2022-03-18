@@ -83,6 +83,16 @@ module LexbufIfdefStore =
     val SaveEndIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
 
     val GetTrivia: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
+    
+    val SetLexingString: lexbuf:UnicodeLexing.Lexbuf -> unit
+    
+    val ClearLexingString: lexbuf:UnicodeLexing.Lexbuf -> unit
+
+    val SetLexingBlockComment: lexbuf:UnicodeLexing.Lexbuf -> unit
+    
+    val ClearLexingBlockComment: lexbuf:UnicodeLexing.Lexbuf -> unit
+    
+    val ClearTrivia: lexbuf:UnicodeLexing.Lexbuf -> unit
 
 [<RequireQualifiedAccess>]
 type LexerStringStyle =

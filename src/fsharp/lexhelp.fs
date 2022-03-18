@@ -83,6 +83,7 @@ let mkLexargs (defines, lightStatus, resourceManager, ifdefStack, errorLogger, p
 let reusingLexbufForParsing lexbuf f = 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
+    LexbufIfdefStore.ClearTrivia lexbuf
     try
       f () 
     with e ->
