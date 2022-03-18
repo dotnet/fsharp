@@ -223,6 +223,8 @@ type BackgroundCompiler(
     let fileChecked = Event<string * FSharpProjectOptions>()
     let projectChecked = Event<FSharpProjectOptions>()
 
+    let getScriptProjectFileName scriptFileName = scriptFileName + ".fsproj"
+
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.scriptClosureCache 
     /// Information about the derived script closure.
     let scriptClosureCache = 
@@ -908,7 +910,7 @@ type BackgroundCompiler(
 
             let options = 
                 {
-                    ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
+                    ProjectFileName = getScriptProjectFileName filename // Make a name that is unique in this directory.
                     ProjectId = None
                     SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
                     OtherOptions = otherFlags 
@@ -925,7 +927,13 @@ type BackgroundCompiler(
             return options, (diags @ errors.Diagnostics)
           }
           |> Cancellable.toAsync
-            
+
+    member _.GetCachedProjectOptions(projectOrScriptFileName, isScript) =
+        let projectFileName =
+            if isScript then getScriptProjectFileName projectOrScriptFileName
+            else projectOrScriptFileName
+        incrementalBuildersCache.Keys(AnyCallerThread) |> List.filter (fun x -> x.ProjectFileName = projectFileName)
+
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
@@ -1077,6 +1085,9 @@ type FSharpChecker(legacyReferenceResolver,
         let sourceFiles = List.ofArray options.SourceFiles
         let argv = List.ofArray options.OtherOptions
         ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, options.UseScriptResolutionRules)
+
+    member _.GetCachedProjectOptions(projectOrScriptFileName, isScript) =
+        backgroundCompiler.GetCachedProjectOptions(projectOrScriptFileName, isScript)
 
     member ic.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true

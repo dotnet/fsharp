@@ -142,7 +142,10 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
        let keep = FilterAndHold(tok)
        AssignWithStrength(tok,keep)
 
-        
+    member al.Keys(tok) =
+        FilterAndHold(tok) |> List.map fst
+
+
 
 type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSimilar, ?requiredToKeep, ?keepMax) =
         
@@ -199,4 +202,5 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
         
     member bc.Resize(tok, newKeepStrongly, ?newKeepMax) =
         cache.Resize(tok, newKeepStrongly, ?newKeepMax=newKeepMax)
-        
+
+    member bc.Keys(tok) = cache.Keys(tok)

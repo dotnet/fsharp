@@ -184,6 +184,12 @@ type public FSharpChecker =
         ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpDiagnostic list>
 
+    /// <summary>Get the list of FSharpProjectOptions for the project/script if they exist in the FCS cache.</summary>
+    ///
+    /// <param name="projectOrScriptFileName">The project or script filename.</param>
+    /// <param name="isScript">Is the passed <paramref name="projectOrScriptFileName"/> the path to the script file.</param>
+    member GetCachedProjectOptions: projectOrScriptFileName: string * isScript: bool -> FSharpProjectOptions list
+
     /// <summary>Get the FSharpProjectOptions implied by a set of command line arguments.</summary>
     ///
     /// <param name="projectFileName">Used to differentiate between projects and for the base directory of the project.</param>

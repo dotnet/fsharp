@@ -38,7 +38,10 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct> =
 
     /// Resize
     member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
-    
+
+    /// Keys
+    member Keys : 'Token -> 'Key list
+
 /// Simple priority caching for a small number of key/value associations.
 /// This cache may age-out results that have been Set by the caller.
 /// Because of this, the caller must be able to tolerate values 
@@ -84,3 +87,5 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
     /// Resize
     member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
 
+    /// Keys
+    member Keys : 'Token -> 'Key list
