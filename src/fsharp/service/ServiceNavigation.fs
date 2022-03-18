@@ -589,7 +589,7 @@ module NavigateTo =
             let ctor = mapMemberKind memberFlags.MemberKind
             addValSig ctor valSig isSig container
     
-        let rec walkSigFileInput (ParsedSigFileInput (fileName, _, _, _, moduleOrNamespaceList)) = 
+        let rec walkSigFileInput (ParsedSigFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespaceSig item { Type = NavigableContainerType.File; Name = fileName }
     
