@@ -252,8 +252,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
 %token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
 %token QMARK QMARK_QMARK DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
-%token SEMICOLON_SEMICOLON LARROW EQUALS  LBRACK  LBRACK_BAR  LBRACE_BAR  LBRACK_LESS 
-%token BAR_RBRACK BAR_RBRACE UNDERSCORE
+%token SEMICOLON_SEMICOLON LARROW EQUALS  LBRACK  LBRACK_BAR LBRACK_COLON LBRACE_BAR  LBRACK_LESS 
+%token BAR_RBRACK COLON_RBRACK BAR_RBRACE UNDERSCORE
 %token BAR RBRACK RBRACE_COMING_SOON RBRACE_IS_HERE MINUS DOLLAR
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
@@ -438,7 +438,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %nonassoc prec_atompat_pathop
 %nonassoc INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NATIVEINT UNATIVEINT IEEE32 IEEE64 CHAR KEYWORD_STRING STRING BYTEARRAY BIGNUM DECIMAL
 %nonassoc INTERP_STRING_BEGIN INTERP_STRING_PART INTERP_STRING_END
-%nonassoc LPAREN LBRACE LBRACK_BAR 
+%nonassoc LPAREN LBRACE LBRACK_BAR LBRACK_COLON
 %nonassoc TRUE FALSE UNDERSCORE NULL
 
 
@@ -3373,8 +3373,11 @@ atomicPattern:
   | LBRACK listPatternElements RBRACK
       { SynPat.ArrayOrList(ConcreteCollection.List, $2, lhs parseState) }
 
-  | LBRACK_BAR listPatternElements  BAR_RBRACK
+  | LBRACK_BAR listPatternElements BAR_RBRACK
       { SynPat.ArrayOrList(ConcreteCollection.Array, $2, lhs parseState) }
+
+  | LBRACK_COLON listPatternElements COLON_RBRACK
+      { SynPat.ArrayOrList(ConcreteCollection.ImmutableArray, $2, lhs parseState) }
 
   | UNDERSCORE 
       { SynPat.Wild (lhs parseState) }
@@ -4617,6 +4620,22 @@ arrayExpr:
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar())  
         (* silent recovery *) 
         exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], rhs parseState 1)) }  
+
+immutablearrayExpr:
+  | LBRACK_COLON immarrayExprElements COLON_RBRACK
+      {  $2 (lhs parseState) }
+
+  | LBRACK_COLON immarrayExprElements recover
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedColonBar())
+        exprFromParseError ($2 (rhs2 parseState 1 2)) }
+
+  | LBRACK_COLON error COLON_RBRACK
+      {  (* silent recovery *) SynExpr.ArrayOrList (ConcreteCollection.ImmutableArray, [ ], lhs parseState) }
+
+  | LBRACK_COLON recover
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedColonBar())
+        (* silent recovery *)
+        exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.ImmutableArray, [ ], rhs parseState 1)) }
 
 parenExpr:
   | LPAREN rparen 

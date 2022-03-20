@@ -821,6 +821,8 @@ rule token args skip = parse
 
  | "[|" { LBRACK_BAR }
 
+ | "[:" { LBRACK_COLON }
+
  | "{|" { LBRACE_BAR }
 
  | "<" { LESS false }
@@ -832,6 +834,8 @@ rule token args skip = parse
  | "]" { RBRACK }
 
  | "|]" { BAR_RBRACK }
+
+ | "[:" { COLON_RBRACK }
 
  | "|}" { BAR_RBRACE }
 
