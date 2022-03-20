@@ -198,8 +198,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
-        <source>Clear Screen</source>
-        <target state="translated">Pulisci terminale</target>
+        <source>Clear screen</source>
+        <target state="needs-review-translation">Pulisci terminale</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
