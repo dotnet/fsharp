@@ -2684,6 +2684,7 @@ type internal FsiInteractionProcessor
     #endif
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("clear"), [], _), _) ->
                 fsiOptions.ClearScreen()
+                istate, Completed None
                 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) ->
                 fsiInterruptController.Exit()
