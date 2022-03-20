@@ -3371,10 +3371,10 @@ atomicPattern:
       { let rs, m = $2 in SynPat.Record (rs, rhs2 parseState 1 3) }
 
   | LBRACK listPatternElements RBRACK
-      { SynPat.ArrayOrList(false, $2, lhs parseState) }
+      { SynPat.ArrayOrList(ConcreteCollection.List, $2, lhs parseState) }
 
   | LBRACK_BAR listPatternElements  BAR_RBRACK
-      { SynPat.ArrayOrList(true, $2, lhs parseState) }
+      { SynPat.ArrayOrList(ConcreteCollection.Array, $2, lhs parseState) }
 
   | UNDERSCORE 
       { SynPat.Wild (lhs parseState) }
@@ -4458,12 +4458,12 @@ atomicExpr:
 
   | LBRACK error RBRACK 
       { // silent recovery 
-        SynExpr.ArrayOrList (false, [ ], lhs parseState), false  } 
+        SynExpr.ArrayOrList (ConcreteCollection.List, [ ], lhs parseState), false  } 
 
   | LBRACK recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
         // silent recovery 
-        exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false  } 
+        exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.List, [ ], rhs parseState 1)), false  } 
 
   | STRUCT LPAREN tupleExpr rparen
       { let exprs, commas = $3
@@ -4611,12 +4611,12 @@ arrayExpr:
         exprFromParseError ($2 (rhs2 parseState 1 2)) }
 
   | LBRACK_BAR error BAR_RBRACK 
-      {  (* silent recovery *) SynExpr.ArrayOrList (true, [ ], lhs parseState) }  
+      {  (* silent recovery *) SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], lhs parseState) }  
 
   | LBRACK_BAR recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar())  
         (* silent recovery *) 
-        exprFromParseError (SynExpr.ArrayOrList (true, [ ], rhs parseState 1)) }  
+        exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], rhs parseState 1)) }  
 
 parenExpr:
   | LPAREN rparen 
@@ -4728,14 +4728,14 @@ listExprElements:
      { (fun lhsm -> SynExpr.ArrayOrListComputed (false, $1, lhsm)) }
 
   | 
-     { (fun lhsm -> SynExpr.ArrayOrList (false, [ ], lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrList (ConcreteCollection.List, [ ], lhsm)) }
 
 arrayExprElements: 
   | sequentialExpr
      { (fun lhsm -> SynExpr.ArrayOrListComputed (true, $1, lhsm)) }
 
   | 
-     { (fun lhsm -> SynExpr.ArrayOrList (true, [ ], lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], lhsm)) }
 
 computationExpr: 
   | sequentialExpr

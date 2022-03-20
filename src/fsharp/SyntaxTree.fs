@@ -42,7 +42,7 @@ type LongIdentWithDots =
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 [<Struct; RequireQualifiedAccess>]
-type ConcreteSequence =
+type ConcreteCollection =
     | List
     | Array
     | ImmutableArray
@@ -496,7 +496,7 @@ type SynExpr =
         range: range
 
     | ArrayOrList of
-        sequenceType: ConcreteSequence *
+        sequenceType: ConcreteCollection *
         exprs: SynExpr list *
         range: range
 
@@ -1121,7 +1121,7 @@ type SynPat =
         range: range
 
     | ArrayOrList of
-        isArray: bool *
+        ConcreteCollection:ConcreteCollection *
         elementPats: SynPat list *
         range: range
 
