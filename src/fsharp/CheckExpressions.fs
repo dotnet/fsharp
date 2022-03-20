@@ -6164,7 +6164,7 @@ and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
 
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let argty = NewInferenceType g
-    let actualTy = match cc with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> failwith "not implemented"
+    let actualTy = match cType with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> failwith "not implemented"
 
     // Propagating type directed conversion, e.g. for 
     //     let x : seq<int64>  = [ 1; 2 ]
@@ -6181,12 +6181,12 @@ and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
                 first <- false
                 env
             else
-                { env with eContextInfo = ContextInfo.CollectionElement (cc, m) }
+                { env with eContextInfo = ContextInfo.CollectionElement (cType, m) }
 
         let args', tpenv = List.mapFold (fun tpenv (x: SynExpr) -> TcExprFlex cenv flex false argty (getInitEnv x.Range) tpenv x) tpenv args
 
         let expr =
-            match cc with
+            match cType with
             | CollectionType.Array ->
                 Expr.Op (TOp.Array, [argty], args', m)
             | CollectionType.List ->
