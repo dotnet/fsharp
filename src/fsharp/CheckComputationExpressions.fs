@@ -2221,7 +2221,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         | _ -> ()
 
         let replacementExpr =
-            let ConcreteCollection = if isArray then ConcreteCollection.Array else ConcreteCollection.List
+            let cc = if isArray then ConcreteCollection.Array else ConcreteCollection.List
             if isArray then 
                 // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP 
                 let nelems = elems.Length 
@@ -2229,11 +2229,11 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
                 then SynExpr.Const (SynConst.UInt16s (Array.ofList (List.map (function SynExpr.Const (SynConst.UInt16 x, _) -> x | _ -> failwith "unreachable") elems)), m)
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
-                else SynExpr.ArrayOrList (ConcreteCollection, elems, m)
+                else SynExpr.ArrayOrList (cc, elems, m)
             else 
                 if elems.Length > 500 then 
                     error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                SynExpr.ArrayOrList (ConcreteCollection, elems, m)
+                SynExpr.ArrayOrList (cc, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
