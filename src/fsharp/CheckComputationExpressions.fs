@@ -2233,7 +2233,8 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
                 else SynExpr.ArrayOrList (cType, elems, m)
-            | CollectionType.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray -> // NOTE: if the compiler moves internally from array to immarray then the optimization above should be moved here
+                SynExpr.ArrayOrList (cType, elems, m)
             | CollectionType.List ->
                 if elems.Length > 500 then 
                     error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
