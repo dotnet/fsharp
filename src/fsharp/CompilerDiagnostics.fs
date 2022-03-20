@@ -1034,9 +1034,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_LBRACK -> getErrorString("Parser.TOKEN.LBRACK")
               | Parser.TOKEN_LBRACE_BAR -> getErrorString("Parser.TOKEN.LBRACE.BAR")
               | Parser.TOKEN_LBRACK_BAR -> getErrorString("Parser.TOKEN.LBRACK.BAR")
+              | Parser.TOKEN_LBRACK_COLON -> getErrorString("Parser.TOKEN.LBRACK.COLON")
               | Parser.TOKEN_LBRACK_LESS -> getErrorString("Parser.TOKEN.LBRACK.LESS")
               | Parser.TOKEN_LBRACE -> getErrorString("Parser.TOKEN.LBRACE")
               | Parser.TOKEN_BAR_RBRACK -> getErrorString("Parser.TOKEN.BAR.RBRACK")
+              | Parser.TOKEN_COLON_RBRACK -> getErrorString("Parser.TOKEN.COLON.RBRACK")
               | Parser.TOKEN_BAR_RBRACE -> getErrorString("Parser.TOKEN.BAR.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
               | Parser.TOKEN_RQUOTE_DOT _
