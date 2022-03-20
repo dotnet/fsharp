@@ -2244,7 +2244,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
 
       let genCollElemTy = NewInferenceType g
 
-      let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
+      let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType) cenv.g genCollElemTy
 
       // Propagating type directed conversion, e.g. for 
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
