@@ -1121,7 +1121,7 @@ type SynPat =
         range: range
 
     | ArrayOrList of
-        ConcreteCollection:ConcreteCollection *
+        cc:ConcreteCollection *
         elementPats: SynPat list *
         range: range
 
