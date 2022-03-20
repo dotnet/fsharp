@@ -197,6 +197,11 @@
         <target state="translated">Esci</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear Screen</source>
+        <target state="translated">Pulisci terminale</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
         <target state="translated">  Opzioni della riga di comando F# Interactive:</target>
