@@ -41,6 +41,12 @@ type LongIdentWithDots =
            let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
+[<Struct; RequireQualifiedAccess>]
+type ConcreteSequence =
+    | List
+    | Array
+    | ImmutableArray
+
 [<RequireQualifiedAccess>]
 type ParserDetail =
     | Ok
@@ -490,7 +496,7 @@ type SynExpr =
         range: range
 
     | ArrayOrList of
-        isArray: bool *
+        sequenceType: ConcreteSequence *
         exprs: SynExpr list *
         range: range
 
