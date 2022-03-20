@@ -2518,6 +2518,7 @@ and p_op x st =
     | TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
                                      -> p_byte 18 st; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
     | TOp.Array                      -> p_byte 19 st
+    | TOp.Block -> failwith "not implemented"
     | TOp.While _                    -> p_byte 20 st
     | TOp.IntegerForLoop (_, _, dir)            -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st

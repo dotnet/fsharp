@@ -5374,7 +5374,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             match cs with
             | CollectionType.Array -> TPat_array(args', argty, m)
             | CollectionType.List -> List.foldBack (mkConsListPat g argty) args' (mkNilListPat g m argty)
-            | CollectionType.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray -> TPat_block(args', argty, m)
         ), acc
 
     | SynPat.Record (flds, m) ->
@@ -6191,7 +6191,8 @@ and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
                 Expr.Op (TOp.Array, [argty], args', m)
             | CollectionType.List ->
                 List.foldBack (mkCons g argty) args' (mkNil g m argty)
-            | CollectionType.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray ->
+                Expr.Op (TOp.Block, [argty], args', m)
         expr, tpenv
     )
 

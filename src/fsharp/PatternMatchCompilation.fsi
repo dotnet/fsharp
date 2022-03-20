@@ -32,6 +32,7 @@ type Pattern =
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of TupInfo * Pattern list * TType list * range
     | TPat_array of Pattern list * TType * range
+    | TPat_block of Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range

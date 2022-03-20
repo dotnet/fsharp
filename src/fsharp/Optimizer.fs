@@ -1461,6 +1461,7 @@ and OpHasEffect g m op =
     | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefDefinitelyMutable ucref.TyconRef
     | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true // mutable
+    | TOp.Block _ -> false
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
@@ -2467,7 +2468,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     
-      | TOp.Array | TOp.IntegerForLoop _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
+      | TOp.Array | TOp.Block | TOp.IntegerForLoop _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   

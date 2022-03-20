@@ -5025,6 +5025,7 @@ and accFreeInOp opts op acc =
     | TOp.Coerce 
     | TOp.RefAddrGet _
     | TOp.Array 
+    | TOp.Block
     | TOp.While _
     | TOp.Goto _ | TOp.Label _ | TOp.Return 
     | TOp.TupleFieldGet _ -> acc
@@ -6264,6 +6265,7 @@ let rec tyOfExpr g expr =
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | TOp.IntegerForLoop _ | TOp.While _ -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
+        | TOp.Block -> (match tinst with [ty] -> mkBlockType g ty | _ -> failwith "bad TOp.Array node")
         | TOp.TryWith _ | TOp.TryFinally _ -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
