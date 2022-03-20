@@ -49,6 +49,12 @@ type ParserDetail =
     /// The construct arises from error recovery
     | ErrorRecovery
 
+[<Struct; RequireQualifiedAccess>]
+type ConcreteSequence =
+    | List
+    | Array
+    | ImmutableArray
+
 /// Represents whether a type parameter has a static requirement or not (^T or 'T)
 [<RequireQualifiedAccess>]
 type TyparStaticReq =
@@ -594,7 +600,7 @@ type SynExpr =
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of
-        isArray: bool *
+        sequenceType: ConcreteSequence *
         exprs: SynExpr list *
         range: range
 
