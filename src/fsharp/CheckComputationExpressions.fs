@@ -2181,7 +2181,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
     | Some replacementExpr -> 
         let genCollElemTy = NewInferenceType g
 
-        let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
+        let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType) cenv.g genCollElemTy
 
         UnifyTypes cenv env m overallTy.Commit genCollTy
 

@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSComp.resx">
     <body>
+      <trans-unit id="blockElementHasWrongType">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">L'estensione di file di '{0}' non è riconosciuta. I file di origine devono avere estensione fs, fsi, fsx o fsscript. Per abilitare l'uso deprecato delle estensioni ml o mli, usare '--langversion:5.0' e '--mlcompatibility'.</target>

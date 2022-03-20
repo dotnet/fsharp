@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSComp.resx">
     <body>
+      <trans-unit id="blockElementHasWrongType">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">'{0}' のファイル拡張子を認識できません。ソース ファイル拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。非推奨の拡張子 .ml または .mli の使用を有効にするには、'--langversion:5.0' および '--mlcompatibility' を使用してください。</target>

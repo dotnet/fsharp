@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="blockElementHasWrongType">
+        <source>All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="new">All elements of a block must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 fsi、.fsx 或 .fsscript。若要啟用已被取代的 .ml 或 .mli 副檔名，請使用 '--langversion:5.0' and '--mlcompatibility'。</target>

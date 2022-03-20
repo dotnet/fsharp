@@ -6202,6 +6202,8 @@ let mkMethodTy g argtys rty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argt
 
 let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
 
+let mkBlockType (g: TcGlobals) (ty:TType) = TType_app (g.block_tcr_nice, [ty], g.knownWithoutNull)
+
 let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
 //---------------------------------------------------------------------------
