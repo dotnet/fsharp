@@ -639,11 +639,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
           | ContextInfo.CollectionElement (cc, range) when equals range m ->
             match cc with
-            | ConcreteCollection.Array ->
+            | CollectionType.Array ->
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
-            | ConcreteCollection.List ->
+            | CollectionType.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-            | ConcreteCollection.ImmutableArray ->
+            | CollectionType.ImmutableArray ->
                 failwith "not implemented"
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
@@ -673,11 +673,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
           | ContextInfo.CollectionElement (cc, range) when equals range m ->
             match cc with
-            | ConcreteCollection.Array ->
+            | CollectionType.Array ->
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
-            | ConcreteCollection.List ->
+            | CollectionType.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-            | ConcreteCollection.ImmutableArray ->
+            | CollectionType.ImmutableArray ->
                 failwith "not implemented"
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore

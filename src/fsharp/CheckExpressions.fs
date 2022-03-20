@@ -421,7 +421,7 @@ type TcFileState =
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call
-      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> ConcreteCollection * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> CollectionType * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
@@ -4986,7 +4986,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         match c with
         | SynConst.Bytes (bytes, _, m) ->
             UnifyTypes cenv env m ty (mkByteArrayTy g)
-            TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.ArrayOrList (ConcreteCollection.Array, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m))
+            TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.ArrayOrList (CollectionType.Array, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m))
 
         | SynConst.UserNum _ ->
             errorR (Error (FSComp.SR.tcInvalidNonPrimitiveLiteralInPatternMatch (), m))
@@ -5367,14 +5367,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.ArrayOrList (cs, args, m) ->
         let argty = NewInferenceType g
-        UnifyTypes cenv env m ty (match cs with ConcreteCollection.Array -> mkArrayType g argty | ConcreteCollection.List -> mkListTy g argty | ConcreteCollection.ImmutableArray -> failwith "not implemented")
+        UnifyTypes cenv env m ty (match cs with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> failwith "not implemented")
         let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> argty) args) args
         (fun values ->
             let args' = List.map (fun f -> f values) args'
             match cs with
-            | ConcreteCollection.Array -> TPat_array(args', argty, m)
-            | ConcreteCollection.List -> List.foldBack (mkConsListPat g argty) args' (mkNilListPat g m argty)
-            | ConcreteCollection.ImmutableArray -> failwith "not implemented"
+            | CollectionType.Array -> TPat_array(args', argty, m)
+            | CollectionType.List -> List.foldBack (mkConsListPat g argty) args' (mkNilListPat g m argty)
+            | CollectionType.ImmutableArray -> failwith "not implemented"
         ), acc
 
     | SynPat.Record (flds, m) ->
@@ -6159,12 +6159,12 @@ and TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m) =
         expr, tpenv
     )
 
-and TcExprArrayOrList cenv overallTy env tpenv (cc:ConcreteCollection, args, m) =
+and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
     let g = cenv.g
 
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let argty = NewInferenceType g
-    let actualTy = match cc with ConcreteCollection.Array -> mkArrayType g argty | ConcreteCollection.List -> mkListTy g argty | ConcreteCollection.ImmutableArray -> failwith "not implemented"
+    let actualTy = match cc with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> failwith "not implemented"
 
     // Propagating type directed conversion, e.g. for 
     //     let x : seq<int64>  = [ 1; 2 ]
@@ -6187,11 +6187,11 @@ and TcExprArrayOrList cenv overallTy env tpenv (cc:ConcreteCollection, args, m) 
 
         let expr =
             match cc with
-            | ConcreteCollection.Array ->
+            | CollectionType.Array ->
                 Expr.Op (TOp.Array, [argty], args', m)
-            | ConcreteCollection.List ->
+            | CollectionType.List ->
                 List.foldBack (mkCons g argty) args' (mkNil g m argty)
-            | ConcreteCollection.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray -> failwith "not implemented"
         expr, tpenv
     )
 
@@ -8064,7 +8064,7 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                 // expr[idx1..]
                 // expr[..idx1]
                 // expr[idx1..idx2]
-                | SynExpr.ArrayOrListComputed(ConcreteCollection.List, _, _) ->
+                | SynExpr.ArrayOrListComputed(CollectionType.List, _, _) ->
                     let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
                     if isAdjacent && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                         // This is the non-error path
@@ -8294,15 +8294,15 @@ and isAdjacentListExpr isSugar atomicFlag (synLeftExprOpt: SynExpr option) (synA
     not isSugar  &&
     if atomicFlag = ExprAtomicFlag.Atomic then
         match synArg with
-        | SynExpr.ArrayOrList (ConcreteCollection.List, _, _)
-        | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _) -> true
+        | SynExpr.ArrayOrList (CollectionType.List, _, _)
+        | SynExpr.ArrayOrListComputed (CollectionType.List, _, _) -> true
         | _ -> false
     else
         match synLeftExprOpt with
         | Some synLeftExpr -> 
             match synArg with
-            | SynExpr.ArrayOrList (ConcreteCollection.List, _, _)
-            | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _) ->
+            | SynExpr.ArrayOrList (CollectionType.List, _, _)
+            | SynExpr.ArrayOrListComputed (CollectionType.List, _, _) ->
                 synLeftExpr.Range.IsAdjacentTo synArg.Range 
             | _ -> false
         | _ -> false
@@ -8325,7 +8325,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
         // atomicLeftExpr[idx] unifying as application gives a warning 
         if not isSugar then
             match synArg, atomicFlag with
-            | (SynExpr.ArrayOrList (ConcreteCollection.List, _, _) | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _)), ExprAtomicFlag.Atomic ->
+            | (SynExpr.ArrayOrList (CollectionType.List, _, _) | SynExpr.ArrayOrListComputed (CollectionType.List, _, _)), ExprAtomicFlag.Atomic ->
                 if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
                 elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
@@ -8377,7 +8377,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
         match synArg with
         // leftExpr[idx]
         // leftExpr[idx] <- expr2
-        | SynExpr.ArrayOrListComputed(ConcreteCollection.List, IndexerArgs indexArgs, m) 
+        | SynExpr.ArrayOrListComputed(CollectionType.List, IndexerArgs indexArgs, m) 
               when 
                 isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
                 g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->

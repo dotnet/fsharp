@@ -237,7 +237,7 @@ type TcFileState =
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call 
-      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> ConcreteCollection * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> CollectionType * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call 
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
@@ -257,7 +257,7 @@ type TcFileState =
         // forward call to CheckComputationExpressions.fs
         tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
-        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> ConcreteCollection * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> CollectionType * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
         tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) 
          -> TcFileState
