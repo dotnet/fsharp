@@ -637,11 +637,14 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
           match contextInfo with
           | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-            if isArray then
+          | ContextInfo.CollectionElement (cc, range) when equals range m ->
+            match cc with
+            | ConcreteCollection.Array ->
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
-            else
+            | ConcreteCollection.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
+            | ConcreteCollection.ImmutableArray ->
+                failwith "not implemented"
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
@@ -668,11 +671,14 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
           | ContextInfo.IfExpression range when equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-            if isArray then
+          | ContextInfo.CollectionElement (cc, range) when equals range m ->
+            match cc with
+            | ConcreteCollection.Array ->
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
-            else
+            | ConcreteCollection.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
+            | ConcreteCollection.ImmutableArray ->
+                failwith "not implemented"
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore

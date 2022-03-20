@@ -50,7 +50,7 @@ type ParserDetail =
     | ErrorRecovery
 
 [<Struct; RequireQualifiedAccess>]
-type ConcreteSequence =
+type ConcreteCollection =
     | List
     | Array
     | ImmutableArray
@@ -600,7 +600,7 @@ type SynExpr =
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of
-        sequenceType: ConcreteSequence *
+        sequenceType: ConcreteCollection *
         exprs: SynExpr list *
         range: range
 
@@ -1263,7 +1263,7 @@ type SynPat =
 
     /// An array or a list as a pattern
     | ArrayOrList of
-        isArray: bool *
+        ConcreteCollection: ConcreteCollection *
         elementPats: SynPat list *
         range: range
 
