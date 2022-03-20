@@ -4621,19 +4621,19 @@ arrayExpr:
         (* silent recovery *) 
         exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], rhs parseState 1)) }  
 
-immutablearrayExpr:
+immarrayExpr:
   | LBRACK_COLON immarrayExprElements COLON_RBRACK
       {  $2 (lhs parseState) }
 
   | LBRACK_COLON immarrayExprElements recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedColonBar())
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar()) // Don't know where this is, can't change to BracketColon
         exprFromParseError ($2 (rhs2 parseState 1 2)) }
 
   | LBRACK_COLON error COLON_RBRACK
       {  (* silent recovery *) SynExpr.ArrayOrList (ConcreteCollection.ImmutableArray, [ ], lhs parseState) }
 
   | LBRACK_COLON recover
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedColonBar())
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar()) // Don't know where this is, can't change to BracketColon
         (* silent recovery *)
         exprFromParseError (SynExpr.ArrayOrList (ConcreteCollection.ImmutableArray, [ ], rhs parseState 1)) }
 
@@ -4744,17 +4744,24 @@ braceExprBody:
 
 listExprElements: 
   | sequentialExpr
-     { (fun lhsm -> SynExpr.ArrayOrListComputed (false, $1, lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrListComputed (ConcreteCollection.List, $1, lhsm)) }
 
   | 
      { (fun lhsm -> SynExpr.ArrayOrList (ConcreteCollection.List, [ ], lhsm)) }
 
 arrayExprElements: 
   | sequentialExpr
-     { (fun lhsm -> SynExpr.ArrayOrListComputed (true, $1, lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrListComputed (ConcreteCollection.Array, $1, lhsm)) }
 
   | 
      { (fun lhsm -> SynExpr.ArrayOrList (ConcreteCollection.Array, [ ], lhsm)) }
+
+immarrayExprElements: 
+  | sequentialExpr
+     { (fun lhsm -> SynExpr.ArrayOrListComputed (ConcreteCollection.ImmutableArray, $1, lhsm)) }
+
+  | 
+     { (fun lhsm -> SynExpr.ArrayOrList (ConcreteCollection.ImmutableArray, [ ], lhsm)) }
 
 computationExpr: 
   | sequentialExpr

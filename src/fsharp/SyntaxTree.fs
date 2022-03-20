@@ -550,7 +550,7 @@ type SynExpr =
         range: range
 
     | ArrayOrListComputed of
-        isArray: bool *
+        cc:ConcreteCollection *
         expr: SynExpr *
         range: range
 

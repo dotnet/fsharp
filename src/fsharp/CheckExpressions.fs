@@ -421,7 +421,7 @@ type TcFileState =
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call
-      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> ConcreteCollection * SynExpr -> range -> Expr * UnscopedTyparEnv
 
       // forward call
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
@@ -8064,7 +8064,7 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                 // expr[idx1..]
                 // expr[..idx1]
                 // expr[idx1..idx2]
-                | SynExpr.ArrayOrListComputed(false, _, _) ->
+                | SynExpr.ArrayOrListComputed(ConcreteCollection.List, _, _) ->
                     let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
                     if isAdjacent && g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                         // This is the non-error path
@@ -8295,14 +8295,14 @@ and isAdjacentListExpr isSugar atomicFlag (synLeftExprOpt: SynExpr option) (synA
     if atomicFlag = ExprAtomicFlag.Atomic then
         match synArg with
         | SynExpr.ArrayOrList (ConcreteCollection.List, _, _)
-        | SynExpr.ArrayOrListComputed (false, _, _) -> true
+        | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _) -> true
         | _ -> false
     else
         match synLeftExprOpt with
         | Some synLeftExpr -> 
             match synArg with
             | SynExpr.ArrayOrList (ConcreteCollection.List, _, _)
-            | SynExpr.ArrayOrListComputed (false, _, _) ->
+            | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _) ->
                 synLeftExpr.Range.IsAdjacentTo synArg.Range 
             | _ -> false
         | _ -> false
@@ -8325,7 +8325,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
         // atomicLeftExpr[idx] unifying as application gives a warning 
         if not isSugar then
             match synArg, atomicFlag with
-            | (SynExpr.ArrayOrList (ConcreteCollection.List, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
+            | (SynExpr.ArrayOrList (ConcreteCollection.List, _, _) | SynExpr.ArrayOrListComputed (ConcreteCollection.List, _, _)), ExprAtomicFlag.Atomic ->
                 if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
                 elif not (g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
@@ -8377,7 +8377,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
         match synArg with
         // leftExpr[idx]
         // leftExpr[idx] <- expr2
-        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m) 
+        | SynExpr.ArrayOrListComputed(ConcreteCollection.List, IndexerArgs indexArgs, m) 
               when 
                 isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
                 g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->

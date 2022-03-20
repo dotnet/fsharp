@@ -665,7 +665,7 @@ type SynExpr =
 
     /// F# syntax: [ expr ], [| expr |]
     | ArrayOrListComputed of
-        isArray: bool *
+        cc:ConcreteCollection *
         expr: SynExpr *
         range: range
 
