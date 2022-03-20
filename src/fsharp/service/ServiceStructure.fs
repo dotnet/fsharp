@@ -304,8 +304,9 @@ module Structure =
             | SynExpr.Sequential (_, _, e1, e2, _) ->
                 parseExpr e1
                 parseExpr e2
-            | SynExpr.ArrayOrListComputed (isArray, e, r) ->
-                rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
+            | SynExpr.ArrayOrListComputed (cc, e, r) ->
+                let pos = match cc with ConcreteCollection.Array | ConcreteCollection.ImmutableArray -> 2 | ConcreteCollection.List -> 1
+                rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth pos pos r
                 parseExpr e
             | SynExpr.ComputationExpr (_, e, _r) as _c ->
                 parseExpr e
