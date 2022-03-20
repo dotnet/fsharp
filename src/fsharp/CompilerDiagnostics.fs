@@ -644,7 +644,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
             | CollectionType.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
             | CollectionType.ImmutableArray ->
-                failwith "not implemented"
+                os.Append(FSComp.SR.immarrayElementHasWrongType(t1, t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
@@ -678,7 +678,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
             | CollectionType.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
             | CollectionType.ImmutableArray ->
-                failwith "not implemented"
+                os.Append(FSComp.SR.immarrayElementHasWrongType(t1, t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when equals range m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
