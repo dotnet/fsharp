@@ -306,6 +306,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
+  let v_block_tcr_nice = mk_MFCore_tcref fslibCcu "option`1"
   let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
   let v_list_tcr_canon        = mk_MFCollections_tcref fslibCcu "List`1"
   let v_list_tcr_nice            = mk_MFCollections_tcref fslibCcu "list`1"
@@ -1003,6 +1004,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.lazy_tcr_canon = lazy_tcr
   member val refcell_tcr_nice = v_refcell_tcr_nice
   member val array_tcr_nice = v_il_arr_tcr_map.[0]
+  member _.block_tcr_nice = v_block_tcr_nice
   member _.option_tcr_nice = v_option_tcr_nice
   member _.valueoption_tcr_nice = v_valueoption_tcr_nice
   member _.list_tcr_nice = v_list_tcr_nice

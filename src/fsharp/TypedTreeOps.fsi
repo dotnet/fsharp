@@ -1437,6 +1437,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Build a single-dimensional block type
+val mkBlockType: TcGlobals -> TType -> TType
+
 /// Determine if a type is a value option type
 val isValueOptionTy: TcGlobals -> TType -> bool
 
