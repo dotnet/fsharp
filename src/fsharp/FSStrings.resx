@@ -399,6 +399,9 @@
   <data name="Parser.TOKEN.LBRACK.BAR" xml:space="preserve">
     <value>symbol '[|'</value>
   </data>
+  <data name="Parser.TOKEN.LBRACK.COLON" xml:space="preserve">
+    <value>symbol '[:'</value>
+  </data>
   <data name="Parser.TOKEN.LBRACK.LESS" xml:space="preserve">
     <value>symbol '[&lt;'</value>
   </data>
@@ -410,6 +413,9 @@
   </data>
   <data name="Parser.TOKEN.BAR.RBRACK" xml:space="preserve">
     <value>symbol '|]'</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.RBRACK" xml:space="preserve">
+    <value>symbol ':]'</value>
   </data>
   <data name="Parser.TOKEN.BAR.RBRACE" xml:space="preserve">
     <value>symbol '|}'</value>

@@ -7,6 +7,11 @@
         <target state="translated">Un ou plusieurs messages d’information dans le fichier chargé.\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.RBRACK">
+        <source>symbol ':]'</source>
+        <target state="new">symbol ':]'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">symbole '..^'</target>
@@ -30,6 +35,11 @@
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
         <target state="translated">chaîne interpolée (partie)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.COLON">
+        <source>symbol '[:'</source>
+        <target state="new">symbol '[:'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
