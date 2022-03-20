@@ -305,7 +305,7 @@ module Structure =
                 parseExpr e1
                 parseExpr e2
             | SynExpr.ArrayOrListComputed (cc, e, r) ->
-                let pos = match cc with ConcreteCollection.Array | ConcreteCollection.ImmutableArray -> 2 | ConcreteCollection.List -> 1
+                let pos = match cc with CollectionType.Array | CollectionType.ImmutableArray -> 2 | CollectionType.List -> 1
                 rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth pos pos r
                 parseExpr e
             | SynExpr.ComputationExpr (_, e, _r) as _c ->

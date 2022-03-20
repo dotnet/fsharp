@@ -2170,7 +2170,7 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
         
     TcSequenceExpression cenv env tpenv comp overallTy m
 
-let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (cc:ConcreteCollection, comp) m  =
+let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (cType: CollectionType, comp) m  =
     let g = cenv.g
 
     // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
@@ -2181,7 +2181,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
     | Some replacementExpr -> 
         let genCollElemTy = NewInferenceType g
 
-        let genCollTy = (match cc with ConcreteCollection.Array -> mkArrayType | ConcreteCollection.List -> mkListTy | ConcreteCollection.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
+        let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
 
         UnifyTypes cenv env m overallTy.Commit genCollTy
 
@@ -2200,12 +2200,12 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy.Commit)
 
         let expr = 
-            match cc with
-            | ConcreteCollection.Array ->
+            match cType with
+            | CollectionType.Array ->
                 mkCallSeqToArray cenv.g m genCollElemTy expr
-            | ConcreteCollection.List ->
+            | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
-            | ConcreteCollection.ImmutableArray ->
+            | CollectionType.ImmutableArray ->
                 failwith "not implemented"
         expr, tpenv
 
@@ -2224,27 +2224,27 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         | _ -> ()
 
         let replacementExpr =
-            match cc with
-            | ConcreteCollection.Array ->
+            match cType with
+            | CollectionType.Array ->
                 // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP 
                 let nelems = elems.Length 
                 if nelems > 0 && List.forall (function SynExpr.Const (SynConst.UInt16 _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.UInt16s (Array.ofList (List.map (function SynExpr.Const (SynConst.UInt16 x, _) -> x | _ -> failwith "unreachable") elems)), m)
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
-                else SynExpr.ArrayOrList (cc, elems, m)
-            | ConcreteCollection.ImmutableArray -> failwith "not implemented"
-            | ConcreteCollection.List ->
+                else SynExpr.ArrayOrList (cType, elems, m)
+            | CollectionType.ImmutableArray -> failwith "not implemented"
+            | CollectionType.List ->
                 if elems.Length > 500 then 
                     error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                SynExpr.ArrayOrList (cc, elems, m)
+                SynExpr.ArrayOrList (cType, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
 
       let genCollElemTy = NewInferenceType g
 
-      let genCollTy = (match cc with ConcreteCollection.Array -> mkArrayType | ConcreteCollection.List -> mkListTy | ConcreteCollection.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
+      let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> failwith "not implemented") cenv.g genCollElemTy
 
       // Propagating type directed conversion, e.g. for 
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
@@ -2269,11 +2269,11 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy.Commit)
 
         let expr = 
-            match cc with
-            | ConcreteCollection.Array ->
+            match cType with
+            | CollectionType.Array ->
                 mkCallSeqToArray cenv.g m genCollElemTy expr
-            | ConcreteCollection.List ->
+            | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
-            | ConcreteCollection.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray -> failwith "not implemented"
                 
         expr, tpenv)

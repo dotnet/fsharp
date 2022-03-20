@@ -10,7 +10,7 @@ open FSharp.Compiler.TypedTree
 
 val TcSequenceExpressionEntry: cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> hasBuilder:bool * comp:SynExpr -> m:range -> Expr * UnscopedTyparEnv    
 
-val TcArrayOrListComputedExpression: cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> cc:ConcreteCollection * comp:SynExpr -> m:range -> Expr * UnscopedTyparEnv    
+val TcArrayOrListComputedExpression: cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> cType:CollectionType * comp:SynExpr -> m:range -> Expr * UnscopedTyparEnv    
 
 val TcComputationExpression: cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> mWhole:range * interpExpr:Expr * builderTy:TType * comp:SynExpr -> Expr * UnscopedTyparEnv    
 
