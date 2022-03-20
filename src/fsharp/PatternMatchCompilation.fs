@@ -47,6 +47,7 @@ type Pattern =
     | TPat_exnconstr of TyconRef * Pattern list * range
     | TPat_tuple of  TupInfo * Pattern list * TType list * range
     | TPat_array of  Pattern list * TType * range
+    | TPat_block of Pattern list * TType * range // so far no different logic from TPat_array - may be able to consolidate
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range
@@ -64,7 +65,8 @@ type Pattern =
         |   TPat_unioncase(_, _, _, m) -> m
         |   TPat_exnconstr(_, _, m) -> m
         |   TPat_tuple(_, _, _, m) -> m
-        |   TPat_array(_, _, m) -> m
+        |   TPat_array(_, _, m)
+        | TPat_block(_, _, m) -> m
         |   TPat_recd(_, _, _, m) -> m
         |   TPat_range(_, _, m) -> m
         |   TPat_null m -> m
@@ -924,6 +926,7 @@ let rec investigationPoints inpPat =
             for subPat in subPats do 
                 yield! investigationPoints subPat
         | TPat_array (subPats, _, _)
+        | TPat_block (subPats, _, _)
         | TPat_unioncase (_, _, subPats, _) ->
             yield false
             for subPat in subPats do 
@@ -947,6 +950,7 @@ let rec erasePartialPatterns inpPat =
     | TPat_tuple (tupInfo, subPats, x, m) -> TPat_tuple(tupInfo, erasePartials subPats, x, m)
     | TPat_exnconstr(x, subPats, m) -> TPat_exnconstr(x, erasePartials subPats, m)
     | TPat_array (subPats, x, m) -> TPat_array (erasePartials subPats, x, m)
+    | TPat_block (subPats, x, m) -> TPat_array (erasePartials subPats, x, m)
     | TPat_unioncase (x, y, ps, m) -> TPat_unioncase (x, y, erasePartials ps, m)
     | TPat_recd (x, y, ps, m) -> TPat_recd (x, y, List.map erasePartialPatterns ps, m)
     | TPat_isinst (x, y, subPatOpt, m) -> TPat_isinst (x, y, Option.map erasePartialPatterns subPatOpt, m)
@@ -968,6 +972,7 @@ let rec isPatternDisjunctive inpPat =
     | TPat_tuple (_, subPats, _, _)
     | TPat_exnconstr(_, subPats, _)
     | TPat_array (subPats, _, _)
+    | TPat_block (subPats, _, _)
     | TPat_unioncase (_, _, subPats, _)
     | TPat_recd (_, _, subPats, _) -> List.exists isPatternDisjunctive subPats
     | TPat_isinst (_, _, subPatOpt, _) -> Option.exists isPatternDisjunctive subPatOpt
