@@ -5365,13 +5365,18 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
     | SynPat.Paren (p, _) ->
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
 
-    | SynPat.ArrayOrList (cs, args, m) ->
+    | SynPat.ArrayOrList (cType, args, m) ->
         let argty = NewInferenceType g
-        UnifyTypes cenv env m ty (match cs with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> mkBlockType g argty)
+        let tt =
+            match cType with
+            | CollectionType.Array -> mkArrayType g argty
+            | CollectionType.List -> mkListTy g argty
+            | CollectionType.ImmutableArray -> mkBlockType g argty
+        UnifyTypes cenv env m ty tt
         let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> argty) args) args
         (fun values ->
             let args' = List.map (fun f -> f values) args'
-            match cs with
+            match cType with
             | CollectionType.Array -> TPat_array(args', argty, m)
             | CollectionType.List -> List.foldBack (mkConsListPat g argty) args' (mkNilListPat g m argty)
             | CollectionType.ImmutableArray -> TPat_block(args', argty, m)
@@ -6164,7 +6169,11 @@ and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
 
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let argty = NewInferenceType g
-    let actualTy = match cType with CollectionType.Array -> mkArrayType g argty | CollectionType.List -> mkListTy g argty | CollectionType.ImmutableArray -> mkBlockType g argty
+    let actualTy =
+        match cType with
+        | CollectionType.Array -> mkArrayType g argty
+        | CollectionType.List -> mkListTy g argty
+        | CollectionType.ImmutableArray -> mkBlockType g argty
 
     // Propagating type directed conversion, e.g. for 
     //     let x : seq<int64>  = [ 1; 2 ]

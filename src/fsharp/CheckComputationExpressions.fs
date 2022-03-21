@@ -2177,7 +2177,8 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
     // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
-    let mkType = match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType
+    let mkType =
+        match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
         let genCollElemTy = NewInferenceType g
