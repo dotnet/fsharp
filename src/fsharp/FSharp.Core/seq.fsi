@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Collections
 
 open System
 open System.Collections
+open System.Collections.Immutable
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
     
@@ -2489,6 +2490,23 @@ module Seq =
     /// </example>
     [<CompiledName("ToList")>]
     val toList: source:seq<'T> -> 'T list
+
+    /// <summary>Builds a block from the given collection.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result list.</returns>
+    ///
+    /// <example id="toblock-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 1; 2; 5 }
+    ///
+    /// inputs |> Seq.toBlock
+    /// </code>
+    /// Evaluates to <c>[: 1; 2; 5 :]</c>.
+    /// </example>
+    [<CompiledName("ToBlock")>]
+    val toBlock: source:seq<'T> -> ImmutableArray<'T>
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Return None if no such element exists.</summary>

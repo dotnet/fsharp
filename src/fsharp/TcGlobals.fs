@@ -429,6 +429,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       assert (rank >= 1 && rank <= 32)
       TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
 
+  let mkBlockType (ty:TType) = TType_app (v_block_tcr_nice, [ty], v_knownWithoutNull)
+
   let mkLazyTy ty = TType_app(lazy_tcr, [ty], v_knownWithoutNull)
 
   let mkPrintfFormatTy aty bty cty dty ety = TType_app(v_format_tcr, [aty;bty;cty;dty; ety], v_knownWithoutNull)
@@ -758,6 +760,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
+  let v_seq_to_block_info = makeIntrinsicValRef(fslib_MFSeqModule_nleref, "toBlock", None, Some "ToBlock", [varb], ([[mkSeqTy varbTy]], mkBlockType varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
@@ -1523,6 +1526,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
   member val seq_to_list_vref            = ValRefForIntrinsic v_seq_to_list_info
   member val seq_to_array_vref            = ValRefForIntrinsic v_seq_to_array_info
+  member val seq_to_block_vref = ValRefForIntrinsic v_seq_to_block_info
 
   member _.seq_collect_info           = v_seq_collect_info
   member _.seq_using_info             = v_seq_using_info
@@ -1551,6 +1555,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.create_event_info          = v_create_event_info
   member _.seq_to_list_info           = v_seq_to_list_info
   member _.seq_to_array_info          = v_seq_to_array_info
+  member _.seq_to_block_info = v_seq_to_block_info
 
   member _.array_length_info          = v_array_length_info
   member _.array_get_info             = v_array_get_info
