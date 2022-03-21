@@ -2064,6 +2064,8 @@ val mkCallSeqToArray: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallSeqToList: TcGlobals -> range -> TType -> Expr -> Expr 
 
+val mkCallSeqToBlock: TcGlobals -> range -> TType -> Expr -> Expr
+
 val mkCallSeqMap: TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr
 
 val mkCallSeqSingleton: TcGlobals -> range -> TType -> Expr -> Expr

@@ -2177,11 +2177,12 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
     // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
+    let mkType = match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
         let genCollElemTy = NewInferenceType g
 
-        let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType) cenv.g genCollElemTy
+        let genCollTy = mkType cenv.g genCollElemTy
 
         UnifyTypes cenv env m overallTy.Commit genCollTy
 
@@ -2206,7 +2207,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
             | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
             | CollectionType.ImmutableArray ->
-                failwith "not implemented"
+                mkCallSeqToBlock cenv.g m genCollElemTy expr
         expr, tpenv
 
     | None ->
@@ -2245,7 +2246,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
 
       let genCollElemTy = NewInferenceType g
 
-      let genCollTy = (match cType with CollectionType.Array -> mkArrayType | CollectionType.List -> mkListTy | CollectionType.ImmutableArray -> mkBlockType) cenv.g genCollElemTy
+      let genCollTy = mkType cenv.g genCollElemTy
 
       // Propagating type directed conversion, e.g. for 
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
@@ -2275,6 +2276,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
                 mkCallSeqToArray cenv.g m genCollElemTy expr
             | CollectionType.List ->
                 mkCallSeqToList cenv.g m genCollElemTy expr
-            | CollectionType.ImmutableArray -> failwith "not implemented"
+            | CollectionType.ImmutableArray ->
+                mkCallSeqToBlock cenv.g m genCollElemTy expr
                 
         expr, tpenv)
