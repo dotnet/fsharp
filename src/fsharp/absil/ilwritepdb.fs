@@ -995,8 +995,6 @@ let logDebugInfo (outfile: string) (info: PdbData) =
         if scope.Locals.Length > 0 then
           fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]
 
-        // TODO: Print scope.Imports
-
         for child in scope.Children do writeScope (offs + "  ") child
 
       match meth.RootScope with
