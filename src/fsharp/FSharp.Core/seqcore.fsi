@@ -204,7 +204,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         member AddMany: values: seq<'T> -> unit
 
         /// Add multiple elements to the collector and return the resulting block
-        member AddManyAndClose: values: seq<'T> -> 'T[]
+        member AddManyAndClose: values: seq<'T> -> ImmutableArray<'T>
 
         /// Return the resulting block
-        member Close: unit -> 'T[]
+        member Close: unit -> ImmutableArray<'T>
