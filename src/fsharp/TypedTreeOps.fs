@@ -7535,7 +7535,10 @@ let mkCallSeqToArray g m elemTy arg1 =
                   
 let mkCallSeqToList g m elemTy arg1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_to_list_info, [[elemTy]], [ arg1 ], m) 
-                  
+
+let mkCallSeqToBlock (_: TcGlobals) (_: range) (_: TType) (_: Expr): Expr =
+    failwith "not implemented"
+
 let mkCallSeqMap g m inpElemTy genElemTy arg1 arg2 = 
     mkApps g (typedExprForIntrinsic g m g.seq_map_info, [[inpElemTy;genElemTy]], [ arg1; arg2 ], m) 
                   
