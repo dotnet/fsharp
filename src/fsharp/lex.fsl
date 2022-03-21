@@ -835,7 +835,7 @@ rule token args skip = parse
 
  | "|]" { BAR_RBRACK }
 
- | "[:" { COLON_RBRACK }
+ | ":]" { COLON_RBRACK }
 
  | "|}" { BAR_RBRACE }
 
