@@ -1068,7 +1068,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
 
-  member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
+  member val private ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
+
+  member val private BlockCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "BlockCollector`1"
 
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
 
@@ -1083,6 +1085,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy], v_knownWithoutNull)
 
   member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy], v_knownWithoutNull)
+
+  member g.mk_BlockCollector_ty seqElemTy = TType_app(g.BlockCollector_tcr,[seqElemTy], v_knownWithoutNull)
 
   member val byrefkind_In_tcr = mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
 

@@ -180,6 +180,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Primitives.Basics
     open System.Collections
     open System.Collections.Generic
+    open System.Collections.Immutable
     open System.Runtime.CompilerServices
 
     module RuntimeHelpers =
@@ -575,3 +576,31 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 this <- ArrayCollector<'T>()
                 res
             
+    [<Struct; NoEquality; NoComparison>]
+    type BlockCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable Builder: ImmutableArray<'T>.Builder
+
+        member this.Add (value: 'T) =
+            match this.Builder with
+            | null -> this.Builder <- ImmutableArray.CreateBuilder<'T>()
+            | _ -> ()
+            this.Builder.Add value
+
+        member this.AddMany (values: seq<'T>) =
+            match this.Builder with
+            | null -> this.Builder <- ImmutableArray.CreateBuilder<'T>()
+            | _ -> ()
+            this.Builder.AddRange values
+
+        member this.AddManyAndClose (values: seq<'T>) =
+            this.AddMany values
+            this.Close()
+
+        member this.Close() =
+            let res =
+                match this.Builder with
+                | null -> ImmutableArray<'T>.Empty
+                | _ -> this.Builder.ToImmutable()
+            this.Builder <- ImmutableArray.CreateBuilder<'T>()
+            res

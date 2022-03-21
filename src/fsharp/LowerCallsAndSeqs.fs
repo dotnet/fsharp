@@ -213,6 +213,11 @@ let (|SeqToArray|_|) g expr =
     | ValApp g g.seq_to_array_vref (_, [seqExpr], m) -> Some (seqExpr, m)
     | _ -> None
 
+let (|SeqToBlock|_|) g expr =
+    match expr with
+    | ValApp g g.seq_to_block_vref (_, [seqExpr], m) -> Some (seqExpr, m)
+    | _ -> None
+
 let tyConfirmsToSeq g ty = 
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
@@ -1104,6 +1109,10 @@ let LowerComputedListOrArrayExpr tcVal (g: TcGlobals) amap overallExpr =
         
         | SeqToArray g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
             let collectorTy = g.mk_ArrayCollector_ty overallElemTy
+            LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
+        
+        | SeqToBlock g (OptionalCoerce (OptionalSeq g amap (overallSeqExpr, overallElemTy)), m) ->
+            let collectorTy = g.mk_BlockCollector_ty overallElemTy
             LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr
 
         | _ -> None
