@@ -49,6 +49,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System
     open System.Collections
     open System.Collections.Generic
+    open System.Collections.Immutable
     open System.Runtime.CompilerServices
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
@@ -187,6 +188,23 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// Add multiple elements to the collector and return the resulting array
         member AddManyAndClose: values: seq<'T> -> 'T[]
 
-        /// Return the resulting list
+        /// Return the resulting array
         member Close: unit -> 'T[]
 
+    /// Collects elements and builds a block
+    [<Struct; NoEquality; NoComparison>]
+    type BlockCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal Builder: ImmutableArray<'T>.Builder
+
+        /// Add an element to the collector
+        member Add: value: 'T -> unit
+
+        /// Add multiple elements to the collector
+        member AddMany: values: seq<'T> -> unit
+
+        /// Add multiple elements to the collector and return the resulting block
+        member AddManyAndClose: values: seq<'T> -> 'T[]
+
+        /// Return the resulting block
+        member Close: unit -> 'T[]
