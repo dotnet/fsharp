@@ -780,46 +780,45 @@ type ArrayModule2() =
     member this.Sum() =
         // empty integer array 
         let resultEptInt = Array.sum ([||]:int[]) 
-        if resultEptInt <> 0 then Assert.Fail()    
+        if resultEptInt <> 0 then Assert.Fail(sprintf "int: should 0 but is %i" resultEptInt)
         
         // empty float32 array
         let emptyFloatArray = Array.empty<System.Single> 
         let resultEptFloat = Array.sum emptyFloatArray 
-        if resultEptFloat <> 0.0f then Assert.Fail()
+        if resultEptFloat <> 0.0f then Assert.Fail(sprintf "float32: should be 0 but is %.10f" resultEptFloat)
         
         // empty double array
         let emptyDoubleArray = Array.empty<System.Double> 
-        let resultDouEmp = Array.sum emptyDoubleArray 
-        if resultDouEmp <> 0.0 then Assert.Fail()
+        let resultEptDouble = Array.sum emptyDoubleArray 
+        if resultEptDouble <> 0.0 then Assert.Fail(sprintf "float: should be 0 but is %.10f" resultEptDouble)
         
         // empty decimal array
         let emptyDecimalArray = Array.empty<System.Decimal> 
-        let resultDecEmp = Array.sum emptyDecimalArray 
-        if resultDecEmp <> 0M then Assert.Fail()
+        let resultEptDec = Array.sum emptyDecimalArray 
+        if resultEptDec <> 0M then Assert.Fail(sprintf "decimal: should be 0 but is %M" resultEptDec)
 
         // integer array  
         let resultInt = Array.sum [|1..10|] 
-        if resultInt <> 55 then Assert.Fail()  
+        if resultInt <> 55 then Assert.Fail(sprintf "int: should 55 but is %i" resultInt)
         
         // float32 array
         let floatArray: float32[] = [| 1.1f; 1.1f; 1.1f |]
         let resultFloat = Array.sum floatArray
-        if resultFloat < 3.3f - 0.001f || resultFloat > 3.3f + 0.001f then
-            Assert.Fail()
+        if abs (resultFloat - 3.3f) > 0.000001f then Assert.Fail(sprintf "float32: should be 3.3 but is %.10f" resultFloat)
         
         // double array
         let doubleArray: System.Double[] = [| 1.0; 8.0 |]
         let resultDouble = Array.sum doubleArray
-        if resultDouble <> 9.0 then Assert.Fail()
+        if resultDouble <> 9.0 then Assert.Fail(sprintf "float: should be 9.0 but is %.10f" resultDouble)
         
         // decimal array
         let decimalArray: decimal[] = [| 0M; 19M; 19.03M |]
         let resultDecimal = Array.sum decimalArray
-        if resultDecimal <> 38.03M then Assert.Fail()      
+        if resultDecimal <> 38.03M then Assert.Fail(sprintf "decimal: should be 38.03 but is %M" resultDecimal)
  
         // null array
         let nullArr = null:double[]    
-        CheckThrowsArgumentNullException (fun () -> Array.sum  nullArr  |> ignore) 
+        CheckThrowsArgumentNullException (fun () -> Array.sum nullArr |> ignore) 
         ()
 
     [<Fact>]
@@ -850,8 +849,7 @@ type ArrayModule2() =
         // float32 array
         let floatArray: string[] = [| "1.2";"3.5";"6.7" |]
         let resultFloat = Array.sumBy float32 floatArray
-        let difference = abs (resultFloat - 11.4f)
-        if difference > 0.00000001f then Assert.Fail(sprintf "float32: should be 11.4 but is %.10f, difference is %.10f" resultFloat difference)
+        if abs (resultFloat - 11.4f) > 0.000001f then Assert.Fail(sprintf "float32: should be 11.4 but is %.10f" resultFloat)
         
         // double array
         let doubleArray: System.Double[] = [| 1.0;8.0 |]
