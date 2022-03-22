@@ -138,6 +138,12 @@ module FSharpTokenTag =
 
     /// Indicates the token is a `|]`
     val BAR_RBRACK : int
+    
+    /// Indicates the token is a `[:`
+    val LBRACK_COLON : int
+
+    /// Indicates the token is a `:]`
+    val COLON_RBRACK : int
 
     /// Indicates the token is a `+` or `-`
     val PLUS_MINUS_OP : int
@@ -418,6 +424,7 @@ type public FSharpTokenKind =
     | Minus
     | Dollar
     | BarRightBracket
+    | ColonRightBracket
     | BarRightBrace
     | Underscore
     | Semicolon
@@ -426,6 +433,7 @@ type public FSharpTokenKind =
     | Equals
     | LeftBracket
     | LeftBracketBar
+    | LeftBracketColon
     | LeftBraceBar
     | LeftBracketLess
     | LeftBrace
