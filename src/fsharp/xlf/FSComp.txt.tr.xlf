@@ -502,6 +502,11 @@
         <target state="translated">{0}' algoritması desteklenmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnmatchedBracketColon">
+        <source>Unmatched '[:'</source>
+        <target state="new">Unmatched '[:'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="translated">__resumeAt için olan hedef etiket statik olarak belirlenmedi. Statik olmayan hedef etiketine sahip bir __resumeAt yalnızca sürdürülebilir kod yönteminin başında yer alabilir</target>
