@@ -502,6 +502,11 @@
         <target state="translated">不支持算法“{0}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnmatchedBracketColon">
+        <source>Unmatched '[:'</source>
+        <target state="new">Unmatched '[:'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="translated">未静态确定 __resumeAt 的目标标签。具有非静态目标标签的 __resumeAt 只能出现在可恢复代码方法的开头</target>

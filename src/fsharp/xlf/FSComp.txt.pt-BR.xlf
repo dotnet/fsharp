@@ -502,6 +502,11 @@
         <target state="translated">Algoritmo '{0}' sem suporte</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsUnmatchedBracketColon">
+        <source>Unmatched '[:'</source>
+        <target state="new">Unmatched '[:'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
         <target state="translated">Uma etiqueta de destino para __resumeAt não foi estaticamente determinada. Um __resumeAt com uma etiqueta de destino não estática só pode aparecer no início de um método de código retomável.</target>
