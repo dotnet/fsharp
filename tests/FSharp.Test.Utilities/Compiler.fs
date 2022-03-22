@@ -76,7 +76,7 @@ module rec Compiler =
         | UnionCase of string 
         | Field of string 
 
-        member this.ImportScope () =
+        member this.FullName () =
             match this with
             | MemberOrFunctionOrValue fullname
             | Entity fullname
@@ -701,7 +701,7 @@ module rec Compiler =
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 
     type PdbVerificationOption =
-    | VerifyImportScopes of ImportScope list
+    | VerifyImportScopes of ImportScope list list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -721,33 +721,39 @@ module rec Compiler =
         if reader.DebugMetadataHeader.EntryPoint.IsNil && shouldHaveEntryPoint then
             failwith $"EntryPoint expected to be {shouldHaveEntryPoint}, but was {reader.DebugMetadataHeader.EntryPoint.IsNil}"
 
-    let private verifyPdbImportTables (reader: MetadataReader) (scopes: ImportScope list) =
+    let private verifyPdbImportTables (reader: MetadataReader) (scopes: ImportScope list list) =
         // There always should be 2 import scopes - 1 empty "root" one, and one flattened table of imports for current scope.
-        if reader.ImportScopes.Count <> 2 then
-            failwith $"Expected to have 2 import scopes, but found {reader.ImportScopes.Count}."
+        if reader.ImportScopes.Count < 2 then
+            failwith $"Expected to have at least 2 import scopes, but found {reader.ImportScopes.Count}."
 
         // Sanity check: explicitly test that first import scope is indeed an apty one (i.e. there are no imports).
         let rootScope = reader.ImportScopes.ToImmutableArray().Item(0) |> reader.GetImportScope
+
         let rootScopeImportsLength = rootScope.GetImports().ToImmutableArray().Length
+
         if rootScopeImportsLength <> 0 then
             failwith $"Expected root scope to have 0 imports, but got {rootScopeImportsLength}."
 
-        let mainScope = reader.ImportScopes.ToImmutableArray().Item(1) |> reader.GetImportScope
+        let pdbScopes = [ for import in reader.ImportScopes -> reader.GetImportScope import ] |> List.skip 1 |> List.rev
 
-        let imports = [ for import in mainScope.GetImports() ->
-                        match import.Kind with
-                        | ImportDefinitionKind.ImportNamespace ->
-                            let targetNamespaceBlob = import.TargetNamespace
-                            let targetNamespaceBytes = reader.GetBlobBytes(targetNamespaceBlob)
-                            let name = Encoding.UTF8.GetString(targetNamespaceBytes, 0, targetNamespaceBytes.Length)
-                            Some { Kind = import.Kind; Name = name }
-                        | _ -> None ] |> List.filter Option.isSome |> List.map Option.get
+        if pdbScopes.Length <> scopes.Length then
+            failwith $"Expected import scopes amount is {scopes.Length}, but got {pdbScopes.Length}."
 
-        if scopes.Length <> imports.Length then
-            failwith $"Expected import scopes amount is {scopes.Length}, but got {imports.Length}\nExpected:\n%A{scopes}\nActual:%A{imports}"
+        for (pdbScope, expectedScope) in List.zip pdbScopes scopes do
+            let imports = [ for import in pdbScope.GetImports() ->
+                            match import.Kind with
+                            | ImportDefinitionKind.ImportNamespace ->
+                                let targetNamespaceBlob = import.TargetNamespace
+                                let targetNamespaceBytes = reader.GetBlobBytes(targetNamespaceBlob)
+                                let name = Encoding.UTF8.GetString(targetNamespaceBytes, 0, targetNamespaceBytes.Length)
+                                Some { Kind = import.Kind; Name = name }
+                            | _ -> None ] |> List.filter Option.isSome |> List.map Option.get
 
-        if scopes <> imports then
-            failwith $"Expected import scopes are different from PDB.\nExpected:\n%A{scopes}\nActual:%A{imports}"
+            if expectedScope.Length <> imports.Length then
+                failwith $"Expected imports amount is {expectedScope.Length}, but got {imports.Length}\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
+
+            if expectedScope <> imports then
+                failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
 
     let private verifyPdbOptions reader options =

@@ -11,29 +11,42 @@ module PortablePdbs =
     [<Fact>]
     let ``Valid Portable PDBs are produced by compiler`` () =
         FSharp """
+namespace UserNamespace
+
 open System
 
 module Foo =
     let getcwd () = Environment.CurrentDirectory
 
-[<EntryPoint>]
-let main _ =
-    printfn "%s" Environment.CurrentDirectory
-    0
+
+namespace UserNamespace2
+
+open System.IO
+
+module Bar =
+    let baz _ = ()
         """
-        |> asExe
+        |> asLibrary
         |> withPortablePdb
         |> compile
         |> shouldSucceed
         |> verifyPdb [
             VerifyImportScopes [
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft" }
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp" }
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Core" }
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Collections" }
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Control" }
-                { Kind = ImportDefinitionKind.ImportNamespace; Name = "System" }
+                [
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Core" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Collections" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Control" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "System" }
+                ]
+                [
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Core" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Collections" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Control" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "System.IO" }
+                ]
             ]
         ]
-
-    

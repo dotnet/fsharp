@@ -542,18 +542,14 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     let writeMethodScopes methToken rootScope =
 
         let flattenedScopes = flattenScopes rootScope
-        
+
         for scope in flattenedScopes do
             // Get or create the import scope for this method
             let importScopeHandle =
-#if !NO_EMIT_IMPORT_SCOPES
+
                 match scope.Imports with 
                 | None -> Unchecked.defaultof<_>
                 | Some imports -> getImportScopeIndex imports
-#else
-                getImportScopeIndex |> ignore // make sure this code counts as used
-                Unchecked.defaultof<_>
-#endif
 
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
@@ -684,14 +680,9 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         sortMethods showTimes info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
-// Currently disabled, see 
-#if !NO_EMIT_IMPORT_SCOPES
         defineModuleImportScope()
-#else
-        defineModuleImportScope |> ignore // make sure this function counts as used
-#endif
 
-        for minfo in info.Methods do 
+        for minfo in info.Methods do
             emitMethod minfo
 
         let entryPoint =
