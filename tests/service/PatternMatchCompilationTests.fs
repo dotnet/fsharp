@@ -504,6 +504,7 @@ atomicPattern:
   | LBRACE recordPatternElementsAux rbrace
   | LBRACK listPatternElements RBRACK
   | LBRACK_BAR listPatternElements  BAR_RBRACK
+  | LBRACK_COLON listPatternElements COLON_RBRACK
   | UNDERSCORE
   | QMARK ident
   | atomicPatternLongIdent %prec prec_atompat_pathop
