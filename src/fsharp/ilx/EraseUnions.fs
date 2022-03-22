@@ -406,7 +406,7 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @  [ AI_ldnull; AI_ceq ]
             | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un  ]
-            | _ -> failwith "unexpected"
+            | _ -> failwith "mkIsData - unexpected"
 
 type ICodeGen<'Mark> = 
     abstract CodeLabel: 'Mark -> ILCodeLabel
@@ -454,7 +454,7 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
             match cidx with 
             | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
             | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (pos,tg)]
-            | _ -> failwith "unexpected"
+            | _ -> failwith "mkBrIsData - unexpected"
 
 
 let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
@@ -1065,8 +1065,8 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     // The class can be abstract if each alternative is represented by a derived type
     let isAbstract = (altTypeDefs.Length = cud.UnionCases.Length)        
 
-    let existingMeths = td.Methods.AsList 
-    let existingProps = td.Properties.AsList
+    let existingMeths = td.Methods.AsList()
+    let existingProps = td.Properties.AsList()
 
     let enumTypeDef = 
         // The nested Tags type is elided if there is only one tag
@@ -1099,10 +1099,10 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let baseTypeDef = 
        td.WithInitSemantics(ILTypeInit.BeforeField)
-         .With(nestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList),
+         .With(nestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList()),
                extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends),
                methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths),
-               fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList),
+               fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList()),
                properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps))
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 

@@ -19,7 +19,17 @@ val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimization
 
 val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 
-val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv 
+val ApplyAllOptimizations:
+    TcConfig *
+    TcGlobals *
+    ConstraintSolver.TcValF *
+    string *
+    ImportMap *
+    isIncrementalFragment: bool *
+    IncrementalOptimizationEnv *
+    CcuThunk *
+    TypedImplFile list
+        -> TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 

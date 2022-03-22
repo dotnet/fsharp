@@ -19,8 +19,8 @@ namespace FSharp.Compiler.Interactive
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart : unit -> unit
     
+    /// Operations supported by the currently executing F# Interactive session.
     [<Sealed>]
-    /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
     type InteractiveSession =
 
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>

@@ -51,8 +51,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     member doc.NonEmpty = not doc.IsEmpty
 
     static member Merge (doc1: XmlDoc) (doc2: XmlDoc) =
-        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines,
-               unionRanges doc1.Range doc2.Range)
+        let range = 
+            if doc1.IsEmpty then doc2.Range
+            elif doc2.IsEmpty then doc1.Range
+            else unionRanges doc1.Range doc2.Range
+
+        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, range)
 
     member doc.GetXmlText() =
         if doc.IsEmpty then ""

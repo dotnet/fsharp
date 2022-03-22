@@ -36,13 +36,13 @@
   // Offset: 0x00001148 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {620FB412-37F5-C118-A745-038312B40F62}
+// MVID: {6220E46D-37F5-C118-A745-03836DE42062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DA0000
+// Image base: 0x06C10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -151,7 +151,7 @@
             instance int32  CompareTo(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       64 (0x40)
+      // Code size       55 (0x37)
       .maxstack  4
       .locals init ([0] class ABC/Expr V_0,
                [1] class ABC/Expr V_1,
@@ -161,64 +161,58 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SerializableAttribute\\ToplevelModule.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0036
+      IL_0001:  brfalse.s  IL_0030
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  ldnull
-      IL_0008:  cgt.un
-      IL_000a:  brfalse.s  IL_0034
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_002e
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldarg.0
-      IL_000d:  pop
+      IL_0006:  ldarg.0
+      IL_0007:  pop
       .line 100001,100001 : 0,0 ''
-      IL_000e:  ldarg.0
-      IL_000f:  stloc.0
-      IL_0010:  ldarg.1
-      IL_0011:  stloc.1
-      IL_0012:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0017:  stloc.2
-      IL_0018:  ldloc.0
-      IL_0019:  ldfld      int32 ABC/Expr::item
-      IL_001e:  stloc.3
-      IL_001f:  ldloc.1
-      IL_0020:  ldfld      int32 ABC/Expr::item
-      IL_0025:  stloc.s    V_4
+      IL_0008:  ldarg.0
+      IL_0009:  stloc.0
+      IL_000a:  ldarg.1
+      IL_000b:  stloc.1
+      IL_000c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0011:  stloc.2
+      IL_0012:  ldloc.0
+      IL_0013:  ldfld      int32 ABC/Expr::item
+      IL_0018:  stloc.3
+      IL_0019:  ldloc.1
+      IL_001a:  ldfld      int32 ABC/Expr::item
+      IL_001f:  stloc.s    V_4
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldloc.3
-      IL_0028:  ldloc.s    V_4
-      IL_002a:  bge.s      IL_002e
+      IL_0021:  ldloc.3
+      IL_0022:  ldloc.s    V_4
+      IL_0024:  bge.s      IL_0028
 
       .line 100001,100001 : 0,0 ''
-      IL_002c:  ldc.i4.m1
+      IL_0026:  ldc.i4.m1
+      IL_0027:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0028:  ldloc.3
+      IL_0029:  ldloc.s    V_4
+      IL_002b:  cgt
       IL_002d:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002e:  ldloc.3
-      IL_002f:  ldloc.s    V_4
-      IL_0031:  cgt
-      IL_0033:  ret
+      IL_002e:  ldc.i4.1
+      IL_002f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0034:  ldc.i4.1
-      IL_0035:  ret
+      IL_0030:  ldarg.1
+      IL_0031:  brfalse.s  IL_0035
 
       .line 100001,100001 : 0,0 ''
-      IL_0036:  ldarg.1
-      IL_0037:  ldnull
-      IL_0038:  cgt.un
-      IL_003a:  brfalse.s  IL_003e
+      IL_0033:  ldc.i4.m1
+      IL_0034:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003c:  ldc.i4.m1
-      IL_003d:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_003e:  ldc.i4.0
-      IL_003f:  ret
+      IL_0035:  ldc.i4.0
+      IL_0036:  ret
     } // end of method Expr::CompareTo
 
     .method public hidebysig virtual final 
@@ -239,7 +233,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       80 (0x50)
+      // Code size       71 (0x47)
       .maxstack  4
       .locals init ([0] class ABC/Expr V_0,
                [1] class ABC/Expr V_1,
@@ -253,115 +247,107 @@
       IL_0006:  stloc.0
       .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
-      IL_0008:  ldnull
-      IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_0041
+      IL_0008:  brfalse.s  IL_003b
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  unbox.any  ABC/Expr
-      IL_0013:  ldnull
-      IL_0014:  cgt.un
-      IL_0016:  brfalse.s  IL_003f
+      IL_000a:  ldarg.1
+      IL_000b:  unbox.any  ABC/Expr
+      IL_0010:  brfalse.s  IL_0039
 
       .line 100001,100001 : 0,0 ''
-      IL_0018:  ldarg.0
-      IL_0019:  pop
+      IL_0012:  ldarg.0
+      IL_0013:  pop
       .line 100001,100001 : 0,0 ''
-      IL_001a:  ldarg.0
-      IL_001b:  stloc.1
-      IL_001c:  ldloc.0
-      IL_001d:  stloc.2
-      IL_001e:  ldarg.2
-      IL_001f:  stloc.3
-      IL_0020:  ldloc.1
-      IL_0021:  ldfld      int32 ABC/Expr::item
-      IL_0026:  stloc.s    V_4
-      IL_0028:  ldloc.2
-      IL_0029:  ldfld      int32 ABC/Expr::item
-      IL_002e:  stloc.s    V_5
+      IL_0014:  ldarg.0
+      IL_0015:  stloc.1
+      IL_0016:  ldloc.0
+      IL_0017:  stloc.2
+      IL_0018:  ldarg.2
+      IL_0019:  stloc.3
+      IL_001a:  ldloc.1
+      IL_001b:  ldfld      int32 ABC/Expr::item
+      IL_0020:  stloc.s    V_4
+      IL_0022:  ldloc.2
+      IL_0023:  ldfld      int32 ABC/Expr::item
+      IL_0028:  stloc.s    V_5
       .line 100001,100001 : 0,0 ''
-      IL_0030:  ldloc.s    V_4
-      IL_0032:  ldloc.s    V_5
-      IL_0034:  bge.s      IL_0038
+      IL_002a:  ldloc.s    V_4
+      IL_002c:  ldloc.s    V_5
+      IL_002e:  bge.s      IL_0032
 
       .line 100001,100001 : 0,0 ''
-      IL_0036:  ldc.i4.m1
-      IL_0037:  ret
+      IL_0030:  ldc.i4.m1
+      IL_0031:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0038:  ldloc.s    V_4
-      IL_003a:  ldloc.s    V_5
-      IL_003c:  cgt
-      IL_003e:  ret
+      IL_0032:  ldloc.s    V_4
+      IL_0034:  ldloc.s    V_5
+      IL_0036:  cgt
+      IL_0038:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003f:  ldc.i4.1
-      IL_0040:  ret
+      IL_0039:  ldc.i4.1
+      IL_003a:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0041:  ldarg.1
-      IL_0042:  unbox.any  ABC/Expr
-      IL_0047:  ldnull
-      IL_0048:  cgt.un
-      IL_004a:  brfalse.s  IL_004e
+      IL_003b:  ldarg.1
+      IL_003c:  unbox.any  ABC/Expr
+      IL_0041:  brfalse.s  IL_0045
 
       .line 100001,100001 : 0,0 ''
-      IL_004c:  ldc.i4.m1
-      IL_004d:  ret
+      IL_0043:  ldc.i4.m1
+      IL_0044:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_004e:  ldc.i4.0
-      IL_004f:  ret
+      IL_0045:  ldc.i4.0
+      IL_0046:  ret
     } // end of method Expr::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       41 (0x29)
+      // Code size       38 (0x26)
       .maxstack  7
       .locals init ([0] int32 V_0,
                [1] class ABC/Expr V_1,
                [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0027
+      IL_0001:  brfalse.s  IL_0024
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldc.i4.0
-      IL_0007:  stloc.0
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
       .line 100001,100001 : 0,0 ''
-      IL_0008:  ldarg.0
-      IL_0009:  pop
+      IL_0005:  ldarg.0
+      IL_0006:  pop
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.0
-      IL_000b:  stloc.1
-      IL_000c:  ldc.i4.0
-      IL_000d:  stloc.0
-      IL_000e:  ldc.i4     0x9e3779b9
-      IL_0013:  ldarg.1
-      IL_0014:  stloc.2
-      IL_0015:  ldloc.1
-      IL_0016:  ldfld      int32 ABC/Expr::item
+      IL_0007:  ldarg.0
+      IL_0008:  stloc.1
+      IL_0009:  ldc.i4.0
+      IL_000a:  stloc.0
+      IL_000b:  ldc.i4     0x9e3779b9
+      IL_0010:  ldarg.1
+      IL_0011:  stloc.2
+      IL_0012:  ldloc.1
+      IL_0013:  ldfld      int32 ABC/Expr::item
+      IL_0018:  ldloc.0
+      IL_0019:  ldc.i4.6
+      IL_001a:  shl
       IL_001b:  ldloc.0
-      IL_001c:  ldc.i4.6
-      IL_001d:  shl
-      IL_001e:  ldloc.0
-      IL_001f:  ldc.i4.2
-      IL_0020:  shr
-      IL_0021:  add
-      IL_0022:  add
-      IL_0023:  add
-      IL_0024:  stloc.0
-      IL_0025:  ldloc.0
-      IL_0026:  ret
+      IL_001c:  ldc.i4.2
+      IL_001d:  shr
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  add
+      IL_0021:  stloc.0
+      IL_0022:  ldloc.0
+      IL_0023:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
+      IL_0024:  ldc.i4.0
+      IL_0025:  ret
     } // end of method Expr::GetHashCode
 
     .method public hidebysig virtual final 
@@ -381,7 +367,7 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       52 (0x34)
+      // Code size       49 (0x31)
       .maxstack  4
       .locals init ([0] class ABC/Expr V_0,
                [1] class ABC/Expr V_1,
@@ -390,97 +376,91 @@
                [4] class [mscorlib]System.Collections.IEqualityComparer V_4)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_002c
+      IL_0001:  brfalse.s  IL_0029
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  isinst     ABC/Expr
-      IL_000c:  stloc.0
+      IL_0003:  ldarg.1
+      IL_0004:  isinst     ABC/Expr
+      IL_0009:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_000a:  ldloc.0
+      IL_000b:  brfalse.s  IL_0027
+
       .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
-      IL_000e:  brfalse.s  IL_002a
+      IL_000e:  stloc.1
+      .line 100001,100001 : 0,0 ''
+      IL_000f:  ldarg.0
+      IL_0010:  pop
+      .line 100001,100001 : 0,0 ''
+      IL_0011:  ldarg.0
+      IL_0012:  stloc.2
+      IL_0013:  ldloc.1
+      IL_0014:  stloc.3
+      IL_0015:  ldarg.2
+      IL_0016:  stloc.s    V_4
+      IL_0018:  ldloc.2
+      IL_0019:  ldfld      int32 ABC/Expr::item
+      IL_001e:  ldloc.3
+      IL_001f:  ldfld      int32 ABC/Expr::item
+      IL_0024:  ceq
+      IL_0026:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0010:  ldloc.0
-      IL_0011:  stloc.1
-      .line 100001,100001 : 0,0 ''
-      IL_0012:  ldarg.0
-      IL_0013:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_0014:  ldarg.0
-      IL_0015:  stloc.2
-      IL_0016:  ldloc.1
-      IL_0017:  stloc.3
-      IL_0018:  ldarg.2
-      IL_0019:  stloc.s    V_4
-      IL_001b:  ldloc.2
-      IL_001c:  ldfld      int32 ABC/Expr::item
-      IL_0021:  ldloc.3
-      IL_0022:  ldfld      int32 ABC/Expr::item
-      IL_0027:  ceq
-      IL_0029:  ret
+      IL_0027:  ldc.i4.0
+      IL_0028:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_002c:  ldarg.1
-      IL_002d:  ldnull
-      IL_002e:  cgt.un
-      IL_0030:  ldc.i4.0
-      IL_0031:  ceq
-      IL_0033:  ret
+      IL_0029:  ldarg.1
+      IL_002a:  ldnull
+      IL_002b:  cgt.un
+      IL_002d:  ldc.i4.0
+      IL_002e:  ceq
+      IL_0030:  ret
     } // end of method Expr::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       43 (0x2b)
+      // Code size       37 (0x25)
       .maxstack  4
       .locals init ([0] class ABC/Expr V_0,
                [1] class ABC/Expr V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0023
+      IL_0001:  brfalse.s  IL_001d
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  ldnull
-      IL_0008:  cgt.un
-      IL_000a:  brfalse.s  IL_0021
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_001b
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldarg.0
-      IL_000d:  pop
+      IL_0006:  ldarg.0
+      IL_0007:  pop
       .line 100001,100001 : 0,0 ''
-      IL_000e:  ldarg.0
-      IL_000f:  stloc.0
-      IL_0010:  ldarg.1
-      IL_0011:  stloc.1
-      IL_0012:  ldloc.0
+      IL_0008:  ldarg.0
+      IL_0009:  stloc.0
+      IL_000a:  ldarg.1
+      IL_000b:  stloc.1
+      IL_000c:  ldloc.0
+      IL_000d:  ldfld      int32 ABC/Expr::item
+      IL_0012:  ldloc.1
       IL_0013:  ldfld      int32 ABC/Expr::item
-      IL_0018:  ldloc.1
-      IL_0019:  ldfld      int32 ABC/Expr::item
-      IL_001e:  ceq
-      IL_0020:  ret
+      IL_0018:  ceq
+      IL_001a:  ret
 
       .line 100001,100001 : 0,0 ''
+      IL_001b:  ldc.i4.0
+      IL_001c:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_001d:  ldarg.1
+      IL_001e:  ldnull
+      IL_001f:  cgt.un
       IL_0021:  ldc.i4.0
-      IL_0022:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0023:  ldarg.1
-      IL_0024:  ldnull
-      IL_0025:  cgt.un
-      IL_0027:  ldc.i4.0
-      IL_0028:  ceq
-      IL_002a:  ret
+      IL_0022:  ceq
+      IL_0024:  ret
     } // end of method Expr::Equals
 
     .method public hidebysig virtual final 
@@ -584,41 +564,39 @@
             GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       40 (0x28)
+      // Code size       37 (0x25)
       .maxstack  7
       .locals init ([0] int32 V_0,
                [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0026
+      IL_0001:  brfalse.s  IL_0023
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldc.i4.0
-      IL_0007:  stloc.0
-      IL_0008:  ldc.i4     0x9e3779b9
-      IL_000d:  ldarg.1
-      IL_000e:  stloc.1
-      IL_000f:  ldarg.0
-      IL_0010:  castclass  ABC/MyExn
-      IL_0015:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.0
+      IL_0005:  ldc.i4     0x9e3779b9
+      IL_000a:  ldarg.1
+      IL_000b:  stloc.1
+      IL_000c:  ldarg.0
+      IL_000d:  castclass  ABC/MyExn
+      IL_0012:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.6
+      IL_0019:  shl
       IL_001a:  ldloc.0
-      IL_001b:  ldc.i4.6
-      IL_001c:  shl
-      IL_001d:  ldloc.0
-      IL_001e:  ldc.i4.2
-      IL_001f:  shr
-      IL_0020:  add
-      IL_0021:  add
-      IL_0022:  add
-      IL_0023:  stloc.0
-      IL_0024:  ldloc.0
-      IL_0025:  ret
+      IL_001b:  ldc.i4.2
+      IL_001c:  shr
+      IL_001d:  add
+      IL_001e:  add
+      IL_001f:  add
+      IL_0020:  stloc.0
+      IL_0021:  ldloc.0
+      IL_0022:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0026:  ldc.i4.0
-      IL_0027:  ret
+      IL_0023:  ldc.i4.0
+      IL_0024:  ret
     } // end of method MyExn::GetHashCode
 
     .method public hidebysig virtual instance int32 
@@ -642,34 +620,35 @@
       .maxstack  4
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+               [2] object V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_003b
+      IL_0001:  brfalse.s  IL_003b
 
       .line 100001,100001 : 0,0 ''
-      IL_0006:  ldarg.1
-      IL_0007:  isinst     [mscorlib]System.Exception
-      IL_000c:  stloc.0
+      IL_0003:  ldarg.1
+      IL_0004:  isinst     [mscorlib]System.Exception
+      IL_0009:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_000a:  ldloc.0
+      IL_000b:  brfalse.s  IL_0039
+
       .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
-      IL_000e:  brfalse.s  IL_0039
-
+      IL_000e:  stloc.1
       .line 100001,100001 : 0,0 ''
-      IL_0010:  ldloc.0
-      IL_0011:  stloc.1
-      .line 100001,100001 : 0,0 ''
-      IL_0012:  ldloc.0
-      IL_0013:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/MyExn>(object)
-      IL_0018:  brtrue.s   IL_001c
-
-      IL_001a:  br.s       IL_0037
+      IL_000f:  ldloc.0
+      IL_0010:  stloc.2
+      IL_0011:  ldloc.2
+      IL_0012:  isinst     ABC/MyExn
+      IL_0017:  ldnull
+      IL_0018:  cgt.un
+      IL_001a:  brfalse.s  IL_0037
 
       .line 100001,100001 : 0,0 ''
       IL_001c:  ldarg.2
-      IL_001d:  stloc.2
+      IL_001d:  stloc.3
       IL_001e:  ldarg.0
       IL_001f:  castclass  ABC/MyExn
       IL_0024:  call       instance int32 ABC/MyExn::get_Data0()
@@ -700,52 +679,51 @@
             Equals(class [mscorlib]System.Exception obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       59 (0x3b)
-      .maxstack  8
+      // Code size       56 (0x38)
+      .maxstack  4
+      .locals init ([0] object V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0033
+      IL_0001:  brfalse.s  IL_0030
+
+      .line 100001,100001 : 0,0 ''
+      IL_0003:  ldarg.1
+      IL_0004:  brfalse.s  IL_002e
 
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.1
-      IL_0007:  ldnull
-      IL_0008:  cgt.un
-      IL_000a:  brfalse.s  IL_0031
+      IL_0007:  stloc.0
+      IL_0008:  ldloc.0
+      IL_0009:  isinst     ABC/MyExn
+      IL_000e:  ldnull
+      IL_000f:  cgt.un
+      IL_0011:  brfalse.s  IL_002c
 
       .line 100001,100001 : 0,0 ''
-      IL_000c:  ldarg.1
-      IL_000d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/MyExn>(object)
-      IL_0012:  brtrue.s   IL_0016
-
-      IL_0014:  br.s       IL_002f
-
-      .line 100001,100001 : 0,0 ''
-      IL_0016:  ldarg.0
-      IL_0017:  castclass  ABC/MyExn
-      IL_001c:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_0021:  ldarg.1
-      IL_0022:  castclass  ABC/MyExn
-      IL_0027:  call       instance int32 ABC/MyExn::get_Data0()
-      IL_002c:  ceq
-      IL_002e:  ret
+      IL_0013:  ldarg.0
+      IL_0014:  castclass  ABC/MyExn
+      IL_0019:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_001e:  ldarg.1
+      IL_001f:  castclass  ABC/MyExn
+      IL_0024:  call       instance int32 ABC/MyExn::get_Data0()
+      IL_0029:  ceq
+      IL_002b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002f:  ldc.i4.0
-      IL_0030:  ret
+      IL_002c:  ldc.i4.0
+      IL_002d:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0031:  ldc.i4.0
-      IL_0032:  ret
+      IL_002e:  ldc.i4.0
+      IL_002f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0033:  ldarg.1
-      IL_0034:  ldnull
-      IL_0035:  cgt.un
-      IL_0037:  ldc.i4.0
-      IL_0038:  ceq
-      IL_003a:  ret
+      IL_0030:  ldarg.1
+      IL_0031:  ldnull
+      IL_0032:  cgt.un
+      IL_0034:  ldc.i4.0
+      IL_0035:  ceq
+      IL_0037:  ret
     } // end of method MyExn::Equals
 
     .method public hidebysig virtual instance bool 
@@ -924,7 +902,7 @@
               instance int32  CompareTo(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       64 (0x40)
+        // Code size       55 (0x37)
         .maxstack  4
         .locals init ([0] class ABC/ABC/Expr V_0,
                  [1] class ABC/ABC/Expr V_1,
@@ -933,64 +911,58 @@
                  [4] int32 V_4)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0036
+        IL_0001:  brfalse.s  IL_0030
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  ldnull
-        IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0034
+        IL_0003:  ldarg.1
+        IL_0004:  brfalse.s  IL_002e
 
         .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.0
-        IL_000d:  pop
+        IL_0006:  ldarg.0
+        IL_0007:  pop
         .line 100001,100001 : 0,0 ''
-        IL_000e:  ldarg.0
-        IL_000f:  stloc.0
-        IL_0010:  ldarg.1
-        IL_0011:  stloc.1
-        IL_0012:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0017:  stloc.2
-        IL_0018:  ldloc.0
-        IL_0019:  ldfld      int32 ABC/ABC/Expr::item
-        IL_001e:  stloc.3
-        IL_001f:  ldloc.1
-        IL_0020:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0025:  stloc.s    V_4
+        IL_0008:  ldarg.0
+        IL_0009:  stloc.0
+        IL_000a:  ldarg.1
+        IL_000b:  stloc.1
+        IL_000c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_0011:  stloc.2
+        IL_0012:  ldloc.0
+        IL_0013:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0018:  stloc.3
+        IL_0019:  ldloc.1
+        IL_001a:  ldfld      int32 ABC/ABC/Expr::item
+        IL_001f:  stloc.s    V_4
         .line 100001,100001 : 0,0 ''
-        IL_0027:  ldloc.3
-        IL_0028:  ldloc.s    V_4
-        IL_002a:  bge.s      IL_002e
+        IL_0021:  ldloc.3
+        IL_0022:  ldloc.s    V_4
+        IL_0024:  bge.s      IL_0028
 
         .line 100001,100001 : 0,0 ''
-        IL_002c:  ldc.i4.m1
+        IL_0026:  ldc.i4.m1
+        IL_0027:  ret
+
+        .line 100001,100001 : 0,0 ''
+        IL_0028:  ldloc.3
+        IL_0029:  ldloc.s    V_4
+        IL_002b:  cgt
         IL_002d:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_002e:  ldloc.3
-        IL_002f:  ldloc.s    V_4
-        IL_0031:  cgt
-        IL_0033:  ret
+        IL_002e:  ldc.i4.1
+        IL_002f:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0034:  ldc.i4.1
-        IL_0035:  ret
+        IL_0030:  ldarg.1
+        IL_0031:  brfalse.s  IL_0035
 
         .line 100001,100001 : 0,0 ''
-        IL_0036:  ldarg.1
-        IL_0037:  ldnull
-        IL_0038:  cgt.un
-        IL_003a:  brfalse.s  IL_003e
+        IL_0033:  ldc.i4.m1
+        IL_0034:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_003c:  ldc.i4.m1
-        IL_003d:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_003e:  ldc.i4.0
-        IL_003f:  ret
+        IL_0035:  ldc.i4.0
+        IL_0036:  ret
       } // end of method Expr::CompareTo
 
       .method public hidebysig virtual final 
@@ -1011,7 +983,7 @@
                                         class [mscorlib]System.Collections.IComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       80 (0x50)
+        // Code size       71 (0x47)
         .maxstack  4
         .locals init ([0] class ABC/ABC/Expr V_0,
                  [1] class ABC/ABC/Expr V_1,
@@ -1025,115 +997,107 @@
         IL_0006:  stloc.0
         .line 100001,100001 : 0,0 ''
         IL_0007:  ldarg.0
-        IL_0008:  ldnull
-        IL_0009:  cgt.un
-        IL_000b:  brfalse.s  IL_0041
+        IL_0008:  brfalse.s  IL_003b
 
         .line 100001,100001 : 0,0 ''
-        IL_000d:  ldarg.1
-        IL_000e:  unbox.any  ABC/ABC/Expr
-        IL_0013:  ldnull
-        IL_0014:  cgt.un
-        IL_0016:  brfalse.s  IL_003f
+        IL_000a:  ldarg.1
+        IL_000b:  unbox.any  ABC/ABC/Expr
+        IL_0010:  brfalse.s  IL_0039
 
         .line 100001,100001 : 0,0 ''
-        IL_0018:  ldarg.0
-        IL_0019:  pop
+        IL_0012:  ldarg.0
+        IL_0013:  pop
         .line 100001,100001 : 0,0 ''
-        IL_001a:  ldarg.0
-        IL_001b:  stloc.1
-        IL_001c:  ldloc.0
-        IL_001d:  stloc.2
-        IL_001e:  ldarg.2
-        IL_001f:  stloc.3
-        IL_0020:  ldloc.1
-        IL_0021:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0026:  stloc.s    V_4
-        IL_0028:  ldloc.2
-        IL_0029:  ldfld      int32 ABC/ABC/Expr::item
-        IL_002e:  stloc.s    V_5
+        IL_0014:  ldarg.0
+        IL_0015:  stloc.1
+        IL_0016:  ldloc.0
+        IL_0017:  stloc.2
+        IL_0018:  ldarg.2
+        IL_0019:  stloc.3
+        IL_001a:  ldloc.1
+        IL_001b:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0020:  stloc.s    V_4
+        IL_0022:  ldloc.2
+        IL_0023:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0028:  stloc.s    V_5
         .line 100001,100001 : 0,0 ''
-        IL_0030:  ldloc.s    V_4
-        IL_0032:  ldloc.s    V_5
-        IL_0034:  bge.s      IL_0038
+        IL_002a:  ldloc.s    V_4
+        IL_002c:  ldloc.s    V_5
+        IL_002e:  bge.s      IL_0032
 
         .line 100001,100001 : 0,0 ''
-        IL_0036:  ldc.i4.m1
-        IL_0037:  ret
+        IL_0030:  ldc.i4.m1
+        IL_0031:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0038:  ldloc.s    V_4
-        IL_003a:  ldloc.s    V_5
-        IL_003c:  cgt
-        IL_003e:  ret
+        IL_0032:  ldloc.s    V_4
+        IL_0034:  ldloc.s    V_5
+        IL_0036:  cgt
+        IL_0038:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_003f:  ldc.i4.1
-        IL_0040:  ret
+        IL_0039:  ldc.i4.1
+        IL_003a:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0041:  ldarg.1
-        IL_0042:  unbox.any  ABC/ABC/Expr
-        IL_0047:  ldnull
-        IL_0048:  cgt.un
-        IL_004a:  brfalse.s  IL_004e
+        IL_003b:  ldarg.1
+        IL_003c:  unbox.any  ABC/ABC/Expr
+        IL_0041:  brfalse.s  IL_0045
 
         .line 100001,100001 : 0,0 ''
-        IL_004c:  ldc.i4.m1
-        IL_004d:  ret
+        IL_0043:  ldc.i4.m1
+        IL_0044:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_004e:  ldc.i4.0
-        IL_004f:  ret
+        IL_0045:  ldc.i4.0
+        IL_0046:  ret
       } // end of method Expr::CompareTo
 
       .method public hidebysig virtual final 
               instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       41 (0x29)
+        // Code size       38 (0x26)
         .maxstack  7
         .locals init ([0] int32 V_0,
                  [1] class ABC/ABC/Expr V_1,
                  [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0027
+        IL_0001:  brfalse.s  IL_0024
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldc.i4.0
-        IL_0007:  stloc.0
+        IL_0003:  ldc.i4.0
+        IL_0004:  stloc.0
         .line 100001,100001 : 0,0 ''
-        IL_0008:  ldarg.0
-        IL_0009:  pop
+        IL_0005:  ldarg.0
+        IL_0006:  pop
         .line 100001,100001 : 0,0 ''
-        IL_000a:  ldarg.0
-        IL_000b:  stloc.1
-        IL_000c:  ldc.i4.0
-        IL_000d:  stloc.0
-        IL_000e:  ldc.i4     0x9e3779b9
-        IL_0013:  ldarg.1
-        IL_0014:  stloc.2
-        IL_0015:  ldloc.1
-        IL_0016:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0007:  ldarg.0
+        IL_0008:  stloc.1
+        IL_0009:  ldc.i4.0
+        IL_000a:  stloc.0
+        IL_000b:  ldc.i4     0x9e3779b9
+        IL_0010:  ldarg.1
+        IL_0011:  stloc.2
+        IL_0012:  ldloc.1
+        IL_0013:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0018:  ldloc.0
+        IL_0019:  ldc.i4.6
+        IL_001a:  shl
         IL_001b:  ldloc.0
-        IL_001c:  ldc.i4.6
-        IL_001d:  shl
-        IL_001e:  ldloc.0
-        IL_001f:  ldc.i4.2
-        IL_0020:  shr
-        IL_0021:  add
-        IL_0022:  add
-        IL_0023:  add
-        IL_0024:  stloc.0
-        IL_0025:  ldloc.0
-        IL_0026:  ret
+        IL_001c:  ldc.i4.2
+        IL_001d:  shr
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  add
+        IL_0021:  stloc.0
+        IL_0022:  ldloc.0
+        IL_0023:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0027:  ldc.i4.0
-        IL_0028:  ret
+        IL_0024:  ldc.i4.0
+        IL_0025:  ret
       } // end of method Expr::GetHashCode
 
       .method public hidebysig virtual final 
@@ -1153,7 +1117,7 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       52 (0x34)
+        // Code size       49 (0x31)
         .maxstack  4
         .locals init ([0] class ABC/ABC/Expr V_0,
                  [1] class ABC/ABC/Expr V_1,
@@ -1162,97 +1126,91 @@
                  [4] class [mscorlib]System.Collections.IEqualityComparer V_4)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_002c
+        IL_0001:  brfalse.s  IL_0029
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  isinst     ABC/ABC/Expr
-        IL_000c:  stloc.0
+        IL_0003:  ldarg.1
+        IL_0004:  isinst     ABC/ABC/Expr
+        IL_0009:  stloc.0
+        .line 100001,100001 : 0,0 ''
+        IL_000a:  ldloc.0
+        IL_000b:  brfalse.s  IL_0027
+
         .line 100001,100001 : 0,0 ''
         IL_000d:  ldloc.0
-        IL_000e:  brfalse.s  IL_002a
+        IL_000e:  stloc.1
+        .line 100001,100001 : 0,0 ''
+        IL_000f:  ldarg.0
+        IL_0010:  pop
+        .line 100001,100001 : 0,0 ''
+        IL_0011:  ldarg.0
+        IL_0012:  stloc.2
+        IL_0013:  ldloc.1
+        IL_0014:  stloc.3
+        IL_0015:  ldarg.2
+        IL_0016:  stloc.s    V_4
+        IL_0018:  ldloc.2
+        IL_0019:  ldfld      int32 ABC/ABC/Expr::item
+        IL_001e:  ldloc.3
+        IL_001f:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0024:  ceq
+        IL_0026:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0010:  ldloc.0
-        IL_0011:  stloc.1
-        .line 100001,100001 : 0,0 ''
-        IL_0012:  ldarg.0
-        IL_0013:  pop
-        .line 100001,100001 : 0,0 ''
-        IL_0014:  ldarg.0
-        IL_0015:  stloc.2
-        IL_0016:  ldloc.1
-        IL_0017:  stloc.3
-        IL_0018:  ldarg.2
-        IL_0019:  stloc.s    V_4
-        IL_001b:  ldloc.2
-        IL_001c:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0021:  ldloc.3
-        IL_0022:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0027:  ceq
-        IL_0029:  ret
+        IL_0027:  ldc.i4.0
+        IL_0028:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_002a:  ldc.i4.0
-        IL_002b:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_002c:  ldarg.1
-        IL_002d:  ldnull
-        IL_002e:  cgt.un
-        IL_0030:  ldc.i4.0
-        IL_0031:  ceq
-        IL_0033:  ret
+        IL_0029:  ldarg.1
+        IL_002a:  ldnull
+        IL_002b:  cgt.un
+        IL_002d:  ldc.i4.0
+        IL_002e:  ceq
+        IL_0030:  ret
       } // end of method Expr::Equals
 
       .method public hidebysig virtual final 
               instance bool  Equals(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       43 (0x2b)
+        // Code size       37 (0x25)
         .maxstack  4
         .locals init ([0] class ABC/ABC/Expr V_0,
                  [1] class ABC/ABC/Expr V_1)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0023
+        IL_0001:  brfalse.s  IL_001d
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  ldnull
-        IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0021
+        IL_0003:  ldarg.1
+        IL_0004:  brfalse.s  IL_001b
 
         .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.0
-        IL_000d:  pop
+        IL_0006:  ldarg.0
+        IL_0007:  pop
         .line 100001,100001 : 0,0 ''
-        IL_000e:  ldarg.0
-        IL_000f:  stloc.0
-        IL_0010:  ldarg.1
-        IL_0011:  stloc.1
-        IL_0012:  ldloc.0
+        IL_0008:  ldarg.0
+        IL_0009:  stloc.0
+        IL_000a:  ldarg.1
+        IL_000b:  stloc.1
+        IL_000c:  ldloc.0
+        IL_000d:  ldfld      int32 ABC/ABC/Expr::item
+        IL_0012:  ldloc.1
         IL_0013:  ldfld      int32 ABC/ABC/Expr::item
-        IL_0018:  ldloc.1
-        IL_0019:  ldfld      int32 ABC/ABC/Expr::item
-        IL_001e:  ceq
-        IL_0020:  ret
+        IL_0018:  ceq
+        IL_001a:  ret
 
         .line 100001,100001 : 0,0 ''
+        IL_001b:  ldc.i4.0
+        IL_001c:  ret
+
+        .line 100001,100001 : 0,0 ''
+        IL_001d:  ldarg.1
+        IL_001e:  ldnull
+        IL_001f:  cgt.un
         IL_0021:  ldc.i4.0
-        IL_0022:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_0023:  ldarg.1
-        IL_0024:  ldnull
-        IL_0025:  cgt.un
-        IL_0027:  ldc.i4.0
-        IL_0028:  ceq
-        IL_002a:  ret
+        IL_0022:  ceq
+        IL_0024:  ret
       } // end of method Expr::Equals
 
       .method public hidebysig virtual final 
@@ -1356,41 +1314,39 @@
               GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       40 (0x28)
+        // Code size       37 (0x25)
         .maxstack  7
         .locals init ([0] int32 V_0,
                  [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0026
+        IL_0001:  brfalse.s  IL_0023
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldc.i4.0
-        IL_0007:  stloc.0
-        IL_0008:  ldc.i4     0x9e3779b9
-        IL_000d:  ldarg.1
-        IL_000e:  stloc.1
-        IL_000f:  ldarg.0
-        IL_0010:  castclass  ABC/ABC/MyExn
-        IL_0015:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_0003:  ldc.i4.0
+        IL_0004:  stloc.0
+        IL_0005:  ldc.i4     0x9e3779b9
+        IL_000a:  ldarg.1
+        IL_000b:  stloc.1
+        IL_000c:  ldarg.0
+        IL_000d:  castclass  ABC/ABC/MyExn
+        IL_0012:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_0017:  ldloc.0
+        IL_0018:  ldc.i4.6
+        IL_0019:  shl
         IL_001a:  ldloc.0
-        IL_001b:  ldc.i4.6
-        IL_001c:  shl
-        IL_001d:  ldloc.0
-        IL_001e:  ldc.i4.2
-        IL_001f:  shr
-        IL_0020:  add
-        IL_0021:  add
-        IL_0022:  add
-        IL_0023:  stloc.0
-        IL_0024:  ldloc.0
-        IL_0025:  ret
+        IL_001b:  ldc.i4.2
+        IL_001c:  shr
+        IL_001d:  add
+        IL_001e:  add
+        IL_001f:  add
+        IL_0020:  stloc.0
+        IL_0021:  ldloc.0
+        IL_0022:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0026:  ldc.i4.0
-        IL_0027:  ret
+        IL_0023:  ldc.i4.0
+        IL_0024:  ret
       } // end of method MyExn::GetHashCode
 
       .method public hidebysig virtual instance int32 
@@ -1414,34 +1370,35 @@
         .maxstack  4
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [mscorlib]System.Exception V_1,
-                 [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+                 [2] object V_2,
+                 [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_003b
+        IL_0001:  brfalse.s  IL_003b
 
         .line 100001,100001 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  isinst     [mscorlib]System.Exception
-        IL_000c:  stloc.0
+        IL_0003:  ldarg.1
+        IL_0004:  isinst     [mscorlib]System.Exception
+        IL_0009:  stloc.0
+        .line 100001,100001 : 0,0 ''
+        IL_000a:  ldloc.0
+        IL_000b:  brfalse.s  IL_0039
+
         .line 100001,100001 : 0,0 ''
         IL_000d:  ldloc.0
-        IL_000e:  brfalse.s  IL_0039
-
+        IL_000e:  stloc.1
         .line 100001,100001 : 0,0 ''
-        IL_0010:  ldloc.0
-        IL_0011:  stloc.1
-        .line 100001,100001 : 0,0 ''
-        IL_0012:  ldloc.0
-        IL_0013:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/ABC/MyExn>(object)
-        IL_0018:  brtrue.s   IL_001c
-
-        IL_001a:  br.s       IL_0037
+        IL_000f:  ldloc.0
+        IL_0010:  stloc.2
+        IL_0011:  ldloc.2
+        IL_0012:  isinst     ABC/ABC/MyExn
+        IL_0017:  ldnull
+        IL_0018:  cgt.un
+        IL_001a:  brfalse.s  IL_0037
 
         .line 100001,100001 : 0,0 ''
         IL_001c:  ldarg.2
-        IL_001d:  stloc.2
+        IL_001d:  stloc.3
         IL_001e:  ldarg.0
         IL_001f:  castclass  ABC/ABC/MyExn
         IL_0024:  call       instance int32 ABC/ABC/MyExn::get_Data0()
@@ -1472,52 +1429,51 @@
               Equals(class [mscorlib]System.Exception obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       59 (0x3b)
-        .maxstack  8
+        // Code size       56 (0x38)
+        .maxstack  4
+        .locals init ([0] object V_0)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0033
+        IL_0001:  brfalse.s  IL_0030
+
+        .line 100001,100001 : 0,0 ''
+        IL_0003:  ldarg.1
+        IL_0004:  brfalse.s  IL_002e
 
         .line 100001,100001 : 0,0 ''
         IL_0006:  ldarg.1
-        IL_0007:  ldnull
-        IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0031
+        IL_0007:  stloc.0
+        IL_0008:  ldloc.0
+        IL_0009:  isinst     ABC/ABC/MyExn
+        IL_000e:  ldnull
+        IL_000f:  cgt.un
+        IL_0011:  brfalse.s  IL_002c
 
         .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.1
-        IL_000d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class ABC/ABC/MyExn>(object)
-        IL_0012:  brtrue.s   IL_0016
-
-        IL_0014:  br.s       IL_002f
-
-        .line 100001,100001 : 0,0 ''
-        IL_0016:  ldarg.0
-        IL_0017:  castclass  ABC/ABC/MyExn
-        IL_001c:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_0021:  ldarg.1
-        IL_0022:  castclass  ABC/ABC/MyExn
-        IL_0027:  call       instance int32 ABC/ABC/MyExn::get_Data0()
-        IL_002c:  ceq
-        IL_002e:  ret
+        IL_0013:  ldarg.0
+        IL_0014:  castclass  ABC/ABC/MyExn
+        IL_0019:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_001e:  ldarg.1
+        IL_001f:  castclass  ABC/ABC/MyExn
+        IL_0024:  call       instance int32 ABC/ABC/MyExn::get_Data0()
+        IL_0029:  ceq
+        IL_002b:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_002f:  ldc.i4.0
-        IL_0030:  ret
+        IL_002c:  ldc.i4.0
+        IL_002d:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0031:  ldc.i4.0
-        IL_0032:  ret
+        IL_002e:  ldc.i4.0
+        IL_002f:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0033:  ldarg.1
-        IL_0034:  ldnull
-        IL_0035:  cgt.un
-        IL_0037:  ldc.i4.0
-        IL_0038:  ceq
-        IL_003a:  ret
+        IL_0030:  ldarg.1
+        IL_0031:  ldnull
+        IL_0032:  cgt.un
+        IL_0034:  ldc.i4.0
+        IL_0035:  ceq
+        IL_0037:  ret
       } // end of method MyExn::Equals
 
       .method public hidebysig virtual instance bool 

@@ -40,7 +40,7 @@ Emitted debug information includes:
 * The PDB file/information (embedded or in PDB file) which contains
   * Debug "sequence" points for IL code
   * Names of locals and the IL code scopes over which those names are active
-* The attributes on IL methods such as `CompilerGeneratedAttribute` and `DebuggerNonUserCodeAttribute`, wee below
+* The attributes on IL methods such as `CompilerGeneratedAttribute` and `DebuggerNonUserCodeAttribute`, see below
 * We add some codegen to give better debug experiences, see below.
 
 We almost always now emit the [Portable PDB](https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md) format.
@@ -73,7 +73,7 @@ We use the terms "sequence point" and "debug point" interchangeably. The word "s
 
 Breakpoints have two existences which must give matching behavior:
 
-* At design-time, before debugging is launched, `ValidateBreakpointLocation` is called to validate every breakpoint.  This operators on the SyntaxTree and forms a kind of "gold-standard" about the exact places where break points are valid.
+* At design-time, before debugging is launched, `ValidateBreakpointLocation` is called to validate every breakpoint.  This operates on the SyntaxTree and forms a kind of "gold-standard" about the exact places where break points are valid.
 
 * At run-time, breakpoints are "mapped" by the .NET runtime to actual sequence points found in the PDB data for .NET methods. The runtime searches all methods with debug points for the relevant document and determines where to "bind" the actual breakpoint to.  A typical debugger can bind a breakpoint to multiple locations.
 
@@ -201,14 +201,14 @@ Other computation expressions such as `async { .. }` or `builder { ... }` get de
 
 * For every `builder.TryFinally` call, a debug point covering the `try` keyword is added immediately within the body lambda expression. A debug point covering the `finally` keyword is added immediately within the finally lambda expression. No debug point is added for the `builder.TryFinally` call itself even if used in statement position.
 
-* For every `builder.Yield`, `builder.Return`, `builder.YieldFrom` or `builder.ReturnFrom` call, debug points are placed on the expression as if it were control flow. For example `yield 1` will place a debug point on `1`and `yield! printfn "hello"; [2]` will place two debug points.
+* For every `builder.Yield`, `builder.Return`, `builder.YieldFrom` or `builder.ReturnFrom` call, debug points are placed on the expression as if it were control flow. For example `yield 1` will place a debug point on `1` and `yield! printfn "hello"; [2]` will place two debug points.
 
 * No debug point is added for the `builder.Run`, `builder.Run` or `builder.Delay` calls at the entrance to the computation expression, nor the `builder.Delay` calls implied by `try/with` or `try/finally` or sequential `Combine` calls.
 
 The computations are often "cold-start" anyway, leading to a two-phase debug problem.
 
 The "step-into" and "step-over" behaviour for computation expressions is often buggy because it is performed with respect to the de-sugaring and inlining rather than the original source.
-For example, a "step over" on a "while" with a non-inlined `builder.While` will step over the whole call, when the used expects it to step the loop.
+For example, a "step over" on a "while" with a non-inlined `builder.While` will step over the whole call, when the user expects it to step the loop.
 One approach is to inline the `builder.While` method, and apply `[<InlineIfLambda>]` to the body function. This however has only limited success
 as at some points inlining fails to fully flatten. Builders implemented with resumable code tend to be much better in this regards as
 more complete inlining and code-flattening is applied.
@@ -298,7 +298,7 @@ Debug points for `task { .. }` poses much harder problems. We use "while" loops 
 
 As mentioned above, other computation expressions such as `async { .. }` have significant problems with their debug points.
 
-The main problem is stepping: even after inlining the code for computation expressions is rarely "flattened" enough, so, for example, a "step-into" is required to get into the second part of an `expr1; expr2` construct (i.e. an `async.Combine(..., async.Delay(fun () -> ...)))`) where the user expects to press "step-over".  
+The main problem is stepping: even after inlining the code for computation expressions is rarely "flattened" enough, so, for example, a "step-into" is required to get into the second part of an `expr1; expr2` construct (i.e. an `async.Combine(..., async.Delay(fun () -> ...))`) where the user expects to press "step-over".  
 
 Breakpoints tend to be less problematic.
 
@@ -336,7 +336,7 @@ These methods also get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAtt
 
 > TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing, however the absence of debug points should be sufficient to exclude these.
 
-> TODO: the `NewABC` methods are missing `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`. However the absence of debug points should be sufficient to exclude these from code coverage and profiling.
+> TODO: the `NewABC` methods are missing `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`. However, the absence of debug points should be sufficient to exclude these from code coverage and profiling.
 
 ### Generated closures for lambdas
 
@@ -464,7 +464,7 @@ We do some "extra" code gen to improve debugging. It is likely much of this coul
 
 ### 'this' value
 
-For `member x.Foo() = ...` the implementation of the member adds a local variable `x` containing the `this` pointer from `ldarg.0`. THis means hovering over `x` in the method produces the right value, as does `x.Property` etc.
+For `member x.Foo() = ...` the implementation of the member adds a local variable `x` containing the `this` pointer from `ldarg.0`. This means hovering over `x` in the method produces the right value, as does `x.Property` etc.
 
 ### Pipeline debugging
 
@@ -504,7 +504,3 @@ Some design-time services are un-implemented by F#:
 * Unimplemented: [Proximity expressions](https://github.com/dotnet/fsharp/issues/4271) (for Autos window)
 
 These are major holes in the F# experience and should be implemented.
-
-### Missing debug emit for F# Interactive
-
-For F# Interactive [we do not currently emit debug information for script code](https://github.com/dotnet/fsharp/issues/5457). This is because of a missing piece of functionality in the Reflection.Emit APIs, and means we have to change our approach to emitting code fragments in F# Interactive to no longer use dynamic assemblies.

@@ -36,13 +36,13 @@
   // Offset: 0x00000748 Length: 0x00000231
 }
 .module Structs01.exe
-// MVID: {61EFEE1F-701F-5E27-A745-03831FEEEF61}
+// MVID: {6220CCA3-701F-5E27-A745-0383A3CC2062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06E70000
+// Image base: 0x06B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -200,36 +200,39 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       39 (0x27)
+      // Code size       42 (0x2a)
       .maxstack  4
-      .locals init ([0] valuetype Experiment.Test/Test V_0,
-               [1] valuetype Experiment.Test/Test& V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+      .locals init ([0] object V_0,
+               [1] valuetype Experiment.Test/Test V_1,
+               [2] valuetype Experiment.Test/Test& V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype Experiment.Test/Test>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0025
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     Experiment.Test/Test
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0028
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  Experiment.Test/Test
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  Experiment.Test/Test
       IL_0013:  stloc.1
-      IL_0014:  ldarg.2
-      IL_0015:  stloc.2
-      IL_0016:  ldarg.0
-      IL_0017:  ldfld      int32 Experiment.Test/Test::Field
-      IL_001c:  ldloc.1
-      IL_001d:  ldfld      int32 Experiment.Test/Test::Field
-      IL_0022:  ceq
-      IL_0024:  ret
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  stloc.2
+      IL_0017:  ldarg.2
+      IL_0018:  stloc.3
+      IL_0019:  ldarg.0
+      IL_001a:  ldfld      int32 Experiment.Test/Test::Field
+      IL_001f:  ldloc.2
+      IL_0020:  ldfld      int32 Experiment.Test/Test::Field
+      IL_0025:  ceq
+      IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  ldc.i4.0
-      IL_0026:  ret
+      IL_0028:  ldc.i4.0
+      IL_0029:  ret
     } // end of method Test::Equals
 
     .method public specialname rtspecialname 
@@ -265,28 +268,31 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       30 (0x1e)
       .maxstack  4
-      .locals init ([0] valuetype Experiment.Test/Test V_0)
+      .locals init ([0] object V_0,
+               [1] valuetype Experiment.Test/Test V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype Experiment.Test/Test>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
-
-      .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  Experiment.Test/Test
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool Experiment.Test/Test::Equals(valuetype Experiment.Test/Test)
-      IL_0018:  ret
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     Experiment.Test/Test
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001c
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  Experiment.Test/Test
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  call       instance bool Experiment.Test/Test::Equals(valuetype Experiment.Test/Test)
+      IL_001b:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_001c:  ldc.i4.0
+      IL_001d:  ret
     } // end of method Test::Equals
 
   } // end of class Test

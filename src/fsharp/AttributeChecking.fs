@@ -125,7 +125,7 @@ type AttribInfo =
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
 let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
-    attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+    attribs.AsList()  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
 
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -443,7 +443,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsArray 
+                tcref.ILTyconRawMetadata.CustomAttrs.AsArray()
                 |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
@@ -452,9 +452,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
-
-    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
+    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.

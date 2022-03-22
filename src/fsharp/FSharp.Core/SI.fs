@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The International System of Units (SI)
+// The International System of Units (SI)
 namespace Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
     open Microsoft.FSharp.Core
 
@@ -113,7 +113,7 @@ namespace Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
     type katal = mole/second 
 
 
-/// Common abbreviations for the International System of Units (SI)
+// Common abbreviations for the International System of Units (SI)
 namespace Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames

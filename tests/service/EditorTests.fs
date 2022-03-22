@@ -37,12 +37,29 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 let stringMethods =
-    ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetEnumerator"; "GetHashCode"; "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
-    "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
+    [
+        "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
+#if NETCOREAPP
+        "EnumerateRunes";
+#endif
+        "Equals"; "GetEnumerator"; "GetHashCode";
+#if NETCOREAPP
+        "GetPinnableReference";
+#endif
+        "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
+        "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
+        "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";
+        "Replace";
+#if NETCOREAPP
+        "ReplaceLineEndings";
+#endif
+        "Split"; "StartsWith"; "Substring";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
+#if NETCOREAPP
+        "TryCopyTo"
+#endif
+]
 
 let input =
   """
@@ -131,23 +148,36 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
     let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines.[4], ["String"; "Concat"])
     match methodsSymbols with
     | Some methods ->
-        [ for ms in methods do
-            yield ms.Symbol.DisplayName, extractCurriedParams ms ]
-        |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
-        |> shouldEqual
+        let results =
+            [ for ms in methods do
+                yield ms.Symbol.DisplayName, extractCurriedParams ms ]
+            |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
+        let expected =
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
              ("Concat", [("args", "obj[]")]);
              ("Concat", [("values", "string[]")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>"); ("str3", "ReadOnlySpan<char>")]);
+#endif
 #if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
+        
+        results |> shouldEqual expected
+
     | None -> failwith "No symbols returned"
 
 

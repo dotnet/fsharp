@@ -808,7 +808,7 @@ module SyntaxTraversal =
             visitor.VisitBinding(origPath, defaultTraverse,b)
 
         match parseTree with
-        | ParsedInput.ImplFile (ParsedImplFileInput (_,_,_,_,_,l,_))-> 
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = l))-> 
             let fileRange =
 #if DEBUG
                 match l with [] -> range0 | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges

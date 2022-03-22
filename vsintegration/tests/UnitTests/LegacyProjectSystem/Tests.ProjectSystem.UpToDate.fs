@@ -172,7 +172,7 @@ type UpToDate() =
             File.AppendAllText(proj1Path, TheTests.SimpleFsprojText(
                 ["File1.fs"], // <Compile>
                 [], // <Reference>
-                "<PropertyGroup><TargetFrameworkVersion>v4.5</TargetFrameworkVersion></PropertyGroup>"))  // other stuff
+                "<PropertyGroup><TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion></PropertyGroup>"))  // other stuff
             use project1 = TheTests.CreateProject(proj1Path)
             let sourcePath1 = Path.Combine(project1.ProjectFolder, "File1.fs")
             File.AppendAllText(sourcePath1, "namespace Proj1\r\n")
@@ -191,7 +191,7 @@ type UpToDate() =
                 File.AppendAllText(proj2Path, TheTests.SimpleFsprojText(
                     ["File2.fs"], // <Compile>
                     [output1], // <Reference>
-                    "<PropertyGroup><TargetFrameworkVersion>v4.5</TargetFrameworkVersion></PropertyGroup>"))  // other stuff
+                    "<PropertyGroup><TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion></PropertyGroup>"))  // other stuff
                 use project2 = TheTests.CreateProject(proj2Path)
                 let sourcePath2 = Path.Combine(project2.ProjectFolder, "File2.fs")
                 File.AppendAllText(sourcePath2, "open Proj1\r\n")

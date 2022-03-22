@@ -144,22 +144,27 @@ namespace Microsoft.FSharp.Control
         /// <summary>
         /// Builds a task using computation expression syntax.
         /// </summary>
+        /// 
+        /// <example-tbd></example-tbd>
         val task: TaskBuilder
 
         /// <summary>
         /// Builds a task using computation expression syntax which switches to execute on a background thread if not
         /// already doing so.
         /// </summary>
+        ///
         /// <remarks>
         /// If the task is created on a foreground thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is non-null)
         /// its body is executed on a background thread using <see cref="M:System.Threading.Tasks.Task.Run"/>.
         /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed immeidately
         /// immediately on that thread.
         /// </remarks>
+        /// 
+        /// <example-tbd></example-tbd>
         val backgroundTask: BackgroundTaskBuilder
     
 
-/// Contains the `task` computation expression builder.
+// Contains the `task` computation expression builder.
 namespace Microsoft.FSharp.Control.TaskBuilderExtensions 
 
     open System

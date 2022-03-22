@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// SourceCodeServices API to the compiler as an incremental service for parsing,
-/// type checking and intellisense-like environment-reporting.
+// SourceCodeServices API to the compiler as an incremental service for parsing,
+// type checking and intellisense-like environment-reporting.
 namespace FSharp.Compiler.CodeAnalysis
 
 open System

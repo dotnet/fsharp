@@ -130,27 +130,46 @@ module internal Utilities =
             sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
-
+        let dotnetHostPath = getDotnetHostPath()
+        let args = arguments "msbuild -v:quiet"
         let success, stdOut, stdErr =
-            executeTool (getDotnetHostPath()) (arguments "msbuild -v:quiet") workingDir timeout
+            executeTool dotnetHostPath args workingDir timeout
 
 #if DEBUG
+        let diagnostics =
+            [|
+                $"workingDir:       {workingDir}"
+                $"dotnetHostPath:   {dotnetHostPath}"
+                $"arguments:        {args}"
+            |]
+        File.WriteAllLines(Path.Combine(workingDir, "build_CommandLine.txt"), diagnostics)
         File.WriteAllLines(Path.Combine(workingDir, "build_StandardOutput.txt"), stdOut)
         File.WriteAllLines(Path.Combine(workingDir, "build_StandardError.txt"), stdErr)
 #endif
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None
-        { success = success
-          projectPath = projectPath
-          stdOut = stdOut
-          stdErr = stdErr
-          resolutionsFile = resolutionsFile }
+        {
+            success = success
+            projectPath = projectPath
+            stdOut = stdOut
+            stdErr = stdErr
+            resolutionsFile = resolutionsFile
+        }
 
     let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
+        let dotnetHostPath = getDotnetHostPath()
+        let args = "nuget list source --format short"
         let success, stdOut, stdErr =
-            executeTool (getDotnetHostPath()) "nuget list source --format short" scriptDirectory timeout
+            executeTool dotnetHostPath args scriptDirectory timeout
 #if DEBUG
+        let diagnostics =
+            [|
+                $"scriptDirectory:  {scriptDirectory}"
+                $"dotnetHostPath:   {dotnetHostPath}"
+                $"arguments:        {args}"
+            |]
+        File.WriteAllLines(Path.Combine(workingDir, "nuget_CommandLine.txt"), diagnostics)
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardOutput.txt"), stdOut)
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardError.txt"), stdErr)
 #else

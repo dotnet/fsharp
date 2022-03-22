@@ -469,8 +469,6 @@ namespace ProviderImplementation.ProvidedTypes
                 ShapeCombinationUnchecked (Shape (function [cond; body] -> Expr.WhileLoopUnchecked (cond,  body) | _ -> invalidArg "expr" "invalid shape"), [cond; body])
             | IfThenElse (g, t, e) ->
                 ShapeCombinationUnchecked (Shape (function [g; t; e] -> Expr.IfThenElseUnchecked (g, t, e) | _ -> invalidArg "expr" "invalid shape"), [g; t; e])
-            | TupleGet (expr, i) ->
-                ShapeCombinationUnchecked (Shape (function [expr] -> Expr.TupleGetUnchecked (expr, i) | _ -> invalidArg "expr" "invalid shape"), [expr])
             | ExprShape.ShapeCombination (comb,args) ->
                 ShapeCombinationUnchecked (Shape (fun args -> ExprShape.RebuildShapeCombination(comb, args)), args)
             | ExprShape.ShapeVar v -> ShapeVarUnchecked v
@@ -9799,7 +9797,6 @@ namespace ProviderImplementation.ProvidedTypes
                 bb.EmitByte (if req then et_CMOD_REQD else et_CMOD_OPT)
                 emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Namespace, tref.Name)
                 EmitType cenv env bb ty
-             | _ -> failwith "EmitType"
 
         and EmitLocalInfo cenv env (bb:ByteBuffer) (l:ILLocal) =
             if l.IsPinned then 
@@ -13034,7 +13031,7 @@ namespace ProviderImplementation.ProvidedTypes
              showTimes: bool
              dumpDebugInfo:bool }
 
-        let WriteILBinary (outfile, (args: options), modul) =
+        let WriteILBinaryFile (outfile, (args: options), modul) =
             writeBinaryAndReportMappings (outfile, 
                                           args.ilg, args.pdbfile, (* args.signer, *) args.portablePDB, args.embeddedPDB, args.embedAllSource, 
                                           args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
@@ -13342,7 +13339,7 @@ namespace ProviderImplementation.ProvidedTypes
         member _.Save() = 
             let il = mb.Content
             let options: BinaryWriter.options = { ilg = ilg; pdbfile = None; portablePDB = false; embeddedPDB = false; embedAllSource = false; embedSourceList = []; sourceLink = ""; emitTailcalls = true; deterministic = false; showTimes = false; dumpDebugInfo = false }
-            BinaryWriter.WriteILBinary (fileName, options, il)
+            BinaryWriter.WriteILBinaryFile (fileName, options, il)
         override _.ToString() = "builder for " + (assemblyName.ToString())
         
 
