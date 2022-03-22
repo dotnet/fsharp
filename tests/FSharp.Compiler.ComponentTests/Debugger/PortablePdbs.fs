@@ -25,6 +25,11 @@ open System.IO
 
 module Bar =
     let baz _ = ()
+
+open System.Collections.Generic
+
+module Baz = 
+    let aiou _ = ()
         """
         |> asLibrary
         |> withPortablePdb
@@ -47,6 +52,15 @@ module Bar =
                     { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Collections" }
                     { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Control" }
                     { Kind = ImportDefinitionKind.ImportNamespace; Name = "System.IO" }
+                ]
+                [
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Core" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Collections" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "Microsoft.FSharp.Control" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "System.IO" }
+                    { Kind = ImportDefinitionKind.ImportNamespace; Name = "System.Collections.Generic" }
                 ]
             ]
         ]
