@@ -79,6 +79,7 @@ let ApplyDefaults () =
             """
             (fun verifier -> verifier.VerifyIL [
             """
+			
 .method public static void  ApplyDefaults() cil managed
 {
   
@@ -92,7 +93,7 @@ let ApplyDefaults () =
            bool V_6)
   IL_0000:  ldc.i4.0
   IL_0001:  stloc.0
-  IL_0002:  br.s       IL_0040
+  IL_0002:  br.s       IL_003d
   
   IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> DontEliminateForLoops::get_unsolved()
   IL_0009:  stloc.1
@@ -104,35 +105,33 @@ let ApplyDefaults () =
   IL_000f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
   IL_0014:  stloc.s    V_4
   IL_0016:  ldloc.s    V_4
-  IL_0018:  ldnull
-  IL_0019:  cgt.un
-  IL_001b:  brfalse.s  IL_003c
+  IL_0018:  brfalse.s  IL_0039
   
-  IL_001d:  ldloc.3
-  IL_001e:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
-  IL_0023:  stloc.s    V_5
-  IL_0025:  ldloc.s    V_5
-  IL_0027:  stloc.s    V_6
-  IL_0029:  call       void [runtime]System.Console::WriteLine()
-  IL_002e:  ldloc.s    V_4
-  IL_0030:  stloc.3
-  IL_0031:  ldloc.3
-  IL_0032:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
-  IL_0037:  stloc.s    V_4
-  IL_0039:  nop
-  IL_003a:  br.s       IL_0016
+  IL_001a:  ldloc.3
+  IL_001b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
+  IL_0020:  stloc.s    V_5
+  IL_0022:  ldloc.s    V_5
+  IL_0024:  stloc.s    V_6
+  IL_0026:  call       void [runtime]System.Console::WriteLine()
+  IL_002b:  ldloc.s    V_4
+  IL_002d:  stloc.3
+  IL_002e:  ldloc.3
+  IL_002f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
+  IL_0034:  stloc.s    V_4
+  IL_0036:  nop
+  IL_0034:  br.s       IL_0016
   
-  IL_003c:  ldloc.0
-  IL_003d:  ldc.i4.1
-  IL_003e:  add
-  IL_003f:  stloc.0
-  IL_0040:  ldloc.0
-  IL_0041:  ldc.i4.1
-  IL_0042:  ldc.i4.s   10
-  IL_0044:  add
-  IL_0045:  blt.s      IL_0004
+  IL_0039:  ldloc.0
+  IL_003a:  ldc.i4.1
+  IL_003b:  add
+  IL_003c:  stloc.0
+  IL_003d:  ldloc.0
+  IL_003e:  ldc.i4.1
+  IL_003f:  ldc.i4.s   10
+  IL_0041:  add
+  IL_0042:  blt.s      IL_0004
   
-  IL_0047:  ret
+  IL_0044:  ret
 } 
             """
             ])
