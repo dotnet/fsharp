@@ -3654,3 +3654,95 @@ let v : string = \"\"\"
         | [] -> Assert.Pass()
         | _ ->
             Assert.Fail $"Unexpected trivia, got {trivia}"
+
+module CodeComments =
+    let private getCommentTrivia isSignatureFile source =
+        let ast = (if isSignatureFile then getParseResultsOfSignatureFile else getParseResults) source
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(trivia = { CodeComments = trivia }))
+        | ParsedInput.SigFile(ParsedSigFileInput(trivia = { CodeComments = trivia })) -> trivia
+    
+    [<Test>]
+    let ``comment on single line`` () =
+        let trivia =
+            getCommentTrivia false """
+// comment!
+foo()
+"""
+
+        match trivia with
+        | [ CommentTrivia.LineComment mComment ] ->
+            assertRange (2, 0) (2, 11) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``comment on single line, signature file`` () =
+        let trivia =
+            getCommentTrivia true """
+namespace Meh
+// comment!
+foo()
+"""
+
+        match trivia with
+        | [ CommentTrivia.LineComment mComment ] ->
+            assertRange (3, 0) (3, 11) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``comment after source code`` () =
+        let trivia =
+            getCommentTrivia false """
+foo() // comment!
+"""
+
+        match trivia with
+        | [ CommentTrivia.LineComment mComment ] ->
+            assertRange (2, 6) (2, 17) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``comment after source code, signature file`` () =
+        let trivia =
+            getCommentTrivia true """
+namespace Meh
+
+val foo : int // comment!
+"""
+
+        match trivia with
+        | [ CommentTrivia.LineComment mComment ] ->
+            assertRange (4, 14) (4, 25) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``block comment in source code`` () =
+        let trivia =
+            getCommentTrivia false """
+let a (* b *)  c = c + 42
+"""
+
+        match trivia with
+        | [ CommentTrivia.BlockComment mComment ] ->
+            assertRange (2, 6) (2, 13) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``block comment in source code, signature file`` () =
+        let trivia =
+            getCommentTrivia true """
+namespace Meh
+
+val a (* b *) : int
+"""
+
+        match trivia with
+        | [ CommentTrivia.BlockComment mComment ] ->
+            assertRange (4, 6) (4, 13) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"

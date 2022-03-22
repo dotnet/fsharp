@@ -15,14 +15,21 @@ and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
     | Or of IfDirectiveExpression * IfDirectiveExpression
     | Not of IfDirectiveExpression
     | Ident of string
+    
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type CommentTrivia =
+    | LineComment of range: range
+    | BlockComment of range: range
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInputTrivia =
-    { ConditionalDirectives: ConditionalDirectiveTrivia list }
+    { ConditionalDirectives: ConditionalDirectiveTrivia list
+      CodeComments: CommentTrivia list }
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInputTrivia =
-    { ConditionalDirectives: ConditionalDirectiveTrivia list }
+    { ConditionalDirectives: ConditionalDirectiveTrivia list
+      CodeComments: CommentTrivia list }
 
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =
