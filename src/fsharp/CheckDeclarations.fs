@@ -233,13 +233,16 @@ let AddLocalSubModule g amap m env (modul: ModuleOrNamespace) =
                     eNameResEnv = AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights env.eNameResEnv (mkLocalModRef modul)
                     eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems }
     env
- 
+
 /// Add a "module X = ..." definition to the TcEnv and report it to the sink
 let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul: ModuleOrNamespace) =
-    let env = AddLocalSubModule g amap m env modul 
-    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    let env = AddLocalSubModule g amap m env modul
+    if not (equals scopem m) then
+        // Don't report another environment for top-level module at its own range,
+        // so it doesn't overwrite inner environment used by features like code completion. 
+        CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
- 
+
 /// Given an inferred module type, place that inside a namespace path implied by a "namespace X.Y.Z" definition
 let BuildRootModuleType enclosingNamespacePath (cpath: CompilationPath) mtyp = 
     (enclosingNamespacePath, (cpath, (mtyp, []))) 
