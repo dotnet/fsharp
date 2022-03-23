@@ -557,6 +557,8 @@ val internal ResolveField                      : TcResultsSink -> NameResolver -
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent              : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> ResultOrException<EnclosingTypeInst * Item * Ident list>
 
+val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
+
 /// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
 

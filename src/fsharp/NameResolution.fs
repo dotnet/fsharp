@@ -4473,6 +4473,14 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
             | _ -> []
         )
 
+let getRecordFieldsInScope nenv =
+    nenv.eFieldLabels
+   |> Seq.collect (fun (KeyValue(_, v)) -> v)
+   |> Seq.map (fun fref ->
+        let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
+        Item.RecdField(RecdFieldInfo(typeInsts, fref)))
+   |> List.ofSeq
+
 /// allowObsolete - specifies whether we should return obsolete types & modules
 ///   as (no other obsolete items are returned)
 let rec ResolvePartialLongIdentToClassOrRecdFields (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (allowObsolete: bool) =
@@ -4516,13 +4524,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.map (ItemOfTyconRef ncenv m)
            |> Seq.toList
 
-       let recdFields =
-           nenv.eFieldLabels
-           |> Seq.collect (fun (KeyValue(_, v)) -> v)
-           |> Seq.map (fun fref ->
-                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
-                Item.RecdField(RecdFieldInfo(typeInsts, fref)))
-           |> List.ofSeq
+       let recdFields = getRecordFieldsInScope nenv
 
        mods @ recdTyCons @ recdFields
 
