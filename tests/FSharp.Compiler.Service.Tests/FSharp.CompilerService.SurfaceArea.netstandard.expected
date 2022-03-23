@@ -9089,6 +9089,25 @@ FSharp.Compiler.Syntax.TyparStaticReq: Int32 GetHashCode(System.Collections.IEqu
 FSharp.Compiler.Syntax.TyparStaticReq: Int32 Tag
 FSharp.Compiler.Syntax.TyparStaticReq: Int32 get_Tag()
 FSharp.Compiler.Syntax.TyparStaticReq: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+BlockComment: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+BlockComment: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+LineComment: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+LineComment: FSharp.Compiler.Text.Range range
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+Tags: Int32 BlockComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia+Tags: Int32 LineComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Boolean IsBlockComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Boolean IsLineComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Boolean get_IsBlockComment()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Boolean get_IsLineComment()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: FSharp.Compiler.SyntaxTrivia.CommentTrivia NewBlockComment(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: FSharp.Compiler.SyntaxTrivia.CommentTrivia NewLineComment(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: FSharp.Compiler.SyntaxTrivia.CommentTrivia+BlockComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: FSharp.Compiler.SyntaxTrivia.CommentTrivia+LineComment
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: FSharp.Compiler.SyntaxTrivia.CommentTrivia+Tags
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Int32 Tag
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: Int32 get_Tag()
+FSharp.Compiler.SyntaxTrivia.CommentTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Else: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia+Else: FSharp.Compiler.Text.Range range
@@ -9155,15 +9174,19 @@ FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.IfDirectiveExpression: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
 FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] CodeComments
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia] get_CodeComments()
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] ConditionalDirectives
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia] get_ConditionalDirectives()
 FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia])
+FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia: Void .ctor(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.CommentTrivia])
 FSharp.Compiler.SyntaxTrivia.SynBindingTrivia
 FSharp.Compiler.SyntaxTrivia.SynBindingTrivia: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynBindingTrivia: FSharp.Compiler.SyntaxTrivia.SynBindingTrivia get_Zero()

@@ -84,6 +84,16 @@ module LexbufIfdefStore =
 
     val GetTrivia: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
 
+module LexbufCommentStore =
+
+    val SaveSingleLineComment: lexbuf:UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
+    
+    val SaveBlockComment: lexbuf:UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
+
+    val GetComments: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.CommentTrivia list
+    
+    val ClearComments: lexbuf:UnicodeLexing.Lexbuf -> unit
+
 [<RequireQualifiedAccess>]
 type LexerStringStyle =
     | Verbatim
