@@ -23,9 +23,6 @@ type internal FSharpIndentationService
     [<ImportingConstructor>]
     () =
 
-    static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
-        options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
-
     static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions) =
         let lastTokenOpt =
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions

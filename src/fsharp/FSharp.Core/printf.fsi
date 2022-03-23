@@ -35,8 +35,10 @@ type PrintfFormat<'Printer,'State,'Residue,'Result> =
     /// <summary>The raw text of the format string.</summary>
     member Value : string
 
+    /// <summary>The captures associated with an interpolated string.</summary>
     member Captures: obj[]
-
+    
+    /// <summary>The capture types associated with an interpolated string.</summary>
     member CaptureTypes: System.Type[]
 
 /// <summary>Type of a formatting expression.</summary>
