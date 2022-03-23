@@ -1,0 +1,29 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<!--
+***********************************************************************************************
+Microsoft.FSharp.Core.NetSdkVersion.props
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+***********************************************************************************************
+-->
+
+<!--
+    This is a visual studio support version.  It adds a property that the build can use to determine the version of FSharp.Core selected for the build/
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+   <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_FSCorePackageVersionSet)' != 'true'">
+    <_FSCorePackageVersionSet>true</_FSCorePackageVersionSet>
+    <FSCorePackageVersion>{{FSCorePackageVersionValue}}</FSCorePackageVersion>
+    <_FSharpCoreLibraryPacksFolder Condition="'$(_FSharpCoreLibraryPacksFolder)' == ''">$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))library-packs</_FSharpCoreLibraryPacksFolder>
+  </PropertyGroup>
+
+</Project>

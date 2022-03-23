@@ -124,3 +124,5 @@ nCrunchTemp_*
 /tests/fsharp/core/members/set-only-property/cs.dll
 
 .fake
+*.pdb
+*.dll

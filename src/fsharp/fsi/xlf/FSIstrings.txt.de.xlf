@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
+        <target state="translated">Der Zugriff auf den internen Typ, die Methode oder das Feld “{0}” aus einer vorherigen Auswertung in F# Interactive ist veraltet und kann zu nachfolgenden Zugriffsfehlern führen. Verwenden Sie die Option “--multiemit-”, um die Legacygenerierung einer einzelnen dynamischen Assembly zu aktivieren, die auf Interne zugreifen kann.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">URI der Paketquelle bei Suche nach Paketen einschließen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
+        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
+        <target state="translated">Ausgeben mehrerer Assemblys (standardmäßig deaktiviert für .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -15,6 +25,11 @@
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
         <target state="translated">Fehler beim Vorgang. Der Fehlertext wurde im Fehlerstream ausgegeben. Verwenden Sie "EvalInteractionNonThrowing", "EvalScriptNonThrowing" oder "EvalExpressionNonThrowing", um die entsprechende FSharpDiagnostic zurückzugeben.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOption">
+        <source>Emit multiple assemblies (on by default)</source>
+        <target state="translated">Ausgeben mehrerer Assemblys (standardmäßig aktiviert)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

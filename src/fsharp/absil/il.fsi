@@ -781,7 +781,11 @@ type internal ILMethodBody =
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      DebugPoint: ILDebugPoint option
+      
+      /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
+      /// Additionally, if the range is not set, then no debug points are emitted.
+      DebugRange: ILDebugPoint option
+
       DebugImports: ILDebugImports option
     }
 
@@ -844,9 +848,9 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
-    member AsArray: ILAttribute []
+    member AsArray: unit -> ILAttribute []
 
-    member AsList: ILAttribute list
+    member AsList: unit -> ILAttribute list
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
@@ -911,7 +915,7 @@ type internal ILSecurityDecl =
 /// below to construct/destruct these.
 [<NoComparison; NoEquality; Struct>]
 type internal ILSecurityDecls =
-    member AsList: ILSecurityDecl list
+    member AsList: unit -> ILSecurityDecl list
 
 /// Represents the efficiency-oriented storage of ILSecurityDecls in another item.
 [<NoEquality; NoComparison>]
@@ -1101,8 +1105,8 @@ type ILMethodDef =
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
-    member AsArray: ILMethodDef[]
-    member AsList: ILMethodDef list
+    member AsArray: unit -> ILMethodDef[]
+    member AsList: unit -> ILMethodDef list
     member FindByName: string -> ILMethodDef list
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
@@ -1154,7 +1158,8 @@ type ILFieldDef =
 /// a form to allow efficient looking up fields by name.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
-    member internal AsList: ILFieldDef list
+    member internal AsList: unit -> ILFieldDef list
+
     member internal LookupByName: string -> ILFieldDef list
 
 /// Event definitions.
@@ -1192,7 +1197,8 @@ type ILEventDef =
 /// Table of those events in a type definition.
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs =
-    member internal AsList: ILEventDef list
+    member internal AsList: unit -> ILEventDef list
+
     member internal LookupByName: string -> ILEventDef list
 
 /// Property definitions
@@ -1232,7 +1238,9 @@ type ILPropertyDef =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILPropertyDefs =
-    member internal AsList: ILPropertyDef list
+
+    member internal AsList: unit -> ILPropertyDef list
+
     member internal LookupByName: string -> ILPropertyDef list
 
 /// Method Impls
@@ -1242,7 +1250,7 @@ type ILMethodImplDef =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodImplDefs =
-    member internal AsList: ILMethodImplDef list
+    member internal AsList: unit -> ILMethodImplDef list
 
 /// Type Layout information.
 [<RequireQualifiedAccess>]
@@ -1289,12 +1297,12 @@ type ILTypeDefKind =
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
 
-    member internal AsArray: ILTypeDef[]
+    member internal AsArray: unit -> ILTypeDef[]
 
-    member internal AsList: ILTypeDef list
+    member internal AsList: unit -> ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member internal AsArrayOfPreTypeDefs: ILPreTypeDef[]
+    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
     /// Calls to <c>FindByName</c> will result in any laziness in the overall
     /// set of ILTypeDefs being read in in addition
@@ -1396,7 +1404,7 @@ val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
-    member internal AsList: ILNestedExportedType  list
+    member internal AsList: unit -> ILNestedExportedType list
 
 /// "Classes Elsewhere" - classes in auxiliary modules.
 ///
@@ -1454,7 +1462,7 @@ type ILExportedTypeOrForwarder =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILExportedTypesAndForwarders =
-    member internal AsList: ILExportedTypeOrForwarder list
+    member internal AsList: unit -> ILExportedTypeOrForwarder list
     member internal TryFindByName: string -> ILExportedTypeOrForwarder option
 
 [<RequireQualifiedAccess>]
@@ -1494,7 +1502,7 @@ type internal ILResource =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILResources =
-    member internal AsList: ILResource  list
+    member internal AsList: unit -> ILResource list
 
 [<RequireQualifiedAccess>]
 type ILAssemblyLongevity =
@@ -2012,23 +2020,27 @@ val NoMetadataIdx: int32
 //                        become ILScopeRef.Assembly m
 // --------------------------------------------------------------------
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILScopeRef: ILScopeRef -> ILScopeRef -> ILScopeRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
+/// the new scope.
+val internal rescopeILTypeRef: ILScopeRef -> ILTypeRef -> ILTypeRef
+
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILTypeSpec: ILScopeRef -> ILTypeSpec -> ILTypeSpec
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILType: ILScopeRef -> ILType -> ILType
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILMethodRef: ILScopeRef -> ILMethodRef -> ILMethodRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILFieldRef: ILScopeRef -> ILFieldRef -> ILFieldRef
 
@@ -2101,11 +2113,15 @@ type internal ILPropertyRef =
      member Name: string
      interface System.IComparable
 
-type internal ILReferences =
-    { AssemblyReferences: ILAssemblyRef list
-      ModuleReferences: ILModuleRef list }
+type ILReferences =
+    { AssemblyReferences: ILAssemblyRef[]
+      ModuleReferences: ILModuleRef[]
+      TypeReferences: ILTypeRef[]
+      MethodReferences: ILMethodRef[]
+      FieldReferences: ILFieldRef[] }
 
 /// Find the full set of assemblies referenced by a module.
 val internal computeILRefs: ILGlobals -> ILModuleDef -> ILReferences
+
 val internal emptyILRefs: ILReferences
 

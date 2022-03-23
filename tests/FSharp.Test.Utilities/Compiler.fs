@@ -21,6 +21,8 @@ open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.PortableExecutable
 
+open FSharp.Test.CompilerAssertHelpers
+open TestFramework
 
 module rec Compiler =
     type BaselineFile = { FilePath: string; Content: string option }
@@ -56,6 +58,7 @@ module rec Compiler =
         { Source:          TestType
           LangVersion:     CSharpLanguageVersion
           TargetFramework: TargetFramework
+          OutputDirectory: DirectoryInfo option
           Name:            string option
           References:      CompilationUnit list }
 
@@ -101,6 +104,11 @@ module rec Compiler =
           StartColumn: int
           EndLine:     int
           EndColumn:   int }
+
+    type Disposable (dispose : unit -> unit) =
+        interface IDisposable with
+            member this.Dispose() = 
+                dispose()
 
     type ErrorInfo =
         { Error:   ErrorType
@@ -163,6 +171,7 @@ module rec Compiler =
             { Source          = Text source
               LangVersion     = CSharpLanguageVersion.CSharp9
               TargetFramework = TargetFramework.Current
+              OutputDirectory= None
               Name            = None
               References      = [] }
 
@@ -273,6 +282,12 @@ module rec Compiler =
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
+    let withWarnOn  (cUnit: CompilationUnit) warning : CompilationUnit =
+        withOptionsHelper [ $"--warnon:{warning}" ] "withWarnOn is only supported for F#" cUnit
+
+    let withNoWarn warning (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--nowarn:{warning}" ] "withNoWarn is only supported for F#" cUnit
+
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit
@@ -310,7 +325,7 @@ module rec Compiler =
                     | Some p -> p |> MetadataReference.CreateFromFile
         | _ -> failwith "Conversion isn't possible"
 
-    let private processReferences (references: CompilationUnit list) =
+    let private processReferences (references: CompilationUnit list) defaultOutputDirectory =
         let rec loop acc = function
             | [] -> List.rev acc
             | x::xs ->
@@ -320,16 +335,24 @@ module rec Compiler =
                     let source = getSource fs.Source
                     let options = fs.Options |> List.toArray
                     let name = defaultArg fs.Name null
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, fs.OutputDirectory) |> CompilationReference.CreateFSharp
+                    let outDir =
+                        match fs.OutputDirectory with
+                        | Some outputDirectory -> outputDirectory
+                        | _ -> defaultOutputDirectory
+                    let cmpl =
+                        Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, outDir) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
+
                 | CS cs ->
                     let refs = loop [] cs.References
                     let source = getSource cs.Source
                     let name = defaultArg cs.Name null
                     let metadataReferences = List.map asMetadataReference refs
-                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
-                            |> CompilationReference.Create
+                    let cmpl =
+                        CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
+                        |> CompilationReference.Create
                     loop (cmpl::acc) xs
+
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
@@ -361,16 +384,19 @@ module rec Compiler =
         let output = fs.OutputType
         let options = fs.Options |> Array.ofList
         let name = defaultArg fs.Name null
+        let outputDirectory =
+            match fs.OutputDirectory with
+            | Some di -> di
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
-        let references = processReferences fs.References
-
-        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory)
+        let references = processReferences fs.References outputDirectory
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, outputDirectory)
 
         compileFSharpCompilation compilation fs.IgnoreWarnings
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
-        let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
+        let outputPath = tryCreateTemporaryDirectory()
 
         Directory.CreateDirectory(outputPath) |> ignore
 
@@ -395,10 +421,15 @@ module rec Compiler =
     let private compileCSharp (csSource: CSharpCompilationSource) : TestResult =
 
         let source = getSource csSource.Source
-        let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
+        let name = defaultArg csSource.Name (tryCreateTemporaryFileName())
+
+        let outputDirectory =
+            match csSource.OutputDirectory with
+            | Some di -> di
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let additionalReferences =
-            match processReferences csSource.References with
+            match processReferences csSource.References outputDirectory with
             | [] -> ImmutableArray.Empty
             | r  -> (List.map asMetadataReference r).ToImmutableArray().As<MetadataReference>()
 
@@ -575,27 +606,56 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs ->
-            let source = getSource fs.Source
+            let disposals = ResizeArray<IDisposable>()
+            try
+                let source = getSource fs.Source
+                let name = fs.Name |> Option.defaultValue "unnamed"
+                let options = fs.Options |> Array.ofList
+                let outputDirectory =
+                    match fs.OutputDirectory with
+                    | Some di -> di
+                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
+                outputDirectory.Create()
+                disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
-            let options = fs.Options |> Array.ofList
+                let references = processReferences fs.References outputDirectory
+                let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, references, name, outputDirectory)
+                let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
+                let options =
+                    let opts = new ResizeArray<string>(fs.Options)
 
-            let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+                    // For every built reference add a -I path so that fsi can find it easily
+                    for reference in references do
+                        match reference with
+                        | CompilationReference( cmpl, _) ->
+                            match cmpl with
+                            | Compilation(_source, _sourceKind, _outputType, _options, _references, _name, outputDirectory) ->
+                                if outputDirectory.IsSome then
+                                    opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
+                        | _ -> ()
+                    opts.ToArray()
+                let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
-            let result =
-                { OutputPath   = None
-                  Dependencies = []
-                  Adjust       = 0
-                  Diagnostics  = []
-                  Output       = None }
+                let result =
+                    { OutputPath   = None
+                      Dependencies = []
+                      Adjust       = 0
+                      Diagnostics  = []
+                      Output       = None }
 
-            if errors.Count > 0 then
-                let output = ExecutionOutput {
-                    ExitCode = -1
-                    StdOut   = String.Empty
-                    StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
-                Failure { result with Output = Some output }
-            else
-                Success result
+                if errors.Count > 0 then
+                    let output = ExecutionOutput {
+                        ExitCode = -1
+                        StdOut   = String.Empty
+                        StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
+                    Failure { result with Output = Some output }
+                else
+                    Success result
+
+            finally
+                disposals
+                |> Seq.iter (fun x -> x.Dispose())
+
         | _ -> failwith "FSI running only supports F#."
 
 

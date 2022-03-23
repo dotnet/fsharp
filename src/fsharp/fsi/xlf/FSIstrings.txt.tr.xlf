@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
+        <target state="translated">F# Etkileşimli’de önceki bir değerlendirmeden '{0}' iç türüne, yöntemine veya alanına erişim kullanım dışıdır ve sonraki erişim hatalarına neden olabilir. İç öğelere erişen tek bir dinamik bütünleştirilmiş kodun eski neslini etkinleştirmek için '--multiemit-' seçeneğini kullanın.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Paketler aranırken paket kaynağı URI'si ekleyin</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
+        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
+        <target state="translated">Birden çok bütünleştirilmiş kod göster (.NET Framework için varsayılan olarak kapalı)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -15,6 +25,11 @@
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
         <target state="translated">İşlem başarısız oldu. Hata metni hata akışında yazdırıldı. İlgili FSharpDiagnostic'i döndürmek için EvalInteractionNonThrowing, EvalScriptNonThrowing veya EvalExpressionNonThrowing kullanın</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOption">
+        <source>Emit multiple assemblies (on by default)</source>
+        <target state="translated">Birden çok bütünleştirilmiş kod göster (varsayılan olarak açık)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

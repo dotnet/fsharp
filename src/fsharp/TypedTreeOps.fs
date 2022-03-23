@@ -175,10 +175,12 @@ let generalizeTypars tps = List.map generalizeTypar tps
 let rec remapTypeAux (tyenv: Remap) (ty: TType) =
   let ty = stripTyparEqns ty
   match ty with
-  | TType_var tp as ty -> instTyparRef tyenv.tpinst ty tp
-  | TType_app (tcref, tinst) as ty -> 
+  | TType_var (tp, _) as ty ->
+      instTyparRef tyenv.tpinst ty tp
+
+  | TType_app (tcref, tinst, flags) as ty -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
-      | Some tcref' -> TType_app (tcref', remapTypesAux tyenv tinst)
+      | Some tcref' -> TType_app (tcref', remapTypesAux tyenv tinst, flags)
       | None -> 
           match tinst with 
           | [] -> ty  // optimization to avoid re-allocation of TType_app node in the common case 
@@ -186,7 +188,7 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
               // avoid reallocation on idempotent 
               let tinst' = remapTypesAux tyenv tinst
               if tinst === tinst' then ty else 
-              TType_app (tcref, tinst')
+              TType_app (tcref, tinst', flags)
 
   | TType_ucase (UnionCaseRef(tcref, n), tinst) -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
@@ -205,11 +207,11 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       if tupInfo === tupInfo' && l === l' then ty else  
       TType_tuple (tupInfo', l')
 
-  | TType_fun (d, r) as ty -> 
+  | TType_fun (d, r, flags) as ty -> 
       let d' = remapTypeAux tyenv d
       let r' = remapTypeAux tyenv r
       if d === d' && r === r' then ty else
-      TType_fun (d', r')
+      TType_fun (d', r', flags)
 
   | TType_forall (tps, ty) -> 
       let tps', tyenv = copyAndRemapAndBindTypars tyenv tps
@@ -590,21 +592,21 @@ let tryNormalizeMeasureInType g ty =
 
 let mkNativePtrTy (g: TcGlobals) ty = 
     assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
-    TType_app (g.nativeptr_tcr, [ty])
+    TType_app (g.nativeptr_tcr, [ty], g.knownWithoutNull)
 
 let mkByrefTy (g: TcGlobals) ty = 
     assert g.byref_tcr.CanDeref // this should always be available, but check anyway
-    TType_app (g.byref_tcr, [ty])
+    TType_app (g.byref_tcr, [ty], g.knownWithoutNull)
 
 let mkInByrefTy (g: TcGlobals) ty = 
     if g.inref_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.inref_tcr, [ty])
+        TType_app (g.inref_tcr, [ty], g.knownWithoutNull)
     else
         mkByrefTy g ty
 
 let mkOutByrefTy (g: TcGlobals) ty = 
     if g.outref_tcr.CanDeref then // If not using sufficient FSharp.Core, then outref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.outref_tcr, [ty])
+        TType_app (g.outref_tcr, [ty], g.knownWithoutNull)
     else
         mkByrefTy g ty
 
@@ -616,24 +618,24 @@ let mkByrefTyWithFlag g readonly ty =
 
 let mkByref2Ty (g: TcGlobals) ty1 ty2 = 
     assert g.byref2_tcr.CanDeref // check we are using sufficient FSharp.Core, caller should check this
-    TType_app (g.byref2_tcr, [ty1; ty2])
+    TType_app (g.byref2_tcr, [ty1; ty2], g.knownWithoutNull)
 
 let mkVoidPtrTy (g: TcGlobals) = 
     assert g.voidptr_tcr.CanDeref // check we are using sufficient FSharp.Core, caller should check this
-    TType_app (g.voidptr_tcr, [])
+    TType_app (g.voidptr_tcr, [], g.knownWithoutNull)
 
 let mkByrefTyWithInference (g: TcGlobals) ty1 ty2 = 
     if g.byref2_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
-        TType_app (g.byref2_tcr, [ty1; ty2]) 
+        TType_app (g.byref2_tcr, [ty1; ty2], g.knownWithoutNull) 
     else 
-        TType_app (g.byref_tcr, [ty1]) 
+        TType_app (g.byref_tcr, [ty1], g.knownWithoutNull) 
 
 let mkArrayTy (g: TcGlobals) rank ty m =
     if rank < 1 || rank > 32 then
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo rank, m))
-        TType_app (g.il_arr_tcr_map.[3], [ty])
+        TType_app (g.il_arr_tcr_map.[3], [ty], g.knownWithoutNull)
     else
-        TType_app (g.il_arr_tcr_map.[rank - 1], [ty])
+        TType_app (g.il_arr_tcr_map.[rank - 1], [ty], g.knownWithoutNull)
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -675,16 +677,16 @@ let mkCompiledTupleTyconRef (g: TcGlobals) isStruct n =
 let rec mkCompiledTupleTy g isStruct tupElemTys = 
     let n = List.length tupElemTys 
     if n < maxTuple then
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
     else 
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
-        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB])
+        TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB], g.knownWithoutNull)
 
 /// Convert from F# tuple types to .NET tuple types, but only the outermost level
 let mkOuterCompiledTupleTy g isStruct tupElemTys = 
     let n = List.length tupElemTys 
     if n < maxTuple then 
-        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys, g.knownWithoutNull)
     else 
         let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
@@ -692,10 +694,10 @@ let mkOuterCompiledTupleTy g isStruct tupElemTys =
         // as a regular F# tuple type.
         match tysB with 
         | [ tyB ] -> 
-            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB])
-            TType_app (tcref, tysA@[marker])
+            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB], g.knownWithoutNull)
+            TType_app (tcref, tysA@[marker], g.knownWithoutNull)
         | _ ->
-            TType_app (tcref, tysA@[TType_tuple (mkTupInfo isStruct, tysB)])
+            TType_app (tcref, tysA@[TType_tuple (mkTupInfo isStruct, tysB)], g.knownWithoutNull)
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -734,7 +736,7 @@ let reduceTyconRefMeasureableOrProvided (g: TcGlobals) (tcref: TyconRef) tyargs 
 let rec stripTyEqnsA g canShortcut ty = 
     let ty = stripTyparEqnsAux canShortcut ty 
     match ty with 
-    | TType_app (tcref, tinst) -> 
+    | TType_app (tcref, tinst, _) -> 
         let tycon = tcref.Deref
         match tycon.TypeAbbrev with 
         | Some abbrevTy -> 
@@ -746,7 +748,7 @@ let rec stripTyEqnsA g canShortcut ty =
             // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
             // See RFC FS-1053.md
             if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref && g.byrefkind_InOut_tcr.CanDeref then 
-                mkByref2Ty g tinst.[0] (TType_app(g.byrefkind_InOut_tcr, []))
+                mkByref2Ty g tinst.[0] (TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull))
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
@@ -771,7 +773,7 @@ let evalAnonInfoIsStruct (anonInfo: AnonRecdTypeInfo) =
 let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
     let ty = stripTyEqns g ty
     match ty with
-    | TType_app (tcref, args) -> 
+    | TType_app (tcref, args, _) -> 
         let tycon = tcref.Deref
         if tycon.IsErased then
             stripTyEqnsAndErase eraseFuncAndTuple g (reduceTyconMeasureableOrProvided g tycon args)
@@ -779,8 +781,13 @@ let rec stripTyEqnsAndErase eraseFuncAndTuple (g: TcGlobals) ty =
             stripTyEqnsAndErase eraseFuncAndTuple g g.nativeint_ty
         else
             ty
-    | TType_fun(a, b) when eraseFuncAndTuple -> TType_app(g.fastFunc_tcr, [ a; b]) 
-    | TType_tuple(tupInfo, l) when eraseFuncAndTuple -> mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+
+    | TType_fun(a, b, flags) when eraseFuncAndTuple ->
+        TType_app(g.fastFunc_tcr, [ a; b ], flags) 
+
+    | TType_tuple(tupInfo, l) when eraseFuncAndTuple ->
+        mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) l
+
     | ty -> ty
 
 let stripTyEqnsAndMeasureEqns g ty =
@@ -801,62 +808,98 @@ let rec stripExnEqns (eref: TyconRef) =
     | _ -> exnc
 
 let primDestForallTy g ty = ty |> stripTyEqns g |> (function TType_forall (tyvs, tau) -> (tyvs, tau) | _ -> failwith "primDestForallTy: not a forall type")
-let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> (tyv, tau) | _ -> failwith "destFunTy: not a function type")
-let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
-let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
-let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
-let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
-let destAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
-let destMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
-let isFunTy g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
-let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
-let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
-let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
-let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo | _ -> false)
-let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
-let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
-let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsUnionTycon | _ -> false)
-let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsHiddenReprTycon | _ -> false)
-let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpObjectModelTycon | _ -> false)
-let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsRecordTycon | _ -> false)
-let isFSharpStructOrEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpStructOrEnumTycon | _ -> false)
-let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpEnumTycon | _ -> false)
-let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
-let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
-let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true | _ -> false)
 
+let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _) -> (tyv, tau) | _ -> failwith "destFunTy: not a function type")
+
+let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
+
+let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
+
+let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
+
+let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> v | _ -> failwith "destTyparTy: not a typar type")
+
+let destAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
+
+let destMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
+
+let isFunTy g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
+
+let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
+
+let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
+
+let isRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false)
+
+let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo | _ -> false)
+
+let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
+
+let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
+
+let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsUnionTycon | _ -> false)
+
+let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsHiddenReprTycon | _ -> false)
+
+let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsFSharpObjectModelTycon | _ -> false)
+
+let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsRecordTycon | _ -> false)
+
+let isFSharpStructOrEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsFSharpStructOrEnumTycon | _ -> false)
+
+let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsFSharpEnumTycon | _ -> false)
+
+let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
+
+let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
+
+let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true | _ -> false)
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
-let mkAppTy tcref tyargs = TType_app(tcref, tyargs)
+let mkAppTy tcref tyargs = TType_app(tcref, tyargs, 0uy)
+
 let mkProvenUnionCaseTy ucref tyargs = TType_ucase(ucref, tyargs)
+
 let isAppTy g ty = ty |> stripTyEqns g |> (function TType_app _ -> true | _ -> false) 
-let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
-let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> tcref, tinst | _ -> failwith "destAppTy")
-let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
-let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst) -> tinst | _ -> [])
-let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | _ -> ValueNone)
-let tryDestFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> ValueSome(tyv, tau) | _ -> ValueNone)
-let tryTcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> ValueSome tcref | _ -> ValueNone)
+
+let tryAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> ValueSome (tcref, tinst) | _ -> ValueNone) 
+
+let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> tcref, tinst | _ -> failwith "destAppTy")
+
+let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
+
+let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
+
+let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> ValueSome v | _ -> ValueNone)
+
+let tryDestFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _) -> ValueSome(tyv, tau) | _ -> ValueNone)
+
+let tryTcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> ValueSome tcref | _ -> ValueNone)
+
 let tryDestAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) -> ValueSome (anonInfo, tys) | _ -> ValueNone)
 
-let tryAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
-let tryAnyParTyOption g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
-let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) -> Some (tcref, tinst) | _ -> None) 
+let tryAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
+
+let tryAnyParTyOption g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> Some v | TType_measure unt when isUnitParMeasure g unt -> Some(destUnitParMeasure g unt) | _ -> None)
+
+let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _) -> Some (tcref, tinst) | _ -> None) 
+
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
-let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
+
+let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty, _) -> Some (dty, rty) | _ -> None)
 
 let tryNiceEntityRefOfTy ty = 
     let ty = stripTyparEqnsAux false ty 
     match ty with
-    | TType_app (tcref, _) -> ValueSome tcref
+    | TType_app (tcref, _, _) -> ValueSome tcref
     | TType_measure (Measure.Con tcref) -> ValueSome tcref
     | _ -> ValueNone
 
 let tryNiceEntityRefOfTyOption ty = 
     let ty = stripTyparEqnsAux false ty 
     match ty with
-    | TType_app (tcref, _) -> Some tcref
+    | TType_app (tcref, _, _) -> Some tcref
     | TType_measure (Measure.Con tcref) -> Some tcref
     | _ -> None
     
@@ -883,9 +926,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTType g tt = 
     match tt with
-    | TType_app(a,b) ->
+    | TType_app(a, b, flags) ->
         let b' = b |> List.filter (isMeasureTy g >> not)
-        TType_app(a, b')
+        TType_app(a, b', flags)
     | _ -> tt
 
 //---------------------------------------------------------------------------
@@ -994,30 +1037,39 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     match ty1, ty2 with
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
+
+    | TType_var (tp1, _), TType_var (tp2, _) when typarEq tp1 tp2 -> 
         true
-    | TType_var tp1, _ ->
+
+    | TType_var (tp1, _), _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some v -> typeEquivAux erasureFlag g v ty2
         | None -> false
-    | TType_app (tc1, b1), TType_app (tc2, b2) -> 
+
+    | TType_app (tc1, b1, _), TType_app (tc2, b2, _) -> 
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
+
     | TType_ucase (UnionCaseRef(tc1, n1), b1), TType_ucase (UnionCaseRef(tc2, n2), b2) -> 
         n1=n2 &&
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
+
     | TType_tuple (s1, l1), TType_tuple (s2, l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
+
     | TType_anon (anonInfo1, l1), TType_anon (anonInfo2, l2) -> 
         anonInfoEquiv anonInfo1 anonInfo2 &&
         typesAEquivAux erasureFlag g aenv l1 l2
-    | TType_fun (dtys1, rty1), TType_fun (dtys2, rty2) -> 
+
+    | TType_fun (dtys1, rty1, _), TType_fun (dtys2, rty2, _) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
+
     | TType_measure m1, TType_measure m2 -> 
         match erasureFlag with 
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true 
+
     | _ -> false
 
 
@@ -1039,20 +1091,26 @@ and measureAEquiv g aenv un1 un2 =
     let cons1 = ListMeasureConOccsAfterRemapping g remapTyconRef un1
     let cons2 = ListMeasureConOccsAfterRemapping g remapTyconRef un2 
  
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
-    List.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (cons1@cons2)  
-
+    vars1 |> List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) &&
+    vars2 |> List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) &&
+    (cons1@cons2) |> List.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2)
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
+
 and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
 
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
+
 let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
+
 let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
+
 let traitKeysAEquiv g aenv t1 t2 = traitKeysAEquivAux EraseNone g aenv t1 t2
+
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
+
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
+
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
@@ -1069,7 +1127,7 @@ let getMeasureOfType g ty =
 let isErasedType g ty = 
   match stripTyEqns g ty with
 #if !NO_EXTENSIONTYPING
-  | TType_app (tcref, _) -> tcref.IsProvidedErasedTycon
+  | TType_app (tcref, _, _) -> tcref.IsProvidedErasedTycon
 #endif
   | _ -> false
 
@@ -1080,15 +1138,14 @@ let rec getErasedTypes g ty =
     match ty with
     | TType_forall(_, rty) -> 
         getErasedTypes g rty
-    | TType_var tp -> 
+    | TType_var (tp, _) -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
+    | TType_app (_, b, _) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
-    | TType_fun (dty, rty) -> 
+    | TType_fun (dty, rty, _) -> 
         getErasedTypes g dty @ getErasedTypes g rty
     | TType_measure _ -> 
         [ty]
-
 
 //---------------------------------------------------------------------------
 // Standard orderings, e.g. for order set/map keys
@@ -1114,9 +1171,8 @@ let unionCaseRefOrder =
 // Make some common types
 //---------------------------------------------------------------------------
 
-let mkFunTy d r = TType_fun (d, r)
-
-let (-->) d r = mkFunTy d r
+let mkFunTy (g: TcGlobals) d r =
+    TType_fun (d, r, g.knownWithoutNull)
 
 let mkForallTy d r = TType_forall (d, r)
 
@@ -1124,7 +1180,9 @@ let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
 
 let (+->) d r = mkForallTyIfNeeded d r
 
-let mkIteratedFunTy dl r = List.foldBack (-->) dl r
+let mkIteratedFunTy g dl r = List.foldBack (mkFunTy g) dl r
+
+let mkLambdaTy g tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy g tys rty)
 
 let mkLambdaArgTy m tys = 
     match tys with 
@@ -1133,8 +1191,8 @@ let mkLambdaArgTy m tys =
     | _ -> mkRawRefTupleTy tys
 
 let typeOfLambdaArg m vs = mkLambdaArgTy m (typesOfVals vs)
-let mkMultiLambdaTy m vs rty = mkFunTy (typeOfLambdaArg m vs) rty 
-let mkLambdaTy tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy tys rty)
+
+let mkMultiLambdaTy g m vs rty = mkFunTy g (typeOfLambdaArg m vs) rty 
 
 /// When compiling FSharp.Core.dll we have to deal with the non-local references into
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these
@@ -1170,26 +1228,24 @@ let rec stripExpr e =
     | Expr.Link eref -> stripExpr eref.Value
     | _ -> e    
 
+let rec stripDebugPoints expr = 
+    match stripExpr expr with
+    | Expr.DebugPoint (_, innerExpr) -> stripDebugPoints innerExpr
+    | expr -> expr
+
+// Strip debug points and remember how to recrete them
+let (|DebugPoints|) expr =
+    match stripExpr expr with
+    | Expr.DebugPoint (dp, innerExpr) -> innerExpr, (fun e -> Expr.DebugPoint(dp, e))
+    | expr -> expr, id
+
 let mkCase (a, b) = TCase(a, b)
 
 let isRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, _, _) -> not (evalTupInfoIsStruct tupInfo) | _ -> false
+
 let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) when not (evalTupInfoIsStruct tupInfo) -> es | _ -> [e]
 
-//---------------------------------------------------------------------------
-// Range info for expressions
-//---------------------------------------------------------------------------
-
-let rec rangeOfExpr x = 
-    match x with
-    | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
-    | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
-    | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
-    | Expr.WitnessArg (_, m)
-    | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
-    | Expr.Link eref -> rangeOfExpr eref.Value
-
-type Expr with 
-    member x.Range = rangeOfExpr x
+let rangeOfExpr (x: Expr) = x.Range
 
 //---------------------------------------------------------------------------
 // Build nodes in decision graphs
@@ -1206,22 +1262,22 @@ type MatchBuilder(spBind, inpRange: range) =
         targets.Add tg
         n
 
-    member x.AddResultTarget(e, spTarget) = TDSuccess([], x.AddTarget(TTarget([], e, spTarget, None)))
+    member x.AddResultTarget(e) = TDSuccess([], x.AddTarget(TTarget([], e, None)))
 
-    member x.CloseTargets() = targets |> ResizeArray.toList
+    member _.CloseTargets() = targets |> ResizeArray.toList
 
-    member x.Close(dtree, m, ty) = primMkMatch (spBind, inpRange, dtree, targets.ToArray(), m, ty)
+    member _.Close(dtree, m, ty) = primMkMatch (spBind, inpRange, dtree, targets.ToArray(), m, ty)
 
-let mkBoolSwitch debugPoint m g t e =
-    TDSwitch(debugPoint, g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
+let mkBoolSwitch m g t e =
+    TDSwitch(g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
 
-let primMkCond spBind spTarget1 spTarget2 m ty e1 e2 e3 = 
+let primMkCond spBind m ty e1 e2 e3 = 
     let mbuilder = MatchBuilder(spBind, m)
-    let dtree = mkBoolSwitch DebugPointAtSwitch.No m e1 (mbuilder.AddResultTarget(e2, spTarget1)) (mbuilder.AddResultTarget(e3, spTarget2)) 
+    let dtree = mkBoolSwitch m e1 (mbuilder.AddResultTarget(e2)) (mbuilder.AddResultTarget(e3)) 
     mbuilder.Close(dtree, m, ty)
 
-let mkCond spBind spTarget m ty e1 e2 e3 =
-    primMkCond spBind spTarget spTarget m ty e1 e2 e3
+let mkCond spBind m ty e1 e2 e3 =
+    primMkCond spBind m ty e1 e2 e3
 
 //---------------------------------------------------------------------------
 // Primitive constructors
@@ -1248,29 +1304,29 @@ let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
     Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
 
-let mkLambdas m tps (vs: Val list) (b, rty) = 
-    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
+let mkLambdas g m tps (vs: Val list) (b, rty) = 
+    mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), mkFunTy g v.Type ty) vs (b, rty))
 
-let mkMultiLambdasCore m vsl (b, rty) = 
-    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), typeOfLambdaArg m v --> ty) vsl (b, rty)
+let mkMultiLambdasCore g m vsl (b, rty) = 
+    List.foldBack (fun v (e, ty) -> mkMultiLambda m v (e, ty), mkFunTy g (typeOfLambdaArg m v) ty) vsl (b, rty)
 
-let mkMultiLambdas m tps vsl (b, rty) = 
-    mkTypeLambda m tps (mkMultiLambdasCore m vsl (b, rty) )
+let mkMultiLambdas g m tps vsl (b, rty) = 
+    mkTypeLambda m tps (mkMultiLambdasCore g m vsl (b, rty) )
 
-let mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
+let mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (b, rty) = 
     let expr = 
         match ctorThisValOpt, baseValOpt with
-        | None, None -> mkMultiLambdasCore m vsl (b, rty)
+        | None, None -> mkMultiLambdasCore g m vsl (b, rty)
         | _ -> 
             match vsl with 
             | [] -> error(InternalError("mk_basev_multi_lambdas_core: can't attach a basev to a non-lambda expression", m))
             | h :: t -> 
-                let b, rty = mkMultiLambdasCore m t (b, rty)
-                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (typeOfLambdaArg m h --> rty))
+                let b, rty = mkMultiLambdasCore g m t (b, rty)
+                (rebuildLambda m ctorThisValOpt baseValOpt h (b, rty), (mkFunTy g (typeOfLambdaArg m h) rty))
     mkTypeLambda m tps expr
 
-let mkMultiLambdaBind v letSeqPtOpt m tps vsl (b, rty) = 
-    TBind(v, mkMultiLambdas m tps vsl (b, rty), letSeqPtOpt)
+let mkMultiLambdaBind g v letSeqPtOpt m tps vsl (b, rty) = 
+    TBind(v, mkMultiLambdas g m tps vsl (b, rty), letSeqPtOpt)
 
 let mkBind seqPtOpt v e = TBind(v, e, seqPtOpt)
 
@@ -1352,10 +1408,10 @@ let mkTrue g m = mkBool g m true
 let mkFalse g m = mkBool g m false
 
 let mkLazyOr (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty e1 (mkTrue g m) e2
+    mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e1 (mkTrue g m) e2
 
 let mkLazyAnd (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty e1 e2 (mkFalse g m)
+    mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e1 e2 (mkFalse g m)
 
 let mkCoerceExpr(e, to_ty, m, from_ty) = Expr.Op (TOp.Coerce, [to_ty;from_ty], [e], m)
 
@@ -1417,8 +1473,8 @@ let mkDummyLambda (g: TcGlobals) (e: Expr, ety) =
 let mkWhile (g: TcGlobals) (spWhile, marker, e1, e2, m) = 
     Expr.Op (TOp.While (spWhile, marker), [], [mkDummyLambda g (e1, g.bool_ty);mkDummyLambda g (e2, g.unit_ty)], m)
 
-let mkFor (g: TcGlobals) (spFor, v, e1, dir, e2, e3: Expr, m) = 
-    Expr.Op (TOp.For (spFor, dir), [], [mkDummyLambda g (e1, g.int_ty) ;mkDummyLambda g (e2, g.int_ty);mkLambda e3.Range v (e3, g.unit_ty)], m)
+let mkIntegerForLoop (g: TcGlobals) (spFor, spIn, v, e1, dir, e2, e3: Expr, m) = 
+    Expr.Op (TOp.IntegerForLoop (spFor, spIn, dir), [], [mkDummyLambda g (e1, g.int_ty) ;mkDummyLambda g (e2, g.int_ty);mkLambda e3.Range v (e3, g.unit_ty)], m)
 
 let mkTryWith g (e1, vf, ef: Expr, vh, eh: Expr, m, ty, spTry, spWith) = 
     Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
@@ -1681,37 +1737,46 @@ let tyconRefEqOpt g tcOpt tc =
     | None -> false
     | Some tc2 -> tyconRefEq g tc2 tc
 
-let isStringTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.system_String_tcref | _ -> false)
-let isListTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.list_tcr_canon | _ -> false)
-let isArrayTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isArrayTyconRef g tcref | _ -> false) 
-let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.il_arr_tcr_map.[0] | _ -> false) 
-let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
-let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
-let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
-let isVoidTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Void_tcref tcref | _ -> false) 
-let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsILTycon | _ -> false) 
-let isNativePtrTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref | _ -> false) 
+let isStringTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.system_String_tcref | _ -> false)
+
+let isListTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.list_tcr_canon | _ -> false)
+
+let isArrayTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isArrayTyconRef g tcref | _ -> false) 
+
+let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.il_arr_tcr_map.[0] | _ -> false) 
+
+let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
+
+let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+
+let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
+
+let isVoidTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.system_Void_tcref tcref | _ -> false) 
+
+let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.IsILTycon | _ -> false) 
+
+let isNativePtrTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.nativeptr_tcr tcref | _ -> false) 
 
 let isByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
-        | TType_app(tcref, _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref
-        | TType_app(tcref, _) -> tyconRefEq g g.byref_tcr tcref
+        | TType_app(tcref, _, _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref
+        | TType_app(tcref, _, _) -> tyconRefEq g g.byref_tcr tcref
         | _ -> false) 
 
-let isInByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, []) -> tyconRefEq g g.byrefkind_In_tcr tcref | _ -> false) 
+let isInByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_In_tcr tcref | _ -> false) 
 let isInByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
-        | TType_app(tcref, [_; tag]) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isInByrefTag g tag         
+        | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isInByrefTag g tag         
         | _ -> false) 
 
-let isOutByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, []) -> tyconRefEq g g.byrefkind_Out_tcr tcref | _ -> false) 
+let isOutByrefTag g ty = ty |> stripTyEqns g |> (function TType_app(tcref, [], _) -> tyconRefEq g g.byrefkind_Out_tcr tcref | _ -> false) 
 let isOutByrefTy g ty = 
     ty |> stripTyEqns g |> (function 
-        | TType_app(tcref, [_; tag]) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tag         
+        | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tag         
         | _ -> false) 
 
 #if !NO_EXTENSIONTYPING
-let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.TypeReprInfo | _ -> TNoRepr) 
+let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.TypeReprInfo | _ -> TNoRepr) 
 #endif
 
 type TypeDefMetadata = 
@@ -2167,18 +2232,31 @@ and accFreeTyparRef opts (tp: Typar) acc =
 
 and accFreeInType opts ty acc = 
     match stripTyparEqns ty with 
-    | TType_tuple (tupInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
-    | TType_anon (anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
-    | TType_app (tc, tinst) -> 
+    | TType_tuple (tupInfo, l) ->
+        accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
+
+    | TType_anon (anonInfo, l) ->
+        accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
+
+    | TType_app (tc, tinst, _) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
         | [] -> acc  // optimization to avoid unneeded call
         | [h] -> accFreeInType opts h acc // optimization to avoid unneeded call
         | _ -> accFreeInTypes opts tinst acc
-    | TType_ucase (UnionCaseRef(tc, _), tinst) -> accFreeInTypes opts tinst (accFreeTycon opts tc acc)
-    | TType_fun (d, r) -> accFreeInType opts d (accFreeInType opts r acc)
-    | TType_var r -> accFreeTyparRef opts r acc
-    | TType_forall (tps, r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
+
+    | TType_ucase (UnionCaseRef(tc, _), tinst) ->
+        accFreeInTypes opts tinst (accFreeTycon opts tc acc)
+
+    | TType_fun (d, r, _) ->
+        accFreeInType opts d (accFreeInType opts r acc)
+
+    | TType_var (r, _) ->
+        accFreeTyparRef opts r acc
+
+    | TType_forall (tps, r) ->
+        unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
+
     | TType_measure unt -> accFreeInMeasure opts unt acc
 
 and accFreeInTupInfo _opts unt acc = 
@@ -2266,21 +2344,28 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
     | TType_anon (anonInfo, anonTys) ->
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc anonInfo.TupInfo 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc anonTys 
+
     | TType_tuple (tupInfo, tupTys) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tupTys 
-    | TType_app (_, tinst) -> 
+
+    | TType_app (_, tinst, _) ->
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
+
     | TType_ucase (_, tinst) -> 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
-    | TType_fun (d, r) -> 
+
+    | TType_fun (d, r, _) -> 
         let dacc = accFreeInTypeLeftToRight g cxFlag thruFlag acc d 
         accFreeInTypeLeftToRight g cxFlag thruFlag dacc r
-    | TType_var r -> 
+
+    | TType_var (r, _) -> 
         accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
+
     | TType_forall (tps, r) -> 
         let racc = accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r
         unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps racc) acc
+
     | TType_measure unt -> 
         let mvars = ListMeasureVarOccsWithNonZeroExponents unt
         List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
@@ -2503,13 +2588,16 @@ let ArgInfosOfPropertyVal g (v: Val) =
 // Generalize type constructors to types
 //---------------------------------------------------------------------------
 
-let generalTyconRefInst (tc: TyconRef) = generalizeTypars tc.TyparsNoRange
+let generalTyconRefInst (tcref: TyconRef) = 
+    generalizeTypars tcref.TyparsNoRange
 
-let generalizeTyconRef tc = 
-    let tinst = generalTyconRefInst tc
-    tinst, TType_app(tc, tinst)
+let generalizeTyconRef (g: TcGlobals) tcref = 
+    let tinst = generalTyconRefInst tcref
+    tinst, TType_app(tcref, tinst, g.knownWithoutNull)
 
-let generalizedTyconRef tc = TType_app(tc, generalTyconRefInst tc)
+let generalizedTyconRef (g: TcGlobals) tcref = 
+    let tinst = generalTyconRefInst tcref
+    TType_app(tcref, tinst, g.knownWithoutNull)
 
 let isTTyparSupportsStaticMethod = function TyparConstraint.MayResolveMember _ -> true | _ -> false
 let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> false
@@ -2706,13 +2794,20 @@ module SimplifyTypes =
         let ty = stripTyparEqns ty 
         let z = f z ty
         match ty with
-        | TType_forall (_, body) -> foldTypeButNotConstraints f z body
-        | TType_app (_, tys) 
+        | TType_forall (_, body) ->
+            foldTypeButNotConstraints f z body
+
+        | TType_app (_, tys, _) 
         | TType_ucase (_, tys) 
         | TType_anon (_, tys) 
-        | TType_tuple (_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
-        | TType_fun (s, t) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
+        | TType_tuple (_, tys) ->
+            List.fold (foldTypeButNotConstraints f) z tys
+
+        | TType_fun (s, t, _) ->
+            foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
+
         | TType_var _ -> z
+
         | TType_measure _ -> z
 
     let incM x m =
@@ -2721,7 +2816,10 @@ module SimplifyTypes =
 
     let accTyparCounts z ty =
         // Walk type to determine typars and their counts (for pprinting decisions) 
-        foldTypeButNotConstraints (fun z ty -> match ty with | TType_var tp when tp.Rigidity = TyparRigidity.Rigid -> incM tp z | _ -> z) z ty
+        (z, ty) ||> foldTypeButNotConstraints (fun z ty ->
+            match ty with
+            | TType_var (tp, _) when tp.Rigidity = TyparRigidity.Rigid -> incM tp z
+            | _ -> z)
 
     let emptyTyparCounts = Zmap.empty typarOrder
 
@@ -2928,8 +3026,8 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
-let fullDisplayTextOfTyconRef (tc: TyconRef) = 
-    fullNameOfEntityRef (fun tc -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) tc
+let fullDisplayTextOfTyconRef (tcref: TyconRef) = 
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
     let navigableText = 
@@ -2958,16 +3056,25 @@ let fullNameOfParentOfValRefAsLayout vref =
     | VRefNonLocal nlr -> 
         ValueSome (fullNameOfEntityRefAsLayout (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) nlr.EnclosingEntity)
 
+let fullDisplayTextOfParentOfModRef eref = fullNameOfParentOfEntityRef eref
 
-let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
+let fullDisplayTextOfModRef r =
+    fullNameOfEntityRef (fun eref -> eref.DemangledModuleOrNamespaceName) r
 
-let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
-let fullDisplayTextOfTyconRefAsLayout r = fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRef r = fullNameOfEntityRef (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
-let fullDisplayTextOfExnRefAsLayout r = fullNameOfEntityRefAsLayout (fun (tc: TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+let fullDisplayTextOfTyconRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
 
-let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) = fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
-let fullDisplayTextOfRecdFieldRef (rfref: RecdFieldRef) = fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
+let fullDisplayTextOfExnRef tcref =
+    fullNameOfEntityRef (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
+
+let fullDisplayTextOfExnRefAsLayout tcref =
+    fullNameOfEntityRefAsLayout (fun tcref -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) tcref
+
+let fullDisplayTextOfUnionCaseRef (ucref: UnionCaseRef) =
+    fullDisplayTextOfTyconRef ucref.TyconRef +.+ ucref.CaseName
+
+let fullDisplayTextOfRecdFieldRef (rfref: RecdFieldRef) =
+    fullDisplayTextOfTyconRef rfref.TyconRef +.+ rfref.FieldName
 
 let fullDisplayTextOfValRef (vref: ValRef) = 
     match fullNameOfParentOfValRef vref with 
@@ -3000,29 +3107,36 @@ let fullMangledPathToTyconRef (tcref:TyconRef) =
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
     
 /// generates a name like 'System.IComparable<System.Int32>.Get'
-let tyconRefToFullName (tc:TyconRef) =
+let tyconRefToFullName (tcref:TyconRef) =
     let namespaceParts =
         // we need to ensure there are no collisions between (for example)
         // - ``IB<GlobalType>`` (non-generic)
         // - IB<'T> instantiated with 'T = GlobalType
         // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
         // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
-        match fullMangledPathToTyconRef tc with
+        match fullMangledPathToTyconRef tcref with
         | [||] -> [| "global`" |]
         | ns -> ns
-    seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+    seq { yield! namespaceParts; yield tcref.DisplayName } |> String.concat "."
 
 let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
     match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
-    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_app (a, [], _) ->
+        tyconRefToFullName a
+
     | TType_anon (a,b) ->
         let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
         sprintf "%s<%s>" a.ILTypeRef.FullName genericParameters
-    | TType_app (a,b) ->
+
+    | TType_app (a, b, _) ->
         let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
         sprintf "%s<%s>" (tyconRefToFullName a) genericParameters
-    | TType_var v -> "'" + v.Name
-    | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
+
+    | TType_var (v, _) ->
+        "'" + v.Name
+
+    | _ ->
+        failwithf "unexpected: expected TType_app but got %O" (x.GetType())
 
 /// for types in the global namespace, `global is prepended (note the backtick)
 let qualifiedInterfaceImplementationName g (tt:TType) memberName =
@@ -3063,8 +3177,10 @@ let superOfTycon (g: TcGlobals) (tycon: Tycon) =
 
 /// walk a TyconRef's inheritance tree, yielding any parent types as an array
 let supersOfTyconRef (tcref: TyconRef) =
-    Array.unfold (fun (tcref: TyconRef) -> match tcref.TypeContents.tcaug_super with Some (TType_app(sup, _)) -> Some(sup, sup) | _ -> None) tcref
-
+    tcref |> Array.unfold (fun tcref ->
+        match tcref.TypeContents.tcaug_super with
+        | Some (TType_app(sup, _, _)) -> Some(sup, sup)
+        | _ -> None)
 
 //----------------------------------------------------------------------------
 // Detect attributes
@@ -3084,10 +3200,10 @@ let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) =
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
 let HasILAttribute tref (attrs: ILAttributes) = 
-    attrs.AsArray |> Array.exists (isILAttrib tref) 
+    attrs.AsArray() |> Array.exists (isILAttrib tref) 
 
 let TryDecodeILAttribute tref (attrs: ILAttributes) = 
-    attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
+    attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
 
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
@@ -3212,7 +3328,7 @@ let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) =
             a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m).IsSome
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
-        tdef.CustomAttrs.AsArray
+        tdef.CustomAttrs.AsArray()
         |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         tcref.Attribs
@@ -3249,7 +3365,7 @@ let isSpanLikeTyconRef g m tcref =
     not (isByrefTyconRef g tcref)
 
 let isByrefLikeTy g m ty = 
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
+    ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isByrefLikeTyconRef g m tcref | _ -> false)
 
 let isSpanLikeTy g m ty =
     isByrefLikeTy g m ty && 
@@ -3260,7 +3376,7 @@ let isSpanTyconRef g m tcref =
     tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Span`1"
 
 let isSpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isSpanTyconRef g m tcref | _ -> false)
+    ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isSpanTyconRef g m tcref | _ -> false)
 
 let rec tryDestSpanTy g m ty =
     match tryAppTy g ty with
@@ -3277,7 +3393,7 @@ let isReadOnlySpanTyconRef g m tcref =
     tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
 
 let isReadOnlySpanTy g m ty =
-    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
+    ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isReadOnlySpanTyconRef g m tcref | _ -> false)
 
 let tryDestReadOnlySpanTy g m ty =
     match tryAppTy g ty with
@@ -3295,8 +3411,8 @@ let destReadOnlySpanTy g m ty =
 
 let destByrefTy g ty = 
     match ty |> stripTyEqns g with
-    | TType_app(tcref, [x; _]) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
-    | TType_app(tcref, [x]) when tyconRefEq g g.byref_tcr tcref -> x // all others
+    | TType_app(tcref, [x; _], _) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
+    | TType_app(tcref, [x], _) when tyconRefEq g g.byref_tcr tcref -> x // all others
     | _ -> failwith "destByrefTy: not a byref type"
 
 let (|ByrefTy|_|) g ty = 
@@ -3305,7 +3421,7 @@ let (|ByrefTy|_|) g ty =
 
 let destNativePtrTy g ty =
     match ty |> stripTyEqns g with
-    | TType_app(tcref, [x]) when tyconRefEq g g.nativeptr_tcr tcref -> x
+    | TType_app(tcref, [x], _) when tyconRefEq g g.nativeptr_tcr tcref -> x
     | _ -> failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty = 
@@ -3315,7 +3431,7 @@ let isRefCellTy g ty =
 
 let destRefCellTy g ty = 
     match ty |> stripTyEqns g with
-    | TType_app(tcref, [x]) when tyconRefEq g g.refcell_tcr_canon tcref -> x
+    | TType_app(tcref, [x], _) when tyconRefEq g g.refcell_tcr_canon tcref -> x
     | _ -> failwith "destRefCellTy: not a ref type"
 
 let StripSelfRefCell(g: TcGlobals, baseOrThisInfo: ValBaseOrThisInfo, tau: TType) : TType =
@@ -3323,19 +3439,19 @@ let StripSelfRefCell(g: TcGlobals, baseOrThisInfo: ValBaseOrThisInfo, tau: TType
         then destRefCellTy g tau 
         else tau
 
-let mkRefCellTy (g: TcGlobals) ty = TType_app(g.refcell_tcr_nice, [ty])
+let mkRefCellTy (g: TcGlobals) ty = TType_app(g.refcell_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkLazyTy (g: TcGlobals) ty = TType_app(g.lazy_tcr_nice, [ty])
+let mkLazyTy (g: TcGlobals) ty = TType_app(g.lazy_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety])
+let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr, [aty;bty;cty;dty; ety], g.knownWithoutNull)
 
-let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
+let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty])
+let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty], g.knownWithoutNull)
 
-let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
+let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty], g.knownWithoutNull)
 
-let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
+let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
 
 let isValueOptionTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
@@ -3566,8 +3682,8 @@ module DebugPrint =
     let stampL _n w = 
         w
 
-    let layoutTyconRef (tc: TyconRef) = 
-        wordL (tagText tc.DisplayNameWithStaticParameters) |> stampL tc.Stamp
+    let layoutTyconRef (tcref: TyconRef) = 
+        wordL (tagText tcref.DisplayNameWithStaticParameters) |> stampL tcref.Stamp
 
     let rec auxTypeL env ty = auxTypeWrapL env false ty
 
@@ -3592,15 +3708,26 @@ module DebugPrint =
         match stripTyparEqns ty with
         | TType_forall (typars, rty) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env rty) |> wrap
+
         | TType_ucase (UnionCaseRef(tcref, _), tinst)
-        | TType_app (tcref, tinst) -> 
+
+        | TType_app (tcref, tinst, _) -> 
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
-        | TType_anon (anonInfo, tys) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
-        | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
-        | TType_fun (f, x) -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
-        | TType_var typar -> auxTyparWrapL env isAtomic typar 
+
+        | TType_tuple (_tupInfo, tys) ->
+            sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+
+        | TType_fun (dty, rty, _) ->
+            ((auxTypeAtomL env dty ^^ wordL (tagText "->")) --- auxTypeL env rty) |> wrap
+
+        | TType_var (typar, _) ->
+            auxTyparWrapL env isAtomic typar 
+
+        | TType_anon (anonInfo, tys) ->
+            braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
+
         | TType_measure unt -> 
 #if DEBUG
           leftL (tagText "{") ^^
@@ -3612,7 +3739,7 @@ module DebugPrint =
              let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
              let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
              let unparL (uv: Typar) = wordL (tagText ("'" + uv.DisplayName))
-             let unconL tc = layoutTyconRef tc
+             let unconL tcref = layoutTyconRef tcref
              let rationalL e = wordL (tagText(RationalToString e))
              let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
              let prefix =
@@ -3980,7 +4107,7 @@ module DebugPrint =
                        | VSlotDirectCall -> xL ^^ rightL(tagText "<vdirect>")
                        | NormalValUse -> xL 
                  xL
-            | Expr.Sequential (expr1, expr2, flag, _, _) -> 
+            | Expr.Sequential (expr1, expr2, flag, _) -> 
                 let flag = 
                     match flag with
                     | NormalSeq -> ";"
@@ -4006,6 +4133,8 @@ module DebugPrint =
                 letL g bind (exprL body) |> wrap
             | Expr.Link rX -> 
                 (wordL(tagText "RecLink") --- atomL rX.Value) |> wrap
+            | Expr.DebugPoint (_, rX) -> 
+                (wordL(tagText "DebugPoint") --- atomL rX) |> wrap
             | Expr.Match (_, _, dtree, targets, _, _) -> 
                 leftL(tagText "[") ^^ (decisionTreeL g dtree @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL(tagText "]"))
             | Expr.Op (TOp.UnionCase c, _, args, _) -> 
@@ -4014,8 +4143,8 @@ module DebugPrint =
                 wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
             | Expr.Op (TOp.Tuple _, _, xs, _) -> 
                 tupleL (List.map exprL xs)
-            | Expr.Op (TOp.Recd (ctor, tc), _, xs, _) -> 
-                let fields = tc.TrueInstanceFieldsAsList
+            | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _) -> 
+                let fields = tcref.TrueInstanceFieldsAsList
                 let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
                 let ctorL = 
                     match ctor with
@@ -4069,7 +4198,7 @@ module DebugPrint =
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
             | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
-            | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
+            | Expr.Op (TOp.IntegerForLoop _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
             | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
                 (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
@@ -4120,7 +4249,7 @@ module DebugPrint =
         let z = if isNil args then z else z --- spaceListL (List.map (atomL g) args)
         z
 
-    and implFileL g (TImplFile (_, _, mexpr, _, _, _)) =
+    and implFileL g (TImplFile (implExprWithSig=mexpr)) =
         aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g mexpr]
 
     and mexprL g x =
@@ -4164,7 +4293,7 @@ module DebugPrint =
             (bind @@ decisionTreeL g body) 
         | TDSuccess (args, n) -> 
             wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL g))
-        | TDSwitch (_, test, dcases, dflt, _) ->
+        | TDSwitch (test, dcases, dflt, _) ->
             (wordL(tagText "Switch") --- exprL g test) @@--
             (aboveListL (List.map (dcaseL g) dcases) @@
              match dflt with
@@ -4183,7 +4312,7 @@ module DebugPrint =
         | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> wordL(tagText "query") ^^ exprL g exp
         | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
  
-    and targetL g i (TTarget (argvs, body, _, _)) =
+    and targetL g i (TTarget (argvs, body, _)) =
         leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
     and flatValsL vs = vs |> List.map valL
@@ -4221,7 +4350,7 @@ let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr =
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
-let SigTypeOfImplFile (TImplFile (_, _, mexpr, _, _, _)) = mexpr.Type 
+let SigTypeOfImplFile (TImplFile (implExprWithSig=mexpr)) = mexpr.Type 
 
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped (i.e. renamed or alpha-converted)
@@ -4476,8 +4605,35 @@ let rec accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc =
     let acc = QueueList.foldBack accValHidingInfoAtAssemblyBoundary mty.AllValsAndMembers acc
     acc 
 
-let ComputeHidingInfoAtAssemblyBoundary mty acc = 
+let ComputeSignatureHidingInfoAtAssemblyBoundary mty acc = 
     accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc
+
+let rec accImplHidingInfoAtAssemblyBoundary mdef acc = 
+    match mdef with 
+    | TMDefRec(_isRec, _opens, tycons, mbinds, _m) -> 
+        let acc = List.foldBack accTyconHidingInfoAtAssemblyBoundary tycons acc
+        let acc =
+            (mbinds, acc) ||> List.foldBack (fun mbind acc ->
+                match mbind with
+                | ModuleOrNamespaceBinding.Binding bind -> 
+                    accValHidingInfoAtAssemblyBoundary bind.Var acc
+                | ModuleOrNamespaceBinding.Module(_mspec, def) -> 
+                    accImplHidingInfoAtAssemblyBoundary def acc)
+        acc
+
+    | TMAbstract mexpr -> 
+        accModuleOrNamespaceHidingInfoAtAssemblyBoundary mexpr.Type acc
+
+    | TMDefOpens _openDecls ->  acc
+
+    | TMDefLet(bind, _m) -> accValHidingInfoAtAssemblyBoundary bind.Var acc
+
+    | TMDefDo _ -> acc
+
+    | TMDefs defs -> List.foldBack accImplHidingInfoAtAssemblyBoundary defs acc
+
+let ComputeImplementationHidingInfoAtAssemblyBoundary mty acc = 
+    accImplHidingInfoAtAssemblyBoundary mty acc
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
@@ -4556,11 +4712,11 @@ let freeTyvarsAllPublic tyvars =
 
 let (|LinearMatchExpr|_|) expr = 
     match expr with 
-    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, _))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, sp2, m2, ty)
+    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, _))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, m2, ty)
     | _ -> None
     
-let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, sp2, m2, ty) = 
-    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, None))|], m2, ty)
+let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, m2, ty) = 
+    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, None))|], m2, ty)
 
 /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
 /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
@@ -4667,7 +4823,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
 
 and accFreeInDecisionTree opts x (acc: FreeVars) =
     match x with 
-    | TDSwitch(_, e1, csl, dflt, _) -> accFreeInExpr opts e1 (accFreeInSwitchCases opts csl dflt acc)
+    | TDSwitch(e1, csl, dflt, _) -> accFreeInExpr opts e1 (accFreeInSwitchCases opts csl dflt acc)
     | TDSuccess (es, _) -> accFreeInFlatExprs opts es acc
     | TDBind (bind, body) -> unionFreeVars (bindLhs opts bind (accBindRhs opts bind (freeInDecisionTree opts body))) acc
   
@@ -4820,7 +4976,7 @@ and accFreeInExprNonLinearImpl opts x acc =
     | Expr.Link eref ->
         accFreeInExpr opts eref.Value acc
 
-    | Expr.Sequential (expr1, expr2, _, _, _) -> 
+    | Expr.Sequential (expr1, expr2, _, _) -> 
         let acc = accFreeInExpr opts expr1 acc
         // tail-call - linear expression
         accFreeInExpr opts expr2 acc 
@@ -4831,7 +4987,7 @@ and accFreeInExprNonLinearImpl opts x acc =
     | Expr.Match (_, _, dtree, targets, _, _) -> 
         match x with 
         // Handle if-then-else
-        | LinearMatchExpr(_, _, dtree, target, bodyExpr, _, _, _) ->
+        | LinearMatchExpr(_, _, dtree, target, bodyExpr, _, _) ->
             let acc = accFreeInDecisionTree opts dtree acc
             let acc = accFreeInTarget opts target acc
             accFreeInExpr opts bodyExpr acc  // tailcall
@@ -4854,6 +5010,9 @@ and accFreeInExprNonLinearImpl opts x acc =
     | Expr.WitnessArg (traitInfo, _) ->
          accFreeVarsInTraitInfo opts traitInfo acc
 
+    | Expr.DebugPoint (_, innerExpr) ->
+         accFreeInExpr opts innerExpr acc
+
 and accFreeInOp opts op acc =
     match op with
 
@@ -4862,7 +5021,7 @@ and accFreeInOp opts op acc =
     | TOp.UInt16s _ 
     | TOp.TryWith _
     | TOp.TryFinally _ 
-    | TOp.For _ 
+    | TOp.IntegerForLoop _ 
     | TOp.Coerce 
     | TOp.RefAddrGet _
     | TOp.Array 
@@ -4928,7 +5087,7 @@ and accFreeInOp opts op acc =
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
 
-and accFreeInTarget opts (TTarget(vs, expr, _, flags)) acc = 
+and accFreeInTarget opts (TTarget(vs, expr, flags)) acc = 
     match flags with 
     | None -> List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
     | Some xs -> List.foldBack2 (fun v isStateVar acc -> if isStateVar then acc else boundLocalVal opts v acc) vs xs (accFreeInExpr opts expr acc)
@@ -5021,15 +5180,19 @@ type AllowTypeDirectedDetupling = Yes | No
 // i.e. base the chosen arity on the syntactic expression shape and type of arguments 
 let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttribs expr = 
     let rec stripLambda_notypes e = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.Lambda (_, _, _, vs, b, _, _) -> 
             let vs', b' = stripLambda_notypes b
             (vs :: vs', b') 
-        | Expr.TyChoose (_, b, _) -> stripLambda_notypes b 
+        | Expr.TyChoose (_, b, _) ->
+            stripLambda_notypes b 
         | _ -> ([], e)
 
     let stripTopLambdaNoTypes e =
-        let tps, taue = match e with Expr.TyLambda (_, tps, b, _, _) -> tps, b | _ -> [], e
+        let tps, taue =
+            match stripDebugPoints e with
+            | Expr.TyLambda (_, tps, b, _, _) -> tps, b
+            | _ -> [], e
         let vs, body = stripLambda_notypes taue
         tps, vs, body
 
@@ -5055,6 +5218,7 @@ let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttri
                 if partialAttribs.Length = tys.Length then partialAttribs 
                 else tys |> List.map (fun _ -> [])
             (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs }: ArgReprInfo ))
+
     let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None }
     ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
 
@@ -5306,7 +5470,8 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     | LinearOpExpr _ 
     | LinearMatchExpr _ 
     | Expr.Sequential _  
-    | Expr.Let _ -> 
+    | Expr.Let _ 
+    | Expr.DebugPoint _ ->
         remapLinearExpr ctxt compgen tmenv expr (fun x -> x)
 
     // Binding constructs - see also dtrees below 
@@ -5423,9 +5588,9 @@ and remapAppExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (e1,
     if e1 === e1' && e1ty === e1ty' && tyargs === tyargs' && args === args' then origExpr 
     else Expr.App (e1', e1ty', tyargs', args', m)
 
-and remapTarget ctxt compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
+and remapTarget ctxt compgen tmenv (TTarget(vs, e, flags)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals ctxt compgen tmenv vs 
-    TTarget(vs', remapExprImpl ctxt compgen tmenvinner e, spTarget, flags)
+    TTarget(vs', remapExprImpl ctxt compgen tmenvinner e, flags)
 
 and remapLinearExpr ctxt compgen tmenv expr contf =
 
@@ -5436,20 +5601,20 @@ and remapLinearExpr ctxt compgen tmenv expr contf =
         // tailcall for the linear position
         remapLinearExpr ctxt compgen tmenvinner bodyExpr (contf << mkLetBind m bind')
 
-    | Expr.Sequential (expr1, expr2, dir, spSeq, m) -> 
+    | Expr.Sequential (expr1, expr2, dir, m) -> 
         let expr1' = remapExprImpl ctxt compgen tmenv expr1 
         // tailcall for the linear position
         remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2' -> 
             if expr1 === expr1' && expr2 === expr2' then expr 
-            else Expr.Sequential (expr1', expr2', dir, spSeq, m)))
+            else Expr.Sequential (expr1', expr2', dir, m)))
 
-    | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
+    | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
         let dtree' = remapDecisionTree ctxt compgen tmenv dtree
         let tg1' = remapTarget ctxt compgen tmenv tg1
         let ty' = remapType tmenv ty
         // tailcall for the linear position
         remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2' -> 
-            rebuildLinearMatchExpr (spBind, exprm, dtree', tg1', expr2', sp2, m2, ty')))
+            rebuildLinearMatchExpr (spBind, exprm, dtree', tg1', expr2', m2, ty')))
 
     | LinearOpExpr (op, tyargs, argsFront, argLast, m) -> 
         let op' = remapOp tmenv op 
@@ -5459,6 +5624,10 @@ and remapLinearExpr ctxt compgen tmenv expr contf =
         remapLinearExpr ctxt compgen tmenv argLast (contf << (fun argLast' -> 
             if op === op' && tyargs === tinst' && argsFront === argsFront' && argLast === argLast' then expr 
             else rebuildLinearOpExpr (op', tinst', argsFront', argLast', m)))
+
+    | Expr.DebugPoint (dpm, innerExpr) -> 
+        remapLinearExpr ctxt compgen tmenv innerExpr (contf << (fun innerExprR ->
+            Expr.DebugPoint (dpm, innerExprR)))
 
     | _ -> 
         contf (remapExprImpl ctxt compgen tmenv expr) 
@@ -5506,7 +5675,7 @@ and remapFlatExprs ctxt compgen tmenv es = List.mapq (remapExprImpl ctxt compgen
 
 and remapDecisionTree ctxt compgen tmenv x =
     match x with 
-    | TDSwitch(sp, e1, cases, dflt, m) -> 
+    | TDSwitch(e1, cases, dflt, m) -> 
         let e1R = remapExprImpl ctxt compgen tmenv e1
         let casesR =
             cases |> List.map (fun (TCase(test, subTree)) -> 
@@ -5522,7 +5691,7 @@ and remapDecisionTree ctxt compgen tmenv x =
                 let subTreeR = remapDecisionTree ctxt compgen tmenv subTree
                 TCase(testR, subTreeR))
         let dfltR = Option.map (remapDecisionTree ctxt compgen tmenv) dflt
-        TDSwitch(sp, e1R, casesR, dfltR, m)
+        TDSwitch(e1R, casesR, dfltR, m)
 
     | TDSuccess (es, n) -> 
         TDSuccess (remapFlatExprs ctxt compgen tmenv es, n)
@@ -5857,7 +6026,7 @@ let instExpr g tpinst e =
 // eliminated (i.e. an expression gets inlined)
 //--------------------------------------------------------------------------
 
-let rec remarkExpr m x =
+let rec remarkExpr (m: range) x =
     match x with
     | Expr.Lambda (uniq, ctorThisValOpt, baseValOpt, vs, b, _, rty) ->
         Expr.Lambda (uniq, ctorThisValOpt, baseValOpt, vs, remarkExpr m b, m, rty)  
@@ -5875,7 +6044,7 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, DebugPointAtTarget.No, flags))
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, flags)) -> TTarget(vs, remarkExpr m e, flags))
         primMkMatch (DebugPointAtBinding.NoneAtInvisible, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
@@ -5891,37 +6060,17 @@ let rec remarkExpr m x =
 
     | Expr.Op (op, tinst, args, _) -> 
 
-        // If this is ultimately being inlined as the implementation 
-        // of a 'while'/'for' etc in a computation expression then lay down a
-        // debug point
+        // This code allows a feature where if a 'while'/'for' etc in a computation expression is
+        // implemented using code inlining and is ultimately implemented by a corresponding construct somewhere
+        // in the remark'd code then aat least one debug point is recovered, based on the noted debug point for the original construct.
+        //
+        // However it is imperfect, since only one debug point is recovered
         let op = 
             match op with 
-            | TOp.For (spFor, style) ->
-                let spFor2 = 
-                    match m.DebugPointKind with
-                    | RangeDebugPointKind.For -> DebugPointAtFor.Yes m
-                    | _ -> spFor
-                TOp.For(spFor2, style)
-            | TOp.While (spWhile, marker) -> 
-                let spWhile2 = 
-                    match m.DebugPointKind with
-                    | RangeDebugPointKind.While -> DebugPointAtWhile.Yes m
-                    | _ -> spWhile
-                TOp.While(spWhile2, marker)
-            | TOp.TryFinally (spTry, _) ->
-                let spTry2 = 
-                    match m.DebugPointKind with
-                    | RangeDebugPointKind.Try -> DebugPointAtTry.Yes m
-                    | _ -> spTry
-                // The debug point for the 'finally' is not yet recoverable
-                TOp.TryFinally (spTry2, DebugPointAtFinally.No)
-            | TOp.TryWith (spTry, _) -> 
-                let spTry2 = 
-                    match m.DebugPointKind with
-                    | RangeDebugPointKind.Try -> DebugPointAtTry.Yes m
-                    | _ -> spTry
-                // The debug point for the 'with' is not yet recoverable
-                TOp.TryWith (spTry2, DebugPointAtWith.No)
+            | TOp.IntegerForLoop (_, _, style) -> TOp.IntegerForLoop(DebugPointAtFor.No, DebugPointAtInOrTo.No, style)
+            | TOp.While (_, marker) -> TOp.While(DebugPointAtWhile.No, marker)
+            | TOp.TryFinally _ -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
+            | TOp.TryWith _ -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5933,31 +6082,10 @@ let rec remarkExpr m x =
     | Expr.App (e1, e1ty, tyargs, args, _) ->
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
-    | Expr.Sequential (e1, e2, dir, sp, _) ->
+    | Expr.Sequential (e1, e2, dir, _) ->
         let e1R = remarkExpr m e1
         let e2R = remarkExpr m e2
-
-        // This is to suppress false sequence points when inlining 'ResumableCode.TryWith'
-        // It is adhoc and may need to be improved if the library implementation changes
-        //
-        // For this specific code: 
-        //
-        //        __stack_caught <- true
-        //        __stack_savedExn <- ...
-        //
-        // we suppress the sequence points on both the sequentials.
-        //
-        // Normally inlining associates all of the inlined code with the expression range of the overall construct,
-        // which for computation expression calls TryFinally and TryWith is the 'try' keyword.
-        // However this is broken when inlining sophisticated control flow as the 'with' and 'finally'
-        // parts of the code get the 'try' keyword as their sequence point range.
-        let sp = 
-            match sp, e2R with 
-            | DebugPointAtSequential.SuppressBoth, _ -> DebugPointAtSequential.SuppressBoth
-            | _, Expr.Op(TOp.LValueOp (LSet _, v), _, _, _) when v.DisplayName = "__stack_savedExn" -> DebugPointAtSequential.SuppressBoth
-            | _ -> DebugPointAtSequential.SuppressStmt
-
-        Expr.Sequential (e1R, e2R, dir, sp, m)
+        Expr.Sequential (e1R, e2R, dir, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
@@ -5968,6 +6096,9 @@ let rec remarkExpr m x =
     | Expr.WitnessArg (witnessInfo, _) ->
         Expr.WitnessArg (witnessInfo, m)
 
+    | Expr.DebugPoint (_, innerExpr) ->
+        remarkExpr m innerExpr
+
 and remarkObjExprMethod m (TObjExprMethod(slotsig, attribs, tps, vs, e, _)) = 
     TObjExprMethod(slotsig, attribs, tps, vs, remarkExpr m e, m)
 
@@ -5976,17 +6107,15 @@ and remarkInterfaceImpl m (ty, overrides) =
 
 and remarkExprs m es = es |> List.map (remarkExpr m) 
 
-and remarkFlatExprs m es = es |> List.map (remarkExpr m) 
-
 and remarkDecisionTree m x =
     match x with 
-    | TDSwitch(sp, e1, cases, dflt, _) ->
+    | TDSwitch(e1, cases, dflt, _) ->
         let e1R = remarkExpr m e1
         let casesR = cases |> List.map (fun (TCase(test, y)) -> TCase(test, remarkDecisionTree m y))
         let dfltR = Option.map (remarkDecisionTree m) dflt
-        TDSwitch(sp, e1R, casesR, dfltR, m)
+        TDSwitch(e1R, casesR, dfltR, m)
     | TDSuccess (es, n) ->
-        TDSuccess (remarkFlatExprs m es, n)
+        TDSuccess (remarkExprs m es, n)
     | TDBind (bind, rest) ->
         TDBind(remarkBind m bind, remarkDecisionTree m rest)
 
@@ -6052,9 +6181,9 @@ let isQuotedExprTy g ty = match tryAppTy g ty with ValueSome (tcref, _) -> tycon
 
 let destQuotedExprTy g ty = match tryAppTy g ty with ValueSome (_, [ty]) -> ty | _ -> failwith "destQuotedExprTy"
 
-let mkQuotedExprTy (g: TcGlobals) ty = TType_app(g.expr_tcr, [ty])
+let mkQuotedExprTy (g: TcGlobals) ty = TType_app(g.expr_tcr, [ty], g.knownWithoutNull)
 
-let mkRawQuotedExprTy (g: TcGlobals) = TType_app(g.raw_expr_tcr, [])
+let mkRawQuotedExprTy (g: TcGlobals) = TType_app(g.raw_expr_tcr, [], g.knownWithoutNull)
 
 let mkAnyTupledTy (g: TcGlobals) tupInfo tys = 
     match tys with 
@@ -6069,9 +6198,9 @@ let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
-let mkMethodTy g argtys rty = mkIteratedFunTy (List.map (mkRefTupledTy g) argtys) rty 
+let mkMethodTy g argtys rty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) rty 
 
-let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty])
+let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
 
 let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
@@ -6100,20 +6229,21 @@ let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
 // tyOfExpr
 //--------------------------------------------------------------------------
  
-let rec tyOfExpr g e = 
-    match e with 
+let rec tyOfExpr g expr = 
+    match expr with 
     | Expr.App (_, fty, tyargs, args, _) -> applyTys g fty (tyargs, args)
     | Expr.Obj (_, ty, _, _, _, _, _)  
     | Expr.Match (_, _, _, _, _, ty) 
     | Expr.Quote (_, _, _, _, ty) 
     | Expr.Const (_, _, ty) -> ty
     | Expr.Val (vref, _, _) -> vref.Type
-    | Expr.Sequential (a, b, k, _, _) -> tyOfExpr g (match k with NormalSeq -> b | ThenDoSeq -> a)
-    | Expr.Lambda (_, _, _, vs, _, _, rty) -> (mkRefTupledVarsTy g vs --> rty)
+    | Expr.Sequential (a, b, k, _) -> tyOfExpr g (match k with NormalSeq -> b | ThenDoSeq -> a)
+    | Expr.Lambda (_, _, _, vs, _, _, rty) -> mkFunTy g (mkRefTupledVarsTy g vs) rty
     | Expr.TyLambda (_, tyvs, _, _, rty) -> (tyvs +-> rty)
     | Expr.Let (_, e, _, _) 
     | Expr.TyChoose (_, e, _)
     | Expr.Link { contents=e}
+    | Expr.DebugPoint (_, e)
     | Expr.StaticOptimization (_, _, e, _) 
     | Expr.LetRec (_, e, _, _) -> tyOfExpr g e
     | Expr.Op (op, tinst, _, _) -> 
@@ -6130,7 +6260,7 @@ let rec tyOfExpr g e =
         | TOp.TupleFieldGet (_, i) -> List.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
-        | TOp.For _ | TOp.While _ -> g.unit_ty
+        | TOp.IntegerForLoop _ | TOp.While _ -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
         | TOp.TryWith _ | TOp.TryFinally _ -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
@@ -6220,7 +6350,7 @@ let mkTyAppExpr m (f, fty) tyargs = match tyargs with [] -> f | _ -> primMkApp (
 
 let rec accTargetsOfDecisionTree tree acc =
     match tree with 
-    | TDSwitch (_, _, cases, dflt, _) -> 
+    | TDSwitch (_, cases, dflt, _) -> 
         List.foldBack (fun (c: DecisionTreeCase) -> accTargetsOfDecisionTree c.CaseTree) cases 
             (Option.foldBack accTargetsOfDecisionTree dflt acc)
     | TDSuccess (_, i) -> i :: acc
@@ -6228,10 +6358,10 @@ let rec accTargetsOfDecisionTree tree acc =
 
 let rec mapTargetsOfDecisionTree f tree =
     match tree with 
-    | TDSwitch (sp, e, cases, dflt, m) ->
+    | TDSwitch (e, cases, dflt, m) ->
         let casesR = cases |> List.map (mapTargetsOfDecisionTreeCase f) 
         let dfltR = Option.map (mapTargetsOfDecisionTree f) dflt
-        TDSwitch (sp, e, casesR, dfltR, m)
+        TDSwitch (e, casesR, dfltR, m)
     | TDSuccess (es, i) -> TDSuccess(es, f i) 
     | TDBind (bind, rest) -> TDBind(bind, mapTargetsOfDecisionTree f rest)
 
@@ -6264,7 +6394,7 @@ let rec targetOfSuccessDecisionTree tree =
 /// Check a decision tree only has bindings that immediately cover a 'Success'
 let rec decisionTreeHasNonTrivialBindings tree =
     match tree with 
-    | TDSwitch (_, _, cases, dflt, _) -> 
+    | TDSwitch (_, cases, dflt, _) -> 
         cases |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
@@ -6284,7 +6414,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
         // Build a map showing how each target might be reached
         let rec accumulateTipsOfDecisionTree accBinds tree =
             match tree with 
-            | TDSwitch (_, _, cases, dflt, _) -> 
+            | TDSwitch (_, cases, dflt, _) -> 
                 assert (isNil accBinds)  // No switches under bindings
                 for edge in cases do
                     accumulateTipsOfDecisionTree accBinds edge.CaseTree
@@ -6317,10 +6447,10 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                 | Some i when isLinearTgtIdx i -> TDSuccess([], i)
                 | _ -> 
                     match tree with 
-                    | TDSwitch (sp, e, cases, dflt, m) ->
+                    | TDSwitch (e, cases, dflt, m) ->
                         let casesR = List.map rebuildDecisionTreeEdge cases
                         let dfltR = Option.map rebuildDecisionTree dflt
-                        TDSwitch (sp, e, casesR, dfltR, m)
+                        TDSwitch (e, casesR, dfltR, m)
                     | TDSuccess _ -> tree
                     | TDBind _ -> tree
 
@@ -6331,7 +6461,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
 
             /// rebuild the targets, replacing linear targets by ones that include all the 'let' bindings from the source
             let targets' = 
-                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, spTarget, _) as tg) -> 
+                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, _) as tg) -> 
                     if isLinearTgtIdx i then
                         let binds, es = getLinearTgtIdx i
                         // The value bindings are moved to become part of the target.
@@ -6339,7 +6469,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                         let mTarget = exprTarget.Range
                         let es = es |> List.map (remarkExpr mTarget)
                         // These are non-sticky - any sequence point for 'exprTarget' goes on 'exprTarget' _after_ the bindings have been evaluated
-                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget, None)
+                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), None)
                     else tg )
      
             tree', targets'
@@ -6349,11 +6479,18 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
     match tree with 
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
-        // REVIEW: should we use _spTarget here?
-        let (TTarget(vs, rhs, _spTarget, _)) = targets.[n]
-        if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", List.length targets = " + string targets.Length)
+        let (TTarget(vs, rhs, _)) = targets.[n]
+        if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", #targets = " + string targets.Length)
+
         // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
-        mkInvisibleLetsFromBindings rhs.Range vs es rhs
+        let res = mkInvisibleLetsFromBindings rhs.Range vs es rhs
+
+        // Incorporate spBind as a note if present
+        let res =
+            match spBind with 
+            | DebugPointAtBinding.Yes dp -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes dp, res)
+            | _ -> res
+        res
     | _ -> 
         primMkMatch (spBind, exprm, tree, targets, matchm, ty)
  
@@ -6793,7 +6930,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | Expr.Op (_c, _tyargs, args, _) -> 
             exprsF z args
 
-        | Expr.Sequential (x0, x1, _dir, _, _) -> 
+        | Expr.Sequential (x0, x1, _dir, _) -> 
             let z = exprF z x0
             exprF z x1
 
@@ -6819,6 +6956,8 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             exprF z body
                 
         | Expr.Link rX -> exprF z rX.Value
+
+        | Expr.DebugPoint (_, innerExpr) -> exprF z innerExpr
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) -> 
             let z = dtreeF z dtree
@@ -6862,7 +7001,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             let z = valBindF true z bind
             dtreeF z rest
         | TDSuccess (args, _) -> exprsF z args
-        | TDSwitch (_, test, dcases, dflt, _) -> 
+        | TDSwitch (test, dcases, dflt, _) -> 
             let z = exprF z test
             let z = List.fold dcaseF z dcases
             let z = Option.fold dtreeF z dflt
@@ -6875,7 +7014,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         match folders.targetIntercept exprFClosure z x with 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
-            let (TTarget (_, body, _, _)) = x
+            let (TTarget (_, body, _)) = x
             exprF z body
               
     and tmethodF z x =
@@ -6969,26 +7108,26 @@ let destIDelegateEventType g ty =
         | _ -> failwith "destIDelegateEventType: internal error"
     else failwith "destIDelegateEventType: not an IDelegateEvent type"
 
-let mkIEventType (g: TcGlobals) ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2])
+let mkIEventType (g: TcGlobals) ty1 ty2 = TType_app (g.fslib_IEvent2_tcr, [ty1;ty2], g.knownWithoutNull)
 
-let mkIObservableType (g: TcGlobals) ty1 = TType_app (g.tcref_IObservable, [ty1])
+let mkIObservableType (g: TcGlobals) ty1 = TType_app (g.tcref_IObservable, [ty1], g.knownWithoutNull)
 
-let mkIObserverType (g: TcGlobals) ty1 = TType_app (g.tcref_IObserver, [ty1])
+let mkIObserverType (g: TcGlobals) ty1 = TType_app (g.tcref_IObserver, [ty1], g.knownWithoutNull)
 
 let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "contents"
 
-let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
+let mkSequential m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, m)
 
-let mkCompGenSequential m stmt expr = mkSequential DebugPointAtSequential.SuppressStmt m stmt expr
+let mkCompGenSequential m stmt expr = mkSequential m stmt expr
 
-let mkThenDoSequential spSeq m expr stmt = Expr.Sequential (expr, stmt, ThenDoSeq, spSeq, m)
+let mkThenDoSequential m expr stmt = Expr.Sequential (expr, stmt, ThenDoSeq, m)
 
-let mkCompGenThenDoSequential m expr stmt = mkThenDoSequential DebugPointAtSequential.SuppressStmt m expr stmt
+let mkCompGenThenDoSequential m expr stmt = mkThenDoSequential m expr stmt
 
-let rec mkSequentials spSeq g m es = 
+let rec mkSequentials g m es = 
     match es with 
     | [e] -> e 
-    | e :: es -> mkSequential spSeq m e (mkSequentials spSeq g m es) 
+    | e :: es -> mkSequential m e (mkSequentials g m es) 
     | [] -> mkUnit g m
 
 let mkGetArg0 m ty = mkAsmExpr ( [ mkLdarg0 ], [], [], [ty], m) 
@@ -7320,8 +7459,6 @@ let mkCallBox (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.box
 
 let mkCallIsNull (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnull_info, [[ty]], [ e1 ], m)
 
-let mkCallIsNotNull (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
-
 let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.raise_info, [[ty]], [ e1 ], m)
 
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
@@ -7586,7 +7723,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string MaybeNull option = 
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
@@ -7856,7 +7993,7 @@ let AdjustValForExpectedArity g m (vref: ValRef) flags topValInfo =
     let call = MakeApplicationAndBetaReduce g (Expr.Val (vref, flags, m), vref.Type, [tyargs'], (List.map (mkRefTupledVars g m) vsl), m)
     let tauexpr, tauty = 
         List.foldBack 
-            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkRefTupledVarsTy g vs --> ty))
+            (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkFunTy g (mkRefTupledVarsTy g vs) ty))
             vsl
             (call, rty')
     // Build a type-lambda expression for the toplevel value if needed... 
@@ -8085,8 +8222,8 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                         
                         let inpsAsVars, inpsAsExprs = inpArgTys |> List.mapi (fun j ty -> mkCompGenLocal appm ("arg" + string i + string j) ty) |> List.unzip
                         let inpsAsActualArg = CoerceDetupled inpArgTys inpsAsExprs actualArgTys
-                        let inpCloVarType = (mkFunTy (mkRefTupledTy g actualArgTys) cloVar.Type)
-                        let newResTy = mkFunTy inpArgTy resTy
+                        let inpCloVarType = mkFunTy g (mkRefTupledTy g actualArgTys) cloVar.Type
+                        let newResTy = mkFunTy g inpArgTy resTy
                         let inpCloVar, inpCloVarAsExpr = mkCompGenLocal appm ("clo" + string i) inpCloVarType
                         let newRes = 
                             // For the final arg we can skip introducing the dummy variable
@@ -8228,10 +8365,10 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         | [] -> failwith "itemsProj: no items?"
         | [_] -> x (* no projection needed *)
         | tys -> Expr.Op (TOp.TupleFieldGet (tupInfoRef, i), tys, [x], m)
-    let isThrowingTarget = function TTarget(_, x, _, _) -> isThrow x
+    let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
         // Have failing targets and ONE successful one, so linearize
-        let (TTarget (vs, rhs, spTarget, _)) = List.find (isThrowingTarget >> not) targetsL
+        let (TTarget (vs, rhs, _)) = List.find (isThrowingTarget >> not) targetsL
         let fvs = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys = vs |> List.map (fun v -> v.Type) 
         let tmpTy = mkRefTupledVarsTy g vs
@@ -8239,12 +8376,12 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
 
         AdjustValToTopVal tmp parent ValReprInfo.emptyValData
 
-        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, spTarget, None)
-        let fixup (TTarget (tvs, tx, spTarget, flags)) = 
+        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, None)
+        let fixup (TTarget (tvs, tx, flags)) = 
            match destThrow tx with
            | Some (m, _, e) -> 
                let tx = mkThrow m tmpTy e
-               TTarget(tvs, tx, spTarget, flags) (* Throwing targets, recast it's "return type" *)
+               TTarget(tvs, tx, flags) (* Throwing targets, recast it's "return type" *)
            | None -> newTg (* Non-throwing target, replaced [new/old] *)
        
         let targets = Array.map fixup targets
@@ -8311,11 +8448,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
     | TType_ucase (_, tinst)   
-    | TType_app (_, tinst) -> 
+    | TType_app (_, tinst, _) -> 
         let tyName = 
             let ty = stripTyEqnsAndMeasureEqns g ty
             match ty with
-            | TType_app (tcref, _tinst) -> 
+            | TType_app (tcref, _tinst, _) -> 
                 // Generic type names are (name + "`" + digits) where name does not contain "`".
                 // In XML doc, when used in type instances, these do not use the ticks.
                 let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
@@ -8334,10 +8471,10 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         else 
             sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
 
-    | TType_fun (f, x) -> 
+    | TType_fun (f, x, _) -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [f;x]
 
-    | TType_var typar -> 
+    | TType_var (typar, _) -> 
         typarEnc g (gtpsType, gtpsMethod) typar
 
     | TType_measure _ -> "?"
@@ -8512,7 +8649,7 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-// The non-inferring counter-part to SolveTypeSupportsNull
+// The non-inferring counter-part to SolveTypeUseSupportsNull
 let TypeSatisfiesNullConstraint g m ty = 
     TypeNullIsExtraValue g m ty  
 
@@ -8582,8 +8719,7 @@ let (|SpecialNotEquatableHeadType|_|) g ty =
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
-     not (TypeNullIsTrueValue g ty) && 
-     not (TypeNullNever g ty)
+     not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
 let canUseUnboxFast g m ty = 
@@ -8601,20 +8737,20 @@ let canUseUnboxFast g m ty =
 // used for compiler-generated code.
 let mkIsInstConditional g m tgty vinpe v e2 e3 = 
     
-    if canUseTypeTestFast g tgty then 
+    if canUseTypeTestFast g tgty && isRefTy g tgty then 
 
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = mbuilder.AddResultTarget(e2, DebugPointAtTarget.No)
-        let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)
-        let dtree = TDSwitch(DebugPointAtSwitch.No, exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
+        let tg2 = mbuilder.AddResultTarget(e2)
+        let tg3 = mbuilder.AddResultTarget(e3)
+        let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointAtTarget.No, None)))
-        let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)
-        let dtree = TDSwitch(DebugPointAtSwitch.No, vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, None)))
+        let tg3 = mbuilder.AddResultTarget(e3)
+        let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
 
@@ -8624,9 +8760,9 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 // used for compiler-generated code.
 let mkNullTest g m e1 e2 e3 =
     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-    let tg2 = mbuilder.AddResultTarget(e2, DebugPointAtTarget.No)
-    let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)            
-    let dtree = TDSwitch(DebugPointAtSwitch.No, e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
+    let tg2 = mbuilder.AddResultTarget(e2)
+    let tg3 = mbuilder.AddResultTarget(e3)            
+    let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
     let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
     expr         
 
@@ -8636,12 +8772,12 @@ let mkNonNullTest (g: TcGlobals) m e =
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
 let mkNonNullCond g m ty e1 e2 e3 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m ty (mkNonNullTest g m e1) e2 e3
+    mkCond DebugPointAtBinding.NoneAtInvisible m ty (mkNonNullTest g m e1) e2 e3
 
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
 let mkIfThen (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.unit_ty e1 e2 (mkUnit g m)
+    mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty e1 e2 (mkUnit g m)
 
 let ModuleNameIsMangled g attrs =
     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
@@ -8783,7 +8919,7 @@ type ActivePatternInfo with
         else mkOptionTy g choicety
     
     member apinfo.OverallType g m dty rtys isStruct = 
-        mkFunTy dty (apinfo.ResultType g m rtys isStruct)
+        mkFunTy g dty (apinfo.ResultType g m rtys isStruct)
 
 //---------------------------------------------------------------------------
 // Active pattern validation
@@ -8833,7 +8969,8 @@ and RewriteExpr env expr =
     | LinearOpExpr _ 
     | LinearMatchExpr _ 
     | Expr.Let _ 
-    | Expr.Sequential _ ->
+    | Expr.Sequential _ 
+    | Expr.DebugPoint _ ->
         rewriteLinearExpr env expr (fun e -> e)
     | _ -> 
         let expr = 
@@ -8873,8 +9010,12 @@ and rewriteExprStructure env expr =
   | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
                   List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
+
   | Expr.Link eref -> 
       RewriteExpr env eref.Value
+
+  | Expr.DebugPoint _ ->
+      failwith "unreachable - linear debug point"
 
   | Expr.Op (c, tyargs, args, m) -> 
       let args' = rewriteExprs env args
@@ -8927,12 +9068,12 @@ and rewriteLinearExpr env expr contf =
             rewriteLinearExpr env bodyExpr (contf << (fun bodyExpr' ->
                 mkLetBind m bind bodyExpr'))
         
-        | Expr.Sequential (expr1, expr2, dir, spSeq, m) ->
+        | Expr.Sequential (expr1, expr2, dir, m) ->
             let expr1' = RewriteExpr env expr1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2' ->
                 if expr1 === expr1' && expr2 === expr2' then expr 
-                else Expr.Sequential (expr1', expr2', dir, spSeq, m)))
+                else Expr.Sequential (expr1', expr2', dir, m)))
         
         | LinearOpExpr (op, tyargs, argsFront, argLast, m) -> 
             let argsFront' = rewriteExprs env argsFront
@@ -8941,12 +9082,17 @@ and rewriteLinearExpr env expr contf =
                 if argsFront === argsFront' && argLast === argLast' then expr 
                 else rebuildLinearOpExpr (op, tyargs, argsFront', argLast', m)))
 
-        | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
+        | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
             let dtree = RewriteDecisionTree env dtree
             let tg1' = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2' ->
-                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1', expr2', sp2, m2, ty)))
+                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1', expr2', m2, ty)))
+      
+        | Expr.DebugPoint (dpm, innerExpr) ->
+            rewriteLinearExpr env innerExpr (contf << (fun innerExprR ->
+                 Expr.DebugPoint (dpm, innerExprR)))
+
         | _ -> 
             // no longer linear, no tailcall
             contf (RewriteExpr env expr) 
@@ -8962,20 +9108,20 @@ and RewriteDecisionTree env x =
       if LanguagePrimitives.PhysicalEquality es esR then x 
       else TDSuccess(esR, n)
 
-  | TDSwitch (sp, e, cases, dflt, m) ->
+  | TDSwitch (e, cases, dflt, m) ->
       let eR = RewriteExpr env e
       let casesR = List.map (fun (TCase(discrim, e)) -> TCase(discrim, RewriteDecisionTree env e)) cases
       let dfltR = Option.map (RewriteDecisionTree env) dflt
-      TDSwitch (sp, eR, casesR, dfltR, m)
+      TDSwitch (eR, casesR, dfltR, m)
 
   | TDBind (bind, body) ->
       let bindR = rewriteBind env bind
       let bodyR = RewriteDecisionTree env body
       TDBind (bindR, bodyR)
 
-and rewriteTarget env (TTarget(vs, e, spTarget, flags)) =
+and rewriteTarget env (TTarget(vs, e, flags)) =
     let eR = RewriteExpr env e
-    TTarget(vs, eR, spTarget, flags)
+    TTarget(vs, eR, flags)
 
 and rewriteTargets env targets =
     List.map (rewriteTarget env) (Array.toList targets)
@@ -9143,10 +9289,9 @@ type EntityRef with
     member tcref.HasOverride g nm argtys = tcref.Deref.HasOverride g nm argtys
     member tcref.HasMember g nm argtys = tcref.Deref.HasMember g nm argtys
 
-let mkFastForLoop g (spLet, m, idv: Val, start, dir, finish, body) =
+let mkFastForLoop g (spFor, spTo, m, idv: Val, start, dir, finish, body) =
     let dir = if dir then FSharpForLoopUp else FSharpForLoopDown 
-    mkFor g (spLet, idv, start, dir, finish, body, m)
-
+    mkIntegerForLoop g (spFor, spTo, idv, start, dir, finish, body, m)
 
 /// Accessing a binding of the form "let x = 1" or "let x = e" for any "e" satisfying the predicate
 /// below does not cause an initialization trigger, i.e. does not get compiled as a static field.
@@ -9186,8 +9331,9 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | Expr.Val (vref, _, _) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
         | Expr.Match (_, _, dtree, targets, _, _) -> checkDecisionTree vrefs dtree && targets |> Array.forall (checkDecisionTreeTarget vrefs)
         | Expr.Let (b, e, _, _) -> checkExpr vrefs b.Expr && checkExpr (vrefs.Add b.Var.Stamp) e
-        // Detect standard constants 
+        | Expr.DebugPoint (_, b) -> checkExpr vrefs b
         | Expr.TyChoose (_, b, _) -> checkExpr vrefs b
+        // Detect standard constants 
         | Expr.Const _ 
         | Expr.Op (TOp.UnionCase _, _, [], _)         // Nullary union cases
         | UncheckedDefaultOfExpr g _ 
@@ -9200,7 +9346,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
     and checkDecisionTree vrefs x = 
         match x with 
         | TDSuccess (es, _n) -> es |> List.forall (checkExpr vrefs)
-        | TDSwitch (_, e, cases, dflt, _m) ->
+        | TDSwitch (e, cases, dflt, _m) ->
             checkExpr vrefs e &&
             cases |> List.forall (checkDecisionTreeCase vrefs) &&
             dflt |> Option.forall (checkDecisionTree vrefs)
@@ -9214,7 +9360,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
          | _ -> false) && 
         checkDecisionTree vrefs dtree
 
-    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _, _)) = 
+    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) = 
         let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
         checkExpr vrefs e
 
@@ -9372,15 +9518,15 @@ let rec mkCompiledTuple g isStruct (argtys, args, m) =
             | [ty8], [arg8] -> 
                 match ty8 with
                 // if it's already been nested or ended, pass it through
-                | TType_app(tn, _) when (isCompiledTupleTyconRef g tn) ->
+                | TType_app(tn, _, _) when (isCompiledTupleTyconRef g tn) ->
                     ty8, arg8
                 | _ ->
-                    let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8])
+                    let ty8enc = TType_app((if isStruct then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [ty8], g.knownWithoutNull)
                     let v8enc = Expr.Op (TOp.Tuple (mkTupInfo isStruct), [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
                 let a, b, c, d = mkCompiledTuple g isStruct (argtysB, argsB, m)
-                let ty8plus = TType_app(a, b)
+                let ty8plus = TType_app(a, b, g.knownWithoutNull)
                 let v8plus = Expr.Op (TOp.Tuple (mkTupInfo isStruct), b, c, d)
                 ty8plus, v8plus
         let argtysAB = argtysA @ [ty8] 
@@ -9413,7 +9559,8 @@ let (|TryFinally|_|) expr =
 // detect ONLY the while loops that result from compiling 'for ... in ... do ...'
 let (|WhileLoopForCompiledForEachExpr|_|) expr = 
     match expr with 
-    | Expr.Op (TOp.While (_, WhileLoopForCompiledForEachExprMarker), _, [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) -> Some(e1, e2, m)
+    | Expr.Op (TOp.While (spInWhile, WhileLoopForCompiledForEachExprMarker), _, [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) ->
+        Some(spInWhile, e1, e2, m)
     | _ -> None
     
 let (|Let|_|) expr = 
@@ -9440,11 +9587,12 @@ let (|GetEnumeratorCall|_|) expr =
         else None  
     | _ -> None  
 
+// This code matches exactly the output of TcForEachExpr
 let (|CompiledForEachExpr|_|) g expr =   
     match expr with
-    | Let (enumerableVar, enumerableExpr, _, 
-           Let (enumeratorVar, GetEnumeratorCall enumerableVar2, enumeratorBind, 
-              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar, _, _, bodyExpr), _), _))) 
+    | Let (enumerableVar, enumerableExpr, spFor, 
+           Let (enumeratorVar, GetEnumeratorCall enumerableVar2, _enumeratorBind, 
+              TryFinally (WhileLoopForCompiledForEachExpr (spInWhile, _, (Let (elemVar, _, _, bodyExpr) as elemLet), _), _))) 
                  // Apply correctness conditions to ensure this really is a compiled for-each expression.
                  when valRefEq g (mkLocalValRef enumerableVar) enumerableVar2 &&
                       enumerableVar.IsCompilerGenerated &&
@@ -9454,15 +9602,16 @@ let (|CompiledForEachExpr|_|) g expr =
                        not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
-        let mEnumExpr = enumerableExpr.Range
         let mBody = bodyExpr.Range
         let mWholeExpr = expr.Range
+        let mIn = elemLet.Range
 
-        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding.Yes spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
-        let spWhileLoop = match enumeratorBind with DebugPointAtBinding.Yes spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
+        let mFor = match spFor with DebugPointAtBinding.Yes mFor -> mFor | _ -> enumerableExpr.Range
+        let spIn, mIn = match spInWhile with DebugPointAtWhile.Yes mIn -> DebugPointAtInOrTo.Yes mIn, mIn | _ -> DebugPointAtInOrTo.No, mIn
+        let spInWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
-        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
+        Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr))
     | _ -> None  
              
 
@@ -9474,39 +9623,45 @@ let (|CompiledInt32RangeForEachExpr|_|) g expr =
     | _ -> None
 
 
-type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
+let mkDebugPoint m expr = 
+    Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, expr)
 
-let DetectAndOptimizeForExpression g option expr =
+type OptimizeForExpressionOptions =
+    | OptimizeIntRangesOnly
+    | OptimizeAllForExpressions
+
+let DetectAndOptimizeForEachExpression g option expr =
     match option, expr with
     | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) -> 
 
-           let _mEnumExpr, _mBody, spForLoop, _mForLoop, _spWhileLoop, mWholeExpr = ranges
-           mkFastForLoop g (spForLoop, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
+           let _mBody, spFor, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
+           let spFor = match spFor with DebugPointAtBinding.Yes mFor -> DebugPointAtFor.Yes mFor | _ -> DebugPointAtFor.No
+           mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
 
     | OptimizeAllForExpressions, CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
-         let mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr = ranges
+         let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
 
          if isStringTy g enumerableTy then
             // type is string, optimize for expression as:
             //  let $str = enumerable
-            //  for $idx in 0..(str.Length - 1) do
+            //  for $idx = 0 to str.Length - 1 do
             //      let elem = str.[idx]
             //      body elem
 
-            let strVar, strExpr = mkCompGenLocal mEnumExpr "str" enumerableTy
+            let strVar, strExpr = mkCompGenLocal mFor "str" enumerableTy
             let idxVar, idxExpr = mkCompGenLocal elemVar.Range "idx" g.int32_ty
 
-            let lengthExpr = mkGetStringLength g mForLoop strExpr
-            let charExpr = mkGetStringChar g mForLoop strExpr idxExpr
+            let lengthExpr = mkGetStringLength g mFor strExpr
+            let charExpr = mkGetStringChar g mFor strExpr idxExpr
 
-            let startExpr = mkZero g mForLoop
-            let finishExpr = mkDecr g mForLoop lengthExpr
+            let startExpr = mkZero g mFor
+            let finishExpr = mkDecr g mFor lengthExpr
             // for compat reasons, loop item over string is sometimes object, not char
             let loopItemExpr = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  
-            let bodyExpr = mkCompGenLet mForLoop elemVar loopItemExpr bodyExpr
-            let forExpr = mkFastForLoop g (spForLoop, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
-            let expr = mkCompGenLet mEnumExpr strVar enumerableExpr forExpr
+            let bodyExpr = mkInvisibleLet mIn elemVar loopItemExpr bodyExpr
+            let forExpr = mkFastForLoop g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
+            let expr = mkLet spFor mFor strVar enumerableExpr forExpr
 
             expr
 
@@ -9523,29 +9678,29 @@ let DetectAndOptimizeForExpression g option expr =
             let IndexHead = 0
             let IndexTail = 1
 
-            let currentVar, currentExpr = mkMutableCompGenLocal mEnumExpr "current" enumerableTy
-            let nextVar, nextExpr = mkMutableCompGenLocal mEnumExpr "next" enumerableTy
+            let currentVar, currentExpr = mkMutableCompGenLocal mIn "current" enumerableTy
+            let nextVar, nextExpr = mkMutableCompGenLocal mIn "next" enumerableTy
             let elemTy = destListTy g enumerableTy
 
-            let guardExpr = mkNonNullTest g mForLoop nextExpr
-            let headOrDefaultExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexHead, mForLoop)
-            let tailOrNullExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexTail, mForLoop)
+            let guardExpr = mkNonNullTest g mFor nextExpr
+            let headOrDefaultExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexHead, mIn)
+            let tailOrNullExpr = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexTail, mIn)
+
             let bodyExpr =
-                mkCompGenLet mForLoop elemVar headOrDefaultExpr
-                    (mkCompGenSequential mForLoop
+                mkInvisibleLet mIn elemVar headOrDefaultExpr
+                    (mkSequential mIn
                         bodyExpr
-                        (mkCompGenSequential mForLoop
-                            (mkValSet mForLoop (mkLocalValRef currentVar) nextExpr)
-                            (mkValSet mForLoop (mkLocalValRef nextVar) tailOrNullExpr)))
+                        (mkSequential mIn
+                            (mkValSet mIn (mkLocalValRef currentVar) nextExpr)
+                            (mkValSet mIn (mkLocalValRef nextVar) tailOrNullExpr)))
 
             let expr =
                 // let mutable current = enumerableExpr
-                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding.Yes spStart | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky)
-                mkLet spBind mEnumExpr currentVar enumerableExpr
+                mkLet spFor mIn currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
-                    (mkCompGenLet mForLoop nextVar tailOrNullExpr 
-                        // while nonNull next dp
-                       (mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
+                    (mkInvisibleLet mFor nextVar tailOrNullExpr 
+                        // while nonNull next do
+                       (mkWhile g (spInWhile, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, mBody)))
 
             expr
 
@@ -9587,11 +9742,11 @@ let (|UseResumableStateMachinesExpr|_|) g expr =
     | ValApp g g.cgh__useResumableCode_vref (_, _, _m) -> Some ()
     | _ -> None
 
-/// Match 
+/// Match an if...then...else expression or the result of "a && b" or "a || b"
 let (|IfThenElseExpr|_|) expr =
     match expr with
-    | Expr.Match (_spBind, _exprm, TDSwitch(_spSwitch, cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
-                  [| TTarget([], thenExpr, _, _); TTarget([], elseExpr, _, _) |], _m, _ty) -> 
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
+                  [| TTarget([], thenExpr, _); TTarget([], elseExpr, _) |], _m, _ty) -> 
         Some (cond, thenExpr,  elseExpr)
     | _ -> None
 
@@ -9683,10 +9838,10 @@ let (|TryFinallyExpr|_|) expr =
         Some (sp1, sp2, ty, e1, e2, m)
     | _ -> None
 
-let (|ForLoopExpr|_|) expr = 
+let (|IntegerForLoopExpr|_|) expr = 
     match expr with 
-    | Expr.Op (TOp.For (sp1, sp2), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
-        Some (sp1, sp2, e1, e2, v, e3, m)
+    | Expr.Op (TOp.IntegerForLoop (sp1, sp2, style), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
+        Some (sp1, sp2, style, e1, e2, v, e3, m)
     | _ -> None
 
 let (|TryWithExpr|_|) expr =
@@ -9697,11 +9852,11 @@ let (|TryWithExpr|_|) expr =
 
 let (|MatchTwoCasesExpr|_|) expr =
     match expr with 
-    | Expr.Match (spBind, exprm, TDSwitch(spSwitch, cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
+    | Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
 
         // How to rebuild this construct
         let rebuild (cond, ucref, tg1, tg2, tgs) = 
-            Expr.Match (spBind, exprm, TDSwitch(spSwitch, cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
+            Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
 
         Some (cond, ucref, tg1, tg2, tgs, rebuild)
 
@@ -9713,17 +9868,17 @@ let (|MatchOptionExpr|_|) expr =
     | MatchTwoCasesExpr(cond, ucref, tg1, tg2, tgs, rebuildTwoCases) -> 
         let tgNone, tgSome = if ucref.CaseName = "None" then tg1, tg2 else tg2, tg1
         match tgs.[tgNone], tgs.[tgSome] with 
-        | TTarget([], noneBranchExpr, b1, b2), 
+        | TTarget([], noneBranchExpr, b2), 
           TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
-                               Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a15, a16) 
+                               Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a16) 
               when unionCaseVar.LogicalName = "unionCase" -> 
 
             // How to rebuild this construct
             let rebuild (cond, noneBranchExpr, someVar, someBranchExpr) =
                 let tgs = Array.zeroCreate 2
-                tgs.[tgNone] <- TTarget([], noneBranchExpr, b1, b2)
+                tgs.[tgNone] <- TTarget([], noneBranchExpr, b2)
                 tgs.[tgSome] <- TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
-                                                    Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a15, a16)
+                                                    Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a16)
                 rebuildTwoCases (cond, ucref, tg1, tg2, tgs)
 
             Some (cond, noneBranchExpr, someVar, someBranchExpr, rebuild)
@@ -9781,13 +9936,19 @@ let (|ResumeAtExpr|_|) g expr =
     | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> Some pcExpr
     | _ -> None
 
+// Detect __debugPoint calls
+let (|DebugPointExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__debugPoint_vref (_, [StringExpr debugPointName], _m) -> Some debugPointName
+    | _ -> None
+
 // Detect sequencing constructs in state machine code
 let (|SequentialResumableCode|_|) (g: TcGlobals) expr = 
     match expr with
 
     // e1; e2
-    | Expr.Sequential(e1, e2, NormalSeq, sp, m) ->
-        Some (e1, e2, m, (fun e1 e2 -> Expr.Sequential(e1, e2, NormalSeq, sp, m)))
+    | Expr.Sequential(e1, e2, NormalSeq, m) ->
+        Some (e1, e2, m, (fun e1 e2 -> Expr.Sequential(e1, e2, NormalSeq, m)))
 
     // let __stack_step = e1 in e2
     | Expr.Let(bind, e2, m, _) when bind.Var.CompiledName(g.CompilerGlobalState).StartsWith(stackVarPrefix) ->
@@ -9797,7 +9958,7 @@ let (|SequentialResumableCode|_|) (g: TcGlobals) expr =
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
-let isResumableCodeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.ResumableCode_tcr | _ -> false)
+let isResumableCodeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.ResumableCode_tcr | _ -> false)
 
 let rec isReturnsResumableCodeTy g ty = 
     if isFunTy g ty then isReturnsResumableCodeTy g (rangeOfFunTy g ty)
@@ -9810,7 +9971,4 @@ let (|ResumableCodeInvoke|_|) g expr =
             when invokeRef.LogicalName = "Invoke" && isReturnsResumableCodeTy g (tyOfExpr g f) -> 
         Some (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
     | _ -> None
-
-let mkDebugPoint g m expr = 
-    mkThenDoSequential DebugPointAtSequential.SuppressStmt m expr (mkUnit g m)
 

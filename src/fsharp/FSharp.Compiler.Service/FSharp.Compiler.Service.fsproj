@@ -447,6 +447,12 @@
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
     </Compile>
+    <Compile Include="..\SyntaxTrivia.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTrivia.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTrivia.fs">
+      <Link>ParserAndUntypedAST\SyntaxTrivia.fs</Link>
+    </Compile>
     <Compile Include="..\SyntaxTree.fsi">
       <Link>ParserAndUntypedAST\SyntaxTree.fsi</Link>
     </Compile>

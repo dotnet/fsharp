@@ -34,9 +34,17 @@ module internal PervasiveAutoOpens =
         | [_] -> true
         | _ -> false
 
-    let inline isNonNull x = not (isNull x)
+    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
 
-    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+    let inline isNotNull (x: 'T) = not (isNull x)
+
+    let inline (|NonNullQuick|) (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline nonNull (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline (|Null|NonNull|) (x: 'T MaybeNull) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+
+    let inline nullArgCheck paramName (x: 'T MaybeNull) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
@@ -258,8 +266,7 @@ module Array =
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
     let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -570,25 +577,18 @@ module String =
             String strArr
 
     let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
-            let charr = str.ToCharArray() 
-            Array.revInPlace charr
-            let digits = Array.takeWhile Char.IsDigit charr
-            Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+        let charr = str.ToCharArray() 
+        Array.revInPlace charr
+        let digits = Array.takeWhile Char.IsDigit charr
+        Array.revInPlace digits
+        String digits
+        |> function
+            | "" -> str, None
+            | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-        if isNull value then null else value.Split(separator, options)
+        value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -1134,11 +1134,9 @@ module MapAutoOpens =
         member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
-        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
+        member x.AddMany (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
-
-        member x.MarkAsCollapsible () = x
+        member x.AddOrModify (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -1148,11 +1146,8 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = 
-        let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-        x.MarkAsCollapsible()
-
-    member _.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member x.AddMany (kvs: _[]) = 
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 

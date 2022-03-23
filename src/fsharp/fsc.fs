@@ -315,7 +315,7 @@ module InterfaceFileWriter =
         let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
         let denv = { denv with shrinkOverloads = false; printVerboseSignatures = true }
 
-        let writeToFile os (TImplFile (_, _, mexpr, _, _, _)) =
+        let writeToFile os (TImplFile (implExprWithSig=mexpr)) =
           writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
             (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
@@ -346,7 +346,7 @@ module InterfaceFileWriter =
                 ".fsi"
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
-            for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
+            for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
                 let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
                 use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
@@ -728,7 +728,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger =
-        let scopedPragmas = [ for TImplFile (_, pragmas, _, _, _, _) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for TImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.errorSeverityOptions, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -789,22 +789,22 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
             match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
              | _ -> ""
-        
+
     let optimizedImpls, optDataResources =
         // Perform optimization
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
-    
+
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
         let importMap = tcImports.GetImportMap()
 
-        let optimizedImpls, optimizationData, _ = 
-            ApplyAllOptimizations 
-                (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
-                    importMap, false, optEnv0, generatedCcu, typedImplFiles)
+        let optimizedImpls, optimizationData, _ =
+            ApplyAllOptimizations
+                (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+                 importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
         AbortOnError(errorLogger, exiter)
-        
+
         // Encode the optimization data
         ReportTime tcConfig ("Encoding OptData")
 
@@ -914,43 +914,33 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
             | _ ->
                 let outfile =
                     match tcConfig.emitMetadataAssembly with
-                    | MetadataAssemblyGeneration.ReferenceOut outputPath ->
-                        outputPath
-                    | _ ->
-                        outfile
+                    | MetadataAssemblyGeneration.ReferenceOut outputPath -> outputPath
+                    | _ -> outfile
                 let referenceAssemblyAttribOpt =
                     tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
                     |> Option.map (fun ilTy ->
                         mkILCustomAttribute (ilTy.TypeRef, [], [], [])
                     )
                 try
-                    use stream =
-                        try
-                            // Ensure the output directory exists otherwise it will fail
-                            let dir = FileSystem.GetDirectoryNameShim outfile
-                            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
-                            FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
-                        with _ ->
-                            failwith ("Could not open file for writing (binary mode): " + outfile)
-
-                    ILBinaryWriter.WriteILBinaryStreamWithNoPDB
-                     (stream,
-                      { ilg = tcGlobals.ilg
-                        pdbfile=pdbfile
+                    // We want to write no PDB info.
+                    ILBinaryWriter.WriteILBinaryFile
+                     ({ ilg = tcGlobals.ilg
+                        outfile = outfile
+                        pdbfile = None
                         emitTailcalls = tcConfig.emitTailcalls
                         deterministic = tcConfig.deterministic
                         showTimes = tcConfig.showTimes
-                        portablePDB = tcConfig.portablePDB
-                        embeddedPDB = tcConfig.embeddedPDB
+                        portablePDB = false
+                        embeddedPDB = false
                         embedAllSource = tcConfig.embedAllSource
                         embedSourceList = tcConfig.embedSourceList
                         sourceLink = tcConfig.sourceLink
                         checksumAlgorithm = tcConfig.checksumAlgorithm
                         signer = GetStrongNameSigner signingInfo
                         dumpDebugInfo = tcConfig.dumpDebugInfo
+                        referenceAssemblyOnly = true
+                        referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
                         pathMap = tcConfig.pathMap },
-                      true,
-                      referenceAssemblyAttribOpt,
                       ilxMainModule,
                       normalizeAssemblyRefs
                       )
@@ -961,10 +951,10 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try
-                    ILBinaryWriter.WriteILBinary
-                     (outfile,
-                      { ilg = tcGlobals.ilg
-                        pdbfile=pdbfile
+                    ILBinaryWriter.WriteILBinaryFile
+                     ({ ilg = tcGlobals.ilg
+                        outfile = outfile
+                        pdbfile = pdbfile
                         emitTailcalls = tcConfig.emitTailcalls
                         deterministic = tcConfig.deterministic
                         showTimes = tcConfig.showTimes
@@ -976,6 +966,8 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                         checksumAlgorithm = tcConfig.checksumAlgorithm
                         signer = GetStrongNameSigner signingInfo
                         dumpDebugInfo = tcConfig.dumpDebugInfo
+                        referenceAssemblyOnly = false
+                        referenceAssemblyAttribOpt = None
                         pathMap = tcConfig.pathMap },
                       ilxMainModule,
                       normalizeAssemblyRefs

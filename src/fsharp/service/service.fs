@@ -156,7 +156,7 @@ module CompileHelpers =
         // Also, the dynamic assembly creator can't currently handle types called "<Module>" from statically linked assemblies.
         let ilxMainModule = 
             { ilxMainModule with 
-                TypeDefs = ilxMainModule.TypeDefs.AsList |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
+                TypeDefs = ilxMainModule.TypeDefs.AsList() |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
                 Resources=mkILResources [] }
 
         // The function used to resolve types while emitting the code
@@ -166,7 +166,7 @@ module CompileHelpers =
             | None -> None
 
         // Emit the code
-        let _emEnv,execs = ILRuntimeWriter.emitModuleFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILRuntimeWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
+        let _emEnv,execs = ILDynamicAssemblyWriter.EmitDynamicAssemblyFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILDynamicAssemblyWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
 
         // Execute the top-level initialization, if requested
         if execute then 
@@ -178,7 +178,7 @@ module CompileHelpers =
                     raise exn
 
         // Register the reflected definitions for the dynamically generated assembly
-        for resource in ilxMainModule.Resources.AsList do 
+        for resource in ilxMainModule.Resources.AsList() do 
             if IsReflectedDefinitionsResource resource then 
                 Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
@@ -934,6 +934,10 @@ type BackgroundCompiler(
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+            parseCacheLock.AcquireLock(fun ltok -> 
+                for sourceFile in options.SourceFiles do
+                    checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options))
+            )
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 

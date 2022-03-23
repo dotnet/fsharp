@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction20
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000398 Length: 0x00000100
 }
 .module TestFunction20.exe
-// MVID: {60B68B97-A643-44FB-A745-0383978BB660}
+// MVID: {61FD32BA-A643-44FB-A745-0383BA32FD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B80000
+// Image base: 0x06C20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,11 +71,9 @@
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 4,4 : 8,9 ''
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
       IL_000a:  stfld      int32 TestFunction20/D::x
-      .line 4,4 : 14,15 ''
       IL_000f:  ldarg.0
       IL_0010:  ldarg.2
       IL_0011:  stfld      int32 TestFunction20/D::y
@@ -93,7 +91,6 @@
       IL_002b:  ldloc.0
       IL_002c:  add
       IL_002d:  stloc.1
-      .line 4,4 : 6,7 ''
       IL_002e:  ret
     } // end of method D::.ctor
 
@@ -170,7 +167,6 @@
     {
       // Code size       15 (0xf)
       .maxstack  8
-      .line 14,14 : 5,31 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> TestFunction20/'TestFunction20@14-1'::clo2
       IL_0006:  ldarg.1
@@ -208,8 +204,7 @@
     {
       // Code size       20 (0x14)
       .maxstack  6
-      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
-      .line 14,14 : 5,31 ''
+      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> TestFunction20/TestFunction20@14::clo1
       IL_0006:  ldarg.1
@@ -241,7 +236,7 @@
     IL_000a:  newobj     instance void TestFunction20/D::.ctor(int32,
                                                                int32)
     IL_000f:  stloc.1
-    .line 14,14 : 5,31 ''
+    .line 14,14 : 5,37 ''
     IL_0010:  ldstr      "d1 = %A, d2 = %A"
     IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`2<class TestFunction20/D,class TestFunction20/D>>::.ctor(string)
     IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

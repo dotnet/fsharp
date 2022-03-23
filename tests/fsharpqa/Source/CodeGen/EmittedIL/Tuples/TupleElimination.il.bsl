@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {6124063B-DFDD-92DF-A745-03833B062461}
+// MVID: {61F02896-DFDD-92DF-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D10000
+// Image base: 0x06990000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,7 +60,7 @@
   {
     .entrypoint
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       205 (0xcd)
+    // Code size       206 (0xce)
     .maxstack  5
     .locals init ([0] class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32> dic,
              [1] int32 i,
@@ -78,7 +78,7 @@
     .line 7,7 : 5,64 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleElimination.fs'
     IL_0000:  newobj     instance void class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
     IL_0005:  stloc.0
-    .line 9,9 : 31,48 ''
+    .line 9,9 : 5,48 ''
     IL_0006:  ldloc.0
     IL_0007:  ldc.i4.1
     IL_0008:  ldloca.s   i
@@ -109,13 +109,12 @@
     IL_0048:  ldloc.s    V_4
     IL_004a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_004f:  pop
-    .line 14,14 : 38,65 ''
+    .line 14,14 : 5,65 ''
     IL_0050:  ldstr      "123"
     IL_0055:  ldloca.s   l
     IL_0057:  call       bool [mscorlib]System.Int64::TryParse(string,
                                                                int64&)
     IL_005c:  stloc.s    b
-    .line 14,14 : 5,65 ''
     IL_005e:  ldloc.s    b
     IL_0060:  ldloc.s    l
     IL_0062:  newobj     instance void class [mscorlib]System.Tuple`2<bool,int64>::.ctor(!0,
@@ -145,20 +144,22 @@
     IL_00a3:  ldloc.s    V_9
     IL_00a5:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_00aa:  pop
+    .line 18,18 : 5,28 ''
+    IL_00ab:  nop
     .line 21,21 : 5,9 ''
-    IL_00ab:  ldstr      "%A"
-    IL_00b0:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`2<bool,int64>>::.ctor(string)
-    IL_00b5:  stloc.s    V_11
-    IL_00b7:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-    IL_00bc:  ldloc.s    V_11
-    IL_00be:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
+    IL_00ac:  ldstr      "%A"
+    IL_00b1:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`2<bool,int64>>::.ctor(string)
+    IL_00b6:  stloc.s    V_11
+    IL_00b8:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+    IL_00bd:  ldloc.s    V_11
+    IL_00bf:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_00c3:  ldloc.s    t
-    IL_00c5:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_00ca:  pop
+    IL_00c4:  ldloc.s    t
+    IL_00c6:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<bool,int64>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_00cb:  pop
     .line 23,23 : 5,6 ''
-    IL_00cb:  ldc.i4.0
-    IL_00cc:  ret
+    IL_00cc:  ldc.i4.0
+    IL_00cd:  ret
   } // end of method TupleElimination::main
 
 } // end of class TupleElimination

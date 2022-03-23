@@ -776,7 +776,8 @@ module InterfaceStubGenerator =
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; members=ms; extraImpls=ifaces) ->
+                    let binds = unionBindingAndMembers binds ms
                     match baseCallOpt with
                     | None -> 
                         if rangeContainsPos ty.Range pos then
@@ -790,9 +791,10 @@ module InterfaceStubGenerator =
                         // Ignore object expressions of normal objects
                         None
 
-                | SynExpr.While (_sequencePointInfoForWhileLoop, synExpr1, synExpr2, _range) ->
+                | SynExpr.While (_spWhile, synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
-                | SynExpr.ForEach (_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
+
+                | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | SynExpr.For (identBody=synExpr1; toBody=synExpr2; doBody=synExpr3) -> 
@@ -800,21 +802,26 @@ module InterfaceStubGenerator =
 
                 | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
+
+                | SynExpr.Lambda (body=synExpr) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
                     synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
+
                 | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) ->
                     walkExpr synExpr
                     |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.Do (synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.Assert (synExpr, _range) -> 
                     walkExpr synExpr
 
@@ -824,19 +831,19 @@ module InterfaceStubGenerator =
                 | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUse (_, _, synBindingList, synExpr, _range) -> 
+                | SynExpr.LetOrUse (bindings=synBindingList; body=synExpr) -> 
                     Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
                 | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
-                | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 
+                | SynExpr.TryFinally (tryExpr=synExpr1; finallyExpr=synExpr2) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (ifExpr=synExpr1; thenExpr=synExpr2; elseExpr=synExprOpt) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]

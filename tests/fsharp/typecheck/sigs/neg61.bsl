@@ -51,13 +51,13 @@ neg61.fs(64,13,64,20): typecheck error FS3145: This is not a known query operato
 
 neg61.fs(69,13,69,23): typecheck error FS3140: 'while' expressions may not be used in queries
 
-neg61.fs(74,13,74,32): typecheck error FS3139: In queries, use the form 'for x in n .. m do ...' for ranging over integers
+neg61.fs(74,13,74,16): typecheck error FS3139: In queries, use the form 'for x in n .. m do ...' for ranging over integers
 
 neg61.fs(79,13,79,16): typecheck error FS3146: 'try/with' expressions may not be used in queries
 
 neg61.fs(86,13,86,16): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg61.fs(92,21,92,70): typecheck error FS3142: 'use' expressions may not be used in queries
+neg61.fs(92,13,92,70): typecheck error FS3142: 'use' expressions may not be used in queries
 
 neg61.fs(97,13,97,33): typecheck error FS3143: 'let!', 'use!' and 'do!' expressions may not be used in queries
 

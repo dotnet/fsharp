@@ -20,7 +20,7 @@ type internal FSharpCompletionService
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
-    inherit CompletionServiceWithProviders(workspace)
+    inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
@@ -31,7 +31,7 @@ type internal FSharpCompletionService
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
-    override _.GetRules() =
+    override _.GetRulesImpl() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
             | NeverNewline -> EnterKeyRule.Never

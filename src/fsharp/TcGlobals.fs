@@ -83,7 +83,10 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-let private mkNonGenericTy tcref = TType_app(tcref, [])
+// empty flags
+let v_knownWithoutNull = 0uy
+
+let private mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
 
 let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
 
@@ -113,6 +116,8 @@ type
     override x.ToString() = x.TyconRef.ToString()
 
 
+[<Literal>]
+let tname_InternalsVisibleToAttribute = "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
 [<Literal>]
 let tname_DebuggerNonUserCodeAttribute = "System.Diagnostics.DebuggerNonUserCodeAttribute"
 [<Literal>]
@@ -183,7 +188,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu,
-                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      emitDebugInfoInQuotations: bool, noDebugAttributes: bool,
                       pathMap: PathMap, langVersion: LanguageVersion) =
 
   let vara = Construct.NewRigidTypar "a" envRange
@@ -242,6 +247,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
+  let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
       FSComp.SR.tcGlobalsSystemTypeNotFound (String.concat "." path + "." + typeName)
@@ -296,9 +302,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let lazy_tcr = findSysTyconRef sys "Lazy`1"
   let v_fslib_IEvent2_tcr        = mk_MFControl_tcref fslibCcu "IEvent`2"
-  let v_tcref_IQueryable      =  findSysTyconRef sysLinq "IQueryable`1"
-  let v_tcref_IObservable      =  findSysTyconRef sys "IObservable`1"
-  let v_tcref_IObserver        =  findSysTyconRef sys "IObserver`1"
+  let v_tcref_IQueryable      = findSysTyconRef sysLinq "IQueryable`1"
+  let v_tcref_IObservable      = findSysTyconRef sys "IObservable`1"
+  let v_tcref_IObserver        = findSysTyconRef sys "IObserver`1"
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
@@ -359,12 +365,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
-
   (* local helpers to build value infos *)
-  let mkNullableTy ty = TType_app(v_nullable_tcr, [ty])
-  let mkByrefTy ty = TType_app(v_byref_tcr, [ty])
-  let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty])
-  let mkFunTy d r = TType_fun (d, r)
+  let mkNullableTy ty = TType_app(v_nullable_tcr, [ty], v_knownWithoutNull)
+  let mkByrefTy ty = TType_app(v_byref_tcr, [ty], v_knownWithoutNull)
+  let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty], v_knownWithoutNull)
+  let mkFunTy d r = TType_fun (d, r, v_knownWithoutNull)
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
@@ -406,26 +411,42 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_compare_withc_sig  ty = [[v_IComparer_ty];[ty]; [ty]], v_int_ty
   let mk_equality_withc_sig ty = [[v_IEqualityComparer_ty];[ty];[ty]], v_bool_ty
   let mk_hash_withc_sig     ty = [[v_IEqualityComparer_ty]; [ty]], v_int_ty
-  let mkListTy ty         = TType_app(v_list_tcr_nice, [ty])
-  let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1])
-  let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty])
-  let mkOptionTy ty      = TType_app(v_option_tcr_nice, [ty])
-  let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2])
-  let v_tcref_System_Collections_IEnumerable         = findSysTyconRef sysCollections "IEnumerable";
+
+  let mkListTy ty = TType_app(v_list_tcr_nice, [ty], v_knownWithoutNull)
+
+  let mkSeqTy ty1 = TType_app(v_seq_tcr, [ty1], v_knownWithoutNull)
+
+  let mkIEvent2Ty ty1 ty2 = TType_app (v_fslib_IEvent2_tcr, [ty1; ty2], v_knownWithoutNull)
+
+  let mkRefCellTy ty = TType_app(v_refcell_tcr_canon, [ty], v_knownWithoutNull)
+
+  let mkOptionTy ty = TType_app(v_option_tcr_nice, [ty], v_knownWithoutNull)
+
+  let mkQuerySourceTy ty1 ty2 = TType_app(v_querySource_tcr, [ty1; ty2], v_knownWithoutNull)
+
+  let v_tcref_System_Collections_IEnumerable = findSysTyconRef sysCollections "IEnumerable";
+
   let mkArrayType rank (ty : TType) : TType =
       assert (rank >= 1 && rank <= 32)
-      TType_app(v_il_arr_tcr_map.[rank - 1], [ty])
-  let mkLazyTy ty         = TType_app(lazy_tcr, [ty])
+      TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
 
-  let mkPrintfFormatTy aty bty cty dty ety = TType_app(v_format_tcr, [aty;bty;cty;dty; ety])
-  let mk_format4_ty aty bty cty dty = TType_app(v_format4_tcr, [aty;bty;cty;dty])
-  let mkQuotedExprTy aty = TType_app(v_expr_tcr, [aty])
-  let mkRawQuotedExprTy = TType_app(v_raw_expr_tcr, [])
-  let mkQueryBuilderTy = TType_app(v_query_builder_tcref, [])
-  let mkLinqExpressionTy aty = TType_app(v_linqExpression_tcr, [aty])
+  let mkLazyTy ty = TType_app(lazy_tcr, [ty], v_knownWithoutNull)
+
+  let mkPrintfFormatTy aty bty cty dty ety = TType_app(v_format_tcr, [aty;bty;cty;dty; ety], v_knownWithoutNull)
+
+  let mk_format4_ty aty bty cty dty = TType_app(v_format4_tcr, [aty;bty;cty;dty], v_knownWithoutNull)
+
+  let mkQuotedExprTy aty = TType_app(v_expr_tcr, [aty], v_knownWithoutNull)
+
+  let mkRawQuotedExprTy = TType_app(v_raw_expr_tcr, [], v_knownWithoutNull)
+
+  let mkQueryBuilderTy = TType_app(v_query_builder_tcref, [], v_knownWithoutNull)
+
+  let mkLinqExpressionTy aty = TType_app(v_linqExpression_tcr, [aty], v_knownWithoutNull)
+
   let v_cons_ucref = mkUnionCaseRef v_list_tcr_canon "op_ColonColon"
-  let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil"
 
+  let v_nil_ucref  = mkUnionCaseRef v_list_tcr_canon "op_Nil"
 
   let fslib_MF_nleref                   = mkNonLocalEntityRef fslibCcu FSharpLib.RootPathArray
   let fslib_MFCore_nleref               = mkNonLocalEntityRef fslibCcu FSharpLib.CorePathArray
@@ -538,8 +559,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       match l with
       | [t1;t2;t3;t4;t5;t6;t7;marker] ->
           match marker with
-          | TType_app(tcref, [t8]) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
-          | TType_app(tcref, [t8]) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
           | _ -> None
       | [] -> None
@@ -555,7 +576,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let decodeTupleTyIfPossible tcref tupInfo l =
       match tryDecodeTupleTy tupInfo l with
       | Some ty -> ty
-      | None -> TType_app(tcref, l)
+      | None -> TType_app(tcref, l, v_knownWithoutNull)
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
       AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
@@ -690,7 +711,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
   let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
   let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
-  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None                 , Some "IsNotNull" , [vara],  ([[varaTy]], v_bool_ty))
   let v_raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                , None                 , Some "Raise"  , [vara],     ([[mkSysNonGenericTy sys "Exception"]], varaTy))
   let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None                 , Some "FailWith" , [vara],   ([[v_string_ty]], varaTy))
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None                 , Some "InvalidArg" , [vara], ([[v_string_ty]; [v_string_ty]], varaTy))
@@ -732,12 +752,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_generated_info         = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateWhile"                       , None                 , None          , [varb],     ([[v_unit_ty --> v_bool_ty]; [mkSeqTy varbTy]], mkSeqTy varbTy))
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
-  let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
+  let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], mkIEvent2Ty varaTy varbTy))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__debugPoint_info       = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__debugPoint"                         , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
-  let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
+  let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
@@ -778,6 +799,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
   let mutable generatedAttribsCache = []
   let mutable debuggerBrowsableNeverAttributeCache = None
@@ -790,16 +812,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res = [ if not noDebugData then
-                        yield mkCompilerGeneratedAttribute()
-                        yield mkDebuggerNonUserCodeAttribute()]
+           let res =
+               [ if not noDebugAttributes then
+                   mkCompilerGeneratedAttribute()
+                   mkDebuggerNonUserCodeAttribute()]
            generatedAttribsCache <- res
            res
        | res -> res
-    mkILCustomAttrs (attrs.AsList @ attribs)
+    mkILCustomAttrs (attrs.AsList() @ attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
+
   let addFieldGeneratedAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addGeneratedAttrs fdef.CustomAttrs)
 
   let tref_DebuggerBrowsableAttribute n =
@@ -816,7 +841,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           res
       | Some res -> res
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
@@ -864,13 +889,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let betterEntries = Array.append betterTyconEntries decompileTyconEntries
 
-  let mutable decompileTypeDict = null
-  let mutable betterTypeDict1 = null
-  let mutable betterTypeDict2 = null
+  let mutable decompileTypeDict = Unchecked.defaultof<_>
+  let mutable betterTypeDict1 = Unchecked.defaultof<_>
+  let mutable betterTypeDict2 = Unchecked.defaultof<_>
 
   /// This map is indexed by stamps and lazy to avoid dereferencing while setting up the base imports.
   let getDecompileTypeDict () =
-      match decompileTypeDict with
+      match box decompileTypeDict with
       | null ->
           let entries = decompileTyconEntries
           let t = Dictionary.newWithSize entries.Length
@@ -879,26 +904,31 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           decompileTypeDict <- t
           t
-      | t -> t
+      | _ -> decompileTypeDict
 
   /// This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
   /// the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
   /// So this dictionary is indexed by names. Make it lazy to avoid dereferencing while setting up the base imports.
   let getBetterTypeDict1 () =
-      match betterTypeDict1 with
+      match box betterTypeDict1 with
       | null ->
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
           for nm, tcref, builder in entries do
-              t.Add(nm, fun tcref2 tinst2 -> if tyconRefEq tcref tcref2 then builder tinst2 else TType_app (tcref2, tinst2))
+              t.Add(nm, 
+                     (fun tcref2 tinst2 -> 
+                         if tyconRefEq tcref tcref2 then 
+                             builder tinst2
+                         else 
+                             TType_app (tcref2, tinst2, v_knownWithoutNull)))
           betterTypeDict1 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict1
 
   /// This map is for use in normal times (not building FSharp.Core.dll). It is indexed by stamps
   /// and lazy to avoid dereferencing while setting up the base imports.
   let getBetterTypeDict2 () =
-      match betterTypeDict2 with
+      match box betterTypeDict2 with
       | null ->
           let entries = betterEntries
           let t = Dictionary.newWithSize entries.Length
@@ -907,7 +937,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                   t.Add(tcref.Stamp, builder)
           betterTypeDict2 <- t
           t
-      | t -> t
+      | _ -> betterTypeDict2
 
   /// For logical purposes equate some F# types with .NET types, e.g. TType_tuple == System.Tuple/ValueTuple.
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -915,12 +945,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let decompileTy (tcref: EntityRef) tinst =
       if compilingFslib then
           // No need to decompile when compiling FSharp.Core.dll
-          TType_app (tcref, tinst)
+          TType_app (tcref, tinst, v_knownWithoutNull)
       else
           let dict = getDecompileTypeDict()
           match dict.TryGetValue tcref.Stamp with
           | true, builder -> builder tinst
-          | _ -> TType_app (tcref, tinst)
+          | _ -> TType_app (tcref, tinst, v_knownWithoutNull)
 
   /// For cosmetic purposes "improve" some .NET types, e.g. Int32 --> int32.
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
@@ -930,12 +960,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             let dict = getBetterTypeDict1()
             match dict.TryGetValue tcref.LogicalName with
             | true, builder -> builder tcref tinst
-            | _ -> TType_app (tcref, tinst)
+            | _ -> TType_app (tcref, tinst, v_knownWithoutNull)
         else
             let dict = getBetterTypeDict2()
             match dict.TryGetValue tcref.Stamp with
             | true, builder -> builder tinst
-            | _ -> TType_app (tcref, tinst)
+            | _ -> TType_app (tcref, tinst, v_knownWithoutNull)
 
   // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
   let v_attribs_Unsupported = [
@@ -945,190 +975,214 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override x.ToString() = "<TcGlobals>"
-  member _.ilg=ilg
-      // A table of all intrinsics that the compiler cares about
-  member _.knownIntrinsics                = v_knownIntrinsics
-      // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
-      // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
-  member _.knownFSharpCoreModules         = v_knownFSharpCoreModules
-  member _.compilingFslib                 = compilingFslib
-  member _.mlCompatibility                = mlCompatibility
-  member _.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
-  member _.directoryToResolveRelativePaths= directoryToResolveRelativePaths
+
+  member _.ilg = ilg
+
+  // A table of all intrinsics that the compiler cares about
+  member _.knownIntrinsics = v_knownIntrinsics
+
+  // empty flags
+  member _.knownWithoutNull = v_knownWithoutNull
+
+  // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
+  // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
+  member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+  member _.compilingFslib = compilingFslib
+  member _.mlCompatibility = mlCompatibility
+  member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
+  member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
   member _.pathMap = pathMap
   member _.langVersion = langVersion
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member _.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
-  member _.fslibCcu                 = fslibCcu
-  member val refcell_tcr_canon    = v_refcell_tcr_canon
-  member val option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
-  member val valueoption_tcr_canon    = mk_MFCore_tcref     fslibCcu "ValueOption`1"
-  member _.list_tcr_canon       = v_list_tcr_canon
-  member val set_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Set`1"
-  member val map_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Map`2"
-  member _.lazy_tcr_canon       = lazy_tcr
-  member val refcell_tcr_nice     = v_refcell_tcr_nice
-  member val array_tcr_nice       = v_il_arr_tcr_map.[0]
-  member _.option_tcr_nice   = v_option_tcr_nice
-  member _.valueoption_tcr_nice  = v_valueoption_tcr_nice
-  member _.list_tcr_nice     = v_list_tcr_nice
-  member _.lazy_tcr_nice     = v_lazy_tcr_nice
-  member _.format_tcr       = v_format_tcr
-  member _.expr_tcr       = v_expr_tcr
-  member _.raw_expr_tcr       = v_raw_expr_tcr
-  member _.nativeint_tcr  = v_nativeint_tcr
+  member _.fslibCcu = fslibCcu
+  member val refcell_tcr_canon = v_refcell_tcr_canon
+  member val option_tcr_canon = mk_MFCore_tcref     fslibCcu "Option`1"
+  member val valueoption_tcr_canon = mk_MFCore_tcref     fslibCcu "ValueOption`1"
+  member _.list_tcr_canon = v_list_tcr_canon
+  member val set_tcr_canon = mk_MFCollections_tcref   fslibCcu "Set`1"
+  member val map_tcr_canon = mk_MFCollections_tcref   fslibCcu "Map`2"
+  member _.lazy_tcr_canon = lazy_tcr
+  member val refcell_tcr_nice = v_refcell_tcr_nice
+  member val array_tcr_nice = v_il_arr_tcr_map.[0]
+  member _.option_tcr_nice = v_option_tcr_nice
+  member _.valueoption_tcr_nice = v_valueoption_tcr_nice
+  member _.list_tcr_nice = v_list_tcr_nice
+  member _.lazy_tcr_nice = v_lazy_tcr_nice
+  member _.format_tcr = v_format_tcr
+  member _.expr_tcr = v_expr_tcr
+  member _.raw_expr_tcr = v_raw_expr_tcr
+  member _.nativeint_tcr = v_nativeint_tcr
   member _.unativeint_tcr = v_unativeint_tcr
-  member _.int_tcr        = v_int_tcr
-  member _.int32_tcr      = v_int32_tcr
-  member _.int16_tcr      = v_int16_tcr
-  member _.int64_tcr      = v_int64_tcr
-  member _.uint16_tcr     = v_uint16_tcr
-  member _.uint32_tcr     = v_uint32_tcr
-  member _.uint64_tcr     = v_uint64_tcr
-  member _.sbyte_tcr      = v_sbyte_tcr
-  member _.decimal_tcr    = v_decimal_tcr
-  member _.date_tcr    = v_date_tcr
-  member _.pdecimal_tcr   = v_pdecimal_tcr
-  member _.byte_tcr       = v_byte_tcr
-  member _.bool_tcr       = v_bool_tcr
+  member _.int_tcr = v_int_tcr
+  member _.int32_tcr = v_int32_tcr
+  member _.int16_tcr = v_int16_tcr
+  member _.int64_tcr = v_int64_tcr
+  member _.uint16_tcr = v_uint16_tcr
+  member _.uint32_tcr = v_uint32_tcr
+  member _.uint64_tcr = v_uint64_tcr
+  member _.sbyte_tcr = v_sbyte_tcr
+  member _.decimal_tcr = v_decimal_tcr
+  member _.date_tcr = v_date_tcr
+  member _.pdecimal_tcr = v_pdecimal_tcr
+  member _.byte_tcr = v_byte_tcr
+  member _.bool_tcr = v_bool_tcr
   member _.unit_tcr_canon = v_unit_tcr_canon
-  member _.unit_tcr_nice  = v_unit_tcr_nice
-  member _.exn_tcr        = v_exn_tcr
-  member _.char_tcr       = v_char_tcr
-  member _.float_tcr      = v_float_tcr
-  member _.float32_tcr    = v_float32_tcr
-  member _.pfloat_tcr      = v_pfloat_tcr
-  member _.pfloat32_tcr    = v_pfloat32_tcr
-  member _.pint_tcr        = v_pint_tcr
-  member _.pint8_tcr       = v_pint8_tcr
-  member _.pint16_tcr      = v_pint16_tcr
-  member _.pint64_tcr      = v_pint64_tcr
-  member _.pnativeint_tcr  = v_pnativeint_tcr
-  member _.puint_tcr       = v_puint_tcr
-  member _.puint8_tcr      = v_puint8_tcr
-  member _.puint16_tcr     = v_puint16_tcr
-  member _.puint64_tcr     = v_puint64_tcr
+  member _.unit_tcr_nice = v_unit_tcr_nice
+  member _.exn_tcr = v_exn_tcr
+  member _.char_tcr = v_char_tcr
+  member _.float_tcr = v_float_tcr
+  member _.float32_tcr = v_float32_tcr
+  member _.pfloat_tcr = v_pfloat_tcr
+  member _.pfloat32_tcr = v_pfloat32_tcr
+  member _.pint_tcr = v_pint_tcr
+  member _.pint8_tcr = v_pint8_tcr
+  member _.pint16_tcr = v_pint16_tcr
+  member _.pint64_tcr = v_pint64_tcr
+  member _.pnativeint_tcr = v_pnativeint_tcr
+  member _.puint_tcr = v_puint_tcr
+  member _.puint8_tcr = v_puint8_tcr
+  member _.puint16_tcr = v_puint16_tcr
+  member _.puint64_tcr = v_puint64_tcr
   member _.punativeint_tcr = v_punativeint_tcr
-  member _.byref_tcr      = v_byref_tcr
-  member _.byref2_tcr     = v_byref2_tcr
-  member _.outref_tcr     = v_outref_tcr
-  member _.inref_tcr      = v_inref_tcr
-  member _.nativeptr_tcr  = v_nativeptr_tcr
-  member _.voidptr_tcr    = v_voidptr_tcr
-  member _.ilsigptr_tcr   = v_ilsigptr_tcr
+  member _.byref_tcr = v_byref_tcr
+  member _.byref2_tcr = v_byref2_tcr
+  member _.outref_tcr = v_outref_tcr
+  member _.inref_tcr = v_inref_tcr
+  member _.nativeptr_tcr = v_nativeptr_tcr
+  member _.voidptr_tcr = v_voidptr_tcr
+  member _.ilsigptr_tcr = v_ilsigptr_tcr
   member _.fastFunc_tcr = v_fastFunc_tcr
+  member _.MatchFailureException_tcr = v_mfe_tcr
   member _.tcref_IQueryable = v_tcref_IQueryable
-  member _.tcref_IObservable      = v_tcref_IObservable
-  member _.tcref_IObserver      = v_tcref_IObserver
-  member _.fslib_IEvent2_tcr      = v_fslib_IEvent2_tcr
-  member _.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
-  member _.seq_tcr        = v_seq_tcr
+  member _.tcref_IObservable = v_tcref_IObservable
+  member _.tcref_IObserver = v_tcref_IObserver
+  member _.fslib_IEvent2_tcr = v_fslib_IEvent2_tcr
+  member _.fslib_IDelegateEvent_tcr = v_fslib_IDelegateEvent_tcr
+  member _.seq_tcr = v_seq_tcr
+
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+
   member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
+
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
-  member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy])
+
+  member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
+
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
-  member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy])
+
+  member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy], v_knownWithoutNull)
+
   member val IResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "IResumableStateMachine`1"
-  member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy])
-  member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy])
-  member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy])
-  member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
-  member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
-  member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
+
+  member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy], v_knownWithoutNull)
+
+  member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr,[seqElemTy], v_knownWithoutNull)
+
+  member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr,[seqElemTy], v_knownWithoutNull)
+
+  member val byrefkind_In_tcr = mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
+
+  member val byrefkind_Out_tcr = mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
+
+  member val byrefkind_InOut_tcr = mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
+
   member val measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2"
+
   member val measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1"
+
   member val measureone_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureOne"
+
   member val ResumableCode_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableCode`2"
 
   member _.il_arr_tcr_map = v_il_arr_tcr_map
-  member _.ref_tuple1_tcr     = v_ref_tuple1_tcr
-  member _.ref_tuple2_tcr     = v_ref_tuple2_tcr
-  member _.ref_tuple3_tcr     = v_ref_tuple3_tcr
-  member _.ref_tuple4_tcr     = v_ref_tuple4_tcr
-  member _.ref_tuple5_tcr     = v_ref_tuple5_tcr
-  member _.ref_tuple6_tcr     = v_ref_tuple6_tcr
-  member _.ref_tuple7_tcr     = v_ref_tuple7_tcr
-  member _.ref_tuple8_tcr     = v_ref_tuple8_tcr
-  member _.struct_tuple1_tcr     = v_struct_tuple1_tcr
-  member _.struct_tuple2_tcr     = v_struct_tuple2_tcr
-  member _.struct_tuple3_tcr     = v_struct_tuple3_tcr
-  member _.struct_tuple4_tcr     = v_struct_tuple4_tcr
-  member _.struct_tuple5_tcr     = v_struct_tuple5_tcr
-  member _.struct_tuple6_tcr     = v_struct_tuple6_tcr
-  member _.struct_tuple7_tcr     = v_struct_tuple7_tcr
-  member _.struct_tuple8_tcr     = v_struct_tuple8_tcr
-  member _.choice2_tcr    = v_choice2_tcr
-  member _.choice3_tcr    = v_choice3_tcr
-  member _.choice4_tcr    = v_choice4_tcr
-  member _.choice5_tcr    = v_choice5_tcr
-  member _.choice6_tcr    = v_choice6_tcr
-  member _.choice7_tcr    = v_choice7_tcr
-  member val nativeint_ty  = v_nativeint_ty
+  member _.ref_tuple1_tcr = v_ref_tuple1_tcr
+  member _.ref_tuple2_tcr = v_ref_tuple2_tcr
+  member _.ref_tuple3_tcr = v_ref_tuple3_tcr
+  member _.ref_tuple4_tcr = v_ref_tuple4_tcr
+  member _.ref_tuple5_tcr = v_ref_tuple5_tcr
+  member _.ref_tuple6_tcr = v_ref_tuple6_tcr
+  member _.ref_tuple7_tcr = v_ref_tuple7_tcr
+  member _.ref_tuple8_tcr = v_ref_tuple8_tcr
+  member _.struct_tuple1_tcr = v_struct_tuple1_tcr
+  member _.struct_tuple2_tcr = v_struct_tuple2_tcr
+  member _.struct_tuple3_tcr = v_struct_tuple3_tcr
+  member _.struct_tuple4_tcr = v_struct_tuple4_tcr
+  member _.struct_tuple5_tcr = v_struct_tuple5_tcr
+  member _.struct_tuple6_tcr = v_struct_tuple6_tcr
+  member _.struct_tuple7_tcr = v_struct_tuple7_tcr
+  member _.struct_tuple8_tcr = v_struct_tuple8_tcr
+  member _.choice2_tcr = v_choice2_tcr
+  member _.choice3_tcr = v_choice3_tcr
+  member _.choice4_tcr = v_choice4_tcr
+  member _.choice5_tcr = v_choice5_tcr
+  member _.choice6_tcr = v_choice6_tcr
+  member _.choice7_tcr = v_choice7_tcr
+  member val nativeint_ty = v_nativeint_ty
   member val unativeint_ty = v_unativeint_ty
-  member val int32_ty      = v_int32_ty
-  member val int16_ty      = v_int16_ty
-  member val int64_ty      = v_int64_ty
-  member val uint16_ty     = v_uint16_ty
-  member val uint32_ty     = v_uint32_ty
-  member val uint64_ty     = v_uint64_ty
-  member val sbyte_ty      = v_sbyte_ty
-  member _.byte_ty       = v_byte_ty
-  member _.bool_ty       = v_bool_ty
-  member _.int_ty       = v_int_ty
-  member _.string_ty     = v_string_ty
+  member val int32_ty = v_int32_ty
+  member val int16_ty = v_int16_ty
+  member val int64_ty = v_int64_ty
+  member val uint16_ty = v_uint16_ty
+  member val uint32_ty = v_uint32_ty
+  member val uint64_ty = v_uint64_ty
+  member val sbyte_ty = v_sbyte_ty
+  member _.byte_ty = v_byte_ty
+  member _.bool_ty = v_bool_ty
+  member _.int_ty = v_int_ty
+  member _.string_ty = v_string_ty
   member _.system_IFormattable_tcref = v_IFormattable_tcref
   member _.system_FormattableString_tcref = v_FormattableString_tcref
   member _.system_FormattableStringFactory_tcref = v_FormattableStringFactory_tcref
   member _.system_IFormattable_ty = v_IFormattable_ty
   member _.system_FormattableString_ty = v_FormattableString_ty
   member _.system_FormattableStringFactory_ty = v_FormattableStringFactory_ty
-  member _.unit_ty       = v_unit_ty
-  member _.obj_ty        = v_obj_ty
-  member _.char_ty       = v_char_ty
-  member _.decimal_ty    = v_decimal_ty
+  member _.unit_ty = v_unit_ty
+  member _.obj_ty = v_obj_ty
+  member _.char_ty = v_char_ty
+  member _.decimal_ty = v_decimal_ty
 
-  member val exn_ty        = mkNonGenericTy v_exn_tcr
-  member val float_ty      = v_float_ty
-  member val float32_ty    = v_float32_ty
+  member val exn_ty = mkNonGenericTy v_exn_tcr
+  member val float_ty = v_float_ty
+  member val float32_ty = v_float32_ty
       /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member _.memoize_file x = v_memoize_file.Apply x
 
-  member val system_Array_ty     = mkSysNonGenericTy sys "Array"
-  member val system_Object_ty    = mkSysNonGenericTy sys "Object"
-  member val system_IDisposable_ty    = mkSysNonGenericTy sys "IDisposable"
-  member val system_RuntimeHelpers_ty    = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
-  member val system_Value_ty     = mkSysNonGenericTy sys "ValueType"
-  member val system_Delegate_ty     = mkSysNonGenericTy sys "Delegate"
-  member val system_MulticastDelegate_ty     = mkSysNonGenericTy sys "MulticastDelegate"
-  member val system_Enum_ty      = mkSysNonGenericTy sys "Enum"
+  member val system_Array_ty = mkSysNonGenericTy sys "Array"
+  member val system_Object_ty = mkSysNonGenericTy sys "Object"
+  member val system_IDisposable_ty = mkSysNonGenericTy sys "IDisposable"
+  member val system_RuntimeHelpers_ty = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
+  member val system_Value_ty = mkSysNonGenericTy sys "ValueType"
+  member val system_Delegate_ty = mkSysNonGenericTy sys "Delegate"
+  member val system_MulticastDelegate_ty = mkSysNonGenericTy sys "MulticastDelegate"
+  member val system_Enum_ty = mkSysNonGenericTy sys "Enum"
   member val system_Exception_ty = mkSysNonGenericTy sys "Exception"
-  member val system_String_typ    = mkSysNonGenericTy sys "String"
-  member val system_String_tcref  = findSysTyconRef sys "String"
-  member val system_Int32_ty     = mkSysNonGenericTy sys "Int32"
-  member _.system_Type_ty                  = v_system_Type_ty
-  member val system_TypedReference_tcref        = tryFindSysTyconRef sys "TypedReference"
-  member val system_ArgIterator_tcref           = tryFindSysTyconRef sys "ArgIterator"
-  member val system_RuntimeArgumentHandle_tcref =  tryFindSysTyconRef sys "RuntimeArgumentHandle"
-  member val system_SByte_tcref =  findSysTyconRef sys "SByte"
-  member val system_Decimal_tcref =  findSysTyconRef sys "Decimal"
-  member val system_Int16_tcref =  findSysTyconRef sys "Int16"
-  member val system_Int32_tcref =  findSysTyconRef sys "Int32"
-  member val system_Int64_tcref =  findSysTyconRef sys "Int64"
-  member val system_IntPtr_tcref =  findSysTyconRef sys "IntPtr"
-  member val system_Bool_tcref =  findSysTyconRef sys "Boolean"
-  member val system_Byte_tcref =  findSysTyconRef sys "Byte"
-  member val system_UInt16_tcref =  findSysTyconRef sys "UInt16"
-  member val system_Char_tcref            =  findSysTyconRef sys "Char"
-  member val system_UInt32_tcref          =  findSysTyconRef sys "UInt32"
-  member val system_UInt64_tcref          =  findSysTyconRef sys "UInt64"
-  member val system_UIntPtr_tcref         =  findSysTyconRef sys "UIntPtr"
-  member val system_Single_tcref          =  findSysTyconRef sys "Single"
-  member val system_Double_tcref          =  findSysTyconRef sys "Double"
+  member val system_String_typ = mkSysNonGenericTy sys "String"
+  member val system_String_tcref = findSysTyconRef sys "String"
+  member val system_Int32_ty = mkSysNonGenericTy sys "Int32"
+  member _.system_Type_ty = v_system_Type_ty
+  member val system_TypedReference_tcref = tryFindSysTyconRef sys "TypedReference"
+  member val system_ArgIterator_tcref = tryFindSysTyconRef sys "ArgIterator"
+  member val system_RuntimeArgumentHandle_tcref = tryFindSysTyconRef sys "RuntimeArgumentHandle"
+  member val system_SByte_tcref = findSysTyconRef sys "SByte"
+  member val system_Decimal_tcref = findSysTyconRef sys "Decimal"
+  member val system_Int16_tcref = findSysTyconRef sys "Int16"
+  member val system_Int32_tcref = findSysTyconRef sys "Int32"
+  member val system_Int64_tcref = findSysTyconRef sys "Int64"
+  member val system_IntPtr_tcref = findSysTyconRef sys "IntPtr"
+  member val system_Bool_tcref = findSysTyconRef sys "Boolean"
+  member val system_Byte_tcref = findSysTyconRef sys "Byte"
+  member val system_UInt16_tcref = findSysTyconRef sys "UInt16"
+  member val system_Char_tcref = findSysTyconRef sys "Char"
+  member val system_UInt32_tcref = findSysTyconRef sys "UInt32"
+  member val system_UInt64_tcref = findSysTyconRef sys "UInt64"
+  member val system_UIntPtr_tcref = findSysTyconRef sys "UIntPtr"
+  member val system_Single_tcref = findSysTyconRef sys "Single"
+  member val system_Double_tcref = findSysTyconRef sys "Double"
   member val system_RuntimeTypeHandle_ty = mkSysNonGenericTy sys "RuntimeTypeHandle"
   member _.system_RuntimeMethodHandle_ty = v_system_RuntimeMethodHandle_ty
 
-  member val system_MarshalByRefObject_tcref =  tryFindSysTyconRef sys "MarshalByRefObject"
+  member val system_MarshalByRefObject_tcref = tryFindSysTyconRef sys "MarshalByRefObject"
   member val system_MarshalByRefObject_ty = tryMkSysNonGenericTy sys "MarshalByRefObject"
 
   member val system_ExceptionDispatchInfo_ty =
@@ -1138,10 +1192,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine" 
     
   member val system_Array_tcref = v_Array_tcref
-  member val system_Object_tcref  = findSysTyconRef sys "Object"
+  member val system_Object_tcref = findSysTyconRef sys "Object"
   member val system_Value_tcref = findSysTyconRef sys "ValueType"
-  member val system_Void_tcref    = findSysTyconRef sys "Void"
-  member val system_IndexOutOfRangeException_tcref    = findSysTyconRef sys "IndexOutOfRangeException"
+  member val system_Void_tcref = findSysTyconRef sys "Void"
+  member val system_IndexOutOfRangeException_tcref = findSysTyconRef sys "IndexOutOfRangeException"
   member val system_Nullable_tcref = v_nullable_tcr
   member val system_GenericIComparable_tcref = findSysTyconRef sys "IComparable`1"
   member val system_GenericIEquatable_tcref = findSysTyconRef sys "IEquatable`1"
@@ -1163,17 +1217,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val tcref_System_IComparable = findSysTyconRef sys "IComparable"
   member val tcref_System_IStructuralComparable = findSysTyconRef sysCollections "IStructuralComparable"
-  member val tcref_System_IStructuralEquatable  = findSysTyconRef sysCollections "IStructuralEquatable"
+  member val tcref_System_IStructuralEquatable = findSysTyconRef sysCollections "IStructuralEquatable"
   member val tcref_System_IDisposable = findSysTyconRef sys "IDisposable"
 
   member val tcref_LanguagePrimitives = mk_MFCore_tcref fslibCcu "LanguagePrimitives"
 
-  member val tcref_System_Collections_Generic_List       = findSysTyconRef sysGenerics "List`1"
-  member val tcref_System_Collections_Generic_IList       = findSysTyconRef sysGenerics "IList`1"
-  member val tcref_System_Collections_Generic_IReadOnlyList       = findSysTyconRef sysGenerics "IReadOnlyList`1"
+  member val tcref_System_Collections_Generic_List = findSysTyconRef sysGenerics "List`1"
+  member val tcref_System_Collections_Generic_IList = findSysTyconRef sysGenerics "IList`1"
+  member val tcref_System_Collections_Generic_IReadOnlyList = findSysTyconRef sysGenerics "IReadOnlyList`1"
   member val tcref_System_Collections_Generic_ICollection = findSysTyconRef sysGenerics "ICollection`1"
   member val tcref_System_Collections_Generic_IReadOnlyCollection = findSysTyconRef sysGenerics "IReadOnlyCollection`1"
-  member _.tcref_System_Collections_IEnumerable         = v_tcref_System_Collections_IEnumerable
+  member _.tcref_System_Collections_IEnumerable = v_tcref_System_Collections_IEnumerable
 
   member _.tcref_System_Collections_Generic_IEnumerable = v_IEnumerable_tcr
   member _.tcref_System_Collections_Generic_IEnumerator = v_IEnumerator_tcr
@@ -1183,54 +1237,54 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   // Review: Does this need to be an option type?
   member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
 
-  member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
-  member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
-  member val iltyp_SerializationInfo   = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
-  member val iltyp_Missing             = findSysILTypeRef tname_Missing |> mkILNonGenericBoxedTy
-  member val iltyp_AsyncCallback       = findSysILTypeRef tname_AsyncCallback |> mkILNonGenericBoxedTy
-  member val iltyp_IAsyncResult        = findSysILTypeRef tname_IAsyncResult |> mkILNonGenericBoxedTy
-  member val iltyp_IComparable         = findSysILTypeRef tname_IComparable |> mkILNonGenericBoxedTy
-  member val iltyp_Exception           = findSysILTypeRef tname_Exception |> mkILNonGenericBoxedTy
-  member val iltyp_ValueType           = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
-  member val iltyp_RuntimeFieldHandle  = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
+  member val iltyp_TypedReference = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
+  member val iltyp_StreamingContext = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
+  member val iltyp_SerializationInfo = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
+  member val iltyp_Missing = findSysILTypeRef tname_Missing |> mkILNonGenericBoxedTy
+  member val iltyp_AsyncCallback = findSysILTypeRef tname_AsyncCallback |> mkILNonGenericBoxedTy
+  member val iltyp_IAsyncResult = findSysILTypeRef tname_IAsyncResult |> mkILNonGenericBoxedTy
+  member val iltyp_IComparable = findSysILTypeRef tname_IComparable |> mkILNonGenericBoxedTy
+  member val iltyp_Exception = findSysILTypeRef tname_Exception |> mkILNonGenericBoxedTy
+  member val iltyp_ValueType = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
+  member val iltyp_RuntimeFieldHandle = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
   member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
 
 
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
-  member val attrib_ParamArrayAttribute     = findSysAttrib "System.ParamArrayAttribute"
-  member val attrib_IDispatchConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
-  member val attrib_IUnknownConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
+  member val attrib_ParamArrayAttribute = findSysAttrib "System.ParamArrayAttribute"
+  member val attrib_IDispatchConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
+  member val attrib_IUnknownConstantAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsReadOnlyAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
+  member val attrib_IsReadOnlyAttribute = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
 
-  member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
-  member val attrib_DllImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
-  member val attrib_StructLayoutAttribute   = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
-  member val attrib_TypeForwardedToAttribute   = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
-  member val attrib_ComVisibleAttribute     = findSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
-  member val attrib_ComImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
-  member val attrib_FieldOffsetAttribute    = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute"
-  member val attrib_MarshalAsAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
-  member val attrib_InAttribute             = findSysAttrib "System.Runtime.InteropServices.InAttribute"
-  member val attrib_OutAttribute            = findSysAttrib "System.Runtime.InteropServices.OutAttribute"
-  member val attrib_OptionalAttribute       = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute"
+  member val attrib_SystemObsolete = findSysAttrib "System.ObsoleteAttribute"
+  member val attrib_DllImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"
+  member val attrib_StructLayoutAttribute = findSysAttrib "System.Runtime.InteropServices.StructLayoutAttribute"
+  member val attrib_TypeForwardedToAttribute = findSysAttrib "System.Runtime.CompilerServices.TypeForwardedToAttribute"
+  member val attrib_ComVisibleAttribute = findSysAttrib "System.Runtime.InteropServices.ComVisibleAttribute"
+  member val attrib_ComImportAttribute = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
+  member val attrib_FieldOffsetAttribute = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute"
+  member val attrib_MarshalAsAttribute = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
+  member val attrib_InAttribute = findSysAttrib "System.Runtime.InteropServices.InAttribute"
+  member val attrib_OutAttribute = findSysAttrib "System.Runtime.InteropServices.OutAttribute"
+  member val attrib_OptionalAttribute = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute"
   member val attrib_DefaultParameterValueAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DefaultParameterValueAttribute"
-  member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
-  member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
-  member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
+  member val attrib_ThreadStaticAttribute = tryFindSysAttrib "System.ThreadStaticAttribute"
+  member val attrib_SpecialNameAttribute = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
+  member val attrib_VolatileFieldAttribute = mk_MFCore_attrib "VolatileFieldAttribute"
   member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
-  member val attrib_ContextStaticAttribute  = tryFindSysAttrib "System.ContextStaticAttribute"
-  member val attrib_FlagsAttribute          = findSysAttrib "System.FlagsAttribute"
-  member val attrib_DefaultMemberAttribute  = findSysAttrib "System.Reflection.DefaultMemberAttribute"
-  member val attrib_DebuggerDisplayAttribute  = findSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
-  member val attrib_DebuggerTypeProxyAttribute  = findSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
-  member val attrib_PreserveSigAttribute    = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
-  member val attrib_MethodImplAttribute     = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
-  member val attrib_ExtensionAttribute     = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
+  member val attrib_ContextStaticAttribute = tryFindSysAttrib "System.ContextStaticAttribute"
+  member val attrib_FlagsAttribute = findSysAttrib "System.FlagsAttribute"
+  member val attrib_DefaultMemberAttribute = findSysAttrib "System.Reflection.DefaultMemberAttribute"
+  member val attrib_DebuggerDisplayAttribute = findSysAttrib "System.Diagnostics.DebuggerDisplayAttribute"
+  member val attrib_DebuggerTypeProxyAttribute = findSysAttrib "System.Diagnostics.DebuggerTypeProxyAttribute"
+  member val attrib_PreserveSigAttribute = tryFindSysAttrib "System.Runtime.InteropServices.PreserveSigAttribute"
+  member val attrib_MethodImplAttribute = findSysAttrib "System.Runtime.CompilerServices.MethodImplAttribute"
+  member val attrib_ExtensionAttribute = findSysAttrib "System.Runtime.CompilerServices.ExtensionAttribute"
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
@@ -1260,7 +1314,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
-  member val attrib_InternalsVisibleToAttribute            = findSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+  member val attrib_InternalsVisibleToAttribute            = findSysAttrib tname_InternalsVisibleToAttribute
   member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
@@ -1417,7 +1471,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.hash_info                  = v_hash_info
   member _.box_info                   = v_box_info
   member _.isnull_info                = v_isnull_info
-  member _.isnotnull_info             = v_isnotnull_info
   member _.raise_info                 = v_raise_info
   member _.failwith_info              = v_failwith_info
   member _.invalid_arg_info           = v_invalid_arg_info
@@ -1533,6 +1586,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
+  member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info
 
@@ -1592,8 +1646,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
 
-  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
-
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
   member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
@@ -1619,6 +1671,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+
+  member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
+      mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
   /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.

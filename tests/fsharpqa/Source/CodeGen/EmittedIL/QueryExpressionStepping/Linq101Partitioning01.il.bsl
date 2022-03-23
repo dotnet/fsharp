@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern Utils
 {
@@ -45,13 +45,13 @@
   // Offset: 0x000003D8 Length: 0x00000138
 }
 .module Linq101Partitioning01.exe
-// MVID: {611C4D82-B280-A6A2-A745-0383824D1C61}
+// MVID: {6220E157-B280-A6A2-A745-038357E12062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06570000
+// Image base: 0x06F10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,7 +100,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] int32 V_0,
                [1] int32 n)
@@ -118,78 +118,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 12,12 : 9,28 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      .line 12,12 : 9,28 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 12,12 : 9,12 ''
+      IL_0025:  nop
+      .line 12,12 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0054:  stloc.0
-      .line 12,12 : 9,28 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 13,13 : 9,15 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      .line 12,12 : 9,28 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldc.i4.0
-      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.0
+      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #1 input at line 11@12'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -262,7 +261,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 12,12 : 9,28 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -272,20 +270,16 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 12,12 : 9,28 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #1 input at line 11@12'::Close
 
     .method public strict virtual instance bool 
@@ -394,7 +388,7 @@
       // Code size       28 (0x1c)
       .maxstack  7
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 21,21 : 9,29 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 22,22 : 9,32 ''
@@ -440,10 +434,10 @@
       // Code size       45 (0x2d)
       .maxstack  8
       .locals init ([0] class [Utils]Utils/Customer c)
-      .line 20,20 : 9,30 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
-      .line 21,21 : 9,29 ''
+      .line 21,21 : 9,12 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'Pipe #2 input at line 19@20'::builder@
       IL_0008:  ldarg.0
@@ -610,7 +604,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] int32 V_0,
                [1] int32 n)
@@ -627,78 +621,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 29,29 : 9,28 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      .line 29,29 : 9,28 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 29,29 : 9,12 ''
+      IL_0025:  nop
+      .line 29,29 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0054:  stloc.0
-      .line 29,29 : 9,28 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 30,30 : 9,15 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      .line 29,29 : 9,28 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldc.i4.0
-      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.0
+      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #3 input at line 28@29'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -771,7 +764,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 29,29 : 9,28 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -781,20 +773,16 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 29,29 : 9,28 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #3 input at line 28@29'::Close
 
     .method public strict virtual instance bool 
@@ -903,7 +891,7 @@
       // Code size       28 (0x1c)
       .maxstack  7
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 37,37 : 9,29 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 38,38 : 9,32 ''
@@ -949,10 +937,10 @@
       // Code size       45 (0x2d)
       .maxstack  8
       .locals init ([0] class [Utils]Utils/Customer c)
-      .line 36,36 : 9,30 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
-      .line 37,37 : 9,29 ''
+      .line 37,37 : 9,12 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Partitioning01/'Pipe #4 input at line 35@36'::builder@
       IL_0008:  ldarg.0
@@ -1119,7 +1107,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] int32 V_0,
                [1] int32 n)
@@ -1136,78 +1124,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 45,45 : 9,28 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      .line 45,45 : 9,28 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 45,45 : 9,12 ''
+      IL_0025:  nop
+      .line 45,45 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0054:  stloc.0
-      .line 45,45 : 9,28 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 46,46 : 9,26 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      .line 45,45 : 9,28 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldc.i4.0
-      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.0
+      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #5 input at line 44@45'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1280,7 +1267,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 45,45 : 9,28 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -1290,20 +1276,16 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 45,45 : 9,28 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #5 input at line 44@45'::Close
 
     .method public strict virtual instance bool 
@@ -1459,7 +1441,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] int32 V_0,
                [1] int32 n)
@@ -1476,78 +1458,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 52,52 : 9,28 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      .line 52,52 : 9,28 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 52,52 : 9,12 ''
+      IL_0025:  nop
+      .line 52,52 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Partitioning01::get_numbers()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0054:  stloc.0
-      .line 52,52 : 9,28 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 53,53 : 9,31 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      .line 52,52 : 9,28 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldc.i4.0
-      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.0
+      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #6 input at line 51@52'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       124 (0x7c)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1620,7 +1601,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 52,52 : 9,28 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -1630,20 +1610,16 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 52,52 : 9,28 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_0079:  ldloc.0
+      IL_007a:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007b:  ret
     } // end of method 'Pipe #6 input at line 51@52'::Close
 
     .method public strict virtual instance bool 
@@ -1911,7 +1887,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       466 (0x1d2)
+    // Code size       460 (0x1cc)
     .maxstack  13
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> numbers,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> first3Numbers,
@@ -1969,172 +1945,162 @@
     IL_0042:  dup
     IL_0043:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::numbers@7
     IL_0048:  stloc.0
-    .line 10,14 : 1,20 ''
-    IL_0049:  nop
     .line 11,11 : 5,10 ''
-    IL_004a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_004f:  stloc.s    V_9
-    IL_0051:  ldloc.s    V_9
-    IL_0053:  ldnull
+    IL_0049:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_004e:  stloc.s    V_9
+    IL_0050:  ldloc.s    V_9
+    IL_0052:  ldnull
+    IL_0053:  ldc.i4.0
     IL_0054:  ldc.i4.0
-    IL_0055:  ldc.i4.0
-    IL_0056:  newobj     instance void Linq101Partitioning01/'Pipe #1 input at line 11@12'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_0055:  newobj     instance void Linq101Partitioning01/'Pipe #1 input at line 11@12'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                   int32,
                                                                                                   int32)
-    IL_005b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0060:  ldc.i4.3
-    IL_0061:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Take<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_005a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_005f:  ldc.i4.3
+    IL_0060:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Take<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                               int32)
-    IL_0066:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_006b:  stloc.s    'Pipe #1 input at line 11'
+    IL_0065:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_006a:  stloc.s    'Pipe #1 input at line 11'
     .line 14,14 : 10,20 ''
-    IL_006d:  ldloc.s    'Pipe #1 input at line 11'
-    IL_006f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0074:  dup
-    IL_0075:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::first3Numbers@10
-    IL_007a:  stloc.1
+    IL_006c:  ldloc.s    'Pipe #1 input at line 11'
+    IL_006e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0073:  dup
+    IL_0074:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::first3Numbers@10
+    IL_0079:  stloc.1
     .line 17,17 : 1,34 ''
-    IL_007b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
-    IL_0080:  dup
-    IL_0081:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::customers@17
-    IL_0086:  stloc.2
-    .line 18,24 : 1,21 ''
-    IL_0087:  nop
+    IL_007a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
+    IL_007f:  dup
+    IL_0080:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::customers@17
+    IL_0085:  stloc.2
     .line 19,19 : 5,10 ''
-    IL_0088:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_008d:  stloc.s    V_11
+    IL_0086:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_008b:  stloc.s    V_11
+    IL_008d:  ldloc.s    V_11
     IL_008f:  ldloc.s    V_11
+    .line 20,20 : 9,12 ''
     IL_0091:  ldloc.s    V_11
     IL_0093:  ldloc.s    V_11
-    IL_0095:  ldloc.s    V_11
-    IL_0097:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
-    IL_009c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_00a1:  ldloc.s    V_11
-    IL_00a3:  newobj     instance void Linq101Partitioning01/'Pipe #2 input at line 19@20'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_00a8:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0095:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
+    IL_009a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_009f:  ldloc.s    V_11
+    IL_00a1:  newobj     instance void Linq101Partitioning01/'Pipe #2 input at line 19@20'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_00a6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00ad:  ldsfld     class Linq101Partitioning01/'Pipe #2 input at line 19@22-2' Linq101Partitioning01/'Pipe #2 input at line 19@22-2'::@_instance
-    IL_00b2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00ab:  ldsfld     class Linq101Partitioning01/'Pipe #2 input at line 19@22-2' Linq101Partitioning01/'Pipe #2 input at line 19@22-2'::@_instance
+    IL_00b0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_00b7:  ldsfld     class Linq101Partitioning01/'Pipe #2 input at line 19@23-3' Linq101Partitioning01/'Pipe #2 input at line 19@23-3'::@_instance
-    IL_00bc:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00b5:  ldsfld     class Linq101Partitioning01/'Pipe #2 input at line 19@23-3' Linq101Partitioning01/'Pipe #2 input at line 19@23-3'::@_instance
+    IL_00ba:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_00c1:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_00c6:  stloc.s    'Pipe #2 input at line 19'
+    IL_00bf:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_00c4:  stloc.s    'Pipe #2 input at line 19'
     .line 24,24 : 10,21 ''
-    IL_00c8:  ldloc.s    'Pipe #2 input at line 19'
-    IL_00ca:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_00cf:  dup
-    IL_00d0:  stsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders@18
-    IL_00d5:  stloc.3
-    .line 27,31 : 1,20 ''
-    IL_00d6:  nop
+    IL_00c6:  ldloc.s    'Pipe #2 input at line 19'
+    IL_00c8:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00cd:  dup
+    IL_00ce:  stsfld     class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders@18
+    IL_00d3:  stloc.3
     .line 28,28 : 5,10 ''
-    IL_00d7:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_00dc:  stloc.s    V_13
-    IL_00de:  ldloc.s    V_13
-    IL_00e0:  ldnull
-    IL_00e1:  ldc.i4.0
-    IL_00e2:  ldc.i4.0
-    IL_00e3:  newobj     instance void Linq101Partitioning01/'Pipe #3 input at line 28@29'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_00d4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_00d9:  stloc.s    V_13
+    IL_00db:  ldloc.s    V_13
+    IL_00dd:  ldnull
+    IL_00de:  ldc.i4.0
+    IL_00df:  ldc.i4.0
+    IL_00e0:  newobj     instance void Linq101Partitioning01/'Pipe #3 input at line 28@29'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                   int32,
                                                                                                   int32)
-    IL_00e8:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_00ed:  ldc.i4.4
-    IL_00ee:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Skip<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00e5:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_00ea:  ldc.i4.4
+    IL_00eb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Skip<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                               int32)
-    IL_00f3:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_00f8:  stloc.s    'Pipe #3 input at line 28'
+    IL_00f0:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_00f5:  stloc.s    'Pipe #3 input at line 28'
     .line 31,31 : 10,20 ''
-    IL_00fa:  ldloc.s    'Pipe #3 input at line 28'
-    IL_00fc:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0101:  dup
-    IL_0102:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst4Numbers@27
-    IL_0107:  stloc.s    allButFirst4Numbers
-    .line 34,40 : 1,34 ''
-    IL_0109:  nop
+    IL_00f7:  ldloc.s    'Pipe #3 input at line 28'
+    IL_00f9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00fe:  dup
+    IL_00ff:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst4Numbers@27
+    IL_0104:  stloc.s    allButFirst4Numbers
     .line 35,35 : 5,10 ''
-    IL_010a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_010f:  stloc.s    V_15
+    IL_0106:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_010b:  stloc.s    V_15
+    IL_010d:  ldloc.s    V_15
+    IL_010f:  ldloc.s    V_15
+    .line 36,36 : 9,12 ''
     IL_0111:  ldloc.s    V_15
     IL_0113:  ldloc.s    V_15
-    IL_0115:  ldloc.s    V_15
-    IL_0117:  ldloc.s    V_15
-    IL_0119:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
-    IL_011e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0123:  ldloc.s    V_15
-    IL_0125:  newobj     instance void Linq101Partitioning01/'Pipe #4 input at line 35@36'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_012a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0115:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Partitioning01::get_customers()
+    IL_011a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_011f:  ldloc.s    V_15
+    IL_0121:  newobj     instance void Linq101Partitioning01/'Pipe #4 input at line 35@36'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0126:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_012f:  ldsfld     class Linq101Partitioning01/'Pipe #4 input at line 35@38-2' Linq101Partitioning01/'Pipe #4 input at line 35@38-2'::@_instance
-    IL_0134:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_012b:  ldsfld     class Linq101Partitioning01/'Pipe #4 input at line 35@38-2' Linq101Partitioning01/'Pipe #4 input at line 35@38-2'::@_instance
+    IL_0130:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_0139:  ldsfld     class Linq101Partitioning01/'Pipe #4 input at line 35@39-3' Linq101Partitioning01/'Pipe #4 input at line 35@39-3'::@_instance
-    IL_013e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0135:  ldsfld     class Linq101Partitioning01/'Pipe #4 input at line 35@39-3' Linq101Partitioning01/'Pipe #4 input at line 35@39-3'::@_instance
+    IL_013a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0143:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0148:  stloc.s    'Pipe #4 input at line 35'
+    IL_013f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0144:  stloc.s    'Pipe #4 input at line 35'
     .line 40,40 : 10,20 ''
-    IL_014a:  ldc.i4.2
-    IL_014b:  ldloc.s    'Pipe #4 input at line 35'
-    IL_014d:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Skip<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(int32,
+    IL_0146:  ldc.i4.2
+    IL_0147:  ldloc.s    'Pipe #4 input at line 35'
+    IL_0149:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Skip<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(int32,
                                                                                                                                                                                                                                    class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0152:  stloc.s    'Pipe #4 stage #1 at line 40'
+    IL_014e:  stloc.s    'Pipe #4 stage #1 at line 40'
     .line 40,40 : 24,34 ''
-    IL_0154:  ldloc.s    'Pipe #4 stage #1 at line 40'
-    IL_0156:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_015b:  dup
-    IL_015c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders2@34
-    IL_0161:  stloc.s    WAOrders2
-    .line 43,47 : 1,20 ''
-    IL_0163:  nop
+    IL_0150:  ldloc.s    'Pipe #4 stage #1 at line 40'
+    IL_0152:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0157:  dup
+    IL_0158:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::WAOrders2@34
+    IL_015d:  stloc.s    WAOrders2
     .line 44,44 : 5,10 ''
-    IL_0164:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0169:  stloc.s    V_18
-    IL_016b:  ldloc.s    V_18
-    IL_016d:  ldnull
-    IL_016e:  ldc.i4.0
-    IL_016f:  ldc.i4.0
-    IL_0170:  newobj     instance void Linq101Partitioning01/'Pipe #5 input at line 44@45'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_015f:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0164:  stloc.s    V_18
+    IL_0166:  ldloc.s    V_18
+    IL_0168:  ldnull
+    IL_0169:  ldc.i4.0
+    IL_016a:  ldc.i4.0
+    IL_016b:  newobj     instance void Linq101Partitioning01/'Pipe #5 input at line 44@45'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                   int32,
                                                                                                   int32)
-    IL_0175:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_017a:  ldsfld     class Linq101Partitioning01/'Pipe #5 input at line 44@46-1' Linq101Partitioning01/'Pipe #5 input at line 44@46-1'::@_instance
-    IL_017f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::TakeWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0170:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0175:  ldsfld     class Linq101Partitioning01/'Pipe #5 input at line 44@46-1' Linq101Partitioning01/'Pipe #5 input at line 44@46-1'::@_instance
+    IL_017a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::TakeWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_0184:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0189:  stloc.s    'Pipe #5 input at line 44'
+    IL_017f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0184:  stloc.s    'Pipe #5 input at line 44'
     .line 47,47 : 10,20 ''
-    IL_018b:  ldloc.s    'Pipe #5 input at line 44'
-    IL_018d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0192:  dup
-    IL_0193:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::firstNumbersLessThan6@43
-    IL_0198:  stloc.s    firstNumbersLessThan6
-    .line 50,54 : 1,20 ''
-    IL_019a:  nop
+    IL_0186:  ldloc.s    'Pipe #5 input at line 44'
+    IL_0188:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_018d:  dup
+    IL_018e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::firstNumbersLessThan6@43
+    IL_0193:  stloc.s    firstNumbersLessThan6
     .line 51,51 : 5,10 ''
-    IL_019b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_01a0:  stloc.s    V_20
-    IL_01a2:  ldloc.s    V_20
-    IL_01a4:  ldnull
-    IL_01a5:  ldc.i4.0
-    IL_01a6:  ldc.i4.0
-    IL_01a7:  newobj     instance void Linq101Partitioning01/'Pipe #6 input at line 51@52'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_0195:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_019a:  stloc.s    V_20
+    IL_019c:  ldloc.s    V_20
+    IL_019e:  ldnull
+    IL_019f:  ldc.i4.0
+    IL_01a0:  ldc.i4.0
+    IL_01a1:  newobj     instance void Linq101Partitioning01/'Pipe #6 input at line 51@52'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                   int32,
                                                                                                   int32)
-    IL_01ac:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_01b1:  ldsfld     class Linq101Partitioning01/'Pipe #6 input at line 51@53-1' Linq101Partitioning01/'Pipe #6 input at line 51@53-1'::@_instance
-    IL_01b6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SkipWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_01a6:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_01ab:  ldsfld     class Linq101Partitioning01/'Pipe #6 input at line 51@53-1' Linq101Partitioning01/'Pipe #6 input at line 51@53-1'::@_instance
+    IL_01b0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SkipWhile<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_01bb:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_01c0:  stloc.s    'Pipe #6 input at line 51'
+    IL_01b5:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_01ba:  stloc.s    'Pipe #6 input at line 51'
     .line 54,54 : 10,20 ''
-    IL_01c2:  ldloc.s    'Pipe #6 input at line 51'
-    IL_01c4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_01c9:  dup
-    IL_01ca:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst3Numbers@50
-    IL_01cf:  stloc.s    allButFirst3Numbers
-    IL_01d1:  ret
+    IL_01bc:  ldloc.s    'Pipe #6 input at line 51'
+    IL_01be:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01c3:  dup
+    IL_01c4:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::allButFirst3Numbers@50
+    IL_01c9:  stloc.s    allButFirst3Numbers
+    IL_01cb:  ret
   } // end of method $Linq101Partitioning01::main@
 
 } // end of class '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01

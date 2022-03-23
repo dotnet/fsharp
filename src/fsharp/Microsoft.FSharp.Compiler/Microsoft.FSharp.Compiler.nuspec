@@ -4,7 +4,7 @@
         $CommonMetadataElements$
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NET5.0" />
+            <group targetFramework=".NET6.0" />
         </dependencies>
         <contentFiles>
             <files include="any\any\default.win32manifest"                       buildAction="Content" copyToOutput="true" flatten="false" />
@@ -26,16 +26,16 @@
             this approach gives a very small deployment. Which is kind of necessary.
         -->
         <!-- assemblies -->
-        <file src="fsc\$Configuration$\net5.0\fsc.dll"                                                     target="lib\net5.0" />
-        <file src="fsi\$Configuration$\net5.0\fsi.dll"                                                     target="lib\net5.0" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                             target="lib\net5.0" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"                             target="lib\net5.0" />
-        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\net5.0" />
-        <file src="FSharp.Build\$Configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\net5.0" />
+        <file src="fsc\$Configuration$\net6.0\fsc.dll"                                                     target="lib\net6.0" />
+        <file src="fsi\$Configuration$\net6.0\fsi.dll"                                                     target="lib\net6.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                             target="lib\net6.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"                             target="lib\net6.0" />
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\net6.0" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\net6.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
-                                                                                                           target="lib\net5.0" />
+                                                                                                           target="lib\net6.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
-                                                                                                           target="lib\net5.0" />
+                                                                                                           target="lib\net6.0" />
 
         <!-- additional files -->
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\default.win32manifest"           target="contentFiles\any\any" />
@@ -46,19 +46,23 @@
         <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"                target="lib\net5.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"                target="lib\net6.0" />
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"
-                                                                                                           target="lib\net5.0" />
+                                                                                                           target="lib\net6.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
-                                                                                                           target="lib\net5.0" />
-        <file src="FSharp.Build\$Configuration$\netstandard2.0\**\FSharp.Build.resources.dll"              target="lib\net5.0" />
+                                                                                                           target="lib\net6.0" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\**\FSharp.Build.resources.dll"              target="lib\net6.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
-                                                                                                           target="lib\net5.0" />
+                                                                                                           target="lib\net6.0" />
         <file src="$artifactsPackagesDir$Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"     target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
         <file src="$artifactsPackagesDir$Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"
                                                                                                            target="contentFiles\Shipping" />
         <file src="$artifactsPackagesDir$Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"
-        	                                                                                                 target="contentFiles\Release" />
+                                                                                                           target="contentFiles\Release" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Shipping\Microsoft.FSharp.Core.NetSdk.props"
+                                                                                                           target="contentFiles\Shipping" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Release\Microsoft.FSharp.Core.NetSdk.props"
+                                                                                                           target="contentFiles\Release" />
     </files>
 </package>

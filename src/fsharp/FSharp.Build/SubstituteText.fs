@@ -10,31 +10,31 @@ open Microsoft.Build.Utilities
 
 type SubstituteText () =
 
-    let mutable _buildEngine : IBuildEngine = null
-    let mutable _hostObject : ITaskHost = null
+    let mutable _buildEngine: IBuildEngine MaybeNull = null
+    let mutable _hostObject: ITaskHost MaybeNull = null
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
-    let mutable embeddedResources : ITaskItem[] = [||]
+    let mutable embeddedResources: ITaskItem[] = [||]
 
     [<Required>]
-    member this.EmbeddedResources
+    member _.EmbeddedResources
         with get() = embeddedResources
          and set(value) = embeddedResources <- value
 
     [<Output>]
-    member this.CopiedFiles
+    member _.CopiedFiles
         with get() = copiedFiles.ToArray()
 
     interface ITask with
-        member this.BuildEngine
+        member _.BuildEngine
             with get() = _buildEngine
              and set(value) = _buildEngine <- value
 
-        member this.HostObject
+        member _.HostObject
             with get() = _hostObject
              and set(value) = _hostObject <- value
 
-        member this.Execute() =
+        member _.Execute() =
             copiedFiles.Clear()
             if not(isNull embeddedResources) then
                 for item in embeddedResources do

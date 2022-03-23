@@ -110,13 +110,13 @@ Now get the value that corresponds to the function defined in the code:
 let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
 
 (**
-Now look around at the properties describing the function value. All of the following evaluate to `true`:
+Now look around at the properties describing the function value:
 *)
-fnVal.Attributes.Count = 1
+fnVal.Attributes.Count // 1
 fnVal.CurriedParameterGroups.Count // 1
 fnVal.CurriedParameterGroups.[0].Count // 2
-fnVal.CurriedParameterGroups.[0].[0].Name // "x"
-fnVal.CurriedParameterGroups.[0].[1].Name // "y"
+fnVal.CurriedParameterGroups.[0].[0].Name // Some "x"
+fnVal.CurriedParameterGroups.[0].[1].Name // Some "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
 fnVal.DeclaringEntity.Value.DisplayName // "Test"

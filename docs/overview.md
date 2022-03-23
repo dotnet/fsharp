@@ -45,7 +45,7 @@ The following are the key data formats and internal data representations of the 
 
 The following are the most relevant parts of the F# compiler tooling, making up the "engine" and API surface area of `FSharp.Compiler.Service`.
 
-* The incremental project build engine state in [IncrementalBuild.fsi](https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src/fsharp/service/IncrementalBuild.fsi)/[IncrementalBuild.fs](https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src/fsharp/service/IncrementalBuild.fs), a part of the F# Compiler Service API.
+* The incremental project build engine state in [IncrementalBuild.fsi](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service/IncrementalBuild.fsi)/[IncrementalBuild.fs](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service/IncrementalBuild.fs), a part of the F# Compiler Service API.
 
 * The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service) and [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/symbols).
 
@@ -53,7 +53,7 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 ## Key compiler phases
 
-The following is a diagram of how different phases of F# compiler work:
+The following is a diagram of how the different phases of the F# compiler work:
 
 ![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
 
@@ -67,7 +67,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for
-   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. 
+   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler.
    See [DependencyManager](https://github.com/dotnet/fsharp/tree/main/src/fsharp/DependencyManager) for reference resolution and package management used in `fsi`.
 
 * _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
@@ -81,7 +81,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Pattern match compilation_, see [PatternMatchCompilation.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fsi)/[PatternMatchCompilation.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fs). Accepts a subset of checked Typed Tree nodes representing F# pattern matching and produces Typed Tree expressions implementing the pattern matching. Called during type checking as each construct involving pattern matching is processed.
 
-* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fs).A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
+* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fs). A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
 
 * _Post-inference type checks_, see [PostInferenceChecks.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fsi)/[PostInferenceChecks.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fs). Called at the end of type checking/inference for each file. A range of checks that can only be enforced after type checking on a file is complete, such as analysis when using `byref<'T>` or other `IsByRefLike` structs.
 
@@ -93,7 +93,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Abstract IL code rewriting_, see [EraseClosures.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ilx/EraseClosures.fs) and
   [EraseUnions.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ilx/EraseUnions.fs). Eliminates some constructs by rewriting Abstract IL nodes.
-  
+
 * _Binary emit_, see [ilwrite.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilwrite.fsi)/[ilwrite.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilwrite.fs).
 
 * _Reflection-Emit_, see [ilreflect.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilreflect.fs).
@@ -112,5 +112,4 @@ The F# compiler is bootstrapped. That is, an existing F# compiler is used to bui
 
 ## FSharp.Build
 
-`FSharp.Build.dll` and `Microsoft.FSharp.targets` give MSBuild support for F# projects (`.fsproj`) and contain the. Although not strictly part of the F# compiler, they are essential for using F# in all contexts for .NET, aside from some more targeted scripting scenarios. The targets expose things like the `CoreCompile` and `Fsc` tasks called by MSBuild.
-
+`FSharp.Build.dll` and `Microsoft.FSharp.targets` give MSBuild support for F# projects (`.fsproj`) and contain the targets. Although not strictly part of the F# compiler, they are essential for using F# in all contexts for .NET, aside from some more targeted scripting scenarios. The targets expose things like the `CoreCompile` and `Fsc` tasks called by MSBuild.
