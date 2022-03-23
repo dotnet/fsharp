@@ -67,6 +67,9 @@
     <Compile Include="..\service\PatternMatchCompilationTests.fs">
       <Link>PatternMatchCompilationTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\CompletionTests.fs">
+      <Link>CompletionTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>
     </Compile>
