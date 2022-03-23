@@ -2223,7 +2223,7 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
                                               EmitType cenv env bb ty)
     GetBytesAsBlobIdx cenv bytes
 
-let GenPdbImport (cenv: cenv) _env (input: ILDebugImport) =
+let GenPdbImport (cenv: cenv) (input: ILDebugImport) =
     match input with 
     | ILDebugImport.ImportType ty ->
         let tspec = ty.TypeSpec
@@ -2232,7 +2232,7 @@ let GenPdbImport (cenv: cenv) _env (input: ILDebugImport) =
 
     | ILDebugImport.ImportNamespace nsp -> PdbImport.ImportNamespace nsp
 
-let rec GenPdbImports (cenv: cenv) env (input: ILDebugImports option) =
+let rec GenPdbImports (cenv: cenv) (input: ILDebugImports option) =
     match input with 
     | None -> None
     | Some ilImports -> 
@@ -2240,8 +2240,8 @@ let rec GenPdbImports (cenv: cenv) env (input: ILDebugImports option) =
         | true, v -> Some v
         | _ ->
             let v : PdbImports = 
-                { Imports = ilImports.Imports |> Array.map (GenPdbImport cenv env)
-                  Parent = GenPdbImports cenv env ilImports.Parent }
+                { Imports = ilImports.Imports |> Array.map (GenPdbImport cenv)
+                  Parent = GenPdbImports cenv ilImports.Parent }
             cenv.pdbImports.[ilImports] <- v
             Some v
 
@@ -2256,7 +2256,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
       else
         [| |]
 
-    let imports = GenPdbImports cenv env il.DebugImports
+    let imports = GenPdbImports cenv il.DebugImports
     let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
     let codeSize = code.Length
     use methbuf = ByteBuffer.Create (codeSize * 3)
