@@ -950,7 +950,7 @@ let rec erasePartialPatterns inpPat =
     | TPat_tuple (tupInfo, subPats, x, m) -> TPat_tuple(tupInfo, erasePartials subPats, x, m)
     | TPat_exnconstr(x, subPats, m) -> TPat_exnconstr(x, erasePartials subPats, m)
     | TPat_array (subPats, x, m) -> TPat_array (erasePartials subPats, x, m)
-    | TPat_block (subPats, x, m) -> TPat_array (erasePartials subPats, x, m)
+    | TPat_block (subPats, x, m) -> TPat_block (erasePartials subPats, x, m)
     | TPat_unioncase (x, y, ps, m) -> TPat_unioncase (x, y, erasePartials ps, m)
     | TPat_recd (x, y, ps, m) -> TPat_recd (x, y, List.map erasePartialPatterns ps, m)
     | TPat_isinst (x, y, subPatOpt, m) -> TPat_isinst (x, y, Option.map erasePartialPatterns subPatOpt, m)
