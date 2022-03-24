@@ -306,7 +306,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
-  let v_block_tcr_nice = mk_MFCore_tcref fslibCcu "option`1"
+  let v_block_tcr = findSysTyconRef ["System";"Collections";"Immutable"] "ImmutableArray`1"
   let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
   let v_list_tcr_canon        = mk_MFCollections_tcref fslibCcu "List`1"
   let v_list_tcr_nice            = mk_MFCollections_tcref fslibCcu "list`1"
@@ -429,7 +429,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       assert (rank >= 1 && rank <= 32)
       TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
 
-  let mkBlockType (ty:TType) = TType_app (v_block_tcr_nice, [ty], v_knownWithoutNull)
+  let mkBlockType (ty:TType) = TType_app (v_block_tcr, [ty], v_knownWithoutNull)
 
   let mkLazyTy ty = TType_app(lazy_tcr, [ty], v_knownWithoutNull)
 
@@ -1007,7 +1007,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.lazy_tcr_canon = lazy_tcr
   member val refcell_tcr_nice = v_refcell_tcr_nice
   member val array_tcr_nice = v_il_arr_tcr_map.[0]
-  member _.block_tcr_nice = v_block_tcr_nice
+  member _.block_tcr = v_block_tcr
   member _.option_tcr_nice = v_option_tcr_nice
   member _.valueoption_tcr_nice = v_valueoption_tcr_nice
   member _.list_tcr_nice = v_list_tcr_nice
