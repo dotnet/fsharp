@@ -304,6 +304,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         globalOptions.BlockForCompletionItems <- false
         globalOptions.SetBackgroundAnalysisScope(openFilesOnly=true)
 
+        let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
+        globalOptions.BlockForCompletionItems <- false
+
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
 
