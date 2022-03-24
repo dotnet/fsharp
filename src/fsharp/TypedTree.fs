@@ -4763,7 +4763,7 @@ type TOp =
     /// An operation representing the creation of an array value
     | Array
 
-    /// An operation representing the creation of an block value
+    /// An operation representing the creation of a block value
     | Block
 
     /// Constant byte arrays (used for parser tables and other embedded data)
