@@ -4483,20 +4483,21 @@ let getRecordFieldsInScope nenv =
 
 /// allowObsolete - specifies whether we should return obsolete types & modules
 ///   as (no other obsolete items are returned)
-let rec ResolvePartialLongIdentToClassOrRecdFields (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (allowObsolete: bool) =
-    ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv OpenQualified m ad plid allowObsolete
+let rec ResolvePartialLongIdentToClassOrRecdFields (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (allowObsolete: bool) (fieldsOnly: bool) =
+    ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv OpenQualified m ad plid allowObsolete fieldsOnly
 
-and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: NameResolutionEnv) fullyQualified m ad plid allowObsolete =
+and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: NameResolutionEnv) fullyQualified m ad plid allowObsolete fieldsOnly =
     let g = ncenv.g
 
     match  plid with
     |  id :: plid when id = "global" -> // this is deliberately not the mangled name
        // dive deeper
-       ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv FullyQualified m ad plid allowObsolete
+       ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv FullyQualified m ad plid allowObsolete fieldsOnly
     |  [] ->
 
         // empty plid - return namespaces\modules\record types\accessible fields
 
+       if fieldsOnly then getRecordFieldsInScope nenv else
 
        let mods =
            let moduleOrNamespaceRefs =
@@ -4524,7 +4525,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.map (ItemOfTyconRef ncenv m)
            |> Seq.toList
 
-       let recdFields = getRecordFieldsInScope nenv
+       let recdFields =
+           getRecordFieldsInScope nenv
 
        mods @ recdTyCons @ recdFields
 
@@ -4540,7 +4542,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
 
         let qualifiedFields =
             match rest with
-            | [] ->
+            | [] when not fieldsOnly ->
                 // get record types accessible in given nenv
                 let tycons = LookupTypeNameInEnvNoArity OpenQualified id nenv
                 tycons

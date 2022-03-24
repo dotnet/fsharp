@@ -560,7 +560,7 @@ val internal ResolveExprLongIdent              : TcResultsSink -> NameResolver -
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
 
 /// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
-val internal ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
+val internal ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType  : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
