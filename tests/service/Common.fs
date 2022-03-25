@@ -331,22 +331,22 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
 
 
 let getParseResults (source: string) =
-    parseSourceCode("/home/user/Test.fsx", source)
+    parseSourceCode("Test.fsx", source)
 
 let getParseResultsOfSignatureFile (source: string) =
-    parseSourceCode("/home/user/Test.fsi", source)
+    parseSourceCode("Test.fsi", source)
 
 let getParseAndCheckResults (source: string) =
-    parseAndCheckScript("/home/user/Test.fsx", source)
+    parseAndCheckScript("Test.fsx", source)
 
 let getParseAndCheckResultsOfSignatureFile (source: string) =
-    parseAndCheckScript("/home/user/Test.fsi", source)
+    parseAndCheckScript("Test.fsi", source)
 
 let getParseAndCheckResultsPreview (source: string) =
-    parseAndCheckScriptPreview("/home/user/Test.fsx", source)
+    parseAndCheckScriptPreview("Test.fsx", source)
 
 let getParseAndCheckResults50 (source: string) =
-    parseAndCheckScript50("/home/user/Test.fsx", source)
+    parseAndCheckScript50("Test.fsx", source)
 
 
 let inline dumpErrors results =
