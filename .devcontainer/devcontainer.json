@@ -9,9 +9,61 @@
             "VARIANT": "6.0-bullseye"
         }
     },
+    "hostRequirements": {
+        "cpus": 2,
+        "memory": "4gb",
+        "storage": "32gb"
+    },
     // Default settings are set in .vscode/settings.json
     "settings": {
         "terminal.integrated.shell.linux": "/bin/bash",
+        "editor.trimAutoWhitespace": false,
+        "files.trimTrailingWhitespace": false,
+        "files.associations": {
+            "*.csproj": "msbuild",
+            "*.fsproj": "msbuild",
+            "*.nuspec": "xml",
+            "*.props": "msbuild",
+            "*.targets": "msbuild",
+            "*.vsixmanifest": "xml",
+            "*.vstemplate": "xml",
+        },
+        "FSharp.suggestGitignore": false,
+        "FSharp.enableMSBuildProjectGraph": true,
+        "FSharp.workspacePath": "FSharp.sln",
+        "FSharp.workspaceModePeekDeepLevel": 1,
+        "FSharp.excludeProjectDirectories": [
+            ".git",
+            "eng",
+            "artifacts",
+            "fcs-samples",
+            "tests/projects",
+            "tests/benchmarks",
+            "tests/EndToEndBuildTests",
+        ],
+        "csharp.showOmnisharpLogOnError": false,
+        "csharp.suppressBuildAssetsNotification": true,
+        "csharp.suppressDotnetInstallWarning": true,
+        "csharp.suppressDotnetRestoreNotification": true,
+        "csharp.suppressHiddenDiagnostics": true,
+        "omnisharp.autoStart": true,
+        "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
+        "omnisharp.disableMSBuildDiagnosticWarning": true,
+        "razor.disabled": true,
+        "powershell.promptToUpdatePowerShell": false,
+        "powershell.integratedConsole.showOnStartup": false,
+        "powershell.startAutomatically": false,
+        "dotnet-test-explorer.testProjectPath": "tests/+(FSharp.Compiler.Service.Tests|FSharp.Compiler.UnitTests|FSharp.Core.UnitTests|FSharp.Build.UnitTests|FSharp.Compiler.ComponentTests)/*Tests.fsproj",
+        "dotnet-test-explorer.addProblems": true,
+        "dotnet-test-explorer.autoWatch": false,
+        "dotnet-test-explorer.treeMode": "merged",
+        "testExplorer.useNativeTesting": true,
+        "markdownlint.config": {
+            "MD028": false,
+            "MD025": {
+                "front_matter_title": ""
+            }
+        }
     },
 
     // Add the IDs of extensions you want installed when the container is created.
