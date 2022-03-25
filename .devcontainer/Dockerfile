@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-ARG VARIANT=6.0-bullseye
+ARG VARIANT=6.0-focal
 FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
 
 # Avoid warnings by switching to noninteractive
