@@ -502,7 +502,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                           methodImpls=emptyILMethodImpls,
                           properties=emptyILProperties,
                           events=emptyILEvents,
-                          isAttribute=false,
+                          isKnownToBeAttribute=false,
                           securityDecls=emptyILSecurityDecls)
                      .WithSpecialName(false)
                      .WithImport(false)
@@ -599,7 +599,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                               methodImpls=emptyILMethodImpls,
                               properties=emptyILProperties,
                               events=emptyILEvents,
-                              isAttribute=false,
+                              isKnownToBeAttribute=false,
                               securityDecls=emptyILSecurityDecls)
                          .WithHasSecurity(false)
                          .WithSpecialName(false)

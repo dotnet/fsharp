@@ -1719,7 +1719,7 @@ and typeDefReader ctxtH: ILTypeDefStored =
                      methodImpls=mimpls,
                      events= events,
                      properties=props,
-                     isAttribute=false,
+                     isKnownToBeAttribute=false,
                      customAttrsStored=ctxt.customAttrsReader_TypeDef,
                      metadataIndex=idx)
     )

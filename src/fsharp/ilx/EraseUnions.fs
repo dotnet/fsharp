@@ -1088,7 +1088,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                           methodImpls=emptyILMethodImpls,
                           events=emptyILEvents,
                           properties=emptyILProperties,
-                          isAttribute=false,
+                          isKnownToBeAttribute=false,
                           customAttrs= emptyILCustomAttrs)
                       .WithNestedAccess(cud.UnionCasesAccessibility)
                       .WithAbstract(true)

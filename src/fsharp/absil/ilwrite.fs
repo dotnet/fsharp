@@ -1138,7 +1138,7 @@ let canGenMethodDef (td: ILTypeDef) cenv (md: ILMethodDef) =
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if td.IsAttribute && md.IsSpecialName && (not md.IsConstructor) && (not md.IsClassInitializer) then
+    else if td.IsKnownToBeAttribute && md.IsSpecialName && (not md.IsConstructor) && (not md.IsClassInitializer) then
         true
     else
         match md.Access with
@@ -1155,7 +1155,7 @@ let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
     if not cenv.referenceAssemblyOnly then
         true
     // We want to explicitly generate fields for struct types and attributes, since they can be part of `unmanaged constraint`.
-    else if td.IsStruct || td.IsAttribute then
+    else if td.IsStruct || td.IsKnownToBeAttribute then
         true
     else
         match fd.Access with
