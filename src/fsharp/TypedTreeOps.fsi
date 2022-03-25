@@ -6,6 +6,7 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
@@ -34,10 +35,7 @@ val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
 /// Build a function type
-val mkFunTy: TType -> TType -> TType
-
-/// Build a function type
-val ( --> ): TType -> TType -> TType
+val mkFunTy: TcGlobals -> TType -> TType -> TType
 
 /// Build a type-forall anonymous generic type if necessary
 val mkForallTyIfNeeded: Typars -> TType -> TType
@@ -45,16 +43,16 @@ val mkForallTyIfNeeded: Typars -> TType -> TType
 val ( +-> ): Typars -> TType -> TType
 
 /// Build a curried function type
-val mkIteratedFunTy: TTypes -> TType -> TType
+val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
 
 /// Get the natural type of a single argument amongst a set of curried arguments
 val typeOfLambdaArg: range -> Val list -> TType
 
-/// Get the curried type corresponding to a lambda 
-val mkMultiLambdaTy: range -> Val list -> TType -> TType
+/// Get the type corresponding to a lambda 
+val mkLambdaTy: TcGlobals -> Typars -> TTypes -> TType -> TType
 
 /// Get the curried type corresponding to a lambda 
-val mkLambdaTy: Typars -> TTypes -> TType -> TType
+val mkMultiLambdaTy: TcGlobals -> range -> Val list -> TType -> TType
 
 /// Module publication, used while compiling fslib.
 val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
@@ -146,16 +144,16 @@ val mkObjExpr: TType * Val option * Expr * ObjExprMethod list * (TType * ObjExpr
 val mkTypeChoose: range -> Typars -> Expr -> Expr
 
 /// Build an iterated (curried) lambda expression
-val mkLambdas: range -> Typars -> Val list -> Expr * TType -> Expr
+val mkLambdas: TcGlobals -> range -> Typars -> Val list -> Expr * TType -> Expr
 
 /// Build an iterated (tupled+curried) lambda expression
-val mkMultiLambdasCore: range -> Val list list -> Expr * TType -> Expr * TType
+val mkMultiLambdasCore: TcGlobals -> range -> Val list list -> Expr * TType -> Expr * TType
 
 /// Build an iterated generic (type abstraction + tupled+curried) lambda expression
-val mkMultiLambdas: range -> Typars -> Val list list -> Expr * TType -> Expr
+val mkMultiLambdas: TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
 
 /// Build a lambda expression that corresponds to the implementation of a member
-val mkMemberLambdas: range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+val mkMemberLambdas: TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 /// Build a 'while' loop expression
 val mkWhile: TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range -> Expr
@@ -185,7 +183,7 @@ val mkLetsFromBindings: range -> Bindings -> Expr -> Expr
 val mkLet: DebugPointAtBinding -> range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a function value to a lambda taking multiple arguments
-val mkMultiLambdaBind: Val -> DebugPointAtBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind: TcGlobals -> Val -> DebugPointAtBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -554,12 +552,14 @@ val instTyparConstraints: TyparInst -> TyparConstraint list -> TyparConstraint l
 
 val instTrait: TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
 
+val generalTyconRefInst : TyconRef -> TypeInst
+
 /// From typars to types 
 val generalizeTypars: Typars -> TypeInst
 
-val generalizeTyconRef: TyconRef -> TTypes * TType
+val generalizeTyconRef: TcGlobals -> TyconRef -> TTypes * TType
 
-val generalizedTyconRef: TyconRef -> TType
+val generalizedTyconRef: TcGlobals -> TyconRef -> TType
 
 val mkTyparToTyparRenaming: Typars -> Typars -> TyparInst * TTypes
 
@@ -1923,8 +1923,6 @@ val mkCallBox: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallIsNull: TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallIsNotNull: TcGlobals -> range -> TType -> Expr -> Expr
-
 val mkCallRaise: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGenericComparisonWithComparerOuter: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -2168,7 +2166,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool

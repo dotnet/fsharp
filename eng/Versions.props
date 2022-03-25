@@ -112,8 +112,8 @@
     <SystemRuntimeCompilerServicesUnsafeVersion>5.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- VisualStudio package versions  -->
-    <VisualStudioImplementationPackagesVersion>17.0.154-preview</VisualStudioImplementationPackagesVersion>
-    <VisualStudioContractPackagesVersion>17.0.0-previews-2-31423-289</VisualStudioContractPackagesVersion>
+    <VisualStudioImplementationPackagesVersion>17.0.391-preview-g5e248c9073</VisualStudioImplementationPackagesVersion>
+    <VisualStudioContractPackagesVersion>17.0.0-previews-4-31709-430</VisualStudioContractPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.0.77-pre-g62a6cb5699</VisualStudioProjectSystemPackagesVersion>
     <MicrosoftVisualStudioInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftInternalVisualStudioInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftInternalVisualStudioInteropVersion>
@@ -134,7 +134,7 @@
     <EnvDTEVersion>$(VisualStudioContractPackagesVersion)</EnvDTEVersion>
     <EnvDTE80Version>$(VisualStudioContractPackagesVersion)</EnvDTE80Version>
     <!-- Roslyn packages -->
-    <RoslynVersion>4.0.0-1.21181.18</RoslynVersion>
+    <RoslynVersion>4.1.0-1.21511.14</RoslynVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
@@ -144,12 +144,12 @@
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>16.11</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>17.0.0</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
     <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
-    <MicrosoftVSSDKBuildToolsVersion>17.0.2136-preview2</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
     <!-- Visual Studio editor packages -->
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioEditorVersion>
@@ -168,7 +168,7 @@
     <MicrosoftVisualStudioShellFrameworkVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
     <!-- Misc. Visual Studio packages -->
-    <MicrosoftVisualStudioRpcContractsVersion>17.0.50-preview-0002-0002</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>17.0.50-preview-0002-0025</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualStudioComponentModelHostVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioComponentModelHostVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
@@ -184,9 +184,9 @@
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.1</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
     <MicrosoftVisualStudioShellInterop16DesignTimeVersion>16.0.28924.11111</MicrosoftVisualStudioShellInterop16DesignTimeVersion>
-    <MicrosoftVisualStudioThreadingVersion>17.0.26-alpha</MicrosoftVisualStudioThreadingVersion>
+    <MicrosoftVisualStudioThreadingVersion>17.0.46-alpha</MicrosoftVisualStudioThreadingVersion>
     <MicrosoftVisualStudioUtilitiesVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioUtilitiesVersion>
-    <MicrosoftVisualStudioValidationVersion>17.0.1-alpha</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioValidationVersion>17.0.23-alpha</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>5.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
@@ -207,15 +207,18 @@
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
+    <MicrosoftNETTestSdkVersion>16.11.0</MicrosoftNETTestSdkVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
-    <NewtonsoftJsonVersion>12.0.2</NewtonsoftJsonVersion>
+    <NewtonsoftJsonVersion>13.0.1</NewtonsoftJsonVersion>
     <NUnitVersion>3.13.2</NUnitVersion>
     <NUnit3TestAdapterVersion>4.1.0</NUnit3TestAdapterVersion>
     <NunitXmlTestLoggerVersion>2.1.80</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
-    <StreamJsonRpcVersion>2.8.3-alpha</StreamJsonRpcVersion>
+    <StreamJsonRpcVersion>2.8.21</StreamJsonRpcVersion>
+    <NerdbankStreamsVersion>2.7.74</NerdbankStreamsVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
+    <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
+    <HumanizerCoreVersion>2.2.0</HumanizerCoreVersion>
   </PropertyGroup>
 </Project>

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>Types and functions related to expression quotations</summary>
+// Types and functions related to expression quotations
 namespace Microsoft.FSharp.Quotations
 
 open Microsoft.FSharp.Core

@@ -553,9 +553,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
                                    match obj with
                                    | null -> None
                                    | _ when aty.IsAssignableFrom(obj.GetType())  ->
-                                       match printer obj with
+                                       let text = printer obj
+                                       match box text with
                                        | null -> None
-                                       | s -> Some (wordL (TaggedText.tagText s))
+                                       | _ -> Some (wordL (TaggedText.tagText text))
                                    | _ -> None)
 
                          | Choice2Of2 (aty: Type, converter) ->
@@ -1777,7 +1778,7 @@ type internal FsiDynamicCompiler
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m)
         let isLastCompiland = true
         let isExe = false
-        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe) ))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
         let isIncrementalFragment = true
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState
@@ -1869,10 +1870,10 @@ type internal FsiDynamicCompiler
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
-                | null ->
+                | Null ->
                     errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
-                | dependencyManager ->
+                | NonNull dependencyManager ->
                     let directive d =
                         match d with
                         | Directive.Resolution -> "r"
@@ -1923,7 +1924,7 @@ type internal FsiDynamicCompiler
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
-                        | _, dependencyManager when not(isNull dependencyManager) ->
+                        | _, NonNull dependencyManager ->
                             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                                 fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
                                 st
@@ -1936,8 +1937,11 @@ type internal FsiDynamicCompiler
                             st
 
                         // #r "Assembly"
-                        | path, _ ->
+                        | NonNull path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
+
+                        | Null, Null ->
+                           st
                     ),
                     (fun _ _ -> ()))
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
@@ -2264,9 +2268,7 @@ module internal MagicAssemblyResolution =
     [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
     let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
-    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
-
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+    let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
            try
                // Grab the name of the assembly
@@ -2363,6 +2365,8 @@ module internal MagicAssemblyResolution =
            with e ->
                stopProcessingRecovery e range0
                null
+
+    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
         let rangeStdin0 = rangeN stdinMockFilename 0
 
@@ -2557,11 +2561,11 @@ type internal FsiInteractionProcessor
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
-            | null, null ->
+            | Null, Null ->
                 // error already reported
                 istate, CompletedWithAlreadyReportedError
 
-            | _, dependencyManager when not(isNull dependencyManager) ->
+            | _, NonNull dependencyManager ->
                if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                    fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
                    istate, Completed None
@@ -2573,7 +2577,7 @@ type internal FsiInteractionProcessor
                 errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
                 istate,Completed None
 
-            | p, _ ->
+            | NonNull p, Null ->
                 let path =
                     if String.IsNullOrWhiteSpace(p) then ""
                     else p

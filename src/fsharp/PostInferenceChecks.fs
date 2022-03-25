@@ -336,7 +336,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     // In an ideal world we would, instead, record the solutions to these constraints as "witness variables" in expressions, 
     // rather than solely in types. 
     match ty with 
-    | TType_var tp when tp.Solution.IsSome ->
+    | TType_var (tp, _) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with 
             | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) -> 
@@ -350,7 +350,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         if g.compilingFslib then
             match stripTyparEqns ty with
             // When compiling FSharp.Core, do not strip type equations at this point if we can't dereference a tycon.
-            | TType_app (tcref, _) when not tcref.CanDeref -> ty
+            | TType_app (tcref, _, _) when not tcref.CanDeref -> ty
             | _ -> stripTyEqns g ty
         else 
             stripTyEqns g ty
@@ -362,8 +362,9 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         CheckTypeDeep cenv f g env isInner body           
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
-    | TType_measure _          -> ()
-    | TType_app (tcref, tinst) -> 
+    | TType_measure _ -> ()
+
+    | TType_app (tcref, tinst, _) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef isInner tcref 
         | None -> ()
@@ -378,14 +379,22 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         match visitAppTyOpt with 
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
+
     | TType_anon (anonInfo, tys) -> 
         RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
-    | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
-    | TType_tuple (_, tys) -> CheckTypesDeep cenv f g env tys
-    | TType_fun (s, t) -> CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
-    | TType_var tp -> 
+    | TType_ucase (_, tinst) ->
+        CheckTypesDeep cenv f g env tinst
+
+    | TType_tuple (_, tys) ->
+        CheckTypesDeep cenv f g env tys
+
+    | TType_fun (s, t, _) ->
+        CheckTypeDeep cenv f g env true s
+        CheckTypeDeep cenv f g env true t
+
+    | TType_var (tp, _) -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
               | None -> ()
@@ -1341,7 +1350,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) context =
 
 and CheckLambda cenv env expr (argvs, m, rty) = 
     let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-    let ty = mkMultiLambdaTy m argvs rty in 
+    let ty = mkMultiLambdaTy cenv.g m argvs rty in 
     CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
 and CheckTyLambda cenv env expr (tps, m, rty) = 
@@ -2181,8 +2190,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
-                        let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
-                        let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        let minfo1 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind, v.DisplayName, v.Range)))
@@ -2242,7 +2251,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let g = cenv.g
     let m = tycon.Range 
     let tcref = mkLocalTyconRef tycon
-    let ty = generalizedTyconRef tcref
+    let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let env = BindTypars g env (tycon.Typars m)
@@ -2519,7 +2528,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 |> List.filter (isInterfaceTy g)
             CheckMultipleInterfaceInstantiations cenv ty interfaces false m
         
-        // Check struct fields. We check these late because we have to have first checked that the structs are
+        // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
         if tycon.IsStructOrEnumTycon then 
             for f in tycon.AllInstanceFieldsAsList do

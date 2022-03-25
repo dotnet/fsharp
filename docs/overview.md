@@ -53,7 +53,7 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 ## Key compiler phases
 
-The following is a diagram of how different phases of F# compiler work:
+The following is a diagram of how the different phases of the F# compiler work:
 
 ![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
 
@@ -81,7 +81,7 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Pattern match compilation_, see [PatternMatchCompilation.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fsi)/[PatternMatchCompilation.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fs). Accepts a subset of checked Typed Tree nodes representing F# pattern matching and produces Typed Tree expressions implementing the pattern matching. Called during type checking as each construct involving pattern matching is processed.
 
-* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fs).A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
+* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fs). A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
 
 * _Post-inference type checks_, see [PostInferenceChecks.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fsi)/[PostInferenceChecks.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fs). Called at the end of type checking/inference for each file. A range of checks that can only be enforced after type checking on a file is complete, such as analysis when using `byref<'T>` or other `IsByRefLike` structs.
 
@@ -112,4 +112,4 @@ The F# compiler is bootstrapped. That is, an existing F# compiler is used to bui
 
 ## FSharp.Build
 
-`FSharp.Build.dll` and `Microsoft.FSharp.targets` give MSBuild support for F# projects (`.fsproj`) and contain the. Although not strictly part of the F# compiler, they are essential for using F# in all contexts for .NET, aside from some more targeted scripting scenarios. The targets expose things like the `CoreCompile` and `Fsc` tasks called by MSBuild.
+`FSharp.Build.dll` and `Microsoft.FSharp.targets` give MSBuild support for F# projects (`.fsproj`) and contain the targets. Although not strictly part of the F# compiler, they are essential for using F# in all contexts for .NET, aside from some more targeted scripting scenarios. The targets expose things like the `CoreCompile` and `Fsc` tasks called by MSBuild.

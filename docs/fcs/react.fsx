@@ -16,7 +16,7 @@ FCS is an incremental execution engine. The aim is to make it Roslyn-like. We're
 
 There are two dimensions of incrementality:
 
-* The inputs change, e.g. the source filed are edited or a referenced assembly changes, appears or disappears
+* The inputs change, e.g. the source files are edited or a referenced assembly changes, appears or disappears
 * The results of analysis on the inputs (e.g. a parse tree) are further enriched with information (e.g. symbol uses are requested) and this information is held, i.e. not re-computed, perhaps by a returned object.
 
 The logical results of all "Check" routines (``ParseAndCheckFileInProject``, ``GetBackgroundCheckResultsForFileInProject``, 

@@ -304,8 +304,8 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
 
     let docs =
         match info.Documents with
-        | null -> Array.empty
-        | _ -> info.Documents
+        | Null -> Array.empty
+        | NonNull docs -> docs
 
     // The metadata to wite to the PoortablePDB (Roslyn = _debugMetadataOpt)
 
@@ -571,11 +571,11 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         let docHandle, sequencePointBlob =
             let sps =
                 match minfo.DebugPoints with
-                | null -> Array.empty
-                | _ ->
+                | Null -> Array.empty
+                | NonNull pts ->
                     match minfo.DebugRange with
                     | None -> Array.empty
-                    | Some _ -> minfo.DebugPoints
+                    | Some _ -> pts
 
             let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)

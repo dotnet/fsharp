@@ -23,8 +23,18 @@
     <Fsc_DotNET_ToolPath>$(NetCoreRoot)</Fsc_DotNET_ToolPath>
     <Fsc_DotNET_ToolExe>dotnet.exe</Fsc_DotNET_ToolExe>
     <Fsc_DotNET_DotnetFscCompilerPath>$(Fsc_DotNet_CompilerPath)fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <Fsc_DotNET__FSharpCoreLibraryPacksFolder>$(Fsc_DotNet_CompilerPath)library-packs</Fsc_DotNET__FSharpCoreLibraryPacksFolder>
 
     <FSharpCompilerPath>$(Fsc_NetFramework_ToolPath)</FSharpCompilerPath>
+  </PropertyGroup>
+
+  <Import Condition="Exists('$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props') and '$(FSharp_Shim_Present)'=='true'"
+          Project="$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props" />
+
+  <!-- TBD: Remove before shipping. Temporary workaround to account for F# arriving in VS before an SDK with these updates -->
+  <PropertyGroup Condition="!Exists('$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props') and '$(FSharp_Shim_Present)'=='true'">
+    <_FSCorePackageVersionSet>true</_FSCorePackageVersionSet>
+    <FSCorePackageVersion>6.0.3</FSCorePackageVersion>
   </PropertyGroup>
 
 </Project>

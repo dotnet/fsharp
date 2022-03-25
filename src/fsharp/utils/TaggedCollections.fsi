@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// This namespace contains FSharp.PowerPack extensions for the F# collection types
+// This namespace contains FSharp.PowerPack extensions for the F# collection types
 namespace Internal.Utilities.Collections.Tagged
 
     open System

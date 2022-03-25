@@ -36,13 +36,13 @@
   // Offset: 0x00000858 Length: 0x000003BA
 }
 .module SeqExpressionSteppingTest7.exe
-// MVID: {61FD4A6D-2432-93C3-A745-03836D4AFD61}
+// MVID: {6220E157-2432-93C3-A745-038357E12062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07240000
+// Image base: 0x05050000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -313,7 +313,7 @@
 
   .method public static void  testSimpleForEachListLoopWithOneStatement(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> inp) cil managed
   {
-    // Code size       51 (0x33)
+    // Code size       48 (0x30)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
@@ -326,34 +326,32 @@
     IL_0008:  stloc.1
     .line 28,28 : 11,13 ''
     IL_0009:  ldloc.1
-    IL_000a:  ldnull
-    IL_000b:  cgt.un
-    IL_000d:  brfalse.s  IL_0032
+    IL_000a:  brfalse.s  IL_002f
 
-    IL_000f:  ldloc.0
-    IL_0010:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0015:  stloc.2
+    IL_000c:  ldloc.0
+    IL_000d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0012:  stloc.2
     .line 29,29 : 8,42 ''
-    IL_0016:  ldstr      "{0}"
-    IL_001b:  ldloc.2
-    IL_001c:  box        [mscorlib]System.Int32
-    IL_0021:  call       void [mscorlib]System.Console::WriteLine(string,
+    IL_0013:  ldstr      "{0}"
+    IL_0018:  ldloc.2
+    IL_0019:  box        [mscorlib]System.Int32
+    IL_001e:  call       void [mscorlib]System.Console::WriteLine(string,
                                                                   object)
-    IL_0026:  ldloc.1
-    IL_0027:  stloc.0
-    IL_0028:  ldloc.0
-    IL_0029:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_002e:  stloc.1
+    IL_0023:  ldloc.1
+    IL_0024:  stloc.0
+    IL_0025:  ldloc.0
+    IL_0026:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_002b:  stloc.1
     .line 100001,100001 : 0,0 ''
-    IL_002f:  nop
-    IL_0030:  br.s       IL_0009
+    IL_002c:  nop
+    IL_002d:  br.s       IL_0009
 
-    IL_0032:  ret
+    IL_002f:  ret
   } // end of method SeqExpressionSteppingTest7::testSimpleForEachListLoopWithOneStatement
 
   .method public static void  testSimpleForEachListLoopWithTwoStatements(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> inp) cil managed
   {
-    // Code size       67 (0x43)
+    // Code size       64 (0x40)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
@@ -366,35 +364,33 @@
     IL_0008:  stloc.1
     .line 32,32 : 11,13 ''
     IL_0009:  ldloc.1
-    IL_000a:  ldnull
-    IL_000b:  cgt.un
-    IL_000d:  brfalse.s  IL_0042
+    IL_000a:  brfalse.s  IL_003f
 
-    IL_000f:  ldloc.0
-    IL_0010:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0015:  stloc.2
+    IL_000c:  ldloc.0
+    IL_000d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0012:  stloc.2
     .line 33,33 : 8,42 ''
-    IL_0016:  ldstr      "{0}"
-    IL_001b:  ldloc.2
-    IL_001c:  box        [mscorlib]System.Int32
-    IL_0021:  call       void [mscorlib]System.Console::WriteLine(string,
+    IL_0013:  ldstr      "{0}"
+    IL_0018:  ldloc.2
+    IL_0019:  box        [mscorlib]System.Int32
+    IL_001e:  call       void [mscorlib]System.Console::WriteLine(string,
                                                                   object)
     .line 34,34 : 8,42 ''
-    IL_0026:  ldstr      "{0}"
-    IL_002b:  ldloc.2
-    IL_002c:  box        [mscorlib]System.Int32
-    IL_0031:  call       void [mscorlib]System.Console::WriteLine(string,
+    IL_0023:  ldstr      "{0}"
+    IL_0028:  ldloc.2
+    IL_0029:  box        [mscorlib]System.Int32
+    IL_002e:  call       void [mscorlib]System.Console::WriteLine(string,
                                                                   object)
-    IL_0036:  ldloc.1
-    IL_0037:  stloc.0
-    IL_0038:  ldloc.0
-    IL_0039:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_003e:  stloc.1
+    IL_0033:  ldloc.1
+    IL_0034:  stloc.0
+    IL_0035:  ldloc.0
+    IL_0036:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_003b:  stloc.1
     .line 100001,100001 : 0,0 ''
-    IL_003f:  nop
-    IL_0040:  br.s       IL_0009
+    IL_003c:  nop
+    IL_003d:  br.s       IL_0009
 
-    IL_0042:  ret
+    IL_003f:  ret
   } // end of method SeqExpressionSteppingTest7::testSimpleForEachListLoopWithTwoStatements
 
   .method public static void  testSimpleForEachIntRangeLoopWithOneStatement(int32 start,

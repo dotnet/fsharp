@@ -552,8 +552,6 @@ module UncheckedQuotations =
             ShapeCombinationUnchecked (Shape (function [cond; body] -> Expr.WhileLoopUnchecked (cond, body) | _ -> invalidArg "expr" "invalid shape"), [cond; body])
         | IfThenElse (g, t, e) ->
             ShapeCombinationUnchecked (Shape (function [g; t; e] -> Expr.IfThenElseUnchecked (g, t, e) | _ -> invalidArg "expr" "invalid shape"), [g; t; e])
-        | TupleGet (expr, i) ->
-            ShapeCombinationUnchecked (Shape (function [expr] -> Expr.TupleGetUnchecked (expr, i) | _ -> invalidArg "expr" "invalid shape"), [expr])
         | ExprShape.ShapeCombination (comb, args) ->
             ShapeCombinationUnchecked (Shape (fun args -> ExprShape.RebuildShapeCombination(comb, args)), args)
         | ExprShape.ShapeVar v -> ShapeVarUnchecked v
@@ -6519,8 +6517,8 @@ module internal AssemblyReader =
             // mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
             //
             // Note that
-            //   • Since we're only reading valid IL, we assume that the signature is properly formed
-            //   • For type parameters, if the type is non-local, it will be wrapped in brackets ([])
+            //   ï¿½ Since we're only reading valid IL, we assume that the signature is properly formed
+            //   ï¿½ For type parameters, if the type is non-local, it will be wrapped in brackets ([])
             member x.ParseType() =
 
                 // Does the type name start with a leading '['?  If so, ignore it
@@ -10258,7 +10256,6 @@ namespace ProviderImplementation.ProvidedTypes
                 bb.EmitByte (if req then et_CMOD_REQD else et_CMOD_OPT)
                 emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Namespace, tref.Name)
                 EmitType cenv env bb ty
-             | _ -> failwith "EmitType"
 
         and EmitLocalInfo cenv env (bb:ByteBuffer) (l:ILLocal) =
             if l.IsPinned then 

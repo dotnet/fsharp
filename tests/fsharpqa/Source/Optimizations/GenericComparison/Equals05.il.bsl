@@ -36,13 +36,13 @@
   // Offset: 0x000006D0 Length: 0x000003B9
 }
 .module Equals05.dll
-// MVID: {61E0712B-0759-CBC5-A745-03832B71E061}
+// MVID: {6220E4FA-0759-CBC5-A745-0383FAE42062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A70000
+// Image base: 0x067F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -123,7 +123,7 @@
               instance int32  CompareTo(class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       101 (0x65)
+        // Code size       92 (0x5c)
         .maxstack  4
         .locals init ([0] int32 V_0,
                  [1] class [mscorlib]System.Collections.IComparer V_1,
@@ -132,103 +132,97 @@
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals05.fsx'
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_005b
+        IL_0001:  brfalse.s  IL_0055
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  ldnull
-        IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0059
+        IL_0003:  ldarg.1
+        IL_0004:  brfalse.s  IL_0053
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_0011:  stloc.1
-        IL_0012:  ldarg.0
-        IL_0013:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0018:  stloc.2
-        IL_0019:  ldarg.1
-        IL_001a:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_001f:  stloc.3
+        IL_0006:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_000b:  stloc.1
+        IL_000c:  ldarg.0
+        IL_000d:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0012:  stloc.2
+        IL_0013:  ldarg.1
+        IL_0014:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0019:  stloc.3
         .line 16707566,16707566 : 0,0 ''
-        IL_0020:  ldloc.2
-        IL_0021:  ldloc.3
-        IL_0022:  bge.s      IL_0028
+        IL_001a:  ldloc.2
+        IL_001b:  ldloc.3
+        IL_001c:  bge.s      IL_0022
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0024:  ldc.i4.m1
+        IL_001e:  ldc.i4.m1
         .line 16707566,16707566 : 0,0 ''
-        IL_0025:  nop
-        IL_0026:  br.s       IL_002d
+        IL_001f:  nop
+        IL_0020:  br.s       IL_0027
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0028:  ldloc.2
-        IL_0029:  ldloc.3
-        IL_002a:  cgt
+        IL_0022:  ldloc.2
+        IL_0023:  ldloc.3
+        IL_0024:  cgt
         .line 16707566,16707566 : 0,0 ''
-        IL_002c:  nop
+        IL_0026:  nop
         .line 16707566,16707566 : 0,0 ''
-        IL_002d:  stloc.0
+        IL_0027:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
+        IL_0028:  ldloc.0
+        IL_0029:  ldc.i4.0
+        IL_002a:  bge.s      IL_002e
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_002c:  ldloc.0
+        IL_002d:  ret
+
         .line 16707566,16707566 : 0,0 ''
         IL_002e:  ldloc.0
         IL_002f:  ldc.i4.0
-        IL_0030:  bge.s      IL_0034
+        IL_0030:  ble.s      IL_0034
 
         .line 16707566,16707566 : 0,0 ''
         IL_0032:  ldloc.0
         IL_0033:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0034:  ldloc.0
-        IL_0035:  ldc.i4.0
-        IL_0036:  ble.s      IL_003a
+        IL_0034:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+        IL_0039:  stloc.1
+        IL_003a:  ldarg.0
+        IL_003b:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0040:  stloc.2
+        IL_0041:  ldarg.1
+        IL_0042:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0047:  stloc.3
+        .line 16707566,16707566 : 0,0 ''
+        IL_0048:  ldloc.2
+        IL_0049:  ldloc.3
+        IL_004a:  bge.s      IL_004e
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0038:  ldloc.0
-        IL_0039:  ret
+        IL_004c:  ldc.i4.m1
+        IL_004d:  ret
 
-        .line 16707566,16707566 : 0,0 ''
-        IL_003a:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-        IL_003f:  stloc.1
-        IL_0040:  ldarg.0
-        IL_0041:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0046:  stloc.2
-        IL_0047:  ldarg.1
-        IL_0048:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_004d:  stloc.3
         .line 16707566,16707566 : 0,0 ''
         IL_004e:  ldloc.2
         IL_004f:  ldloc.3
-        IL_0050:  bge.s      IL_0054
+        IL_0050:  cgt
+        IL_0052:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0052:  ldc.i4.m1
-        IL_0053:  ret
+        IL_0053:  ldc.i4.1
+        IL_0054:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0054:  ldloc.2
-        IL_0055:  ldloc.3
-        IL_0056:  cgt
-        IL_0058:  ret
+        IL_0055:  ldarg.1
+        IL_0056:  brfalse.s  IL_005a
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0059:  ldc.i4.1
-        IL_005a:  ret
+        IL_0058:  ldc.i4.m1
+        IL_0059:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_005b:  ldarg.1
-        IL_005c:  ldnull
-        IL_005d:  cgt.un
-        IL_005f:  brfalse.s  IL_0063
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0061:  ldc.i4.m1
-        IL_0062:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0063:  ldc.i4.0
-        IL_0064:  ret
+        IL_005a:  ldc.i4.0
+        IL_005b:  ret
       } // end of method KeyR::CompareTo
 
       .method public hidebysig virtual final 
@@ -249,7 +243,7 @@
                                         class [mscorlib]System.Collections.IComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       106 (0x6a)
+        // Code size       97 (0x61)
         .maxstack  4
         .locals init ([0] class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR V_0,
                  [1] int32 V_1,
@@ -261,151 +255,143 @@
         IL_0006:  stloc.0
         .line 16707566,16707566 : 0,0 ''
         IL_0007:  ldarg.0
-        IL_0008:  ldnull
-        IL_0009:  cgt.un
-        IL_000b:  brfalse.s  IL_005b
+        IL_0008:  brfalse.s  IL_0055
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000d:  ldarg.1
-        IL_000e:  unbox.any  Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
-        IL_0013:  ldnull
-        IL_0014:  cgt.un
-        IL_0016:  brfalse.s  IL_0059
+        IL_000a:  ldarg.1
+        IL_000b:  unbox.any  Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
+        IL_0010:  brfalse.s  IL_0053
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0018:  ldarg.0
-        IL_0019:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_001e:  stloc.2
-        IL_001f:  ldloc.0
-        IL_0020:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0025:  stloc.3
+        IL_0012:  ldarg.0
+        IL_0013:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0018:  stloc.2
+        IL_0019:  ldloc.0
+        IL_001a:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_001f:  stloc.3
         .line 16707566,16707566 : 0,0 ''
-        IL_0026:  ldloc.2
-        IL_0027:  ldloc.3
-        IL_0028:  bge.s      IL_002e
+        IL_0020:  ldloc.2
+        IL_0021:  ldloc.3
+        IL_0022:  bge.s      IL_0028
 
         .line 16707566,16707566 : 0,0 ''
-        IL_002a:  ldc.i4.m1
+        IL_0024:  ldc.i4.m1
         .line 16707566,16707566 : 0,0 ''
-        IL_002b:  nop
-        IL_002c:  br.s       IL_0033
+        IL_0025:  nop
+        IL_0026:  br.s       IL_002d
 
         .line 16707566,16707566 : 0,0 ''
-        IL_002e:  ldloc.2
-        IL_002f:  ldloc.3
-        IL_0030:  cgt
+        IL_0028:  ldloc.2
+        IL_0029:  ldloc.3
+        IL_002a:  cgt
         .line 16707566,16707566 : 0,0 ''
-        IL_0032:  nop
+        IL_002c:  nop
         .line 16707566,16707566 : 0,0 ''
-        IL_0033:  stloc.1
+        IL_002d:  stloc.1
+        .line 16707566,16707566 : 0,0 ''
+        IL_002e:  ldloc.1
+        IL_002f:  ldc.i4.0
+        IL_0030:  bge.s      IL_0034
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0032:  ldloc.1
+        IL_0033:  ret
+
         .line 16707566,16707566 : 0,0 ''
         IL_0034:  ldloc.1
         IL_0035:  ldc.i4.0
-        IL_0036:  bge.s      IL_003a
+        IL_0036:  ble.s      IL_003a
 
         .line 16707566,16707566 : 0,0 ''
         IL_0038:  ldloc.1
         IL_0039:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_003a:  ldloc.1
-        IL_003b:  ldc.i4.0
-        IL_003c:  ble.s      IL_0040
+        IL_003a:  ldarg.0
+        IL_003b:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0040:  stloc.2
+        IL_0041:  ldloc.0
+        IL_0042:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0047:  stloc.3
+        .line 16707566,16707566 : 0,0 ''
+        IL_0048:  ldloc.2
+        IL_0049:  ldloc.3
+        IL_004a:  bge.s      IL_004e
 
         .line 16707566,16707566 : 0,0 ''
-        IL_003e:  ldloc.1
-        IL_003f:  ret
+        IL_004c:  ldc.i4.m1
+        IL_004d:  ret
 
-        .line 16707566,16707566 : 0,0 ''
-        IL_0040:  ldarg.0
-        IL_0041:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0046:  stloc.2
-        IL_0047:  ldloc.0
-        IL_0048:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_004d:  stloc.3
         .line 16707566,16707566 : 0,0 ''
         IL_004e:  ldloc.2
         IL_004f:  ldloc.3
-        IL_0050:  bge.s      IL_0054
+        IL_0050:  cgt
+        IL_0052:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0052:  ldc.i4.m1
-        IL_0053:  ret
+        IL_0053:  ldc.i4.1
+        IL_0054:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0054:  ldloc.2
-        IL_0055:  ldloc.3
-        IL_0056:  cgt
-        IL_0058:  ret
+        IL_0055:  ldarg.1
+        IL_0056:  unbox.any  Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
+        IL_005b:  brfalse.s  IL_005f
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0059:  ldc.i4.1
-        IL_005a:  ret
+        IL_005d:  ldc.i4.m1
+        IL_005e:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_005b:  ldarg.1
-        IL_005c:  unbox.any  Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
-        IL_0061:  ldnull
-        IL_0062:  cgt.un
-        IL_0064:  brfalse.s  IL_0068
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0066:  ldc.i4.m1
-        IL_0067:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0068:  ldc.i4.0
-        IL_0069:  ret
+        IL_005f:  ldc.i4.0
+        IL_0060:  ret
       } // end of method KeyR::CompareTo
 
       .method public hidebysig virtual final 
               instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       54 (0x36)
+        // Code size       51 (0x33)
         .maxstack  7
         .locals init ([0] int32 V_0)
         .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0034
+        IL_0001:  brfalse.s  IL_0031
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0006:  ldc.i4.0
-        IL_0007:  stloc.0
-        IL_0008:  ldc.i4     0x9e3779b9
-        IL_000d:  ldarg.0
-        IL_000e:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0003:  ldc.i4.0
+        IL_0004:  stloc.0
+        IL_0005:  ldc.i4     0x9e3779b9
+        IL_000a:  ldarg.0
+        IL_000b:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0010:  ldloc.0
+        IL_0011:  ldc.i4.6
+        IL_0012:  shl
         IL_0013:  ldloc.0
-        IL_0014:  ldc.i4.6
-        IL_0015:  shl
-        IL_0016:  ldloc.0
-        IL_0017:  ldc.i4.2
-        IL_0018:  shr
-        IL_0019:  add
-        IL_001a:  add
-        IL_001b:  add
-        IL_001c:  stloc.0
-        IL_001d:  ldc.i4     0x9e3779b9
-        IL_0022:  ldarg.0
-        IL_0023:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0014:  ldc.i4.2
+        IL_0015:  shr
+        IL_0016:  add
+        IL_0017:  add
+        IL_0018:  add
+        IL_0019:  stloc.0
+        IL_001a:  ldc.i4     0x9e3779b9
+        IL_001f:  ldarg.0
+        IL_0020:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0025:  ldloc.0
+        IL_0026:  ldc.i4.6
+        IL_0027:  shl
         IL_0028:  ldloc.0
-        IL_0029:  ldc.i4.6
-        IL_002a:  shl
-        IL_002b:  ldloc.0
-        IL_002c:  ldc.i4.2
-        IL_002d:  shr
-        IL_002e:  add
-        IL_002f:  add
-        IL_0030:  add
-        IL_0031:  stloc.0
-        IL_0032:  ldloc.0
-        IL_0033:  ret
+        IL_0029:  ldc.i4.2
+        IL_002a:  shr
+        IL_002b:  add
+        IL_002c:  add
+        IL_002d:  add
+        IL_002e:  stloc.0
+        IL_002f:  ldloc.0
+        IL_0030:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0034:  ldc.i4.0
-        IL_0035:  ret
+        IL_0031:  ldc.i4.0
+        IL_0032:  ret
       } // end of method KeyR::GetHashCode
 
       .method public hidebysig virtual final 
@@ -425,103 +411,97 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       57 (0x39)
+        // Code size       54 (0x36)
         .maxstack  4
         .locals init ([0] class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR V_0)
         .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0031
+        IL_0001:  brfalse.s  IL_002e
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  isinst     Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
-        IL_000c:  stloc.0
+        IL_0003:  ldarg.1
+        IL_0004:  isinst     Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR
+        IL_0009:  stloc.0
         .line 16707566,16707566 : 0,0 ''
-        IL_000d:  ldloc.0
-        IL_000e:  brfalse.s  IL_002f
+        IL_000a:  ldloc.0
+        IL_000b:  brfalse.s  IL_002c
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0010:  ldarg.0
-        IL_0011:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0016:  ldloc.0
-        IL_0017:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_001c:  bne.un.s   IL_002d
+        IL_000d:  ldarg.0
+        IL_000e:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0013:  ldloc.0
+        IL_0014:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_0019:  bne.un.s   IL_002a
 
         .line 16707566,16707566 : 0,0 ''
-        IL_001e:  ldarg.0
-        IL_001f:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0024:  ldloc.0
-        IL_0025:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_002a:  ceq
-        IL_002c:  ret
+        IL_001b:  ldarg.0
+        IL_001c:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0021:  ldloc.0
+        IL_0022:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_0027:  ceq
+        IL_0029:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_002d:  ldc.i4.0
-        IL_002e:  ret
+        IL_002a:  ldc.i4.0
+        IL_002b:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_002f:  ldc.i4.0
-        IL_0030:  ret
+        IL_002c:  ldc.i4.0
+        IL_002d:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0031:  ldarg.1
-        IL_0032:  ldnull
-        IL_0033:  cgt.un
-        IL_0035:  ldc.i4.0
-        IL_0036:  ceq
-        IL_0038:  ret
+        IL_002e:  ldarg.1
+        IL_002f:  ldnull
+        IL_0030:  cgt.un
+        IL_0032:  ldc.i4.0
+        IL_0033:  ceq
+        IL_0035:  ret
       } // end of method KeyR::Equals
 
       .method public hidebysig virtual final 
               instance bool  Equals(class Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       53 (0x35)
+        // Code size       47 (0x2f)
         .maxstack  8
         .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldnull
-        IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_002d
+        IL_0001:  brfalse.s  IL_0027
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0006:  ldarg.1
-        IL_0007:  ldnull
-        IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_002b
+        IL_0003:  ldarg.1
+        IL_0004:  brfalse.s  IL_0025
 
         .line 16707566,16707566 : 0,0 ''
-        IL_000c:  ldarg.0
+        IL_0006:  ldarg.0
+        IL_0007:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
+        IL_000c:  ldarg.1
         IL_000d:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0012:  ldarg.1
-        IL_0013:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key1@
-        IL_0018:  bne.un.s   IL_0029
+        IL_0012:  bne.un.s   IL_0023
 
         .line 16707566,16707566 : 0,0 ''
-        IL_001a:  ldarg.0
+        IL_0014:  ldarg.0
+        IL_0015:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
+        IL_001a:  ldarg.1
         IL_001b:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0020:  ldarg.1
-        IL_0021:  ldfld      int32 Equals05/EqualsMicroPerfAndCodeGenerationTests/KeyR::key2@
-        IL_0026:  ceq
-        IL_0028:  ret
+        IL_0020:  ceq
+        IL_0022:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0029:  ldc.i4.0
-        IL_002a:  ret
+        IL_0023:  ldc.i4.0
+        IL_0024:  ret
 
         .line 16707566,16707566 : 0,0 ''
+        IL_0025:  ldc.i4.0
+        IL_0026:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_0027:  ldarg.1
+        IL_0028:  ldnull
+        IL_0029:  cgt.un
         IL_002b:  ldc.i4.0
-        IL_002c:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_002d:  ldarg.1
-        IL_002e:  ldnull
-        IL_002f:  cgt.un
-        IL_0031:  ldc.i4.0
-        IL_0032:  ceq
-        IL_0034:  ret
+        IL_002c:  ceq
+        IL_002e:  ret
       } // end of method KeyR::Equals
 
       .method public hidebysig virtual final 

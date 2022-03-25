@@ -323,11 +323,11 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref, [t1;t2]) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
-                        | TType_app (tcref, [t1]) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
-                        | TType_app (tcref, []) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref, []) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
-                        | TType_app (tcref, _) -> 
+                        | TType_app (tcref, [t1;t2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
+                        | TType_app (tcref, [t1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
+                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
+                        | TType_app (tcref, _, _) -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
                             Measure.One
                         | _ -> 
@@ -399,15 +399,19 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
          |  None ->
             match mbase.OfType<ProvidedConstructorInfo>() with
             | Some _  -> mbase.PApply((fun _ -> ProvidedType.Void), m)
-            | _ -> failwith "unexpected"
+            | _ -> failwith "ImportProvidedMethodBaseAsILMethodRef - unexpected"
+
      let genericArity = 
         if mbase.PUntaint((fun x -> x.IsGenericMethod), m) then 
             mbase.PUntaint((fun x -> x.GetGenericArguments().Length), m)
         else 0
+
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)
+
      let parameters = 
          [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
               yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m)) ]
+
      mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name), m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
 #endif
 

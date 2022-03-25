@@ -3,7 +3,7 @@
   <!-- Used as a diagnostic tool to view the state of the NuGet package cache as it existed immediately after a restore/build. -->
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

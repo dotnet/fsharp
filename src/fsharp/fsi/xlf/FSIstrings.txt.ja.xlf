@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">F# インタラクティブの以前の評価から内部型、メソッド、またはフィールド `{0}` にアクセスすることは非推奨であり、その後のアクセス エラーが発生する可能性があります。内部にアクセスできる単一の動的アセンブリのレガシ生成を有効にするには、`--multiemit-` オプションを使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">複数のアセンブリを出力する (.NET Frameworkの場合は既定でオフ)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">複数のアセンブリを出力する (既定ではオン)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
