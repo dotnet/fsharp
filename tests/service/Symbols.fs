@@ -3746,3 +3746,14 @@ val a (* b *) : int
             assertRange (4, 6) (4, 13) mComment
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``comment at end of file`` () =
+        let trivia =
+            getCommentTrivia false "x // y"
+
+        match trivia with
+        | [ CommentTrivia.LineComment mComment ] ->
+            assertRange (1, 2) (1, 6) mComment
+        | _ ->
+            Assert.Fail "Could not get valid AST"
