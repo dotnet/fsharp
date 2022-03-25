@@ -1427,7 +1427,7 @@ and singleLineComment cargs skip = parse
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
        else
-           LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
+           if Option.isNone buff then LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
            token args skip lexbuf }
 
  | eof

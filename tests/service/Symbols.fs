@@ -3757,3 +3757,17 @@ val a (* b *) : int
             assertRange (1, 2) (1, 6) mComment
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``triple slash comment should not be captured`` () =
+        let trivia =
+            getCommentTrivia false """
+/// Some great documentation comment
+let x = 0
+"""
+
+        match trivia with
+        | [] ->
+            Assert.Pass()
+        | _ ->
+            Assert.Fail "Could not get valid AST"
