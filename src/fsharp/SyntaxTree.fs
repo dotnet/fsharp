@@ -657,6 +657,15 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    | IfBangThenElse of
+        ifExpr: SynExpr *
+        thenExpr: SynExpr *
+        elseExpr: SynExpr option *
+        spIfToThen: DebugPointAtBinding *
+        isFromErrorRecovery: bool *
+        range: range *
+        trivia: SynExprIfThenElseTrivia
+
     | Ident of
         ident: Ident
 
@@ -890,6 +899,7 @@ type SynExpr =
         | SynExpr.FromParseError (range=m)
         | SynExpr.DiscardAfterMissingQualificationAfterDot (range=m)
         | SynExpr.IfThenElse (range=m)
+        | SynExpr.IfBangThenElse (range=m)
         | SynExpr.LongIdent (range=m)
         | SynExpr.LongIdentSet (range=m)
         | SynExpr.NamedIndexedPropertySet (range=m)

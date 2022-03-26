@@ -273,7 +273,7 @@ module internal TokenClassifications =
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
         | FINALLY   | LAZY   | MATCH  | MATCH_BANG  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
         | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
-        | IF | THEN  | ELSE | DO | DONE | LET _ | AND_BANG _ | IN | CONST
+        | IF | IF_BANG | THEN  | ELSE | DO | DONE | LET _ | AND_BANG _ | IN | CONST
         | HIGH_PRECEDENCE_PAREN_APP | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
         | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE ->
@@ -1074,6 +1074,7 @@ type FSharpTokenKind =
     | Fun
     | Function
     | If
+    | IfBang
     | In
     | JoinIn
     | Finally
@@ -1284,6 +1285,7 @@ type FSharpToken =
         | FUN  -> FSharpTokenKind.Fun
         | FUNCTION  -> FSharpTokenKind.Function
         | IF  -> FSharpTokenKind.If
+        | IF_BANG -> FSharpTokenKind.IfBang
         | IN  -> FSharpTokenKind.In
         | JOIN_IN  -> FSharpTokenKind.JoinIn
         | FINALLY  -> FSharpTokenKind.Finally

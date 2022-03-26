@@ -2277,7 +2277,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 pushCtxtSeqBlock(true, AddBlockEnd)
                 returnToken tokenLexbufState OELSE
 
-        | (ELIF | IF), _ -> 
+        | (ELIF | IF | IF_BANG), _ -> 
             if debug then dprintf "IF, pushing CtxtIf(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtIf tokenStartPos)
             returnToken tokenLexbufState token

@@ -1168,6 +1168,18 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     mkSynCall "Zero" trivia.IfToThenRange []
                 Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia))))
 
+        | SynExpr.IfBangThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia) ->
+            match elseCompOpt with 
+            | Some elseComp -> 
+                if isQuery then error(Error(FSComp.SR.tcIfThenElseMayNotBeUsedWithinQueries(), trivia.IfToThenRange))
+                Some (translatedCtxt (SynExpr.IfThenElse (guardExpr, transNoQueryOps thenComp, Some(transNoQueryOps elseComp), spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia)))
+            | None -> 
+                let elseComp = 
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env trivia.IfToThenRange ad "Zero" builderTy) then
+                        error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), trivia.IfToThenRange))
+                    mkSynCall "Zero" trivia.IfToThenRange []
+                Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia))))
+
         // 'let binds in expr'
         | SynExpr.LetOrUse (isRec, false, binds, innerComp, m, trivia) ->
 
@@ -1741,6 +1753,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.Sequential (_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
         | SynExpr.IfThenElse (thenExpr=thenComp; elseExpr=elseCompOpt) -> 
              isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
+        | SynExpr.IfBangThenElse (thenExpr=thenComp; elseExpr=elseCompOpt) -> 
+             isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
         | SynExpr.LetOrUse (body=innerComp) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
         | SynExpr.Match (clauses=clauses) ->
@@ -2004,6 +2018,9 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let elseComp = (match elseCompOpt with Some c -> c | None -> SynExpr.ImplicitZero trivia.IfToThenRange)
             let elseExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv elseComp
             Some(mkCond spIfToThen mIfToEndOfElseBranch genOuterTy guardExpr' thenExpr elseExpr, tpenv)
+
+        | SynExpr.IfBangThenElse (_, _, _, _, _, mIfToEndOfElseBranch, _) ->
+            error(Error(FSComp.SR.tcDoBangIllegalInSequenceExpression(), mIfToEndOfElseBranch))
 
         // 'let x = expr in expr'
         | SynExpr.LetOrUse (isUse=false (* not a 'use' binding *)) ->

@@ -478,6 +478,7 @@ type public FSharpTokenKind =
     | Fun
     | Function
     | If
+    | IfBang
     | In
     | JoinIn
     | Finally

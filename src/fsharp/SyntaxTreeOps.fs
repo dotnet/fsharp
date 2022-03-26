@@ -851,6 +851,9 @@ let rec synExprContainsError inpExpr =
           | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 
+          | SynExpr.IfBangThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt) ->
+              walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
+
           | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
               (match expr1 with Some e -> walkExpr e | None -> false) ||
               (match expr2 with Some e -> walkExpr e | None -> false)

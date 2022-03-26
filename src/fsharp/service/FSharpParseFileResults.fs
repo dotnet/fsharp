@@ -226,6 +226,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | Some expr ->
                         getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
+            | SynExpr.IfBangThenElse (ifExpr=ifExpr; thenExpr=thenExpr; elseExpr=elseExpr; range=range) when rangeContainsPos range pos ->
+                if rangeContainsPos ifExpr.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr ifExpr pos
+                elif rangeContainsPos thenExpr.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr thenExpr pos
+                else
+                    match elseExpr with
+                    | None -> None
+                    | Some expr ->
+                        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
             | SynExpr.Match (expr=expr; clauses=clauses; range=range) when rangeContainsPos range pos ->
                 if rangeContainsPos expr.Range pos then
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
@@ -651,6 +662,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr (match spSeq with DebugPointAtSequential.SuppressStmt | DebugPointAtSequential.SuppressBoth -> false | _ -> true) e2
 
                   | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt; spIfToThen=spBind) ->
+                      yield! walkBindSeqPt spBind
+                      yield! walkExpr false e1
+                      yield! walkExpr true e2
+                      yield! walkExprOpt true e3opt
+
+                  | SynExpr.IfBangThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt; spIfToThen=spBind) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e1
                       yield! walkExpr true e2

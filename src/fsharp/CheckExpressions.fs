@@ -5992,6 +5992,9 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.IfThenElse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
 
+    | SynExpr.IfBangThenElse (range=m) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+
     // This is for internal use in the libraries only
     | SynExpr.LibraryOnlyStaticOptimization (constraints, e2, e3, m) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -8809,6 +8812,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
         | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
         | SynExpr.IfThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
+        | SynExpr.IfBangThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
         | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
         | SynExpr.ObjExpr _
         | SynExpr.AnonRecd _

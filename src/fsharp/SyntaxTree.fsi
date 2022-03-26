@@ -808,6 +808,17 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    /// F# syntax: if! expr then expr
+    /// F# syntax: if! expr then expr else expr
+    | IfBangThenElse of
+        ifExpr: SynExpr *
+        thenExpr: SynExpr *
+        elseExpr: SynExpr option *
+        spIfToThen: DebugPointAtBinding *
+        isFromErrorRecovery: bool *
+        range: range *
+        trivia: SynExprIfThenElseTrivia
+
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
     | Ident of

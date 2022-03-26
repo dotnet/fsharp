@@ -1119,6 +1119,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_WHILE -> getErrorString("Parser.TOKEN.WHILE")
               | Parser.TOKEN_WITH-> getErrorString("Parser.TOKEN.WITH")
               | Parser.TOKEN_IF -> getErrorString("Parser.TOKEN.IF")
+              | Parser.TOKEN_IF_BANG -> getErrorString("Parser.TOKEN.IF_BANG")
               | Parser.TOKEN_DO -> getErrorString("Parser.TOKEN.DO")
               | Parser.TOKEN_GLOBAL -> getErrorString("Parser.TOKEN.GLOBAL")
               | Parser.TOKEN_DONE -> getErrorString("Parser.TOKEN.DONE")
