@@ -94,6 +94,9 @@ module Structure =
         | IfThenElse
         | ThenInIfThenElse
         | ElseInIfThenElse
+        | IfBangThenElse
+        | ThenInIfBangThenElse
+        | ElseInIfBangThenElse
         | TryWith
         | TryInTryWith
         | WithInTryWith
@@ -143,6 +146,9 @@ module Structure =
             | IfThenElse          -> "IfThenElse"
             | ThenInIfThenElse    -> "ThenInIfThenElse"
             | ElseInIfThenElse    -> "ElseInIfThenElse"
+            | IfBangThenElse      -> "IfThenElseBang"
+            | ThenInIfBangThenElse -> "ThenInIfBangThenElse"
+            | ElseInIfBangThenElse -> "ElseInIfBangThenElse"
             | TryWith             -> "TryWith"
             | TryInTryWith        -> "TryInTryWith"
             | WithInTryWith       -> "WithInTryWith"
@@ -347,6 +353,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
+            | SynExpr.IfBangThenElse (ifExpr=ifExpr; thenExpr=thenExpr; elseExpr=elseExprOpt; spIfToThen=spIfToThen; range=r; trivia=trivia)
             | SynExpr.IfThenElse (ifExpr=ifExpr; thenExpr=thenExpr; elseExpr=elseExprOpt; spIfToThen=spIfToThen; range=r; trivia=trivia) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->

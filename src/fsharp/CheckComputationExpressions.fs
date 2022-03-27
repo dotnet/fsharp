@@ -96,6 +96,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Sequential (expr1=e1; expr2=e2) ->
                 YieldFree e1 && YieldFree e2
 
+            | SynExpr.IfBangThenElse (thenExpr=e2; elseExpr=e3opt)
             | SynExpr.IfThenElse (thenExpr=e2; elseExpr=e3opt) ->
                 YieldFree e2 && Option.forall YieldFree e3opt
 
@@ -127,7 +128,8 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Sequential (expr1=e1; expr2=e2) ->
                 YieldFree e1 && YieldFree e2
 
-            | SynExpr.IfThenElse (thenExpr=e2; elseExpr=e3opt) ->
+            | SynExpr.IfThenElse (thenExpr=e2; elseExpr=e3opt)
+            | SynExpr.IfBangThenElse (thenExpr=e2; elseExpr=e3opt) ->
                 YieldFree e2 && Option.forall YieldFree e3opt
 
             | SynExpr.TryWith (tryExpr=e1; withCases=clauses) ->
@@ -164,6 +166,7 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
         match expr with
         | SynExpr.IfThenElse _ when acceptDeprecated && YieldFree cenv expr -> true
         | SynExpr.IfThenElse _
+        | SynExpr.IfBangThenElse _
         | SynExpr.TryWith _ 
         | SynExpr.Match _ 
         | SynExpr.For _ 
@@ -1172,7 +1175,15 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             match elseCompOpt with 
             | Some elseComp -> 
                 if isQuery then error(Error(FSComp.SR.tcIfThenElseMayNotBeUsedWithinQueries(), trivia.IfToThenRange))
-                Some (translatedCtxt (SynExpr.IfThenElse (guardExpr, transNoQueryOps thenComp, Some(transNoQueryOps elseComp), spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia)))
+                let consumeExpr = SynExpr.MatchLambda(false, mIfToEndOfElseBranch, 
+                    [SynMatchClause((SynPat.Const (SynConst.Bool true, Range.Zero)), None, transNoQueryOps thenComp, thenComp.Range, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero);
+                     SynMatchClause((SynPat.Const (SynConst.Bool false, Range.Zero)), None, transNoQueryOps elseComp, elseComp.Range, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)],
+                    DebugPointAtBinding.NoneAtInvisible, mIfToEndOfElseBranch)
+                let inputExpr = mkSourceExpr guardExpr
+                let callExpr =
+                    mkSynCall "Bind" mIfToEndOfElseBranch [inputExpr; consumeExpr]
+                    |> addBindDebugPoint spIfToThen
+                Some (translatedCtxt callExpr)
             | None -> 
                 let elseComp = 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env trivia.IfToThenRange ad "Zero" builderTy) then
@@ -1753,8 +1764,6 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.Sequential (_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
         | SynExpr.IfThenElse (thenExpr=thenComp; elseExpr=elseCompOpt) -> 
              isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
-        | SynExpr.IfBangThenElse (thenExpr=thenComp; elseExpr=elseCompOpt) -> 
-             isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
         | SynExpr.LetOrUse (body=innerComp) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
         | SynExpr.Match (clauses=clauses) ->
@@ -1766,6 +1775,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.YieldOrReturnFrom _ -> false
         | SynExpr.YieldOrReturn _ -> false
         | SynExpr.DoBang _ -> false
+        | SynExpr.IfBangThenElse _ -> false
         | _ -> true
 
     let basicSynExpr = 

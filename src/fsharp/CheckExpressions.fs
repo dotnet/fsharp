@@ -8812,7 +8812,6 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
         | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
         | SynExpr.IfThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
-        | SynExpr.IfBangThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
         | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
         | SynExpr.ObjExpr _
         | SynExpr.AnonRecd _
@@ -8856,6 +8855,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _
+        | SynExpr.IfBangThenElse _
             -> false
 
     // Propagate the known application structure into function types

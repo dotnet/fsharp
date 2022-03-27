@@ -120,6 +120,7 @@ let rec IsControlFlowExpression e =
     // Treat "ident { ... }" as a control flow expression
     | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
+    | SynExpr.IfBangThenElse _
     | SynExpr.LetOrUseBang _
     | SynExpr.Match _
     | SynExpr.TryWith _

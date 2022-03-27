@@ -29,6 +29,9 @@ module public Structure =
         | IfThenElse
         | ThenInIfThenElse
         | ElseInIfThenElse
+        | IfBangThenElse
+        | ThenInIfBangThenElse
+        | ElseInIfBangThenElse
         | TryWith
         | TryInTryWith
         | WithInTryWith
