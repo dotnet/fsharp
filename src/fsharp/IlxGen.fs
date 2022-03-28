@@ -1720,7 +1720,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                     [ for _, fldName, fldTy in flds ->
                         // Don't hide fields when splitting to multiple assemblies.
                         let access = 
-                            if cenv.opts.fsiMultiAssemblyEmit then ILMemberAccess.Public
+                            if cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit then ILMemberAccess.Public
                             else ILMemberAccess.Private
                         let fdef = mkILInstanceField (fldName, fldTy, None, access)
                         fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
