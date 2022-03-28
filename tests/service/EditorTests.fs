@@ -916,8 +916,14 @@ type FooImpl() =
                         match parseResult.ValidateBreakpointLocation pos with
                         | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
                         | None -> ()]
+    printfn "%A" results
     results |> shouldEqual
-          [(("type FooBase(foo:IFoo) =", 5, 5), (5, 5, 5, 12));
+          [(("type FooBase(foo:IFoo) =", 5, 0), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 1), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 2), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 3), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 4), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 5), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 6), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 7), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 8), (5, 5, 5, 12));
@@ -925,9 +931,27 @@ type FooImpl() =
            (("type FooBase(foo:IFoo) =", 5, 10), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 11), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 12), (5, 5, 5, 12));
-           (("    do ()", 6, 4), (6, 7, 6, 9)); (("    do ()", 6, 5), (6, 7, 6, 9));
-           (("    do ()", 6, 6), (6, 7, 6, 9)); (("    do ()", 6, 7), (6, 7, 6, 9));
-           (("    do ()", 6, 8), (6, 7, 6, 9));
+           (("type FooBase(foo:IFoo) =", 5, 13), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 14), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 15), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 16), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 17), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 18), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 19), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 20), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 21), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 22), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 23), (5, 5, 5, 12));
+           (("    do ()", 6, 0), (6, 4, 6, 9)); (("    do ()", 6, 1), (6, 4, 6, 9));
+           (("    do ()", 6, 2), (6, 4, 6, 9)); (("    do ()", 6, 3), (6, 4, 6, 9));
+           (("    do ()", 6, 4), (6, 4, 6, 9)); (("    do ()", 6, 5), (6, 4, 6, 9));
+           (("    do ()", 6, 6), (6, 4, 6, 9)); (("    do ()", 6, 7), (6, 4, 6, 9));
+           (("    do ()", 6, 8), (6, 4, 6, 9));
+           (("type FooImpl() =", 8, 0), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 1), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 2), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 3), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 4), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 5), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 6), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 7), (8, 5, 8, 12));
@@ -936,6 +960,13 @@ type FooImpl() =
            (("type FooImpl() =", 8, 10), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 11), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 12), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 13), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 14), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 15), (8, 5, 8, 12));
+           (("    inherit FooBase", 9, 0), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 1), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 2), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 3), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 4), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 5), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 6), (9, 4, 17, 9));
@@ -1469,6 +1500,63 @@ let bodyWrapper (a, b, c) = a || b && c"""
          ((2, 34), (2, 33, 2, 34, "b")); ((2, 35), (2, 38, 2, 39, "c"));
          ((2, 36), (2, 38, 2, 39, "c")); ((2, 37), (2, 38, 2, 39, "c"));
          ((2, 38), (2, 38, 2, 39, "c"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for side-effect expression`` () =
+    let input =
+      """
+let print() = ()
+print()
+do print()
+type C() =
+    do print()
+module M =
+    print()
+"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+            [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
+             ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
+             ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
+             ((2, 6), (2, 14, 2, 16, "()")); ((2, 7), (2, 14, 2, 16, "()"));
+             ((2, 8), (2, 14, 2, 16, "()")); ((2, 9), (2, 14, 2, 16, "()"));
+             ((2, 10), (2, 14, 2, 16, "()")); ((2, 11), (2, 14, 2, 16, "()"));
+             ((2, 12), (2, 14, 2, 16, "()")); ((2, 13), (2, 14, 2, 16, "()"));
+             ((2, 14), (2, 14, 2, 16, "()")); ((2, 15), (2, 14, 2, 16, "()"));
+             ((3, 0), (3, 0, 3, 7, "print()")); ((3, 1), (3, 0, 3, 7, "print()"));
+             ((3, 2), (3, 0, 3, 7, "print()")); ((3, 3), (3, 0, 3, 7, "print()"));
+             ((3, 4), (3, 0, 3, 7, "print()")); ((3, 5), (3, 0, 3, 7, "print()"));
+             ((3, 6), (3, 0, 3, 7, "print()")); ((4, 0), (4, 0, 4, 10, "do print()"));
+             ((4, 1), (4, 0, 4, 10, "do print()")); ((4, 2), (4, 0, 4, 10, "do print()"));
+             ((4, 3), (4, 0, 4, 10, "do print()")); ((4, 4), (4, 0, 4, 10, "do print()"));
+             ((4, 5), (4, 0, 4, 10, "do print()")); ((4, 6), (4, 0, 4, 10, "do print()"));
+             ((4, 7), (4, 0, 4, 10, "do print()")); ((4, 8), (4, 0, 4, 10, "do print()"));
+             ((4, 9), (4, 0, 4, 10, "do print()")); ((5, 0), (5, 5, 5, 6, "C"));
+             ((5, 1), (5, 5, 5, 6, "C")); ((5, 2), (5, 5, 5, 6, "C"));
+             ((5, 3), (5, 5, 5, 6, "C")); ((5, 4), (5, 5, 5, 6, "C"));
+             ((5, 5), (5, 5, 5, 6, "C")); ((5, 6), (5, 5, 5, 6, "C"));
+             ((5, 7), (5, 5, 5, 6, "C")); ((5, 8), (5, 5, 5, 6, "C"));
+             ((5, 9), (5, 5, 5, 6, "C")); ((6, 0), (6, 4, 6, 14, "do print()"));
+             ((6, 1), (6, 4, 6, 14, "do print()")); ((6, 2), (6, 4, 6, 14, "do print()"));
+             ((6, 3), (6, 4, 6, 14, "do print()")); ((6, 4), (6, 4, 6, 14, "do print()"));
+             ((6, 5), (6, 4, 6, 14, "do print()")); ((6, 6), (6, 4, 6, 14, "do print()"));
+             ((6, 7), (6, 4, 6, 14, "do print()")); ((6, 8), (6, 4, 6, 14, "do print()"));
+             ((6, 9), (6, 4, 6, 14, "do print()")); ((6, 10), (6, 4, 6, 14, "do print()"));
+             ((6, 11), (6, 4, 6, 14, "do print()")); ((6, 12), (6, 4, 6, 14, "do print()"));
+             ((6, 13), (6, 4, 6, 14, "do print()")); ((8, 0), (8, 4, 8, 11, "print()"));
+             ((8, 1), (8, 4, 8, 11, "print()")); ((8, 2), (8, 4, 8, 11, "print()"));
+             ((8, 3), (8, 4, 8, 11, "print()")); ((8, 4), (8, 4, 8, 11, "print()"));
+             ((8, 5), (8, 4, 8, 11, "print()")); ((8, 6), (8, 4, 8, 11, "print()"));
+             ((8, 7), (8, 4, 8, 11, "print()")); ((8, 8), (8, 4, 8, 11, "print()"));
+             ((8, 9), (8, 4, 8, 11, "print()")); ((8, 10), (8, 4, 8, 11, "print()"))]
+
 
 [<Test>]
 let ``Partially valid namespaces should be reported`` () =

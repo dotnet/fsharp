@@ -603,9 +603,11 @@ module Structure =
                     let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs r
                     rcheck Scope.LetOrUse Collapse.Below r collapse
                 parseBindings bindings
+
             | SynModuleDecl.Types (types, _r) ->
                 for t in types do
                     parseTypeDefn t
+
             // Fold the attributes above a module
             | SynModuleDecl.NestedModule (moduleInfo=SynComponentInfo (attributes=attrs; range=cmpRange); decls=decls) ->                
                 // Outline the full scope of the module
@@ -615,10 +617,13 @@ module Structure =
                 parseAttributes attrs
                 collectOpens decls
                 List.iter parseDeclaration decls
-            | SynModuleDecl.DoExpr (_, e, _) ->
+
+            | SynModuleDecl.Expr (e, _) ->
                 parseExpr e
+
             | SynModuleDecl.Attributes (attrs, _) ->
                 parseAttributes attrs
+
             | _ -> ()
 
         let parseModuleOrNamespace (SynModuleOrNamespace (longId, _, kind, decls, _, attribs, _, r)) =

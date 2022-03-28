@@ -719,7 +719,7 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> ifPosInRange range (fun _ -> List.tryPick (walkSynModuleDecl false) modules))
             | SynModuleDecl.Open _ -> None
             | SynModuleDecl.Let (_, bindings, _) -> List.tryPick walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.tryPick walkTypeDefn types
             | _ -> None
 
@@ -1532,7 +1532,7 @@ module ParsedInput =
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.iter walkTypeDefn types
             | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
@@ -1600,7 +1600,7 @@ module ParsedInput =
                 match firstDecl with
                 | SynModuleDecl.NestedModule (range=r)
                 | SynModuleDecl.Let (range=r)
-                | SynModuleDecl.DoExpr (range=r)
+                | SynModuleDecl.Expr (range=r)
                 | SynModuleDecl.Types (range=r)
                 | SynModuleDecl.Exception (range=r)
                 | SynModuleDecl.Open (range=r)

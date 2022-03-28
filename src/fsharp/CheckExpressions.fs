@@ -10429,7 +10429,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s.
         let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
 
-        // Now check the r-ght of the binding.
+        // Now check the right of the binding.
         //
         // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
         // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
@@ -10452,6 +10452,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 //    let _ = expr
                 //    let () = expr
                 // which are transformed to sequential expressions in TcLetBinding
+                //
                 let rhsIsControlFlow =
                     match pat with 
                     | SynPat.Wild _
