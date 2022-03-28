@@ -156,9 +156,7 @@ module InterfacesOfMeasureAnnotatedTypes =
 
     // Check that Prim<'m> supports the unit-annotated IComparable interface
     let f1 (x: Prim<'m>) = (x :> IComparable<Prim<'m>>)
-    let f2 (x: Prim<'m>) = (x :> IDerivedComparable<Prim<'m>>)
     let f3 (x: Prim<'m>) = (x :> IEquatable<Prim<'m>>)
-    let f4 (x: Prim<'m>) = (x :> IDerivedEquatable<Prim<'m>>)
     let f5 (x: Prim<'m>) = (x :> IComparable)
     // Does not apply to other interfaces
     let f6 (x: Prim<'m>) = (x :> IRandomOtherInterface<Prim>)

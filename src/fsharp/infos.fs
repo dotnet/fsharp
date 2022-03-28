@@ -157,36 +157,56 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
             mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
     ]
 
-// For 
+// Report the interfaces supported by a measure-annotated type.
 //
-//     [<MeasureAnnotatedAbbreviation>] type A<[<Measure>] 'm> = A
+// For example, consider:
 //
-// the measure-annotated type is considered to support the interfaces that arise by rewriting
-// the IComparable and IEquatable interfaces on non-measurable type A, so that
+//     [<MeasureAnnotatedAbbreviation>]
+//     type A<[<Measure>] 'm> = A
+//
+// This measure-annotated type is considered to support the interfaces on its representation type A,
+// with the exception that
+//
+//   1. we rewrite the IComparable and IEquatable interfaces, so that
 //    IComparable<A> --> IComparable<A<'m>>
 //    IEquatable<A> --> IEquatable<A<'m>>
 //
-// This rule is conservative and only applies to IComparable and IEquatable interfaces,
-// and they must be directly instantiated at type A. It also applies to
-// any generic interfaces that derive from these.
+//   2. we emit any other interfaces that derive from IComparable and IEquatable interfaces
+//
+// This rule is conservative and only applies to IComparable and IEquatable interfaces.
+//
+// This rule may in future be extended to rewrite the "trait" interfaces associated with .NET 7.
 and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
-    [ for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
-        match ity with
-        | AppTy g (tcref, tyargs) when 
-            IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m ity &&
-            tyargs |> List.exists (fun tyarg -> typeEquiv g tyarg reprTy) ->
-                let ftyargs = tyargs |> List.map (fun tyarg -> if typeEquiv g tyarg reprTy then ty else tyarg)
-                mkAppTy tcref ftyargs 
-        | _ -> ity]
+    [
+        // Report any interfaces that don't derive from IComparable<_> or IEquatable<_>
+        for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
+            if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m ity) &&
+               not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m ity) then
+                ity
+
+        // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
+        // if the original type supports IComparable<A> somewhere in the hierarchy, likeiwse IEquatable<A<'m>>.
+        //
+        // However since F# 2.0 we have always reported these interfaces for all measure-annotated types.
+
+        //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIComparable_tcref [reprTy])) skipUnref g amap m ty then
+        mkAppTy g.system_GenericIComparable_tcref [ty]
+
+        //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
+        mkAppTy g.system_GenericIEquatable_tcref [ty]
+    ]
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
-and IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m ity =
+and ExistsHeadTypeInInterfaceHierarchy target skipUnref g amap m ity =
+    ExistsInInterfaceHierarchy (function AppTy g (tcref,_) -> tyconRefEq g tcref target | _ -> false) skipUnref g amap m ity
+
+// Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
+and ExistsInInterfaceHierarchy p skipUnref g amap m ity =
     match ity with
     | AppTy g (tcref, tinst) ->
-        tyconRefEq g tcref g.system_GenericIComparable_tcref ||
-        tyconRefEq g tcref g.system_GenericIEquatable_tcref ||
+        p ity ||
         (GetImmediateInterfacesOfMetadataType g amap m skipUnref ity tcref tinst 
-         |> List.exists (IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m))
+         |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
