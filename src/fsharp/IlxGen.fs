@@ -8061,7 +8061,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   //
                   // Additionally, don't hide fields for multiemit in F# Interactive
                   let isFieldHidden =
-                      isPropHidden || (not useGenuineField && not isFSharpMutable && not cenv.opts.fsiMultiAssemblyEmit)
+                      isPropHidden ||
+                      (not useGenuineField && 
+                       not isFSharpMutable &&
+                       not (cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit))
 
                   let extraAttribs =
                      match tyconRepr with
