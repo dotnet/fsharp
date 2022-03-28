@@ -1455,7 +1455,7 @@ FSharp.Compiler.AbstractIL.IL+ILType: System.String get_BasicQualifiedName()
 FSharp.Compiler.AbstractIL.IL+ILType: System.String get_QualifiedName()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean HasSecurity
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsAbstract
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsAttribute
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsKnownToBeAttribute
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsClass
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsComInterop
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsDelegate
@@ -1468,7 +1468,7 @@ FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsStruct
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsStructOrEnum
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_HasSecurity()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsAbstract()
-FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsAttribute()
+FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsKnownToBeAttribute()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsClass()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsComInterop()
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean get_IsDelegate()
