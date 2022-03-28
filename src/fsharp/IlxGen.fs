@@ -1418,35 +1418,45 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
 let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
     List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
-and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
+and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
     let ilImports =
         [| 
           for openDecl in openDecls do
             for modul in openDecl.Modules do
                 if modul.IsNamespace then
                     ILDebugImport.ImportNamespace (fullDisplayTextOfModRef modul)
-                // Emit of 'open type' and 'open <module>' is causing problems
-                // See https://github.com/dotnet/fsharp/pull/12010#issuecomment-903339109
-                //
-                // It may be nested types/modules in particular
-                //else
-                //    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
-            //for t in openDecl.Types do
-            //    let m = defaultArg openDecl.Range Range.range0
-            //    ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
+                else
+                    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
+            for t in openDecl.Types do
+                let m = defaultArg openDecl.Range Range.range0
+                ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
         |]
-        |> Array.distinctBy (function
-            | ILDebugImport.ImportNamespace nsp -> nsp
-            | ILDebugImport.ImportType t -> t.QualifiedName)
 
     if ilImports.Length = 0 then
         eenv
     else
+        // We flatten _all_ the import scopes, creating repetition, because C# debug engine doesn't seem to handle
+        // nesting of import scopes at all. This means every new "open" in, say, a nested module in F# causes 
+        // duplication of all the implicit/enclosing "open" in within the debug information. 
+        // However overall there are not very many "open" declarations and debug information can be large
+        // so this is not considered a problem.
         let imports =
-            { Parent = eenv.imports
-              Imports = ilImports }
+            [| match eenv.imports with 
+               | None -> ()
+               | Some parent -> yield! parent.Imports
+               yield! ilImports |]
+             |> Array.filter (function
+                | ILDebugImport.ImportNamespace _ -> true
+                | ILDebugImport.ImportType t ->
+                    t.IsNominal &&
+                    // We filter out FSI_NNNN types (dynamic modules), since we don't really need them in the import tables.
+                    not (t.QualifiedName.StartsWithOrdinal FsiDynamicModulePrefix
+                         && t.TypeRef.Scope = ILScopeRef.Local ))
+             |> Array.distinctBy (function
+                | ILDebugImport.ImportNamespace nsp -> nsp
+                | ILDebugImport.ImportType t -> t.QualifiedName)
                 
-        { eenv with imports = Some imports }
+        { eenv with imports = Some { Parent = None; Imports = imports } }
 
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with

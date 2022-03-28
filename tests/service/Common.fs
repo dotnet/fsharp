@@ -223,9 +223,8 @@ let getSingleDeclInModule (input: ParsedInput) =
 
 let getSingleExprInModule (input: ParsedInput) =
     match getSingleDeclInModule input with
-    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
-
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl

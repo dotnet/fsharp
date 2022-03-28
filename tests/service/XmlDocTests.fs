@@ -110,7 +110,7 @@ let (|Decls|LetBindings|ValSig|LetOrUse|) = function
 
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.DoExpr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
+                SynModuleDecl.Expr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
         LetBindings(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [

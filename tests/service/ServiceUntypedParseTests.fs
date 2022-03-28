@@ -182,7 +182,7 @@ let ``SynType.Paren ranges`` () =
     let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.DoExpr (expr = SynExpr.Paren (expr = SynExpr.Typed (_, synType ,_))) ->
+        | SynModuleDecl.Expr (expr = SynExpr.Paren (expr = SynExpr.Typed (_, synType ,_))) ->
             getParenTypes synType
             |> List.map (fun synType -> getRangeCoords synType.Range)
         | _ -> failwith "Could not get binding")
