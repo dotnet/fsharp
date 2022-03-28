@@ -1092,14 +1092,14 @@ module CoreTests =
     // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
     // as it feeds in many incremental fragments into stdin of the FSI process.
     [<Test>]
-    let ``printing-legacyemitoff`` () =
-         runPrintingTest "--multiemit+ --debug+" "output.legacyemitoff"
+    let ``printing-multiemit`` () =
+         runPrintingTest "--multiemit+ --debug+" "output.multiemit"
 
     // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
     // needs to be tested with optimizations off.  The output should not change.
     [<Test>]
-    let ``printing-legacyemitoff-optimizeoff`` () =
-         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.legacyemitoff"
+    let ``printing-multiemit-optimizeoff`` () =
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.multiemit"
 
     [<Test>]
     let ``printing-width-1000`` () =

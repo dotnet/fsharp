@@ -221,6 +221,8 @@ type IlxGenOptions =
 
       ilxBackend: IlxGenBackend
 
+      fsiMultiAssemblyEmit: bool
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool
@@ -1716,8 +1718,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilFieldDefs =
                 mkILFields
                     [ for _, fldName, fldTy in flds ->
-                        // The F# Interactive backend may split to multiple assemblies.
-                        let access = (if cenv.opts.isInteractive then ILMemberAccess.Public else  ILMemberAccess.Private)
+                        // Don't hide fields when splitting to multiple assemblies.
+                        let access = 
+                            if cenv.opts.fsiMultiAssemblyEmit then ILMemberAccess.Public
+                            else ILMemberAccess.Private
                         let fdef = mkILInstanceField (fldName, fldTy, None, access)
                         fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
 
@@ -8054,7 +8058,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   // The IL field is hidden if the property/field is hidden OR we're using a property
                   // AND the field is not mutable (because we can take the address of a mutable field).
                   // Otherwise fields are always accessed via their property getters/setters
-                  let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
+                  //
+                  // Additionally, don't hide fields for multiemit in F# Interactive
+                  let isFieldHidden =
+                      isPropHidden || (not useGenuineField && not isFSharpMutable && not cenv.opts.fsiMultiAssemblyEmit)
 
                   let extraAttribs =
                      match tyconRepr with
@@ -8062,6 +8069,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeMemberAccess isFieldHidden
+
                   let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
 
                   let fdef =
