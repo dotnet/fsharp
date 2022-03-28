@@ -103,16 +103,13 @@ let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
 [<RequireQualifiedAccess>]
 type SkipUnrefInterfaces = Yes | No
 
-/// Collect the set of immediate declared interface types for an F# type, but do not
-/// traverse the type hierarchy to collect further interfaces.
-let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
-
-    let getInterfaces ty (tcref:TyconRef) tinst =
+let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef) tinst =
+    [
         match metadataOfTy g ty with
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info ->
-            [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                yield Import.ImportProvidedType amap m ity ]
+            for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                Import.ImportProvidedType amap m ity
 #endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
@@ -122,58 +119,75 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
             // succeeded with more reported. There are pathological corner cases where this
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
-            tdef.Implements |> List.choose (fun ity ->
+            for ity in tdef.Implements do
                 if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
-                    Some (ImportILType scoref amap m tinst ity)
-                else
-                    None)
+                    ImportILType scoref amap m tinst ity
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
+            for ity in tcref.ImmediateInterfaceTypesOfFSharpTycon do
+               instType (mkInstForAppTy g ty) ity ]
 
-    let itys =
+/// Collect the set of immediate declared interface types for an F# type, but do not
+/// traverse the type hierarchy to collect further interfaces.
+//
+// NOTE: Anonymous record types are not directly considered to implement IComparable,
+// IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
+// consitutent types, which may not yet be known in type inference.
+let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
+    [
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
-            if tcref.IsMeasureableReprTycon then
-                [ match tcref.TypeReprInfo with
-                  | TMeasureableRepr reprTy ->
-                       for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
-                          match tryTcrefOfAppTy g ity with
-                          | ValueNone -> ()
-                          | ValueSome itcref ->
-                              if not (tyconRefEq g itcref g.system_GenericIComparable_tcref) &&
-                                 not (tyconRefEq g itcref g.system_GenericIEquatable_tcref) then
-                                   yield ity
-                  | _ -> ()
-                  yield mkAppTy g.system_GenericIComparable_tcref [ty]
-                  yield mkAppTy g.system_GenericIEquatable_tcref [ty]]
-            else
-                getInterfaces ty tcref tinst
-        | _ ->
+            // Check if this is a measure-annotated type
+            match tcref.TypeReprInfo with
+            | TMeasureableRepr reprTy ->
+                yield! GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy
+            | _ ->
+                yield! GetImmediateInterfacesOfMetadataType g amap m skipUnref ty tcref tinst
+
+        | ValueNone ->
+            // For tuple types, func types, check if we can eliminate to a type with metadata.
             let tyWithMetadata = convertToTypeWithMetadataIfPossible g ty
             match tryAppTy g tyWithMetadata with
             | ValueSome (tcref, tinst) ->
                 if isAnyTupleTy g ty then
-                    getInterfaces tyWithMetadata tcref tinst
-                else
-                    []
-            | _ -> []
+                    yield! GetImmediateInterfacesOfMetadataType g amap m skipUnref tyWithMetadata tcref tinst
+            | _ -> ()
 
-    // NOTE: Anonymous record types are not directly considered to implement IComparable,
-    // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
-    // consitutent types, which may not yet be known in type inference.
-    //
-    // NOTE: Tuples could in theory always support IComparable etc. because this
-    // is in the .NET metadata for System.Tuple etc.  However from the F# perspective tuple types don't
-    // always support the 'comparable' and 'equality' constraints (again, it depends on their constitutent types).
-
-    // .NET array types are considered to implement IList<T>
-    let itys =
+        // .NET array types are considered to implement IList<T>
         if isArray1DTy g ty then
-            mkSystemCollectionsGenericIListTy g (destArrayTy g ty) :: itys
-        else
-            itys
+            mkSystemCollectionsGenericIListTy g (destArrayTy g ty)
+    ]
 
-    itys
+// For 
+//
+//     [<MeasureAnnotatedAbbreviation>] type A<[<Measure>] 'm> = A
+//
+// the measure-annotated type is considered to support the interfaces that arise by rewriting
+// the IComparable and IEquatable interfaces on non-measurable type A, so that
+//    IComparable<A> --> IComparable<A<'m>>
+//    IEquatable<A> --> IEquatable<A<'m>>
+//
+// This rule is conservative and only applies to IComparable and IEquatable interfaces,
+// and they must be directly instantiated at type A. It also applies to
+// any generic interfaces that derive from these.
+and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
+    [ for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
+        match ity with
+        | AppTy g (tcref, tyargs) when 
+            IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m ity &&
+            tyargs |> List.exists (fun tyarg -> typeEquiv g tyarg reprTy) ->
+                let ftyargs = tyargs |> List.map (fun tyarg -> if typeEquiv g tyarg reprTy then ty else tyarg)
+                mkAppTy tcref ftyargs 
+        | _ -> ity]
+
+// Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
+and IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m ity =
+    match ity with
+    | AppTy g (tcref, tinst) ->
+        tyconRefEq g tcref g.system_GenericIComparable_tcref ||
+        tyconRefEq g tcref g.system_GenericIEquatable_tcref ||
+        (GetImmediateInterfacesOfMetadataType g amap m skipUnref ity tcref tinst 
+         |> List.exists (IsRewrittenInterfaceOfMeasureAnnotatedType skipUnref g amap m))
+    | _ -> false
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
 [<RequireQualifiedAccess>]

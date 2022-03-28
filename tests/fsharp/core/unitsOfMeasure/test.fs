@@ -128,6 +128,41 @@ module TestLibrary =
     printfn "test 7: %i" (test7 1000)
     printfn "test 8: %i" (test8 1000)
 
+module InterfacesOfMeasureAnnotatedTypes =
+    open System
+    type IDerivedComparable<'T> =
+        inherit IComparable<'T>
+
+    type IRandomOtherInterface<'T> =
+        abstract M: 'T -> 'T
+
+    type IDerivedEquatable<'T> =
+        inherit IEquatable<'T>
+
+    type Prim() =
+        interface IComparable with 
+            member x.CompareTo(y) = 0
+        interface IDerivedComparable<Prim> with 
+            member x.CompareTo(y) = 0
+        interface IDerivedEquatable<Prim> with 
+            member x.Equals(y) = true
+        interface IRandomOtherInterface<Prim> with 
+            member x.M(y) = y
+        override x.Equals(y) = true
+        override x.GetHashCode() = 0
+
+    [<MeasureAnnotatedAbbreviation>]
+    type Prim<[<Measure>] 'm> = Prim
+
+    // Check that Prim<'m> supports the unit-annotated IComparable interface
+    let f1 (x: Prim<'m>) = (x :> IComparable<Prim<'m>>)
+    let f2 (x: Prim<'m>) = (x :> IDerivedComparable<Prim<'m>>)
+    let f3 (x: Prim<'m>) = (x :> IEquatable<Prim<'m>>)
+    let f4 (x: Prim<'m>) = (x :> IDerivedEquatable<Prim<'m>>)
+    let f5 (x: Prim<'m>) = (x :> IComparable)
+    // Does not apply to other interfaces
+    let f6 (x: Prim<'m>) = (x :> IRandomOtherInterface<Prim>)
+
 
 [<EntryPoint>]
 let main argv = 
