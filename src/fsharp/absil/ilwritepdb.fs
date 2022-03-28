@@ -490,10 +490,10 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         //        writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyReferenceAlias);
         //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
 
-    let serializeImportsBlob (scope: PdbImports) =
+    let serializeImportsBlob (imports: PdbImport[]) =
         let writer = new BlobBuilder()
 
-        for import in scope.Imports do
+        for import in imports do
             serializeImport writer import
 
         metadata.GetOrAddBlob(writer)
@@ -515,7 +515,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
             | None -> moduleImportScopeHandle
             | Some parent -> getImportScopeIndex parent
 
-        let blob = serializeImportsBlob imports
+        let blob = serializeImportsBlob imports.Imports
         let result = metadata.AddImportScope(parentScopeHandle, blob)
 
         importScopesTable.Add(imports, result)
@@ -542,19 +542,15 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     let writeMethodScopes methToken rootScope =
 
         let flattenedScopes = flattenScopes rootScope
-            
-        // Get or create the import scope for this method
-        let importScopeHandle =
-#if EMIT_IMPORT_SCOPES
-            match s.Imports with 
-            | None -> Unchecked.defaultof<_>
-            | Some imports -> getImportScopeIndex imports
-#else
-            getImportScopeIndex |> ignore // make sure this code counts as used
-            Unchecked.defaultof<_>
-#endif
 
         for scope in flattenedScopes do
+            // Get or create the import scope for this method
+            let importScopeHandle =
+
+                match scope.Imports with 
+                | None -> Unchecked.defaultof<_>
+                | Some imports -> getImportScopeIndex imports
+
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
 
@@ -684,14 +680,9 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         sortMethods showTimes info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
-// Currently disabled, see 
-#if EMIT_IMPORT_SCOPES
         defineModuleImportScope()
-#else
-        defineModuleImportScope |> ignore // make sure this function counts as used
-#endif
 
-        for minfo in info.Methods do 
+        for minfo in info.Methods do
             emitMethod minfo
 
         let entryPoint =
@@ -994,6 +985,7 @@ let logDebugInfo (outfile: string) (info: PdbData) =
         fprintfn sw "      %s- [%d-%d]" offs scope.StartOffset scope.EndOffset
         if scope.Locals.Length > 0 then
           fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]
+
         for child in scope.Children do writeScope (offs + "  ") child
 
       match meth.RootScope with

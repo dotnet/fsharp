@@ -19,6 +19,7 @@ open System.Text
 open System.Text.RegularExpressions
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
+open System.Reflection.Metadata
 
 module rec Compiler =
     type BaselineFile = { FilePath: string; Content: string option }
@@ -128,7 +129,8 @@ module rec Compiler =
           Dependencies: string list
           Adjust:       int
           Diagnostics:  ErrorInfo list
-          Output:       RunOutput option }
+          Output:       RunOutput option
+          Compilation:  CompilationUnit }
 
     type TestResult =
         | Success of Output
@@ -279,6 +281,9 @@ module rec Compiler =
     let withXmlCommentStrictParamChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3391" ] "withXmlCommentChecking is only supported for F#" cUnit
 
+    let withPortablePdb (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper ["--debug:portable"] "withPortablePdb is only supported for F#" cUnit
+
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }
@@ -294,10 +299,10 @@ module rec Compiler =
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
-    let rec private asMetadataReference reference =
+    let rec private asMetadataReference (cUnit: CompilationUnit) reference =
         match reference with
         | CompilationReference (cmpl, _) ->
-            let result = compileFSharpCompilation cmpl false
+            let result = compileFSharpCompilation cmpl false cUnit
             match result with
             | Failure f ->
                 let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (f.Diagnostics)
@@ -330,7 +335,7 @@ module rec Compiler =
                     let refs = loop [] cs.References
                     let source = getSource cs.Source
                     let name = defaultArg cs.Name null
-                    let metadataReferences = List.map asMetadataReference refs
+                    let metadataReferences = List.map (asMetadataReference x) refs
                     let cmpl =
                         CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
                         |> CompilationReference.Create
@@ -339,7 +344,7 @@ module rec Compiler =
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
-    let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
+    let private compileFSharpCompilation compilation ignoreWarnings (cUnit: CompilationUnit) : TestResult =
 
         let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
@@ -350,7 +355,8 @@ module rec Compiler =
               Dependencies = deps
               Adjust       = 0
               Diagnostics  = diagnostics
-              Output       = None }
+              Output       = None
+              Compilation  = cUnit }
 
         let (errors, warnings) = partitionErrors diagnostics
 
@@ -375,9 +381,9 @@ module rec Compiler =
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.Create(source, sourceKind, output, options, references, name, outputDirectory)
 
-        compileFSharpCompilation compilation fs.IgnoreWarnings
+        compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
-    let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
+    let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : TestResult =
 
         let outputPath = tryCreateTemporaryDirectory()
 
@@ -394,7 +400,8 @@ module rec Compiler =
               Dependencies = []
               Adjust       = 0
               Diagnostics  = []
-              Output       = None }
+              Output       = None 
+              Compilation  = CS csSource }
 
         if cmplResult.Success then
             Success { result with OutputPath  = Some output }
@@ -414,7 +421,7 @@ module rec Compiler =
         let additionalReferences =
             match processReferences csSource.References outputDirectory with
             | [] -> ImmutableArray.Empty
-            | r  -> (List.map asMetadataReference r).ToImmutableArray().As<MetadataReference>()
+            | r  -> (List.map (asMetadataReference (CS csSource)) r).ToImmutableArray().As<MetadataReference>()
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
@@ -430,7 +437,7 @@ module rec Compiler =
             references.As<MetadataReference>().AddRange additionalReferences,
             CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
 
-        cmpl |> compileCSharpCompilation
+        compileCSharpCompilation cmpl csSource
 
     let compile (cUnit: CompilationUnit) : TestResult =
         match cUnit with
@@ -451,7 +458,8 @@ module rec Compiler =
               Dependencies = []
               Adjust       = 0
               Diagnostics  = diagnostics
-              Output       = None }
+              Output       = None 
+              Compilation  = FS fsSource }
 
         if failed then
             Failure result
@@ -484,7 +492,8 @@ module rec Compiler =
               Dependencies = []
               Adjust       = 0
               Diagnostics  = diagnostics
-              Output       = None }
+              Output       = None 
+              Compilation  = FS fsSource }
 
         let (errors, warnings) = partitionErrors diagnostics
 
@@ -549,7 +558,8 @@ module rec Compiler =
               Dependencies = []
               Adjust       = 0
               Diagnostics  = diagnostics
-              Output       = Some(EvalOutput evalresult) }
+              Output       = Some(EvalOutput evalresult) 
+              Compilation  = FS fs }
 
         let (errors, warnings) = partitionErrors diagnostics
 
@@ -603,7 +613,8 @@ module rec Compiler =
                       Dependencies = []
                       Adjust       = 0
                       Diagnostics  = []
-                      Output       = None }
+                      Output       = None 
+                      Compilation  = cUnit }
 
                 if errors.Count > 0 then
                     let output = ExecutionOutput {
@@ -686,6 +697,98 @@ module rec Compiler =
         cUnit
 
     let verifyBaselines = verifyBaseline >> verifyILBaseline
+
+    type ImportScope = { Kind: ImportDefinitionKind; Name: string }
+
+    type PdbVerificationOption =
+    | VerifyImportScopes of ImportScope list list
+    | Dummy of unit
+
+    let private verifyPdbFormat (reader: MetadataReader) compilationType =
+        if reader.MetadataVersion <> "PDB v1.0" then
+            failwith $"Invalid PDB file version. Expected: \"PDB v1.0\"; Got {reader.MetadataVersion}"
+
+        if reader.MetadataKind <> MetadataKind.Ecma335 then
+            failwith $"Invalid metadata kind detected. Expected {MetadataKind.Ecma335}; Got {reader.MetadataKind}"
+
+        // This should not happen, just a sanity check:
+        if reader.IsAssembly then
+            failwith $"Unexpected PDB type, expected `IsAssembly` to be `false`."
+
+        let shouldHaveEntryPoint = (compilationType = CompileOutput.Exe)
+
+        // Sanity check, we want to verify, that Entrypoint is non-nil, if we are building "Exe" target.
+        if reader.DebugMetadataHeader.EntryPoint.IsNil && shouldHaveEntryPoint then
+            failwith $"EntryPoint expected to be {shouldHaveEntryPoint}, but was {reader.DebugMetadataHeader.EntryPoint.IsNil}"
+
+    let private verifyPdbImportTables (reader: MetadataReader) (scopes: ImportScope list list) =
+        // There always should be 2 import scopes - 1 empty "root" one, and one flattened table of imports for current scope.
+        if reader.ImportScopes.Count < 2 then
+            failwith $"Expected to have at least 2 import scopes, but found {reader.ImportScopes.Count}."
+
+        // Sanity check: explicitly test that first import scope is indeed an apty one (i.e. there are no imports).
+        let rootScope = reader.ImportScopes.ToImmutableArray().Item(0) |> reader.GetImportScope
+
+        let rootScopeImportsLength = rootScope.GetImports().ToImmutableArray().Length
+
+        if rootScopeImportsLength <> 0 then
+            failwith $"Expected root scope to have 0 imports, but got {rootScopeImportsLength}."
+
+        let pdbScopes = [ for import in reader.ImportScopes -> reader.GetImportScope import ] |> List.skip 1 |> List.rev
+
+        if pdbScopes.Length <> scopes.Length then
+            failwith $"Expected import scopes amount is {scopes.Length}, but got {pdbScopes.Length}."
+
+        for (pdbScope, expectedScope) in List.zip pdbScopes scopes do
+            let imports = [ for import in pdbScope.GetImports() ->
+                            match import.Kind with
+                            | ImportDefinitionKind.ImportNamespace ->
+                                let targetNamespaceBlob = import.TargetNamespace
+                                let targetNamespaceBytes = reader.GetBlobBytes(targetNamespaceBlob)
+                                let name = Encoding.UTF8.GetString(targetNamespaceBytes, 0, targetNamespaceBytes.Length)
+                                Some { Kind = import.Kind; Name = name }
+                            | _ -> None ] |> List.filter Option.isSome |> List.map Option.get
+
+            if expectedScope.Length <> imports.Length then
+                failwith $"Expected imports amount is {expectedScope.Length}, but got {imports.Length}\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
+
+            if expectedScope <> imports then
+                failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
+
+
+    let private verifyPdbOptions reader options =
+        for option in options do
+            match option with
+            | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
+            | _ -> failwith $"Unknown verification option: {option.ToString()}"
+
+    let private verifyPortablePdb (result: Output) options : unit =
+        match result.OutputPath with
+        | Some assemblyPath ->
+            let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+            if not (FileSystem.FileExistsShim pdbPath) then
+                failwith $"PDB file does not exists: {pdbPath}"
+
+            use fileStream = File.OpenRead pdbPath;
+            use provider = MetadataReaderProvider.FromPortablePdbStream fileStream
+            let reader = provider.GetMetadataReader()
+            let compilationType =
+                match result.Compilation with
+                | FS r -> r.OutputType
+                | _ -> failwith "Only F# compilations are supported when verifying PDBs."
+
+            verifyPdbFormat reader compilationType
+            verifyPdbOptions reader options
+        | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+
+        ()
+
+    let verifyPdb (options: PdbVerificationOption list) (result: TestResult) : TestResult =
+        match result with
+        | Success r -> verifyPortablePdb r options
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
+
+        result
 
     [<AutoOpen>]
     module Assertions =
