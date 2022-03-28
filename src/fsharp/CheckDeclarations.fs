@@ -693,8 +693,8 @@ module IncrClassChecking =
 
     /// Represents a single group of bindings in a class with an implicit constructor
     type IncrClassBindingGroup = 
-      | IncrClassBindingGroup of Binding list * (*isStatic:*) bool* (*recursive:*) bool
-      | IncrClassDo of Expr * (*isStatic:*) bool
+      | IncrClassBindingGroup of bindings: Binding list * isStatic: bool* isRecursive: bool
+      | IncrClassDo of expr: Expr * isStatic: bool * range: Range 
 
     /// Typechecked info for implicit constructor and it's arguments 
     type IncrClassCtorLhs = 
@@ -1269,7 +1269,7 @@ module IncrClassChecking =
                                     (instanceForcedFieldVars, methodBinds) ||> accFreeInBindings
                                         
                                 (staticForcedFieldVars, instanceForcedFieldVars)
-                            | IncrClassDo (e, isStatic) -> 
+                            | IncrClassDo (e, isStatic, _) -> 
                                 let staticForcedFieldVars = 
                                     if isStatic then 
                                         staticForcedFieldVars
@@ -1388,9 +1388,14 @@ module IncrClassChecking =
                   else 
                       ([], actions, methodBinds), reps
 
-              | IncrClassDo (doExpr, isStatic) -> 
+              | IncrClassDo (doExpr, isStatic, mFull) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential doExpr.Range doExpr e)
+                  // Extend the range of any immediate debug point to include the 'do'
+                  let doExpr =
+                      match doExpr with
+                      | Expr.DebugPoint(_, innerExpr) -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, innerExpr)
+                      | e -> e
+                  let binder = (fun e -> mkSequential mFull doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1936,7 +1941,7 @@ module MutRecBindingChecking =
                                         binds 
                                         |> List.map (function
                                             | TMDefLet(bind, _) -> [bind], IncrClassBindingGroup([bind], isStatic, false)
-                                            | TMDefDo(e, _) -> [], IncrClassDo(e, isStatic)
+                                            | TMDefDo(e, _) -> [], IncrClassDo(e, isStatic, bindsm)
                                             | _ -> error(InternalError("unexpected definition kind", tcref.Range)))
                                         |> List.unzip
                                     List.concat binds, bindRs, env, tpenv
@@ -2148,7 +2153,7 @@ module MutRecBindingChecking =
                                                 | IncrClassBindingGroup(binds, isStatic, _) -> 
                                                     isStatic || 
                                                     binds |> List.forall (IncrClassReprInfo.IsMethodRepr cenv)
-                                                | IncrClassDo(_, isStatic) ->
+                                                | IncrClassDo(_, isStatic, _) ->
                                                     isStatic)
                                         | _ -> true) 
 

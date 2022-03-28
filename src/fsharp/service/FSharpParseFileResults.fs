@@ -442,9 +442,23 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let walkWithSeqPt sp = [ match sp with DebugPointAtWith.Yes m -> yield! checkRange m | _ -> () ]
             let walkFinallySeqPt sp = [ match sp with DebugPointAtFinally.Yes m -> yield! checkRange m | _ -> () ]
 
-            let rec walkBind (SynBinding(expr=synExpr; debugPoint=spInfo)) =
+            let rec walkBind (SynBinding(kind=kind; expr=synExpr; debugPoint=spInfo; range=m)) =
                 [ yield! walkBindSeqPt spInfo
-                  yield! walkExpr (match spInfo with DebugPointAtBinding.Yes _ -> false | _-> true) synExpr ]
+                  let extendDebugPointForDo =
+                      match kind with
+                      | SynBindingKind.Do -> not (IsControlFlowExpression synExpr)
+                      | _ -> false
+
+                  // This extends the range of the implicit debug point for 'do expr' range to include the 'do'
+                  if extendDebugPointForDo then
+                      yield! checkRange m
+
+                  let useImplicitDebugPoint =
+                      match spInfo with
+                      | DebugPointAtBinding.Yes _ -> false
+                      | _-> not extendDebugPointForDo
+
+                  yield! walkExpr useImplicitDebugPoint synExpr ]
 
             and walkExprs es = List.collect (walkExpr false) es
 
@@ -705,7 +719,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       
             // Returns class-members for the right dropdown                  
             and walkMember memb =
-                if not (rangeContainsPos memb.Range pos) then [] else
+                if not (isMatchRange memb.Range) then [] else
                 [ match memb with
                   | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
                   | SynMemberDefn.AutoProperty(synExpr=synExpr) -> yield! walkExpr true synExpr
