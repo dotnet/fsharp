@@ -695,7 +695,7 @@ module InterfaceStubGenerator =
                     List.tryPick walkSynModuleDecl modules
                 | SynModuleDecl.Types(typeDefs, _range) ->
                     List.tryPick walkSynTypeDefn typeDefs
-                | SynModuleDecl.DoExpr (_, expr, _) ->
+                | SynModuleDecl.Expr (expr, _) ->
                     walkExpr expr
                 | SynModuleDecl.Attributes _
                 | SynModuleDecl.HashDirective _

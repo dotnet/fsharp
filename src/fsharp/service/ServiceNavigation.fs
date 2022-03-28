@@ -682,7 +682,7 @@ module NavigateTo =
                 for t in typeDefs do
                     walkSynTypeDefn t container
             | SynModuleDecl.Attributes _
-            | SynModuleDecl.DoExpr _
+            | SynModuleDecl.Expr _
             | SynModuleDecl.HashDirective _
             | SynModuleDecl.Open _ -> ()
     

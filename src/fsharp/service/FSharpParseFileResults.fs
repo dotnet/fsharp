@@ -727,9 +727,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 [ match decl with 
                   | SynModuleDecl.Let(_, binds, m) when isMatchRange m -> 
                       yield! walkBinds binds
-                  | SynModuleDecl.DoExpr(spExpr, expr, m) when isMatchRange m ->  
-                      yield! walkBindSeqPt spExpr
-                      yield! walkExpr false expr
+                  | SynModuleDecl.Expr(expr, m) when isMatchRange m ->  
+                      yield! walkExpr true expr
                   | SynModuleDecl.ModuleAbbrev _ -> ()
                   | SynModuleDecl.NestedModule(decls=decls; range=m) when isMatchRange m ->
                       for d in decls do yield! walkDecl d

@@ -7530,12 +7530,12 @@ FSharp.Compiler.Syntax.SynModuleDecl+Attributes: FSharp.Compiler.Text.Range get_
 FSharp.Compiler.Syntax.SynModuleDecl+Attributes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Attributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynModuleDecl+Attributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Syntax.DebugPointAtBinding debugPoint
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Syntax.DebugPointAtBinding get_debugPoint()
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Syntax.SynExpr expr
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Syntax.SynExpr get_expr()
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynModuleDecl+DoExpr: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Syntax.DebugPointAtBinding debugPoint
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Syntax.DebugPointAtBinding get_debugPoint()
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Syntax.SynExpr expr
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Syntax.SynExpr get_expr()
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynModuleDecl+Expr: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Exception: FSharp.Compiler.Syntax.SynExceptionDefn exnDefn
 FSharp.Compiler.Syntax.SynModuleDecl+Exception: FSharp.Compiler.Syntax.SynExceptionDefn get_exnDefn()
 FSharp.Compiler.Syntax.SynModuleDecl+Exception: FSharp.Compiler.Text.Range get_range()
@@ -7575,7 +7575,7 @@ FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Syntax.SynOpenDeclTar
 FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 Attributes
-FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 DoExpr
+FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 Expr
 FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 Exception
 FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 HashDirective
 FSharp.Compiler.Syntax.SynModuleDecl+Tags: Int32 Let
@@ -7589,7 +7589,7 @@ FSharp.Compiler.Syntax.SynModuleDecl+Types: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+Types: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeDefn] get_typeDefns()
 FSharp.Compiler.Syntax.SynModuleDecl+Types: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeDefn] typeDefns
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsAttributes
-FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsDoExpr
+FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsExpr
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsException
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsHashDirective
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsLet
@@ -7599,7 +7599,7 @@ FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsNestedModule
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsOpen
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean IsTypes
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsAttributes()
-FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsDoExpr()
+FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsExpr()
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsException()
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsHashDirective()
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsLet()
@@ -7609,7 +7609,7 @@ FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsNestedModule()
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsOpen()
 FSharp.Compiler.Syntax.SynModuleDecl: Boolean get_IsTypes()
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewAttributes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewDoExpr(FSharp.Compiler.Syntax.DebugPointAtBinding, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewExpr(FSharp.Compiler.Syntax.DebugPointAtBinding, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewException(FSharp.Compiler.Syntax.SynExceptionDefn, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewLet(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Text.Range)
@@ -7619,7 +7619,7 @@ FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNe
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewOpen(FSharp.Compiler.Syntax.SynOpenDeclTarget, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeDefn], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+Attributes
-FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+DoExpr
+FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+Expr
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+Exception
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+HashDirective
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+Let

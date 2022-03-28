@@ -144,7 +144,7 @@ match () with
 b
 """
     match getSingleModuleMemberDecls parseResults with
-    | [ SynModuleDecl.DoExpr (_, (SynExpr.Match _ as m), _); SynModuleDecl.DoExpr (_, (SynExpr.Ident _ as i), _) ] ->
+    | [ SynModuleDecl.Expr (_, (SynExpr.Match _ as m), _); SynModuleDecl.Expr (_, (SynExpr.Ident _ as i), _) ] ->
         Assert.True(Position.posLt m.Range.End i.Range.Start)
     | _ -> failwith "Unexpected tree"
 

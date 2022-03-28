@@ -1929,9 +1929,8 @@ type SynModuleDecl =
         bindings: SynBinding list *
         range: range
 
-    /// A 'do expr' within a module
-    | DoExpr of
-       debugPoint: DebugPointAtBinding *
+    /// An 'expr' within a module.
+    | Expr of
        expr: SynExpr *
        range: range
 

@@ -1471,6 +1471,56 @@ let bodyWrapper (a, b, c) = a || b && c"""
          ((2, 38), (2, 38, 2, 39, "c"))]
 
 [<Test>]
+let ``ValidateBreakpointLocation tests for side-effect expression`` () =
+    let input =
+      """
+let print() = ()
+print()
+do print()
+type C() =
+    do print()
+module M =
+    print()
+"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+            [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
+             ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
+             ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
+             ((2, 6), (2, 14, 2, 16, "()")); ((2, 7), (2, 14, 2, 16, "()"));
+             ((2, 8), (2, 14, 2, 16, "()")); ((2, 9), (2, 14, 2, 16, "()"));
+             ((2, 10), (2, 14, 2, 16, "()")); ((2, 11), (2, 14, 2, 16, "()"));
+             ((2, 12), (2, 14, 2, 16, "()")); ((2, 13), (2, 14, 2, 16, "()"));
+             ((2, 14), (2, 14, 2, 16, "()")); ((2, 15), (2, 14, 2, 16, "()"));
+             ((3, 0), (3, 0, 3, 7, "print()")); ((3, 1), (3, 0, 3, 7, "print()"));
+             ((3, 2), (3, 0, 3, 7, "print()")); ((3, 3), (3, 0, 3, 7, "print()"));
+             ((3, 4), (3, 0, 3, 7, "print()")); ((3, 5), (3, 0, 3, 7, "print()"));
+             ((3, 6), (3, 0, 3, 7, "print()")); ((4, 0), (4, 0, 4, 10, "do print()"));
+             ((4, 1), (4, 0, 4, 10, "do print()")); ((4, 2), (4, 0, 4, 10, "do print()"));
+             ((4, 3), (4, 0, 4, 10, "do print()")); ((4, 4), (4, 0, 4, 10, "do print()"));
+             ((4, 5), (4, 0, 4, 10, "do print()")); ((4, 6), (4, 0, 4, 10, "do print()"));
+             ((4, 7), (4, 0, 4, 10, "do print()")); ((4, 8), (4, 0, 4, 10, "do print()"));
+             ((4, 9), (4, 0, 4, 10, "do print()")); ((5, 5), (5, 5, 5, 6, "C"));
+             ((5, 6), (5, 5, 5, 6, "C")); ((6, 4), (6, 7, 6, 14, "print()"));
+             ((6, 5), (6, 7, 6, 14, "print()")); ((6, 6), (6, 7, 6, 14, "print()"));
+             ((6, 7), (6, 7, 6, 14, "print()")); ((6, 8), (6, 7, 6, 14, "print()"));
+             ((6, 9), (6, 7, 6, 14, "print()")); ((6, 10), (6, 7, 6, 14, "print()"));
+             ((6, 11), (6, 7, 6, 14, "print()")); ((6, 12), (6, 7, 6, 14, "print()"));
+             ((6, 13), (6, 7, 6, 14, "print()")); ((8, 0), (8, 4, 8, 11, "print()"));
+             ((8, 1), (8, 4, 8, 11, "print()")); ((8, 2), (8, 4, 8, 11, "print()"));
+             ((8, 3), (8, 4, 8, 11, "print()")); ((8, 4), (8, 4, 8, 11, "print()"));
+             ((8, 5), (8, 4, 8, 11, "print()")); ((8, 6), (8, 4, 8, 11, "print()"));
+             ((8, 7), (8, 4, 8, 11, "print()")); ((8, 8), (8, 4, 8, 11, "print()"));
+             ((8, 9), (8, 4, 8, 11, "print()")); ((8, 10), (8, 4, 8, 11, "print()"))]
+
+[<Test>]
 let ``Partially valid namespaces should be reported`` () =
     let input =
       """
