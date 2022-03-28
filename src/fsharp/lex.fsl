@@ -1427,11 +1427,12 @@ and singleLineComment cargs skip = parse
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then LINE_COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
        else
-           LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
+           if Option.isNone buff then LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
            token args skip lexbuf }
 
  | eof
-     { let _, _n, _mStart, _mEnd, args = cargs
+     { let _, _n, mStart, mEnd, args = cargs
+       LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
        // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token
        EOF (LexCont.Token(args.ifdefStack, args.stringNest)) }
 
