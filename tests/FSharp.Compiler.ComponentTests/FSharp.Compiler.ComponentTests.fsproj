@@ -101,6 +101,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
