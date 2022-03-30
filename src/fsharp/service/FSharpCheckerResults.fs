@@ -911,7 +911,7 @@ type internal TypeCheckInfo
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option,
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads,
-                                       getAllSymbols: unit -> AssemblySymbol list)
+                                       completionContextAtPos: (pos * CompletionContext option) option, getAllSymbols: unit -> AssemblySymbol list)
                                        : (CompletionItem list * DisplayEnv * CompletionContext option * range) option =
 
         let loc =
@@ -923,9 +923,16 @@ type internal TypeCheckInfo
 
         // Look for a "special" completion context
         let completionContext =
-            parseResultsOpt
-            |> Option.map (fun x -> x.ParseTree)
-            |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
+            let pos = mkPos line colAtEndOfNamesAndResidue
+
+            // If the completion context we have computed higher up the stack is for the same position,
+            // reuse it, otherwise recompute
+            match completionContextAtPos with
+            | Some (contextForPos, context) when contextForPos = pos -> context
+            | _ ->
+                parseResultsOpt
+                |> Option.map (fun x -> x.ParseTree)
+                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
 
         let res =
             match completionContext with
@@ -1091,7 +1098,7 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
     /// Get the auto-complete items at a location
-    member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect range0
             (fun () ->
@@ -1100,7 +1107,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line,
                         lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities)
+                        completionContextAtPos, getAllEntities)
 
                 match declItemsOpt with
                 | None -> DeclarationListInfo.Empty
@@ -1127,7 +1134,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr,
                         partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities)
+                        None, getAllEntities)
 
                 match declItemsOpt with
                 | None -> List.Empty
@@ -1268,7 +1275,7 @@ type internal TypeCheckInfo
                     let declItemsOpt =
                         GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                             line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                            ResolveOverloads.Yes, (fun() -> []))
+                            ResolveOverloads.Yes, None, (fun() -> []))
 
                     match declItemsOpt with
                     | None -> ToolTipText []
@@ -1295,7 +1302,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []))
+                        ResolveOverloads.No, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None -> None
@@ -1333,7 +1340,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition(None, namesOpt, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []))
+                        ResolveOverloads.No, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None -> MethodGroup("",[| |])
@@ -1357,7 +1364,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition (None, Some names, None,
                         None, line, lineStr, colAtEndOfNames,
                         ResolveTypeNamesToCtors, ResolveOverloads.No,
-                        (fun() -> []))
+                        None, (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([],_,_,_) -> None
@@ -1377,7 +1384,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []))
+                        ResolveOverloads.Yes, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None
@@ -1485,7 +1492,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []))
+                        ResolveOverloads.Yes, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([], _, _, _) -> None
@@ -1977,7 +1984,12 @@ type FSharpCheckFileResults
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, None, getAllEntities))
+
+    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, completionContextAtPos, ?getAllEntities) =
+        let getAllEntities = defaultArg getAllEntities (fun() -> [])
+        threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope ->
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities))
 
     member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
         let getAllEntities = defaultArg getAllEntities (fun() -> [])

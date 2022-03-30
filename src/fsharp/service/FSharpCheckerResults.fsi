@@ -251,6 +251,29 @@ type public FSharpCheckFileResults =
     /// </param>
     member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> DeclarationListInfo
 
+    /// <summary>Get the items for a declaration list</summary>
+    ///
+    /// <param name="parsedFileResults">
+    ///    If this is present, it is used to filter declarations based on location in the
+    ///    parse tree, specifically at 'open' declarations, 'inherit' of class or interface
+    ///    'record field' locations and r.h.s. of 'range' operator a..b
+    /// </param>
+    /// <param name="line">The line number where the completion is happening</param>
+    /// <param name="partialName">
+    ///    Partial long name. QuickParse.GetPartialLongNameEx can be used to get it.
+    /// </param>
+    /// <param name="lineText">
+    ///    The text of the line where the completion is happening. This is only used to make a couple
+    ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
+    /// </param>
+    /// <param name="completionContextAtPos">
+    ///    Completion context for a particular position computed in advance.
+    /// </param>
+    /// <param name="getAllEntities">
+    ///    Function that returns all entities from current and referenced assemblies.
+    /// </param>
+    member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * completionContextAtPos: (pos * CompletionContext option) option * ?getAllEntities: (unit -> AssemblySymbol list) -> DeclarationListInfo
+
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
     /// <param name="parsedFileResults">
