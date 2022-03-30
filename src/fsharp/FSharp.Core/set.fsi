@@ -239,7 +239,7 @@ open System.Collections.Generic
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
-/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.Set`1"/>.</summary>
+/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpSet`1"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Set = 
