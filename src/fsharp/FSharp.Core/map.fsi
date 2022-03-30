@@ -215,7 +215,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     interface IReadOnlyDictionary<'Key,'Value>
     override Equals : obj -> bool
 
-/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
+/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpMap`2"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Map = 
