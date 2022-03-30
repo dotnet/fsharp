@@ -447,3 +447,32 @@ module OptionTypeOpImplicitsIgnored =
     let x1 : int option = 3
     let x2 : string option = "a"
 
+module InterfacesOfMeasureAnnotatedTypes =
+    open System
+    type IDerivedComparable<'T> =
+        inherit IComparable<'T>
+
+    type IRandomOtherInterface<'T> =
+        abstract M: 'T -> 'T
+
+    type IDerivedEquatable<'T> =
+        inherit IEquatable<'T>
+
+    type Prim() =
+        interface IComparable with 
+            member x.CompareTo(y) = 0
+        interface IDerivedComparable<Prim> with 
+            member x.CompareTo(y) = 0
+        interface IDerivedEquatable<Prim> with 
+            member x.Equals(y) = true
+        interface IRandomOtherInterface<Prim> with 
+            member x.M(y) = y
+        override x.Equals(y) = true
+        override x.GetHashCode() = 0
+
+    [<MeasureAnnotatedAbbreviation>]
+    type Prim<[<Measure>] 'm> = Prim
+
+    // Check that Prim<'m> does not suppor interfaces in any way derived from IComparable and IEquatable
+    let f2 (x: Prim<'m>) = (x :> IDerivedComparable<Prim<'m>>)
+    let f4 (x: Prim<'m>) = (x :> IDerivedEquatable<Prim<'m>>)
