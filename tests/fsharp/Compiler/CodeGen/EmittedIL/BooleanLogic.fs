@@ -10,14 +10,14 @@ module BooleanLogic =
 
     [<Test>]
     let BooleanOrs() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize+"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions ([|"-g"; "--optimize+"|],
             """
 module BooleanOrs
 let compute (x: int) = 
     if (x = 1 || x = 2) then 2
     elif (x = 3 || x = 4) then 3
     else 4
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  compute(int32 x) cil managed
@@ -52,7 +52,7 @@ let compute (x: int) =
     IL_0017:  ret
 }    
             """
-            ])
+            ]))
 
 [<TestFixture>]
 // We had a regression in debug code regression where we were falsely marking pipelines
@@ -66,7 +66,7 @@ module DontEliminateForLoopsInDebugCode =
     [<Test>]
     // See https://github.com/dotnet/fsharp/pull/12021
     let Regression12021() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module DontEliminateForLoops
 
@@ -76,7 +76,7 @@ let ApplyDefaults () =
         for priority = 0 to 10 do
             unsolved |> List.iter (fun tp -> System.Console.WriteLine())
 
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
       .method public static void  ApplyDefaults() cil managed
@@ -136,5 +136,5 @@ let ApplyDefaults () =
     IL_004f:  ret
   } 
             """
-            ])
+            ]))
 
