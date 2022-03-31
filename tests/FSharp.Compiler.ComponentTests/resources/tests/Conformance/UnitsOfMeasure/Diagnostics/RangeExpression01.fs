@@ -10,5 +10,4 @@ type foo
 let m, n = 1<foo>, 10<foo>
 
 [m .. 1<foo> .. n]         // OK
-
-exit 0
+printfn "Finished"

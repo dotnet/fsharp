@@ -12,7 +12,7 @@ namespace N2
       f2 10
 
    module M3 =
-   exit 0
+   printfn "Finished"
 
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Import mscorlib and FSharp.Core.dll\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Parse inputs\]</Expects>

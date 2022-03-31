@@ -22,7 +22,7 @@ module ComputationExpressionOptimizations =
     // one uses this in practice but it's a good baseline test for the elimination and redution of constructs.
     //
     let ``check reduction of sample builder for synchronous code``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module Test
 
@@ -134,7 +134,7 @@ module Examples =
             finally
                printfn "step"
          }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             // Check testFunctionWithBind is flattened
             """
@@ -314,6 +314,6 @@ module Examples =
   IL_0062:  ret
 } 
             """
-            ])
+            ]))
 
 #endif

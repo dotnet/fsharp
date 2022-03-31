@@ -24,6 +24,7 @@
     <Compile Include="Assert.fs" />
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
+    <Compile Include="Peverifier.fs" />
     <Compile Include="DirectoryAttribute.fs" />
   </ItemGroup>
 
@@ -36,7 +37,7 @@
          Make sure they are getting built with the Utilities. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,7 +51,7 @@
     <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)" >
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbVersion)">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -10,11 +10,11 @@ module ``ComputedListExpressions`` =
 
     [<Test>]
     let ``ComputedListExpression01``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module ComputedListExpression01
 let ListExpressionSteppingTest1 () = [ yield 1 ]
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -33,11 +33,11 @@ let ListExpressionSteppingTest1 () = [ yield 1 ]
   IL_0011:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     let ``ComputedListExpression02``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module ComputedListExpression02
 let ListExpressionSteppingTest2 () = 
@@ -45,7 +45,7 @@ let ListExpressionSteppingTest2 () =
       yield 1
       printfn "goodbye"
       yield 2]
-        """
+        """,
             (fun verifier -> verifier.VerifyIL [
         """
       .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -76,11 +76,12 @@ let ListExpressionSteppingTest2 () =
         IL_003a:  ret
       } 
         """
-            ])
+            ]))
 
     [<Test>]
     let ``ComputedListExpression03``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module ComputedListExpression03
 let ListExpressionSteppingTest3 () = 
@@ -89,7 +90,7 @@ let ListExpressionSteppingTest3 () =
             incr x
             printfn "hello"
             yield x ]
-        """
+        """,
             (fun verifier -> verifier.VerifyIL [
         """
 .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> 
@@ -127,11 +128,11 @@ let ListExpressionSteppingTest3 () =
     IL_003b:  ret
 } 
         """
-            ])
+            ]))
 
     [<Test>]
     let ``ComputedListExpression04``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module ComputedListExpression04
 let ListExpressionSteppingTest4 () = 
@@ -145,7 +146,7 @@ let ListExpressionSteppingTest4 () =
       finally 
             incr x
             printfn "done" ]
-        """
+        """,
             (fun verifier -> verifier.VerifyIL [
         """
 .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -211,18 +212,18 @@ let ListExpressionSteppingTest4 () =
 } 
     
         """
-            ])
+            ]))
 
     [<Test>]
     let ``ComputedListExpression05``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module ComputedListExpression05
 let ListExpressionSteppingTest5 () = 
     [ for x in 1..4 do
             printfn "hello"
             yield x ]
-        """
+        """,
             (fun verifier -> verifier.VerifyIL [
         """
 .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -289,11 +290,11 @@ let ListExpressionSteppingTest5 () =
     IL_005c:  ret
 } 
         """
-            ])
+            ]))
 
     [<Test>]
     let ``ComputedListExpression06``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize-"|],
             """
 module ComputedListExpression06
 let ListExpressionSteppingTest6 () = 
@@ -308,7 +309,7 @@ let ListExpressionSteppingTest6 () =
         | _ -> 
             yield x 
         ]
-        """
+        """,
             (fun verifier -> verifier.VerifyIL [
         """
 .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -402,4 +403,4 @@ let ListExpressionSteppingTest6 () =
     IL_0097:  ret
 } 
         """
-            ])
+            ]))

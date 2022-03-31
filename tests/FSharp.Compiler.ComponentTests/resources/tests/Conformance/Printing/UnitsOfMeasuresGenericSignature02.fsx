@@ -6,4 +6,4 @@
 // This is the case where the generic function takes 2 args
 //<Expects status="success">val g: x: float+</Expects>
 let g (x:float<'a>) (y:float32<'b>) = x * float y;;
-exit 0;;
+printfn "Finished"

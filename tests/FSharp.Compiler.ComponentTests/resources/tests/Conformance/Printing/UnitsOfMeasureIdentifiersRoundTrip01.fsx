@@ -18,7 +18,7 @@ module M2 =
 2.0f<M2.Kg>;;
 1.2<M1.Kg>;;
 
-exit 0;;
+printfn "Finished";;
 
 
 

@@ -12,7 +12,7 @@ module DelegateAndFuncOptimizations =
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce function via InlineIfLambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module InlineIfLambda01
 
@@ -30,7 +30,7 @@ type C =
              printfn("code")
              printfn("code")
              x + 1)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             // Check M is inlined and optimized when small
             """
@@ -151,12 +151,12 @@ type C =
   IL_0117:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce delegate invoke via InlineIfLambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module InlineIfLambdaOnDelegate
 
@@ -178,7 +178,7 @@ type C =
              printfn("code")
              printfn("code")
              x + 1))
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             // Check M is inlined and optimized when small
             """
@@ -299,12 +299,12 @@ type C =
   IL_0117:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce computed function invoke``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module ReduceComputedFunction
 
@@ -312,7 +312,7 @@ open System
 
 let ApplyComputedFunction(c: int) =
     (let x = c+c in printfn("hello"); (fun y -> x + y)) 3
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  ApplyComputedFunction(int32 c) cil managed
@@ -339,12 +339,12 @@ let ApplyComputedFunction(c: int) =
   IL_001e:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Delegate``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module ReduceComputedDelegate
 
@@ -352,7 +352,7 @@ open System
 type D = delegate of int -> int
 let ApplyComputedDelegate(c: int) =
     (let x = c+c in printfn("hello"); D(fun y -> x + y)).Invoke 3
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  ApplyComputedDelegate(int32 c) cil managed
@@ -379,12 +379,12 @@ let ApplyComputedDelegate(c: int) =
   IL_001e:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Function with irreducible match``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module ReduceComputedFunction
 
@@ -392,7 +392,7 @@ open System
 
 let ApplyComputedFunction(c: int) =
     (let x = c+c in printfn("hello"); match x with 1 -> (fun y -> x + y) | _ -> (fun y -> x - y)) 3
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  ApplyComputedFunction(int32 c) cil managed
@@ -431,13 +431,12 @@ let ApplyComputedFunction(c: int) =
   IL_0030:  ret
 } 
             """
-            ])
+            ]))
 
-    
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Immediately apply computed function in sequential``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module ImmediatelyApplyComputedFunction
 
@@ -447,7 +446,7 @@ let ApplyComputedFunction(c: int) =
     let part1 = match c with 1 -> (fun y -> printfn("a")) | _ -> (fun y -> printfn("b"))
     part1 3
     printfn("done!")
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static void  ApplyComputedFunction(int32 c) cil managed
@@ -491,12 +490,12 @@ let ApplyComputedFunction(c: int) =
   IL_0055:  ret
 } 
             """
-            ])
+            ]))
 
     [<Test>]
     // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
     let ``Reduce Computed Delegate with let rec``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module ReduceComputedDelegate
 
@@ -504,7 +503,7 @@ open System
 type D = delegate of int -> int
 let ApplyComputedDelegate(c: int) =
     (let rec f x = if x = 0 then x else f (x-1) in printfn("hello"); D(fun y -> f c + y)).Invoke 3
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  ApplyComputedDelegate(int32 c) cil managed
@@ -527,6 +526,6 @@ let ApplyComputedDelegate(c: int) =
   IL_001f:  ret
 } 
             """
-            ])
+            ]))
 
 #endif

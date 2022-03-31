@@ -106,4 +106,4 @@ module M =
         | Macro (e, _, _)
           -> e
 
-exit 0
+printfn "Finished"

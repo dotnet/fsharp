@@ -234,7 +234,7 @@ type MyClass() =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fs, SourceKind.Fsx, Library, cmplRefs = [csCmpl])
+            Compilation.Create(fs, Library, cmplRefs = [csCmpl])
 
         CompilerAssert.Compile fsCmpl
 

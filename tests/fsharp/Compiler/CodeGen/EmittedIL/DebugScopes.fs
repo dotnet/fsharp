@@ -10,21 +10,21 @@ module DebugScopes =
 
     [<Test>]
     let SimpleFunction() =
-        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions 
-            [|"--debug:portable"; "--optimize-"; "--optimize-"|]
-            (__SOURCE_DIRECTORY__ + "/SimpleFunction.debuginfo.expected")
+        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
+            [|"--debug:portable"; "--optimize-"; "--optimize-"|],
+            (__SOURCE_DIRECTORY__ + "/SimpleFunction.debuginfo.expected"),
             """
 module Test
 let f x = 
     let y = 1
     2
-            """
+            """)
 
     [<Test>]
     let SimpleShadowingFunction() =
-        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions 
-            [|"--debug:portable"; "--optimize-"; "--optimize-"|]
-            (__SOURCE_DIRECTORY__ + "/SimpleShadowingFunction.debuginfo.expected")
+        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
+            [|"--debug:portable"; "--optimize-"; "--optimize-"|],
+            (__SOURCE_DIRECTORY__ + "/SimpleShadowingFunction.debuginfo.expected"),
             """
 module Test
 let f x = 
@@ -32,13 +32,13 @@ let f x =
     let y = y+1
     let y = y+1
     2
-            """
+            """)
 
     [<Test>]
     let ComplexShadowingFunction() =
-        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions 
-            [|"--debug:portable"; "--optimize-"; "--optimize-"|]
-            (__SOURCE_DIRECTORY__ + "/ComplexShadowingFunction.debuginfo.expected")
+        CompilerAssert.CompileLibraryAndVerifyDebugInfoWithOptions(
+            [|"--debug:portable"; "--optimize-"; "--optimize-"|],
+            (__SOURCE_DIRECTORY__ + "/ComplexShadowingFunction.debuginfo.expected"),
             """
 module Test
 
@@ -67,5 +67,5 @@ let f2 (a, b) =
 
 
 
-            """
+            """)
 

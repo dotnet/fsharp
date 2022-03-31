@@ -5,8 +5,10 @@
 
 // System.Func<...> is in System.Core.dll (NetFx3.5)
 
+open System
+
 let f ( d : System.Func<int> ) = d.Invoke() + 1;;
 
-if f ( new System.Func<_>(fun _ -> 10) ) <> 11 then exit 1
+if f ( new System.Func<_>(fun _ -> 10) ) <> 11 then raise (new Exception("if f ( new System.Func<_>(fun _ -> 10) ) <> 11"))
 
-exit 0
+printfn "Finished"

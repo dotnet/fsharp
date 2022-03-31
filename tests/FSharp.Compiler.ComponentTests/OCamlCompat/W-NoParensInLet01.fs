@@ -8,4 +8,4 @@ type t = F of int * int
 
 let F(x, y) = F(1, 2)
 
-exit 0
+printfn "Finished"

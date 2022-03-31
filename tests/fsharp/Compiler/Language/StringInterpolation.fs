@@ -10,11 +10,13 @@ open FSharp.Test
 module StringInterpolationTests =
 
     let SimpleCheckTest text =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:5.0" |] ("""
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:5.0" |],
+            ("""
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 
-""" + text)
+""" + text))
 
     [<Test>]
     let ``Basic string interpolation`` () =
@@ -544,11 +546,13 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
                    "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:preview" |],
+            """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 check "vcewweh22a" $"x = %B{19}" "x = 10011"
-        """
+        """)
 
     [<Test>]
     let ``String interpolation using list and array data`` () =

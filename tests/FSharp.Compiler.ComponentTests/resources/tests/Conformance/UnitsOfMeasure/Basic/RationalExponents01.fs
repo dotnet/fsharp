@@ -30,6 +30,4 @@ let test10(x:float<'u>) (y:float<'u^(1/2)>) = sqrt x + y
 let test11(x:float<'u^-(1/4)>) (y:float<'u^(3/4)>) : float</'u> = (x*x*x + 1.0/y) * x
 let test12(x:float<'u^(1/2)>) (y:float<'v^2>) :float<'u 'v> = x*x*sqrt y
 let test13() = test12 4.0<s^(1/4)> 2.0<kg> + 3.0<(kg s)^(1/2)>
-
-exit 0
-
+printfn "Finished"

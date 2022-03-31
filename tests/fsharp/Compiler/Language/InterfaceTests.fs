@@ -173,9 +173,8 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 
         let fsCmpl =
             Compilation.Create(
-                ``Many Instantiations of the same interface - SetUp`` +
-                ``Many Instantiations of the same interface - Asserts``,
-                Fs, Library,
+                "test.fs",
+                ``Many Instantiations of the same interface - SetUp`` + ``Many Instantiations of the same interface - Asserts``,Library,
                 options = [|
                     "--langversion:5.0";
 #if !NETSTANDARD
@@ -205,7 +204,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 
     [<Test>]
     let MultipleTypedInterfacesFSharp50VerifyIl() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
             [|
                 "--langversion:5.0";
                 "--deterministic+";
@@ -213,8 +212,8 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 #if NETSTANDARD
                 "--define:NETSTANDARD";
 #endif
-            |]
-            ``Many Instantiations of the same interface - SetUp``
+            |],
+            ``Many Instantiations of the same interface - SetUp``,
             (fun verifier -> verifier.VerifyIL ["""
 .class auto ansi serializable nested public implementation
        extends [mscorlib]System.Object
@@ -252,4 +251,4 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
                   class Program/IInterface`1<uint8>,
                   class Program/IInterface`1<bool>
 {
-"""] )
+"""] ))

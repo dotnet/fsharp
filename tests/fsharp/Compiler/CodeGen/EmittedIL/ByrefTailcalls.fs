@@ -13,7 +13,7 @@ module ByrefTailcalls =
 
     [<Test>]
     let ``check no tailcall to inref``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/optimize";"/tailcalls" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "/optimize";"/tailcalls" |],
             """
 module Test
 
@@ -22,7 +22,7 @@ type Getter<'T, 'FT> = delegate of inref<'T> -> 'FT
 type GetterWrapper<'T, 'FT> (getter : Getter<'T, 'FT>) =
     member _.Get (instance : 'T) = getter.Invoke &instance
 
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public hidebysig instance !FT 
@@ -37,4 +37,4 @@ type GetterWrapper<'T, 'FT> (getter : Getter<'T, 'FT>) =
   IL_000d:  ret
 } 
                 """
-            ])
+            ]))

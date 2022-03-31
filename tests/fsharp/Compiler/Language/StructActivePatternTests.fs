@@ -9,13 +9,15 @@ open FSharp.Test
 [<TestFixture>]
 module StructActivePatternTests =
 
-    let private pass = CompilerAssert.PassWithOptions [| |]
-    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [| |]
-    let private run src = CompilerAssert.CompileExeAndRunWithOptions [| |] ("""
+    let private pass = CompilerAssert.PassWithOptions [||]
+    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [||]
+    let private run src = CompilerAssert.CompileExeAndRunWithOptions(
+        [||],
+        ("""
 let fail msg =
     printfn "%s" msg
     failwith msg
-""" + src)
+""" + src))
 
     [<Test>]
     let ``Partial active pattern returns Option`1`` () =

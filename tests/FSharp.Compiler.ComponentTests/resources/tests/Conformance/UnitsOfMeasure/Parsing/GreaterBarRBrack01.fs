@@ -14,5 +14,4 @@ let l2 = [|10.0<m> |]        // ok
 // we check that care too.
 let p1 = [|Array.empty<float>|]     // ok
 let p2 = [|Array.empty<float> |]    // ok
-
-exit 0
+printfn "Finished"

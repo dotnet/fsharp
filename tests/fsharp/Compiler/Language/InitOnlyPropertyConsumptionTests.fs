@@ -48,7 +48,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "123")
 

@@ -32,4 +32,4 @@ let h =
         | 10 -> 10
     @@>
     
-exit 0
+printfn "Finished"
