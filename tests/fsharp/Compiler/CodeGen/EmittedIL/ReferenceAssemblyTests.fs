@@ -399,7 +399,7 @@ let test() =
         |> withOptions ["--staticlink:foo"; "--refonly"]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly. Check the compiler options to not specify static linking, or using '--refonly' and '--refout' together.")
+        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
         |> ignore
 
     [<Test>]
@@ -418,7 +418,7 @@ let test() =
         |> withOptions ["--staticlink:foo"; "--refout:foo"]
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly. Check the compiler options to not specify static linking, or using '--refonly' and '--refout' together.")
+        |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.")
         |> ignore
 
     [<Test>]
