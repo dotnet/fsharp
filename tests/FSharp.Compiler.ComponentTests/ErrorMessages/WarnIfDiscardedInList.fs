@@ -16,8 +16,7 @@ let view model dispatch =
        yield! subView model dispatch
        div [] []
    ]
-
-exit 1
+printfn "Finished"
     """
 
     [<Fact>]
@@ -63,7 +62,7 @@ let view model dispatch =
     ]
    ]
 
-exit 1
+printfn "Finished"
 """
         // warning because implicit yields are not allowed in F# 4.6 and earlier
         FSharp source
@@ -96,7 +95,7 @@ let view model dispatch =
         ]
     ]
         
-exit 0
+printfn "Finished"
         """
         // This no longer gives a warning because implicit yields are allowed in F# 4.7 and above
         FSharp source
@@ -125,7 +124,7 @@ let view model dispatch =
         ]
    ]
 
-exit 0
+printfn "Finished"
         """
         // This no longer gives a warning because implicit yields are allowed in F# 4.7 and above
         FSharp source
@@ -156,8 +155,7 @@ let view model dispatch =
            | _ -> subView model dispatch
         ]
    ]
-
-exit 0
+printfn "Finished"
         """
         // This no longer gives a warning because implicit yields are allowed in F# 4.7 and above
         FSharp source
