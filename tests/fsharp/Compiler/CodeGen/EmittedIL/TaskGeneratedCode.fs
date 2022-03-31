@@ -28,12 +28,13 @@ module TaskGeneratedCode =
 
     [<Test>]
     let ``check MoveNext of simple task debug``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
 let testTask() = task { return 1 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public strict virtual instance void 
@@ -100,7 +101,7 @@ MoveNext() cil managed
     IL_005f:  ret
 } 
                 """
-            ])
+            ]))
 
     // This tests the exact optimized code generated for the MoveNext for a trivial task - we expect 'MoveNext' to be there
     // because state machine compilation succeeds
@@ -115,12 +116,13 @@ MoveNext() cil managed
 
     [<Test>]
     let ``check MoveNext of simple task optimized``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
             """
 module Test
 
 let testTask() = task { return 1 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public strict virtual instance void 
@@ -183,17 +185,18 @@ let testTask() = task { return 1 }
   IL_0058:  ret
 } 
                 """
-            ])
+            ]))
 
 
     [<Test>]
     let ``check MoveNext of simple binding task debug``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview"; "/debug:portable"; "/optimize-"; "/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview"; "/debug:portable"; "/optimize-"; "/tailcalls-" |],
             """
 module Test
 open System.Threading.Tasks
 let testTask(t: Task<int>) = task { let! res = t in return res+1 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
     .method public strict virtual instance void 
@@ -361,18 +364,19 @@ let testTask(t: Task<int>) = task { let! res = t in return res+1 }
           IL_010c:  ret
         } 
                 """
-            ])
+            ]))
 
 module TaskTryFinallyGeneration =
 
     [<Test>]
     let ``check MoveNext of task try/finally optimized``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
             """
 module Test
 
 let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -470,17 +474,18 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_008e:  ret
     } 
                 """
-            ])
+            ]))
 
 
     [<Test>]
     let ``check MoveNext of task try/finally debug``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
 let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -585,18 +590,19 @@ let testTask() = task { try 1+1 finally System.Console.WriteLine("finally") }
       IL_0091:  ret
     } 
                 """
-            ])
+            ]))
 
 module TaskTryWithGeneration =
 
     [<Test>]
     let ``check MoveNext of task try/with optimized``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
             """
 module Test
 
 let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -698,17 +704,18 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("finally"); 2 }
       IL_0089:  ret
     } 
                 """
-            ])
+            ]))
 
 
     [<Test>]
     let ``check MoveNext of task try/with debug``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
 let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -816,19 +823,20 @@ let testTask() = task { try 1 with e -> System.Console.WriteLine("with"); 2 }
       IL_008d:  ret
     } 
                 """
-            ])
+            ]))
 
 module TaskWhileLoopGeneration =
 
     [<Test>]
     let ``check MoveNext of task while loop optimized``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize+";"/debug:portable";"/tailcalls+" |],
             """
 module Test
 
 let mutable x = 1
 let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -915,18 +923,19 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
       IL_007a:  ret
     } 
                 """
-            ])
+            ]))
 
 
     [<Test>]
     let ``check MoveNext of task while loop debug``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
 let mutable x = 1 
 let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
         .method public strict virtual instance void 
@@ -1014,7 +1023,7 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
       IL_007a:  ret
     } 
                 """
-            ])
+            ]))
 #endif
 
 
@@ -1023,7 +1032,8 @@ module TaskTypeInference =
     // See https://github.com/dotnet/fsharp/issues/12188
     [<Test>]
     let ``check initially ambiguous SRTP task code ``() =
-        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "/langversion:preview"; "/optimize-"; "/debug:portable";"/tailcalls-" |],
             """
 module Test
 
@@ -1037,12 +1047,13 @@ let myFunction (f: string -> _, _i: 'T) =
 
 let myTuple : (string -> Task<unit>) * int = (fun (_s: string) -> Task.FromResult()), 1
 (myFunction myTuple).Wait()
-            """
+            """)
 
     // Test task code in generic position
     [<Test>]
     let ``check generic task code ``() =
-        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
@@ -1067,14 +1078,15 @@ Generic2InGeneric1<int, string>().Run().Result |> checkEquals "cwewe23" 3
 Generic2InGeneric1<string, int>().Run().Result |> checkEquals "cwewe24" 3
 printfn "test passed"
 
-            """
+            """)
 
 
 #if !DEBUG 
 
     [<Test>]
     let ``check generic task exact code``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |],
             """
 module Test
 
@@ -1084,7 +1096,7 @@ type Generic1InGeneric1<'T>() =
         task { return! computation }
 
     member _.Run() = run (Task.FromResult 3)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
     .method assembly hidebysig instance class [runtime]System.Threading.Tasks.Task`1<!!A> 
@@ -1280,7 +1292,7 @@ type Generic1InGeneric1<'T>() =
       IL_010c:  ret
     } 
             """
-            ])
+            ]))
 #endif
 
 

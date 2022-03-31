@@ -27,6 +27,13 @@ let tryCreateTemporaryFileName () =
     let filePath = Path.Combine(directory, fileName)
     filePath
 
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileNameInDirectory (directory) =
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
+
 [<RequireQualifiedAccess>]
 module Commands =
 

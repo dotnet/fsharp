@@ -9,7 +9,8 @@ module HatDesugaringTests =
 
     [<Test>]
     let ``Hat operator should be overloadable in infix context``() =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:preview" |],
             """
 module X
 open System
@@ -18,11 +19,12 @@ let (^) (x: int) (y: int) = x + y
 
 if 1 ^ 2 <> 3 then failwithf "expected result to be 3 but got %i" (1 ^ 2)
 Console.WriteLine()
-            """
+            """)
     
     [<Test>]
     let ``Reverse slicing should work with overloaded infix hat``() =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:preview" |],
             """
 module X
 open System
@@ -31,7 +33,7 @@ let (^) (x: int) (y: int) = x + y
 let result = [1;2][^1..]
 if result <> [1;2] then failwithf "expected result to be [1;2] but got %A" result
 Console.WriteLine()
-            """
+            """)
 
     [<Test>]
     let ``At operator should not be usable in prefix context``() =

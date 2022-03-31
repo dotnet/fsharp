@@ -23,7 +23,8 @@ let test () =
         Console.WriteLine(item)
             """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileLibraryAndVerifyIL(
+            source,
             (fun verifier ->
                 verifier.VerifyIL
                             [
@@ -59,7 +60,7 @@ let test () =
 
     IL_002c:  ret
   }"""
-                                ])
+                                ]))
 
     [<Test>]
     let ReadOnlySpanForInDo() =
@@ -75,7 +76,8 @@ let test () =
         Console.WriteLine(item)
             """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileLibraryAndVerifyIL(
+            source,
             (fun verifier ->
                 verifier.VerifyIL
                             [
@@ -110,7 +112,7 @@ let test () =
 
     IL_002c:  ret
   }"""
-                            ])
+                            ]))
 
     [<Test>]
     let ExplicitSpanTypeForInDo() =
@@ -152,10 +154,10 @@ module Test =
             """
 
         // The current behavior doesn't optimize, but it could in the future. Making a test to catch if it ever does.
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileLibraryAndVerifyIL(
+            source,
             (fun verifier ->
-                verifier.VerifyIL
-                            [
+                verifier.VerifyIL [
                             """
       .method public static void  test() cil managed
       {
@@ -199,7 +201,7 @@ module Test =
         IL_0041:  ret
       }
 """
-                        ])
+                        ]))
 
     [<Test>]
     let SpanForInBoundsDo() =
@@ -215,10 +217,10 @@ for i in 0 .. span.Length-1 do
     Console.WriteLine(span.[i])
         """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileLibraryAndVerifyIL(
+            source,
             (fun verifier ->
-                verifier.VerifyIL
-                            [
+                verifier.VerifyIL [
                             """.method public static void  test() cil managed
   {
 
@@ -250,7 +252,8 @@ for i in 0 .. span.Length-1 do
 
     IL_002c:  ret
   }"""
-                            ])
+                            ]))
+
     [<Test>]
     let ReadOnlySpanForInBoundsDo() =
         let source =
@@ -265,10 +268,10 @@ for i in 0 .. span.Length-1 do
 Console.WriteLine(span.[i])
     """
 
-        CompilerAssert.CompileLibraryAndVerifyIL source
+        CompilerAssert.CompileLibraryAndVerifyIL(
+            source,
             (fun verifier ->
-                verifier.VerifyIL
-                        [
+                verifier.VerifyIL [
                         """.method public static void  test() cil managed
   {
 
@@ -300,6 +303,6 @@ Console.WriteLine(span.[i])
 
     IL_002c:  ret
   }"""
-                        ])
+                        ]))
 
 #endif
