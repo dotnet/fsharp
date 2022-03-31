@@ -442,7 +442,7 @@ module rec Compiler =
                     let name = defaultArg cs.Name null
                     let metadataReferences = List.map (asMetadataReference x) refs
                     let cmpl =
-                        CompilationUtil.CreateCSharpCompilation(cs.Source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
+                        CompilationUtil.CreateCSharpCompilation(cs.Source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<PortableExecutableReference>(), name = name)
                         |> CompilationReference.Create
                     loop (cmpl::acc) xs
 

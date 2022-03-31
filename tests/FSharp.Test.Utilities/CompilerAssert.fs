@@ -144,13 +144,13 @@ type CompilationUtil private () =
         let tf = defaultArg tf TargetFramework.NetStandard20
         let source = source.GetSourceText |> Option.defaultValue ""
         let name = defaultArg name (Guid.NewGuid().ToString ())
-        let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
+        let additionalReferences = defaultArg additionalReferences ImmutableArray<PortableExecutableReference>.Empty
         let references = TargetFrameworkUtil.getReferences tf
         let c =
             CSharpCompilation.Create(
                 name,
                 [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-                (references.As<MetadataReference>()).AddRange(additionalReferences.As<MetadataReference>()),
+                references.AddRange(additionalReferences).As<MetadataReference>(),
                 CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
         TestCompilation.CSharp c
 

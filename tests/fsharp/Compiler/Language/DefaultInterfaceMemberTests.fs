@@ -573,7 +573,7 @@ let f1 () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Exe, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 3350, (9, 5, 9, 15), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
