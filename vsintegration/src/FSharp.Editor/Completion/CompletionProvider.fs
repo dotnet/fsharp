@@ -116,7 +116,7 @@ type internal FSharpCompletionProvider
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
             let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
             let completionContext = ParsedInput.TryGetCompletionContext(completionContextPos, parseResults.ParseTree, line)
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, Some(completionContextPos, completionContext), getAllSymbols)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols, (completionContextPos, completionContext))
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-

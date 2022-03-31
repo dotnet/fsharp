@@ -1981,12 +1981,7 @@ type FSharpCheckFileResults
         | Some (scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
-        let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, None, getAllEntities))
-
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, completionContextAtPos, ?getAllEntities) =
+    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope ->
             scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities))
