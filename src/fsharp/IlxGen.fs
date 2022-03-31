@@ -1250,16 +1250,12 @@ let ComputeFieldSpecForVal(optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option,
     match optIntraAssemblyInfo with
     | None -> generate()
     | Some intraAssemblyInfo ->
-        if vspec.IsMutable && vspec.IsCompiledAsTopLevel && isStructTy g vspec.Type then
-            let ok, res = intraAssemblyInfo.StaticFieldInfo.TryGetValue ilGetterMethRef
-            if ok then
-                res
-            else
-                let res = generate()
-                intraAssemblyInfo.StaticFieldInfo.[ilGetterMethRef] <- res
-                res
-        else
-            generate()
+        match intraAssemblyInfo.StaticFieldInfo.TryGetValue ilGetterMethRef with
+        | true, res -> res
+        | _ ->
+            let res = generate()
+            intraAssemblyInfo.StaticFieldInfo.[ilGetterMethRef] <- res
+            res
 
 /// Compute the representation information for an F#-declared value (not a member nor a function).
 /// Mutable and literal static fields must have stable names and live in the "public" location
