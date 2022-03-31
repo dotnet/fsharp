@@ -31,6 +31,7 @@
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
+    <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />

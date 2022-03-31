@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.GenIter04
 {
-  // Offset: 0x00000000 Length: 0x000001E4
+  // Offset: 0x00000000 Length: 0x00000211
+  // WARNING: managed resource file FSharpSignatureData.GenIter04 created
 }
 .mresource public FSharpOptimizationData.GenIter04
 {
-  // Offset: 0x000001E8 Length: 0x0000007B
+  // Offset: 0x00000218 Length: 0x0000007B
+  // WARNING: managed resource file FSharpOptimizationData.GenIter04 created
 }
 .module GenIter04.exe
-// MVID: {61FDB6C7-F79D-DC98-A745-0383C7B6FD61}
+// MVID: {62455CDD-F79D-DC98-A745-0383DD5C4562}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07060000
+// Image base: 0x03940000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -82,16 +83,13 @@
     .entrypoint
     // Code size       90 (0x5a)
     .maxstack  5
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> squaresOfOneToTenD,
-             [1] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
-             [2] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_2,
-             [3] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_3,
-             [4] int32 x,
-             [5] class [mscorlib]System.IDisposable V_5)
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 1,55 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\GeneratedIterators\\GenIter04.fs'
+    .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1,
+             class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_2,
+             class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_3,
+             int32 V_4,
+             class [mscorlib]System.IDisposable V_5)
     IL_0000:  nop
-    .line 4,4 : 28,31 ''
     IL_0001:  ldc.i4.0
     IL_0002:  ldc.i4.1
     IL_0003:  ldc.i4.s   10
@@ -100,7 +98,6 @@
                                                                                                                                                                      int32)
     IL_000a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
     IL_000f:  stloc.2
-    .line 4,4 : 34,36 ''
     .try
     {
       IL_0010:  ldloc.2
@@ -109,15 +106,13 @@
 
       IL_0018:  ldloc.2
       IL_0019:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_001e:  stloc.s    x
+      IL_001e:  stloc.s    V_4
       IL_0020:  ldloca.s   V_1
-      .line 4,4 : 45,53 ''
-      IL_0022:  ldloc.s    x
-      IL_0024:  ldloc.s    x
+      IL_0022:  ldloc.s    V_4
+      IL_0024:  ldloc.s    V_4
       IL_0026:  mul
       IL_0027:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_002c:  nop
-      .line 100001,100001 : 0,0 ''
       IL_002d:  nop
       IL_002e:  br.s       IL_0010
 
@@ -131,17 +126,13 @@
       IL_0034:  ldloc.2
       IL_0035:  isinst     [mscorlib]System.IDisposable
       IL_003a:  stloc.s    V_5
-      .line 100001,100001 : 0,0 ''
       IL_003c:  ldloc.s    V_5
       IL_003e:  brfalse.s  IL_0048
 
-      .line 100001,100001 : 0,0 ''
       IL_0040:  ldloc.s    V_5
       IL_0042:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
       IL_0047:  endfinally
-      .line 100001,100001 : 0,0 ''
       IL_0048:  endfinally
-      .line 100001,100001 : 0,0 ''
     }  // end handler
     IL_0049:  ldloc.3
     IL_004a:  pop
@@ -159,3 +150,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GeneratedIterators\GenIter04_fs\GenIter04.res
