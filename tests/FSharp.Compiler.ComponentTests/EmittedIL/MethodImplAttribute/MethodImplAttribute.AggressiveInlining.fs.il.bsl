@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -13,36 +12,38 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 6:0:0:0
 }
-.assembly MethodImplAttribute.InternalCall
+.assembly MethodImplAttribute.AggressiveInlining
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.MethodImplAttribute.InternalCall
+.mresource public FSharpSignatureData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000000 Length: 0x00000339
+  // Offset: 0x00000000 Length: 0x00000390
+  // WARNING: managed resource file FSharpSignatureData.MethodImplAttribute.AggressiveInlining created
 }
-.mresource public FSharpOptimizationData.MethodImplAttribute.InternalCall
+.mresource public FSharpOptimizationData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000340 Length: 0x0000007F
+  // Offset: 0x00000398 Length: 0x00000085
+  // WARNING: managed resource file FSharpOptimizationData.MethodImplAttribute.AggressiveInlining created
 }
-.module MethodImplAttribute.InternalCall.dll
-// MVID: {59B1920C-FBF7-6A35-A745-03830C92B159}
+.module MethodImplAttribute.AggressiveInlining.exe
+// MVID: {62465C5A-66E8-A02F-A745-03835A5C4662}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x015B0000
+// Image base: 0x032C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,12 +52,10 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public static void  getUnit(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed
+  .method public static void  getUnit(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> f) cil managed aggressiveinlining
   {
     // Code size       9 (0x9)
     .maxstack  8
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 34,37 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\MethodImplAttribute\\MethodImplAttribute.InternalCall.fs'
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
@@ -66,12 +65,21 @@
 
 } // end of class M
 
-.class private abstract auto ansi sealed '<StartupCode$MethodImplAttribute-InternalCall>'.$M
+.class private abstract auto ansi sealed '<StartupCode$MethodImplAttribute-AggressiveInlining>'.$M
        extends [mscorlib]System.Object
 {
-} // end of class '<StartupCode$MethodImplAttribute-InternalCall>'.$M
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
+  } // end of method $M::main@
+
+} // end of class '<StartupCode$MethodImplAttribute-AggressiveInlining>'.$M
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\MethodImplAttribute\MethodImplAttribute_AggressiveInlining_fs\MethodImplAttribute.AggressiveInlining.res

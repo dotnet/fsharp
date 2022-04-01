@@ -34,6 +34,7 @@
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
+    <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
@@ -120,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -127,9 +129,5 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
