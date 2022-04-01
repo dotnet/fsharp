@@ -193,7 +193,7 @@ let TransformImplFile g amap implFile =
               { PreIntercept = Some(TransformExpr g nvs)
                 PreInterceptBinding = Some(TransformBinding g nvs)
                 PostTransform = (fun _ -> None)
-                RewriteQuotations = false
+                RewriteQuotations = true
                 StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

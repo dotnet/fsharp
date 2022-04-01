@@ -4158,6 +4158,19 @@ module TestTaskQuotationExecution =
 
     check "vewhwveh" task.Result "bar"
 
+module QuotationCapturingMutableThatGetsBoxed =
+
+    // Debug compilation failed
+    type Test () =
+        static member g ([< ReflectedDefinition>] f : Quotations.Expr<unit -> unit>) = printfn "%A" f
+
+    let f () =
+        let mutable x = 0
+        fun _ ->
+            Test.g (fun _ -> x |> ignore)
+
+    f () ()
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
