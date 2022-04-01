@@ -7867,12 +7867,12 @@ let MultiLambdaToTupledLambdaIfNeeded g (vs, arg) body =
 
 let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, argsl: Expr list, m) =
   match f with 
-  | Expr.Let (bind, body, mlet, _) ->
+  | Expr.Let (bind, body, mLet, _) ->
       // Lift bindings out, i.e. (let x = e in f) y --> let x = e in f y 
       // This increases the scope of 'x', which I don't like as it mucks with debugging 
       // scopes of variables, but this is an important optimization, especially when the '|>' 
       // notation is used a lot. 
-      mkLetBind mlet bind (MakeApplicationAndBetaReduceAux g (body, fty, tyargsl, argsl, m))
+      mkLetBind mLet bind (MakeApplicationAndBetaReduceAux g (body, fty, tyargsl, argsl, m))
   | _ -> 
   match tyargsl with 
   | [] :: rest -> 
@@ -7922,14 +7922,14 @@ let MakeApplicationAndBetaReduce g (f, fty, tyargsl, argl, m) =
 let (|NewDelegateExpr|_|) g expr =
     match expr with
     | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], m) when isDelegateTy g ty ->
-        Some (lambdaId, tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
+        Some (lambdaId, List.concat tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
     | _ -> None
 
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as iref, fty, tyargs, (f :: args), m) 
-        when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g f) -> 
-            Some(iref, fty, tyargs, f, args, m)
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
+        when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
+            Some(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
     | _ -> None
 
 let (|OpPipeRight|_|) g expr =
@@ -7953,19 +7953,17 @@ let (|OpPipeRight3|_|) g expr =
             Some(resType, arg1, arg2, arg3, fExpr, m)
     | _ -> None
 
-let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, fty, tyargs, argsl: Expr list, m) =
-    match f with 
-    | Expr.Let (bind, body, mlet, _) ->
-        mkLetBind mlet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, body, fty, tyargs, argsl, m))
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+    match delExpr with 
+    | Expr.Let (bind, body, mLet, _) ->
+        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, delInvokeArg, m))
+    | NewDelegateExpr g (_, argvs, body, m, _) when argvs.Length > 0 -> 
+        let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body
+        let argvs2, args2 = List.unzip pairs
+        mkLetsBind m (mkCompGenBinds argvs2 args2) body
     | _ -> 
-        match f with
-        | NewDelegateExpr g (_, argvsl, body, m, _) when argvsl.Length = argsl.Length -> 
-            let pairs, body = List.mapFoldBack (MultiLambdaToTupledLambdaIfNeeded g) (List.zip argvsl argsl) body
-            let argvs2, args2 = List.unzip (List.concat pairs)
-            mkLetsBind m (mkCompGenBinds argvs2 args2) body
-        | _ -> 
-            // Remake the delegate invoke
-            Expr.App (invokeRef, fty, tyargs, (f :: argsl), m) 
+        // Remake the delegate invoke
+        Expr.App (delInvokeRef, delInvokeTy, [], [delExpr; delInvokeArg], m) 
       
 //---------------------------------------------------------------------------
 // Adjust for expected usage
@@ -9921,9 +9919,9 @@ let (|StructStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; afterCode], _m) ->
         match moveNext, setStateMachine, afterCode with 
-        | NewDelegateExpr g (_, [[moveNextThisVar]], moveNextBody, _, _),
-          NewDelegateExpr g (_, [[setStateMachineThisVar;setStateMachineStateVar]], setStateMachineBody, _, _),
-          NewDelegateExpr g (_, [[afterCodeThisVar]], afterCodeBody, _, _) ->
+        | NewDelegateExpr g (_, [moveNextThisVar], moveNextBody, _, _),
+          NewDelegateExpr g (_, [setStateMachineThisVar;setStateMachineStateVar], setStateMachineBody, _, _),
+          NewDelegateExpr g (_, [afterCodeThisVar], afterCodeBody, _, _) ->
               Some (dataTy, 
                     (moveNextThisVar, moveNextBody), 
                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 

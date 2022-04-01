@@ -3897,9 +3897,9 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         if completionTargets.ResolveAll then
             [ for einfo in einfos do
                 let delegateType = einfo.GetDelegateType(amap, m)
-                let (SigOfFunctionForDelegate(invokeMethInfo, _, _, _)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad
+                let (SigOfFunctionForDelegate(delInvokeMeth, _, _, _)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad
                 // Only events with void return types are suppressed in intellisense.
-                if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then
+                if slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(amap, m)) then
                   yield einfo.AddMethod.DisplayName
                   yield einfo.RemoveMethod.DisplayName ]
         else []
@@ -4620,9 +4620,9 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
 
                 [ for einfo in einfos do
                     let delegateType = einfo.GetDelegateType(amap, m)
-                    let (SigOfFunctionForDelegate(invokeMethInfo, _, _, _)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad
+                    let (SigOfFunctionForDelegate(delInvokeMeth, _, _, _)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad
                     // Only events with void return types are suppressed in intellisense.
-                    if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then
+                    if slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(amap, m)) then
                       yield einfo.AddMethod.DisplayName
                       yield einfo.RemoveMethod.DisplayName ]
 

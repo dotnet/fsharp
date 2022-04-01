@@ -229,9 +229,8 @@ type LowerStateMachine(g: TcGlobals) =
                         if sm_verbose then printfn "application was partial, reducing further args %A" laterArgs
                         TryReduceApp env expandedExpr laterArgs
 
-        | NewDelegateExpr g (_, macroParamsCurried, macroBody, _, _) -> 
+        | NewDelegateExpr g (_, macroParams, macroBody, _, _) -> 
             let m = expr.Range
-            let macroParams = List.concat macroParamsCurried
             let macroVal2 = mkLambdas g m [] macroParams (macroBody, tyOfExpr g macroBody)
             if args.Length < macroParams.Length then 
                 //warning(Error(FSComp.SR.stateMachineMacroUnderapplied(), m))
