@@ -30,7 +30,7 @@ module public FSharpSymbolPatterns =
 
     val (|FSharpType|_|): FSharpEntity -> unit option
 
-#if !NO_EXTENSIONTYPING    
+#if !NO_TYPEPROVIDERS    
     val (|ProvidedType|_|): FSharpEntity -> unit option
 #endif    
 
@@ -42,7 +42,7 @@ module public FSharpSymbolPatterns =
 
     val (|Namespace|_|): FSharpEntity -> unit option
 
-#if !NO_EXTENSIONTYPING    
+#if !NO_TYPEPROVIDERS    
     val (|ProvidedAndErasedType|_|): FSharpEntity -> unit option
 #endif
 

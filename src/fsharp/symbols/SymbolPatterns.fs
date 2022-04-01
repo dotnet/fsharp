@@ -68,7 +68,7 @@ module FSharpSymbolPatterns =
         if e.IsEnum || e.IsValueType || e.HasAttribute<MeasureAnnotatedAbbreviationAttribute>() then Some()
         else None
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
         if abbreviated.IsClass 
            && (not abbreviated.IsStaticInstantiation || original.IsFSharpAbbreviation) then Some()
@@ -98,7 +98,7 @@ module FSharpSymbolPatterns =
             || (e.IsFSharp && e.IsOpaque && not e.IsFSharpModule && not e.IsNamespace) then Some() 
         else None
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let (|ProvidedType|_|) (e: FSharpEntity) =
         if (e.IsProvided || e.IsProvidedAndErased || e.IsProvidedAndGenerated) && e.CompiledName = e.DisplayName then
             Some()
@@ -113,7 +113,7 @@ module FSharpSymbolPatterns =
 
     let (|Namespace|_|) (entity: FSharpEntity) = if entity.IsNamespace then Some() else None
 
-#if !NO_EXTENSIONTYPING    
+#if !NO_TYPEPROVIDERS    
     let (|ProvidedAndErasedType|_|) (entity: FSharpEntity) = if entity.IsProvidedAndErased then Some() else None
 #endif
 

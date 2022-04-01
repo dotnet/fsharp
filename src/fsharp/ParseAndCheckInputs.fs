@@ -791,7 +791,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
     let ccuData: CcuData =
         { IsFSharp=true
           UsesFSharp20PlusQuotations=false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           InvalidateEvent=(Event<_>()).Publish
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)

@@ -995,7 +995,7 @@ and ConvType cenv env m ty =
 
     | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
     | TType_app(tcref, tyargs, _) ->
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match TryElimErasableTyconRef cenv m tcref with
         | Some baseTy -> ConvType cenv env m baseTy
         | _ ->
@@ -1137,7 +1137,7 @@ and ConvDecisionTree cenv env tgs typR x =
 and IsILTypeRefStaticLinkLocal cenv m (tr: ILTypeRef) =
         ignore cenv; ignore m
         match tr.Scope with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ILScopeRef.Assembly aref
             when not cenv.g.isInteractive &&
                  aref.Name <> cenv.g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
@@ -1196,7 +1196,7 @@ and ConvILType cenv env m ty =
     | ILType.FunctionPointer _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainThisType(), m))
 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
@@ -1205,7 +1205,7 @@ and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
 #endif
 
 and ConvTyconRef cenv (tcref: TyconRef) m =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     match TryElimErasableTyconRef cenv m tcref with
     | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
     | None ->

@@ -316,7 +316,7 @@ type BackgroundCompiler(
         | None -> ()
         | Some builder -> 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
             builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))

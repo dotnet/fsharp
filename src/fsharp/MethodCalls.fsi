@@ -16,7 +16,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -411,7 +411,7 @@ val GenWitnessExprLambda: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfo:
 /// Generate the arguments passed for a set of (solved) traits in non-generic code
 val GenWitnessArgs: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfos:TraitConstraintInfo list -> Choice<TraitConstraintInfo,Expr> list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 module ProvidedMethodCalls =
   val BuildInvokerExpressionForProvidedMethodCall:
       tcVal:(ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->

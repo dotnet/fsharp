@@ -20,7 +20,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -136,7 +136,7 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
             // Don't save interface, optimization or resource definitions for provider-generated assemblies.
             // These are "fake".
             let isProvided (ccu: CcuThunk option) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 match ccu with
                 | Some c -> c.IsProviderGenerated
                 | None -> false
@@ -339,7 +339,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
 // prior to this point.
 let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) =
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let providerGeneratedAssemblies =
 
         [ // Add all EST-generated assemblies into the static linking set
@@ -350,7 +350,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
     if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             && providerGeneratedAssemblies.IsEmpty
 #endif
             then
@@ -363,7 +363,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
 
             ReportTime tcConfig "Static link"
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             Morphs.enableMorphCustomAttributeData()
             let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies)
 

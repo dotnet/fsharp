@@ -151,7 +151,7 @@ namespace FSharp.Compiler.Symbols
 
         val FlattenItems : TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
         val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option

@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 open Internal.Utilities.Library
 open FSharp.Core.CompilerServices

@@ -283,7 +283,7 @@ module TcResolutionsExtensions =
                                     SemanticClassificationType.Delegate
                             | TAsmRepr _ -> SemanticClassificationType.TypeDef
                             | TMeasureableRepr _-> SemanticClassificationType.TypeDef 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                             | TProvidedTypeRepr _-> SemanticClassificationType.TypeDef 
                             | TProvidedNamespaceRepr  _-> SemanticClassificationType.TypeDef  
 #endif

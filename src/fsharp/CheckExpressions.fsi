@@ -26,7 +26,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -719,7 +719,7 @@ val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGenera
 /// Check an inheritance expression or other 'new XYZ()' expression
 val TcNewExpr: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> objTy:TType -> mObjTyOpt:range option -> superInit:bool -> arg:SynExpr -> mWholeExprOrObjTy:range -> Expr * UnscopedTyparEnv    
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Check the application of a provided type to static args
 val TcProvidedTypeAppToStaticConstantArgs: cenv:TcFileState -> env:TcEnv -> optGeneratedTypePath:string list option -> tpenv:UnscopedTyparEnv -> tcref:TyconRef -> args:SynType list -> m:range -> bool * Tainted<ProvidedType> * (unit -> unit)
 #endif
