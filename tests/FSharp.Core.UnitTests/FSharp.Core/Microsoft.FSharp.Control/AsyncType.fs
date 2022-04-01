@@ -207,7 +207,7 @@ type AsyncType() =
         finally
             try
                 t.Dispose()
-            catch | _ ->
+            with | _ ->
                 ()
 
     [<Fact>]
