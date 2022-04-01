@@ -113,7 +113,7 @@ module Commands =
     let directoryExists workDir path =
         if path |> getfullpath workDir |> Directory.Exists then Some path else None
 
-    let copy_y workDir source dest =
+    let copy workDir source dest =
         log "copy /y %s %s" source dest
         File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
         CmdResult.Success
@@ -619,16 +619,16 @@ let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
+let fileguard cfg fileName = Commands.getfullpath cfg.Directory fileName |> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
-let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
+let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
-let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
-let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+let copy cfg fromFile toFile = Commands.copy cfg.Directory fromFile toFile |> checkResult
+let copySystemValueTuple cfg = copy cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()

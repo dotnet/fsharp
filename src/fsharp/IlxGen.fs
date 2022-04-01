@@ -6569,52 +6569,26 @@ and GenEventForProperty cenv eenvForMeth (mspec: ILMethodSpec) (v: Val) ilAttrsT
                otherMethods= [],
                customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
 
-and ComputeUseMethodImpl cenv (v: Val, slotsig: SlotSig) =
-    let oty = slotsig.ImplementedType
-    let otcref = tcrefOfAppTy cenv.g oty
-    let tcref = v.MemberApparentEntity
-    // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-    isInterfaceTy cenv.g oty &&
-    (let isCompare =
-        Option.isSome tcref.GeneratedCompareToValues &&
-         (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
-          tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-
-     not isCompare) &&
-
-    (let isGenericEquals =
-        Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
-
-     not isGenericEquals) &&
-    (let isStructural =
-        (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-        (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-
-     not isStructural)
-
-and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     if isNil memberInfo.ImplementedSlotSigs then
+and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val) =
+     if isNil v.ImplementedSlotSigs then
          None
      else
-         let slotsig = memberInfo.ImplementedSlotSigs |> List.last
-         let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+         let slotsig = v.ImplementedSlotSigs |> List.last
+         let useMethodImpl = ComputeUseMethodImpl cenv.g v
          let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
          Some nameOfOverridingMethod
 
-and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     [ if isNil memberInfo.ImplementedSlotSigs then
-           yield fixupVirtualSlotFlags
-       else
-           for slotsig in memberInfo.ImplementedSlotSigs do
-             let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
+     [ let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
-             if useMethodImpl then
-                yield fixupMethodImplFlags
-             else
-                yield fixupVirtualSlotFlags
-           match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
-           | Some nm -> yield renameMethodDef nm
-           | None -> () ]
+       if useMethodImpl then
+          fixupMethodImplFlags
+       else
+          fixupVirtualSlotFlags
+
+       match ComputeMethodImplNameFixupForMemberBinding cenv v with
+       | Some nm -> renameMethodDef nm
+       | None -> () ]
 
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
@@ -6805,10 +6779,10 @@ and GenMethodForBinding
                ((memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                 memberInfo.MemberFlags.IsOverrideOrExplicitImpl) then
 
-                let useMethodImpl = memberInfo.ImplementedSlotSigs |> List.exists (fun slotsig -> ComputeUseMethodImpl cenv (v, slotsig))
+                let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
                 let nameOfOverridingMethod =
-                    match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
+                    match ComputeMethodImplNameFixupForMemberBinding cenv v with
                     | None -> mspec.Name
                     | Some nm -> nm
 
@@ -6853,7 +6827,7 @@ and GenMethodForBinding
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
-                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
+                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
                        let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
                        let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
