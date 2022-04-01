@@ -3,9 +3,9 @@
 module ListExpressionSteppingTest3
 module ListExpressionSteppingTest3 = 
     let f2 () = 
-        let x = ref 0 
-        [ while !x < 4 do 
-             incr x
+        let mutable x = 0 
+        [ while x < 4 do 
+             x <- x + 1
              printfn "hello"
              yield x ]
 

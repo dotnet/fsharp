@@ -3,12 +3,12 @@
 module ListExpressionSteppingTest4
 module ListExpressionSteppingTest4 = 
     let f3 () = 
-        [ let x = ref 0 
-          incr x
-          let y = ref 0 
-          incr y
-          yield !x
-          let z = !x + !y
+        [ let mutable x = 0 
+          x <- x + 1
+          let mutable y = 0 
+          y <- y + 1
+          yield x
+          let z = x + y
           yield z ]
 
     let _ = f3()

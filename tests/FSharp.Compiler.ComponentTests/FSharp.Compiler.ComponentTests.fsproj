@@ -33,6 +33,7 @@
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
+    <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
