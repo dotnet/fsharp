@@ -1021,14 +1021,14 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
             for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
                 fsiConsoleOutput.uprintfn "%s" msg
 
-        fsiConsoleOutput.uprintfn  """    #clear;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo())
-        fsiConsoleOutput.uprintfn  """    #quit;;                                        // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())
+        fsiConsoleOutput.uprintfn  """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo())
+        fsiConsoleOutput.uprintfn  """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())
         fsiConsoleOutput.uprintfn  "";
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine())
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiIntroTextHeader3(helpLine))
         fsiConsoleOutput.uprintfn  ""
         fsiConsoleOutput.uprintfn  ""
-        
+
     member _.ClearScreen() = fsiConsoleOutput.clear()
 
 #if DEBUG
