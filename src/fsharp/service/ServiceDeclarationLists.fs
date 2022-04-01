@@ -353,11 +353,11 @@ module DeclarationListHelpers =
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delty -> 
            let delty, _cxs = PrettyTypes.PrettifyType g delty
-           let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+           let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
            let layout =
                NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
                LeftL.leftParen ^^
-               NicePrint.layoutType denv fty ^^
+               NicePrint.layoutType denv delFuncTy ^^
                RightL.rightParen
            let layout = toArray layout
            ToolTipElement.Single(layout, xml)
@@ -593,7 +593,7 @@ module internal DescriptionListsImpl =
         prettyTyparInst, parameters, prettyRetTyL, prettyConstraintsL
                           
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Get the set of static parameters associated with an item
     let StaticParamsOfItem (infoReader:InfoReader) m denv item = 
@@ -769,10 +769,10 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delty
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
@@ -804,7 +804,7 @@ module internal DescriptionListsImpl =
                 else                      FSharpGlyph.Delegate
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr _-> FSharpGlyph.Typedef 
             | TProvidedNamespaceRepr  _-> FSharpGlyph.Typedef  
 #endif
@@ -894,7 +894,7 @@ module internal DescriptionListsImpl =
         | Item.Property(_, pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
@@ -1183,7 +1183,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
                         let hasStaticParameters = 
                             match flatItem with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                             | ItemIsProvidedTypeWithStaticArguments m g _ -> false 
 #endif
                             | _ -> true
@@ -1196,7 +1196,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                           staticParameters = StaticParamsOfItem infoReader m denv flatItem
 #else
                           staticParameters = [| |]

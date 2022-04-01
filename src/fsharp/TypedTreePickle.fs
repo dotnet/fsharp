@@ -751,7 +751,7 @@ let u_encoded_nleref = u_tup2 u_int (u_array u_int)
 let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
     // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
     let nleref =
@@ -783,7 +783,7 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 
 /// Arbitrary value
 [<Literal>]
-let PickleBufferCapacity = 100000
+let PickleBufferCapacity = 50000
 
 let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
@@ -1883,7 +1883,7 @@ and p_tycon_repr x st =
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr

@@ -26,7 +26,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 open FSharp.Core.CompilerServices
 #endif
@@ -678,7 +678,7 @@ type Entity =
     member x.DisplayNameWithStaticParameters =
         x.GetDisplayName(coreName=false, withStaticParameters=true, withUnderscoreTypars=false)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
             let _nm, args = demangleProvidedTypeName x.LogicalName
@@ -690,7 +690,7 @@ type Entity =
         let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
         if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         elif x.IsProvidedErasedTycon then 
             let nm, args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
@@ -714,7 +714,7 @@ type Entity =
 
     /// The code location where the module, namespace or type is defined.
     member x.Range = 
-#if !NO_EXTENSIONTYPING    
+#if !NO_TYPEPROVIDERS    
         match x.TypeReprInfo with
         | TProvidedTypeRepr info ->
             match Construct.ComputeDefinitionLocationOfProvidedItem info.ProvidedType with
@@ -754,7 +754,7 @@ type Entity =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with
         | TProvidedTypeRepr info ->
             let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
@@ -869,7 +869,7 @@ type Entity =
 
     /// Indicates if the entity is an F# module definition
     member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> false | _ -> true)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Indicates if the entity is a provided type or namespace definition
     member x.IsProvided = 
@@ -900,7 +900,7 @@ type Entity =
     /// Indicates if the entity is erased, either a measure definition, or an erased provided type definition
     member x.IsErased = 
         x.IsMeasureableReprTycon 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         || x.IsProvidedErasedTycon
 #endif
 
@@ -1100,7 +1100,7 @@ type Entity =
 
     /// Indicates if this is an enum type definition 
     member x.IsEnumTycon = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with 
         | TProvidedTypeRepr info -> info.IsEnum 
         | TProvidedNamespaceRepr _ -> false
@@ -1127,7 +1127,7 @@ type Entity =
 
     /// Indicates if this is a struct or enum type definition, i.e. a value type definition
     member x.IsStructOrEnumTycon = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with 
         | TProvidedTypeRepr info -> info.IsStructOrEnum 
         | TProvidedNamespaceRepr _ -> false
@@ -1185,7 +1185,7 @@ type Entity =
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with 
         // We should never be computing this property for erased types
         | TProvidedTypeRepr info when info.IsErased -> 
@@ -1398,7 +1398,7 @@ type TyconRepresentation =
     /// Indicates the type is parameterized on a measure (e.g. float<_>) but erases to some other type (e.g. float)
     | TMeasureableRepr of TType
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// TProvidedTypeRepr
     ///
     /// Indicates the representation information for a provided type. 
@@ -1435,7 +1435,7 @@ type TILObjectReprData =
     override x.ToString() = "TILObjectReprData(...)"
 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 /// The information kept about a provided type
 [<NoComparison; NoEquality; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -1911,7 +1911,7 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
         modulesByDemangledNameCache <- None          
         allEntitiesByMangledNameCache <- None       
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
         entities <- QueueList.appendOne entities entity
@@ -2695,6 +2695,12 @@ type Val =
         | Some memberInfo when memberInfo.MemberFlags.IsOverrideOrExplicitImpl -> true
         | _ -> false
             
+    /// Gets the dispatch slots implemented by this method
+    member x.ImplementedSlotSigs =
+        match x.MemberInfo with 
+        | Some memberInfo -> memberInfo.ImplementedSlotSigs
+        | _ -> []
+            
     /// Indicates if this is declared 'mutable'
     member x.IsMutable = (match x.val_flags.MutabilityInfo with Immutable -> false | Mutable -> true)
 
@@ -3125,13 +3131,13 @@ type NonLocalEntityRef =
         else  
             match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path.[i] with 
             | true, res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | _ -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
             | _ -> ValueNone
 #endif
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Try to find the entity corresponding to the given path, using type-providers to link the data
     static member TryDerefEntityPathViaProvidedType(ccu: CcuThunk, path: string[], i: int, entity: Entity) = 
         // Errors during linking are not necessarily given good ranges. This has always been the case in F# 2.0, but also applies to
@@ -3471,7 +3477,7 @@ type EntityRef =
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
     member x.CompilationPathOpt = x.Deref.CompilationPathOpt
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvided = x.Deref.IsProvided
 
@@ -3798,6 +3804,9 @@ type ValRef =
 
     /// Indicates if this value was a member declared 'override' or an implementation of an interface slot
     member x.IsOverrideOrExplicitImpl = x.Deref.IsOverrideOrExplicitImpl
+
+    /// Gets the dispatch slots implemented by this method
+    member x.ImplementedSlotSigs = x.Deref.ImplementedSlotSigs
 
     /// Is this a member, if so some more data about the member.
     member x.MemberInfo = x.Deref.MemberInfo
@@ -5244,7 +5253,7 @@ type CcuData =
       /// Indicates that this DLL was compiled using the F# compiler and has F# metadata
       IsFSharp: bool 
       
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       /// Is the CCu an assembly injected by a type provider
       IsProviderGenerated: bool 
 
@@ -5349,7 +5358,7 @@ type CcuThunk =
     /// in-memory cross-project references
     member ccu.TryGetILModuleDef() = ccu.Deref.TryGetILModuleDef()
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Is this a provider-injected assembly
     member ccu.IsProviderGenerated = ccu.Deref.IsProviderGenerated
 
@@ -5567,7 +5576,7 @@ type Construct() =
     static member NewEmptyModuleOrNamespaceType mkind = 
         Construct.NewModuleOrNamespaceType mkind [] []
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Create a new node for the representation information for a provided type definition
     static member NewProvidedTyconRepr(resolutionEnvironment, st: Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m) = 
@@ -5856,7 +5865,7 @@ type Construct() =
     static member NewClonedTycon orig =
         Construct.NewModifiedTycon id orig
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))

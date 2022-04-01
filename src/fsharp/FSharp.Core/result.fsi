@@ -4,7 +4,7 @@ namespace Microsoft.FSharp.Core
 
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Core.Result`2"/>.</summary>
+    /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Core.FSharpResult`2"/>.</summary>
     ///
     /// <category>Choices and Results</category>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

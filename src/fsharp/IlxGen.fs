@@ -221,6 +221,8 @@ type IlxGenOptions =
 
       ilxBackend: IlxGenBackend
 
+      fsiMultiAssemblyEmit: bool
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool
@@ -537,7 +539,7 @@ and GenNamedTyAppAux (amap: ImportMap) m (tyenv: TypeReprEnv) ptrsOK tcref tinst
     if ptrsOK = PtrTypesOK && tyconRefEq g tcref g.nativeptr_tcr && (freeInTypes CollectTypars tinst).FreeTypars.IsEmpty then
         GenNamedTyAppAux amap m tyenv ptrsOK g.ilsigptr_tcr tinst
     else
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match tcref.TypeReprInfo with
         // Generate the base type, because that is always the representation of the erased type, unless the assembly is being injected
         | TProvidedTypeRepr info when info.IsErased ->
@@ -1250,16 +1252,12 @@ let ComputeFieldSpecForVal(optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option,
     match optIntraAssemblyInfo with
     | None -> generate()
     | Some intraAssemblyInfo ->
-        if vspec.IsMutable && vspec.IsCompiledAsTopLevel && isStructTy g vspec.Type then
-            let ok, res = intraAssemblyInfo.StaticFieldInfo.TryGetValue ilGetterMethRef
-            if ok then
-                res
-            else
-                let res = generate()
-                intraAssemblyInfo.StaticFieldInfo.[ilGetterMethRef] <- res
-                res
-        else
-            generate()
+        match intraAssemblyInfo.StaticFieldInfo.TryGetValue ilGetterMethRef with
+        | true, res -> res
+        | _ ->
+            let res = generate()
+            intraAssemblyInfo.StaticFieldInfo.[ilGetterMethRef] <- res
+            res
 
 /// Compute the representation information for an F#-declared value (not a member nor a function).
 /// Mutable and literal static fields must have stable names and live in the "public" location
@@ -1418,35 +1416,45 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
 let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
     List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
-and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
+and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
     let ilImports =
         [| 
           for openDecl in openDecls do
             for modul in openDecl.Modules do
                 if modul.IsNamespace then
                     ILDebugImport.ImportNamespace (fullDisplayTextOfModRef modul)
-                // Emit of 'open type' and 'open <module>' is causing problems
-                // See https://github.com/dotnet/fsharp/pull/12010#issuecomment-903339109
-                //
-                // It may be nested types/modules in particular
-                //else
-                //    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
-            //for t in openDecl.Types do
-            //    let m = defaultArg openDecl.Range Range.range0
-            //    ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
+                else
+                    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
+            for t in openDecl.Types do
+                let m = defaultArg openDecl.Range Range.range0
+                ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
         |]
-        |> Array.distinctBy (function
-            | ILDebugImport.ImportNamespace nsp -> nsp
-            | ILDebugImport.ImportType t -> t.QualifiedName)
 
     if ilImports.Length = 0 then
         eenv
     else
+        // We flatten _all_ the import scopes, creating repetition, because C# debug engine doesn't seem to handle
+        // nesting of import scopes at all. This means every new "open" in, say, a nested module in F# causes 
+        // duplication of all the implicit/enclosing "open" in within the debug information. 
+        // However overall there are not very many "open" declarations and debug information can be large
+        // so this is not considered a problem.
         let imports =
-            { Parent = eenv.imports
-              Imports = ilImports }
+            [| match eenv.imports with 
+               | None -> ()
+               | Some parent -> yield! parent.Imports
+               yield! ilImports |]
+             |> Array.filter (function
+                | ILDebugImport.ImportNamespace _ -> true
+                | ILDebugImport.ImportType t ->
+                    t.IsNominal &&
+                    // We filter out FSI_NNNN types (dynamic modules), since we don't really need them in the import tables.
+                    not (t.QualifiedName.StartsWithOrdinal FsiDynamicModulePrefix
+                         && t.TypeRef.Scope = ILScopeRef.Local ))
+             |> Array.distinctBy (function
+                | ILDebugImport.ImportNamespace nsp -> nsp
+                | ILDebugImport.ImportType t -> t.QualifiedName)
                 
-        { eenv with imports = Some imports }
+        { eenv with imports = Some { Parent = None; Imports = imports } }
 
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with
@@ -1716,8 +1724,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilFieldDefs =
                 mkILFields
                     [ for _, fldName, fldTy in flds ->
-                        // The F# Interactive backend may split to multiple assemblies.
-                        let access = (if cenv.opts.isInteractive then ILMemberAccess.Public else  ILMemberAccess.Private)
+                        // Don't hide fields when splitting to multiple assemblies.
+                        let access = 
+                            if cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit then ILMemberAccess.Public
+                            else ILMemberAccess.Private
                         let fdef = mkILInstanceField (fldName, fldTy, None, access)
                         fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
 
@@ -6563,52 +6573,26 @@ and GenEventForProperty cenv eenvForMeth (mspec: ILMethodSpec) (v: Val) ilAttrsT
                otherMethods= [],
                customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
 
-and ComputeUseMethodImpl cenv (v: Val, slotsig: SlotSig) =
-    let oty = slotsig.ImplementedType
-    let otcref = tcrefOfAppTy cenv.g oty
-    let tcref = v.MemberApparentEntity
-    // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-    isInterfaceTy cenv.g oty &&
-    (let isCompare =
-        Option.isSome tcref.GeneratedCompareToValues &&
-         (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
-          tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-
-     not isCompare) &&
-
-    (let isGenericEquals =
-        Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
-
-     not isGenericEquals) &&
-    (let isStructural =
-        (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-        (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-
-     not isStructural)
-
-and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     if isNil memberInfo.ImplementedSlotSigs then
+and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val) =
+     if isNil v.ImplementedSlotSigs then
          None
      else
-         let slotsig = memberInfo.ImplementedSlotSigs |> List.last
-         let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+         let slotsig = v.ImplementedSlotSigs |> List.last
+         let useMethodImpl = ComputeUseMethodImpl cenv.g v
          let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
          Some nameOfOverridingMethod
 
-and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     [ if isNil memberInfo.ImplementedSlotSigs then
-           yield fixupVirtualSlotFlags
-       else
-           for slotsig in memberInfo.ImplementedSlotSigs do
-             let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
+     [ let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
-             if useMethodImpl then
-                yield fixupMethodImplFlags
-             else
-                yield fixupVirtualSlotFlags
-           match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
-           | Some nm -> yield renameMethodDef nm
-           | None -> () ]
+       if useMethodImpl then
+          fixupMethodImplFlags
+       else
+          fixupVirtualSlotFlags
+
+       match ComputeMethodImplNameFixupForMemberBinding cenv v with
+       | Some nm -> renameMethodDef nm
+       | None -> () ]
 
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
@@ -6799,10 +6783,10 @@ and GenMethodForBinding
                ((memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                 memberInfo.MemberFlags.IsOverrideOrExplicitImpl) then
 
-                let useMethodImpl = memberInfo.ImplementedSlotSigs |> List.exists (fun slotsig -> ComputeUseMethodImpl cenv (v, slotsig))
+                let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
                 let nameOfOverridingMethod =
-                    match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
+                    match ComputeMethodImplNameFixupForMemberBinding cenv v with
                     | None -> mspec.Name
                     | Some nm -> nm
 
@@ -6847,7 +6831,7 @@ and GenMethodForBinding
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
-                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
+                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
                        let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
                        let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
@@ -7841,7 +7825,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     let tcref = mkLocalTyconRef tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | TProvidedNamespaceRepr _
     | TProvidedTypeRepr _
 #endif
@@ -8054,7 +8038,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   // The IL field is hidden if the property/field is hidden OR we're using a property
                   // AND the field is not mutable (because we can take the address of a mutable field).
                   // Otherwise fields are always accessed via their property getters/setters
-                  let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
+                  //
+                  // Additionally, don't hide fields for multiemit in F# Interactive
+                  let isFieldHidden =
+                      isPropHidden ||
+                      (not useGenuineField && 
+                       not isFSharpMutable &&
+                       not (cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit))
 
                   let extraAttribs =
                      match tyconRepr with
@@ -8062,6 +8052,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeMemberAccess isFieldHidden
+
                   let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
 
                   let fdef =

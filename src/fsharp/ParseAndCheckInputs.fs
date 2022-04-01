@@ -27,6 +27,7 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -198,8 +199,10 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
               yield! GetScopedPragmasForHashDirective hd ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let codeComments = LexbufCommentStore.GetComments(lexbuf)
+    let trivia: ParsedImplFileInputTrivia = { ConditionalDirectives = conditionalDirectives; CodeComments = codeComments }
     
-    ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, { ConditionalDirectives = conditionalDirectives }))
+    ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
 
 let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs), lexbuf: UnicodeLexing.Lexbuf) =
     match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
@@ -220,8 +223,10 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
               yield! GetScopedPragmasForHashDirective hd ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
+    let codeComments = LexbufCommentStore.GetComments(lexbuf)
+    let trivia: ParsedSigFileInputTrivia = { ConditionalDirectives = conditionalDirectives; CodeComments = codeComments }
 
-    ParsedInput.SigFile (ParsedSigFileInput (filename, qualName, scopedPragmas, hashDirectives, specs, { ConditionalDirectives = conditionalDirectives }))
+    ParsedInput.SigFile (ParsedSigFileInput (filename, qualName, scopedPragmas, hashDirectives, specs, trivia))
 
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
@@ -348,7 +353,7 @@ let EmptyParsedInput(filename, isLastCompiland) =
                 [],
                 [],
                 [],
-                { ConditionalDirectives = [] }
+                { ConditionalDirectives = []; CodeComments = [] }
             )
         )
     else
@@ -361,7 +366,7 @@ let EmptyParsedInput(filename, isLastCompiland) =
                 [],
                 [],
                 isLastCompiland,
-                { ConditionalDirectives = [] }
+                { ConditionalDirectives = []; CodeComments = [] }
             )
         )
 
@@ -786,7 +791,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
     let ccuData: CcuData =
         { IsFSharp=true
           UsesFSharp20PlusQuotations=false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           InvalidateEvent=(Event<_>()).Publish
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)

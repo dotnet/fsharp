@@ -980,48 +980,6 @@ for i in 0..a."]
 
     [<Test>]
     [<Category("Records")>]
-    member public this.``Records.WRONG.MissingBindings``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A = 1; _;  }"], "; _;", ["AAA"; "BBB"]
-                ["let _ = {A = 1; _=; }"], " _=;", ["AAA"; "BBB"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-
-
-    [<Test>]
-    [<Category("Records")>]
-    member public this.``Records.WRONG.IncorrectNameResEnv``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool; CCC : int}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A}"], "_ = {A", ["AAA"; "BBB"; "CCC"]
-                ["let _ = {AAA = 1; }"], "_ = {AAA = 1;", ["AAA"; "BBB"; "CCC"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-    [<Test>]
-    [<Category("Records")>]
     member public this.``Records.WRONG.ErrorsInFirstBinding``() =
         // errors in the first binding are critical now
         let prologue = 

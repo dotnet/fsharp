@@ -28,7 +28,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -139,10 +139,10 @@ type CallerArgs<'T> =
 
 let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
     let g = infoReader.g
-    let (SigOfFunctionForDelegate(_, delArgTys, _, fty)) = GetSigOfFunctionForDelegate infoReader reqdTy m AccessibleFromSomewhere
+    let (SigOfFunctionForDelegate(_, delArgTys, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader reqdTy m AccessibleFromSomewhere
     let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
     if (fst (stripFunTy g actualTy)).Length = delArgTys.Length then
-        fty 
+        delFuncTy 
     else
         reqdTy 
 
@@ -1023,7 +1023,7 @@ let MakeMethInfoCall amap m minfo minst args =
     | DefaultStructCtor(_, ty) -> 
        mkDefault (m, ty)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
@@ -1037,7 +1037,7 @@ let MakeMethInfoCall amap m minfo minst args =
 
 #endif
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
@@ -1086,7 +1086,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     valUseFlags
 
         match minfo with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         // By this time this is an erased method info, e.g. one returned from an expression
         // REVIEW: copied from tastops, which doesn't allow protected methods
         | ProvidedMeth (amap, providedMeth, _, _) -> 
@@ -1208,8 +1208,8 @@ let BuildObjCtorCall (g: TcGlobals) m =
     Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, invokeMethInfo: MethInfo, delArgTys, f, fty, m) =
-    let slotsig = invokeMethInfo.GetSlotSig(amap, m)
+let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, delInvokeMeth: MethInfo, delArgTys, delFuncExpr, delFuncTy, m) =
+    let slotsig = delInvokeMeth.GetSlotSig(amap, m)
     let delArgVals, expr = 
         let topValInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
@@ -1219,7 +1219,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, i
             if Option.isSome eventInfoOpt then 
                 None 
             else 
-                tryDestTopLambda g amap topValInfo (f, fty)        
+                tryDestTopLambda g amap topValInfo (delFuncExpr, delFuncTy)        
 
         match lambdaContents with 
         | None -> 
@@ -1238,19 +1238,19 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, i
                         | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
                     | None -> 
                         if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
-                mkApps g ((f, fty), [], args, m)
+                mkApps g ((delFuncExpr, delFuncTy), [], args, m)
             delArgVals, expr
             
         | Some _ -> 
-            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap topValInfo f
+            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap topValInfo delFuncExpr
             List.concat vsl, body
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
     mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
 
 let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
-    let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad
-    BuildNewDelegateExpr (None, g, amap, delegateTy, invokeMethInfo, delArgTys, callerArgExpr, callerArgTy, m)
+    let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad
+    BuildNewDelegateExpr (None, g, amap, delegateTy, delInvokeMeth, delArgTys, callerArgExpr, callerArgTy, m)
 
 // Handle adhoc argument conversions
 let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReader ad reqdTy actualTy m expr = 
@@ -1675,7 +1675,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
 //------------------------------------------------------------------------- 
 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 

@@ -37,7 +37,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -233,13 +233,16 @@ let AddLocalSubModule g amap m env (modul: ModuleOrNamespace) =
                     eNameResEnv = AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights env.eNameResEnv (mkLocalModRef modul)
                     eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems }
     env
- 
+
 /// Add a "module X = ..." definition to the TcEnv and report it to the sink
 let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul: ModuleOrNamespace) =
-    let env = AddLocalSubModule g amap m env modul 
-    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    let env = AddLocalSubModule g amap m env modul
+    if not (equals scopem m) then
+        // Don't report another environment for top-level module at its own range,
+        // so it doesn't overwrite inner environment used by features like code completion. 
+        CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
- 
+
 /// Given an inferred module type, place that inside a namespace path implied by a "namespace X.Y.Z" definition
 let BuildRootModuleType enclosingNamespacePath (cpath: CompilationPath) mtyp = 
     (enclosingNamespacePath, (cpath, (mtyp, []))) 
@@ -690,8 +693,8 @@ module IncrClassChecking =
 
     /// Represents a single group of bindings in a class with an implicit constructor
     type IncrClassBindingGroup = 
-      | IncrClassBindingGroup of Binding list * (*isStatic:*) bool* (*recursive:*) bool
-      | IncrClassDo of Expr * (*isStatic:*) bool
+      | IncrClassBindingGroup of bindings: Binding list * isStatic: bool* isRecursive: bool
+      | IncrClassDo of expr: Expr * isStatic: bool * range: Range 
 
     /// Typechecked info for implicit constructor and it's arguments 
     type IncrClassCtorLhs = 
@@ -1266,7 +1269,7 @@ module IncrClassChecking =
                                     (instanceForcedFieldVars, methodBinds) ||> accFreeInBindings
                                         
                                 (staticForcedFieldVars, instanceForcedFieldVars)
-                            | IncrClassDo (e, isStatic) -> 
+                            | IncrClassDo (e, isStatic, _) -> 
                                 let staticForcedFieldVars = 
                                     if isStatic then 
                                         staticForcedFieldVars
@@ -1385,9 +1388,14 @@ module IncrClassChecking =
                   else 
                       ([], actions, methodBinds), reps
 
-              | IncrClassDo (doExpr, isStatic) -> 
+              | IncrClassDo (doExpr, isStatic, mFull) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential doExpr.Range (Expr.DebugPoint(DebugPointAtLeafExpr.Yes doExpr.Range, doExpr)) e)
+                  // Extend the range of any immediate debug point to include the 'do'
+                  let doExpr =
+                      match doExpr with
+                      | Expr.DebugPoint(_, innerExpr) -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes mFull, innerExpr)
+                      | e -> e
+                  let binder = (fun e -> mkSequential mFull doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1933,7 +1941,7 @@ module MutRecBindingChecking =
                                         binds 
                                         |> List.map (function
                                             | TMDefLet(bind, _) -> [bind], IncrClassBindingGroup([bind], isStatic, false)
-                                            | TMDefDo(e, _) -> [], IncrClassDo(e, isStatic)
+                                            | TMDefDo(e, _) -> [], IncrClassDo(e, isStatic, bindsm)
                                             | _ -> error(InternalError("unexpected definition kind", tcref.Range)))
                                         |> List.unzip
                                     List.concat binds, bindRs, env, tpenv
@@ -2145,7 +2153,7 @@ module MutRecBindingChecking =
                                                 | IncrClassBindingGroup(binds, isStatic, _) -> 
                                                     isStatic || 
                                                     binds |> List.forall (IncrClassReprInfo.IsMethodRepr cenv)
-                                                | IncrClassDo(_, isStatic) ->
+                                                | IncrClassDo(_, isStatic, _) ->
                                                     isStatic)
                                         | _ -> true) 
 
@@ -3505,7 +3513,7 @@ module EstablishTypeDefinitionCores =
         tycon.entity_tycon_repr <- repr
         attrs, getFinalAttrs
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
     let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
@@ -3731,7 +3739,7 @@ module EstablishTypeDefinitionCores =
             
             | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, m) ->
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
               // for a generative provided type definition, then there is no more work to do).
               if (match tycon.entity_tycon_repr with TNoRepr -> true | _ -> false) then 
@@ -5381,11 +5389,11 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
 // Bind definitions within modules
 //------------------------------------------------------------------------- 
 
-
-let ElimModuleDoBinding bind =
+/// Removes SynModuleDecl.Expr in favour of a SynModuleDecl.Let with a SynBindingKind.StandaloneExpression
+let ElimSynModuleDeclExpr bind =
     match bind with 
-    | SynModuleDecl.DoExpr (spExpr, expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, spExpr, SynBindingTrivia.Zero)
+    | SynModuleDecl.Expr (expr, m) -> 
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
@@ -5431,7 +5439,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
     //printfn "----------\nCHECKING, e = %+A\n------------------\n" e
     try 
-      match ElimModuleDoBinding synDecl with 
+      match ElimSynModuleDeclExpr synDecl with 
 
       | SynModuleDecl.ModuleAbbrev (id, p, m) -> 
           let env = MutRecBindingChecking.TcModuleAbbrevDecl cenv scopem env (id, p, m)
@@ -5475,7 +5483,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                 let binds, env, _ = TcLetBindings cenv env containerInfo ModuleOrMemberBinding tpenv (binds, m, scopem)
                 return ((fun e -> binds@e), []), env, env 
 
-      | SynModuleDecl.DoExpr _ -> return! failwith "unreachable"
+      | SynModuleDecl.Expr _ -> return! failwith "unreachable"
 
       | SynModuleDecl.Attributes (Attributes synAttrs, _) -> 
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
@@ -5641,7 +5649,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
     let mutRecDefns, (_, _, Attributes synAttrs) = 
       let rec loop isNamespace moduleRange attrs defs: MutRecDefnsInitialData * _ = 
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
-            match ElimModuleDoBinding def with
+            match ElimSynModuleDeclExpr def with
 
               | SynModuleDecl.Types (typeDefs, _) -> 
                   let decls = typeDefs |> List.map MutRecShape.Tycon
@@ -5684,7 +5692,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = [ MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev(id, p, m)) ]
                   decls, (false, moduleAbbrevOk, attrs)
 
-              | SynModuleDecl.DoExpr _ -> failwith "unreachable: SynModuleDecl.DoExpr - ElimModuleDoBinding"
+              | SynModuleDecl.Expr _ -> failwith "unreachable: SynModuleDecl.Expr - ElimSynModuleDeclExpr"
 
               | SynModuleDecl.NamespaceFragment _ as d -> error(Error(FSComp.SR.tcUnsupportedMutRecDecl(), d.Range)))
 

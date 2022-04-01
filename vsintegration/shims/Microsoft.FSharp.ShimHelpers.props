@@ -34,7 +34,7 @@
   <!-- TBD: Remove before shipping. Temporary workaround to account for F# arriving in VS before an SDK with these updates -->
   <PropertyGroup Condition="!Exists('$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props') and '$(FSharp_Shim_Present)'=='true'">
     <_FSCorePackageVersionSet>true</_FSCorePackageVersionSet>
-    <FSCorePackageVersion>6.3.0</FSCorePackageVersion>
+    <FSCorePackageVersion>6.0.3</FSCorePackageVersion>
   </PropertyGroup>
 
 </Project>

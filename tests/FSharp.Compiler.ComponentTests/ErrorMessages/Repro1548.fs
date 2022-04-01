@@ -15,21 +15,23 @@ module ``Repro 1548`` =
     [<Fact>]
     let ``The type 'Inherit from non defined type``() =
         let reference =
-            let source = """
+            let source = (Source ("""
 namespace B
 type PublicType =
     member _.Y() = ()
-            """
-            Compilation.Create(source, Fs, CompileOutput.Library)  |> CompilationReference.CreateFSharp
+            """))
+
+            Compilation.Create(source, CompileOutput.Library)  |> CompilationReference.CreateFSharp
 
         let testCmpl =
-            let source = """
+            let source = (Source("""
 module Test
 
 type E() =
     inherit B.Type()
     member x.Y() = ()
-            """
-            Compilation.Create(source, Fs, CompileOutput.Exe, options = [||], cmplRefs = [reference])
+            """))
+
+            Compilation.Create(source, CompileOutput.Exe, options = [||], cmplRefs = [reference])
 
         CompilerAssert.CompileWithErrors(testCmpl, [| (FSharpDiagnosticSeverity.Error, 39, (5, 15, 5, 19), "The type 'Type' is not defined in 'B'.") |])

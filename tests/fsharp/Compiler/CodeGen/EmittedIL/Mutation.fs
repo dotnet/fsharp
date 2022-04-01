@@ -12,14 +12,15 @@ module ``Mutation`` =
 
     [<Test>]
     let ``Mutation 01``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation01
 type Test = struct
               val mutable v: int
               member t.setV v = t.v <- 0
             end
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .class sequential ansi serializable sealed nested public Test
@@ -42,16 +43,17 @@ type Test = struct
           IL_0009:  ret
         } 
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 02``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation02
 let x = System.TimeSpan.MinValue
 x.ToString()
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.TimeSpan
@@ -91,16 +93,17 @@ void  .cctor() cil managed
     IL_0020:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 03``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation03
 let x = System.DateTime.Now
 x.Day
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.DateTime
@@ -139,16 +142,17 @@ x.Day
     IL_001a:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 04``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation04
 let x = System.Decimal.MaxValue
 x.ToString()
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.Decimal
@@ -188,11 +192,12 @@ void  .cctor() cil managed
     IL_0020:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 05``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation05
 type C() =
@@ -207,7 +212,7 @@ type StaticC() =
     static let mutable x = 1
 
     static member X with get() = x and set v = x <- v
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .class auto ansi serializable nested public C
@@ -355,4 +360,4 @@ type StaticC() =
     IL_000b:  stsfld     int32 Mutation05/StaticC::init@10
     IL_0010:  ret
             """
-            ])
+            ]))
