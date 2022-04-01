@@ -674,7 +674,7 @@ type internal TypeCheckInfo
                 nameMatchesResidue n1 ||
                 meths |> List.exists (fun meth ->
                     let tcref = meth.ApparentEnclosingTyconRef
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                     tcref.IsProvided ||
 #endif
                     nameMatchesResidue tcref.DisplayName)
@@ -1463,7 +1463,7 @@ type internal TypeCheckInfo
                     |> FindDeclResult.DeclFound
                 | None ->
                     match item.Item with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                     | Item.CtorGroup  (name, ProvidedMeth _::_   )
                     | Item.MethodGroup(name, ProvidedMeth _::_, _)
@@ -1614,7 +1614,7 @@ module internal ParseAndCheckFile =
                             errorCount <- errorCount + 1
 
                 match exn with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 | { Exception = :? TypeProviderError as tpe } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e

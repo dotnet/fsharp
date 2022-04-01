@@ -40,7 +40,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -2981,7 +2981,7 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
         mkUnit g m, g.unit_ty
 
     | _ ->
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match minfo with
         | ProvidedMeth(_, mi, _, _) ->
             // BuildInvokerExpressionForProvidedMethodCall converts references to F# intrinsics back to values
@@ -3068,7 +3068,7 @@ let BuildILFieldGet g amap m objExpr (finfo: ILFieldInfo) =
     let valu = if isValueType then AsValue else AsObject
     let tinst = finfo.TypeInst
     let fieldType = finfo.FieldType (amap, m)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let ty = tyOfExpr g objExpr
     match finfo with
     | ProvidedField _ when (isErasedType g ty) ->
@@ -4547,7 +4547,7 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv synConstraints =
     let _, tpenv = List.fold (fun (ridx, tpenv) tc -> ridx - 1, TcTyparConstraint ridx cenv newOk checkCxs occ env tpenv tc) (List.length synConstraints - 1, tpenv) synConstraints
     tpenv
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) idOpt container =
     let g = cenv.g
     let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range))
@@ -4741,7 +4741,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
     CheckTyconAccessible cenv.amap m env.AccessRights tcref |> ignore
     CheckEntityAttributes g tcref m |> CommitOperationResult
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // Provided types are (currently) always non-generic. Their names may include mangled
     // static parameters, which are passed by the provider.
     if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys m else
@@ -8665,7 +8665,7 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
 
     | DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed ->
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndTypeArgs, mItem) with
         | Some minfoAfterStaticArguments ->
 
@@ -8696,7 +8696,7 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
             TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
 
     | _ ->
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
 #endif
@@ -8720,7 +8720,7 @@ and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem 
         let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
         CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
         let itemAfterTyArgs, minfosAfterTyArgs =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             // If the type is provided and took static arguments then the constructor will have changed
             // to a provided constructor on the statically instantiated type. Re-resolve that constructor.
             match objTyAfterTyArgs with
@@ -9118,7 +9118,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with
         | Some minfoAfterStaticArguments ->
             // Replace the resolution including the static parameters, plus the extra information about the original method info
