@@ -376,7 +376,7 @@ stages:
               useGlobalJson: true
               includePreviewVersions: false
               workingDirectory: $(Build.SourcesDirectory)/service
-              installationPath: $(Agent.SourcesDirectory)/.dotnet
+              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
