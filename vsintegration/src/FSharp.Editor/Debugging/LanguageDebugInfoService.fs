@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
 open System.Threading
@@ -61,5 +60,3 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>]() =
                 return result
             }
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
-            
-            
