@@ -8478,14 +8478,14 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_measure _ -> "?"
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
-     match args with     
-     | [] -> ""
-     | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
-     | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
+    match args with     
+    | [] -> ""
+    | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
+    | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
 
 let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
-  if isNil argTys then "" 
-  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
+    if isNil argTys then "" 
+    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
 
 let buildAccessPath (cp: CompilationPath option) =
     match cp with
@@ -8493,64 +8493,72 @@ let buildAccessPath (cp: CompilationPath option) =
         let ap = cp.AccessPath |> List.map fst |> List.toArray
         System.String.Join(".", ap)      
     | None -> "Extension Type"
+
 let prependPath path name = if path = "" then name else path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
-  let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
+    let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
 
-    // CLEANUP: this is one of several code paths that treat module values and members 
-    // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
-    // were lined up so code paths like this could be uniform
+        // CLEANUP: this is one of several code paths that treat module values and members 
+        // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
+        // were lined up so code paths like this could be uniform
     
-    match v.MemberInfo with 
-    | Some membInfo when not v.IsExtensionMember -> 
-        // Methods, Properties etc.
-        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
-        let prefix, name = 
-          match membInfo.MemberFlags.MemberKind with 
-          | SynMemberKind.ClassConstructor 
-          | SynMemberKind.Constructor -> "M:", "#ctor"
-          | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
-          | SynMemberKind.PropertyGetSet 
-          | SynMemberKind.PropertySet
-          | SynMemberKind.PropertyGet -> "P:", v.PropertyName
-        let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
-        let parentTypars, methTypars = 
-          match PartitionValTypars g v with
-          | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
-          | None -> [], tps
-        parentTypars, methTypars, witnessInfos, argInfos, rty, prefix, path, name
-    | _ ->
-        // Regular F# values and extension members 
-        let w = arityOfVal v
-        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, rty, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
-        let name = v.CompiledName g.CompilerGlobalState
-        let prefix =
-          if w.NumCurriedArgs = 0 && isNil tps then "P:"
-          else "M:"
-        [], tps, witnessInfos, argInfos, rty, prefix, path, name
+        match v.MemberInfo with 
+        | Some membInfo when not v.IsExtensionMember -> 
 
-  let witnessArgTys = GenWitnessTys g cxs
-  let argTys = argInfos |> List.concat |> List.map fst
-  let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
-  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
-  let arity = List.length methTypars in (* C# XML doc adds ``<arity> to *generic* member names *)
-  let genArity = if arity=0 then "" else sprintf "``%d" arity
-  prefix + prependPath path name + genArity + args
+            // Methods, Properties etc.
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+            let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
+
+            let prefix, name = 
+                match membInfo.MemberFlags.MemberKind with 
+                | SynMemberKind.ClassConstructor 
+                | SynMemberKind.Constructor -> "M:", "#ctor"
+                | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
+                | SynMemberKind.PropertyGetSet 
+                | SynMemberKind.PropertySet
+                | SynMemberKind.PropertyGet -> "P:", v.PropertyName
+
+            let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
+
+            let parentTypars, methTypars = 
+                match PartitionValTypars g v with
+                | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
+                | None -> [], tps
+
+            parentTypars, methTypars, witnessInfos, argInfos, rty, prefix, path, name
+
+        | _ ->
+            // Regular F# values and extension members 
+            let w = arityOfVal v
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+            let tps, witnessInfos, argInfos, rty, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
+            let name = v.CompiledName g.CompilerGlobalState
+            let prefix =
+                if w.NumCurriedArgs = 0 && isNil tps then "P:"
+                else "M:"
+            [], tps, witnessInfos, argInfos, rty, prefix, path, name
+
+    let witnessArgTys = GenWitnessTys g cxs
+    let argTys = argInfos |> List.concat |> List.map fst
+    let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
+    let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
+    let arity = List.length methTypars
+    let genArity = if arity=0 then "" else sprintf "``%d" arity
+    prefix + prependPath path name + genArity + args
   
-let BuildXmlDocSig prefix paths = prefix + List.fold prependPath "" paths
+let BuildXmlDocSig prefix path = prefix + List.fold prependPath "" path
 
-let XmlDocSigOfUnionCase = BuildXmlDocSig "T:" // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
+// Would like to use "U:", but ParseMemberSignature only accepts C# signatures
+let XmlDocSigOfUnionCase path = BuildXmlDocSig "T:" path
 
-let XmlDocSigOfField = BuildXmlDocSig "F:"
+let XmlDocSigOfField path = BuildXmlDocSig "F:" path
 
-let XmlDocSigOfProperty = BuildXmlDocSig "P:"
+let XmlDocSigOfProperty path = BuildXmlDocSig "P:" path
 
-let XmlDocSigOfTycon = BuildXmlDocSig "T:"
+let XmlDocSigOfTycon path = BuildXmlDocSig "T:" path
 
-let XmlDocSigOfSubModul = BuildXmlDocSig "T:"
+let XmlDocSigOfSubModul path = BuildXmlDocSig "T:" path
 
 let XmlDocSigOfEntity (eref: EntityRef) =
     XmlDocSigOfTycon [(buildAccessPath eref.CompilationPathOpt); eref.Deref.CompiledName]
@@ -9970,3 +9978,30 @@ let (|ResumableCodeInvoke|_|) g expr =
         Some (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
     | _ -> None
 
+let ComputeUseMethodImpl g (v: Val) =
+    v.ImplementedSlotSigs |> List.exists (fun slotsig ->
+        let oty = slotsig.ImplementedType
+        let otcref = tcrefOfAppTy g oty
+        let tcref = v.MemberApparentEntity
+
+        // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
+        isInterfaceTy g oty &&
+
+        (let isCompare =
+            Option.isSome tcref.GeneratedCompareToValues &&
+             (typeEquiv g oty g.mk_IComparable_ty ||
+              tyconRefEq g g.system_GenericIComparable_tcref otcref)
+
+         not isCompare) &&
+
+        (let isGenericEquals =
+            Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues &&
+            tyconRefEq g g.system_GenericIEquatable_tcref otcref
+
+         not isGenericEquals) &&
+
+        (let isStructural =
+            (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv g oty g.mk_IStructuralComparable_ty) ||
+            (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv g oty g.mk_IStructuralEquatable_ty)
+
+         not isStructural))

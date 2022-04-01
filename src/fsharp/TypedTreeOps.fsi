@@ -2281,17 +2281,17 @@ val XmlDocArgsEnc: TcGlobals -> Typars * Typars -> TType list -> string
 
 val XmlDocSigOfVal: TcGlobals -> full: bool ->  string -> Val -> string
 
-val XmlDocSigOfUnionCase: (string list -> string)
+val XmlDocSigOfUnionCase: path: string list -> string
 
-val XmlDocSigOfField: (string list -> string)
+val XmlDocSigOfField: path: string list -> string
 
-val XmlDocSigOfProperty: (string list -> string)
+val XmlDocSigOfProperty: path: string list -> string
 
-val XmlDocSigOfTycon: (string list -> string)
+val XmlDocSigOfTycon: path: string list -> string
 
-val XmlDocSigOfSubModul: (string list -> string)
+val XmlDocSigOfSubModul: path: string list -> string
 
-val XmlDocSigOfEntity: EntityRef -> string
+val XmlDocSigOfEntity: eref: EntityRef -> string
 
 //---------------------------------------------------------------------------
 // Resolve static optimizations
@@ -2546,3 +2546,6 @@ val mkDebugPoint: m: range -> expr: Expr -> Expr
 
 /// Match an if...then...else expression or the result of "a && b" or "a || b"
 val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option
+
+/// Determine if a value is a method implementing an interface dispatch slot using a private method impl
+val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
