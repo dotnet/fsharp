@@ -900,38 +900,49 @@ let GetIntrinisicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader)
 /// The Invoke MethInfo, the function argument types, the function return type 
 /// and the overall F# function type for the function type associated with a .NET delegate type
 [<NoEquality;NoComparison>]
-type SigOfFunctionForDelegate = SigOfFunctionForDelegate of MethInfo * TType list * TType * TType
+type SigOfFunctionForDelegate =
+    SigOfFunctionForDelegate of
+        delInvokeMeth: MethInfo *
+        delArgTys: TType list *
+        delRetTy: TType *
+        delFuncTy: TType
 
 /// Given a delegate type work out the minfo, argument types, return type 
 /// and F# function type by looking at the Invoke signature of the delegate. 
 let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
     let g = infoReader.g
     let amap = infoReader.amap
-    let invokeMethInfo = 
+    let delInvokeMeth = 
         match GetIntrinsicMethInfosOfType infoReader (Some "Invoke") ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m delty with 
         | [h] -> h
         | [] -> error(Error(FSComp.SR.noInvokeMethodsFound (), m))
         | h :: _ -> warning(InternalError(FSComp.SR.moreThanOneInvokeMethodFound (), m)); h
     
     let minst = []   // a delegate's Invoke method is never generic 
-    let compiledViewOfDelArgTys = 
-        match invokeMethInfo.GetParamTypes(amap, m, minst) with 
+
+    let delArgTys = 
+        match delInvokeMeth.GetParamTypes(amap, m, minst) with 
         | [args] -> args
         | _ -> error(Error(FSComp.SR.delegatesNotAllowedToHaveCurriedSignatures (), m))
+
     let fsharpViewOfDelArgTys = 
-        match compiledViewOfDelArgTys with 
+        match delArgTys with 
         | [] -> [g.unit_ty] 
-        | _ -> compiledViewOfDelArgTys
-    let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
-    CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
-    let fty = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
-    SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, delRetTy, fty)
+        | _ -> delArgTys
+
+    let delRetTy = delInvokeMeth.GetFSharpReturnTy(amap, m, minst)
+
+    CheckMethInfoAttributes g m None delInvokeMeth |> CommitOperationResult
+
+    let delFuncTy = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
+
+    SigOfFunctionForDelegate(delInvokeMeth, delArgTys, delRetTy, delFuncTy)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
 let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
     let g = infoReader.g
-    let (SigOfFunctionForDelegate(_, compiledViewOfDelArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
-    match compiledViewOfDelArgTys with 
+    let (SigOfFunctionForDelegate(_, delArgTys, delRetTy, _)) = GetSigOfFunctionForDelegate infoReader delTy m ad
+    match delArgTys with 
     | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys, delRetTy)
     | _ -> None
 

@@ -328,7 +328,7 @@ val BuildMethodCall:
 val BuildObjCtorCall: g:TcGlobals -> m:range -> Expr
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:range -> Expr
+val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * delegateTy:TType * delInvokeMeth:MethInfo * delArgTys:TType list * delFuncExpr:Expr * delFuncTy:TType * m:range -> Expr
 
 val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
 

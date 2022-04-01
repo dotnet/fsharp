@@ -159,10 +159,15 @@ val TryFindIntrinsicPropInfo: infoReader:InfoReader -> m:range -> ad:AccessorDom
 /// Get a set of most specific override methods.
 val GetIntrinisicMostSpecificOverrideMethInfoSetsOfType: infoReader:InfoReader -> m:range -> ty:TType -> NameMultiMap<TType * MethInfo>
 
-/// The Invoke MethInfo, the function argument types, the function return type 
+/// Represents information about the delegate - the Invoke MethInfo, the delegate argument types, the delegate return type 
 /// and the overall F# function type for the function type associated with a .NET delegate type
 [<NoEquality; NoComparison>]
-type SigOfFunctionForDelegate = | SigOfFunctionForDelegate of MethInfo * TType list * TType * TType
+type SigOfFunctionForDelegate =
+    SigOfFunctionForDelegate of
+        delInvokeMeth: MethInfo *
+        delArgTys: TType list *
+        delRetTy: TType *
+        delFuncTy: TType
 
 /// Given a delegate type work out the minfo, argument types, return type 
 /// and F# function type by looking at the Invoke signature of the delegate. 

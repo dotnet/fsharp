@@ -2401,8 +2401,7 @@ module NameLookupServiceExample =
 
 *)
 
-
-module ConstraintsInMembers = begin
+module ConstraintsInMembers =
 
     do printfn "ConstraintsInMembers"
     type IDuplex = 
@@ -2420,17 +2419,35 @@ module ConstraintsInMembers = begin
     type C() = 
         member x.Bind1(v:#IDuplex) : string = bind v 
         member x.Bind2(v:#IDuplex) : string = bind v 
-end
 
-module DelegateByrefCreation = begin
+module DelegateByrefCreation =
     type D = delegate of int byref -> int
     type D2 = delegate of int byref * int byref -> int
 
     let createImmediateDelegate = new D(fun b -> b)
     let createImmediateDelegate2 = new D2(fun b1 b2 -> b1  + b2)
-end
 
-module InterfaceCastingTests = begin
+
+module DelegateImmediateInvoke1 =
+
+    type Foo = delegate of unit -> unit 
+
+    let f1 = Foo(ignore)
+    check "clejweljkc" (f1.Invoke()) ()
+
+module DelegateImmediateInvoke2 =
+
+    type Foo = delegate of unit -> unit 
+
+    check "ou309lwnkc" (Foo(ignore).Invoke()) ()
+
+module DelegateImmediateInvoke3 =
+
+    type Foo<'T> = delegate of 'T -> unit 
+
+    check "lceljkewjl" (Foo<unit>(ignore).Invoke(())) ()
+
+module InterfaceCastingTests =
 
     do printfn "InterfaceCastingTests"
     type IBar = 
@@ -2505,9 +2522,6 @@ module InterfaceCastingTests = begin
         
     let checkDowncastInterfaceToUnsealedClassExplicit(l:IBar) =
         (downcast l : D)
-
-end
-
 
 module MiscGenericOverrideTest = 
    do printfn "MiscGenericOverrideTest"
