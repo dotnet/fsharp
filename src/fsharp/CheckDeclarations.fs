@@ -3279,10 +3279,12 @@ module EstablishTypeDefinitionCores =
     // only looking for the 'Measure' attributes, then we discard the generated type parameters
     let TyparsAllHaveMeasureDeclEarlyCheck cenv env (TyparDecls synTypars) =
         suppressErrorReporting (fun () -> 
-            try
-                let tps = TcTyparDecls cenv env synTypars
-                tps |> List.forall (fun tp -> tp.Kind = TyparKind.Measure)
-            with _ -> false)
+            synTypars|> List.forall (fun synTypar ->
+                try
+                    let (SynTyparDecl(Attributes synAttrs, _)) = synTypar
+                    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
+                    HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
+                with _ -> false))
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
