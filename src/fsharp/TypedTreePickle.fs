@@ -783,7 +783,7 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 
 /// Arbitrary value
 [<Literal>]
-let PickleBufferCapacity = 100000
+let PickleBufferCapacity = 50000
 
 let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
