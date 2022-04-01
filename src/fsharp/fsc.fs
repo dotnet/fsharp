@@ -757,7 +757,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     ReportTime tcConfig "Write XML docs"
     tcConfig.xmlDocOutputFile |> Option.iter (fun xmlFile ->
         let xmlFile = tcConfig.MakePathAbsolute xmlFile
-        XmlDocWriter.WriteXmlDocFile (assemblyName, generatedCcu, xmlFile))
+        XmlDocWriter.WriteXmlDocFile (tcGlobals, assemblyName, generatedCcu, xmlFile))
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)

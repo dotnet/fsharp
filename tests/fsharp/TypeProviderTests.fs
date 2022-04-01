@@ -116,7 +116,7 @@ let helloWorld p =
     let bincompat1 = getfullpath cfg "bincompat1"
 
     Directory.EnumerateFiles(bincompat1 ++ "..", "*.dll")
-    |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
+    |> Seq.iter (fun from -> Commands.copy bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
 
     fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".." ++ "test.fsx"]
 
@@ -129,8 +129,8 @@ let helloWorld p =
     log "pushd bincompat2"
     let bincompat2 = getfullpath cfg "bincompat2"
 
-    Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll")
-    |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("." ++ Path.GetFileName(from)) |> ignore)
+    for fromFile in Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll") do
+        Commands.copy bincompat2 fromFile ("." ++ Path.GetFileName(fromFile)) |> ignore
 
     fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".." ++ "provider.fsx"]
 

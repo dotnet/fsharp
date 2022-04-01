@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
             |> List.rev
             |> List.tryFind (fileExists cfg)
 
-        source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
+        source1 |> Option.iter (fun from -> copy cfg from "tmptest.fs")
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
