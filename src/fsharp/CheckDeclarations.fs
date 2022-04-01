@@ -3249,7 +3249,10 @@ module EstablishTypeDefinitionCores =
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
         else ModuleOrType
 
-    let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
+    let AdjustModuleName modKind nm =
+        match modKind with
+        | FSharpModuleWithSuffix -> nm+FSharpModuleSuffix
+        | _ -> nm
 
     let InstanceMembersNeedSafeInitCheck (cenv: cenv) m thisTy = 
         let g = cenv.g
@@ -3271,22 +3274,28 @@ module EstablishTypeDefinitionCores =
         else
             NoSafeInitInfo
 
+    let TyparsAllHaveMeasureDeclEarlyCheck cenv env (TyparDecls synTypars) =
+        suppressErrorReporting (fun () -> 
+            try
+                let tps = TcTyparDecls cenv env synTypars
+                tps |> List.forall (fun tp -> tp.Kind = TyparKind.Measure)
+            with _ -> false)
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
                 match d with 
-                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(_, TyparDecls typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
-                    if isAtOriginalTyconDefn && (TcTyparDecls cenv env typars |> List.forall (fun p -> p.Kind = TyparKind.Measure)) then 
+                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=synTypars; longId=ids), _, _, _, _, isAtOriginalTyconDefn), _) -> 
+                    if isAtOriginalTyconDefn && TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then 
                         yield (List.last ids).idText
                 | _ -> () ]
          |> set
 
-    let TypeNamesInNonMutRecDecls defs =
+    let TypeNamesInNonMutRecDecls cenv env defs =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs, _) -> 
-                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=TyparDecls typars; longId=ids); typeRepr=trepr) in typeSpecs do 
-                        if isNil typars then
+                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=synTypars; longId=ids); typeRepr=trepr) in typeSpecs do 
+                        if TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then
                             match trepr with 
                             | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> ()
                             | _ -> yield (List.last ids).idText
@@ -5629,12 +5638,10 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
             if isNil otherDefs then unionRanges firstDef.Range endm
             else unionRanges (List.head otherDefs).Range endm
 
-        // Possibly better:
-        //let scopem = unionRanges h1.Range.EndRange endm
-        
-        let! firstDef', env', envAtEnd' = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+        let! firstDef, env, envAtEnd = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+
         // tail recursive 
-        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
+        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef :: defsSoFar), env, envAtEnd) otherDefs
     | [] -> 
         return List.rev defsSoFar, envAtEnd
  }
@@ -5746,7 +5753,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath doc
 
     // Collect the type names so we can implicitly add the compilation suffix to module names
-    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls defs
+    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls cenv env defs
 
     match mutRecNSInfo with 
     | Some _ -> 
