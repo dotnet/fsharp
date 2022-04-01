@@ -15,6 +15,7 @@ module MethodImplAttribute =
         |> withEmbedAllSource
         |> ignoreWarnings
         |> verifyILBaseline
+
     // SOURCE=MethodImplAttribute.ForwardRef.fs        SCFLAGS="-a -g --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplAttribute.ForwardRef.dll"	# MethodImplAttribute.ForwardRef.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MethodImplAttribute.ForwardRef.fs"|])>]
     let ``MethodImplAttribute.ForwardRef_fs`` compilation =

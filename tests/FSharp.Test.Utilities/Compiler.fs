@@ -234,7 +234,6 @@ module rec Compiler =
                 EndLine     = range.EndLine     - adjust
                 EndColumn   = range.EndColumn   + 1 }
 
-
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
 
@@ -273,7 +272,6 @@ module rec Compiler =
 
     let CSharpFromPath (path: string) : CompilationUnit =
         csFromString (SourceFromPath path) |> CS
-
 
     let asFsx (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
