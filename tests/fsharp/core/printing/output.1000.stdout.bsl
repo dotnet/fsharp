@@ -2746,4 +2746,15 @@ val ShortName: string = "hi"
 
 > val inst2: TestLoadFile2.ClassInFile2
 
+> type Test =
+  {
+    A: int
+    B: string
+  }
+
+> val list: Test list = [{ A = 1
+                         B = "a" }]
+
+> val list2: int list = [1]
+
 > > > 
