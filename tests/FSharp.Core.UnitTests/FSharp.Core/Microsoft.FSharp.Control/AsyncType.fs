@@ -186,29 +186,23 @@ type AsyncType() =
             doSpinloop()
         }
 
-        // We don't use this disposable type, because the test is to verify that we don't finish automagically
         let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
+        // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
-            // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
-            try
-                let result = t.Wait(300)
-                Assert.False (result)
-            with :? AggregateException -> Assert.Fail "Task should not finish, yet"
+            let result = t.Wait(300)
+            Assert.False (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
-            spinloop <- false
+        spinloop <- false
 
-            try
-                waitASec t
-            with :? AggregateException as a ->
-                match a.InnerException with
-                | :? TaskCanceledException as t -> ()
-                | _ -> reraise()
-            Assert.True (t.IsCompleted, "Task is not completed")
-        finally
-            try
-                t.Dispose()
-            with | _ ->
-                ()
+        try
+            waitASec t
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> ()
+            | _ -> reraise()
+
+        Assert.True (t.IsCompleted, "Task is not completed")
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
