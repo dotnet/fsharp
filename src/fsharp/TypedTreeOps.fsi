@@ -1324,7 +1324,7 @@ val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Ex
 
 /// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
 /// if the delegate expression is a construction of a delegate.
-val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> invokeRef: Expr * f: Expr * fty: TType * tyargs: TypeInst * argsl: Exprs * m: range -> Expr
+val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * delInvokeArg: Expr * m: range -> Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -2462,10 +2462,10 @@ val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
 /// Match expressions that represent the creation of an instance of an F# delegate value
-val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list list * Expr * range * (Expr -> Expr)) option
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) option
 
 /// Match a .Invoke on a delegate
-val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Exprs * range) option
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) option
 
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option

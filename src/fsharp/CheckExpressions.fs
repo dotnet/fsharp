@@ -8953,26 +8953,39 @@ and TcValueItemThen cenv overallTy env vref tpenv mItem afterResolution delayed 
 and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution delayed =
     let g = cenv.g
     let ad = env.eAccessRights
-    if isNil pinfos then error (InternalError ("Unexpected error: empty property list", mItem))
-    // if there are both intrinsics and extensions in pinfos, intrinsics will be listed first.
+    
+    if isNil pinfos then
+        error (InternalError ("Unexpected error: empty property list", mItem))
+
+    // If there are both intrinsics and extensions in pinfos, intrinsics will be listed first.
     // by looking at List.Head we are letting the intrinsics determine indexed/non-indexed
     let pinfo = List.head pinfos
+
     let _, tyargsOpt, args, delayed, tpenv =
-        if pinfo.IsIndexer
-        then GetMemberApplicationArgs delayed cenv env tpenv
-        else ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
-    if not pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsNotStatic nm, mItem))
+        if pinfo.IsIndexer then
+            GetMemberApplicationArgs delayed cenv env tpenv
+        else
+            ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
+    
+    if not pinfo.IsStatic then
+        error (Error (FSComp.SR.tcPropertyIsNotStatic nm, mItem))
+
     match delayed with
     | DelayedSet(e2, mStmt) :: otherDelayed ->
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
+
         // Static Property Set (possibly indexer)
         UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
+
         let meths = pinfos |> SettersOfPropInfos
+
         if meths.IsEmpty then
             let meths = pinfos |> GettersOfPropInfos
             let isByrefMethReturnSetter = meths |> List.exists (function _,Some pinfo -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
+
             if not isByrefMethReturnSetter then
                 errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+
             // x.P <- ... byref setter
             if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
             TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
@@ -9066,7 +9079,6 @@ and GetSynMemberApplicationArgs delayed tpenv =
         (ExprAtomicFlag.Atomic, Some (tyargs, mTypeArgs), [], otherDelayed, tpenv)
     | otherDelayed ->
         (ExprAtomicFlag.NonAtomic, None, [], otherDelayed, tpenv)
-
 
 and TcMemberTyArgsOpt cenv env tpenv tyargsOpt =
     match tyargsOpt with
@@ -9233,15 +9245,15 @@ and TcEventItemThen cenv overallTy env tpenv mItem mExprAndItem objDetails (einf
     | None, false -> error (Error (FSComp.SR.tcEventIsNotStatic nm, mItem))
     | _ -> ()
 
-    let delegateType = einfo.GetDelegateType(cenv.amap, mItem)
-    let (SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delegateType mItem ad
+    let delTy = einfo.GetDelegateType(cenv.amap, mItem)
+    let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delTy mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
-    MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem invokeMethInfo
+    MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem delInvokeMeth
 
     // This checks for and drops the 'object' sender
     let argsTy = ArgsTypOfEventInfo cenv.infoReader mItem ad einfo
-    if not (slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItem)
-    let delEventTy = mkIEventType g delegateType argsTy
+    if not (slotSigHasVoidReturnTy (delInvokeMeth.GetSlotSig(cenv.amap, mItem))) then errorR (nonStandardEventError einfo.EventName mItem)
+    let delEventTy = mkIEventType g delTy argsTy
 
     let bindObjArgs f =
         match objDetails with
@@ -9253,17 +9265,17 @@ and TcEventItemThen cenv overallTy env tpenv mItem mExprAndItem objDetails (einf
     let expr =
         bindObjArgs (fun objVars ->
              //     EventHelper ((fun d -> e.add_X(d)), (fun d -> e.remove_X(d)), (fun f -> new 'Delegate(f)))
-            mkCallCreateEvent g mItem delegateType argsTy
-               (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
+            mkCallCreateEvent g mItem delTy argsTy
+               (let dv, de = mkCompGenLocal mItem "eventDelegate" delTy
                 let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.AddMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, g.unit_ty))
-               (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
+               (let dv, de = mkCompGenLocal mItem "eventDelegate" delTy
                 let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.RemoveMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, g.unit_ty))
                (let fvty = mkFunTy g g.obj_ty (mkFunTy g argsTy g.unit_ty)
                 let fv, fe = mkCompGenLocal mItem "callback" fvty
-                let createExpr = BuildNewDelegateExpr (Some einfo, g, cenv.amap, delegateType, invokeMethInfo, compiledViewOfDelArgTys, fe, fvty, mItem)
-                mkLambda mItem fv (createExpr, delegateType)))
+                let createExpr = BuildNewDelegateExpr (Some einfo, g, cenv.amap, delTy, delInvokeMeth, delArgTys, fe, fvty, mItem)
+                mkLambda mItem fv (createExpr, delTy)))
 
     let exprty = delEventTy
     PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprNoFlex cenv expr) exprty ExprAtomicFlag.Atomic delayed
@@ -9986,23 +9998,28 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
 
     CallerArg(callerArgTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
 
-/// Typecheck "new Delegate(fun x y z -> ...)" constructs
-and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg delegateTy arg atomicFlag delayed =
+/// Typecheck "Delegate(fun x y z -> ...)" constructs
+and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg delegateTy synArg atomicFlag delayed =
     let g = cenv.g
     let ad = env.eAccessRights
-    UnifyTypes cenv env mExprAndArg overallTy.Commit delegateTy
-    let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, fty)) = GetSigOfFunctionForDelegate cenv.infoReader delegateTy mDelTy ad
+
+    let intermediateTy = if isNil delayed then overallTy.Commit else NewInferenceType g
+
+    UnifyTypes cenv env mExprAndArg intermediateTy delegateTy
+
+    let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, delFuncTy)) = GetSigOfFunctionForDelegate cenv.infoReader delegateTy mDelTy ad
 
     // We pass isInstance = true here because we're checking the rights to access the "Invoke" method
-    MethInfoChecks g cenv.amap true None [] env.eAccessRights mExprAndArg invokeMethInfo
-    let args = GetMethodArgs arg
+    MethInfoChecks g cenv.amap true None [] env.eAccessRights mExprAndArg delInvokeMeth
 
-    match args with
-    | [farg], [] ->
-        let m = arg.Range
-        let callerArg, (_, tpenv) = TcMethodArg cenv env (Array.empty, tpenv) (Array.empty, CallerArg(fty, m, false, farg))
-        let expr = BuildNewDelegateExpr (None, g, cenv.amap, delegateTy, invokeMethInfo, delArgTys, callerArg.Expr, fty, m)
-        PropagateThenTcDelayed cenv overallTy env tpenv m (MakeApplicableExprNoFlex cenv expr) delegateTy atomicFlag delayed
+    let synArgs = GetMethodArgs synArg
+
+    match synArgs with
+    | [synFuncArg], [] ->
+        let m = synArg.Range
+        let callerArg, (_, tpenv) = TcMethodArg cenv env (Array.empty, tpenv) (Array.empty, CallerArg(delFuncTy, m, false, synFuncArg))
+        let expr = BuildNewDelegateExpr (None, g, cenv.amap, delegateTy, delInvokeMeth, delArgTys, callerArg.Expr, delFuncTy, m)
+        PropagateThenTcDelayed cenv overallTy env tpenv m (MakeApplicableExprNoFlex cenv expr) intermediateTy atomicFlag delayed
     | _ ->
         error(Error(FSComp.SR.tcDelegateConstructorMustBePassed(), mExprAndArg))
 
