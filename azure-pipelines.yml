@@ -369,6 +369,14 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: false
+              workingDirectory: $(Build.SourcesDirectory)/service
+              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
