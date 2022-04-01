@@ -3274,6 +3274,9 @@ module EstablishTypeDefinitionCores =
         else
             NoSafeInitInfo
 
+    // We suppress all error reporting for this pre-analysis of the attributes,
+    // in case some attributes involve constructs not already in scope - we are
+    // only looking for the 'Measure' attributes, then we discard the generated type parameters
     let TyparsAllHaveMeasureDeclEarlyCheck cenv env (TyparDecls synTypars) =
         suppressErrorReporting (fun () -> 
             try
