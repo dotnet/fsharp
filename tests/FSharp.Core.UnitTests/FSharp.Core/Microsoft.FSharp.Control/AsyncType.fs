@@ -186,7 +186,7 @@ type AsyncType() =
             doSpinloop()
         }
 
-        let t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
+        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
