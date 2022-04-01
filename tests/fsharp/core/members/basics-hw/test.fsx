@@ -2428,14 +2428,24 @@ module DelegateByrefCreation =
     let createImmediateDelegate2 = new D2(fun b1 b2 -> b1  + b2)
 
 
-module DelegateImmediateInvoke =
+module DelegateImmediateInvoke1 =
 
     type Foo = delegate of unit -> unit 
 
     let f1 = Foo(ignore)
-    f1.Invoke()
+    check "clejweljkc" (f1.Invoke()) ()
 
-    Foo(ignore).Invoke()
+module DelegateImmediateInvoke2 =
+
+    type Foo = delegate of unit -> unit 
+
+    check "ou309lwnkc" (Foo(ignore).Invoke()) ()
+
+module DelegateImmediateInvoke3 =
+
+    type Foo<'T> = delegate of 'T -> unit 
+
+    check "lceljkewjl" (Foo<unit>(ignore).Invoke(())) ()
 
 module InterfaceCastingTests =
 
