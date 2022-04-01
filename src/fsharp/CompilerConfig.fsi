@@ -256,7 +256,7 @@ type TcConfigBuilder =
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       mutable showExtensionTypeMessages: bool
 #endif
       mutable pause: bool
@@ -448,7 +448,7 @@ type TcConfig =
     member showTimes: bool
     member showLoadedAssemblies: bool
     member continueAfterParseFailure: bool
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member showExtensionTypeMessages: bool
 #endif
     member pause: bool

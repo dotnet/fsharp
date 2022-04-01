@@ -28,7 +28,7 @@ open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -718,14 +718,14 @@ let reduceTyconRefAbbrev (tcref: TyconRef) tyargs =
     reduceTyconAbbrev tcref.Deref tyargs
 
 let reduceTyconMeasureableOrProvided (g: TcGlobals) (tycon: Tycon) tyargs =
-#if NO_EXTENSIONTYPING
+#if NO_TYPEPROVIDERS
     ignore g  // otherwise g would be unused
 #endif
     let repr = tycon.TypeReprInfo
     match repr with 
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
@@ -1126,7 +1126,7 @@ let getMeasureOfType g ty =
 
 let isErasedType g ty = 
   match stripTyEqns g ty with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
   | TType_app (tcref, _, _) -> tcref.IsProvidedErasedTycon
 #endif
   | _ -> false
@@ -1775,19 +1775,19 @@ let isOutByrefTy g ty =
         | TType_app(tcref, [_; tag], _) when g.byref2_tcr.CanDeref -> tyconRefEq g g.byref2_tcr tcref && isOutByrefTag g tag         
         | _ -> false) 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref.TypeReprInfo | _ -> TNoRepr) 
 #endif
 
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
      | ProvidedTypeMetadata of TProvidedTypeInfo
 #endif
 
 let metadataOfTycon (tycon: Tycon) = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     match tycon.TypeReprInfo with 
     | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
@@ -1799,7 +1799,7 @@ let metadataOfTycon (tycon: Tycon) =
 
 
 let metadataOfTy g ty = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     match extensionInfoOfTy g ty with 
     | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
@@ -1813,7 +1813,7 @@ let metadataOfTy g ty =
 
 let isILReferenceTy g ty = 
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> not info.IsStructOrEnum
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> not td.IsStructOrEnum
@@ -1821,7 +1821,7 @@ let isILReferenceTy g ty =
 
 let isILInterfaceTycon (tycon: Tycon) = 
     match metadataOfTycon tycon with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
@@ -1853,7 +1853,7 @@ let isFSharpInterfaceTy g ty =
 
 let isDelegateTy g ty = 
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
@@ -1864,7 +1864,7 @@ let isDelegateTy g ty =
 
 let isInterfaceTy g ty = 
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
@@ -1874,7 +1874,7 @@ let isFSharpDelegateTy g ty = isDelegateTy g ty && isFSharpObjModelTy g ty
 
 let isClassTy g ty = 
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
@@ -3258,7 +3258,7 @@ let TryFindILAttributeOpt attr attrs =
 let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: obj option list * (string * obj option) list -> 'a option) : 'a option = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> 
         let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
         match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, atref.FullName)), m) with
@@ -3321,7 +3321,7 @@ let TyconRefHasAttribute g m attribSpec tcref =
 let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
     ignore m
     match metadataOfTycon tcref.Deref with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> 
         let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
         provAttribs.PUntaint((fun a ->
@@ -4057,7 +4057,7 @@ module DebugPrint =
 
         let reprL = 
             match tycon.TypeReprInfo with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr _
             | TProvidedNamespaceRepr _
 #endif
@@ -5235,7 +5235,7 @@ let InferArityOfExprBinding g allowTypeDirectedDetupling (v: Val) expr =
 let underlyingTypeOfEnumTy (g: TcGlobals) ty = 
     assert(isEnumTy g ty)
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
@@ -5757,7 +5757,7 @@ and remapTyconRepr ctxt tmenv repr =
     | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields ctxt tmenv x)
     | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases ctxt tmenv x)
     | TILObjectRepr _ -> failwith "cannot remap IL type definitions"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | TProvidedNamespaceRepr _ -> repr
     | TProvidedTypeRepr info -> 
        TProvidedTypeRepr 
@@ -7718,7 +7718,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 // Decode extensible typing attributes
 //----------------------------------------------------------------------------
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
@@ -8819,7 +8819,7 @@ let isSealedTy g ty =
     isArrayTy g ty || 
 
     match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsSealed
