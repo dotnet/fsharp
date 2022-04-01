@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -13,61 +12,63 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
-.assembly InequalityComparison04
+.assembly InequalityComparison01
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.InequalityComparison04
+.mresource public FSharpSignatureData.InequalityComparison01
 {
-  // Offset: 0x00000000 Length: 0x0000020A
+  // Offset: 0x00000000 Length: 0x00000242
+  // WARNING: managed resource file FSharpSignatureData.InequalityComparison01 created
 }
-.mresource public FSharpOptimizationData.InequalityComparison04
+.mresource public FSharpOptimizationData.InequalityComparison01
 {
-  // Offset: 0x00000210 Length: 0x00000085
+  // Offset: 0x00000248 Length: 0x00000085
+  // WARNING: managed resource file FSharpOptimizationData.InequalityComparison01 created
 }
-.module InequalityComparison04.exe
-// MVID: {60B68B7E-263A-E772-A745-03837E8BB660}
+.module InequalityComparison01.exe
+// MVID: {62463DAA-263A-E6D5-A745-0383AA3D4662}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07590000
+// Image base: 0x04BB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed InequalityComparison04
+.class public abstract auto ansi sealed InequalityComparison01
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public static bool  f4(int32 x,
+  .method public static bool  f1(int32 x,
                                  int32 y) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       5 (0x5)
+    // Code size       8 (0x8)
     .maxstack  8
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 27,32 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\InequalityComparison\\InequalityComparison04.fs'
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
     IL_0002:  cgt
-    IL_0004:  ret
-  } // end of method InequalityComparison04::f4
+    IL_0004:  ldc.i4.0
+    IL_0005:  ceq
+    IL_0007:  ret
+  } // end of method InequalityComparison01::f1
 
-} // end of class InequalityComparison04
+} // end of class InequalityComparison01
 
-.class private abstract auto ansi sealed '<StartupCode$InequalityComparison04>'.$InequalityComparison04
+.class private abstract auto ansi sealed '<StartupCode$InequalityComparison01>'.$InequalityComparison01
        extends [mscorlib]System.Object
 {
   .method public static void  main@() cil managed
@@ -76,11 +77,12 @@
     // Code size       1 (0x1)
     .maxstack  8
     IL_0000:  ret
-  } // end of method $InequalityComparison04::main@
+  } // end of method $InequalityComparison01::main@
 
-} // end of class '<StartupCode$InequalityComparison04>'.$InequalityComparison04
+} // end of class '<StartupCode$InequalityComparison01>'.$InequalityComparison01
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\InequalityComparison\InequalityComparison01_fs\InequalityComparison01.res

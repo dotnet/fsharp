@@ -25,6 +25,7 @@ module rec Compiler =
     type BaselineFile =
         {
             FilePath: string
+            BslSource: string
             Content: string option
         }
 
@@ -766,6 +767,14 @@ module rec Compiler =
                     let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
+                        // Failed try update baselines if required
+                        // If we are here then the il file has been produced we can write it back to the baseline location
+                        // if the environment variable TEST_UPDATE_BSL has been set
+                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
+                            match baseline with
+                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                                | None -> ()
+
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
 

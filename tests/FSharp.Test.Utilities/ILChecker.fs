@@ -12,7 +12,6 @@ open TestFramework
 
 [<RequireQualifiedAccess>]
 module ILChecker =
-
     let config = initializeSuite ()
 
     let private exec exe args =
