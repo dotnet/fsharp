@@ -177,6 +177,7 @@ let GenerateIlxCode
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
           mainMethodInfo= mainMethodInfo
           ilxBackend = ilxBackend
+          fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt }

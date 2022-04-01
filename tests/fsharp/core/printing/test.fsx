@@ -1108,6 +1108,12 @@ let inst1 = TestLoadFile.ClassInFile1();; // should load ok
 
 let inst2 = TestLoadFile2.ClassInFile2();; // should load ok
 
+type Test = { A: int; B: string };;
+
+let list = [{ A = 1; B = "a" }];;
+
+let list2 = [ for x in list do x.A ];;
+
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)
