@@ -1076,6 +1076,12 @@ module ParsedInput =
                                     None
                             | _ -> None)
 
+                    member _.VisitPat (_, defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.IsInst (_, range) when rangeContainsPos range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse pat
+
                     member _.VisitModuleDecl(_path, defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
