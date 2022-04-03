@@ -650,12 +650,13 @@ module PrintTypes =
         | _, _ -> squareAngleL (sepListL (rightL (tagPunctuation ";")) ((match kind with TyparKind.Type -> [] | TyparKind.Measure -> [wordL (tagText "Measure")]) @ List.map (layoutAttrib denv) attrs)) ^^ restL
 
     and layoutTyparRef denv (typar: Typar) =
-        wordL
-            (tagTypeParameter 
-                (sprintf "%s%s%s"
-                    (if denv.showConstraintTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
-                    (if denv.showImperativeTyparAnnotations then prefixOfRigidTypar typar else "")
-                    typar.DisplayName))
+        tagTypeParameter 
+            (sprintf "%s%s%s"
+                (if denv.showConstraintTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
+                (if denv.showImperativeTyparAnnotations then prefixOfRigidTypar typar else "")
+                typar.DisplayName)
+        |> mkNav typar.Range
+        |> wordL
 
     /// Layout a single type parameter declaration, taking TypeSimplificationInfo into account
     /// There are several printing-cases for a typar:
