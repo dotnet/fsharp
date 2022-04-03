@@ -70,6 +70,9 @@ type CompletionContext =
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
 
+    /// Completing a type application (e.g. Unchecked.defaultof<str| >)
+    | TypeApp
+
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
 
@@ -957,6 +960,9 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
 
+                            // Unchecked.defaultof<str$>
+                            | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
+                                Some CompletionContext.TypeApp
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) = 

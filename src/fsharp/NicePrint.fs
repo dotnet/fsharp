@@ -2415,6 +2415,8 @@ let prettyLayoutOfType denv x = x |> PrintTypes.prettyLayoutOfType denv
 
 let prettyLayoutOfTypeNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
 
+let prettyLayoutOfTypar denv x = x |> PrintTypes.layoutTyparRef denv
+
 let prettyStringOfTy denv x = x |> PrintTypes.prettyLayoutOfType denv |> showL
 
 let prettyStringOfTyNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv |> showL
