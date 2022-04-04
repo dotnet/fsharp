@@ -5656,6 +5656,22 @@ module Fix11816 =
     check "wwvwev" a 64L
     check "wwvwev23" b.X 64L
 
+module OverloadResolutionUsingFunction =
+
+    open System
+    let ae = new AggregateException()
+        
+    ae.Handle(fun e ->
+        match e with
+        | :? OperationCanceledException -> true
+        | _ -> false        
+        )
+
+    ae.Handle(function
+        | :? OperationCanceledException -> true
+        | _ -> false        
+        )
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

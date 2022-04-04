@@ -9346,10 +9346,13 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
         mkByrefTyWithInference g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType g m)
     | SynExpr.Lambda (body = a) ->
         mkFunTy g (NewInferenceType g) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
+    | SynExpr.MatchLambda _ ->
+        mkFunTy g (NewInferenceType g) (NewInferenceType g)
     | SynExpr.Quote (_, raw, a, _, _) ->
         if raw then mkRawQuotedExprTy g
         else mkQuotedExprTy g (GetNewInferenceTypeForMethodArg cenv env tpenv a)
-    | _ -> NewInferenceType g
+    | _ ->
+        NewInferenceType g
 
 /// Method calls, property lookups, attribute constructions etc. get checked through here
 and TcMethodApplication
