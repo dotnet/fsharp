@@ -118,8 +118,8 @@ type DirectoryAttribute(dir: string) =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath;  Content = ilBslSource  }
+                        FSBaseline = { FilePath = fsOutFilePath; BslSource=fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { FilePath = ilOutFilePath; BslSource=ilBslFilePath ; Content = ilBslSource  }
                     }
             Options             = []
             OutputType          = Library
