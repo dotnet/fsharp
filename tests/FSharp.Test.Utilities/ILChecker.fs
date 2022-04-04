@@ -12,7 +12,6 @@ open TestFramework
 
 [<RequireQualifiedAccess>]
 module ILChecker =
-
     let config = initializeSuite ()
 
     let private exec exe args =
@@ -105,34 +104,37 @@ module ILChecker =
                 |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
                 |> Array.rev
 
-            let startIndex =
-                let index = unifiedInputText.IndexOf(expectedLines[0].Trim())
-                if index > 0 then
-                    index
-                else
-                    0
-            let actualLines =
-                unifiedInputText.Substring(startIndex).Split('\n')
-                |> Array.map(fun e -> e.Trim('\r'))
-                |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                |> Array.rev
-                |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                |> Array.rev
-
-            let errors = ResizeArray()
-            if actualLines.Length < expectedLines.Length then
-                let msg = sprintf "\nExpected at least %d lines but found only %d\n" expectedLines.Length actualLines.Length
-                errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
+            if expectedLines.Length = 0 then
+                errorMsgOpt <- Some("ExpectedLines length invalid: 0")
             else
-                for i = 0 to expectedLines.Length - 1 do
-                    let expected = expectedLines[i].Trim()
-                    let actual = actualLines[i].Trim()
-                    if expected <> actual then
-                        errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+                let startIndex =
+                    let index = unifiedInputText.IndexOf(expectedLines[0].Trim())
+                    if index > 0 then
+                        index
+                    else
+                        0
+                let actualLines =
+                    unifiedInputText.Substring(startIndex).Split('\n')
+                    |> Array.map(fun e -> e.Trim('\r'))
+                    |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
+                    |> Array.rev
+                    |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
+                    |> Array.rev
 
-                if errors.Count > 0 then
-                    let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
-                    errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+                let errors = ResizeArray()
+                if actualLines.Length < expectedLines.Length then
+                    let msg = sprintf "\nExpected at least %d lines but found only %d\n" expectedLines.Length actualLines.Length
+                    errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
+                else
+                    for i = 0 to expectedLines.Length - 1 do
+                        let expected = expectedLines[i].Trim()
+                        let actual = actualLines[i].Trim()
+                        if expected <> actual then
+                            errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+
+                    if errors.Count > 0 then
+                        let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
+                        errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
         )
 
         if expectedIL.Length = 0 then
