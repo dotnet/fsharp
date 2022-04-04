@@ -69,3 +69,8 @@ let Misc_Redundant5(x: obj) =
     | :? string -> 2  // expect - never matched
     | g -> 3
 
+module AmbiguousIntrinsicExtension =
+    type A<'T1, 'T2> = class end
+    type A<'T1, 'T2, 'T3> = class end
+
+    type A<'T1> with member x.Foo = 123
