@@ -37,7 +37,7 @@
 }
 .mresource public FSharpSignatureData.Linq101ElementOperators01
 {
-  // Offset: 0x00000000 Length: 0x000003B6
+  // Offset: 0x00000000 Length: 0x000003BA
   // WARNING: managed resource file FSharpSignatureData.Linq101ElementOperators01 created
 }
 .mresource public FSharpOptimizationData.Linq101ElementOperators01
@@ -46,13 +46,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Linq101ElementOperators01 created
 }
 .module Linq101ElementOperators01.exe
-// MVID: {62466AC2-19D7-C20D-A745-0383C26A4662}
+// MVID: {624A5271-19D7-C20D-A745-038371524A62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x035D0000
+// Image base: 0x030E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1544,4 +1544,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\QueryExpressionStepping\Linq101ElementOperators01_fs\Linq101ElementOperators01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net472\tests\EmittedIL\QueryExpressionStepping\Linq101ElementOperators01_fs\Linq101ElementOperators01.res

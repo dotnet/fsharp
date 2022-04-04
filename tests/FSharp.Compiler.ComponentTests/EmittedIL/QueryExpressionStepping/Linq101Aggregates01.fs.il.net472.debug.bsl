@@ -51,13 +51,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Linq101Aggregates01 created
 }
 .module Linq101Aggregates01.exe
-// MVID: {62466AC2-D281-4783-A745-0383C26A4662}
+// MVID: {624A4BD9-D281-4783-A745-0383D94B4A62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03AB0000
+// Image base: 0x03540000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -7141,16 +7141,16 @@
     IL_044a:  dup
     IL_044b:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories5@89
     IL_0450:  stloc.s    V_15
-    IL_0452:  ldc.r8     5.
-    IL_045b:  ldc.r8     4.
-    IL_0464:  ldc.r8     1.
-    IL_046d:  ldc.r8     3.
-    IL_0476:  ldc.r8     9.
-    IL_047f:  ldc.r8     8.
-    IL_0488:  ldc.r8     6.
-    IL_0491:  ldc.r8     7.
-    IL_049a:  ldc.r8     2.
-    IL_04a3:  ldc.r8     0.0
+    IL_0452:  ldc.r8     5.0999999999999996
+    IL_045b:  ldc.r8     4.0999999999999996
+    IL_0464:  ldc.r8     1.1000000000000001
+    IL_046d:  ldc.r8     3.1000000000000001
+    IL_0476:  ldc.r8     9.0999999999999996
+    IL_047f:  ldc.r8     8.0999999999999996
+    IL_0488:  ldc.r8     6.0999999999999996
+    IL_0491:  ldc.r8     7.0999999999999996
+    IL_049a:  ldc.r8     2.1000000000000001
+    IL_04a3:  ldc.r8     0.10000000000000001
     IL_04ac:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::get_Empty()
     IL_04b1:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
@@ -7413,4 +7413,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\QueryExpressionStepping\Linq101Aggregates01_fs\Linq101Aggregates01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\QueryExpressionStepping\Linq101Aggregates01_fs\Linq101Aggregates01.res
