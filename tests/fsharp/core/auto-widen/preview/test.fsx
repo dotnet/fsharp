@@ -638,7 +638,7 @@ module DelegateNameFix =
     open System
 
     type Delegate = delegate of int -> int
-    Delegate(fun _ -> 1)
+    Delegate(fun _ -> 1) |> ignore
 
 let aa =
   match failures with 
