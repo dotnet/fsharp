@@ -743,6 +743,9 @@ type internal FsiConsoleOutput(tcConfigB, outWriter:TextWriter, errorWriter:Text
     member out.uprintnf   fmt = out.uprintfn ""; out.uprintf   fmt
     member out.uprintnfn  fmt = out.uprintfn ""; out.uprintfn  fmt
     member out.uprintnfnn fmt = out.uprintfn ""; out.uprintfnn fmt
+    
+    /// clear screen
+    member _.clear () = System.Console.Clear()
 
     member _.Out = outWriter
     member _.Error = errorWriter
@@ -1018,12 +1021,15 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
             for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
                 fsiConsoleOutput.uprintfn "%s" msg
 
+        fsiConsoleOutput.uprintfn  """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo())
         fsiConsoleOutput.uprintfn  """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())
         fsiConsoleOutput.uprintfn  "";
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine())
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiIntroTextHeader3(helpLine))
         fsiConsoleOutput.uprintfn  ""
         fsiConsoleOutput.uprintfn  ""
+
+    member _.ClearScreen() = fsiConsoleOutput.clear()
 
 #if DEBUG
     member _.ShowILCode with get() = showILCode and set v = showILCode <- v
@@ -2676,7 +2682,10 @@ type internal FsiInteractionProcessor
                 PrintOptionInfo tcConfigB
                 istate, Completed None
     #endif
-
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("clear"), [], _), _) ->
+                fsiOptions.ClearScreen()
+                istate, Completed None
+                
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) ->
                 fsiInterruptController.Exit()
 

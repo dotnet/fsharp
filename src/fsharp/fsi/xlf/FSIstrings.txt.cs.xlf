@@ -12,6 +12,11 @@
         <target state="translated">Při vyhledávání balíčků zahrnout identifikátor zdroje balíčku</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">Vygenerovat více sestavení (pro .NET Framework je to ve výchozím nastavení vypnuto)</target>

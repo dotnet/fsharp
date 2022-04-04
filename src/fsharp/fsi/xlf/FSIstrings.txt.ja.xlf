@@ -12,6 +12,11 @@
         <target state="translated">パッケージの検索時にパッケージ ソースの URI を含める</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">複数のアセンブリを出力する (.NET Frameworkの場合は既定でオフ)</target>

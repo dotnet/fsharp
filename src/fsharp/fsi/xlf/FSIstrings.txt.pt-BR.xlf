@@ -12,6 +12,11 @@
         <target state="translated">Incluir o URI de origem do pacote ao pesquisar pacotes</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">Emitir várias montagens (desligadas por padrão para .NET Framework)</target>

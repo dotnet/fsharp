@@ -12,6 +12,11 @@
         <target state="translated">搜尋套件時包含套件來源 URI</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">發出多組件 (.NET Framework 預設為關閉)</target>

@@ -12,6 +12,11 @@
         <target state="translated">Uwzględnij identyfikator URI źródła pakietów podczas wyszukiwania pakietów</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">Emituj wiele zestawów (domyślnie wyłączone dla programu .NET Framework)</target>
