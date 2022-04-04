@@ -4235,7 +4235,9 @@ and refs_of_fref s x =
     refs_of_typ s x.Type
     s.refsFs.Add x |> ignore
 
-and refs_of_ospec s (OverridesSpec (mref, ty)) = refs_of_mref s mref; refs_of_typ s ty
+and refs_of_ospec s (OverridesSpec (mref, ty)) =
+    refs_of_mref s mref
+    refs_of_typ s ty
 
 and refs_of_mspec s (x: ILMethodSpec) =
     refs_of_mref s x.MethodRef
@@ -4254,13 +4256,27 @@ and refs_of_token s x =
     | ILToken.ILMethod mr -> refs_of_mspec s mr
     | ILToken.ILField fr -> refs_of_fspec s fr
 
+and refs_of_attrib_elem s (e: ILAttribElem) =
+    match e with
+    | Type (Some ty) -> refs_of_typ s ty
+    | TypeRef (Some tref) -> refs_of_tref s tref
+    | Array (ty, els) ->
+        refs_of_typ s ty 
+        refs_of_attrib_elems s els
+    | _ -> ()
+    
+and refs_of_attrib_elems s els =
+    els |> List.iter (refs_of_attrib_elem s)
+
 and refs_of_custom_attr s (cattr: ILAttribute) =
     refs_of_mspec s cattr.Method
+    refs_of_attrib_elems s cattr.Elements 
 
 and refs_of_custom_attrs s (cas : ILAttributes) =
-    Array.iter (refs_of_custom_attr s) (cas.AsArray())
+    cas.AsArray() |> Array.iter (refs_of_custom_attr s)
 
-and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso
+and refs_of_varargs s tyso =
+    Option.iter (refs_of_tys s) tyso
 
 and refs_of_instr s x =
     match x with
@@ -4402,6 +4418,7 @@ and refs_of_resources s (tab: ILResources) =
 and refs_of_modul s m =
     refs_of_types s m.TypeDefs
     refs_of_resources s m.Resources
+    refs_of_custom_attrs s m.CustomAttrs
     Option.iter (refs_of_manifest s) m.Manifest
 
 and refs_of_manifest s (m: ILAssemblyManifest) =
