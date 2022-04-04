@@ -96,7 +96,7 @@ let categories5 =
     } |> Seq.toArray
 
 // Average - Simple
-let numbers2 = [5.0; 4.0; 1.0; 3.0; 9.0; 8.0; 6.0; 7.0; 2.0; 0.0]
+let numbers2 = [5.1; 4.1; 1.1; 3.1; 9.1; 8.1; 6.1; 7.1; 2.1; 0.1]
 let averageNum = query { for n in numbers2 do averageBy n }
 
 // Average - Projection
