@@ -46,6 +46,7 @@ type LanguageFeature =
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
     | BetterExceptionPrinting
+    | DelegateTypeNameResolutionFix
 
 /// LanguageVersion management
 type LanguageVersion (versionText) =
@@ -102,6 +103,7 @@ type LanguageVersion (versionText) =
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
             LanguageFeature.BetterExceptionPrinting,previewVersion
+            LanguageFeature.DelegateTypeNameResolutionFix,previewVersion
         ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -199,6 +201,7 @@ type LanguageVersion (versionText) =
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
         | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting()
+        | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
