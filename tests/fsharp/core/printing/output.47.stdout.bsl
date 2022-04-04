@@ -4061,6 +4061,7 @@ type 'a T4063 = | AT4063 of 'a
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
     #quit;;                                       // Exit
+    #clear;;                                      // Clear screen
 
   F# Interactive command line options:
 
