@@ -21,6 +21,9 @@ type AsyncType() =
     let ignoreSynchCtx f =
         f ()
 
+    [<VolatileField>]
+    let mutable spinloop = true
+        
     let waitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.True(result, "Task did not finish after waiting for a second.")
@@ -176,12 +179,9 @@ type AsyncType() =
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
-#if !TESTING_ON_LINUX
-    //TBD:   Disabled on MACOS and Linux because of bug: https://github.com/dotnet/runtime/issues/67567
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
-        let mutable spinloop = true
         let doSpinloop () = while spinloop do ()
         let a = async {
             cts.CancelAfter (100)
@@ -205,7 +205,7 @@ type AsyncType() =
             | _ -> reraise()
 
         Assert.True (t.IsCompleted, "Task is not completed")
-#endif
+
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
