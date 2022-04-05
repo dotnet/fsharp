@@ -1474,4 +1474,4 @@ let f x =
 let f x y = x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'") 
+        Assert.IsFalse(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'")
