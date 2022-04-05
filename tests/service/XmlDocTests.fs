@@ -200,6 +200,17 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
     |> shouldEqual expected
 
 [<Test>]
+let ``xml-doc eof``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+/// a"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|(Information 3520, Line 4, Col 0, Line 4, Col 5, "XML comment is not placed on a valid language element.")|])
+
+[<Test>]
 let ``comments after xml-doc``(): unit =
     checkSignatureAndImplementation """
 module Test
