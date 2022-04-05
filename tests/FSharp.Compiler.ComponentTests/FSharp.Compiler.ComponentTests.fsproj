@@ -41,6 +41,7 @@
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
+    <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
     <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
