@@ -49,7 +49,7 @@ type internal XmlDocCollector =
 
     member HasComments: grabPointPos: pos -> bool
 
-    member CheckInvalidXmlDocPositions: unit -> unit
+    member CheckInvalidXmlDocPositions: unit -> range list
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]

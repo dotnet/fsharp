@@ -201,13 +201,19 @@ type XmlDocCollector() =
     member x.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
 
-    member x.CheckInvalidXmlDocPositions() =
+    member x.CheckInvalidXmlDocPositions() : range list =
+        let comments = ResizeArray<range>(savedLines.Count)
+
         for startIndex, endIndex, isValid in savedGrabPoints.Values do
             if isValid then () else
             let _, startRange = savedLines.[startIndex]
             let _, endRange = savedLines.[endIndex]
             let range = unionRanges startRange endRange
             informationalWarning (Error(FSComp.SR.invalidXmlDocPosition(), range))
+            // Collect invalid triple slash comment ranges, to later transform these to trivia 
+            [ startIndex .. endIndex ] |> List.iter (fun idx -> savedLines.[idx] |> snd |> comments.Add)
+
+        List.ofSeq comments
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
