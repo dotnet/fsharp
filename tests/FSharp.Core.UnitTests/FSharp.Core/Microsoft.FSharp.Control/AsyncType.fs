@@ -176,6 +176,8 @@ type AsyncType() =
         Assert.True (t.IsCompleted)
         Assert.AreEqual(s, t.Result)
 
+#if !TESTING_ON_LINUX
+    //TBD:   Disabled on MACOS and Linux because of bug: https://github.com/dotnet/runtime/issues/67567
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
@@ -203,6 +205,7 @@ type AsyncType() =
             | _ -> reraise()
 
         Assert.True (t.IsCompleted, "Task is not completed")
+#endif
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
