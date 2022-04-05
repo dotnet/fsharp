@@ -5581,23 +5581,37 @@ path:
 /* An operator name, with surrounnding parentheses */
 opName: 
   | LPAREN operatorName rparen  
-     {  ident(CompileOpName $2, rhs parseState 2) }
+     {  let ident = ident(CompileOpName $2, rhs parseState 2)
+        OperatorName.Operator(rhs parseState 1, ident, rhs parseState 3) }
 
   | LPAREN error rparen  
-     {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName()); ident(CompileOpName "****", rhs parseState 2) }
+     {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName())
+        let ident = ident(CompileOpName "****", rhs parseState 2)
+        OperatorName.Operator(rhs parseState 1, ident, rhs parseState 3) }
 
   | LPAREN_STAR_RPAREN
-     {  ident(CompileOpName "*", rhs parseState 1) }
+     { let m= rhs parseState 1
+       let lpr = mkFileIndexRange m.FileIndex m.Start m.Start
+       let mStar = mkFileIndexRange m.FileIndex (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn - 1))
+       let ident = ident(CompileOpName "*", mStar)
+       let rpr = mkFileIndexRange m.FileIndex m.End m.End
+       OperatorName.Operator(lpr, ident, rpr) }
 
   /* active pattern name */
   | LPAREN activePatternCaseNames BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|")
-       ident(text, rhs2 parseState 2 3) }
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|")
+       let ident = ident(text, rhs2 parseState 2 3)
+       let rpr = rhs parseState 4
+       OperatorName.ActivePattern(lpr, ident, rpr) }
                          
   /* partial active pattern name */
   | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
-       ident(text, rhs2 parseState 2 5) }
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
+       let ident = ident(text, rhs2 parseState 2 5)
+       let lpr = rhs parseState 6
+       OperatorName.PartialActivePattern(lpr, ident, rpr) }
 
 /* An operator name, without surrounding parentheses */
 operatorName: 
@@ -5711,13 +5725,18 @@ identOrOp:
 /* Note, only used in atomicPatternLongIdent */
 pathOp: 
   | ident  
-     { LongIdentWithDots([$1], []) }
+     { LongIdentWithDots([$1], None, []) }
 
   | opName 
-     { LongIdentWithDots([$1], []) }
+     { LongIdentWithDots([], Some $1, []) }
 
   | ident DOT pathOp 
-     { let (LongIdentWithDots(lid, dotms)) = $3 in LongIdentWithDots($1 :: lid, rhs parseState 2 :: dotms) } 
+     { match $3 with
+       | LongIdentWithDots(leading, None, trailing, dotms) ->
+           LongIdentWithDots($1 :: leading, None, rhs parseState 2 :: dotms)
+       | LongIdentWithDots(, Some _, [], dotms) ->
+     
+     let (LongIdentWithDots(lid, opName, dotms)) = $3 in LongIdentWithDots($1 :: lid, rhs parseState 2 :: dotms) } 
 
   | ident DOT error  
      { (* silent recovery *) LongIdentWithDots([$1], [rhs parseState 2]) }  
@@ -5732,10 +5751,7 @@ identExpr:
      { SynExpr.Ident($1) }
 
   | opName
-     { let m = lhs parseState
-       let mLparen = mkFileIndexRange m.FileIndex m.Start (mkPos m.StartLine (m.StartColumn + 1))
-       let mRparen = mkFileIndexRange m.FileIndex (mkPos m.EndLine (m.EndColumn - 1)) m.End
-       SynExpr.Paren(SynExpr.Ident($1), mLparen, Some mRparen, m) }
+     { SynExpr.OperatorName($1) }
 
 topSeparator: 
   | SEMICOLON { } 

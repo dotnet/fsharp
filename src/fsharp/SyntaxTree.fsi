@@ -13,7 +13,19 @@ type Ident =
      new: text: string * range: range -> Ident
      member idText: string
      member idRange: range
-       
+
+/// Represents an operator identifier in F# code
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type OperatorName =
+    /// (|A|B|)
+    | ActivePattern of lpr: range * id: Ident * rpr: range
+    /// (|A|_|)
+    | PartialActivePattern of lpr: range * id: Ident * rpr: range
+    /// (>=>)
+    | Operator of lpr: range * id: Ident * rpr: range
+    member Range: range
+    member Ident: Ident
+
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
 
@@ -26,7 +38,11 @@ type LongIdent = Ident list
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
 type LongIdentWithDots =
     | //[<Experimental("This construct is subject to change in future versions of FSharp.Compiler.Service and should only be used if no adequate alternative is available.")>]
-      LongIdentWithDots of id: LongIdent * dotRanges: range list
+      LongIdentWithDots of
+        leadingId: LongIdent *
+        operatorName: OperatorName option *
+        trailingId: LongIdent *
+        dotRanges: range list
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1055,6 +1071,9 @@ type SynExpr =
         debugPoint: DebugPointAtLeafExpr *
         isControlFlow: bool *
         innerExpr: SynExpr
+
+    /// Operator, Active pattern or Partial Active pattern
+    | OperatorName of operatorName: OperatorName
 
     /// Gets the syntax range of this construct
     member Range: range

@@ -18,28 +18,59 @@ type Ident (text: string, range: range) =
 
 type LongIdent = Ident list
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type OperatorName =
+    | ActivePattern of lpr: range * id: Ident * rpr: range
+    | PartialActivePattern of lpr: range * id: Ident * rpr: range
+    | Operator of lpr: range * id: Ident * rpr: range
+    member this.Range: range =
+        match this with
+        | OperatorName.ActivePattern(lpr=lpr; rpr=rpr)
+        | OperatorName.PartialActivePattern(lpr=lpr; rpr=rpr)
+        | OperatorName.Operator(lpr=lpr; rpr=rpr) -> unionRanges lpr rpr
+
+    member this.Ident: Ident =
+        match this with
+        | OperatorName.ActivePattern(id=id)
+        | OperatorName.PartialActivePattern(id=id)
+        | OperatorName.Operator(id=id) -> id
+
 type LongIdentWithDots =
-    | LongIdentWithDots of id: LongIdent * dotRanges: range list
+    | LongIdentWithDots of
+        leadingId: LongIdent *
+        operatorName: OperatorName option *
+        trailingId: LongIdent *
+        dotRanges: range list
 
     member this.Range =
        match this with
-       | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], []) -> id.idRange
-       | LongIdentWithDots([id], [m]) -> unionRanges id.idRange m
-       | LongIdentWithDots(h :: t, []) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithDots(h :: t, dotRanges) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
+       | LongIdentWithDots(leading, opName, trailing, dots) ->
+           let identRange (i:Ident) = i.idRange
+           [ yield! (List.map identRange leading)
+             yield! (Option.map (fun (opName: OperatorName) -> opName.Range) opName |> Option.toList)
+             yield! (List.map identRange trailing)
+             yield! dots ]
+           |> List.reduce unionRanges
 
-    member this.Lid = match this with LongIdentWithDots(lid, _) -> lid
+    member this.Lid =
+        match this with
+        | LongIdentWithDots(leading, None, trailing, _) -> leading @ trailing
+        | LongIdentWithDots(leading, Some opName, trailing, _) -> [ yield! leading; yield opName.Ident; yield! trailing ]
 
-    member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid, dots) -> lid.Length = dots.Length
+    member this.ThereIsAnExtraDotAtTheEnd =
+        match this with LongIdentWithDots(leading, opName, trailing, dots) ->
+            let parts = leading.Length + (match opName with | Some _ -> 1 | None -> 0) + trailing.Length
+            parts = dots.Length
 
     member this.RangeWithoutAnyExtraDot =
        match this with
-       | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], _) -> id.idRange
-       | LongIdentWithDots(h :: t, dotRanges) ->
-           let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
-           unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
+       | LongIdentWithDots(leading, opName, trailing, _dots) ->
+           let identRange (i:Ident) = i.idRange
+           [ yield! (List.map identRange leading)
+             yield! (Option.map (fun (opName: OperatorName) -> opName.Range) opName |> Option.toList)
+             yield! (List.map identRange trailing) ]
+           |> List.reduce unionRanges
+
 
 [<RequireQualifiedAccess>]
 type ParserDetail =
@@ -859,6 +890,8 @@ type SynExpr =
         debugPoint: DebugPointAtLeafExpr *
         isControlFlow: bool *
         innerExpr: SynExpr
+    
+    | OperatorName of operatorName: OperatorName
 
     member e.Range =
         match e with
@@ -931,6 +964,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
+        | SynExpr.OperatorName(opName) -> opName.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with
