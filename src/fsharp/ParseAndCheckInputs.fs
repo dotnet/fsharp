@@ -179,7 +179,13 @@ let GetScopedPragmasForHashDirective hd =
                   | Some n -> yield ScopedPragma.WarningOff(m, n)
       | _ -> () ]
 
-let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls), lexbuf: UnicodeLexing.Lexbuf) =
+let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =
+    [ yield! LexbufCommentStore.GetComments(lexbuf); yield! (List.map CommentTrivia.LineComment tripleSlashComments) ]
+    |> List.sortBy (function
+        | CommentTrivia.LineComment r
+        | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
+
+let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
     match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when impls.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
@@ -199,12 +205,12 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
               yield! GetScopedPragmasForHashDirective hd ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
-    let codeComments = LexbufCommentStore.GetComments(lexbuf)
+    let codeComments = collectCodeComments lexbuf tripleSlashComments
     let trivia: ParsedImplFileInputTrivia = { ConditionalDirectives = conditionalDirectives; CodeComments = codeComments }
     
     ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
 
-let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs), lexbuf: UnicodeLexing.Lexbuf) =
+let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
     match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when specs.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
@@ -223,7 +229,7 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
               yield! GetScopedPragmasForHashDirective hd ]
 
     let conditionalDirectives = LexbufIfdefStore.GetTrivia(lexbuf)
-    let codeComments = LexbufCommentStore.GetComments(lexbuf)
+    let codeComments = collectCodeComments lexbuf tripleSlashComments
     let trivia: ParsedSigFileInputTrivia = { ConditionalDirectives = conditionalDirectives; CodeComments = codeComments }
 
     ParsedInput.SigFile (ParsedSigFileInput (filename, qualName, scopedPragmas, hashDirectives, specs, trivia))
@@ -287,12 +293,12 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: E
             // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let impl = Parser.implementationFile lexer lexbuf
-                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-                PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl, lexbuf)
+                let tripleSlashComments = LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl, lexbuf, tripleSlashComments)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let intfs = Parser.signatureFile lexer lexbuf
-                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
-                PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs, lexbuf)
+                let tripleSlashComments =  LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
+                PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs, lexbuf, tripleSlashComments)
             else
                 if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     error(Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated filename, rangeStartup))

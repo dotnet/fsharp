@@ -3771,3 +3771,27 @@ let x = 0
             Assert.Pass()
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``triple slash comment should be captured, if used in an invalid location`` () =
+        let trivia =
+            getCommentTrivia false """
+/// Valid xml doc
+let x =
+    /// Some great documentation comment
+
+    /// With a blank line in between
+    /// but on a while loop
+    while true do ()
+    a + 1
+"""
+
+        match trivia with
+        | [ CommentTrivia.LineComment m1
+            CommentTrivia.LineComment m2
+            CommentTrivia.LineComment m3 ] ->
+            assertRange (4, 4) (4, 40) m1
+            assertRange (6, 4) (6, 36) m2
+            assertRange (7, 4) (7, 27) m3
+        | _ ->
+            Assert.Fail "Could not get valid AST"
