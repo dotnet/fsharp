@@ -3440,9 +3440,11 @@ FSharp.Compiler.EditorServices.OpenStatementInsertionPoint: System.String ToStri
 FSharp.Compiler.EditorServices.ParameterLocations
 FSharp.Compiler.EditorServices.ParameterLocations: Boolean IsThereACloseParen
 FSharp.Compiler.EditorServices.ParameterLocations: Boolean get_IsThereACloseParen()
+FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.EditorServices.TupledArgumentLocation[] ArgumentLocations
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position LongIdEndLocation
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position LongIdStartLocation
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position OpenParenLocation
+FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.EditorServices.TupledArgumentLocation[] get_ArgumentLocations()
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position get_LongIdEndLocation()
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position get_LongIdStartLocation()
 FSharp.Compiler.EditorServices.ParameterLocations: FSharp.Compiler.Text.Position get_OpenParenLocation()
@@ -3980,6 +3982,18 @@ FSharp.Compiler.EditorServices.ToolTipText: Int32 get_Tag()
 FSharp.Compiler.EditorServices.ToolTipText: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElement] Item
 FSharp.Compiler.EditorServices.ToolTipText: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElement] get_Item()
 FSharp.Compiler.EditorServices.ToolTipText: System.String ToString()
+FSharp.Compiler.EditorServices.TupledArgumentLocation
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(FSharp.Compiler.EditorServices.TupledArgumentLocation)
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(System.Object)
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean IsNamedArgument
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Boolean get_IsNamedArgument()
+FSharp.Compiler.EditorServices.TupledArgumentLocation: FSharp.Compiler.Text.Range ArgumentRange
+FSharp.Compiler.EditorServices.TupledArgumentLocation: FSharp.Compiler.Text.Range get_ArgumentRange()
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode()
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.TupledArgumentLocation: System.String ToString()
+FSharp.Compiler.EditorServices.TupledArgumentLocation: Void .ctor(Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.EditorServices.UnresolvedSymbol
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(FSharp.Compiler.EditorServices.UnresolvedSymbol)
 FSharp.Compiler.EditorServices.UnresolvedSymbol: Boolean Equals(System.Object)
@@ -4822,6 +4836,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsInstanceMember
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsInstanceMemberInCompiledCode
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsMember
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsMemberThisValue
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsMethod
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsModuleValueOrMember
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsMutable
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean IsOverrideOrExplicitInterfaceImplementation
@@ -4852,6 +4867,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsInstanceMem
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsInstanceMemberInCompiledCode()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsMember()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsMemberThisValue()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsMethod()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsModuleValueOrMember()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsMutable()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Boolean get_IsOverrideOrExplicitInterfaceImplementation()
@@ -4908,6 +4924,7 @@ FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generi
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpGenericParameter] get_GenericParameters()
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]] CurriedParameterGroups
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpParameter]] get_CurriedParameterGroups()
+FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] GetReturnTypeLayout(FSharp.Compiler.Symbols.FSharpDisplayContext)
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.String CompiledName
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.String DisplayName
 FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue: System.String LogicalName
