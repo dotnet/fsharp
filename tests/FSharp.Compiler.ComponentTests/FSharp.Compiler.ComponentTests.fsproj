@@ -37,6 +37,7 @@
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
+    <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
