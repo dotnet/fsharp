@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -13,7 +12,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly StaticInit_Module01
 {
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.StaticInit_Module01
 {
-  // Offset: 0x00000000 Length: 0x000002A3
+  // Offset: 0x00000000 Length: 0x000002E2
+  // WARNING: managed resource file FSharpSignatureData.StaticInit_Module01 created
 }
 .mresource public FSharpOptimizationData.StaticInit_Module01
 {
-  // Offset: 0x000002A8 Length: 0x000000DF
+  // Offset: 0x000002E8 Length: 0x000000DF
+  // WARNING: managed resource file FSharpOptimizationData.StaticInit_Module01 created
 }
-.module StaticInit_Module01.dll
-// MVID: {60B68B90-705F-DF4F-A745-0383908BB660}
+.module StaticInit_Module01.exe
+// MVID: {624CC9CC-A09B-51CF-A745-0383CCC94C62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x050C0000
+// Image base: 0x04F30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -110,32 +111,29 @@
 .class private abstract auto ansi sealed '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 x@5
+  .field static assembly int32 x@5
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly int32 y@7
+  .field static assembly int32 y@7
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly initonly int32 z@8
+  .field static assembly int32 z@8
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
   .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-  .method private specialname rtspecialname static 
-          void  .cctor() cil managed
+  .method public static void  main@() cil managed
   {
+    .entrypoint
     // Code size       64 (0x40)
     .maxstack  4
-    .locals init ([0] int32 x,
-             [1] int32 y,
-             [2] int32 z)
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 3,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Module01.fs'
+    .locals init (int32 V_0,
+             int32 V_1,
+             int32 V_2)
     IL_0000:  ldstr      "1"
     IL_0005:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_000a:  dup
     IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::x@5
     IL_0010:  stloc.0
-    .line 7,7 : 5,27 ''
     IL_0011:  call       int32 StaticInit_Module01/M::get_x()
     IL_0016:  ldstr      "2"
     IL_001b:  callvirt   instance int32 [mscorlib]System.String::get_Length()
@@ -143,7 +141,6 @@
     IL_0021:  dup
     IL_0022:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
     IL_0027:  stloc.1
-    .line 8,8 : 5,27 ''
     IL_0028:  call       int32 StaticInit_Module01/M/N::get_y()
     IL_002d:  ldstr      "3"
     IL_0032:  callvirt   instance int32 [mscorlib]System.String::get_Length()
@@ -152,7 +149,7 @@
     IL_0039:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
     IL_003e:  stloc.2
     IL_003f:  ret
-  } // end of method $StaticInit_Module01::.cctor
+  } // end of method $StaticInit_Module01::main@
 
 } // end of class '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01
 
@@ -160,3 +157,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\StaticInit\StaticInit_Module01_fs\StaticInit_Module01.res
