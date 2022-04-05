@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.SeqExpressionTailCalls01
 {
-  // Offset: 0x00000000 Length: 0x00000219
+  // Offset: 0x00000000 Length: 0x00000251
+  // WARNING: managed resource file FSharpSignatureData.SeqExpressionTailCalls01 created
 }
 .mresource public FSharpOptimizationData.SeqExpressionTailCalls01
 {
-  // Offset: 0x00000220 Length: 0x0000008C
+  // Offset: 0x00000258 Length: 0x0000008C
+  // WARNING: managed resource file FSharpOptimizationData.SeqExpressionTailCalls01 created
 }
 .module SeqExpressionTailCalls01.exe
-// MVID: {61FD4A6D-093A-A6BE-A745-03836D4AFD61}
+// MVID: {624BDCC5-093A-A6BE-A745-0383C5DC4B62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05DB0000
+// Image base: 0x03C10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -90,8 +91,6 @@
     {
       // Code size       102 (0x66)
       .maxstack  7
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SeqExpressionTailCalls\\SeqExpressionTailCalls01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 SeqExpressionTailCalls01/rwalk@3::pc
       IL_0006:  ldc.i4.1
@@ -102,21 +101,16 @@
                             IL_0021)
       IL_0019:  br.s       IL_0024
 
-      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       IL_001c:  br.s       IL_003a
 
-      .line 100001,100001 : 0,0 ''
       IL_001e:  nop
       IL_001f:  br.s       IL_0056
 
-      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_005d
 
-      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 3,3 : 25,32 ''
       IL_0025:  ldarg.0
       IL_0026:  ldc.i4.1
       IL_0027:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::pc
@@ -127,7 +121,6 @@
       IL_0038:  ldc.i4.1
       IL_0039:  ret
 
-      .line 3,3 : 34,52 ''
       IL_003a:  ldarg.0
       IL_003b:  ldc.i4.2
       IL_003c:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::pc
@@ -167,7 +160,6 @@
     {
       // Code size       48 (0x30)
       .maxstack  8
-      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 SeqExpressionTailCalls01/rwalk@3::pc
       IL_0006:  switch     ( 
@@ -177,23 +169,18 @@
                             IL_0026)
       IL_001b:  br.s       IL_0029
 
-      .line 100001,100001 : 0,0 ''
       IL_001d:  nop
       IL_001e:  br.s       IL_002e
 
-      .line 100001,100001 : 0,0 ''
       IL_0020:  nop
       IL_0021:  br.s       IL_002c
 
-      .line 100001,100001 : 0,0 ''
       IL_0023:  nop
       IL_0024:  br.s       IL_002a
 
-      .line 100001,100001 : 0,0 ''
       IL_0026:  nop
       IL_0027:  br.s       IL_002e
 
-      .line 100001,100001 : 0,0 ''
       IL_0029:  nop
       IL_002a:  ldc.i4.0
       IL_002b:  ret
@@ -241,7 +228,6 @@
   {
     // Code size       9 (0x9)
     .maxstack  8
-    .line 3,3 : 19,54 ''
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.0
     IL_0002:  ldc.i4.0
@@ -270,3 +256,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls01_fs\SeqExpressionTailCalls01.res
