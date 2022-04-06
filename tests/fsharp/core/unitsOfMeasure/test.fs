@@ -1,3 +1,27 @@
+
+let mutable failures = []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures <- failures @ [s]
+
+let test s b =
+    stderr.Write(s:string)
+    if b then stderr.WriteLine " OK" else report_failure s
+    stderr.WriteLine "" 
+
+let check s v1 v2 = 
+   stderr.Write(s:string);  
+   if (v1 = v2) then 
+       stderr.WriteLine " OK" 
+       stderr.WriteLine "" 
+   else
+       eprintf " FAILED: got %A, expected %A" v1 v2 
+       stderr.WriteLine "" 
+       report_failure s
+
+
 type T() =
     member this.H<[<Measure>]'u> (x : int<'u>) = x
 
@@ -161,6 +185,14 @@ module InterfacesOfMeasureAnnotatedTypes =
     // Does not apply to other interfaces
     let f6 (x: Prim<'m>) = (x :> IRandomOtherInterface<Prim>)
 
+module CheckModuleNames =
+    type WithMeasure<[<Measure>] 'u> =
+        | WithMeasure of float32<'u>
+
+    module WithMeasure = ()
+    type A = class end
+    
+    test "celjcelwj" (typeof<A>.DeclaringType.GetNestedType("WithMeasureModule") <> null)
 
 [<EntryPoint>]
 let main argv = 
@@ -171,4 +203,9 @@ let main argv =
 
     System.IO.File.WriteAllText("test.ok","ok"); 
 
+    match failures with 
+    | [] -> 
+        stdout.WriteLine "Test Passed"
+    | _ -> 
+        stdout.WriteLine "Test Failed"
     0
