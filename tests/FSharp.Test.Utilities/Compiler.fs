@@ -792,6 +792,7 @@ module rec Compiler =
 
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
+    | VerifySequencePoints of (Line * Col * Line * Col) list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -845,11 +846,24 @@ module rec Compiler =
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
+
+        let sequencePoints = 
+            [ for sp in reader.MethodDebugInformation do
+                let mdi = reader.GetMethodDebugInformation sp
+                yield! mdi.GetSequencePoints() ]
+            |> List.sortBy (fun sp -> sp.StartLine)
+            |> List.map (fun sp -> (Line sp.StartLine, Col sp.StartColumn, Line sp.EndLine, Col sp.EndColumn) )
+        
+        if sequencePoints <> expectedSequencePoints then
+            failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
+
 
     let private verifyPdbOptions reader options =
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
+            | VerifySequencePoints sp -> verifySequencePoints reader sp
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
