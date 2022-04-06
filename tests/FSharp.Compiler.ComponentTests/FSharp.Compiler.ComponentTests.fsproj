@@ -45,6 +45,7 @@
     <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
     <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
+    <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />

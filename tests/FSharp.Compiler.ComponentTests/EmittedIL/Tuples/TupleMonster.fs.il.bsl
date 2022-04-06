@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.TupleMonster
 {
-  // Offset: 0x00000000 Length: 0x00000145
+  // Offset: 0x00000000 Length: 0x00000185
+  // WARNING: managed resource file FSharpSignatureData.TupleMonster created
 }
 .mresource public FSharpOptimizationData.TupleMonster
 {
-  // Offset: 0x00000150 Length: 0x00000053
+  // Offset: 0x00000190 Length: 0x00000053
+  // WARNING: managed resource file FSharpOptimizationData.TupleMonster created
 }
 .module TupleMonster.exe
-// MVID: {61F02896-1552-41D8-A745-03839628F061}
+// MVID: {624CEE4C-1552-41D8-A745-03834CEE4C62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06830000
+// Image base: 0x034B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,8 +66,6 @@
     .entrypoint
     // Code size       74 (0x4a)
     .maxstack  28
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,137 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleMonster.fs'
     IL_0000:  ldc.i4.s   97
     IL_0002:  ldc.i4.s   98
     IL_0004:  ldc.i4.s   99
@@ -132,3 +131,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\Tuples\TupleMonster_fs\TupleMonster.res
