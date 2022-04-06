@@ -5842,7 +5842,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let inputExpr, inputTy, tpenv =
             let env = { env with eIsControlFlow = false }
             TcExprOfUnknownType cenv env tpenv synInputExpr
-        let mInputExpr = inputExpr.Range
+        let mInputExpr = synInputExpr.Range
         let env = { env with eIsControlFlow = true }
         let matchVal, matchExpr, tpenv = TcAndPatternCompileMatchClauses mInputExpr mInputExpr ThrowIncompleteMatchException cenv (Some inputExpr) inputTy overallTy env tpenv synClauses
         let overallExpr = mkLet spMatch mInputExpr matchVal inputExpr matchExpr
