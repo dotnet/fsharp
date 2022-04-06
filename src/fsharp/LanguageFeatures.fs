@@ -98,12 +98,12 @@ type LanguageVersion (versionText) =
             LanguageFeature.UseBindingValueDiscard, languageVersion60
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
             LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
+            LanguageFeature.DelegateTypeNameResolutionFix,languageVersion60
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
             LanguageFeature.BetterExceptionPrinting,previewVersion
-            LanguageFeature.DelegateTypeNameResolutionFix,previewVersion
         ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
