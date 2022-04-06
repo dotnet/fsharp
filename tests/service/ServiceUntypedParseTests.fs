@@ -1003,6 +1003,40 @@ f<int>
             |> tups
             |> shouldEqual ((3, 0), (3, 1))
 
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a list that is used as an argument - Sequential and ArrayOrListComputed``() =
+        let source = """
+let test () = div [] [
+    button [] [
+        str ""
+        ofInt 3
+        str ""
+    ]
+]
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 5 15)
+        match res with
+        | None -> Assert.Fail("Expected 'ofInt' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((5, 8), (5, 13))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a sequence that is used as an argument - Sequential and ComputationExpr``() =
+        let source = """
+seq { 5; int "6" } |> Seq.sum
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 1 14)
+        match res with
+        | None -> Assert.Fail("Expected 'int' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((1, 9), (1, 12))
+
 module PipelinesAndArgs =
     [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =

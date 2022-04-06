@@ -187,10 +187,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
 
                 // Special case: `async { ... }` is actually a ComputationExpr inside of the argExpr of a SynExpr.App
-                | SynExpr.ComputationExpr (_, expr, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
-                | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
+                | SynExpr.ComputationExpr (_, expr, range)
+                | SynExpr.Paren (expr, _, _, range)
+                // Yielding values in an array or list that is used as an argument: List.sum [ getVal a b; getVal b c ]
+                | SynExpr.ArrayOrListComputed (_, expr, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
                 | _ ->
@@ -204,6 +204,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         // Generally, we want to dive into the func expr to get the range
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
+
+            | SynExpr.Sequential (_, _, expr1, expr2, range) when rangeContainsPos range pos ->
+                if rangeContainsPos expr1.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr1 pos
+                else
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr2 pos
 
             | SynExpr.LetOrUse (bindings=bindings; body=body; range=range) when rangeContainsPos range pos  ->
                 let binding =
@@ -269,7 +275,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             | expr ->
                 traverseSynExpr expr
-                |> Option.map id
 
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
