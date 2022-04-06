@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.SteppingMatch06
 {
-  // Offset: 0x00000000 Length: 0x00000675
+  // Offset: 0x00000000 Length: 0x000006B1
+  // WARNING: managed resource file FSharpSignatureData.SteppingMatch06 created
 }
 .mresource public FSharpOptimizationData.SteppingMatch06
 {
-  // Offset: 0x00000680 Length: 0x000001D9
+  // Offset: 0x000006B8 Length: 0x000001D9
+  // WARNING: managed resource file FSharpOptimizationData.SteppingMatch06 created
 }
-.module SteppingMatch06.dll
-// MVID: {6220E156-4FAE-FD21-A745-038356E12062}
+.module SteppingMatch06.exe
+// MVID: {624CDB11-1F70-8A79-A745-038311DB4C62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06930000
+// Image base: 0x03770000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -207,52 +208,41 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       39 (0x27)
       .maxstack  4
-      .locals init ([0] int32 V_0,
-               [1] int32 V_1)
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch06.fs'
+      .locals init (int32 V_0,
+               int32 V_1)
       IL_0000:  ldarg.0
       IL_0001:  brfalse.s  IL_0020
 
-      .line 100001,100001 : 0,0 ''
       IL_0003:  ldarg.1
       IL_0004:  brfalse.s  IL_001e
 
-      .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.0
       IL_0007:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_000c:  stloc.0
       IL_000d:  ldarg.1
       IL_000e:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_0013:  stloc.1
-      .line 100001,100001 : 0,0 ''
       IL_0014:  ldloc.0
       IL_0015:  ldloc.1
       IL_0016:  bne.un.s   IL_001a
 
-      .line 100001,100001 : 0,0 ''
       IL_0018:  ldc.i4.0
       IL_0019:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_001a:  ldloc.0
       IL_001b:  ldloc.1
       IL_001c:  sub
       IL_001d:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_001e:  ldc.i4.1
       IL_001f:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0020:  ldarg.1
       IL_0021:  brfalse.s  IL_0025
 
-      .line 100001,100001 : 0,0 ''
       IL_0023:  ldc.i4.m1
       IL_0024:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0025:  ldc.i4.0
       IL_0026:  ret
     } // end of method Discr::CompareTo
@@ -277,58 +267,47 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       56 (0x38)
       .maxstack  4
-      .locals init ([0] class SteppingMatch06/Discr V_0,
-               [1] int32 V_1,
-               [2] int32 V_2)
-      .line 100001,100001 : 0,0 ''
+      .locals init (class SteppingMatch06/Discr V_0,
+               int32 V_1,
+               int32 V_2)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  SteppingMatch06/Discr
       IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  brfalse.s  IL_002c
 
-      .line 100001,100001 : 0,0 ''
       IL_000a:  ldarg.1
       IL_000b:  unbox.any  SteppingMatch06/Discr
       IL_0010:  brfalse.s  IL_002a
 
-      .line 100001,100001 : 0,0 ''
       IL_0012:  ldarg.0
       IL_0013:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_0018:  stloc.1
       IL_0019:  ldloc.0
       IL_001a:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_001f:  stloc.2
-      .line 100001,100001 : 0,0 ''
       IL_0020:  ldloc.1
       IL_0021:  ldloc.2
       IL_0022:  bne.un.s   IL_0026
 
-      .line 100001,100001 : 0,0 ''
       IL_0024:  ldc.i4.0
       IL_0025:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0026:  ldloc.1
       IL_0027:  ldloc.2
       IL_0028:  sub
       IL_0029:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_002a:  ldc.i4.1
       IL_002b:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_002c:  ldarg.1
       IL_002d:  unbox.any  SteppingMatch06/Discr
       IL_0032:  brfalse.s  IL_0036
 
-      .line 100001,100001 : 0,0 ''
       IL_0034:  ldc.i4.m1
       IL_0035:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0036:  ldc.i4.0
       IL_0037:  ret
     } // end of method Discr::CompareTo
@@ -339,19 +318,16 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  3
-      .locals init ([0] int32 V_0)
-      .line 100001,100001 : 0,0 ''
+      .locals init (int32 V_0)
       IL_0000:  ldarg.0
       IL_0001:  brfalse.s  IL_000c
 
-      .line 100001,100001 : 0,0 ''
       IL_0003:  ldc.i4.0
       IL_0004:  stloc.0
       IL_0005:  ldarg.0
       IL_0006:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_000b:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_000c:  ldc.i4.0
       IL_000d:  ret
     } // end of method Discr::GetHashCode
@@ -375,23 +351,19 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       44 (0x2c)
       .maxstack  4
-      .locals init ([0] class SteppingMatch06/Discr V_0,
-               [1] class SteppingMatch06/Discr V_1,
-               [2] int32 V_2,
-               [3] int32 V_3)
-      .line 100001,100001 : 0,0 ''
+      .locals init (class SteppingMatch06/Discr V_0,
+               class SteppingMatch06/Discr V_1,
+               int32 V_2,
+               int32 V_3)
       IL_0000:  ldarg.0
       IL_0001:  brfalse.s  IL_0024
 
-      .line 100001,100001 : 0,0 ''
       IL_0003:  ldarg.1
       IL_0004:  isinst     SteppingMatch06/Discr
       IL_0009:  stloc.0
-      .line 100001,100001 : 0,0 ''
       IL_000a:  ldloc.0
       IL_000b:  brfalse.s  IL_0022
 
-      .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  stloc.1
       IL_000f:  ldarg.0
@@ -400,17 +372,14 @@
       IL_0016:  ldloc.1
       IL_0017:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_001c:  stloc.3
-      .line 100001,100001 : 0,0 ''
       IL_001d:  ldloc.2
       IL_001e:  ldloc.3
       IL_001f:  ceq
       IL_0021:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0022:  ldc.i4.0
       IL_0023:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0024:  ldarg.1
       IL_0025:  ldnull
       IL_0026:  cgt.un
@@ -425,34 +394,28 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       35 (0x23)
       .maxstack  4
-      .locals init ([0] int32 V_0,
-               [1] int32 V_1)
-      .line 100001,100001 : 0,0 ''
+      .locals init (int32 V_0,
+               int32 V_1)
       IL_0000:  ldarg.0
       IL_0001:  brfalse.s  IL_001b
 
-      .line 100001,100001 : 0,0 ''
       IL_0003:  ldarg.1
       IL_0004:  brfalse.s  IL_0019
 
-      .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.0
       IL_0007:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_000c:  stloc.0
       IL_000d:  ldarg.1
       IL_000e:  ldfld      int32 SteppingMatch06/Discr::_tag
       IL_0013:  stloc.1
-      .line 100001,100001 : 0,0 ''
       IL_0014:  ldloc.0
       IL_0015:  ldloc.1
       IL_0016:  ceq
       IL_0018:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0019:  ldc.i4.0
       IL_001a:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_001b:  ldarg.1
       IL_001c:  ldnull
       IL_001d:  cgt.un
@@ -467,22 +430,18 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       20 (0x14)
       .maxstack  4
-      .locals init ([0] class SteppingMatch06/Discr V_0)
-      .line 100001,100001 : 0,0 ''
+      .locals init (class SteppingMatch06/Discr V_0)
       IL_0000:  ldarg.1
       IL_0001:  isinst     SteppingMatch06/Discr
       IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 
-      .line 100001,100001 : 0,0 ''
       IL_000a:  ldarg.0
       IL_000b:  ldloc.0
       IL_000c:  callvirt   instance bool SteppingMatch06/Discr::Equals(class SteppingMatch06/Discr)
       IL_0011:  ret
 
-      .line 100001,100001 : 0,0 ''
       IL_0012:  ldc.i4.0
       IL_0013:  ret
     } // end of method Discr::Equals
@@ -530,9 +489,7 @@
   {
     // Code size       34 (0x22)
     .maxstack  8
-    .line 6,6 : 9,21 ''
     IL_0000:  nop
-    .line 100001,100001 : 0,0 ''
     IL_0001:  ldarg.0
     IL_0002:  call       instance int32 SteppingMatch06/Discr::get_Tag()
     IL_0007:  ldc.i4.0
@@ -540,12 +497,10 @@
 
     IL_000a:  br.s       IL_0017
 
-    .line 8,8 : 13,35 ''
     IL_000c:  ldstr      "B"
     IL_0011:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_0016:  ret
 
-    .line 10,10 : 13,35 ''
     IL_0017:  ldstr      "A"
     IL_001c:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_0021:  ret
@@ -556,9 +511,18 @@
 .class private abstract auto ansi sealed '<StartupCode$SteppingMatch06>'.$SteppingMatch06
        extends [mscorlib]System.Object
 {
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
+  } // end of method $SteppingMatch06::main@
+
 } // end of class '<StartupCode$SteppingMatch06>'.$SteppingMatch06
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\SteppingMatch\SteppingMatch06_fs\SteppingMatch06.res
