@@ -1036,7 +1036,7 @@ let test () = div [] [
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 5 13)
 
         // This test exists so that we know we show no result instead of the wrong one
-        // Once this particular case is implemented, the expect result should be the range of the list containing `str`
+        // Once this particular case is implemented, the expected result should be the range of `div`
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
     [<Test>]
@@ -1053,8 +1053,23 @@ let test () = div [] [
         let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 7)
 
         // This test exists so that we know we show no result instead of the wrong one
-        // Once this particular case is implemented, the expect result should be the range of the list containing `str`
+        // Once this particular case is implemented, the expected result should be the range of `div`
         Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a sequence that is used as an argument - Sequential and ComputationExpr``() =
+        let source = """
+seq { 5; int "6" } |> Seq.sum
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 1 14)
+        match res with
+        | None -> Assert.Fail("Expected 'int' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((1, 9), (1, 12))
+
 
 module PipelinesAndArgs =
     [<Test>]
