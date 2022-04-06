@@ -1024,18 +1024,37 @@ let test () = div [] [
             |> shouldEqual ((5, 8), (5, 13))
 
     [<Test>]
-    let ``TryRangeOfFunctionOrMethodBeingApplied - multiple yielding in a sequence that is used as an argument - Sequential and ComputationExpr``() =
+    let ``TryRangeOfFunctionOrMethodBeingApplied - yielding in a list that is used as an argument, after semicolon - Sequential and ComputationExpr``() =
         let source = """
-seq { 5; int "6" } |> Seq.sum
+let div props children = ()
+
+let test () = div [] [
+    str "";  
+]
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 14)
-        match res with
-        | None -> Assert.Fail("Expected 'int' but got nothing")
-        | Some range ->
-            range
-            |> tups
-            |> shouldEqual ((2, 9), (2, 12))
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 5 13)
+
+        // This test exists so that we know we show no result instead of the wrong one
+        // Once this particular case is implemented, the expect result should be the range of the list containing `str`
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - yielding in a list that is used as an argument, after newline and semicolon - Sequential and ComputationExpr``() =
+        let source = """
+let div props children = ()
+
+let test () = div [] [
+    str ""
+    ;  
+]
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 6 7)
+
+        // This test exists so that we know we show no result instead of the wrong one
+        // Once this particular case is implemented, the expect result should be the range of the list containing `str`
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
 
 module PipelinesAndArgs =
     [<Test>]

@@ -188,10 +188,27 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                 // Special case: `async { ... }` is actually a ComputationExpr inside of the argExpr of a SynExpr.App
                 | SynExpr.ComputationExpr (_, expr, range)
-                | SynExpr.Paren (expr, _, _, range)
+                | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
                 // Yielding values in an array or list that is used as an argument: List.sum [ getVal a b; getVal b c ]
                 | SynExpr.ArrayOrListComputed (_, expr, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                    if rangeContainsPos expr.Range pos then
+                        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                    else
+                        (*
+                            In cases like
+
+                            let test () = div [] [
+                                str ""
+                                ; |
+                            ]
+
+                            `ProvideParametersAsyncAux` currently works with the wrong symbol or
+                            doesn't detect the previously applied arguments.
+                            Until that is fixed, don't show any tooltips rather than the wrong signature.
+                        *)
+                        None
 
                 | _ ->
                     match funcExpr with
