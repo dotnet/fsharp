@@ -5108,6 +5108,8 @@ module M
     // Access can be nested
     let f3 (v : {| X: {| X : int; Y : string |} |}) = v.X.X
 
+    let (|Foo|Bar|) _ =
+        if true then Foo else Bar 
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
@@ -5172,6 +5174,11 @@ let ``Test project41 all symbols`` () =
            ("X", ((18, 54), (18, 59)),
             ["field"; "anon(0, [//<>f__AnonymousType4026451324`2]X,Y)"], (18, 25));
            ("f3", ((18, 8), (18, 10)), ["val"], (18, 8));
+           ("Foo", ((20, 10), (20, 13)), ["apatcase0"], (20, 10));
+           ("Bar", ((20, 14), (20, 17)), ["apatcase1"], (20, 14));
+           ("Foo", ((21, 21), (21, 24)), ["apatcase0"], (20, 9));
+           ("Bar", ((21, 30), (21, 33)), ["apatcase1"], (20, 9));
+           ("(|Foo|Bar|)", ((20, 9), (20, 18)), ["apat"; "val"], (20, 9));
            ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
 
 
