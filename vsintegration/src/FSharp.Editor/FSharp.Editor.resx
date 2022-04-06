@@ -288,4 +288,7 @@
   <data name="UseNameof" xml:space="preserve">
     <value>Use 'nameof'</value>
   </data>
+  <data name="UseTripleQuotedInterpolation" xml:space="preserve">
+    <value>Use triple quoted string interpolation.</value>
+  </data>
 </root>
