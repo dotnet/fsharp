@@ -91,8 +91,10 @@ type DirectoryAttribute(dir: string) =
 #else
     #if NETCOREAPP
                 yield sourceFilePath + ".il.netcore.release.bsl"
+                yield sourceFilePath + ".il.netcore.bsl"
     #else
                 yield sourceFilePath + ".il.net472.release.bsl"
+                yield sourceFilePath + ".il.net472.bsl"
     #endif
                 yield sourceFilePath + ".il.release.bsl"
                 yield sourceFilePath + ".il.bsl"
