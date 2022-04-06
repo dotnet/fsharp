@@ -1029,13 +1029,13 @@ let test () = div [] [
 seq { 5; int "6" } |> Seq.sum
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 1 14)
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 14)
         match res with
         | None -> Assert.Fail("Expected 'int' but got nothing")
         | Some range ->
             range
             |> tups
-            |> shouldEqual ((1, 9), (1, 12))
+            |> shouldEqual ((2, 9), (2, 12))
 
 module PipelinesAndArgs =
     [<Test>]
