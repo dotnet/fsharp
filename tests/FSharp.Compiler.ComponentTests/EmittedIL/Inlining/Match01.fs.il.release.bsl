@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -20,25 +19,31 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+
+  // --- The following custom attribute is added automatically, do not uncomment -------
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Match01
 {
-  // Offset: 0x00000000 Length: 0x000006E6
+  // Offset: 0x00000000 Length: 0x00000727
+  // WARNING: managed resource file FSharpSignatureData.Match01 created
 }
 .mresource public FSharpOptimizationData.Match01
 {
-  // Offset: 0x000006F0 Length: 0x000003B7
+  // Offset: 0x00000730 Length: 0x000003B7
+  // WARNING: managed resource file FSharpOptimizationData.Match01 created
 }
-.module Match01.dll
-// MVID: {6220E4FA-FAFE-C8E4-A745-0383FAE42062}
+.module Match01.exe
+// MVID: {624E95FC-1470-80B4-A745-0383FC954E62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x074A0000
+// Image base: 0x03AA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1389,28 +1394,29 @@
 
   .method public static int32  select1(class Match01/Test1 x) cil managed
   {
-    // Code size       45 (0x2d)
+    // Code size       46 (0x2e)
     .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance int32 Match01/Test1::get_Tag()
-    IL_0006:  switch     ( 
-                          IL_001b,
-                          IL_0027,
-                          IL_0029,
-                          IL_002b)
-    IL_001b:  ldarg.0
-    IL_001c:  castclass  Match01/Test1/X11
-    IL_0021:  ldfld      int32 Match01/Test1/X11::item
-    IL_0026:  ret
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 Match01/Test1::get_Tag()
+    IL_0007:  switch     ( 
+                          IL_001c,
+                          IL_0028,
+                          IL_002a,
+                          IL_002c)
+    IL_001c:  ldarg.0
+    IL_001d:  castclass  Match01/Test1/X11
+    IL_0022:  ldfld      int32 Match01/Test1/X11::item
+    IL_0027:  ret
 
-    IL_0027:  ldc.i4.2
-    IL_0028:  ret
+    IL_0028:  ldc.i4.2
+    IL_0029:  ret
 
-    IL_0029:  ldc.i4.3
-    IL_002a:  ret
+    IL_002a:  ldc.i4.3
+    IL_002b:  ret
 
-    IL_002b:  ldc.i4.4
-    IL_002c:  ret
+    IL_002c:  ldc.i4.4
+    IL_002d:  ret
   } // end of method Match01::select1
 
   .method public static int32  fm(class Match01/Test1 y) cil managed
@@ -1427,9 +1433,18 @@
 .class private abstract auto ansi sealed '<StartupCode$Match01>'.$Match01
        extends [mscorlib]System.Object
 {
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
+  } // end of method $Match01::main@
+
 } // end of class '<StartupCode$Match01>'.$Match01
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\Inlining\Match01_fs\Match01.res

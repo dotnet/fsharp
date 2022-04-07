@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -13,32 +12,38 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Match02
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+
+  // --- The following custom attribute is added automatically, do not uncomment -------
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Match02
 {
-  // Offset: 0x00000000 Length: 0x00000484
+  // Offset: 0x00000000 Length: 0x000004C0
+  // WARNING: managed resource file FSharpSignatureData.Match02 created
 }
 .mresource public FSharpOptimizationData.Match02
 {
-  // Offset: 0x00000488 Length: 0x000002EE
+  // Offset: 0x000004C8 Length: 0x000002EE
+  // WARNING: managed resource file FSharpOptimizationData.Match02 created
 }
-.module Match02.dll
-// MVID: {60BE1F16-6125-4D81-A745-0383161FBE60}
+.module Match02.exe
+// MVID: {624E944C-47B1-958A-A745-03834C944E62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06770000
+// Image base: 0x009D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,10 +105,18 @@
 
   .method public static int32  testmethod() cil managed
   {
-    // Code size       3 (0x3)
+    // Code size       11 (0xb)
     .maxstack  8
-    IL_0000:  ldc.i4.s   12
-    IL_0002:  ret
+    IL_0000:  nop
+    IL_0001:  nop
+    IL_0002:  nop
+    IL_0003:  nop
+    IL_0004:  nop
+    IL_0005:  nop
+    IL_0006:  nop
+    IL_0007:  nop
+    IL_0008:  ldc.i4.s   12
+    IL_000a:  ret
   } // end of method Match02::testmethod
 
 } // end of class Match02
@@ -111,9 +124,18 @@
 .class private abstract auto ansi sealed '<StartupCode$Match02>'.$Match02
        extends [mscorlib]System.Object
 {
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
+  } // end of method $Match02::main@
+
 } // end of class '<StartupCode$Match02>'.$Match02
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\Inlining\Match02_fs\Match02.res
