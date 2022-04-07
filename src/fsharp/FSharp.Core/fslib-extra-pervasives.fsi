@@ -23,7 +23,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.printf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormat``1'/>) for examples.</example>
     [<CompiledName("PrintFormat")>]
-    val printf: format: Printf.TextWriterFormat<'T> -> 'T
+    val inline printf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stdout</c> using the given format, and add a newline.</summary>
     ///
