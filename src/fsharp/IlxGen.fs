@@ -231,6 +231,9 @@ type IlxGenOptions =
       /// storage, even though 'it' is not logically mutable
       isInteractiveItExpr: bool
 
+      /// Suppress ToString emit
+      noReflectionCodeGen: bool
+
       /// Whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
     }
@@ -7776,8 +7779,10 @@ and GenToStringMethod cenv eenv ilThisTy m =
 
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
-    let g = cenv.g
-    [ match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
+  let g = cenv.g
+  [ if not cenv.opts.noReflectionCodeGen then
+
+      match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind g.new_format_vref.Deref) with
       | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                // The type returned by the 'sprintf' call
