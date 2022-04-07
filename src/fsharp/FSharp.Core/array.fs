@@ -160,7 +160,7 @@ namespace Microsoft.FSharp.Collections
 
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
-        let inline countByImpl (comparer: IEqualityComparer<'SafeKey>) (projection: 'T->'SafeKey) (getKey: 'SafeKey->'Key) (array: 'T[]) =
+        let inline countByImpl (comparer: IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] projection: 'T->'SafeKey) ([<InlineIfLambda>] getKey: 'SafeKey->'Key) (array: 'T[]) =
             let length = array.Length
             if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
 
@@ -405,7 +405,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
 
-        let inline groupByImpl (comparer: IEqualityComparer<'SafeKey>) (keyf: 'T->'SafeKey) (getKey: 'SafeKey->'Key) (array: 'T[]) =
+        let inline groupByImpl (comparer: IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] keyf: 'T->'SafeKey) ([<InlineIfLambda>] getKey: 'SafeKey->'Key) (array: 'T[]) =
             let length = array.Length
             if length = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
             let dict = Dictionary<_, ResizeArray<_>> comparer
@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Collections
             acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection: 'T -> ^U) (array: 'T[]) : ^U = 
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U = 
             checkNonNull "array" array
             let mutable acc = LanguagePrimitives.GenericZero< ^U>
             for i = 0 to array.Length - 1 do
@@ -1158,7 +1158,7 @@ namespace Microsoft.FSharp.Collections
             LanguagePrimitives.DivideByInt< ^T> acc array.Length
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (projection: 'T -> ^U) (array: 'T[]) : ^U = 
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> ^U) (array: 'T[]) : ^U = 
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable acc = LanguagePrimitives.GenericZero< ^U>

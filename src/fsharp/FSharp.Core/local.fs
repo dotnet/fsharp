@@ -990,7 +990,7 @@ module internal Array =
     let inline zeroCreateUnchecked (count:int) =
         (# "newarr !0" type ('T) count : 'T array #)
 
-    let inline init (count:int) (f: int -> 'T) =
+    let inline init (count:int) ([<InlineIfLambda>] f: int -> 'T) =
         if count < 0 then invalidArgInputMustBeNonNegative "count" count
         let arr = (zeroCreateUnchecked count : 'T array)
         for i = 0 to arr.Length-1 do

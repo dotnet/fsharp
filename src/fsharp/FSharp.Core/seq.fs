@@ -1051,7 +1051,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             mkSeq (fun () -> source.GetEnumerator())
 
-        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] keyf:'T->'SafeKey) ([<InlineIfLambda>] getKey:'SafeKey->'Key) (seq:seq<'T>) =
             checkNonNull "seq" seq
 
             let dict = Dictionary<_,ResizeArray<_>> comparer
@@ -1152,7 +1152,7 @@ namespace Microsoft.FSharp.Collections
             let inline compareDescending a b = compare b a
             sortWith compareDescending source
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] keyf:'T->'SafeKey) ([<InlineIfLambda>] getKey:'SafeKey->'Key) (source:seq<'T>) =
             checkNonNull "source" source
 
             let dict = Dictionary comparer
@@ -1190,7 +1190,7 @@ namespace Microsoft.FSharp.Collections
             acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
+        let inline sumBy ([<InlineIfLambda>] projection : 'T -> ^U) (source: seq<'T>) : ^U =
             use e = source.GetEnumerator()
             let mutable acc = LanguagePrimitives.GenericZero< ^U>
             while e.MoveNext() do
@@ -1211,7 +1211,7 @@ namespace Microsoft.FSharp.Collections
             LanguagePrimitives.DivideByInt< ^a> acc count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
+        let inline averageBy ([<InlineIfLambda>] projection : 'T -> ^U) (source: seq<'T>) : ^U =
             checkNonNull "source" source
             use e = source.GetEnumerator()
             let mutable acc = LanguagePrimitives.GenericZero< ^U>

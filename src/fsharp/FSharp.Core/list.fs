@@ -42,7 +42,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =            
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] projection:'T->'SafeKey) ([<InlineIfLambda>] getKey:'SafeKey->'Key) (list:'T list) =            
             let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
@@ -99,7 +99,7 @@ namespace Microsoft.FSharp.Collections
                 loop ([], state) (rev list)
 
         [<CompiledName("Iterate")>]
-        let inline iter action (list:'T list) = for x in list do action x
+        let inline iter ([<InlineIfLambda>] action) (list:'T list) = for x in list do action x
 
         [<CompiledName("Distinct")>]
         let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
@@ -163,7 +163,7 @@ namespace Microsoft.FSharp.Collections
         let takeWhile predicate (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile predicate list
 
         [<CompiledName("IterateIndexed")>]
-        let inline iteri action (list: 'T list) =
+        let inline iteri ([<InlineIfLambda>] action) (list: 'T list) =
             let mutable n = 0
             for x in list do action n x; n <- n + 1
 
@@ -564,7 +564,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection: 'T -> 'U) (list:list<'T>) =
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> 'U) (list:list<'T>) =
             match list with
             | [] -> LanguagePrimitives.GenericZero<'U>
             | t ->
@@ -636,7 +636,7 @@ namespace Microsoft.FSharp.Collections
                 LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (projection: 'T -> 'U) (list:list<'T>) =
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> 'U) (list:list<'T>) =
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
@@ -654,7 +654,7 @@ namespace Microsoft.FSharp.Collections
         let allPairs list1 list2 = Microsoft.FSharp.Primitives.Basics.List.allPairs list1 list2
 
         [<CompiledName("CompareWith")>]
-        let inline compareWith (comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
+        let inline compareWith ([<InlineIfLambda>] comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
             let rec loop list1 list2 =
                  match list1, list2 with
                  | head1 :: tail1, head2 :: tail2 ->
