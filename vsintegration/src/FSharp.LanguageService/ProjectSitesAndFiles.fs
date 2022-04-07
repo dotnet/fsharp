@@ -46,6 +46,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
+open Microsoft.VisualStudio.FSharp.Editor
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -174,7 +175,7 @@ let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, pro
                 let fst (a, _, _) = a
                 let snd (_, b, _) = b
                 let mutable errorReporter = 
-                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
+                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", FSharpLanguageName, workspace)
                     Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
 
                 {
