@@ -33,7 +33,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.printfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLine``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLine")>]
-    val printfn: format: Printf.TextWriterFormat<'T> -> 'T
+    val inline printfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format.</summary>
     ///
@@ -43,7 +43,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.eprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToError")>]
-    val eprintf: format: Printf.TextWriterFormat<'T> -> 'T
+    val inline eprintf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format, and add a newline.</summary>
     ///
@@ -53,7 +53,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.eprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToError")>]
-    val eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
+    val inline eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a string using the given format.</summary>
     ///
@@ -63,7 +63,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.sprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThen``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToString")>]
-    val sprintf: format: Printf.StringFormat<'T> -> 'T
+    val inline sprintf: format: Printf.StringFormat<'T> -> 'T
 
     /// <summary>Print to a string buffer and raise an exception with the given
     /// result. Helper printers must return strings.</summary>
@@ -85,7 +85,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.fprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToTextWriter")>]
-    val fprintf: textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
+    val inline fprintf: textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a file using the given format, and add a newline.</summary>
     ///
@@ -96,7 +96,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example>See <c>Printf.fprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    val fprintfn : textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
+    val inline fprintfn : textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Builds a set from a sequence of objects. The objects are indexed using generic comparison.</summary>
     ///

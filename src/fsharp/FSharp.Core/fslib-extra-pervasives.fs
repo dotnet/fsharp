@@ -208,28 +208,28 @@ module ExtraTopLevelOperators =
     // -------------------------------------------------------------------- 
 
     [<CompiledName("PrintFormatToString")>]
-    let sprintf     format = Printf.sprintf     format
+    let inline sprintf format = Printf.sprintf format
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf   format = Printf.failwithf   format
+    let failwithf format = Printf.failwithf format
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (textWriter:TextWriter)  format = Printf.fprintf textWriter  format 
+    let inline fprintf (textWriter:TextWriter) format = Printf.fprintf textWriter format 
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
+    let inline fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
     
     [<CompiledName("PrintFormat")>]
-    let printf format = Printf.printf      format 
+    let inline printf format = Printf.printf format 
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf format = Printf.eprintf     format 
+    let inline eprintf format = Printf.eprintf format 
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn format = Printf.printfn     format 
+    let inline printfn format = Printf.printfn format 
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = Printf.eprintfn    format 
+    let inline eprintfn format = Printf.eprintfn format 
 
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)

@@ -31,7 +31,10 @@ namespace Microsoft.FSharp.Collections
 
               interface IEnumerator with
                   member _.Current = unbox<'T> e.Current :> obj
+
+                  [<DebuggerStepThrough>]
                   member _.MoveNext() = e.MoveNext()
+
                   member _.Reset() = noReset()
 
               interface System.IDisposable with
@@ -54,6 +57,7 @@ namespace Microsoft.FSharp.Collections
                     check started
                     alreadyFinished()
 
+                [<DebuggerStepThrough>]
                 member _.MoveNext() =
                     if not started then started <- true
                     false
@@ -110,6 +114,8 @@ namespace Microsoft.FSharp.Collections
 
             interface IEnumerator with
                 member _.Current = box (getCurr())
+
+                [<DebuggerStepThrough>]
                 member _.MoveNext() =
                     start()
                     match state.Value with
@@ -135,7 +141,10 @@ namespace Microsoft.FSharp.Collections
 
             interface IEnumerator with
                 member _.Current = box v
+
+                [<DebuggerStepThrough>]
                 member _.MoveNext() = if started then false else (started <- true; true)
+
                 member _.Reset() = noReset()
 
             interface System.IDisposable with
@@ -149,7 +158,10 @@ namespace Microsoft.FSharp.Collections
 
               interface IEnumerator with
                   member _.Current = (e :> IEnumerator).Current
+
+                  [<DebuggerStepThrough>]
                   member _.MoveNext() = e.MoveNext()
+
                   member _.Reset() = noReset()
 
               interface System.IDisposable with
@@ -298,6 +310,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             interface IEnumerator with
                 member x.Current = box (x.GetCurrent())
 
+                [<DebuggerStepThrough>]
                 member x.MoveNext() =
                    if not started then started <- true
                    if finished then false
@@ -361,6 +374,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                        interface IEnumerator with
                           member _.Current = box (getCurr())
 
+                          [<DebuggerStepThrough>]
                           member _.MoveNext() =
                                start()
                                let keepGoing = (try guard() with e -> finish (); reraise ()) in
@@ -423,10 +437,16 @@ namespace Microsoft.FSharp.Core.CompilerServices
                      redirectTo <-
                            { new GeneratedSequenceBase<'T>() with
                                  member _.GetFreshEnumerator() = e
+
+                                 [<DebuggerStepThrough>]
                                  member _.GenerateNext(_) = if e.MoveNext() then 1 else 0
+
                                  member _.Close() = try e.Dispose() finally active.Close()
+
                                  member _.CheckClose = true
-                                 member _.LastGenerated = e.Current }
+
+                                 member _.LastGenerated = e.Current
+                           }
                  redirect <- true
                  x.MoveNextImpl()
              | _ (* 0 *)  ->
@@ -439,14 +459,16 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
 
         interface IEnumerator<'T> with
-            member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
+            [<DebuggerStepThrough>]
+            member x.get_Current() = if redirect then redirectTo.LastGenerated else x.LastGenerated
 
         interface IDisposable with
             [<DebuggerStepThrough>]
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
 
         interface IEnumerator with
-            member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
+            [<DebuggerStepThrough>]
+            member x.get_Current() = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
 
             [<DebuggerStepThrough>]
             member x.MoveNext() = x.MoveNextImpl()
