@@ -306,6 +306,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
                 | _ -> defaultTraverse binding })
 
+    member _.TryRangeOfStringInterpolationContainingPos pos =
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.InterpolatedString(range = range) when rangeContainsPos range pos ->
+                    Some range
+                | _ -> defaultTraverse expr })
+
     member _.TryRangeOfExprInYieldOrReturn pos =
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_path, _, defaultTraverse, expr) =

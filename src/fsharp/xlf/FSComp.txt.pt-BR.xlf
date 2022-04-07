@@ -142,6 +142,11 @@
         <target state="translated">consumo de membro da interface padrão</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">descartar o padrão em uso de associação</target>

@@ -5294,16 +5294,19 @@ let foo (a: Foo): bool =
 let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunImmediate
+
     let declarations =
         let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
         match checkedFile.Declarations.[0] with
         | FSharpImplementationFileDeclaration.Entity (_, subDecls) -> subDecls
         | _ -> failwith "unexpected declaration"
+
     let getExpr exprIndex =
         match declarations.[exprIndex] with
         | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(_,_,e) -> e
         | FSharpImplementationFileDeclaration.InitAction e -> e
         | _ -> failwith "unexpected declaration"
+
     match getExpr (declarations.Length - 1) with
     | IfThenElse(UnionCaseTest(AddressOf(UnionCaseGet _),_,uci),
                                 Const(trueValue, _), Const(falseValue, _))
