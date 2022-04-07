@@ -185,51 +185,51 @@ module TestFunctions =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22.exe"	# TestFunction22.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22.fs"|])>]
-    let ``Testfunction22_fs`` compilation =
+    //SOURCE=TestFunction22.fs    SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22.exe"	# TestFunction22.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22.fs"|])>]
+    let ``TestFunction22_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22b.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22b.exe"	# TestFunction22b.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22b.fs"|])>]
-    let ``Testfunction22b_fs`` compilation =
+    //SOURCE=TestFunction22b.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22b.exe"	# TestFunction22b.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22b.fs"|])>]
+    let ``TestFunction22b_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22c.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22c.exe"	# TestFunction22c.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22c.fs"|])>]
-    let ``Testfunction22c_fs`` compilation =
+    //SOURCE=TestFunction22c.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22c.exe"	# TestFunction22c.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22c.fs"|])>]
+    let ``TestFunction22c_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22d.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22d.exe"	# TestFunction22d.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22d.fs"|])>]
-    let ``Testfunction22d_fs`` compilation =
+    //SOURCE=TestFunction22d.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22d.exe"	# TestFunction22d.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22d.fs"|])>]
+    let ``TestFunction22d_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22e.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22e.exe"	# TestFunction22e.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22e.fs"|])>]
-    let ``Testfunction22e_fs`` compilation =
+    //SOURCE=TestFunction22e.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22e.exe"	# TestFunction22e.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22e.fs"|])>]
+    let ``TestFunction22e_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22f.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22f.exe"	# TestFunction22f.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22f.fs"|])>]
-    let ``Testfunction22f_fs`` compilation =
+    //SOURCE=TestFunction22f.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22f.exe"	# TestFunction22f.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22f.fs"|])>]
+    let ``TestFunction22f_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22g.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22g.exe"	# TestFunction22g.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22g.fs"|])>]
-    let ``Testfunction22g_fs`` compilation =
+    //SOURCE=TestFunction22g.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22g.exe"	# TestFunction22g.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22g.fs"|])>]
+    let ``TestFunction22g_fs`` compilation =
         compilation
         |> verifyCompilation
 
-    //SOURCE=Testfunction22h.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22h.exe"	# TestFunction22h.fs -
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Testfunction22h.fs"|])>]
-    let ``Testfunction22h_fs`` compilation =
+    //SOURCE=TestFunction22h.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction22h.exe"	# TestFunction22h.fs -
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TestFunction22h.fs"|])>]
+    let ``TestFunction22h_fs`` compilation =
         compilation
         |> verifyCompilation
 
