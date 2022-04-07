@@ -122,46 +122,6 @@ type private ProjectSiteOfSingleFile(sourceFile) =
 
     override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
 
-/// Manage Storage of FSharpProjectOptions the options for a project
-type internal FSharpProjectOptionsTable () =
-
-    // A table of information about projects, excluding single-file projects.
-    let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpParsingOptions * IProjectSite option * FSharpProjectOptions>>()
-    let commandLineOptions = new ConcurrentDictionary<ProjectId, string[]*string[]*string[]>()
-
-    /// Re-fetch all of the options for everything that references projectId
-    let refreshInfoForProjectsThatReferenceThisProject (projectId:ProjectId) =
-        for KeyValue(otherProjectId, ((referencedProjectIds, _parsingOptions, _site, _options), refresh)) in projectTable.ToArray() do
-           for referencedProjectId in referencedProjectIds do
-              if referencedProjectId = projectId then 
-                  projectTable.[otherProjectId] <- (refresh true, refresh)
-
-    /// Add or update a project in the project table
-    member _.AddOrUpdateProject(projectId:ProjectId, refresh) =
-        projectTable.[projectId] <- (refresh false, refresh)
-        refreshInfoForProjectsThatReferenceThisProject(projectId)
-
-    /// Clear a project from the project table
-    member this.ClearInfoForProject(projectId:ProjectId) =
-        projectTable.TryRemove(projectId) |> ignore
-        refreshInfoForProjectsThatReferenceThisProject projectId
-
-    /// Get the options for a project
-    member this.TryGetOptionsForProject(projectId:ProjectId) =
-        match projectTable.TryGetValue(projectId) with
-        | true, ((_referencedProjects, parsingOptions, site, projectOptions), _) -> Some (parsingOptions, site, projectOptions)
-        | _ -> None
-
-    /// Given a projectId return the most recent set of command line options for it
-    member _.GetCommandLineOptionsWithProjectId(projectId:ProjectId) =
-        match commandLineOptions.TryGetValue projectId with
-        | true, (sources, references, options) -> sources, references, options
-        | _ -> [||], [||], [||]
-
-    /// Store the command line options for a projectId
-    member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
-        commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
-
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource_DEPRECATED objects, IProjectSite objects and FSharpProjectOptions
 [<Sealed>]
@@ -258,11 +218,6 @@ type internal ProjectSitesAndFiles() =
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-
-    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        referencedProvideProjectSites (projectSite, serviceProvider)
-        |> Seq.map (fun (_, _, ps) -> ps.GetProjectSite())
-        |> Seq.toArray
 
     member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
