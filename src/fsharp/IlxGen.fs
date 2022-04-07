@@ -4107,18 +4107,20 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
     let eenv = SetIsInLoop true eenv
-    let finish = CG.GenerateDelayMark cgbuf "while_finish"
+
+    let startTest = CG.GenerateDelayMark cgbuf "startTest"
 
     match spWhile with
     | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
     | DebugPointAtWhile.No -> ()
 
-    let startTest = CG.GenerateMark cgbuf "startTest"
+    CG.EmitInstr cgbuf (pop 0) Push0 (I_br startTest.CodeLabel)
 
-    GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+    let startBody = CG.GenerateMark cgbuf "startBody"
+    GenExpr cenv cgbuf eenv bodyExpr discard
 
-    GenExpr cenv cgbuf eenv bodyExpr (DiscardThen (Br startTest))
-    CG.SetMarkToHere cgbuf finish
+    CG.SetMarkToHere cgbuf startTest
+    GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp (BI_brtrue, startBody.CodeLabel) ]))
 
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
