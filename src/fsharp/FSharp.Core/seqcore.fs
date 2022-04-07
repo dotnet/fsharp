@@ -16,12 +16,16 @@ namespace Microsoft.FSharp.Collections
     module internal IEnumerator =
 
         let noReset() = raise (new System.NotSupportedException(SR.GetString(SR.resetNotSupported)))
-        let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-        let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
-        let check started = if not started then notStarted()
-        let dispose (r : System.IDisposable) = r.Dispose()
 
-        let cast (e : IEnumerator) : IEnumerator<'T> =
+        let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+
+        let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+
+        let check started = if not started then notStarted()
+
+        let dispose (r: System.IDisposable) = r.Dispose()
+
+        let cast (e: IEnumerator) : IEnumerator<'T> =
             { new IEnumerator<'T> with
                   member _.Current = unbox<'T> e.Current
 
@@ -43,12 +47,12 @@ namespace Microsoft.FSharp.Collections
             interface IEnumerator<'T> with
                 member _.Current =
                     check started
-                    (alreadyFinished() : 'T)
+                    alreadyFinished()
 
             interface System.Collections.IEnumerator with
                 member _.Current =
                     check started
-                    (alreadyFinished() : obj)
+                    alreadyFinished()
 
                 member _.MoveNext() =
                     if not started then started <- true
@@ -186,7 +190,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         [<Struct; NoComparison; NoEquality>]
         type internal StructBox<'T when 'T:equality>(value:'T) =
-            member x.Value = value
+            member _.Value = value
+
             static member Comparer =
                 let gcomparer = HashIdentity.Structural<'T>
                 { new IEqualityComparer<StructBox<'T>> with
@@ -351,35 +356,40 @@ namespace Microsoft.FSharp.Core.CompilerServices
             mkConcatSeq
                (mkSeq (fun () ->
                     { new IEnumerator<_> with
-                          member x.Current = getCurr()
+                          member _.Current = getCurr()
+
                        interface IEnumerator with
-                          member x.Current = box (getCurr())
-                          member x.MoveNext() =
+                          member _.Current = box (getCurr())
+
+                          member _.MoveNext() =
                                start()
                                let keepGoing = (try guard() with e -> finish (); reraise ()) in
                                if keepGoing then
                                    curr <- Some(source); true
                                else
                                    finish(); false
-                          member x.Reset() = IEnumerator.noReset()
+                          member _.Reset() = IEnumerator.noReset()
+
                        interface System.IDisposable with
-                          member x.Dispose() = () }))
+                          member _.Dispose() = () }))
 
         let EnumerateThenFinally (source: seq<'T>) (compensation: unit -> unit)  =
             (FinallyEnumerable(compensation, (fun () -> source)) :> seq<_>)
 
         let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
             { new obj() with
-                  member x.ToString() = "<published event>"
+                  member _.ToString() = "<published event>"
+
               interface IEvent<'Delegate,'Args> with
-                 member x.AddHandler(h) = addHandler h
-                 member x.RemoveHandler(h) = removeHandler h
+                 member _.AddHandler(h) = addHandler h
+                 member _.RemoveHandler(h) = removeHandler h
+
               interface System.IObservable<'Args> with
-                 member x.Subscribe(r:IObserver<'Args>) =
+                 member _.Subscribe(r:IObserver<'Args>) =
                      let h = createHandler (fun _ args -> r.OnNext(args))
                      addHandler h
                      { new System.IDisposable with
-                          member x.Dispose() = removeHandler h } }
+                          member _.Dispose() = removeHandler h } }
 
         let inline SetFreshConsTail cons tail = cons.( :: ).1 <- tail
 
@@ -387,16 +397,16 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     [<AbstractClass>]
     type GeneratedSequenceBase<'T>() =
-        let mutable redirectTo : GeneratedSequenceBase<'T> = Unchecked.defaultof<_>
-        let mutable redirect : bool = false
+        let mutable redirectTo: GeneratedSequenceBase<'T> = Unchecked.defaultof<_>
+        let mutable redirect: bool = false
 
-        abstract GetFreshEnumerator : unit -> IEnumerator<'T>
-        abstract GenerateNext : result:byref<IEnumerable<'T>> -> int // 0 = Stop, 1 = Yield, 2 = Goto
+        abstract GetFreshEnumerator: unit -> IEnumerator<'T>
+        abstract GenerateNext: result:byref<IEnumerable<'T>> -> int // 0 = Stop, 1 = Yield, 2 = Goto
         abstract Close: unit -> unit
         abstract CheckClose: bool
         abstract LastGenerated : 'T
 
-        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
+        [<DebuggerStepThrough>]
         member x.MoveNextImpl() =
              let active =
                  if redirect then redirectTo
@@ -412,11 +422,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
                  | e ->
                      redirectTo <-
                            { new GeneratedSequenceBase<'T>() with
-                                 member x.GetFreshEnumerator() = e
-                                 member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
-                                 member x.Close() = try e.Dispose() finally active.Close()
-                                 member x.CheckClose = true
-                                 member x.LastGenerated = e.Current }
+                                 member _.GetFreshEnumerator() = e
+                                 member _.GenerateNext(_) = if e.MoveNext() then 1 else 0
+                                 member _.Close() = try e.Dispose() finally active.Close()
+                                 member _.CheckClose = true
+                                 member _.LastGenerated = e.Current }
                  redirect <- true
                  x.MoveNextImpl()
              | _ (* 0 *)  ->
@@ -432,12 +442,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
 
         interface IDisposable with
+            [<DebuggerStepThrough>]
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
 
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
 
-            //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
+            [<DebuggerStepThrough>]
             member x.MoveNext() = x.MoveNextImpl()
 
             member _.Reset() = raise <| new System.NotSupportedException()

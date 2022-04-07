@@ -3418,74 +3418,107 @@ namespace Microsoft.FSharp.Core
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(converter : Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(converter : Func<_,_>) : ('T -> 'Res) =
+            (fun t -> converter.Invoke(t))
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(func : ('T -> 'Res) ) =  new Func<'T,'Res>(func)
+        static member op_Implicit(func : ('T -> 'Res) ) =
+            new Func<'T,'Res>(func)
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(f : Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member op_Implicit(f : Converter<_,_>) : ('T -> 'Res) =
+            (fun t -> f.Invoke(t))
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
+        static member op_Implicit (func : ('T -> 'Res) ) =
+            new Converter<'T,'Res>(func)
 
-        static member FromConverter (converter: Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member FromConverter (converter: Converter<_,_>) : ('T -> 'Res) =
+            (fun t -> converter.Invoke(t))
 
-        static member ToConverter (func: ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
+        static member ToConverter (func: ('T -> 'Res) ) =
+            new Converter<'T,'Res>(func)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res) =
+            OptimizedClosures.invokeFast2(func, arg1, arg2) 
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3) =
+            OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4) =
+            OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) =
+            OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
 
-        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
+        static member inline ToFSharpFunc (action: Action<_>) =
+            (fun t -> action.Invoke(t))
 
-        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+        static member inline ToFSharpFunc (converter : Converter<_,_>) =
+            (fun t -> converter.Invoke(t))
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
-        static member  inline ToFSharpFunc (converter: Func<_, _>) = (fun t -> converter.Invoke(t))
+        static member inline ToFSharpFunc (converter: Func<_, _>) =
+            (fun t -> converter.Invoke(t))
 
-        static member  inline FromFunc (func: Func<_>) = (fun () -> func.Invoke())
+        static member inline FromFunc (func: Func<_>) =
+            (fun () -> func.Invoke())
 
-        static member  inline FromFunc (func: Func<_, _>) = (fun t -> func.Invoke(t))
+        static member inline FromFunc (func: Func<_, _>) =
+            (fun t -> func.Invoke(t))
 
-        static member  inline FromFunc (func: Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+        static member inline FromFunc (func: Func<_, _, _>) =
+            (fun t1 t2 -> func.Invoke(t1,t2))
 
-        static member  inline FromFunc (func: Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+        static member inline FromFunc (func: Func<_, _, _, _>) =
+            (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
 
-        static member  inline FromFunc (func: Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+        static member inline FromFunc (func: Func<_, _, _, _, _>) =
+            (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromFunc (func: Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+        static member inline FromFunc (func: Func<_, _, _, _, _, _>) =
+            (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
 
-        static member  inline FromAction (action: Action) = (fun () -> action.Invoke())
+        static member inline FromAction (action: Action) =
+            (fun () -> action.Invoke())
 
-        static member  inline FromAction (action: Action<_>) = (fun t -> action.Invoke(t))
+        static member inline FromAction (action: Action<_>) =
+            (fun t -> action.Invoke(t))
 
-        static member  inline FromAction (action: Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+        static member inline FromAction (action: Action<_, _>) =
+            (fun t1 t2 -> action.Invoke(t1,t2))
 
-        static member  inline FromAction (action: Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+        static member inline FromAction (action: Action<_, _, _>) =
+            (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
 
-        static member  inline FromAction (action: Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+        static member inline FromAction (action: Action<_, _, _, _>) =
+            (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromAction (action: Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+        static member inline FromAction (action: Action<_, _, _, _, _>) =
+            (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) =
+            (fun a b -> func (a, b))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) =
+            (fun a b c -> func (a, b, c))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) =
+            (fun a b c d -> func (a, b, c, d))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) =
+            (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs

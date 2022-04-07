@@ -141,12 +141,12 @@ type internal FSharpProjectOptionsTable () =
         refreshInfoForProjectsThatReferenceThisProject(projectId)
 
     /// Clear a project from the project table
-    member this.ClearInfoForProject(projectId:ProjectId) =
+    member _.ClearInfoForProject(projectId:ProjectId) =
         projectTable.TryRemove(projectId) |> ignore
         refreshInfoForProjectsThatReferenceThisProject projectId
 
     /// Get the options for a project
-    member this.TryGetOptionsForProject(projectId:ProjectId) =
+    member _.TryGetOptionsForProject(projectId:ProjectId) =
         match projectTable.TryGetValue(projectId) with
         | true, ((_referencedProjects, parsingOptions, site, projectOptions), _) -> Some (parsingOptions, site, projectOptions)
         | _ -> None
@@ -158,7 +158,7 @@ type internal FSharpProjectOptionsTable () =
         | _ -> [||], [||], [||]
 
     /// Store the command line options for a projectId
-    member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
+    member _.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
         commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
 
 
