@@ -201,50 +201,50 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let vardTy = mkTyparTy vard
   let vareTy = mkTyparTy vare
 
-  let v_int_tcr        = mk_MFCore_tcref fslibCcu "int"
-  let v_nativeint_tcr  = mk_MFCore_tcref fslibCcu "nativeint"
+  let v_int_tcr  = mk_MFCore_tcref fslibCcu "int"
+  let v_nativeint_tcr = mk_MFCore_tcref fslibCcu "nativeint"
   let v_unativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint"
-  let v_int32_tcr      = mk_MFCore_tcref fslibCcu "int32"
-  let v_int16_tcr      = mk_MFCore_tcref fslibCcu "int16"
-  let v_int64_tcr      = mk_MFCore_tcref fslibCcu "int64"
-  let v_uint16_tcr     = mk_MFCore_tcref fslibCcu "uint16"
-  let v_uint32_tcr     = mk_MFCore_tcref fslibCcu "uint32"
-  let v_uint64_tcr     = mk_MFCore_tcref fslibCcu "uint64"
-  let v_sbyte_tcr      = mk_MFCore_tcref fslibCcu "sbyte"
-  let v_decimal_tcr    = mk_MFCore_tcref fslibCcu "decimal"
-  let v_pdecimal_tcr   = mk_MFCore_tcref fslibCcu "decimal`1"
-  let v_byte_tcr       = mk_MFCore_tcref fslibCcu "byte"
-  let v_bool_tcr       = mk_MFCore_tcref fslibCcu "bool"
-  let v_string_tcr     = mk_MFCore_tcref fslibCcu "string"
-  let v_obj_tcr        = mk_MFCore_tcref fslibCcu "obj"
+  let v_int32_tcr = mk_MFCore_tcref fslibCcu "int32"
+  let v_int16_tcr = mk_MFCore_tcref fslibCcu "int16"
+  let v_int64_tcr = mk_MFCore_tcref fslibCcu "int64"
+  let v_uint16_tcr = mk_MFCore_tcref fslibCcu "uint16"
+  let v_uint32_tcr = mk_MFCore_tcref fslibCcu "uint32"
+  let v_uint64_tcr = mk_MFCore_tcref fslibCcu "uint64"
+  let v_sbyte_tcr = mk_MFCore_tcref fslibCcu "sbyte"
+  let v_decimal_tcr = mk_MFCore_tcref fslibCcu "decimal"
+  let v_pdecimal_tcr = mk_MFCore_tcref fslibCcu "decimal`1"
+  let v_byte_tcr = mk_MFCore_tcref fslibCcu "byte"
+  let v_bool_tcr = mk_MFCore_tcref fslibCcu "bool"
+  let v_string_tcr = mk_MFCore_tcref fslibCcu "string"
+  let v_obj_tcr  = mk_MFCore_tcref fslibCcu "obj"
   let v_unit_tcr_canon = mk_MFCore_tcref fslibCcu "Unit"
-  let v_unit_tcr_nice  = mk_MFCore_tcref fslibCcu "unit"
-  let v_exn_tcr        = mk_MFCore_tcref fslibCcu "exn"
-  let v_char_tcr       = mk_MFCore_tcref fslibCcu "char"
-  let v_float_tcr      = mk_MFCore_tcref fslibCcu "float"
-  let v_float32_tcr    = mk_MFCore_tcref fslibCcu "float32"
-  let v_pfloat_tcr      = mk_MFCore_tcref fslibCcu "float`1"
-  let v_pfloat32_tcr    = mk_MFCore_tcref fslibCcu "float32`1"
-  let v_pint_tcr        = mk_MFCore_tcref fslibCcu "int`1"
-  let v_pint8_tcr       = mk_MFCore_tcref fslibCcu "sbyte`1"
-  let v_pint16_tcr      = mk_MFCore_tcref fslibCcu "int16`1"
-  let v_pint64_tcr      = mk_MFCore_tcref fslibCcu "int64`1"
-  let v_pnativeint_tcr  = mk_MFCore_tcref fslibCcu "nativeint`1"
-  let v_puint_tcr       = mk_MFCore_tcref fslibCcu "uint`1"
-  let v_puint8_tcr      = mk_MFCore_tcref fslibCcu "byte`1"
-  let v_puint16_tcr     = mk_MFCore_tcref fslibCcu "uint16`1"
-  let v_puint64_tcr     = mk_MFCore_tcref fslibCcu "uint64`1"
+  let v_unit_tcr_nice = mk_MFCore_tcref fslibCcu "unit"
+  let v_exn_tcr  = mk_MFCore_tcref fslibCcu "exn"
+  let v_char_tcr = mk_MFCore_tcref fslibCcu "char"
+  let v_float_tcr = mk_MFCore_tcref fslibCcu "float"
+  let v_float32_tcr = mk_MFCore_tcref fslibCcu "float32"
+  let v_pfloat_tcr = mk_MFCore_tcref fslibCcu "float`1"
+  let v_pfloat32_tcr = mk_MFCore_tcref fslibCcu "float32`1"
+  let v_pint_tcr  = mk_MFCore_tcref fslibCcu "int`1"
+  let v_pint8_tcr = mk_MFCore_tcref fslibCcu "sbyte`1"
+  let v_pint16_tcr = mk_MFCore_tcref fslibCcu "int16`1"
+  let v_pint64_tcr = mk_MFCore_tcref fslibCcu "int64`1"
+  let v_pnativeint_tcr = mk_MFCore_tcref fslibCcu "nativeint`1"
+  let v_puint_tcr = mk_MFCore_tcref fslibCcu "uint`1"
+  let v_puint8_tcr = mk_MFCore_tcref fslibCcu "byte`1"
+  let v_puint16_tcr = mk_MFCore_tcref fslibCcu "uint16`1"
+  let v_puint64_tcr = mk_MFCore_tcref fslibCcu "uint64`1"
   let v_punativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint`1"
-  let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
-  let v_byref2_tcr      = mk_MFCore_tcref fslibCcu "byref`2"
-  let v_outref_tcr      = mk_MFCore_tcref fslibCcu "outref`1"
-  let v_inref_tcr      = mk_MFCore_tcref fslibCcu "inref`1"
-  let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
-  let v_voidptr_tcr      = mk_MFCore_tcref fslibCcu "voidptr"
-  let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
-  let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
+  let v_byref_tcr = mk_MFCore_tcref fslibCcu "byref`1"
+  let v_byref2_tcr = mk_MFCore_tcref fslibCcu "byref`2"
+  let v_outref_tcr = mk_MFCore_tcref fslibCcu "outref`1"
+  let v_inref_tcr = mk_MFCore_tcref fslibCcu "inref`1"
+  let v_nativeptr_tcr = mk_MFCore_tcref fslibCcu "nativeptr`1"
+  let v_voidptr_tcr = mk_MFCore_tcref fslibCcu "voidptr"
+  let v_ilsigptr_tcr = mk_MFCore_tcref fslibCcu "ilsigptr`1"
+  let v_fastFunc_tcr = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
-  let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
+  let v_refcell_tcr_nice = mk_MFCore_tcref fslibCcu "ref`1"
   let v_mfe_tcr = mk_MFCore_tcref fslibCcu "MatchFailureException"
 
   let dummyAssemblyNameCarryingUsefulErrorInformation path typeName =
@@ -300,28 +300,28 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let lazy_tcr = findSysTyconRef sys "Lazy`1"
   let v_fslib_IEvent2_tcr        = mk_MFControl_tcref fslibCcu "IEvent`2"
-  let v_tcref_IQueryable      = findSysTyconRef sysLinq "IQueryable`1"
-  let v_tcref_IObservable      = findSysTyconRef sys "IObservable`1"
-  let v_tcref_IObserver        = findSysTyconRef sys "IObserver`1"
+  let v_tcref_IQueryable = findSysTyconRef sysLinq "IQueryable`1"
+  let v_tcref_IObservable = findSysTyconRef sys "IObservable`1"
+  let v_tcref_IObserver = findSysTyconRef sys "IObserver`1"
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
 
-  let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
+  let v_option_tcr_nice = mk_MFCore_tcref fslibCcu "option`1"
   let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
   let v_list_tcr_canon        = mk_MFCollections_tcref fslibCcu "List`1"
   let v_list_tcr_nice            = mk_MFCollections_tcref fslibCcu "list`1"
   let v_lazy_tcr_nice            = mk_MFControl_tcref fslibCcu "Lazy`1"
   let v_seq_tcr                  = mk_MFCollections_tcref fslibCcu "seq`1"
-  let v_format_tcr               = mk_MFCore_tcref     fslibCcu "PrintfFormat`5"
-  let v_format4_tcr              = mk_MFCore_tcref     fslibCcu "PrintfFormat`4"
-  let v_date_tcr                 = findSysTyconRef sys "DateTime"
-  let v_IEnumerable_tcr          = findSysTyconRef sysGenerics "IEnumerable`1"
-  let v_IEnumerator_tcr          = findSysTyconRef sysGenerics "IEnumerator`1"
-  let v_System_Attribute_tcr     = findSysTyconRef sys "Attribute"
+  let v_format_tcr         = mk_MFCore_tcref     fslibCcu "PrintfFormat`5"
+  let v_format4_tcr        = mk_MFCore_tcref     fslibCcu "PrintfFormat`4"
+  let v_date_tcr          = findSysTyconRef sys "DateTime"
+  let v_IEnumerable_tcr   = findSysTyconRef sysGenerics "IEnumerable`1"
+  let v_IEnumerator_tcr   = findSysTyconRef sysGenerics "IEnumerator`1"
+  let v_System_Attribute_tcr = findSysTyconRef sys "Attribute"
   let v_expr_tcr                 = mk_MFQuotations_tcref fslibCcu "Expr`1"
   let v_raw_expr_tcr             = mk_MFQuotations_tcref fslibCcu "Expr"
   let v_query_builder_tcref         = mk_MFLinq_tcref fslibCcu "QueryBuilder"
   let v_querySource_tcr         = mk_MFLinq_tcref fslibCcu "QuerySource`2"
-  let v_linqExpression_tcr     = findSysTyconRef ["System";"Linq";"Expressions"] "Expression`1"
+  let v_linqExpression_tcr = findSysTyconRef ["System";"Linq";"Expressions"] "Expression`1"
 
   let v_il_arr_tcr_map =
       Array.init 32 (fun idx ->
@@ -455,103 +455,102 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu FSharpLib.ControlPathArray
   let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu FSharpLib.NativeInteropPath
 
-  let fslib_MFLanguagePrimitives_nleref        = mkNestedNonLocalEntityRef fslib_MFCore_nleref "LanguagePrimitives"
-  let fslib_MFIntrinsicOperators_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicOperators"
-  let fslib_MFIntrinsicFunctions_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicFunctions"
-  let fslib_MFHashCompare_nleref               = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "HashCompare"
-  let fslib_MFOperators_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "Operators"
-  let fslib_MFByRefKinds_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
-  let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
-  let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
-  let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
-  let fslib_MFExtraTopLevelOperators_nleref    = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
-  let fslib_MFNullableOperators_nleref         = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
-  let fslib_MFQueryRunExtensions_nleref              = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
-  let fslib_MFQueryRunExtensionsLowPriority_nleref   = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
-  let fslib_MFQueryRunExtensionsHighPriority_nleref  = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "HighPriority"
+  let fslib_MFLanguagePrimitives_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "LanguagePrimitives"
+  let fslib_MFIntrinsicOperators_nleref = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicOperators"
+  let fslib_MFIntrinsicFunctions_nleref = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicFunctions"
+  let fslib_MFHashCompare_nleref = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "HashCompare"
+  let fslib_MFOperators_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "Operators"
+  let fslib_MFByRefKinds_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
+  let fslib_MFOperatorIntrinsics_nleref = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
+  let fslib_MFOperatorsUnchecked_nleref = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
+  let fslib_MFOperatorsChecked_nleref = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
+  let fslib_MFExtraTopLevelOperators_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ExtraTopLevelOperators"
+  let fslib_MFNullableOperators_nleref = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "NullableOperators"
+  let fslib_MFQueryRunExtensions_nleref = mkNestedNonLocalEntityRef fslib_MFLinq_nleref "QueryRunExtensions"
+  let fslib_MFQueryRunExtensionsLowPriority_nleref = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "LowPriority"
+  let fslib_MFQueryRunExtensionsHighPriority_nleref = mkNestedNonLocalEntityRef fslib_MFQueryRunExtensions_nleref "HighPriority"
 
-  let fslib_MFPrintfModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
-  let fslib_MFSeqModule_nleref                 = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SeqModule"
-  let fslib_MFListModule_nleref                = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ListModule"
-  let fslib_MFArrayModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ArrayModule"
-  let fslib_MFArray2DModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array2DModule"
-  let fslib_MFArray3DModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array3DModule"
-  let fslib_MFArray4DModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array4DModule"
-  let fslib_MFSetModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SetModule"
-  let fslib_MFMapModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "MapModule"
-  let fslib_MFStringModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "StringModule"
-  let fslib_MFNativePtrModule_nleref               = mkNestedNonLocalEntityRef fslib_MFNativeInterop_nleref "NativePtrModule"
-  let fslib_MFOptionModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "OptionModule"
-  let fslib_MFStateMachineHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "StateMachineHelpers"
-  let fslib_MFRuntimeHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeHelpers"
-  let fslib_MFQuotations_nleref                = mkNestedNonLocalEntityRef fslib_MF_nleref "Quotations"
+  let fslib_MFPrintfModule_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "PrintfModule"
+  let fslib_MFSeqModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SeqModule"
+  let fslib_MFListModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ListModule"
+  let fslib_MFArrayModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "ArrayModule"
+  let fslib_MFArray2DModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array2DModule"
+  let fslib_MFArray3DModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array3DModule"
+  let fslib_MFArray4DModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "Array4DModule"
+  let fslib_MFSetModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SetModule"
+  let fslib_MFMapModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "MapModule"
+  let fslib_MFStringModule_nleref = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "StringModule"
+  let fslib_MFNativePtrModule_nleref = mkNestedNonLocalEntityRef fslib_MFNativeInterop_nleref "NativePtrModule"
+  let fslib_MFOptionModule_nleref = mkNestedNonLocalEntityRef fslib_MFCore_nleref "OptionModule"
+  let fslib_MFStateMachineHelpers_nleref = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "StateMachineHelpers"
+  let fslib_MFRuntimeHelpers_nleref = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeHelpers"
+  let fslib_MFQuotations_nleref = mkNestedNonLocalEntityRef fslib_MF_nleref "Quotations"
 
-  let fslib_MFLinqRuntimeHelpersQuotationConverter_nleref        = mkNestedNonLocalEntityRef fslib_MFLinqRuntimeHelpers_nleref "LeafExpressionConverter"
-  let fslib_MFLazyExtensions_nleref            = mkNestedNonLocalEntityRef fslib_MFControl_nleref "LazyExtensions"
+  let fslib_MFLinqRuntimeHelpersQuotationConverter_nleref = mkNestedNonLocalEntityRef fslib_MFLinqRuntimeHelpers_nleref "LeafExpressionConverter"
+  let fslib_MFLazyExtensions_nleref = mkNestedNonLocalEntityRef fslib_MFControl_nleref "LazyExtensions"
 
-  let v_ref_tuple1_tcr      = findSysTyconRef sys "Tuple`1"
-  let v_ref_tuple2_tcr      = findSysTyconRef sys "Tuple`2"
-  let v_ref_tuple3_tcr      = findSysTyconRef sys "Tuple`3"
-  let v_ref_tuple4_tcr      = findSysTyconRef sys "Tuple`4"
-  let v_ref_tuple5_tcr      = findSysTyconRef sys "Tuple`5"
-  let v_ref_tuple6_tcr      = findSysTyconRef sys "Tuple`6"
-  let v_ref_tuple7_tcr      = findSysTyconRef sys "Tuple`7"
-  let v_ref_tuple8_tcr      = findSysTyconRef sys "Tuple`8"
-  let v_struct_tuple1_tcr      = findSysTyconRef sys "ValueTuple`1"
-  let v_struct_tuple2_tcr      = findSysTyconRef sys "ValueTuple`2"
-  let v_struct_tuple3_tcr      = findSysTyconRef sys "ValueTuple`3"
-  let v_struct_tuple4_tcr      = findSysTyconRef sys "ValueTuple`4"
-  let v_struct_tuple5_tcr      = findSysTyconRef sys "ValueTuple`5"
-  let v_struct_tuple6_tcr      = findSysTyconRef sys "ValueTuple`6"
-  let v_struct_tuple7_tcr      = findSysTyconRef sys "ValueTuple`7"
-  let v_struct_tuple8_tcr      = findSysTyconRef sys "ValueTuple`8"
+  let v_ref_tuple1_tcr = findSysTyconRef sys "Tuple`1"
+  let v_ref_tuple2_tcr = findSysTyconRef sys "Tuple`2"
+  let v_ref_tuple3_tcr = findSysTyconRef sys "Tuple`3"
+  let v_ref_tuple4_tcr = findSysTyconRef sys "Tuple`4"
+  let v_ref_tuple5_tcr = findSysTyconRef sys "Tuple`5"
+  let v_ref_tuple6_tcr = findSysTyconRef sys "Tuple`6"
+  let v_ref_tuple7_tcr = findSysTyconRef sys "Tuple`7"
+  let v_ref_tuple8_tcr = findSysTyconRef sys "Tuple`8"
+  let v_struct_tuple1_tcr = findSysTyconRef sys "ValueTuple`1"
+  let v_struct_tuple2_tcr = findSysTyconRef sys "ValueTuple`2"
+  let v_struct_tuple3_tcr = findSysTyconRef sys "ValueTuple`3"
+  let v_struct_tuple4_tcr = findSysTyconRef sys "ValueTuple`4"
+  let v_struct_tuple5_tcr = findSysTyconRef sys "ValueTuple`5"
+  let v_struct_tuple6_tcr = findSysTyconRef sys "ValueTuple`6"
+  let v_struct_tuple7_tcr = findSysTyconRef sys "ValueTuple`7"
+  let v_struct_tuple8_tcr = findSysTyconRef sys "ValueTuple`8"
 
-  let v_choice2_tcr     = mk_MFCore_tcref fslibCcu "Choice`2"
-  let v_choice3_tcr     = mk_MFCore_tcref fslibCcu "Choice`3"
-  let v_choice4_tcr     = mk_MFCore_tcref fslibCcu "Choice`4"
-  let v_choice5_tcr     = mk_MFCore_tcref fslibCcu "Choice`5"
-  let v_choice6_tcr     = mk_MFCore_tcref fslibCcu "Choice`6"
-  let v_choice7_tcr     = mk_MFCore_tcref fslibCcu "Choice`7"
+  let v_choice2_tcr = mk_MFCore_tcref fslibCcu "Choice`2"
+  let v_choice3_tcr = mk_MFCore_tcref fslibCcu "Choice`3"
+  let v_choice4_tcr = mk_MFCore_tcref fslibCcu "Choice`4"
+  let v_choice5_tcr = mk_MFCore_tcref fslibCcu "Choice`5"
+  let v_choice6_tcr = mk_MFCore_tcref fslibCcu "Choice`6"
+  let v_choice7_tcr = mk_MFCore_tcref fslibCcu "Choice`7"
   let tyconRefEq x y = primEntityRefEq compilingFslib fslibCcu  x y
 
   let v_suppressed_types =
-    [ mk_MFCore_tcref fslibCcu "Option`1";
-      mk_MFCore_tcref fslibCcu "Ref`1";
-      mk_MFCore_tcref fslibCcu "FSharpTypeFunc";
-      mk_MFCore_tcref fslibCcu "FSharpFunc`2";
-      mk_MFCore_tcref fslibCcu "Unit" ]
+      [ mk_MFCore_tcref fslibCcu "Option`1";
+        mk_MFCore_tcref fslibCcu "Ref`1";
+        mk_MFCore_tcref fslibCcu "FSharpTypeFunc";
+        mk_MFCore_tcref fslibCcu "FSharpFunc`2";
+        mk_MFCore_tcref fslibCcu "Unit" ]
 
   let v_knownFSharpCoreModules =
-     dict [ for nleref in [ fslib_MFLanguagePrimitives_nleref
-                            fslib_MFIntrinsicOperators_nleref
-                            fslib_MFIntrinsicFunctions_nleref
-                            fslib_MFHashCompare_nleref
-                            fslib_MFOperators_nleref
-                            fslib_MFOperatorIntrinsics_nleref
-                            fslib_MFOperatorsUnchecked_nleref
-                            fslib_MFOperatorsChecked_nleref
-                            fslib_MFExtraTopLevelOperators_nleref
-                            fslib_MFNullableOperators_nleref
-                            fslib_MFQueryRunExtensions_nleref
-                            fslib_MFQueryRunExtensionsLowPriority_nleref
-                            fslib_MFQueryRunExtensionsHighPriority_nleref
-
-                            fslib_MFPrintfModule_nleref
-                            fslib_MFSeqModule_nleref
-                            fslib_MFListModule_nleref
-                            fslib_MFArrayModule_nleref   
-                            fslib_MFArray2DModule_nleref   
-                            fslib_MFArray3DModule_nleref   
-                            fslib_MFArray4DModule_nleref   
-                            fslib_MFSetModule_nleref   
-                            fslib_MFMapModule_nleref   
-                            fslib_MFStringModule_nleref   
-                            fslib_MFNativePtrModule_nleref   
-                            fslib_MFOptionModule_nleref   
-                            fslib_MFStateMachineHelpers_nleref 
-                            fslib_MFRuntimeHelpers_nleref ] do
-
-                    yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
+      [ fslib_MFLanguagePrimitives_nleref
+        fslib_MFIntrinsicOperators_nleref
+        fslib_MFIntrinsicFunctions_nleref
+        fslib_MFHashCompare_nleref
+        fslib_MFOperators_nleref
+        fslib_MFOperatorIntrinsics_nleref
+        fslib_MFOperatorsUnchecked_nleref
+        fslib_MFOperatorsChecked_nleref
+        fslib_MFExtraTopLevelOperators_nleref
+        fslib_MFNullableOperators_nleref
+        fslib_MFQueryRunExtensions_nleref
+        fslib_MFQueryRunExtensionsLowPriority_nleref
+        fslib_MFQueryRunExtensionsHighPriority_nleref
+        fslib_MFPrintfModule_nleref
+        fslib_MFSeqModule_nleref
+        fslib_MFListModule_nleref
+        fslib_MFArrayModule_nleref   
+        fslib_MFArray2DModule_nleref   
+        fslib_MFArray3DModule_nleref   
+        fslib_MFArray4DModule_nleref   
+        fslib_MFSetModule_nleref   
+        fslib_MFMapModule_nleref   
+        fslib_MFStringModule_nleref   
+        fslib_MFNativePtrModule_nleref   
+        fslib_MFOptionModule_nleref   
+        fslib_MFStateMachineHelpers_nleref 
+        fslib_MFRuntimeHelpers_nleref ]
+        |> List.map (fun nleref -> nleref.LastItemMangledName, ERefNonLocal nleref) 
+        |> dict
 
   let tryDecodeTupleTy tupInfo l =
       match l with
@@ -762,7 +761,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            , None                 , Some "Singleton"              , [vara],     ([[varaTy]], mkSeqTy varaTy))
   let v_seq_empty_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "empty"                                , None                 , Some "Empty"                  , [vara],     ([], mkSeqTy varaTy))
   let v_new_format_info            = makeIntrinsicValRef(fslib_MFCore_nleref,                                  ".ctor"                                , Some "PrintfFormat`5", None                          , [vara;varb;varc;vard;vare], ([[v_string_ty]], mkPrintfFormatTy varaTy varbTy varcTy vardTy vareTy))
-  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
+  let v_sprintf_info               = makeIntrinsicValRef(fslib_MFPrintfModule_nleref,                          "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))
   let v_lazy_force_info            = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 

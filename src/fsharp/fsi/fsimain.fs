@@ -110,11 +110,11 @@ type WinFormsEventLoop() =
 
 /// Try to set the unhandled exception mode of System.Windows.Forms
 let internal TrySetUnhandledExceptionMode() =  
-    let i = ref 0 // stop inlining 
+    let mutable i = 0 // stop inlining 
     try 
       Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException) 
     with _ -> 
-      decr i;()
+      i <- i - 1
 
 #endif
 
