@@ -142,7 +142,14 @@ type CompilationUtil private () =
                 | _ -> LanguageVersion.Default
 
         let tf = defaultArg tf TargetFramework.NetStandard20
-        let source = source.GetSourceText |> Option.defaultValue ""
+        let source =
+            match source.GetSourceText with
+            | Some text ->
+                // In memory source file copy it to the build directory
+                text
+            | None ->
+                // On Disk file
+                File.ReadAllText(source.GetSourceFileName)
         let name = defaultArg name (Guid.NewGuid().ToString ())
         let additionalReferences = defaultArg additionalReferences ImmutableArray<PortableExecutableReference>.Empty
         let references = TargetFrameworkUtil.getReferences tf

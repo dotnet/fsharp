@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module Structure =
 
     //# This file is needed by the rest of the suite. It is not really a testcase...
-    //	SOURCE=CodeGenHelper.fs       SCFLAGS="-a -g"			# CodeGenHelper.fs
+    // SOURCE=CodeGenHelper.fs       SCFLAGS="-a -g"      # CodeGenHelper.fs
     let codeGenHelperLibrary =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "CodeGenHelper.fs")))
         |> withName "CodeGenHelper"
@@ -78,6 +78,17 @@ module Structure =
     let ``Delegates01_fs`` compilation =
         compilation
         |> verifyExecution
+
+    // SOURCE=ReadOnlyStructFromLib.fs SCFLAGS="-r:ReadWriteLib.dll" PRECMD="\$CSC_PIPE /target:library /reference:System.Core.dll ReadWriteLib.cs"	# ReadOnlyStructFromLib.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReadOnlyStructFromLib.fs"|])>]
+    let ``ReadOnlyStructFromLib_fs`` compilation =
+        let readWriteLib =
+            CSharpFromPath (Path.Combine(__SOURCE_DIRECTORY__, "ReadWriteLib.cs"))
+            |> withName "ReadWriteLib"
+
+        compilation
+        |> withReferences([readWriteLib])
+        |> verifyCompilation
 
     // SOURCE=DiscUnionCodeGen1.fs SCFLAGS="-r:CodeGenHelper.dll"       # DiscUnionCodeGen1.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DiscUnionCodeGen1.fs"|])>]

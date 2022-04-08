@@ -1,7 +1,0 @@
-# Helper assembly - not really a testcase
-CodeGenHelper.dll
-CodeGenHelper.pdb
-# C# library that defines readonly struct to be used from F#
-ReadWriteLib.dll
-# Driver for checking inlining of various calls, not a testcase
-DoNotInlineX.exe
