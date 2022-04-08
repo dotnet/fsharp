@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Compile Include="EmittedIL\Literals.fs" />
-    <Compile Include="EmittedIL\Misc.fs" />
+    <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
@@ -35,6 +35,7 @@
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
+    <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
     <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
@@ -45,6 +46,7 @@
     <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
     <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
+    <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
