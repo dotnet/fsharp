@@ -2393,7 +2393,8 @@ module internal MagicAssemblyResolution =
 // Reading stdin
 //----------------------------------------------------------------------------
 
-type FsiStdinLexerProvider (
+type FsiStdinLexerProvider
+    (
         tcConfigB, fsiStdinSyphon,
         fsiConsoleInput: FsiConsoleInput,
         fsiConsoleOutput: FsiConsoleOutput,
@@ -2480,7 +2481,8 @@ type FsiStdinLexerProvider (
 // It might be simpler if it ran on the parser thread.
 //----------------------------------------------------------------------------
 
-type FsiInteractionProcessor (
+type FsiInteractionProcessor
+    (
         fsi: FsiEvaluationSessionHostConfig,
         tcConfigB,
         fsiOptions: FsiCommandLineOptions,

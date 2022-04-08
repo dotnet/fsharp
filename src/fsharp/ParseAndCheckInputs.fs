@@ -835,7 +835,8 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let CheckOneInput(
+let CheckOneInput
+    (
         checkForErrors,
         tcConfig: TcConfig,
         tcImports: TcImports,

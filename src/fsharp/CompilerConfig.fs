@@ -527,7 +527,8 @@ type TcConfigBuilder =
         }
         |> Seq.distinct
 
-    static member CreateNew(
+    static member CreateNew
+        (
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
             reduceMemoryUsage,

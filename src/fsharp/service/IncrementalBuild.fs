@@ -1377,25 +1377,26 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateIncrementalBuilderForProjectOptions(
-        legacyReferenceResolver,
-        defaultFSharpBinariesDir,
-        frameworkTcImportsCache: FrameworkImportsCache,
-        loadClosureOpt: LoadClosure option,
-        sourceFiles: string list,
-        commandLineArgs: string list,
-        projectReferences,
-        projectDirectory,
-        useScriptResolutionRules,
-        keepAssemblyContents,
-        keepAllBackgroundResolutions,
-        tryGetMetadataSnapshot,
-        suggestNamesForErrors,
-        keepAllBackgroundSymbolUses,
-        enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking: bool,
-        dependencyProvider
-    ) =
+    static member TryCreateIncrementalBuilderForProjectOptions
+        (
+            legacyReferenceResolver,
+            defaultFSharpBinariesDir,
+            frameworkTcImportsCache: FrameworkImportsCache,
+            loadClosureOpt: LoadClosure option,
+            sourceFiles: string list,
+            commandLineArgs: string list,
+            projectReferences,
+            projectDirectory,
+            useScriptResolutionRules,
+            keepAssemblyContents,
+            keepAllBackgroundResolutions,
+            tryGetMetadataSnapshot,
+            suggestNamesForErrors,
+            keepAllBackgroundSymbolUses,
+            enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking: bool,
+            dependencyProvider
+        ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
