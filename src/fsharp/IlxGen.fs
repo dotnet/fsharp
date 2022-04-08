@@ -7938,7 +7938,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
         let debugDisplayAttrs, normalAttrs = tycon.Attribs |> List.partition (IsMatchingFSharpAttribute g g.attrib_DebuggerDisplayAttribute)
         let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
-        let generateDebugDisplayAttribute = not g.compilingFslib && tycon.IsUnionTycon && isNil debugDisplayAttrs
+        let generateDebugDisplayAttribute =
+            not g.useReflectionFreeCodeGen &&
+            not g.compilingFslib &&
+            tycon.IsUnionTycon &&
+            isNil debugDisplayAttrs
 
         let generateDebugProxies =
             not (tyconRefEq g tcref g.unit_tcr_canon) &&
