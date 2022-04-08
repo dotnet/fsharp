@@ -780,7 +780,7 @@ module rec Compiler =
         match cUnit with
         | FS fs ->
             match fs |> compileFSharp  with
-            | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+            | CompilationResult.Failure a -> failwith $"Build failure: {a}"
             | CompilationResult.Success s -> verifyFSILBaseline fs.Baseline s
         | _ -> failwith "Baseline tests are only supported for F#."
 
