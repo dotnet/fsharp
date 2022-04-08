@@ -25,4 +25,11 @@ val ParseFormatString:
     -> printerResultTy: TType
         -> TType list * TType * TType * TType[] * (range * int) list * string
 
-val TryCountFormatStringArguments: m: range -> g: TcGlobals -> isInterpolated: bool -> fmt:string -> printerArgTy:TType -> printerResidueTy:TType -> int option
+val TryCountFormatStringArguments:
+    m: range
+    -> g: TcGlobals
+    -> isInterpolated: bool
+    -> fmt: string
+    -> printerArgTy: TType
+    -> printerResidueTy: TType
+        -> int option

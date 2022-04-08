@@ -54,7 +54,7 @@ type internal IlxGenOptions =
       isInteractiveItExpr: bool
 
       /// Suppress ToString emit
-      noReflectionCodeGen: bool
+      useReflectionFreeCodeGen: bool
 
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt: bool

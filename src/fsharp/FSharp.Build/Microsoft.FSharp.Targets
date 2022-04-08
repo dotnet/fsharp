@@ -335,6 +335,7 @@ this file.
               LCID="$(LCID)"
               NoFramework="true"
               Optimize="$(Optimize)"
+              ReflectionFree="$(ReflectionFree)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
               PathMap="$(PathMap)"

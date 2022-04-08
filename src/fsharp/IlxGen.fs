@@ -232,7 +232,7 @@ type IlxGenOptions =
       isInteractiveItExpr: bool
 
       /// Suppress ToString emit
-      noReflectionCodeGen: bool
+      useReflectionFreeCodeGen: bool
 
       /// Whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
@@ -7780,7 +7780,7 @@ and GenToStringMethod cenv eenv ilThisTy m =
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
   let g = cenv.g
-  [ if not cenv.opts.noReflectionCodeGen then
+  [ if not cenv.opts.useReflectionFreeCodeGen then
 
       match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind g.new_format_vref.Deref) with

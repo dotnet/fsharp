@@ -182,12 +182,20 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 // Table of all these "globals"
 //-------------------------------------------------------------------------
 
-type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths,
-                      mlCompatibility: bool, isInteractive:bool,
-                      // The helper to find system types amongst referenced DLLs
-                      tryFindSysTypeCcu,
-                      emitDebugInfoInQuotations: bool, noDebugAttributes: bool,
-                      pathMap: PathMap, langVersion: LanguageVersion) =
+type TcGlobals(
+    compilingFslib: bool,
+    ilg:ILGlobals,
+    fslibCcu: CcuThunk,
+    directoryToResolveRelativePaths,
+    mlCompatibility: bool,
+    isInteractive: bool,
+    useReflectionFreeCodeGen: bool,
+    // The helper to find system types amongst referenced DLLs
+    tryFindSysTypeCcu,
+    emitDebugInfoInQuotations: bool,
+    noDebugAttributes: bool,
+    pathMap: PathMap,
+    langVersion: LanguageVersion) =
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange
@@ -986,6 +994,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
   member _.compilingFslib = compilingFslib
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
   member _.mlCompatibility = mlCompatibility
   member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
   member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths

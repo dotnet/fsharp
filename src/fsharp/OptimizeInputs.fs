@@ -157,10 +157,16 @@ let CreateIlxAssemblyGenerator (_tcConfig:TcConfig, tcImports:TcImports, tcGloba
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator
 
-let GenerateIlxCode
-       (ilxBackend, isInteractiveItExpr, isInteractiveOnMono,
-        tcConfig:TcConfig, topAttrs: TopAttribs, optimizedImpls,
-        fragName, ilxGenerator: IlxAssemblyGenerator) =
+let GenerateIlxCode (
+        ilxBackend,
+        isInteractiveItExpr,
+        isInteractiveOnMono,
+        tcConfig:TcConfig,
+        topAttrs: TopAttribs,
+        optimizedImpls,
+        fragName,
+        ilxGenerator: IlxAssemblyGenerator
+    ) =
 
     let mainMethodInfo =
         if (tcConfig.target = CompilerTarget.Dll) || (tcConfig.target = CompilerTarget.Module) then
@@ -170,14 +176,15 @@ let GenerateIlxCode
     let ilxGenOpts: IlxGenOptions =
         { generateFilterBlocks = tcConfig.generateFilterBlocks
           emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
-          workAroundReflectionEmitBugs=tcConfig.isInteractive // REVIEW: is this still required?
-          generateDebugSymbols= tcConfig.debuginfo
+          workAroundReflectionEmitBugs = tcConfig.isInteractive // REVIEW: is this still required?
+          generateDebugSymbols = tcConfig.debuginfo
           fragName = fragName
           localOptimizationsEnabled= tcConfig.optSettings.LocalOptimizationsEnabled
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
           mainMethodInfo= mainMethodInfo
           ilxBackend = ilxBackend
           fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
+          useReflectionFreeCodeGen = tcConfig.useReflectionFreeCodeGen
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt }

@@ -1914,10 +1914,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
-        let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
-                                  tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
-                                  tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugAttributes, tcConfig.pathMap, tcConfig.langVersion)
+        let tcGlobals =
+            TcGlobals(tcConfig.compilingFslib,
+                ilGlobals,
+                fslibCcu,
+                tcConfig.implicitIncludeDir,
+                tcConfig.mlCompatibility,
+                tcConfig.isInteractive,
+                tcConfig.useReflectionFreeCodeGen,
+                tryFindSysTypeCcu,
+                tcConfig.emitDebugInfoInQuotations,
+                tcConfig.noDebugAttributes,
+                tcConfig.pathMap,
+                tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
