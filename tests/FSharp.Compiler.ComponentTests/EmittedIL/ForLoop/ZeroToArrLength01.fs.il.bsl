@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET IL Disassembler.  Version 5.0.0-preview.7.20364.11
 
 
 
@@ -22,27 +21,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.ZeroToArrLength01
 {
-  // Offset: 0x00000000 Length: 0x000001DC
+  // Offset: 0x00000000 Length: 0x00000228
+  // WARNING: managed resource file FSharpSignatureData.ZeroToArrLength01 created
 }
 .mresource public FSharpOptimizationData.ZeroToArrLength01
 {
-  // Offset: 0x000001E0 Length: 0x0000007B
+  // Offset: 0x00000230 Length: 0x0000007B
+  // WARNING: managed resource file FSharpOptimizationData.ZeroToArrLength01 created
 }
-.module ZeroToArrLength01.dll
-// MVID: {619833D0-A3D0-03A7-A745-0383D0339861}
+.module ZeroToArrLength01.exe
+// MVID: {624FA9CC-1872-1D93-A745-0383CCA94F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x072F0000
+// Image base: 0x00E80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,14 +56,11 @@
   {
     // Code size       23 (0x17)
     .maxstack  5
-    .locals init ([0] int32 i)
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 5,8 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ZeroToArrLength01.fs'
+    .locals init (int32 V_0)
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
     IL_0002:  br.s       IL_0010
 
-    .line 7,7 : 9,21 ''
     IL_0004:  ldarg.0
     IL_0005:  ldloc.0
     IL_0006:  ldloc.0
@@ -71,7 +69,6 @@
     IL_000d:  ldc.i4.1
     IL_000e:  add
     IL_000f:  stloc.0
-    .line 6,6 : 15,17 ''
     IL_0010:  ldloc.0
     IL_0011:  ldarg.0
     IL_0012:  ldlen
@@ -86,9 +83,18 @@
 .class private abstract auto ansi sealed '<StartupCode$ZeroToArrLength01>'.$ZeroToArrLength01
        extends [mscorlib]System.Object
 {
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
+  } // end of method $ZeroToArrLength01::main@
+
 } // end of class '<StartupCode$ZeroToArrLength01>'.$ZeroToArrLength01
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net472\tests\EmittedIL\ForLoop\ZeroToArrLength01_fs\ZeroToArrLength01.res
