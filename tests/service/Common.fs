@@ -281,6 +281,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsUnresolved then yield "unresolved"
             if v.IsValueType then yield "valuetype"
 
+        | :? FSharpActivePatternCase as v ->
+            yield sprintf "apatcase%d" v.Index
+
         | :? FSharpMemberOrFunctionOrValue as v ->
             if v.IsActivePattern then yield "apat"
             if v.IsDispatchSlot then yield "slot"
