@@ -31,6 +31,17 @@ module Structure =
         |> compileExeAndRun
         |> shouldSucceed
 
+    let verifyIl compilation =
+        compilation
+        |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> asExe
+        |> withNoOptimize
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> ignoreWarnings
+        |> verifyILBaseline
+
+
     // SOURCE=AttributesOnLet01.fs   SCFLAGS="-r:CodeGenHelper.dll" # AttributesOnLet01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributesOnLet01.fs"|])>]
     let ``AttributesOnLet01_fs`` compilation =
@@ -125,6 +136,12 @@ module Structure =
     let ``Extensions02_fs`` compilation =
         compilation
         |> verifyCompilation
+
+    // SOURCE=FloatsAndDoubles.fs  SCFLAGS="-g --out:FloatsAndDoubles.exe" COMPILE_ONLY=1 POSTCMD="comparebsl.cmd  FloatsAndDoubles.exe" # FloatsAndDoubles.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FloatsAndDoubles.fs"|])>]
+    let ``FloatsAndDoubles_fs`` compilation =
+        compilation
+        |> verifyIl
 
     // SOURCE=FunctionArity01.fs     SCFLAGS="-r:CodeGenHelper.dll" # FunctionArity01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FunctionArity01.fs"|])>]
