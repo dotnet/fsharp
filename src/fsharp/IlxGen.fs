@@ -420,7 +420,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
 
     /// Lookup a type parameter
     member _.Item (tp: Typar, m: range) =
-        try reprs.[tp.Stamp]
+        try reprs[tp.Stamp]
         with :? KeyNotFoundException ->
           errorR(InternalError("Undefined or unsolved type variable: " + showL(typarL tp), m))
           // Random value for post-hoc diagnostic analysis on generated tree *
@@ -580,7 +580,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv
 
     | TType_var (tp, _) ->
-        mkILTyvarTy tyenv.[tp, m]
+        mkILTyvarTy tyenv[tp, m]
 
     | TType_measure _ ->
         g.ilg.typ_Int32
@@ -1145,7 +1145,7 @@ let AddStorageForLocalWitnesses witnesses eenv =
 
 let StorageForVal g m v eenv =
     let v =
-        try eenv.valsInScope.[v]
+        try eenv.valsInScope[v]
         with :? KeyNotFoundException ->
           assert false
           errorR(Error(FSComp.SR.ilUndefinedValue(showL(valAtBindL g v)), m))
@@ -1256,7 +1256,7 @@ let ComputeFieldSpecForVal(optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option,
         | true, res -> res
         | _ ->
             let res = generate()
-            intraAssemblyInfo.StaticFieldInfo.[ilGetterMethRef] <- res
+            intraAssemblyInfo.StaticFieldInfo[ilGetterMethRef] <- res
             res
 
 /// Compute the representation information for an F#-declared value (not a member nor a function).
@@ -1561,9 +1561,9 @@ let AddPropertyDefToHash (m: range) (ht: Dictionary<PropKey, int * ILPropertyDef
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
     match ht.TryGetValue nm with
     | true, (idx, pd) ->
-        ht.[nm] <- (idx, MergePropertyPair m pd pdef)
+        ht[nm] <- (idx, MergePropertyPair m pd pdef)
     | _ ->
-        ht.[nm] <- (ht.Count, pdef)
+        ht[nm] <- (ht.Count, pdef)
 
 
 /// Merge a whole group of properties all at once
@@ -1619,7 +1619,7 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     member _.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
         match ResizeArray.tryFindIndex cond gmethods with
-        | Some idx -> gmethods.[idx] <- prependInstrsToMethod instrs gmethods.[idx]
+        | Some idx -> gmethods[idx] <- prependInstrsToMethod instrs gmethods[idx]
         | None ->
             let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
             gmethods.Add(mkILClassCtor body)
@@ -1646,7 +1646,7 @@ and TypeDefsBuilder() =
                   yield tdef ]
 
     member b.FindTypeDefBuilder nm =
-        try tdefs.[nm] |> snd |> fst
+        try tdefs[nm] |> snd |> fst
         with :? KeyNotFoundException -> failwith ("FindTypeDefBuilder: " + nm + " not found")
 
     member b.FindNestedTypeDefsBuilder path =
@@ -1860,7 +1860,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         let key = anonInfo.Stamp
         if not (anonTypeTable.Table.ContainsKey key) then
             let info = generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
-            anonTypeTable.Table.[key] <- info
+            anonTypeTable.Table[key] <- info
 
     member this.LookupAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         match anonTypeTable.Table.TryGetValue anonInfo.Stamp with
@@ -1869,7 +1869,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
            if anonInfo.ILTypeRef.Scope.IsLocalRef then
                failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
            this.GenerateAnonType (genToStringMethod, anonInfo)
-           anonTypeTable.Table.[anonInfo.Stamp]
+           anonTypeTable.Table[anonInfo.Stamp]
 
     member _.GrabExtraBindingsToGenerate () =
         let result = extraBindingsToGenerate
@@ -1889,7 +1889,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     member _.ReplaceNameOfReflectedDefinition (vspec, newName) =
         match reflectedDefinitions.TryGetValue vspec with
-        | true, (name, n, expr) when name <> newName -> reflectedDefinitions.[vspec] <- (newName, n, expr)
+        | true, (name, n, expr) when name <> newName -> reflectedDefinitions[vspec] <- (newName, n, expr)
         | _ -> ()
 
     member _.AddMethodDef (tref: ILTypeRef, ilMethodDef) =
@@ -1969,7 +1969,7 @@ type CodeGenBuffer(m: range,
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph", m))
         match codeLabelToCodeLabel.TryGetValue lbl with
         | true, l -> lab2pc (n + 1) l
-        | _ -> codeLabelToPC.[lbl]
+        | _ -> codeLabelToPC[lbl]
 
     // Add a nop to make way for the first debug point.
     do if mgbuf.cenv.opts.generateDebugSymbols then
@@ -2019,7 +2019,7 @@ type CodeGenBuffer(m: range,
         // Always add a nop between debug points to help .NET get the stepping right
         // Don't do this after a FeeFee marker for hidden code
         if (codebuf.Count > 0 &&
-             (match codebuf.[codebuf.Count-1] with
+             (match codebuf[codebuf.Count-1] with
               | I_seqpoint sm when sm.Line <> FeeFee mgbuf.cenv -> true
               | _ -> false)) then
 
@@ -2035,12 +2035,12 @@ type CodeGenBuffer(m: range,
             // Replace a FeeFee seqpoint with a better debug point
             let n = codebuf.Count
             let isSingleFeeFee =
-                match codebuf.[n-1] with
+                match codebuf[n-1] with
                 | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
                 | _ -> false
 
             if isSingleFeeFee then
-                codebuf.[n-1] <- i
+                codebuf[n-1] <- i
             else
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
@@ -2057,7 +2057,7 @@ type CodeGenBuffer(m: range,
             // don't emit just after another FeeFee
             let n = codebuf.Count
             let isSingleFeeFee =
-                match codebuf.[n-1] with
+                match codebuf[n-1] with
                 | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
                 | _ -> false
 
@@ -2079,7 +2079,7 @@ type CodeGenBuffer(m: range,
             System.Diagnostics.Debug.Assert(false, msg)
             warning(InternalError(msg, m))
 #endif
-        codeLabelToCodeLabel.[lab1] <- lab2
+        codeLabelToCodeLabel[lab1] <- lab2
 
     member _.SetCodeLabelToPC(lab, pc) =
 #if DEBUG
@@ -2088,7 +2088,7 @@ type CodeGenBuffer(m: range,
             System.Diagnostics.Debug.Assert(false, msg)
             warning(InternalError(msg, m))
 #endif
-        codeLabelToPC.[lab] <- pc
+        codeLabelToPC[lab] <- pc
 
     member cgbuf.SetMark (mark1: Mark, mark2: Mark) =
         cgbuf.SetCodeLabelToCodeLabel(mark1.CodeLabel, mark2.CodeLabel)
@@ -2129,8 +2129,8 @@ type CodeGenBuffer(m: range,
     member cgbuf.ReallocLocal(cond, ranges, ty, isFixed) =
         match ResizeArray.tryFindIndexi cond locals with
         | Some j ->
-            let prevRanges, _, isFixed = locals.[j]
-            locals.[j] <- ((ranges@prevRanges), ty, isFixed)
+            let prevRanges, _, isFixed = locals[j]
+            locals[j] <- ((ranges@prevRanges), ty, isFixed)
             j, true
         | None ->
             cgbuf.AllocLocal(ranges, ty, isFixed), false
@@ -2755,7 +2755,7 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
         elif ar < maxTuple then
             let tcr' = mkCompiledTupleTyconRef g tupInfo ar
             let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys
-            mkGetTupleItemN g m n ty tupInfo e tys.[n]
+            mkGetTupleItemN g m n ty tupInfo e tys[n]
         else
             let tysA, tysB = List.splitAfter goodTupleFields tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
@@ -2763,7 +2763,7 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
             let tcr' = mkCompiledTupleTyconRef g tupInfo (List.length tys')
             let ty' = GenNamedTyApp cenv.amap m eenv.tyenv tcr' tys'
             let n' = (min n goodTupleFields)
-            let elast = mkGetTupleItemN g m n' ty' tupInfo e tys'.[n']
+            let elast = mkGetTupleItemN g m n' ty' tupInfo e tys'[n']
             if n < goodTupleFields then
                 elast
             else
@@ -2941,8 +2941,8 @@ and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, 
     let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.LookupAnonType ((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
-    let anonMethod = anonMethods.[n]
-    let anonFieldType = ilTypeArgs.[n]
+    let anonMethod = anonMethods[n]
+    let anonFieldType = ilTypeArgs[n]
     GenExpr cenv cgbuf eenv e Continue
     CG.EmitInstr cgbuf (pop 1) (Push [anonFieldType]) (mkNormalCall (mkILMethSpec(anonMethod, boxity, ilTypeArgs, [])))
     GenSequel cenv eenv.cloc cgbuf sequel
@@ -2975,7 +2975,7 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
       // Try to emit a constant byte-blob array
       let elemsArray = Array.ofList elems
       let test, write =
-          match stripDebugPoints elemsArray.[0] with
+          match stripDebugPoints elemsArray[0] with
           | Expr.Const (Const.Bool _, _, _) ->
               (function Const.Bool _ -> true | _ -> false),
               (fun (buf: ByteBuffer) -> function Const.Bool b -> buf.EmitBoolAsByte b | _ -> failwith "unreachable")
@@ -4557,7 +4557,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
               | "U2" -> "TResult2"
               | _ ->
                   if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then nm
-                  elif nm.Length >= 1 && nm.[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm.[1])) then nm
+                  elif nm.Length >= 1 && nm[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm[1])) then nm
                   else "T" + (String.capitalize nm)
           else
                nm
@@ -5133,7 +5133,7 @@ and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
+    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv[c, m]))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
@@ -5636,7 +5636,7 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
 
 and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree"
-    targets.[n]
+    targets[n]
 
 /// Generate a success node of a decision tree, binding the variables and going to the target
 /// If inplabOpt is present, this label must get set to the first logical place to execute.
@@ -5649,9 +5649,9 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let (targetMarkBeforeBinds, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _) = targetInfo
 
         // We have encountered this target before. See if we should generate it now
-        let targetCount = targetCounts.[targetIdx]
+        let targetCount = targetCounts[targetIdx]
         let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsEnabled && targetCount = 1 && targetNext.Value = targetIdx
-        targetCounts.[targetIdx] <- targetCount - 1
+        targetCounts[targetIdx] <- targetCount - 1
 
         // If not binding anything we can go directly to the targetMarkBeforeBinds point
         // This is useful to avoid lots of branches e.g. in match A | B | C -> e
@@ -5708,13 +5708,13 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
 
         let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, vs, es, stateVarFlagsOpt, startMark, endMark)
 
-        let targetCount = targetCounts.[targetIdx]
+        let targetCount = targetCounts[targetIdx]
 
         // In debug mode, postpone all decision tree targets to after the switching.
         // In release mode, if a target is the target of multiple incoming success nodes, postpone it to avoid 
         // making any backward branches
         let generateTargetNow = cenv.opts.localOptimizationsEnabled && targetCount = 1 && targetNext.Value = targetIdx
-        targetCounts.[targetIdx] <- targetCount - 1
+        targetCounts[targetIdx] <- targetCount - 1
 
         let genTargetInfoOpt =
             if generateTargetNow then
@@ -7566,7 +7566,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     // We expect the first instruction to be a debug point when generating debug symbols
     let feefee, seqpt =
         if topInstrs.Length > 1 then
-            match topInstrs.[0] with
+            match topInstrs[0] with
             | I_seqpoint sp as i -> [ FeeFeeInstr cenv sp.Document ], [ i ]
             | _ -> [], []
         else

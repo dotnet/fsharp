@@ -329,7 +329,7 @@ type LowerStateMachine(g: TcGlobals) =
         match expr with
         // defn --> [expand_code]
         | Expr.Val (defnRef, _, _) when env.ResumableCodeDefns.ContainsVal defnRef.Deref ->
-            let defn = env.ResumableCodeDefns.[defnRef.Deref]
+            let defn = env.ResumableCodeDefns[defnRef.Deref]
             if sm_verbose then printfn "found resumable code %A --> %A" defnRef defn 
             // Expand the resumable code definition
             match TryReduceApp env defn args with 
@@ -428,7 +428,7 @@ type LowerStateMachine(g: TcGlobals) =
                     pcExpr,
                     [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
                         for pc in pcs do
-                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab[pc]) ],
                     // The default is to go to pcInit
                     Some(mkGotoLabelTarget initLabel),
                     m)
@@ -555,7 +555,7 @@ type LowerStateMachine(g: TcGlobals) =
               phase2 = (fun ctxt ->
                 let generate2 = resSome.phase2 ctxt
                 let generate1 = resNone.phase2 ctxt
-                let generate = recreate (Some ctxt.[reenterPC]) generate1 generate2
+                let generate = recreate (Some ctxt[reenterPC]) generate1 generate2
                 generate)
               entryPoints= resSome.entryPoints @ [reenterPC] @ resNone.entryPoints
               stateVars = resSome.stateVars @ resNone.stateVars 
@@ -575,7 +575,7 @@ type LowerStateMachine(g: TcGlobals) =
 
             { phase1 = recreate None 
               phase2 = (fun ctxt ->
-                let generate = recreate (Some ctxt.[contIdPC]) 
+                let generate = recreate (Some ctxt[contIdPC]) 
                 generate)
               entryPoints = []
               stateVars = []

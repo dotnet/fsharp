@@ -398,7 +398,7 @@ module DispatchSlotChecking =
 
             if missingOverloadImplementation.Count = 1 then
                 // only one missing override, we have specific message for that
-                let signature = (snd missingOverloadImplementation.[0]).Value
+                let signature = (snd missingOverloadImplementation[0]).Value
                 if messageWithInterfaceSuggestion then 
                     fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
                 else

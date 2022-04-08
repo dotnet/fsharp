@@ -105,11 +105,11 @@ module TcResolutionsExtensions =
                     if cnrs.Length = 1 then
                         cnrs
                     elif cnrs.Length = 2 then
-                        match cnrs.[0].Item, cnrs.[1].Item with
+                        match cnrs[0].Item, cnrs[1].Item with
                         | Item.Value _, Item.CustomBuilder _ ->
-                            [| cnrs.[1] |]
+                            [| cnrs[1] |]
                         | Item.CustomBuilder _, Item.Value _ ->
-                            [| cnrs.[0] |]
+                            [| cnrs[0] |]
                         | _ ->
                             cnrs
                     else
@@ -211,7 +211,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.RecordField
 
                     | Item.AnonRecdField(_, tys, idx, m), _, _, _, _, _ ->
-                        let ty = tys.[idx]
+                        let ty = tys[idx]
 
                         // It's not currently possible for anon record fields to be mutable, but they can be ref cells
                         if isRefCellTy g ty then

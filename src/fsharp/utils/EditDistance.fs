@@ -12,7 +12,7 @@ let inline existsInWin (mChar: char) (str: string) (offset: int) (rad: int) =
     if endAt - startAt < 0 then false
     else
         let rec exists index =
-            if str.[index] = mChar then true
+            if str[index] = mChar then true
             elif index = endAt then false
             else exists (index + 1)
         exists startAt
@@ -25,7 +25,7 @@ let jaro (s1: string) (s2: string) =
 
     let rec nextChar (s1:string) (s2:string) i c =
         if i < s1.Length then
-            let c = s1.[i]
+            let c = s1[i]
             if not (existsInWin c s2 i matchRadius) then
                 nextChar s1 s2 (i + 1) c
             else
@@ -50,7 +50,7 @@ let jaro (s1: string) (s2: string) =
 
         let rec loop (s1:string) (s2:string) i length =
             if i < s1.Length - 1 then
-                let c = s1.[i]
+                let c = s1[i]
                 if existsInWin c s2 i matchRadius then 
                     loop s1 s2 (i + 1) (length + 1)
                 else
@@ -77,7 +77,7 @@ let JaroWinklerDistance s1 s2 =
     // Accumulate the number of matching initial characters
     let maxLength = (min s1.Length s2.Length) - 1
     let rec calcL i acc =
-        if i > maxLength || s1.[i] <> s2.[i] then acc
+        if i > maxLength || s1[i] <> s2[i] then acc
         else calcL (i + 1) (acc + 1.0)
     let l = min (calcL 0 0.0) 4.0
     // Calculate the JW distance
@@ -95,21 +95,21 @@ let private calcDamerauLevenshtein (a:string, b:string) =
     let mutable actLine = Array.zeroCreate m
 
     for i in 1 .. a.Length do
-        actLine.[0] <- i
+        actLine[0] <- i
         for j in 1 .. b.Length do
-            let cost = if a.[i-1] = b.[j-1] then 0 else 1
-            let deletion = lastLine.[j] + 1
-            let insertion = actLine.[j-1] + 1
-            let substitution = lastLine.[j-1] + cost
-            actLine.[j] <- 
+            let cost = if a[i-1] = b[j-1] then 0 else 1
+            let deletion = lastLine[j] + 1
+            let insertion = actLine[j-1] + 1
+            let substitution = lastLine[j-1] + cost
+            actLine[j] <- 
               deletion 
               |> min insertion 
               |> min substitution
   
             if i > 1 && j > 1 then
-              if a.[i-1] = b.[j-2] && a.[i-2] = b.[j-1] then
-                  let transposition = lastLastLine.[j-2] + cost  
-                  actLine.[j] <- min actLine.[j] transposition
+              if a[i-1] = b[j-2] && a[i-2] = b[j-1] then
+                  let transposition = lastLastLine[j-2] + cost  
+                  actLine[j] <- min actLine[j] transposition
       
         // swap lines
         let temp = lastLastLine
@@ -117,7 +117,7 @@ let private calcDamerauLevenshtein (a:string, b:string) =
         lastLine <- actLine
         actLine <- temp
               
-    lastLine.[b.Length]
+    lastLine[b.Length]
 
 /// Calculates the edit distance between two strings.
 /// The edit distance is a metric that allows to measure the amount of difference between two strings 

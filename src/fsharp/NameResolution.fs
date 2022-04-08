@@ -246,13 +246,13 @@ type Item =
     member d.DisplayNameCore =
         match d with
         | Item.Value v -> v.DisplayNameCore
-        | Item.ActivePatternResult (apinfo, _ty, n, _) -> apinfo.ActiveTags.[n]
+        | Item.ActivePatternResult (apinfo, _ty, n, _) -> apinfo.ActiveTags[n]
         | Item.ActivePatternCase apref -> apref.Name 
         | Item.UnionCase(uinfo, _) -> uinfo.DisplayNameCore
         | Item.ExnCase tcref -> tcref.DisplayNameCore
         | Item.RecdField rfinfo -> rfinfo.DisplayNameCore 
         | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).DisplayNameCore
-        | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i] 
+        | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames[i] 
         | Item.NewDef id -> id.idText 
         | Item.ILField finfo -> finfo.FieldName 
         | Item.Event einfo -> einfo.EventName 
@@ -441,7 +441,7 @@ type NameResolutionEnv =
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
 
-    member nenv.FindUnqualifiedItem nm = nenv.eUnqualifiedItems.[nm]
+    member nenv.FindUnqualifiedItem nm = nenv.eUnqualifiedItems[nm]
 
     /// Get the table of types, indexed by name and arity
     member nenv.TyconsByDemangledNameAndArity fq =
@@ -707,7 +707,7 @@ let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: UnqualifiedItem
         eUnqualifiedItems.AddMany(vrefs |> Array.map (fun vref -> KeyValuePair(vref.LogicalName, Item.Value vref)))
     | BulkAdd.No ->
         assert (vrefs.Length = 1)
-        let vref = vrefs.[0]
+        let vref = vrefs[0]
         eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref)
 
 /// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
@@ -970,7 +970,7 @@ let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair,
             | true, res -> res
             | _ -> []
     | _ ->
-        byAccessNames.[nm]
+        byAccessNames[nm]
 
 /// Qualified lookup of type names in an entity
 let LookupTypeNameInEntityNoArity _m nm (mtyp: ModuleOrNamespaceType) =
@@ -1959,8 +1959,8 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                     [|
                         yield 0
                         for i in 1..sourceText.Length do
-                            let c = sourceText.[i-1]
-                            if c = '\r' && i < sourceText.Length && sourceText.[i] = '\n' then ()
+                            let c = sourceText[i-1]
+                            if c = '\r' && i < sourceText.Length && sourceText[i] = '\n' then ()
                             elif c = '\r' then yield i
                             elif c = '\n' then yield i
                         yield sourceText.Length
@@ -2402,7 +2402,7 @@ let TryFindAnonRecdFieldOfType g typ nm =
     match tryDestAnonRecdTy g typ with
     | ValueSome (anonInfo, tys) ->
         match anonInfo.SortedIds |> Array.tryFindIndex (fun x -> x.idText = nm) with
-        | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds.[i].idRange))
+        | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds[i].idRange))
         | None -> None
     | ValueNone -> None
 
@@ -2894,7 +2894,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | _ -> false
 
             if ValIsInEnv id.idText then
-              success (emptyEnclosingTypeInst, nenv.eUnqualifiedItems.[id.idText], rest)
+              success (emptyEnclosingTypeInst, nenv.eUnqualifiedItems[id.idText], rest)
             else
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
@@ -3076,7 +3076,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             if not newDef &&
                (warnOnUpper = WarnOnUpperCase) &&
                id.idText.Length >= 3 &&
-               System.Char.ToLowerInvariant id.idText.[0] <> id.idText.[0] then
+               System.Char.ToLowerInvariant id.idText[0] <> id.idText[0] then
               warning(UpperCaseIdentifierInPattern m)
             Item.NewDef id
 
@@ -3802,7 +3802,7 @@ let ItemOfTy g x =
     Item.Types (nm, [x])
 
 // Filter out 'PrivateImplementationDetail' classes
-let IsInterestingModuleName nm = not (System.String.IsNullOrEmpty nm) && nm.[0] <> '<'
+let IsInterestingModuleName nm = not (System.String.IsNullOrEmpty nm) && nm[0] <> '<'
 
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (modref: ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
@@ -4085,7 +4085,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       (if statics then []
        else
           match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys.[i]
+          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys[i]
           | _ -> []) @
 
       // e.g. <val-id>.<event-id>.<more>
@@ -4780,7 +4780,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
 
           match TryFindAnonRecdFieldOfType g ty id with
           | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
-              let tyinfo = tys.[i]
+              let tyinfo = tys[i]
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
           | _ -> ()
 

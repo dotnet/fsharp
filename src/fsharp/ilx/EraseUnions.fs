@@ -424,7 +424,7 @@ let genWith g : ILCode =
             member _.CodeLabel(m) = m
             member _.GenerateDelayMark() = generateCodeLabel()
             member _.GenLocal(ilty) = failwith "not needed"
-            member _.SetMarkToHere(m) = lab2pc.[m] <- instrs.Count
+            member _.SetMarkToHere(m) = lab2pc[m] <- instrs.Count
             member _.EmitInstr x = instrs.Add x
             member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i 
             member _.MkInvalidCastExnNewobj () = failwith "not needed" }
@@ -583,7 +583,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         | _ ->
         // Use a dictionary to avoid quadratic lookup in case list
         let dict = Dictionary<int,_>()
-        for i,case in cases do dict.[i] <- case
+        for i,case in cases do dict[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
             match dict.TryGetValue i with
