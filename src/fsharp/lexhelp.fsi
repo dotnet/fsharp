@@ -37,7 +37,7 @@ type LexArgs =
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus : LightSyntaxStatus
+      mutable lightStatus: LightSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
     }
 

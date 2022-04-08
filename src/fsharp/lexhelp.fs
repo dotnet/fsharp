@@ -70,13 +70,13 @@ type LongUnicodeLexResult =
 let mkLexargs (defines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
     { 
       defines = defines
-      ifdefStack= ifdefStack
-      lightStatus=lightStatus
-      resourceManager=resourceManager
-      errorLogger=errorLogger
-      applyLineDirectives=true
+      ifdefStack = ifdefStack
+      lightStatus = lightStatus
+      resourceManager = resourceManager
+      errorLogger = errorLogger
+      applyLineDirectives = true
       stringNest = []
-      pathMap=pathMap
+      pathMap = pathMap
     }
 
 /// Register the lexbuf and call the given function

@@ -96,7 +96,14 @@ module IncrementalBuildSyntaxTree =
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
-    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, source: FSharpSource, isLastCompiland) =
+    type SyntaxTree (
+            tcConfig: TcConfig,
+            fileParsed: Event<string>,
+            lexResourceManager,
+            sourceRange: range,
+            source: FSharpSource,
+            isLastCompiland
+        ) =
 
         let filename = source.FilePath
         let mutable weakCache: WeakReference<_> option = None
@@ -128,11 +135,11 @@ module IncrementalBuildSyntaxTree =
                         use text = source.GetTextContainer()
                         match text with
                         | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
+                            ParseOneInputStream(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
                         | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, sourceText)
+                            ParseOneInputSourceText(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, sourceText)
                         | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+                            ParseOneInputFile(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
                 fileParsed.Trigger filename
 
@@ -479,7 +486,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                        TypeCheckOneInput
+                        CheckOneInput
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
                                 tcConfig, tcImports,
                                 tcGlobals,
@@ -863,11 +870,11 @@ module IncrementalBuilderHelpers =
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState =
-            TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
+            CheckMultipleInputsFinish (results, finalInfo.tcState)
 
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt =
             try
-                let tcState, tcAssemblyExpr, ccuContents = TypeCheckClosedInputSetFinish (mimpls, tcState)
+                let tcState, tcAssemblyExpr, ccuContents = CheckClosedInputSetFinish (mimpls, tcState)
 
                 let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
 
@@ -1370,20 +1377,25 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateIncrementalBuilderForProjectOptions
-                      (legacyReferenceResolver, defaultFSharpBinariesDir,
-                       frameworkTcImportsCache: FrameworkImportsCache,
-                       loadClosureOpt: LoadClosure option,
-                       sourceFiles: string list,
-                       commandLineArgs: string list,
-                       projectReferences, projectDirectory,
-                       useScriptResolutionRules, keepAssemblyContents,
-                       keepAllBackgroundResolutions,
-                       tryGetMetadataSnapshot, suggestNamesForErrors,
-                       keepAllBackgroundSymbolUses,
-                       enableBackgroundItemKeyStoreAndSemanticClassification,
-                       enablePartialTypeChecking: bool,
-                       dependencyProvider) =
+    static member TryCreateIncrementalBuilderForProjectOptions(
+        legacyReferenceResolver,
+        defaultFSharpBinariesDir,
+        frameworkTcImportsCache: FrameworkImportsCache,
+        loadClosureOpt: LoadClosure option,
+        sourceFiles: string list,
+        commandLineArgs: string list,
+        projectReferences,
+        projectDirectory,
+        useScriptResolutionRules,
+        keepAssemblyContents,
+        keepAllBackgroundResolutions,
+        tryGetMetadataSnapshot,
+        suggestNamesForErrors,
+        keepAllBackgroundSymbolUses,
+        enableBackgroundItemKeyStoreAndSemanticClassification,
+        enablePartialTypeChecking: bool,
+        dependencyProvider
+    ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
@@ -1438,9 +1450,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
 
-                tcConfigB.conditionalCompilationDefines <-
+                tcConfigB.conditionalDefines <-
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
-                    define :: tcConfigB.conditionalCompilationDefines
+                    define :: tcConfigB.conditionalDefines
 
                 tcConfigB.projectReferences <- projectReferences
 
