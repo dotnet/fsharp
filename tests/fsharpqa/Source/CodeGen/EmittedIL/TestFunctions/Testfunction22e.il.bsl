@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Testfunction22e
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Testfunction22e
 {
-  // Offset: 0x00000000 Length: 0x00000159
+  // Offset: 0x00000000 Length: 0x00000165
 }
 .mresource public FSharpOptimizationData.Testfunction22e
 {
-  // Offset: 0x00000160 Length: 0x00000056
+  // Offset: 0x00000170 Length: 0x00000056
 }
 .module Testfunction22e.exe
-// MVID: {60B68B97-C83B-1CB9-A745-0383978BB660}
+// MVID: {625017A4-C83B-1CB9-A745-0383A4175062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05440000
+// Image base: 0x06A20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,20 +63,19 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
+    // Code size       11 (0xb)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 3,3 : 1,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22e.fs'
-    IL_0000:  ldc.i4.1
-    IL_0001:  brfalse.s  IL_000b
+    IL_0000:  br.s       IL_0007
 
     .line 4,4 : 4,30 ''
-    IL_0003:  call       void [mscorlib]System.Console::WriteLine()
-    .line 100001,100001 : 0,0 ''
-    IL_0008:  nop
-    IL_0009:  br.s       IL_0000
+    IL_0002:  call       void [mscorlib]System.Console::WriteLine()
+    .line 3,3 : 1,11 ''
+    IL_0007:  ldc.i4.1
+    IL_0008:  brtrue.s   IL_0002
 
-    IL_000b:  ret
+    IL_000a:  ret
   } // end of method $Testfunction22e::main@
 
 } // end of class '<StartupCode$Testfunction22e>'.$Testfunction22e
