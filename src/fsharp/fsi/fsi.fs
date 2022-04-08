@@ -2441,9 +2441,8 @@ type FsiStdinLexerProvider
 
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
-        let defines = tcConfigB.conditionalDefines
         let applyLineDirectives = true
-        let lexargs = mkLexargs (defines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty, applyLineDirectives)
+        let lexargs = mkLexargs (tcConfigB.conditionalDefines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty, applyLineDirectives)
         let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
