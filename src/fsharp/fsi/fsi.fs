@@ -2403,7 +2403,7 @@ type FsiStdinLexerProvider
     ) =
 
     // #light is the default for FSI
-    let interactiveInputLightSyntaxStatus =
+    let lightStatus =
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
@@ -2442,8 +2442,8 @@ type FsiStdinLexerProvider
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
         let defines = tcConfigB.conditionalDefines
-        let lexargs = mkLexargs (defines, interactiveInputLightSyntaxStatus, lexResourceManager, [], errorLogger, PathMap.empty)
-        let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
+        let lexargs = mkLexargs (defines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty)
+        let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
     // Create a new lexer to read stdin

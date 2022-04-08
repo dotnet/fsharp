@@ -1653,14 +1653,16 @@ module internal ParseAndCheckFile =
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
-        let defines = (SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive) @ options.ConditionalDefines
+        let conditionalDefines =
+            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
+            @ options.ConditionalDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
