@@ -1548,6 +1548,7 @@ type internal TypeCheckInfo
 
 type FSharpParsingOptions =
     { SourceFiles: string []
+      ApplyLineDirectives: bool
       ConditionalDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
@@ -1562,6 +1563,7 @@ type FSharpParsingOptions =
 
     static member Default =
         { SourceFiles = Array.empty
+          ApplyLineDirectives = false
           ConditionalDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
@@ -1572,6 +1574,7 @@ type FSharpParsingOptions =
 
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
+          ApplyLineDirectives = tcConfig.applyLineDirectives
           ConditionalDefines = tcConfig.conditionalDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
@@ -1583,6 +1586,7 @@ type FSharpParsingOptions =
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
+          ApplyLineDirectives = tcConfigB.applyLineDirectives
           ConditionalDefines = tcConfigB.conditionalDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
@@ -1653,15 +1657,16 @@ module internal ParseAndCheckFile =
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
-        let defines = (SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive) @ options.ConditionalDefines
+        let conditionalDefines =
+            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
+            @ options.ConditionalDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
-        let lexargs = { lexargs with applyLineDirectives = false }
+        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty, options.ApplyLineDirectives)
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())

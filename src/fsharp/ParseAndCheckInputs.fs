@@ -388,7 +388,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, filenam
         let lightStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true)
 
         // Set up the initial lexer arguments
-        let lexargs = mkLexargs (tcConfig.conditionalDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
+        let lexargs = mkLexargs (tcConfig.conditionalDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap, tcConfig.applyLineDirectives)
 
         // Set up the initial lexer arguments
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir

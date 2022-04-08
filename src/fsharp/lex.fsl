@@ -949,7 +949,7 @@ rule token args skip = parse
 
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange
-     let lookup id = List.contains id args.defines
+     let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
@@ -1027,7 +1027,7 @@ and ifdefSkip n m args skip = parse
        else ifdefSkip n m args skip lexbuf
      else
        let lexed = lexeme lexbuf
-       let lookup id = List.contains id args.defines
+       let lookup id = List.contains id args.conditionalDefines
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
        LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))

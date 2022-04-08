@@ -62,9 +62,10 @@ type public HashIfExpression() =
 
         let lightSyntax = LightSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
-        let defines= []
+        let defines = []
+        let applyLineDirectives = true
         let startPos = Position.Empty
-        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
+        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty, applyLineDirectives)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

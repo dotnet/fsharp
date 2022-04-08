@@ -193,12 +193,26 @@ type public FSharpProjectContext =
 type public FSharpParsingOptions =
     { 
       SourceFiles: string[]
+      
+      /// Indicates if the ranges returned by parsing should have '#line' directives applied to them.
+      /// When compiling code, this should usually be 'true'.  For editing tools, this is usually 'false.
+      /// The default for FSharpParsingOptions.ApplyLineDirectives is 'false'.  The default for 
+      /// FSharpParsingOptions arising from FSharpProjectOptions will be 'true' unless '--ignorelinedirectives' is used in the
+      /// parameters from which these are derived.
+      ApplyLineDirectives: bool
+
       ConditionalDefines: string list
+
       ErrorSeverityOptions: FSharpDiagnosticOptions
+
       LangVersionText: string
+
       IsInteractive: bool
+
       LightSyntax: bool option
+
       CompilingFsLib: bool
+
       IsExe: bool
     }
     static member Default: FSharpParsingOptions

@@ -926,7 +926,9 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
 
     let lexResourceManager = LexResourceManager()
 
-    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let applyLineDirectives = false
+    let lightStatus = LightSyntaxStatus(true, false)
+    let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], DiscardErrorsLogger, PathMap.empty, applyLineDirectives)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
@@ -1520,8 +1522,8 @@ module FSharpLexerImpl =
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
         let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
-        let lexargs = mkLexargs (conditionalDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
-        let lexargs = { lexargs with applyLineDirectives = isCompiling }
+        let applyLineDirectives = isCompiling
+        let lexargs = mkLexargs (conditionalDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap, applyLineDirectives)
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia

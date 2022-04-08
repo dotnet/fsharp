@@ -500,6 +500,8 @@ type TcConfigBuilder =
 
       mutable noConditionalErasure: bool
 
+      mutable applyLineDirectives: bool
+
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
@@ -672,6 +674,7 @@ type TcConfigBuilder =
           fsiMultiAssemblyEmit = true
           internalTestSpanStackReferring = false
           noConditionalErasure = false
+          applyLineDirectives = true
           pathMap = PathMap.empty
           langVersion = LanguageVersion.Default
           implicitIncludeDir = implicitIncludeDir
@@ -1062,6 +1065,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member x.noConditionalErasure = data.noConditionalErasure
+    member _.applyLineDirectives = data.applyLineDirectives
     member x.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) =

@@ -50,7 +50,7 @@ type LexResourceManager(?capacity: int) =
 /// Lexer parameters 
 type LexArgs =  
     {
-      defines: string list
+      conditionalDefines: string list
       resourceManager: LexResourceManager
       errorLogger: ErrorLogger
       applyLineDirectives: bool
@@ -67,14 +67,14 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (defines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
+let mkLexargs (conditionalDefines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap, applyLineDirectives) =
     { 
-      defines = defines
+      conditionalDefines = conditionalDefines
       ifdefStack = ifdefStack
       lightStatus = lightStatus
       resourceManager = resourceManager
       errorLogger = errorLogger
-      applyLineDirectives = true
+      applyLineDirectives = applyLineDirectives
       stringNest = []
       pathMap = pathMap
     }

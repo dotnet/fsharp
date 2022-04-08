@@ -31,7 +31,7 @@ type LexResourceManager =
 /// The context applicable to all lexing functions (tokens, strings etc.)
 type LexArgs =
     {
-      defines: string list
+      conditionalDefines: string list
       resourceManager: LexResourceManager
       errorLogger: ErrorLogger
       applyLineDirectives: bool
@@ -48,7 +48,15 @@ type LongUnicodeLexResult =
 
 val resetLexbufPos: string -> Lexbuf -> unit
 
-val mkLexargs: string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> LexArgs
+val mkLexargs:
+    conditionalDefines: string list *
+    lightStatus: LightSyntaxStatus *
+    resourceManager: LexResourceManager *
+    ifdefStack: LexerIfdefStack *
+    errorLogger: ErrorLogger *
+    pathMap: PathMap *
+    applyLineDirectives: bool
+        -> LexArgs
 
 val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a
 
