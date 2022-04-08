@@ -19,7 +19,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 6:0:0:0
 }
-.assembly Testfunction22
+.assembly TestFunction22
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -31,35 +31,35 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.Testfunction22
+.mresource public FSharpSignatureData.TestFunction22
 {
   // Offset: 0x00000000 Length: 0x0000018E
-  // WARNING: managed resource file FSharpSignatureData.Testfunction22 created
+  // WARNING: managed resource file FSharpSignatureData.TestFunction22 created
 }
-.mresource public FSharpOptimizationData.Testfunction22
+.mresource public FSharpOptimizationData.TestFunction22
 {
   // Offset: 0x00000198 Length: 0x00000055
-  // WARNING: managed resource file FSharpOptimizationData.Testfunction22 created
+  // WARNING: managed resource file FSharpOptimizationData.TestFunction22 created
 }
-.module Testfunction22.exe
-// MVID: {624E2D1D-F5FF-FF76-A745-03831D2D4E62}
+.module TestFunction22.exe
+// MVID: {624F90A7-D7C6-9328-A745-0383A7904F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001F77CF80000
+// Image base: 0x000002025F110000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Testfunction22
+.class public abstract auto ansi sealed TestFunction22
        extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-} // end of class Testfunction22
+} // end of class TestFunction22
 
-.class private abstract auto ansi sealed '<StartupCode$Testfunction22>'.$Testfunction22
+.class private abstract auto ansi sealed '<StartupCode$TestFunction22>'.$TestFunction22
        extends [System.Runtime]System.Object
 {
   .field static assembly int32 init@
@@ -73,12 +73,12 @@
     .maxstack  8
     IL_0000:  call       void [System.Console]System.Console::WriteLine()
     IL_0005:  ret
-  } // end of method $Testfunction22::main@
+  } // end of method $TestFunction22::main@
 
-} // end of class '<StartupCode$Testfunction22>'.$Testfunction22
+} // end of class '<StartupCode$TestFunction22>'.$TestFunction22
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\TestFunctions\Testfunction22_fs\Testfunction22.res
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\TestFunctions\TestFunction22_fs\TestFunction22.res

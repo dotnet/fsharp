@@ -19,7 +19,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 6:0:0:0
 }
-.assembly Testfunction22h
+.assembly TestFunction22h
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -31,29 +31,29 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.Testfunction22h
+.mresource public FSharpSignatureData.TestFunction22h
 {
   // Offset: 0x00000000 Length: 0x000002AB
-  // WARNING: managed resource file FSharpSignatureData.Testfunction22h created
+  // WARNING: managed resource file FSharpSignatureData.TestFunction22h created
 }
-.mresource public FSharpOptimizationData.Testfunction22h
+.mresource public FSharpOptimizationData.TestFunction22h
 {
   // Offset: 0x000002B0 Length: 0x000000BA
-  // WARNING: managed resource file FSharpOptimizationData.Testfunction22h created
+  // WARNING: managed resource file FSharpOptimizationData.TestFunction22h created
 }
-.module Testfunction22h.exe
-// MVID: {624E2D1D-7074-DFAC-A745-03831D2D4E62}
+.module TestFunction22h.exe
+// MVID: {624F90A7-7C14-C293-A745-0383A7904F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000002519B560000
+// Image base: 0x0000028891C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Testfunction22h
+.class public abstract auto ansi sealed TestFunction22h
        extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -78,7 +78,7 @@
 
     }  // end handler
     IL_0015:  ret
-  } // end of method Testfunction22h::test1
+  } // end of method TestFunction22h::test1
 
   .method public static void  test2() cil managed
   {
@@ -133,7 +133,7 @@
 
     }  // end handler
     IL_0042:  ret
-  } // end of method Testfunction22h::test2
+  } // end of method TestFunction22h::test2
 
   .method public static void  test3() cil managed
   {
@@ -196,7 +196,7 @@
 
     }  // end handler
     IL_0051:  ret
-  } // end of method Testfunction22h::test3
+  } // end of method TestFunction22h::test3
 
   .method public static void  test4() cil managed
   {
@@ -262,7 +262,7 @@
 
     }  // end handler
     IL_005f:  ret
-  } // end of method Testfunction22h::test4
+  } // end of method TestFunction22h::test4
 
   .method public static void  test5() cil managed
   {
@@ -326,11 +326,11 @@
 
     }  // end handler
     IL_005f:  ret
-  } // end of method Testfunction22h::test5
+  } // end of method TestFunction22h::test5
 
-} // end of class Testfunction22h
+} // end of class TestFunction22h
 
-.class private abstract auto ansi sealed '<StartupCode$Testfunction22h>'.$Testfunction22h
+.class private abstract auto ansi sealed '<StartupCode$TestFunction22h>'.$TestFunction22h
        extends [System.Runtime]System.Object
 {
   .method public static void  main@() cil managed
@@ -339,12 +339,12 @@
     // Code size       1 (0x1)
     .maxstack  8
     IL_0000:  ret
-  } // end of method $Testfunction22h::main@
+  } // end of method $TestFunction22h::main@
 
-} // end of class '<StartupCode$Testfunction22h>'.$Testfunction22h
+} // end of class '<StartupCode$TestFunction22h>'.$TestFunction22h
 
 
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\TestFunctions\Testfunction22h_fs\Testfunction22h.res
+// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\TestFunctions\TestFunction22h_fs\TestFunction22h.res
