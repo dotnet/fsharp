@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.FloatsAndDoubles created
 }
 .module FloatsAndDoubles.exe
-// MVID: {624FF431-906B-9AD0-A745-038331F44F62}
+// MVID: {62505C08-906B-9AD0-A745-0383085C5062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05430000
+// Image base: 0x035F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1325,7 +1325,7 @@
     IL_007f:  stelem     floatsanddoubles/Float
     IL_0084:  dup
     IL_0085:  ldc.i4.6
-    IL_0086:  ldc.r8     7.
+    IL_0086:  ldc.r8     7.0999999999999996
     IL_008f:  newobj     instance void floatsanddoubles/Float::.ctor(float64)
     IL_0094:  stelem     floatsanddoubles/Float
     IL_0099:  dup
@@ -1365,7 +1365,7 @@
     IL_011f:  stelem     floatsanddoubles/Double
     IL_0124:  dup
     IL_0125:  ldc.i4.6
-    IL_0126:  ldc.r8     7.
+    IL_0126:  ldc.r8     8.0999999999999996
     IL_012f:  newobj     instance void floatsanddoubles/Double::.ctor(float64)
     IL_0134:  stelem     floatsanddoubles/Double
     IL_0139:  dup
@@ -1413,4 +1413,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\Structure\FloatsAndDoubles_fs\FloatsAndDoubles.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net472\tests\EmittedIL\Structure\FloatsAndDoubles_fs\FloatsAndDoubles.res

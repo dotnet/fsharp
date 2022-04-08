@@ -19,8 +19,8 @@ type Double =
         new (d:double) = { D = d }
     end
 
-let floats  = [| Float(Double.Epsilon); Float(Double.MinValue); Float(Double.MaxValue);Float(Double.NegativeInfinity);Float(Double.PositiveInfinity);Float(Double.NaN); Float(7.0)|]
-let doubles = [| Double(Double.Epsilon); Double(Double.MinValue); Double(Double.MaxValue);Double(Double.NegativeInfinity);Double(Double.PositiveInfinity);Double(Double.NaN); Double(7.0)|]
+let floats  = [| Float(Double.Epsilon); Float(Double.MinValue); Float(Double.MaxValue);Float(Double.NegativeInfinity);Float(Double.PositiveInfinity);Float(Double.NaN); Float(7.1)|]
+let doubles = [| Double(Double.Epsilon); Double(Double.MinValue); Double(Double.MaxValue);Double(Double.NegativeInfinity);Double(Double.PositiveInfinity);Double(Double.NaN); Double(8.1)|]
 let names = [| "Epsilon"; "MinValue"; "MaxValue";"NegativeInfinity";"PositiveInfinity";"NaN";"Number" |]
 
 [<EntryPoint>]
