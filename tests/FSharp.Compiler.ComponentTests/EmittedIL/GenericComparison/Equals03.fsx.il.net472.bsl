@@ -33,7 +33,7 @@
 }
 .mresource public FSharpSignatureData.Equals03
 {
-  // Offset: 0x00000000 Length: 0x00000266
+  // Offset: 0x00000000 Length: 0x0000026A
   // WARNING: managed resource file FSharpSignatureData.Equals03 created
 }
 .mresource public FSharpOptimizationData.Equals03
@@ -42,13 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Equals03 created
 }
 .module Equals03.exe
-// MVID: {624F9E44-EB3D-648B-A745-0383449E4F62}
+// MVID: {624FC1D8-EB3D-648B-A745-0383D8C14F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E10000
+// Image base: 0x03C20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -82,8 +82,8 @@
                                                                    string)
       IL_0018:  brfalse.s  IL_0031
 
-      IL_001a:  ldc.r8     6.
-      IL_0023:  ldc.r8     7.
+      IL_001a:  ldc.r8     6.0999999999999996
+      IL_0023:  ldc.r8     7.0999999999999996
       IL_002c:  ceq
       IL_002e:  nop
       IL_002f:  br.s       IL_0033
@@ -124,4 +124,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Equals03_fsx\Equals03.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\GenericComparison\Equals03_fsx\Equals03.res

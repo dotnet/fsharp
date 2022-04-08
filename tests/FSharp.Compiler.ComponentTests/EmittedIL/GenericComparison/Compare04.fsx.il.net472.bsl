@@ -33,22 +33,22 @@
 }
 .mresource public FSharpSignatureData.Compare04
 {
-  // Offset: 0x00000000 Length: 0x0000026A
+  // Offset: 0x00000000 Length: 0x0000026E
   // WARNING: managed resource file FSharpSignatureData.Compare04 created
 }
 .mresource public FSharpOptimizationData.Compare04
 {
-  // Offset: 0x00000270 Length: 0x000000B9
+  // Offset: 0x00000278 Length: 0x000000B9
   // WARNING: managed resource file FSharpOptimizationData.Compare04 created
 }
 .module Compare04.exe
-// MVID: {624F9E44-79CF-7F19-A745-0383449E4F62}
+// MVID: {624FC1D8-79CF-7F19-A745-0383D8C14F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00970000
+// Image base: 0x03B30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -124,8 +124,8 @@
       IL_0052:  nop
       IL_0053:  br.s       IL_00c0
 
-      IL_0055:  ldc.r8     6.
-      IL_005e:  ldc.r8     7.
+      IL_0055:  ldc.r8     6.0999999999999996
+      IL_005e:  ldc.r8     7.0999999999999996
       IL_0067:  clt
       IL_0069:  brfalse.s  IL_006f
 
@@ -133,8 +133,8 @@
       IL_006c:  nop
       IL_006d:  br.s       IL_00c0
 
-      IL_006f:  ldc.r8     6.
-      IL_0078:  ldc.r8     7.
+      IL_006f:  ldc.r8     6.0999999999999996
+      IL_0078:  ldc.r8     7.0999999999999996
       IL_0081:  cgt
       IL_0083:  brfalse.s  IL_0089
 
@@ -142,8 +142,8 @@
       IL_0086:  nop
       IL_0087:  br.s       IL_00c0
 
-      IL_0089:  ldc.r8     6.
-      IL_0092:  ldc.r8     7.
+      IL_0089:  ldc.r8     6.0999999999999996
+      IL_0092:  ldc.r8     7.0999999999999996
       IL_009b:  ceq
       IL_009d:  brfalse.s  IL_00a3
 
@@ -152,8 +152,8 @@
       IL_00a1:  br.s       IL_00c0
 
       IL_00a3:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_00a8:  ldc.r8     6.
-      IL_00b1:  ldc.r8     7.
+      IL_00a8:  ldc.r8     6.0999999999999996
+      IL_00b1:  ldc.r8     7.0999999999999996
       IL_00ba:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [mscorlib]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
@@ -192,4 +192,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Compare04_fsx\Compare04.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\GenericComparison\Compare04_fsx\Compare04.res
