@@ -237,9 +237,6 @@ Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
 Misc02,CodeGen			Optimizations\AssemblyBoundary
-Misc02,CodeGen			Optimizations\ForLoop
-Misc02,CodeGen			Optimizations\GenericComparison
-Misc02,CodeGen			Optimizations\Inlining
 Misc02,NoMT		Printing
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents
