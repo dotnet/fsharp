@@ -25,6 +25,7 @@
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
+    <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
