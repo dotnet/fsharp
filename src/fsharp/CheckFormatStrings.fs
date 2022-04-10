@@ -445,7 +445,7 @@ let parseFormatStringInternal
 
               | 'A' ->
                   if g.useReflectionFreeCodeGen then
-                      failwithf "%s" (FSComp.SR.forPercentAInReflectionFreeCode())
+                      failwith (FSComp.SR.forPercentAInReflectionFreeCode())
 
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
