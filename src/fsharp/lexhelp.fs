@@ -67,7 +67,7 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (conditionalDefines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
+let mkLexargs (conditionalDefines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap: PathMap) =
     { 
       conditionalDefines = conditionalDefines
       ifdefStack = ifdefStack
