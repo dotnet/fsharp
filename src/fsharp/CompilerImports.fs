@@ -455,7 +455,7 @@ type TcConfig with
                 |> Array.filter(fun (_, refs)->refs |> isNil |> not)
 
             let toMsBuild = [|0..groupedReferences.Length-1|]
-                             |> Array.map(fun i->(p13 groupedReferences.[i]), (p23 groupedReferences.[i]), i)
+                             |> Array.map(fun i->(p13 groupedReferences[i]), (p23 groupedReferences[i]), i)
                              |> Array.filter (fun (_, i0, _)->resolvedAsFile|>Array.exists(fun (i1, _) -> i0=i1)|>not)
                              |> Array.map(fun (ref, _, i)->ref, string i)
 
@@ -466,7 +466,7 @@ type TcConfig with
                 resolutions
                     |> Array.map(fun resolvedFile ->
                                     let i = int resolvedFile.baggage
-                                    let _, maxIndexOfReference, ms = groupedReferences.[i]
+                                    let _, maxIndexOfReference, ms = groupedReferences[i]
                                     let assemblyResolutions =
                                         ms|>List.map(fun originalReference ->
                                                     Debug.Assert(FileSystem.IsPathRootedShim(resolvedFile.itemSpec), sprintf "msbuild-resolved path is not absolute: '%s'" resolvedFile.itemSpec)
@@ -1141,7 +1141,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             match generatedTypeRoots.TryGetValue ilTyRef with
             | true, (index, _) -> index
             | false, _ -> generatedTypeRoots.Count
-        generatedTypeRoots.[ilTyRef] <- (index, root)
+        generatedTypeRoots[ilTyRef] <- (index, root)
 
     member tcImports.ProviderGeneratedTypeRoots =
       tciLock.AcquireLock <| fun tcitok ->
@@ -1206,8 +1206,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 if not (auxModTable.ContainsKey key) then
                     let resolution = tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.RaiseError, AssemblyReference(m, key, None)) |> Option.get
                     let ilModule, _ = tcImports.OpenILBinaryModule(ctok, resolution.resolvedPath, m)
-                    auxModTable.[key] <- ilModule
-                auxModTable.[key]
+                    auxModTable[key] <- ilModule
+                auxModTable[key]
 
             | _ ->
                 error(InternalError("Unexpected ILScopeRef.Local or ILScopeRef.Assembly in exported type table", m))
