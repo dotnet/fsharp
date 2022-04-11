@@ -16,6 +16,7 @@ These release notes track our current efforts to document changes to the F# proj
 
 ### FSharp Compiler Service (main)
 
+* In FSharpParsingOptions, rename ConditionalCompilationDefines --> ConditionalDefines
 * Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
 * Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`
 * Some node types in FSharpExpr (e.g. Let, While, TryFinally, TryWith) reveal additional debug points

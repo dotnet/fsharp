@@ -69,7 +69,13 @@ type public FSharpChecker =
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseFile: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?cache: bool * ?userOpName: string -> Async<FSharpParseFileResults>
+    member ParseFile:
+        filename: string *
+        sourceText: ISourceText *
+        options: FSharpParsingOptions *
+        ?cache: bool *
+        ?userOpName: string
+            -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// Parses a source code for a file. Returns an AST that can be traversed for various features.
@@ -81,7 +87,13 @@ type public FSharpChecker =
     /// <param name="cache">Store the parse in a size-limited cache assocaited with the FSharpChecker. Default: true</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please call checker.ParseFile instead.  To do this, you must also pass FSharpParsingOptions instead of FSharpProjectOptions. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
-    member ParseFileInProject: filename: string * source: string * options: FSharpProjectOptions * ?cache: bool * ?userOpName: string -> Async<FSharpParseFileResults>
+    member ParseFileInProject:
+        filename: string *
+        source: string *
+        options: FSharpProjectOptions *
+        ?cache: bool *
+        ?userOpName: string
+            -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Check a source code file, returning a handle to the results of the parse including
@@ -101,7 +113,14 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("This member should no longer be used, please use 'CheckFileInProject'")>]
-    member CheckFileInProjectAllowingStaleCachedResults: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectAllowingStaleCachedResults:
+        parseResults: FSharpParseFileResults *
+        filename: string *
+        fileVersion: int *
+        source: string *
+        options: FSharpProjectOptions *
+        ?userOpName: string
+            -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -121,7 +140,14 @@ type public FSharpChecker =
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+    member CheckFileInProject:
+        parseResults: FSharpParseFileResults *
+        filename: string *
+        fileVersion: int *
+        sourceText: ISourceText *
+        options: FSharpProjectOptions *
+        ?userOpName: string
+            -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -434,7 +460,7 @@ type public CompilerEnvironment =
     static member DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
 
     /// Return the compilation defines that should be used when editing the given file.
-    static member GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
+    static member GetConditionalDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
 
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     static member IsCheckerSupportedSubcategory: string -> bool

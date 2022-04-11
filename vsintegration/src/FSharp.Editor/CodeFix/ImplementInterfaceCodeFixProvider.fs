@@ -143,7 +143,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
             let! _, _, parsingOptions, _ = context.Document.GetFSharpCompilationOptionsAsync(nameof(FSharpImplementInterfaceCodeFixProvider)) |> liftAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
             let tokens = Tokenizer.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)

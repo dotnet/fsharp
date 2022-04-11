@@ -91,7 +91,7 @@ type internal FSharpClassificationService
                 | _ -> ()
                 
         let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter
-        FSharpLexer.Tokenize(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+        FSharpLexer.Tokenize(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
 

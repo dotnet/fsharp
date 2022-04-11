@@ -193,7 +193,7 @@ type public FSharpProjectContext =
 type public FSharpParsingOptions =
     { 
       SourceFiles: string[]
-      ConditionalCompilationDefines: string list
+      ConditionalDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool

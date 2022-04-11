@@ -36,7 +36,7 @@ type Check =
             with 
             | :? 'TException as e -> 
                 let msg = e.ToString();
-                if msg.Contains("ReportTime") || msg.Contains("TypeCheckOneInput") then ()
+                if msg.Contains("ReportTime") || msg.Contains("CheckOneInput") then ()
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")

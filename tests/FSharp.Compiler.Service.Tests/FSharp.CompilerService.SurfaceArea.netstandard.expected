@@ -2097,8 +2097,8 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalCompilationDefines
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalCompilationDefines()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] ConditionalDefines
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalDefines()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] LightSyntax
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] get_LightSyntax()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String LangVersionText
@@ -2196,7 +2196,7 @@ FSharp.Compiler.CompilerEnvironment: Boolean IsCompilable(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsScriptFile(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean MustBeSingleFileProject(System.String)
 FSharp.Compiler.CompilerEnvironment: Microsoft.FSharp.Collections.FSharpList`1[System.String] DefaultReferencesForOrphanSources(Boolean)
-FSharp.Compiler.CompilerEnvironment: Microsoft.FSharp.Collections.FSharpList`1[System.String] GetCompilationDefinesForEditing(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
+FSharp.Compiler.CompilerEnvironment: Microsoft.FSharp.Collections.FSharpList`1[System.String] GetConditionalDefinesForEditing(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CompilerEnvironment: Microsoft.FSharp.Core.FSharpOption`1[System.String] BinFolderOfDefaultFSharpCompiler(Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CompilerEnvironment: System.Guid GetDebuggerLanguageID()
 FSharp.Compiler.DependencyManager.AssemblyResolutionProbe
