@@ -76,7 +76,7 @@ type IParseState with
             | true, gen -> gen
             | _ ->
                 let gen = box (SynArgNameGenerator())
-                bls.[key] <- gen
+                bls[key] <- gen
                 gen
         gen :?> SynArgNameGenerator
 
@@ -97,13 +97,13 @@ module LexbufLocalXmlDocStore =
         | true, collector -> collector
         | _ ->
             let collector = box (XmlDocCollector())
-            lexbuf.BufferLocalStore.[xmlDocKey] <- collector
+            lexbuf.BufferLocalStore[xmlDocKey] <- collector
             collector
 
         |> unbox<XmlDocCollector>
 
     let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
+        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
@@ -188,7 +188,7 @@ module LexbufIfdefStore =
         | true, store -> store
         | _ ->
             let store = box (ResizeArray<ConditionalDirectiveTrivia>())
-            lexbuf.BufferLocalStore.[ifDefKey] <- store
+            lexbuf.BufferLocalStore[ifDefKey] <- store
             store
         |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
 
@@ -237,7 +237,7 @@ module LexbufCommentStore =
         | true, store -> store
         | _ ->
             let store = box (ResizeArray<CommentTrivia>())
-            lexbuf.BufferLocalStore.[commentKey] <- store
+            lexbuf.BufferLocalStore[commentKey] <- store
             store
         |> unbox<ResizeArray<CommentTrivia>>
 

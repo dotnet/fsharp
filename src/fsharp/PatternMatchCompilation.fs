@@ -1102,7 +1102,7 @@ let CompilePatternBasic
     let nClauses = clausesA.Length
     let GetClause i refuted =
         if i < nClauses then
-            clausesA.[i]
+            clausesA[i]
         elif i = nClauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
 
@@ -1726,7 +1726,7 @@ let isProblematicClause (clause: TypedMatchClause) =
     let ips = if isPatternDisjunctive clause.Pattern then Array.append ips ips else ips
     // Look for multiple decision points.
     // We don't mind about the last logical decision point
-    ips.Length > 0 && Array.exists id ips.[0..ips.Length-2] 
+    ips.Length > 0 && Array.exists id ips[0..ips.Length-2] 
 
 let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =
     match clausesL with

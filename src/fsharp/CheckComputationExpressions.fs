@@ -348,8 +348,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
     let customOperationCheckValidity m f opDatas = 
         let vs = opDatas |> List.map f
-        let v0 = vs.[0]
-        let opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo = opDatas.[0]
+        let v0 = vs[0]
+        let opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo = opDatas[0]
         if not (List.allEqual vs) then 
             errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, m))
         v0
@@ -470,8 +470,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 else
                     false
 
-            if not isSpecial && nums |> List.forall (fun v -> v >= 0 && v = nums.[0]) then 
-                Some (max (nums.[0] - 1) 0) // drop the computation context argument
+            if not isSpecial && nums |> List.forall (fun v -> v >= 0 && v = nums[0]) then 
+                Some (max (nums[0] - 1) 0) // drop the computation context argument
             else
                 None
 
@@ -487,10 +487,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         i < argInfos.Length && 
                         let _, argInfo = List.item i argInfos
                         HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs)
-            if List.allEqual vs then vs.[0]
+            if List.allEqual vs then vs[0]
             else 
                 let opDatas = (tryGetDataForCustomOperation nm).Value
-                let opName, _, _, _, _, _, _, _j, _ = opDatas.[0]
+                let opName, _, _, _, _, _, _, _j, _ = opDatas[0]
                 errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
                 false
 
@@ -832,7 +832,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             match tryGetDataForCustomOperation nm with 
             | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.idRange))
             | Some opDatas -> 
-            let opName, _, _, _, _, _, _, _, methInfo = opDatas.[0]
+            let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
             // Record the resolution of the custom operation for posterity
             let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -1329,7 +1329,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         let numSourcesAndPats = sourcesAndPats.Length
                         assert (numSourcesAndPats <> 0)
                         if numSourcesAndPats = 1 then 
-                            sourcesAndPats.[0]
+                            sourcesAndPats[0]
 
                         elif numSourcesAndPats <= maxMergeSources then 
 
@@ -1487,7 +1487,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         // Detect one custom operation... This clause will always match at least once...
         | OptionalSequential (CustomOperationClause (nm, opDatas, opExpr, mClause, optionalIntoPat), optionalCont) ->
 
-            let opName, _, _, _, _, _, _, _, methInfo = opDatas.[0]
+            let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
             let isLikeZip = customOperationIsLikeZip nm
             let isLikeJoin = customOperationIsLikeJoin nm
             let isLikeGroupJoin = customOperationIsLikeZip nm
