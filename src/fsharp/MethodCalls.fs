@@ -555,24 +555,24 @@ type CalledMeth<'T>
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
                         if isIndexerSetter then
-                            unnamedCalledArgs.[nUnnamedCalledArgs-2]
+                            unnamedCalledArgs[nUnnamedCalledArgs-2]
                         else
-                            unnamedCalledArgs.[nUnnamedCalledArgs-1]
+                            unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
                 if supportsParamArgs then
                     if isIndexerSetter then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
-                            unnamedCalledArgs.[0..unnamedCalledArgs.Length-3] @
-                            [unnamedCalledArgs.[unnamedCalledArgs.Length-1]]
+                            unnamedCalledArgs[0..unnamedCalledArgs.Length-3] @
+                            [unnamedCalledArgs[unnamedCalledArgs.Length-1]]
                         let paramArrayCalledArg =
-                            unnamedCalledArgs.[unnamedCalledArgs.Length-2]
+                            unnamedCalledArgs[unnamedCalledArgs.Length-2]
                         let unnamedCallerArgs2 =
-                            unnamedCallerArgs.[0..nUnnamedCalledArgs-3] @
-                            [unnamedCallerArgs.[nUnnamedCallerArgs-1]]
+                            unnamedCallerArgs[0..nUnnamedCalledArgs-3] @
+                            [unnamedCallerArgs[nUnnamedCallerArgs-1]]
                         let paramArrayCallerArgs = 
-                            unnamedCallerArgs.[nUnnamedCalledArgs-2..nUnnamedCallerArgs-2]
+                            unnamedCallerArgs[nUnnamedCalledArgs-2..nUnnamedCallerArgs-2]
                         (unnamedCallerArgs2, paramArrayCallerArgs), unnamedCalledArgs2, Some paramArrayCalledArg
                     else
                         let unnamedCalledArgs2, paramArrayCalledArg = List.frontAndBack unnamedCalledArgs
@@ -1946,7 +1946,7 @@ module ProvidedMethodCalls =
             let vRaw = v.PUntaint (id, m)
             let tyT = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
             let vT, vTe = if mut then mkMutableCompGenLocal m nm tyT else mkCompGenLocal m nm tyT
-            varConv.[vRaw] <- (Some vT, vTe)
+            varConv[vRaw] <- (Some vT, vTe)
             vT
 
         and removeVar (v: Tainted<ProvidedVar>) =    
@@ -2145,18 +2145,18 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
         // static setter
         | true, true, 1 -> 
-            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs[0], m))
 
         // instance setter
         | true, false, 2 -> 
             // If we resolve to an instance field on a struct and we haven't yet taken 
             // the address of the object then go do that 
-            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs[0])) then 
                 let h = List.head argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
-                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs[1], m)))
             else        
-                Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+                Some (mkRecdFieldSetViaExprAddr (argExprs[0], rfref, tinst, argExprs[1], m))
 
         // static getter
         | false, true, 0 -> 
@@ -2164,19 +2164,19 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // instance getter
         | false, false, 1 -> 
-            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-                Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs[0]) then 
+                Some (mkRecdFieldGetViaExprAddr (argExprs[0], rfref, tinst, m))
             else 
-                Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+                Some (mkRecdFieldGet g (argExprs[0], rfref, tinst, m))
 
         | _ -> None 
 
     | Choice3Of5 (anonInfo, tinst, i) -> 
         let tupInfo = anonInfo.TupInfo
-        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs.[0], tinst, i, m))
+        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
+            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else 
-            Some (mkAnonRecdFieldGet g (anonInfo, argExprs.[0], tinst, i, m))
+            Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
     | Choice4Of5 expr -> 
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))

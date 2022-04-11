@@ -63,7 +63,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
 let ``Test that csharp references are recognized as such`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
-    let assembly = table.["CSharp_Analysis"]
+    let assembly = table["CSharp_Analysis"]
     let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass")
     Assert.True search.IsSome
     let found = search.Value
@@ -79,24 +79,24 @@ let ``Test that csharp references are recognized as such`` () =
     members.ContainsKey "InterfaceMethod" |> shouldEqual true
     members.ContainsKey "InterfaceProperty" |> shouldEqual true
     members.ContainsKey "InterfaceEvent" |> shouldEqual true
-    members.["Event"].IsEvent |> shouldEqual true
-    members.["Event"].EventIsStandard |> shouldEqual true
-    members.["Event"].EventAddMethod.DisplayName |> shouldEqual "add_Event"
-    members.["Event"].EventRemoveMethod.DisplayName |> shouldEqual "remove_Event"
-    members.["Event"].EventDelegateType.ToString() |> shouldEqual "type System.EventHandler"
+    members["Event"].IsEvent |> shouldEqual true
+    members["Event"].EventIsStandard |> shouldEqual true
+    members["Event"].EventAddMethod.DisplayName |> shouldEqual "add_Event"
+    members["Event"].EventRemoveMethod.DisplayName |> shouldEqual "remove_Event"
+    members["Event"].EventDelegateType.ToString() |> shouldEqual "type System.EventHandler"
 
     //// Check that we get xml docs
-    members.[".ctor"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.#ctor(System.Int32,System.String)"
-    members.["Method"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method(System.String)"
-    members.["Method2"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method2(System.String)"
-    members.["Method3"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method3(System.String[])"
-    members.["MethodWithOutref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithOutref(System.Int32@)"
-    members.["MethodWithInref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithInref(System.Int32@)"
-    members.["Property"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.Property"
-    members.["Event"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.Event"
-    members.["InterfaceMethod"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceMethod(System.String)"
-    members.["InterfaceProperty"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceProperty"
-    members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
+    members[".ctor"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.#ctor(System.Int32,System.String)"
+    members["Method"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method(System.String)"
+    members["Method2"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method2(System.String)"
+    members["Method3"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method3(System.String[])"
+    members["MethodWithOutref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithOutref(System.Int32@)"
+    members["MethodWithInref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithInref(System.Int32@)"
+    members["Property"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.Property"
+    members["Event"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.Event"
+    members["InterfaceMethod"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceMethod(System.String)"
+    members["InterfaceProperty"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceProperty"
+    members["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
 #if NETCOREAPP

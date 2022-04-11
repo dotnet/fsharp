@@ -138,7 +138,7 @@ let wordsOfNoArgInstr, isNoArgInstr =
         (let t = HashMultiMap(300, HashIdentity.Structural)
          noArgInstrs |> Lazy.force |> List.iter (fun (x, mk) -> t.Add(mk, x))
          t)
-    (fun s -> (Lazy.force t).[s]),
+    (fun s -> (Lazy.force t)[s]),
     (fun s -> (Lazy.force t).ContainsKey s)
 #endif
 

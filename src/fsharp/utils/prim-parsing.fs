@@ -16,19 +16,19 @@ exception Accept of obj
 type internal IParseState(ruleStartPoss:Position[], ruleEndPoss:Position[], lhsPos:Position[], ruleValues:obj[], lexbuf:LexBuffer<char>) = 
     member p.LexBuffer = lexbuf
 
-    member p.InputRange index = ruleStartPoss.[index-1], ruleEndPoss.[index-1]
+    member p.InputRange index = ruleStartPoss[index-1], ruleEndPoss[index-1]
 
-    member p.InputStartPosition index = ruleStartPoss.[index-1]
+    member p.InputStartPosition index = ruleStartPoss[index-1]
 
-    member p.InputEndPosition index = ruleEndPoss.[index-1]
+    member p.InputEndPosition index = ruleEndPoss[index-1]
 
-    member p.ResultStartPosition    = lhsPos.[0]
+    member p.ResultStartPosition    = lhsPos[0]
 
-    member p.ResultEndPosition    = lhsPos.[1]
+    member p.ResultEndPosition    = lhsPos[1]
 
-    member p.GetInput index    = ruleValues.[index-1]        
+    member p.GetInput index    = ruleValues[index-1]        
 
-    member p.ResultRange    = (lhsPos.[0], lhsPos.[1])  
+    member p.ResultRange    = (lhsPos[0], lhsPos[1])  
 
     // Side note: this definition coincidentally tests the fairly complex logic associated with an object expression implementing a generic abstract method.
     member p.RaiseError()  = raise RecoverableParseError 
@@ -98,17 +98,17 @@ type Stack<'a>(n)  =
     
     member buf.Count = count
     member buf.Pop() = count <- count - 1
-    member buf.Peep() = contents.[count - 1]
-    member buf.Top(n) = [ for x in contents.[max 0 (count-n)..count - 1] -> x ] |> List.rev
+    member buf.Peep() = contents[count - 1]
+    member buf.Top(n) = [ for x in contents[max 0 (count-n)..count - 1] -> x ] |> List.rev
     member buf.Push(x) =
         buf.Ensure(count + 1) 
-        contents.[count] <- x 
+        contents[count] <- x 
         count <- count + 1
         
     member buf.IsEmpty = (count = 0)
     member buf.PrintStack() = 
         for i = 0 to (count - 1) do 
-            Console.Write("{0}{1}",contents.[i],if i=count-1 then ":" else "-") 
+            Console.Write("{0}{1}",contents[i],if i=count-1 then ":" else "-") 
           
 
 #if DEBUG
@@ -140,8 +140,8 @@ module internal Implementation =
             if elemNumber = maxElemNum 
             then defaultValueOfAssoc
             else 
-                let x = int elemTab.[elemNumber*2]
-                if keyToFind = x then int elemTab.[elemNumber*2+1]
+                let x = int elemTab[elemNumber*2]
+                if keyToFind = x then int elemTab[elemNumber*2+1]
                 elif keyToFind < x then t.ReadAssoc (minElemNum ,elemNumber,defaultValueOfAssoc,keyToFind)
                 else                    t.ReadAssoc (elemNumber+1,maxElemNum,defaultValueOfAssoc,keyToFind)
 
@@ -158,37 +158,37 @@ module internal Implementation =
             assert (keyToFind < 0x10000)
             let cacheKey = (rowNumber <<< 16) ||| keyToFind
             let cacheIdx = (int32 (uint32 cacheKey % uint32 cacheSize)) * 2
-            let cacheKey2 = cache.[cacheIdx]
-            let v = cache.[cacheIdx+1]
+            let cacheKey2 = cache[cacheIdx]
+            let v = cache[cacheIdx+1]
             if cacheKey = cacheKey2 then v 
             else
-                let headOfTable = int offsetTab.[rowNumber]
+                let headOfTable = int offsetTab[rowNumber]
                 let firstElemNumber = headOfTable + 1           
-                let numberOfElementsInAssoc = int elemTab.[headOfTable*2]
-                let defaultValueOfAssoc = int elemTab.[headOfTable*2+1]          
+                let numberOfElementsInAssoc = int elemTab[headOfTable*2]
+                let defaultValueOfAssoc = int elemTab[headOfTable*2+1]          
                 let res = t.ReadAssoc (firstElemNumber,firstElemNumber+numberOfElementsInAssoc,defaultValueOfAssoc,keyToFind)
-                cache.[cacheIdx] <- cacheKey
-                cache.[cacheIdx+1] <- res
+                cache[cacheIdx] <- cacheKey
+                cache[cacheIdx+1] <- res
                 res
 
         // Read all entries in the association table
         // Used during error recovery to find all valid entries in the table
         member x.ReadAll(n) =       
-            let headOfTable = int offsetTab.[n]
+            let headOfTable = int offsetTab[n]
             let firstElemNumber = headOfTable + 1           
-            let numberOfElementsInAssoc = int32 elemTab.[headOfTable*2]           
-            let defaultValueOfAssoc = int elemTab.[headOfTable*2+1]          
+            let numberOfElementsInAssoc = int32 elemTab[headOfTable*2]           
+            let defaultValueOfAssoc = int elemTab[headOfTable*2+1]          
             [ for i in firstElemNumber .. (firstElemNumber+numberOfElementsInAssoc-1) -> 
-                (int elemTab.[i*2], int elemTab.[i*2+1]) ], defaultValueOfAssoc
+                (int elemTab[i*2], int elemTab[i*2+1]) ], defaultValueOfAssoc
 
     type IdxToIdxListTable(elemTab:uint16[], offsetTab:uint16[]) =
 
         // Read all entries in a row of the table
         member x.ReadAll(n) =       
-            let headOfTable = int offsetTab.[n]
+            let headOfTable = int offsetTab[n]
             let firstElemNumber = headOfTable + 1           
-            let numberOfElements = int32 elemTab.[headOfTable]           
-            [ for i in firstElemNumber .. (firstElemNumber+numberOfElements-1) -> int elemTab.[i] ]
+            let numberOfElements = int32 elemTab[headOfTable]           
+            [ for i in firstElemNumber .. (firstElemNumber+numberOfElements-1) -> int elemTab[i] ]
 
     //-------------------------------------------------------------------------
     // interpret the tables emitted by FSYACC.  
@@ -315,7 +315,7 @@ module internal Implementation =
                 if Flags.debug then (Console.Write("{0} value(state), state ",valueStack.Count); stateStack.PrintStack())
 #endif
                 let action = 
-                    let immediateAction = int tables.immediateActions.[state]
+                    let immediateAction = int tables.immediateActions[state]
                     if not (immediateAction = anyMarker) then
                         // Action has been pre-determined, no need to lookahead 
                         // Expecting it to be a Reduce action on a non-fakeStartNonTerminal ? 
@@ -363,8 +363,8 @@ module internal Implementation =
 
                 ) elif kind = reduceFlag then
                     let prod = actionValue action                                     
-                    let reduction = reductions.[prod]                                                             
-                    let n = int tables.reductionSymbolCounts.[prod]
+                    let reduction = reductions[prod]                                                             
+                    let n = int tables.reductionSymbolCounts[prod]
                        // pop the symbols, populate the values and populate the locations                              
 #if DEBUG
                     if Flags.debug then Console.Write("reduce popping {0} values/states, lookahead {1}", n, report haveLookahead lookaheadToken)
@@ -377,33 +377,33 @@ module internal Implementation =
                         stateStack.Pop()
 
                         let ruleIndex = (n-i)-1
-                        ruleValues.[ruleIndex] <- topVal.value
-                        ruleStartPoss.[ruleIndex] <- topVal.startPos
-                        ruleEndPoss.[ruleIndex] <- topVal.endPos
+                        ruleValues[ruleIndex] <- topVal.value
+                        ruleStartPoss[ruleIndex] <- topVal.startPos
+                        ruleEndPoss[ruleIndex] <- topVal.endPos
 
                         if i = 0 then
                             // Initial range
-                            lhsPos.[0] <- topVal.startPos
-                            lhsPos.[1] <- topVal.endPos
-                        elif topVal.startPos.FileIndex = lhsPos.[1].FileIndex && topVal.startPos.Line <= lhsPos.[1].Line then
+                            lhsPos[0] <- topVal.startPos
+                            lhsPos[1] <- topVal.endPos
+                        elif topVal.startPos.FileIndex = lhsPos[1].FileIndex && topVal.startPos.Line <= lhsPos[1].Line then
                             // Reduce range if same file as the initial end point
-                            lhsPos.[0] <- topVal.startPos
+                            lhsPos[0] <- topVal.startPos
 
                     // Use the lookahead token to populate the locations if the rhs is empty
                     if n = 0 then
                         if haveLookahead then 
-                           lhsPos.[0] <- lookaheadStartPos
-                           lhsPos.[1] <- lookaheadEndPos
+                           lhsPos[0] <- lookaheadStartPos
+                           lhsPos[1] <- lookaheadEndPos
                         else 
-                           lhsPos.[0] <- lexbuf.StartPos
-                           lhsPos.[1] <- lexbuf.EndPos
+                           lhsPos[0] <- lexbuf.StartPos
+                           lhsPos[1] <- lexbuf.EndPos
                     try
                           // printf "reduce %d\n" prod
                         let redResult = reduction parseState
-                        let valueInfo = ValueInfo(redResult, lhsPos.[0], lhsPos.[1])
+                        let valueInfo = ValueInfo(redResult, lhsPos[0], lhsPos[1])
                         valueStack.Push(valueInfo)
                         let currState = stateStack.Peep()
-                        let newGotoState = gotoTable.Read(int tables.productionToNonTerminalTable.[prod], currState)
+                        let newGotoState = gotoTable.Read(int tables.productionToNonTerminalTable[prod], currState)
                         stateStack.Push(newGotoState)
 
 #if DEBUG
@@ -412,7 +412,7 @@ module internal Implementation =
                     with
                     | Accept res ->
                           finished <- true
-                          valueStack.Push(ValueInfo(res, lhsPos.[0], lhsPos.[1])) 
+                          valueStack.Push(ValueInfo(res, lhsPos[0], lhsPos[1])) 
                     | RecoverableParseError ->
 #if DEBUG
                           if Flags.debug then Console.WriteLine("RecoverableParseErrorException...\n")

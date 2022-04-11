@@ -13,7 +13,7 @@ module internal Zmap =
     let empty (ord: IComparer<'T>) = Map<_,_,_>.Empty(ord)
 
     let add k v (m: Zmap<_,_>) = m.Add(k,v)
-    let find k (m: Zmap<_,_>) = m.[k]
+    let find k (m: Zmap<_,_>) = m[k]
     let tryFind k (m: Zmap<_,_>) = m.TryFind(k)
     let remove k (m: Zmap<_,_>) = m.Remove(k)
     let mem k (m: Zmap<_,_>) = m.ContainsKey(k)

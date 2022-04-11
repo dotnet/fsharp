@@ -64,8 +64,8 @@ module Commands =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             // When running tests, we want to roll forward to minor versions (including previews).
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -652,8 +652,8 @@ let diff normalize path1 path2 =
                 if x >= 0 then line.Substring(x+cwd.Length) else line
             else line
 
-        let line1 = normalizePath lines1.[i]
-        let line2 = normalizePath lines2.[i]
+        let line1 = normalizePath lines1[i]
+        let line2 = normalizePath lines2[i]
 
         if line1 <> line2 then
             append <| sprintf "diff between [%s] and [%s]" path1 path2
@@ -664,8 +664,8 @@ let diff normalize path1 path2 =
     if lines1.Length <> lines2.Length then
         append <| sprintf "diff between [%s] and [%s]" path1 path2
         append <| sprintf "diff at line %d" minLines
-        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
-        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+        lines1[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
 
     result.ToString()
 

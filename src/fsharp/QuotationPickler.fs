@@ -273,10 +273,10 @@ module SimplePickle =
             n
 
         member tbl.FindOrAdd x =
-            if tbl.tbl.ContainsKey x then tbl.tbl.[x]
+            if tbl.tbl.ContainsKey x then tbl.tbl[x]
             else tbl.Add x
 
-        member tbl.Find x = tbl.tbl.[x]
+        member tbl.Find x = tbl.tbl[x]
 
         member tbl.ContainsKey x = tbl.tbl.ContainsKey x
 

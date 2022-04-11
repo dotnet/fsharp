@@ -78,8 +78,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             array
 
         // Clear checksum and security data directory
-        for i in 0 .. 3 do allHeaders.[checkSumOffset + i] <- 0uy
-        for i in 0 .. 7 do allHeaders.[securityDirectoryEntryOffset + i] <- 0uy
+        for i in 0 .. 3 do allHeaders[checkSumOffset + i] <- 0uy
+        for i in 0 .. 7 do allHeaders[securityDirectoryEntryOffset + i] <- 0uy
         hashAlgorithm.AppendData(allHeaders, 0, allHeadersSize)
 
         // Hash content of all sections
@@ -93,7 +93,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let sectionHeaders = peHeaders.SectionHeaders
 
         for i in 0 .. (sectionHeaders.Length - 1) do
-            let section = sectionHeaders.[i]
+            let section = sectionHeaders[i]
             let mutable st = section.PointerToRawData
             let en = st + section.SizeOfRawData
 
@@ -119,7 +119,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         member x.ReadInt32() : int =
             let offset = x._offset
             x._offset <- offset + 4
-            int x._blob.[offset] ||| (int x._blob.[offset + 1] <<< 8) ||| (int x._blob.[offset + 2] <<< 16) ||| (int x._blob.[offset + 3] <<< 24)
+            int x._blob[offset] ||| (int x._blob[offset + 1] <<< 8) ||| (int x._blob[offset + 2] <<< 16) ||| (int x._blob[offset + 3] <<< 24)
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
@@ -199,7 +199,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let expAsDword =
                 let mutable buffer = int 0
                 for i in 0 .. rsaParameters.Exponent.Length - 1 do
-                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent.[i]
+                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent[i]
                 buffer
 
             bw.Write expAsDword                                                        // RSAPubKey.pubExp

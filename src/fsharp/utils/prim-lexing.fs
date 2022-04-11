@@ -62,17 +62,17 @@ type StringText(str: string) =
 
     interface ISourceText with
 
-        member _.Item with get index = str.[index]
+        member _.Item with get index = str[index]
 
         member _.GetLastCharacterPosition() =
             let lines = getLines.Value
             if lines.Length > 0 then
-                (lines.Length, lines.[lines.Length - 1].Length)
+                (lines.Length, lines[lines.Length - 1].Length)
             else
                 (0, 0)
 
         member _.GetLineString(lineIndex) = 
-            getLines.Value.[lineIndex]
+            getLines.Value[lineIndex]
 
         member _.GetLineCount() = getLines.Value.Length
 
@@ -221,7 +221,7 @@ namespace Internal.Utilities.Text.Lexing
            and  set b =  endPos <- b
 
         member lexbuf.LexemeView         = System.ReadOnlySpan<'Char>(buffer, bufferScanStart, lexemeLength)
-        member lexbuf.LexemeChar n   = buffer.[n+bufferScanStart]
+        member lexbuf.LexemeChar n   = buffer[n+bufferScanStart]
         member lexbuf.LexemeContains (c:'Char) =  array.IndexOf(buffer, c, bufferScanStart, lexemeLength) >= 0
         member lexbuf.BufferLocalStore = (context :> IDictionary<_,_>)
         member lexbuf.LexemeLength        with get() : int = lexemeLength    and set v = lexemeLength <- v
@@ -309,7 +309,7 @@ namespace Internal.Utilities.Text.Lexing
         let afterRefill (trans: uint16[][],sentinel,lexBuffer:LexBuffer<char>,scanUntilSentinel,endOfScan,state,eofPos) = 
             // end of file occurs if we couldn't extend the buffer 
             if lexBuffer.BufferScanLength = lexBuffer.BufferMaxScanLength then  
-                let snew = int trans.[state].[eofPos] // == EOF 
+                let snew = int trans[state].[eofPos] // == EOF 
                 if snew = sentinel then 
                     endOfScan()
                 else 
@@ -331,12 +331,12 @@ namespace Internal.Utilities.Text.Lexing
         let sentinel = 255 * 256 + 255 
         let numUnicodeCategories = 30 
         let numLowUnicodeChars = 128 
-        let numSpecificUnicodeChars = (trans.[0].Length - 1 - numLowUnicodeChars - numUnicodeCategories)/2
+        let numSpecificUnicodeChars = (trans[0].Length - 1 - numLowUnicodeChars - numUnicodeCategories)/2
         let lookupUnicodeCharacters state inp =
             let inpAsInt = int inp
             // Is it a fast ASCII character?
             if inpAsInt < numLowUnicodeChars then 
-                int trans.[state].[inpAsInt]
+                int trans[state].[inpAsInt]
             else 
                 // Search for a specific unicode character
                 let baseForSpecificUnicodeChars = numLowUnicodeChars
@@ -349,21 +349,21 @@ namespace Internal.Utilities.Text.Lexing
                         let unicodeCategory = 
                             System.Char.GetUnicodeCategory(inp)
                         //System.Console.WriteLine("inp = {0}, unicodeCategory = {1}", [| box inp; box unicodeCategory |]);
-                        int trans.[state].[baseForUnicodeCategories + int32 unicodeCategory]
+                        int trans[state].[baseForUnicodeCategories + int32 unicodeCategory]
                     else 
                         // This is the specific unicode character
-                        let c = char (int trans.[state].[baseForSpecificUnicodeChars+i*2])
+                        let c = char (int trans[state].[baseForSpecificUnicodeChars+i*2])
                         //System.Console.WriteLine("c = {0}, inp = {1}, i = {2}", [| box c; box inp; box i |]);
                         // OK, have we found the entry for a specific unicode character?
                         if c = inp
-                        then int trans.[state].[baseForSpecificUnicodeChars+i*2+1]
+                        then int trans[state].[baseForSpecificUnicodeChars+i*2+1]
                         else loop(i+1)
                 loop 0
         let eofPos    = numLowUnicodeChars + 2*numSpecificUnicodeChars + numUnicodeCategories 
 
         let rec scanUntilSentinel lexBuffer state =
             // Return an endOfScan after consuming the input 
-            let a = int accept.[state] 
+            let a = int accept[state] 
             if a <> sentinel then 
                 onAccept(lexBuffer,a)
             
@@ -374,7 +374,7 @@ namespace Internal.Utilities.Text.Lexing
                 afterRefill (trans,sentinel,lexBuffer,scanUntilSentinel,lexBuffer.EndOfScan,state,eofPos)
             else
                 // read a character - end the scan if there are no further transitions 
-                let inp = lexBuffer.Buffer.[lexBuffer.BufferScanPos]
+                let inp = lexBuffer.Buffer[lexBuffer.BufferScanPos]
                 
                 // Find the new state
                 let snew = lookupUnicodeCharacters state inp

@@ -94,11 +94,11 @@ type BasicProvider (config : TypeProviderConfig) as this =
 
         let ctor2 = ProvidedConstructor(
                         [ProvidedParameter("InnerState", typeof<string>)],
-                        invokeCode = fun args -> <@@ (%%(args.[0]):string) :> obj @@>)
+                        invokeCode = fun args -> <@@ (%%(args[0]):string) :> obj @@>)
         myType.AddMember(ctor2)
 
         let innerState = ProvidedProperty("InnerState", typeof<string>,
-                            getterCode = fun args -> <@@ (%%(args.[0]) :> obj) :?> string @@>)
+                            getterCode = fun args -> <@@ (%%(args[0]) :> obj) :?> string @@>)
         myType.AddMember(innerState)
 
         let someMethod = ProvidedMethod("DoNothing", [], typeof<unit>,
@@ -302,7 +302,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
         let ctor = ProvidedConstructor([], invokeCode = fun args -> <@@ "My internal state" :> obj @@>)
         myType.AddMember(ctor)
 
-        let ctor2 = ProvidedConstructor([ProvidedParameter("InnerState", typeof<string>)], invokeCode = fun args -> <@@ (%%(args.[1]):string) :> obj @@>)
+        let ctor2 = ProvidedConstructor([ProvidedParameter("InnerState", typeof<string>)], invokeCode = fun args -> <@@ (%%(args[1]):string) :> obj @@>)
         myType.AddMember(ctor2)
 
         for i in 1 .. count do 
@@ -317,7 +317,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
 
     let myParamType = 
         let t = ProvidedTypeDefinition(asm, ns, "GenerativeProvider", Some typeof<obj>, isErased=false)
-        t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args.[0]))
+        t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args[0]))
         t
     do
         this.AddNamespace(ns, [myParamType])

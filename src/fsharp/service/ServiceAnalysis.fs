@@ -187,7 +187,7 @@ module UnusedOpens =
                 match usedModules.TryGetValue openedModule.Entity with
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
-            usedModules.[openedModule.Entity] <- scopes
+            usedModules[openedModule.Entity] <- scopes
         not newlyOpenedModules.IsEmpty
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.

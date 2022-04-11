@@ -141,12 +141,12 @@ let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFie
       addFieldNeverAttrs = addFieldNeverAttrs }
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
-let mkILFuncTy cenv dty rty = mkILBoxedTy cenv.tref_Func.[0] [dty;rty]
+let mkILFuncTy cenv dty rty = mkILBoxedTy cenv.tref_Func[0] [dty;rty]
 let mkILCurriedFuncTy cenv dtys rty = List.foldBack (mkILFuncTy cenv) dtys rty
 
 let typ_Func cenv (dtys: ILType list) rty = 
     let n = dtys.Length
-    let tref = if n <= 10 then cenv.tref_Func.[n-1] else mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n   
+    let tref = if n <= 10 then cenv.tref_Func[n-1] else mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n   
     mkILBoxedTy tref (dtys @ [rty])
 
 let rec mkTyOfApps cenv apps =
@@ -172,11 +172,11 @@ let mkMethSpecForMultiApp cenv (argtys': ILType list, rty) =
     let inst = argtys'@[rty]
     if n = 1  then 
       true, 
-       (mkILNonGenericInstanceMethSpecInTy (mkILBoxedTy cenv.tref_Func.[0] inst, "Invoke", formalArgTys, formalRetTy))
+       (mkILNonGenericInstanceMethSpecInTy (mkILBoxedTy cenv.tref_Func[0] inst, "Invoke", formalArgTys, formalRetTy))
     else 
        false, 
        (mkILStaticMethSpecInTy
-          (mkILFuncTy cenv inst.[0] inst.[1], 
+          (mkILFuncTy cenv inst[0] inst[1], 
            "InvokeFast", 
            [mkILCurriedFuncTy cenv formalArgTys formalRetTy]@formalArgTys, 
            formalRetTy, 

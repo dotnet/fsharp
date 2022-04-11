@@ -106,7 +106,7 @@ type NodeCode private () =
                 CompileThreadStatic.BuildPhase <- phase
         with
         | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-            raise(ex.InnerExceptions.[0])
+            raise(ex.InnerExceptions[0])
 
     static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
         NodeCode.RunImmediate(computation, CancellationToken.None)

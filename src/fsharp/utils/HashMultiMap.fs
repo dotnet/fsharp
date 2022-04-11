@@ -27,9 +27,9 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
     member x.Add(y,z) = 
         match firstEntries.TryGetValue y with
         | true, res ->
-            rest.[y] <- res :: x.GetRest(y)
+            rest[y] <- res :: x.GetRest(y)
         | _ -> ()
-        firstEntries.[y] <- z
+        firstEntries[y] <- z
 
     member x.Clear() = 
          firstEntries.Clear()
@@ -94,11 +94,11 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
             | true, res ->
                 match res with 
                 | [h] -> 
-                    firstEntries.[y] <- h; 
+                    firstEntries[y] <- h; 
                     rest.Remove(y) |> ignore
                 | h :: t -> 
-                    firstEntries.[y] <- h
-                    rest.[y] <- t
+                    firstEntries[y] <- h
+                    rest[y] <- t
                 | _ -> 
                     ()
             | _ ->
@@ -106,7 +106,7 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
         | _ -> ()
 
     member x.Replace(y,z) = 
-        firstEntries.[y] <- z
+        firstEntries[y] <- z
 
     member x.TryFind(y) =
         match firstEntries.TryGetValue y with
@@ -132,14 +132,14 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
     interface IDictionary<'Key, 'Value> with 
 
         member s.Item 
-            with get x = s.[x]            
-            and  set x v = s.[x] <- v
+            with get x = s[x]            
+            and  set x v = s[x] <- v
             
         member s.Keys = ([| for kvp in s -> kvp.Key |] :> ICollection<'Key>)
 
         member s.Values = ([| for kvp in s -> kvp.Value |] :> ICollection<'Value>)
 
-        member s.Add(k,v) = s.[k] <- v
+        member s.Add(k,v) = s[k] <- v
 
         member s.ContainsKey(k) = s.ContainsKey(k)
 
@@ -151,7 +151,7 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with 
 
-        member s.Add(x) = s.[x.Key] <- x.Value
+        member s.Add(x) = s[x.Key] <- x.Value
 
         member s.Clear() = s.Clear()            
 
@@ -168,7 +168,7 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
             | Some v when Unchecked.equals v x.Value -> true
             | _ -> false
 
-        member s.CopyTo(arr,arrIndex) = s |> Seq.iteri (fun j x -> arr.[arrIndex+j] <- x)
+        member s.CopyTo(arr,arrIndex) = s |> Seq.iteri (fun j x -> arr[arrIndex+j] <- x)
 
         member s.IsReadOnly = false
 

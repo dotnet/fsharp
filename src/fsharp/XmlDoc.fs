@@ -180,22 +180,22 @@ type XmlDocCollector() =
         | true, struct(startIndex, endIndex, _) ->
             let linesBefore = Array.create (endIndex - startIndex + 1) ("", range0)
             for i in startIndex .. endIndex do
-                linesBefore.[i - startIndex] <- savedLines.[i]
+                linesBefore[i - startIndex] <- savedLines[i]
             linesBefore
         | false, _ -> [||]
 
     member x.LinesRange grabPointPos =
         match savedGrabPoints.TryGetValue grabPointPos with
         | true, struct(startIndex, endIndex, _) ->
-            let startRange = savedLines.[startIndex] |> snd
-            let endRange = savedLines.[endIndex] |> snd
+            let startRange = savedLines[startIndex] |> snd
+            let endRange = savedLines[endIndex] |> snd
             unionRanges startRange endRange
         | false, _ -> range0
 
     member x.SetXmlDocValidity(grabPointPos, isValid) =
         match savedGrabPoints.TryGetValue grabPointPos with
         | true, struct(startIndex, endIndex, _) ->
-            savedGrabPoints.[grabPointPos] <- struct(startIndex, endIndex, isValid)
+            savedGrabPoints[grabPointPos] <- struct(startIndex, endIndex, isValid)
         | _ -> ()
 
     member x.HasComments grabPointPos =
@@ -206,12 +206,12 @@ type XmlDocCollector() =
 
         for startIndex, endIndex, isValid in savedGrabPoints.Values do
             if isValid then () else
-            let _, startRange = savedLines.[startIndex]
-            let _, endRange = savedLines.[endIndex]
+            let _, startRange = savedLines[startIndex]
+            let _, endRange = savedLines[endIndex]
             let range = unionRanges startRange endRange
             informationalWarning (Error(FSComp.SR.invalidXmlDocPosition(), range))
             // Collect invalid triple slash comment ranges, to later transform these to trivia 
-            [ startIndex .. endIndex ] |> List.iter (fun idx -> savedLines.[idx] |> snd |> comments.Add)
+            [ startIndex .. endIndex ] |> List.iter (fun idx -> savedLines[idx] |> snd |> comments.Add)
 
         List.ofSeq comments
 
@@ -299,8 +299,8 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             let childNodes = node.ChildNodes
             let lines = Array.zeroCreate childNodes.Count
             for i = 0 to childNodes.Count - 1 do
-                let childNode = childNodes.[i]
-                lines.[i] <- childNode.OuterXml
+                let childNode = childNodes[i]
+                lines[i] <- childNode.OuterXml
             XmlDoc(lines, range0)
         )
 

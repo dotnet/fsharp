@@ -100,13 +100,13 @@ let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
     wholeProjectResults .Diagnostics.Length |> shouldEqual 2
-    wholeProjectResults.Diagnostics.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
-    wholeProjectResults.Diagnostics.[1].ErrorNumber |> shouldEqual 25
+    wholeProjectResults.Diagnostics[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
+    wholeProjectResults.Diagnostics[1].ErrorNumber |> shouldEqual 25
 
-    wholeProjectResults.Diagnostics.[0].Range.StartLine |> shouldEqual 10
-    wholeProjectResults.Diagnostics.[0].Range.EndLine |> shouldEqual 10
-    wholeProjectResults.Diagnostics.[0].Range.StartColumn |> shouldEqual 43
-    wholeProjectResults.Diagnostics.[0].Range.EndColumn |> shouldEqual 44
+    wholeProjectResults.Diagnostics[0].Range.StartLine |> shouldEqual 10
+    wholeProjectResults.Diagnostics[0].Range.EndLine |> shouldEqual 10
+    wholeProjectResults.Diagnostics[0].Range.StartColumn |> shouldEqual 43
+    wholeProjectResults.Diagnostics[0].Range.EndColumn |> shouldEqual 44
 
 [<Test;NonParallelizable>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () =
@@ -171,11 +171,11 @@ let ``Test project1 basic`` () =
 
     set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["N"; "M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["D1"; "D2"; "D3"; "SaveOptions" ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["D1"; "D2"; "D3"; "SaveOptions" ]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[1].NestedEntities -> x.DisplayName ] |> shouldEqual ["C"; "CAbbrev"]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[1].NestedEntities -> x.DisplayName ] |> shouldEqual ["C"; "CAbbrev"]
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    set [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual (set ["y2"; "pair2"; "pair1"; "(++)"; "c1"; "c2"; "mmmm1"; "mmmm2"; "enumValue" ])
 
 [<Test>]
@@ -697,9 +697,9 @@ let ``Test project2 basic`` () =
 
     set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["DUWithNormalFields"; "DUWithNamedFields"; "GenericClass" ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["DUWithNormalFields"; "DUWithNamedFields"; "GenericClass" ]
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    set [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual (set ["c"; "GenericFunction"])
 
 [<Test>]
@@ -939,10 +939,10 @@ let ``Test project3 basic`` () =
 
     set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ]
         |> shouldEqual ["IFoo"; "CFoo"; "CBaseFoo"; "IFooImpl"; "CFooImpl"; "CBaseFooImpl"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["IFooImplObjectExpression"; "CFooImplObjectExpression"; "getP"; "setP"; "getE";"getM"]
 
 [<Test>]
@@ -1305,10 +1305,10 @@ let ``Test project4 basic`` () =
 
     set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ]
         |> shouldEqual ["Foo"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["twice"]
 
 [<Test>]
@@ -4642,12 +4642,12 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
     let declarations =
-        let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-        match checkedFile.Declarations.[0] with
+        let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
+        match checkedFile.Declarations[0] with
         | FSharpImplementationFileDeclaration.Entity (_, subDecls) -> subDecls
         | _ -> failwith "unexpected declaration"
     let getExpr exprIndex =
-        match declarations.[exprIndex] with
+        match declarations[exprIndex] with
         | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(_,_,e) -> e
         | FSharpImplementationFileDeclaration.InitAction e -> e
         | _ -> failwith "unexpected declaration"
@@ -4678,11 +4678,11 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
     let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunImmediate
-    let project36Module = wholeProjectResults.AssemblySignature.Entities.[0]
-    let lit = project36Module.MembersFunctionsAndValues.[0]
+    let project36Module = wholeProjectResults.AssemblySignature.Entities[0]
+    let lit = project36Module.MembersFunctionsAndValues[0]
     shouldEqual true (lit.LiteralValue.Value |> unbox |> (=) 1.)
 
-    let notLit = project36Module.MembersFunctionsAndValues.[1]
+    let notLit = project36Module.MembersFunctionsAndValues[1]
     shouldEqual true notLit.LiteralValue.IsNone
 
 module internal Project37 =
@@ -4751,7 +4751,7 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
         match su.Symbol with
         | :? FSharpMemberOrFunctionOrValue as funcSymbol ->
             let getAttrArg() =
-                let arg = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd
+                let arg = funcSymbol.Attributes[0].ConstructorArguments[0] |> snd
                 arg :?> FSharpType
             match funcSymbol.DisplayName with
             | "withType" ->
@@ -4760,24 +4760,24 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
             | "withGenericType" ->
                 let t = getAttrArg()
                 t.TypeDefinition.DisplayName |> shouldEqual "list"
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
+                t.GenericArguments[0].TypeDefinition.DisplayName |> shouldEqual "int"
             | "withTupleType" ->
                 let t = getAttrArg()
                 t.IsTupleType |> shouldEqual true
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
-                t.GenericArguments.[1].TypeDefinition.DisplayName |> shouldEqual "int"
+                t.GenericArguments[0].TypeDefinition.DisplayName |> shouldEqual "int"
+                t.GenericArguments[1].TypeDefinition.DisplayName |> shouldEqual "int"
             | "withFuncType" ->
                 let t = getAttrArg()
                 t.IsFunctionType |> shouldEqual true
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
-                t.GenericArguments.[1].TypeDefinition.DisplayName |> shouldEqual "int"
+                t.GenericArguments[0].TypeDefinition.DisplayName |> shouldEqual "int"
+                t.GenericArguments[1].TypeDefinition.DisplayName |> shouldEqual "int"
             | "withTypeArray" ->
-                let attr = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd
+                let attr = funcSymbol.Attributes[0].ConstructorArguments[0] |> snd
                 let ta = attr :?> obj[] |> Array.map (fun t -> t :?> FSharpType)
-                ta.[0].TypeDefinition.DisplayName |> shouldEqual "TestUnion"
-                ta.[1].TypeDefinition.DisplayName |> shouldEqual "TestRecord"
+                ta[0].TypeDefinition.DisplayName |> shouldEqual "TestUnion"
+                ta[1].TypeDefinition.DisplayName |> shouldEqual "TestRecord"
             | "withIntArray" ->
-                let attr = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd
+                let attr = funcSymbol.Attributes[0].ConstructorArguments[0] |> snd
                 let a = attr :?> obj[] |> Array.map (fun t -> t :?> int)
                 a |> shouldEqual [| 0; 1; 2 |]
             | _ -> ()
@@ -4891,7 +4891,7 @@ let ``Test project38 abstract slot information`` () =
     let printAbstractSignature (s: FSharpAbstractSignature) =
         let printType (t: FSharpType) =
             hash t  |> ignore // smoke test to check hash code doesn't loop
-            (string t).[5 ..]
+            (string t)[5 ..]
         let args =
             (s.AbstractArguments |> Seq.concat |> Seq.map (fun a ->
                 (match a.Name with Some n -> n + ":" | _ -> "") + printType a.Type) |> String.concat " * ")
@@ -5296,13 +5296,13 @@ let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/F
     let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunImmediate
 
     let declarations =
-        let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-        match checkedFile.Declarations.[0] with
+        let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
+        match checkedFile.Declarations[0] with
         | FSharpImplementationFileDeclaration.Entity (_, subDecls) -> subDecls
         | _ -> failwith "unexpected declaration"
 
     let getExpr exprIndex =
-        match declarations.[exprIndex] with
+        match declarations[exprIndex] with
         | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(_,_,e) -> e
         | FSharpImplementationFileDeclaration.InitAction e -> e
         | _ -> failwith "unexpected declaration"
@@ -5477,8 +5477,8 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunImmediate
-    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((4, 5), (4, 23)), "open System.Collections // unused");
            (((6, 5), (6, 19)), "open FSharp.Control // unused");
@@ -5550,8 +5550,8 @@ type UseTheThings(i:int) =
     //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
     //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunImmediate
-    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((4, 5), (4, 23)), "open System.Collections // unused");
            (((6, 5), (6, 19)), "open FSharp.Control // unused");
@@ -5626,8 +5626,8 @@ module M2 =
             | _, FSharpCheckFileAnswer.Succeeded(res) -> res
             | _ -> failwithf "Parsing aborted unexpectedly..."
     let lines = FileSystem.OpenFileForReadShim(fileName1).ReadAllLines()
-    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunImmediate
-    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines[i-1])) |> Async.RunImmediate
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines[uo.StartLine-1] ]
     let expected =
           [(((2, 5), (2, 23)), "open System.Collections // unused");
            (((4, 5), (4, 19)), "open FSharp.Control // unused");

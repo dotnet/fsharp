@@ -137,10 +137,10 @@ let ``Test multi project 1 basic`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
@@ -332,9 +332,9 @@ let ``Test ManyProjectsStressTest basic`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
 [<Test>]
@@ -346,9 +346,9 @@ let ``Test ManyProjectsStressTest cache too small`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
 [<Test>]

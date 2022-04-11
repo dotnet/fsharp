@@ -58,7 +58,7 @@ type Parent =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
             for i in 0..p.Length - 1 do
-                idents.[i] <- p.[i]
+                idents[i] <- p[i]
         | _ -> ()
         idents
     
@@ -72,7 +72,7 @@ type Parent =
         let removeGenericParamsCount (idents: ShortIdents) =
             idents 
             |> Array.map (fun ident ->
-                if ident.Length > 0 && Char.IsDigit ident.[ident.Length - 1] then
+                if ident.Length > 0 && Char.IsDigit ident[ident.Length - 1] then
                     let lastBacktickIndex = ident.LastIndexOf '`' 
                     if lastBacktickIndex <> -1 then
                         ident.Substring(0, lastBacktickIndex)
@@ -81,7 +81,7 @@ type Parent =
 
         let removeModuleSuffix (idents: ShortIdents) =
             if entity.IsFSharpModule && idents.Length > 0 then
-                let lastIdent = idents.[idents.Length - 1]
+                let lastIdent = idents[idents.Length - 1]
                 if lastIdent <> entity.DisplayName then
                     idents |> Array.replace (idents.Length - 1) entity.DisplayName
                 else idents
@@ -110,7 +110,7 @@ module AssemblyContent =
 
     let UnresolvedSymbol (topRequireQualifiedAccessParent: ShortIdents option) (cleanedIdents: ShortIdents) (fullName: string) =
         let getNamespace (idents: ShortIdents) = 
-            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
+            if idents.Length > 1 then Some idents[..idents.Length - 2] else None
 
         let ns = 
             topRequireQualifiedAccessParent 
@@ -297,7 +297,7 @@ type EntityCache() =
             match dic.TryGetValue assembly with
             | true, entry -> Some entry
             | _ -> None
-        member _.Set assembly entry = dic.[assembly] <- entry
+        member _.Set assembly entry = dic[assembly] <- entry
 
     member _.Clear() = dic.Clear()
     member x.Locking f = lock dic <| fun _ -> f (x :> IAssemblyContentCache)

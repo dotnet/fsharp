@@ -28,7 +28,7 @@ type NiceNameGenerator() =
             | true, count -> count
             | _ -> 0
         let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-        basicNameCounts.[basicName] <- n + 1
+        basicNameCounts[basicName] <- n + 1
         nm)
 
     member x.Reset () =
@@ -61,8 +61,8 @@ type StableNiceNameGenerator() =
                     | true, c -> c
                     | _ -> 0
                 let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-                names.[key] <- nm
-                basicNameCounts.[basicName] <- n + 1
+                names[key] <- nm
+                basicNameCounts[basicName] <- n + 1
                 nm
         )
 

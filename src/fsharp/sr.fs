@@ -21,7 +21,7 @@ namespace FSharp.Compiler
         open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
-            FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
+            FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys[0],tys[1]), impl)
 
         let funTyC = typeof<obj -> obj>.GetGenericTypeDefinition()  
         let mkFunTy a b = funTyC.MakeGenericType([| a;b |])
@@ -40,12 +40,12 @@ namespace FSharp.Compiler
 
         let buildFunctionForOneArgPat (ty: System.Type) impl = 
             let _,tys = destFunTy ty 
-            let rty = tys.[1]
+            let rty = tys[1]
             // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf "%x"') 
             mkFunctionValue tys (fun inp -> impl rty inp)
                     
         let capture1 (fmt:string) i args ty (go : obj list -> System.Type -> int -> obj) : obj = 
-            match fmt.[i] with
+            match fmt[i] with
             | '%' -> go args ty (i+1) 
             | 'd'
             | 'f'
@@ -63,7 +63,7 @@ namespace FSharp.Compiler
 
             /// Function to capture the arguments and then run.
             let rec capture args ty i = 
-                if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then 
+                if i >= len ||  (fmt[i] = '%' && i+1 >= len) then 
                     let b = System.Text.StringBuilder()    
                     b.AppendFormat(messageString, (Array.ofList (List.rev args))) |> ignore
                     box(b.ToString())
@@ -73,7 +73,7 @@ namespace FSharp.Compiler
                 elif System.Char.IsSurrogatePair(fmt,i) then 
                    capture args ty (i+2)
                 else
-                    match fmt.[i] with
+                    match fmt[i] with
                     | '%' ->
                         let i = i+1 
                         capture1 fmt i args ty capture
@@ -106,13 +106,13 @@ namespace FSharp.Compiler
                 let mutable order = Set.empty<int>
     
                 while pos < len do
-                    if s.[pos] = '{' then
+                    if s[pos] = '{' then
                         let mutable pos' = pos+1
-                        while System.Char.IsNumber(s.[pos']) do
+                        while System.Char.IsNumber(s[pos']) do
                             pos' <- pos' + 1
-                        if pos' > pos+1 && s.[pos'] = '}' then
+                        if pos' > pos+1 && s[pos'] = '}' then
                             nHoles <- nHoles + 1
-                            let ordern = int s.[(pos+1) .. (pos'-1)]
+                            let ordern = int s[(pos+1) .. (pos'-1)]
                             order <- order.Add(ordern)
                             pos <- pos'
                     pos <- pos + 1
@@ -131,8 +131,8 @@ namespace FSharp.Compiler
                     let mutable nFmt = 0
                 
                     while pos < len do
-                        if s.[pos] = '%' && 
-                          (s.[pos+1] = 'd' || s.[pos+1] = 's' || s.[pos+1] = 'f') then
+                        if s[pos] = '%' && 
+                          (s[pos+1] = 'd' || s[pos+1] = 's' || s[pos+1] = 'f') then
                             nFmt <- nFmt + 1
                             pos <- pos + 2 ;
                         else
@@ -144,8 +144,8 @@ namespace FSharp.Compiler
             
             // first, verify that the number of holes in the message string does not exceed the 
             // largest hole reference
-            if holes <> [] && holes.[0] > nHoles - 1 then
-                System.Diagnostics.Debug.Assert(false, sprintf "**DECLARED MESSAGE ERROR** Message string %s contains %d holes, but references hole %d" messageID nHoles holes.[0])
+            if holes <> [] && holes[0] > nHoles - 1 then
+                System.Diagnostics.Debug.Assert(false, sprintf "**DECLARED MESSAGE ERROR** Message string %s contains %d holes, but references hole %d" messageID nHoles holes[0])
                 
             // next, verify that the number of format placeholders is the same as the number of holes
             if nHoles <> nPlaceholders then

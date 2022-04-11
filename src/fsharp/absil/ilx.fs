@@ -25,7 +25,7 @@ type IlxUnionCase =
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
-    member x.FieldDef n = x.altFields.[n]
+    member x.FieldDef n = x.altFields[n]
     member x.Name = x.altName
     member x.IsNullary  = (x.FieldDefs.Length = 0)
     member x.FieldTypes = x.FieldDefs |> Array.map (fun fd -> fd.Type) 
@@ -49,7 +49,7 @@ type IlxUnionSpec =
     member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_, _, _, np, _), _)) = x in np
     member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_, _, _, _, b), _)) = x in b
     member x.Alternatives = Array.toList x.AlternativesArray
-    member x.Alternative idx = x.AlternativesArray.[idx]
+    member x.Alternative idx = x.AlternativesArray[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
 
 type IlxClosureLambdas = 

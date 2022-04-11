@@ -129,7 +129,7 @@ module internal Utils =
         | NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args
         | Quote(e1) -> "quote" + printTupledArgs [e1]
         | FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name
-        | AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
+        | AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames[n]
         | FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
         | Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
         | ThisValue _ -> "this"
@@ -734,13 +734,13 @@ let ``Test Unoptimized Declarations Project1`` () =
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-    let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles.[1]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
+    let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles[1]
 
     let expected =
         ["type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
@@ -869,13 +869,13 @@ let ``Test Optimized Declarations Project1`` () =
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Diagnostics.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
-    wholeProjectResults.Diagnostics.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Diagnostics[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
-    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
-    let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[1]
+    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
+    let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[1]
 
     let expected =
         ["type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
@@ -1038,12 +1038,12 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
         let resultUnoptimized =
-            wholeProjectResults.AssemblyContents.ImplementationFiles.[0].Declarations
+            wholeProjectResults.AssemblyContents.ImplementationFiles[0].Declarations
             |> printDeclarations None
             |> Seq.toList
 
         let resultOptimized =
-            wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0].Declarations
+            wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0].Declarations
             |> printDeclarations None
             |> Seq.toList
 
@@ -3199,7 +3199,7 @@ let ``Test expressions of declarations stress big expressions`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
@@ -3215,7 +3215,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles[0]
 
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
@@ -3276,7 +3276,7 @@ let ``Test ProjectForWitnesses1`` () =
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
         ["type M"; "let callX(x) (y) = trait call X(x,y) @ (5,35--5,88)";
@@ -3333,7 +3333,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         | Some (nm, argTypes) ->
             nm |> shouldEqual "callX$W"
             argTypes.Count |> shouldEqual 1
-            let argText = argTypes.[0].Type.ToString()
+            let argText = argTypes[0].Type.ToString()
             argText |> shouldEqual "type  ^T ->  ^U ->  ^V"
     end
 
@@ -3352,10 +3352,10 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
         | Some (nm, argTypes) ->
             nm |> shouldEqual "callXY$W"
             argTypes.Count |> shouldEqual 2
-            let argName1 = argTypes.[0].Name
-            let argText1 = argTypes.[0].Type.ToString()
-            let argName2 = argTypes.[1].Name
-            let argText2 = argTypes.[1].Type.ToString()
+            let argName1 = argTypes[0].Name
+            let argText1 = argTypes[0].Type.ToString()
+            let argName2 = argTypes[1].Name
+            let argText2 = argTypes[1].Type.ToString()
             argText1 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
             argText2 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
     end
@@ -3401,7 +3401,7 @@ let ``Test ProjectForWitnesses2`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
         ["type M"; "type Point";
@@ -3456,7 +3456,7 @@ let ``Test ProjectForWitnesses3`` () =
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
         ["type M"; "type Point";
@@ -3499,10 +3499,10 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
         | Some (nm, argTypes) ->
             nm |> shouldEqual "Sum$W"
             argTypes.Count |> shouldEqual 2
-            let argName1 = argTypes.[0].Name
-            let argText1 = argTypes.[0].Type.ToString()
-            let argName2 = argTypes.[1].Name
-            let argText2 = argTypes.[1].Type.ToString()
+            let argName1 = argTypes[0].Name
+            let argText1 = argTypes[0].Type.ToString()
+            let argName2 = argTypes[1].Name
+            let argText2 = argTypes[1].Type.ToString()
             argName1 |> shouldEqual (Some "get_Zero")
             argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit ->  ^T"
             argName2 |> shouldEqual (Some "op_Addition")
@@ -3551,7 +3551,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     Assert.AreEqual(wholeProjectResults.Diagnostics.Length, 0)
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
-    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles[0]
 
     let expected =
         ["type M";

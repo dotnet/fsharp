@@ -315,7 +315,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
                             mkSequential m
-                                (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
+                                (mkValSet m pcVar (mkInt32 g m pcMap[label]))
                                 (mkCompGenSequential m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
@@ -456,12 +456,12 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                 mkSequential m
                                     // set the PC to the inner finally, so that if an exception happens we run the right finally
                                     (mkSequential m
-                                        (mkValSet m pcVar (mkInt32 g m pcMap.[innerDisposeContinuationLabel]) |> addTryDebugPoint)
+                                        (mkValSet m pcVar (mkInt32 g m pcMap[innerDisposeContinuationLabel]) |> addTryDebugPoint)
                                         generate1 )
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkLabelled m innerDisposeContinuationLabel
                                         (mkCompGenSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]))
+                                            (mkValSet m pcVar (mkInt32 g m pcMap[currentDisposeContinuationLabel]))
                                             compensation))
                             let dispose =
                                 // generate inner try/finallys, then outer try/finallys
@@ -470,7 +470,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                     // set the PC past the try/finally before trying to run it, to make sure we only run it once
                                     (mkLabelled m innerDisposeContinuationLabel
                                         (mkSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[currentDisposeContinuationLabel]) |> addFinallyDebugPoint)
+                                            (mkValSet m pcVar (mkInt32 g m pcMap[currentDisposeContinuationLabel]) |> addFinallyDebugPoint)
                                             (mkSequential m
                                                 compensation
                                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m)))))
@@ -654,7 +654,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                         Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
                                     let generate =
                                         mkSequential m
-                                            (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
+                                            (mkValSet m pcVar (mkInt32 g m pcMap[label]))
                                             (mkCompGenSequential m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
@@ -750,11 +750,11 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
                         // Yield one target for each PC, where the action of the target is to goto the appropriate label
                         for pc in pcs do
-                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc])
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab[pc])
 
                         // Yield one target for the 'done' program counter, where the action of the target is to continuation label
                         yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
-                      Some(mkGotoLabelTarget pc2lab.[pcInit]),
+                      Some(mkGotoLabelTarget pc2lab[pcInit]),
                       m)
 
                 let table = mbuilder.Close(dtree, m, g.int_ty)

@@ -468,7 +468,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         let copyToArray s (arr: _[]) i =
             let mutable j = i 
-            iter (fun x -> arr.[j] <- x; j <- j + 1) s
+            iter (fun x -> arr[j] <- x; j <- j + 1) s
 
         let toArray s = 
             let n = (count s) 
@@ -939,7 +939,7 @@ namespace Internal.Utilities.Collections.Tagged
           
         let copyToArray s (arr: _[]) i =
             let mutable j = i 
-            s |> iter (fun x y -> arr.[j] <- KeyValuePair(x,y); j <- j + 1)
+            s |> iter (fun x y -> arr[j] <- KeyValuePair(x,y); j <- j + 1)
 
 
         /// Imperative left-to-right iterators.

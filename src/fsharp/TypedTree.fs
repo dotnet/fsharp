@@ -489,7 +489,7 @@ type PublicPath =
     member x.EnclosingPath = 
         let (PubPath pp) = x 
         assert (pp.Length >= 1)
-        pp.[0..pp.Length-2]
+        pp[0..pp.Length-2]
 
 
 /// The information ILXGEN needs about the location of an item
@@ -1555,7 +1555,7 @@ type TyconRecdFields =
 
     /// Get a field by index
     member x.FieldByIndex n = 
-        if n >= 0 && n < x.FieldsByIndex.Length then x.FieldsByIndex.[n] 
+        if n >= 0 && n < x.FieldsByIndex.Length then x.FieldsByIndex[n] 
         else failwith "FieldByIndex"
 
     /// Get a field by name
@@ -1588,7 +1588,7 @@ type TyconUnionCases =
 
     /// Get a union case by index
     member x.GetUnionCaseByIndex n = 
-        if n >= 0 && n < x.CasesByIndex.Length then x.CasesByIndex.[n] 
+        if n >= 0 && n < x.CasesByIndex.Length then x.CasesByIndex[n] 
         else invalidArg "n" "GetUnionCaseByIndex"
 
     /// Get the union cases as a list
@@ -3129,7 +3129,7 @@ type NonLocalEntityRef =
     static member TryDerefEntityPath(ccu: CcuThunk, path: string[], i: int, entity: Entity) = 
         if i >= path.Length then ValueSome entity
         else  
-            match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path.[i] with 
+            match entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue path[i] with 
             | true, res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
 #if !NO_TYPEPROVIDERS
             | _ -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
@@ -3151,7 +3151,7 @@ type NonLocalEntityRef =
             // In this case, we're safely in the realm of types. Just iterate through the nested
             // types until i = path.Length-1. Create the Tycon's as needed
             let rec tryResolveNestedTypeOf(parentEntity: Entity, resolutionEnvironment, st: Tainted<ProvidedType>, i) = 
-                match st.PApply((fun st -> st.GetNestedType path.[i]), m) with
+                match st.PApply((fun st -> st.GetNestedType path[i]), m) with
                 | Tainted.Null -> ValueNone
                 | Tainted.NonNull st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
@@ -3184,8 +3184,8 @@ type NonLocalEntityRef =
                 assert (j <= path.Length - 1)
                 let matched = 
                     [ for resolver in resolvers do
-                        let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
-                        let typename = path.[j]
+                        let moduleOrNamespace = if j = 0 then [| |] else path[0..j-1]
+                        let typename = path[j]
                         let resolution = TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
                         | None -> ()
@@ -3208,7 +3208,7 @@ type NonLocalEntityRef =
                             let newEntity = 
                                 Construct.NewModuleOrNamespace 
                                     (Some cpath) 
-                                    (TAccess []) (ident(path.[k], m)) XmlDoc.Empty [] 
+                                    (TAccess []) (ident(path[k], m)) XmlDoc.Empty [] 
                                     (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
                             entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newEntity
                             injectNamespacesFromIToJ newEntity (k+1)
@@ -3246,7 +3246,7 @@ type NonLocalEntityRef =
             // Look for a forwarder for each prefix-path
             let rec tryForwardPrefixPath i = 
                 if i < path.Length then 
-                    match ccu.TryForward(path.[0..i-1], path.[i]) with
+                    match ccu.TryForward(path[0..i-1], path[i]) with
                        // OK, found a forwarder, now continue with the lookup to find the nested type
                     | Some tcref -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), tcref.Deref)  
                     | None -> tryForwardPrefixPath (i+1)
@@ -3270,12 +3270,12 @@ type NonLocalEntityRef =
     /// Get the mangled name of the last item in the path of the nonlocal reference.
     member nleref.LastItemMangledName = 
         let p = nleref.Path
-        p.[p.Length-1]
+        p[p.Length-1]
 
     /// Get the all-but-last names of the path of the nonlocal reference.
     member nleref.EnclosingMangledPath =  
         let p = nleref.Path
-        p.[0..p.Length-2]
+        p[0..p.Length-2]
         
     /// Get the name of the assembly referenced by the nonlocal reference.
     member nleref.AssemblyName = nleref.Ccu.AssemblyName

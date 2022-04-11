@@ -714,7 +714,7 @@ type internal TypeCheckInfo
         if i >= lineStr.Length then None
         else
         let mutable p = i
-        while p >= 0 && Char.IsWhiteSpace(lineStr.[p]) do
+        while p >= 0 && Char.IsWhiteSpace(lineStr[p]) do
             p <- p - 1
         if p >= 0 then Some p else None
 
@@ -746,7 +746,7 @@ type internal TypeCheckInfo
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp =
                 match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
-                | Some x when x >= 1 && lineStr.[x] = '.' && lineStr.[x - 1] = '.' -> true
+                | Some x when x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
                 | _ -> false
 
             // if last two chars are .. and we are not in range operator context - no completion
@@ -762,7 +762,7 @@ type internal TypeCheckInfo
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
                     // this allows us to handle cases like: let x . $ = 1
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
-                    | Some p when lineStr.[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                            let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -790,7 +790,7 @@ type internal TypeCheckInfo
                 | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
-                    | Some p when lineStr.[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -917,7 +917,7 @@ type internal TypeCheckInfo
         let loc =
             match colAtEndOfNamesAndResidue with
             | pastEndOfLine when pastEndOfLine >= lineStr.Length -> lineStr.Length
-            | atDot when lineStr.[atDot] = '.' -> atDot + 1
+            | atDot when lineStr[atDot] = '.' -> atDot + 1
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 

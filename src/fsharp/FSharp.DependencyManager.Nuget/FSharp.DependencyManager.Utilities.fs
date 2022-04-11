@@ -25,7 +25,7 @@ module internal Utilities =
     /// Note that a quoted string is not going to be mangled into pieces.
     let trimChars = [| ' '; '\t'; '\''; '\"' |]
 
-    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
+    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text[n-1] <> '\\'
 
     let getOptions text =
         let split (option:string) =
@@ -51,7 +51,7 @@ module internal Utilities =
         let mutable start = 0
         let isSeperator c = c = ','
         for i = 0 to last do
-            match text.[i], insideSQ with
+            match text[i], insideSQ with
             | c, false when isSeperator c ->                        // split when seeing a separator
                 result.Add(text.Substring(start, i - start))
                 insideSQ <- false

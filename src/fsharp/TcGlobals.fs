@@ -389,7 +389,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let key = (enclosingEntity.LastItemMangledName, memberParentName, compiledName, argCount)
       assert not (v_knownIntrinsics.ContainsKey(key))
       if isKnown && not (v_knownIntrinsics.ContainsKey(key)) then
-          v_knownIntrinsics.[key] <- ValRefForIntrinsic vref
+          v_knownIntrinsics[key] <- ValRefForIntrinsic vref
       vref
 
   let makeIntrinsicValRef info = makeIntrinsicValRefGeneral true info
@@ -427,7 +427,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let mkArrayType rank (ty : TType) : TType =
       assert (rank >= 1 && rank <= 32)
-      TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
+      TType_app(v_il_arr_tcr_map[rank - 1], [ty], v_knownWithoutNull)
 
   let mkBlockType (ty:TType) = TType_app (v_block_tcr, [ty], v_knownWithoutNull)
 
@@ -1687,7 +1687,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let memberName =
           let nm = t.MemberName
           let coreName =
-              if nm.StartsWith "op_" then nm.[3..]
+              if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
