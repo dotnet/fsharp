@@ -150,12 +150,12 @@ and FSharpProjectOptions =
       SourceFiles: string[]
       OtherOptions: string[]
       ReferencedProjects: FSharpReferencedProject[]
-      IsIncompleteTypeCheckEnvironment : bool
-      UseScriptResolutionRules : bool
-      LoadTime : DateTime
-      UnresolvedReferences : FSharpUnresolvedReferencesSet option
+      IsIncompleteTypeCheckEnvironment: bool
+      UseScriptResolutionRules: bool
+      LoadTime: DateTime
+      UnresolvedReferences: FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
-      Stamp : int64 option
+      Stamp: int64 option
     }
 
     static member UseSameProject(options1,options2) =
@@ -1548,7 +1548,7 @@ type internal TypeCheckInfo
 
 type FSharpParsingOptions =
     { SourceFiles: string []
-      ConditionalCompilationDefines: string list
+      ConditionalDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
@@ -1562,7 +1562,7 @@ type FSharpParsingOptions =
 
     static member Default =
         { SourceFiles = Array.empty
-          ConditionalCompilationDefines = []
+          ConditionalDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
@@ -1572,7 +1572,7 @@ type FSharpParsingOptions =
 
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
-          ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
+          ConditionalDefines = tcConfig.conditionalDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
@@ -1583,7 +1583,7 @@ type FSharpParsingOptions =
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
-          ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
+          ConditionalDefines = tcConfigB.conditionalDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
@@ -1653,19 +1653,20 @@ module internal ParseAndCheckFile =
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
-        let defines = (SourceFileImpl.AdditionalDefinesForUseInEditor options.IsInteractive) @ options.ConditionalCompilationDefines
+        let conditionalDefines =
+            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
+            @ options.ConditionalDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())
-
 
     let createLexbuf langVersion sourceText =
         UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
@@ -1909,7 +1910,7 @@ module internal ParseAndCheckFile =
 
                     use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result =
-                        TypeCheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
+                        CheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
 
                     return result
                 with e ->
