@@ -249,7 +249,7 @@ let mkRuntimeTypeDiscriminateThen ilg avoidHelpers cuspec alt altName altTy afte
         mkRuntimeTypeDiscriminate ilg avoidHelpers cuspec alt altName altTy @ [ after ]
 
 let mkGetTagFromField ilg cuspec baseTy = 
-    [ mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec)) ]
+    mkNormalLdfld (refToFieldInTy baseTy (mkTagFieldId ilg cuspec))
 
 let adjustFieldName hasHelpers nm = 
     match hasHelpers, nm  with
@@ -262,16 +262,16 @@ let mkLdData (avoidHelpers, cuspec, cidx, fidx) =
     let altTy = tyForAlt cuspec alt
     let fieldDef = alt.FieldDef fidx
     if avoidHelpers then 
-        [ mkNormalLdfld (mkILFieldSpecInTy(altTy,fieldDef.LowerName, fieldDef.Type))  ]
+        mkNormalLdfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
     else
-        [ mkNormalCall (mkILNonGenericInstanceMethSpecInTy(altTy,"get_" + adjustFieldName cuspec.HasHelpers fieldDef.Name,[],fieldDef.Type))  ]
+        mkNormalCall (mkILNonGenericInstanceMethSpecInTy (altTy, "get_" + adjustFieldName cuspec.HasHelpers fieldDef.Name, [], fieldDef.Type))
 
 let mkLdDataAddr (avoidHelpers, cuspec, cidx, fidx) = 
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let fieldDef = alt.FieldDef fidx
     if avoidHelpers then 
-        [ mkNormalLdflda (mkILFieldSpecInTy(altTy,fieldDef.LowerName, fieldDef.Type))  ]
+        mkNormalLdflda (mkILFieldSpecInTy(altTy,fieldDef.LowerName, fieldDef.Type))
     else
         failwith (sprintf "can't load address using helpers, for fieldDef %s" fieldDef.LowerName)
 
@@ -287,7 +287,7 @@ let mkGetTagFromHelpers ilg (cuspec: IlxUnionSpec) =
 
 let mkGetTag ilg (cuspec: IlxUnionSpec) = 
     match cuspec.HasHelpers with
-    | AllHelpers -> [ mkGetTagFromHelpers ilg cuspec ]
+    | AllHelpers -> mkGetTagFromHelpers ilg cuspec
     | _hasHelpers -> mkGetTagFromField ilg cuspec (baseTyOfUnionSpec cuspec)
 
 let mkCeqThen after = 
@@ -297,10 +297,10 @@ let mkCeqThen after =
     | _ -> [AI_ceq; after]
 
 let mkTagDiscriminate ilg cuspec _baseTy cidx = 
-    mkGetTag ilg cuspec @ [ mkLdcInt32 cidx; AI_ceq ]
+    [ mkGetTag ilg cuspec; mkLdcInt32 cidx; AI_ceq ]
 
 let mkTagDiscriminateThen ilg cuspec cidx after = 
-    mkGetTag ilg cuspec @ [ mkLdcInt32 cidx ] @ mkCeqThen after
+    [ mkGetTag ilg cuspec; mkLdcInt32 cidx ] @ mkCeqThen after
 
 /// The compilation for struct unions relies on generating a set of constructors.
 /// If necessary some fake types are added to the constructor parameters to distinguish the signature.
@@ -362,7 +362,7 @@ let mkStData (cuspec, cidx, fidx) =
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
     let fieldDef = alt.FieldDef fidx
-    [ mkNormalStfld (mkILFieldSpecInTy(altTy,fieldDef.LowerName, fieldDef.Type)) ]
+    mkNormalStfld (mkILFieldSpecInTy (altTy, fieldDef.LowerName, fieldDef.Type))
 
 let mkNewData ilg (cuspec, cidx) =
     let alt = altOfUnionSpec cuspec cidx
@@ -404,8 +404,8 @@ let mkIsData ilg (avoidHelpers, cuspec, cidx) =
         | IntegerTag -> mkTagDiscriminate ilg cuspec (baseTyOfUnionSpec cuspec) cidx
         | TailOrNull -> 
             match cidx with 
-            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @  [ AI_ldnull; AI_ceq ]
-            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un  ]
+            | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_ceq ]
+            | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
             | _ -> failwith "mkIsData - unexpected"
 
 type ICodeGen<'Mark> = 
@@ -413,9 +413,9 @@ type ICodeGen<'Mark> =
     abstract GenerateDelayMark: unit -> 'Mark
     abstract GenLocal: ILType -> uint16
     abstract SetMarkToHere: 'Mark  -> unit
-    abstract EmitInstr : ILInstr -> unit
-    abstract EmitInstrs : ILInstr list -> unit
-    abstract MkInvalidCastExnNewobj : unit -> ILInstr
+    abstract EmitInstr: ILInstr -> unit
+    abstract EmitInstrs: ILInstr list -> unit
+    abstract MkInvalidCastExnNewobj: unit -> ILInstr
 
 let genWith g : ILCode = 
     let instrs = ResizeArray() 
@@ -452,8 +452,8 @@ let mkBrIsData ilg sense (avoidHelpers, cuspec,cidx,tg) =
         | IntegerTag -> mkTagDiscriminateThen ilg cuspec cidx (I_brcmp (pos,tg))
         | TailOrNull -> 
             match cidx with 
-            | TagNil -> mkGetTailOrNull avoidHelpers cuspec @ [I_brcmp (neg,tg)]
-            | TagCons -> mkGetTailOrNull avoidHelpers cuspec @ [ I_brcmp (pos,tg)]
+            | TagNil -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp (neg,tg) ]
+            | TagCons -> [ mkGetTailOrNull avoidHelpers cuspec; I_brcmp (pos,tg) ]
             | _ -> failwith "mkBrIsData - unexpected"
 
 
@@ -470,11 +470,11 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
         | TailOrNull ->
             // leaves 1 if cons, 0 if not
             ldOpt |> Option.iter cg.EmitInstr 
-            cg.EmitInstrs (mkGetTailOrNull avoidHelpers cuspec @ [ AI_ldnull; AI_cgt_un])
+            cg.EmitInstrs [ mkGetTailOrNull avoidHelpers cuspec; AI_ldnull; AI_cgt_un ]
         | IntegerTag -> 
             let baseTy = baseTyOfUnionSpec cuspec
             ldOpt |> Option.iter cg.EmitInstr 
-            cg.EmitInstrs (mkGetTagFromField ilg cuspec baseTy)
+            cg.EmitInstr (mkGetTagFromField ilg cuspec baseTy)
         | SingleCase -> 
             ldOpt |> Option.iter cg.EmitInstr 
             cg.EmitInstrs [ AI_pop; mkLdcInt32 0 ] 
@@ -520,7 +520,7 @@ let emitLdDataTagPrim ilg ldOpt (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxU
 let emitLdDataTag ilg (cg: ICodeGen<'Mark>) (avoidHelpers,cuspec: IlxUnionSpec)  = 
     emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)  
 
-let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,avoidHelpers,cuspec,cidx) = 
+let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail, avoidHelpers, cuspec, cidx) = 
     let alt = altOfUnionSpec cuspec cidx
     if cuspecRepr.RepresentAlternativeAsNull (cuspec,alt) then 
         if canfail then 
@@ -537,7 +537,7 @@ let emitCastData ilg (cg: ICodeGen<'Mark>) (canfail,avoidHelpers,cuspec,cidx) =
         if canfail then
             let outlab = cg.GenerateDelayMark ()
             let internal1 = cg.GenerateDelayMark ()
-            cg.EmitInstrs [ AI_dup ]
+            cg.EmitInstr AI_dup
             emitLdDataTagPrim ilg None cg (avoidHelpers,cuspec)
             cg.EmitInstrs [ mkLdcInt32 cidx; I_brcmp (BI_beq, cg.CodeLabel outlab) ]
             cg.SetMarkToHere internal1
@@ -579,7 +579,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
 
     | IntegerTag -> 
         match cases with 
-        | [] -> cg.EmitInstrs  [ AI_pop ]
+        | [] -> cg.EmitInstr AI_pop
         | _ ->
         // Use a dictionary to avoid quadratic lookup in case list
         let dict = Dictionary<int,_>()
@@ -591,14 +591,14 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
             | _ -> cg.CodeLabel failLab
 
         let dests = Array.mapi emitCase cuspec.AlternativesArray
-        cg.EmitInstrs (mkGetTag ilg cuspec)
+        cg.EmitInstr (mkGetTag ilg cuspec)
         cg.EmitInstr (I_switch (Array.toList dests))
         cg.SetMarkToHere failLab
 
     | SingleCase ->
         match cases with 
         | [(0,tg)] -> cg.EmitInstrs [ AI_pop; I_br tg ]
-        | [] -> cg.EmitInstrs  [ AI_pop ]
+        | [] -> cg.EmitInstr AI_pop
         | _ -> failwith "unexpected: strange switch on single-case unions should not be present"
 
     | TailOrNull -> 
