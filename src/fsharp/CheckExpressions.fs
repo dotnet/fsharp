@@ -2971,16 +2971,20 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
 
     let g = cenv.g
 
-    let conditionalCallDefineOpt = TryFindMethInfoStringAttribute g m g.attrib_ConditionalAttribute minfo
+    let shouldEraseCall =
+        match cenv.conditionalDefines with
+        | None -> false
+        | Some defines ->
 
-    match conditionalCallDefineOpt, cenv.conditionalDefines with
-    | Some d, Some defines when not (List.contains d defines) ->
+        match TryFindMethInfoStringAttribute g m g.attrib_ConditionalAttribute minfo with
+        | None -> false
+        | Some d -> not (List.contains d defines)
 
+    if shouldEraseCall then
         // Methods marked with 'Conditional' must return 'unit'
         UnifyTypes cenv env m g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
         mkUnit g m, g.unit_ty
-
-    | _ ->
+    else
 #if !NO_TYPEPROVIDERS
         match minfo with
         | ProvidedMeth(_, mi, _, _) ->
