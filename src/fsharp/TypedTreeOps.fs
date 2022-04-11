@@ -7769,10 +7769,8 @@ let TryFindAutoOpenAttr cattr =
     else
         None
         
-let tname_InternalsVisibleToAttr = "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
-
 let TryFindInternalsVisibleToAttr cattr = 
-    if isILAttribByName ([], tname_InternalsVisibleToAttr) cattr then 
+    if isILAttribByName ([], tname_InternalsVisibleToAttribute) cattr then 
         match decodeILAttribData cattr with 
         | [ILAttribElem.String s], _ -> s
         | [], _ -> None
