@@ -1376,18 +1376,18 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
         // FUTURE: consider allowing translation to BindReturn
-        | SynExpr.MatchBang (mMatch, spMatch, expr, _mWith, clauses, _m) ->
+        | SynExpr.MatchBang (spMatch, expr, clauses, _m, trivia) ->
             let inputExpr = mkSourceExpr expr
-            if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
+            if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), trivia.MatchBangKeyword))
 
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mMatch ad "Bind" builderTy) then
-                error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mMatch))
+            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env trivia.MatchBangKeyword ad "Bind" builderTy) then
+                error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), trivia.MatchBangKeyword))
 
             let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, innerComp, patm, sp, trivia)) -> SynMatchClause(pat, cond, transNoQueryOps innerComp, patm, sp, trivia))
-            let consumeExpr = SynExpr.MatchLambda (false, mMatch, clauses, DebugPointAtBinding.NoneAtInvisible, mMatch)
+            let consumeExpr = SynExpr.MatchLambda (false, trivia.MatchBangKeyword, clauses, DebugPointAtBinding.NoneAtInvisible, trivia.MatchBangKeyword)
 
             let callExpr =
-                mkSynCall "Bind" mMatch [inputExpr; consumeExpr]
+                mkSynCall "Bind" trivia.MatchBangKeyword [inputExpr; consumeExpr]
                 |> addBindDebugPoint spMatch
             
             Some(translatedCtxt callExpr)

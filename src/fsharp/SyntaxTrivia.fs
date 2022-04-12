@@ -70,6 +70,11 @@ type SynExprLetOrUseBangTrivia =
 type SynExprMatchTrivia =
     { MatchKeyword: range
       WithKeyword: range }
+    
+[<NoEquality; NoComparison>]
+type SynExprMatchBangTrivia =
+    { MatchBangKeyword: range
+      WithKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =

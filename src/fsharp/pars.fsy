@@ -3682,8 +3682,9 @@ declExpr:
   | MATCH_BANG typedSequentialExpr     withClauses              %prec expr_match 
       { let mMatch = (rhs parseState 1)
         let mWith, (clauses, mLast) = $3 
-        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith) 
-        SynExpr.MatchBang (mMatch, spBind, $2, mWith, clauses, unionRanges mMatch mLast) }
+        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
+        let trivia = { MatchBangKeyword = mMatch; WithKeyword = mWith }
+        SynExpr.MatchBang (spBind, $2, clauses, unionRanges mMatch mLast, trivia) }
 
   | MATCH_BANG typedSequentialExpr     recover               %prec expr_match 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
