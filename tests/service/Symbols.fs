@@ -3934,3 +3934,36 @@ val (&): e1: bool -> e2: bool -> bool
             assertRange (4, 6) (4, 7) rpr
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``operator name in val constraint`` () =
+        let ast =
+            getParseResultsOfSignatureFile """
+    [<AutoOpen>]
+    module Operators
+
+    /// <summary>Overloaded unary negation.</summary>
+    ///
+    /// <param name="n">The value to negate.</param>
+    ///
+    /// <returns>The result of the operation.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
+    /// 
+    val inline (~-): n: ^T -> ^T when ^T: (static member ( ~- ): ^T -> ^T) and default ^T: int
+"""
+
+        match ast with
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+            SynModuleOrNamespaceSig(decls = [
+                SynModuleSigDecl.Val(valSig = SynValSig(synType=SynType.WithGlobalConstraints(constraints=[
+                    SynTypeConstraint.WhereTyparSupportsMember(memberSig=SynMemberSig.Member(memberSig=SynValSig(operatorName=Some(OperatorName.Operator(lpr, ident, rpr)))))
+                    SynTypeConstraint.WhereTyparDefaultsToType _
+                ])))
+                ])
+            ])) ->
+            assertRange (13, 57) (13, 58) lpr
+            Assert.AreEqual("op_UnaryNegation", ident.idText)
+            assertRange (13, 62) (13, 63) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"

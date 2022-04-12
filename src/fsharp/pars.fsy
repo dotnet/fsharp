@@ -855,22 +855,12 @@ moduleSpfn:
       { SynModuleSigDecl.Open($1, (rhs parseState 1)) }
 
 valSpfn: 
-  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access ident opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
+  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access identOrOp opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let attr1, attr2, isInline, isMutable, vis2, (id, operatorName), doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
-        let valSpfn = SynValSig((attr1@attr2), id, None, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
-        SynModuleSigDecl.Val(valSpfn, m)
-      }
-
-  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access opName opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let operatorName: OperatorName = $8
-        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), (operatorName.Ident), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
-        if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
-        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
-        let valSpfn = SynValSig((attr1@attr2), id, Some $8, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
+        let valSpfn = SynValSig((attr1@attr2), id, operatorName, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -1063,9 +1053,9 @@ classSpfnMembersAtLeastOne:
 
 /* A object member in a signature */
 classMemberSpfn:
-  | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access ident opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
+  | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access identOrOp opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
+       let isInline, doc, vis2, (id, operatorName), explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, getSetRangeOpt, getSet = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
@@ -1075,7 +1065,7 @@ classMemberSpfn:
            | Some m2 -> unionRanges m m2
            |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
            |> unionRangeWithXmlDoc doc
-       let valSpfn = SynValSig($1, id, None, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWith, wholeRange)
+       let valSpfn = SynValSig($1, id, operatorName, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWith, wholeRange)
        let _, flags = $3 
        SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), wholeRange) }
 
@@ -1135,13 +1125,16 @@ classMemberSpfnGetSet:
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
   | ident 
-    {  if $1.idText = "get" then SynMemberKind.PropertyGet 
-       elif $1.idText = "set" then SynMemberKind.PropertySet 
+    {  let (id:Ident) = $1
+       if id.idText = "get" then SynMemberKind.PropertyGet 
+       elif id.idText = "set" then SynMemberKind.PropertySet 
        else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired()) }
 
   | ident COMMA ident
-    { if not (($1.idText = "get" && ($3.idText) = "set") ||
-              ($1.idText = "set" && ($3.idText) = "get")) then 
+    { let (id:Ident) = $1
+      let (id2:Ident) = $3
+      if not ((id.idText = "get" && (id2.idText) = "set") ||
+              (id.idText = "set" && (id2.idText) = "get")) then 
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
       SynMemberKind.PropertyGetSet }
 
@@ -2091,9 +2084,9 @@ classDefnMember:
             | Some (mWithKwd, members, m) -> Some mWithKwd, Some members, unionRanges (rhs2 parseState 1 4) m
         [ SynMemberDefn.Interface ($4, mWithKwd, members, mWhole) ] }
         
-  | opt_attributes opt_declVisibility abstractMemberFlags opt_inline ident opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
+  | opt_attributes opt_declVisibility abstractMemberFlags opt_inline identOrOp opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
-       let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
+       let isInline, doc, (id, operatorName) , explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
        let mWith, getSetRangeOpt, getSet = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
@@ -2103,7 +2096,7 @@ classDefnMember:
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), wholeRange))
-       let valSpfn = SynValSig($1, id, None, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWith, wholeRange)
+       let valSpfn = SynValSig($1, id, operatorName, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWith, wholeRange)
        [ SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags $3 (getSetAdjuster arity), wholeRange) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
@@ -4447,12 +4440,9 @@ atomicExpr:
       { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
-  | QMARK opName 
-      { let operatorName: OperatorName = $2
-        SynExpr.LongIdent (true, LongIdentWithDots([operatorName.Ident], [], Some operatorName), None, rhs parseState 2), false }
-
-  | QMARK ident 
-      { SynExpr.LongIdent (true, LongIdentWithDots([$2], [], None), None, rhs parseState 2), false }
+  | QMARK identOrOp 
+      { let (ident, operatorName) = $2
+        SynExpr.LongIdent (true, LongIdentWithDots([ident], [], operatorName), None, rhs parseState 2), false }
 
   | atomicExpr QMARK dynamicArg
       { let arg1, hpa1 = $1
@@ -5725,6 +5715,15 @@ activePatternCaseNames:
 
   | activePatternCaseNames BAR activePatternCaseName
      { $3 :: $1 }
+
+/* A single item that is an identifier or operator name */
+identOrOp: 
+  | ident  
+     { $1, None } 
+
+  | opName 
+     { let operatorName: OperatorName = $1
+       operatorName.Ident, Some operatorName }
 
 /* An A.B.C path ending in an identifier or operator name */
 /* Note, only used in atomicPatternLongIdent */
