@@ -883,7 +883,7 @@ match x with
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.Expr(expr =
-                            SynExpr.Match(matchKeyword=mMatch; withKeyword=mWith))
+                            SynExpr.Match(trivia = { MatchKeyword = mMatch; WithKeyword = mWith }))
                     ])
                 ])) ->
             assertRange (2, 0) (2, 5) mMatch
