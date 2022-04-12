@@ -23,7 +23,6 @@ module AssemblyBoundary =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "lib01.fs"))
             |> withOptimize
             |> asLibrary
-            |> withOptimize
 
         compilation
         |> withReferences [lib01]
@@ -36,7 +35,6 @@ module AssemblyBoundary =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "lib02.fs"))
             |> withOptimize
             |> asLibrary
-            |> withOptimize
 
         compilation
         |> withReferences [lib02]
