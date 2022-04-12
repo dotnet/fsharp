@@ -1563,6 +1563,7 @@ type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
         ident: Ident *
+        operatorName: OperatorName option *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *

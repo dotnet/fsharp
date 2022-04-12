@@ -3913,3 +3913,24 @@ let (|Int32Const|_|) (a: SynConst) = match a with SynConst.Int32 _ -> Some a | _
             assertRange (2, 19) (2, 20) rpr
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``operator name in SynValSig`` () =
+        let ast = """
+module IntrinsicOperators
+
+val (&): e1: bool -> e2: bool -> bool
+"""
+                        |> getParseResultsOfSignatureFile
+
+        match ast with
+        | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+            SynModuleOrNamespaceSig(decls = [
+                SynModuleSigDecl.Val(valSig = SynValSig(operatorName=Some(OperatorName.Operator(lpr, ident, rpr))))
+                ])
+            ])) ->
+            assertRange (4, 4) (4, 5) lpr
+            Assert.AreEqual("op_Amp", ident.idText)
+            assertRange (4, 6) (4, 7) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
