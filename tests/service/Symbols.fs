@@ -3795,3 +3795,121 @@ let x =
             assertRange (7, 4) (7, 27) m3
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+module OperatorName =
+    [<Test>]
+    let ``operator as function`` () =
+        let ast = """
+(+) 3 4
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr (expr = SynExpr.App(funcExpr = SynExpr.App(funcExpr = SynExpr.OperatorName(OperatorName.Operator(lpr, ident, rpr)))))
+                ])
+            ])) ->
+            assertRange (2, 0) (2, 1) lpr
+            Assert.AreEqual("op_Addition", ident.idText)
+            assertRange (2, 2) (2, 3) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``active pattern as function `` () =
+        let ast = """
+(|Odd|Even|) 4
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr (expr = SynExpr.App(funcExpr = SynExpr.OperatorName(OperatorName.ActivePattern(lpr, ident, rpr))))
+                ])
+            ])) ->
+            assertRange (2, 0) (2, 1) lpr
+            Assert.AreEqual("|Odd|Even|", ident.idText)
+            assertRange (2, 11) (2, 12) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``partial active pattern as function `` () =
+        let ast = """
+(|Odd|_|) 4
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr (expr = SynExpr.App(funcExpr = SynExpr.OperatorName(OperatorName.PartialActivePattern(lpr, ident, rpr))))
+                ])
+            ])) ->
+            assertRange (2, 0) (2, 1) lpr
+            Assert.AreEqual("|Odd|_|", ident.idText)
+            assertRange (2, 8) (2, 9) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``custom operator definition`` () =
+        let ast = """
+let (+) a b = a + b
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [SynBinding(headPat=SynPat.LongIdent(longDotId=LongIdentWithDots(operatorName=Some(OperatorName.Operator(lpr, ident, rpr)))))])
+
+                ])
+            ])) ->
+            assertRange (2, 4) (2, 5) lpr
+            Assert.AreEqual("op_Addition", ident.idText)
+            assertRange (2, 6) (2, 7) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``active pattern definition`` () =
+        let ast = """
+let (|Odd|Even|) (a: int) = if a % 2 = 0 then Even else Odd
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [SynBinding(headPat=SynPat.LongIdent(longDotId=LongIdentWithDots(operatorName=Some(OperatorName.ActivePattern(lpr, ident, rpr)))))])
+
+                ])
+            ])) ->
+            assertRange (2, 4) (2, 5) lpr
+            Assert.AreEqual("|Odd|Even|", ident.idText)
+            assertRange (2, 15) (2, 16) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``partial active pattern definition`` () =
+        let ast = """
+let (|Int32Const|_|) (a: SynConst) = match a with SynConst.Int32 _ -> Some a | _ -> None
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [SynBinding(headPat=SynPat.LongIdent(longDotId=LongIdentWithDots(operatorName=Some(OperatorName.PartialActivePattern(lpr, ident, rpr)))))])
+
+                ])
+            ])) ->
+            assertRange (2, 4) (2, 5) lpr
+            Assert.AreEqual("|Int32Const|_|", ident.idText)
+            assertRange (2, 19) (2, 20) rpr
+        | _ ->
+            Assert.Fail "Could not get valid AST"

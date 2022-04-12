@@ -144,6 +144,8 @@ val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
 val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
 
+val mkSynDotWithOperatorName: dotm:range -> m:range -> l:SynExpr -> operatorName:OperatorName -> SynExpr
+
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
 val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> arrow:Range option -> e:SynExpr -> SynExpr

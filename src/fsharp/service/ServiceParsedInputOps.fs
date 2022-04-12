@@ -215,16 +215,16 @@ module ParsedInput =
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
-            | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
+            | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _, _), _altNameRefCell, _range) -> 
                 let _, r = CheckLongIdent longIdent
                 Some r
-            | SynExpr.LongIdentSet (LongIdentWithDots(longIdent, _), synExpr, _range) -> 
+            | SynExpr.LongIdentSet (LongIdentWithDots(longIdent, _, _), synExpr, _range) -> 
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     let _, r = CheckLongIdent longIdent
                     Some r
-            | SynExpr.DotGet (synExpr, _dotm, LongIdentWithDots(longIdent, _), _range) -> 
+            | SynExpr.DotGet (synExpr, _dotm, LongIdentWithDots(longIdent, _, _), _range) -> 
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
@@ -241,7 +241,7 @@ module ParsedInput =
                     traverseSynExpr synExpr2
                 else
                     Some range
-            | SynExpr.DotSet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, _range) ->
+            | SynExpr.DotSet (synExpr, LongIdentWithDots(longIdent, _, _), synExpr2, _range) ->
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
@@ -257,7 +257,7 @@ module ParsedInput =
                         // ----     synExpr.Range has this value
                         // ------   we want this value
                         Some (unionRanges synExpr.Range r)
-            | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, synExpr3, _range) ->  
+            | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _, _), synExpr2, synExpr3, _range) ->  
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
@@ -308,9 +308,9 @@ module ParsedInput =
                 match expr with
                 | SynExpr.Paren (e, _, _, _) when foundCandidate -> 
                     TryGetExpression foundCandidate e
-                | SynExpr.LongIdent (_isOptional, LongIdentWithDots(lid, _), _altNameRefCell, _m) -> 
+                | SynExpr.LongIdent (_isOptional, LongIdentWithDots(lid, _, _), _altNameRefCell, _m) -> 
                     getLidParts lid |> Some
-                | SynExpr.DotGet (leftPart, _, LongIdentWithDots(lid, _), _) when (rangeContainsPos (rangeOfLid lid) pos) || foundCandidate -> 
+                | SynExpr.DotGet (leftPart, _, LongIdentWithDots(lid, _, _), _) when (rangeContainsPos (rangeOfLid lid) pos) || foundCandidate -> 
                     // requested position is at the lid part of the DotGet
                     // process left part and append result to the result of processing lid
                     let leftPartResult = TryGetExpression true leftPart
@@ -370,7 +370,7 @@ module ParsedInput =
                             // the cursor location.
                             None
                     else
-                        let rec traverseLidOrElse (optExprIfLeftOfLongId : SynExpr option) (LongIdentWithDots(lid, dots) as lidwd) =
+                        let rec traverseLidOrElse (optExprIfLeftOfLongId : SynExpr option) (LongIdentWithDots(lid, dots, _) as lidwd) =
                             let resultIfLeftOfLongId =
                                 match optExprIfLeftOfLongId with
                                 | None -> None
@@ -548,7 +548,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
         and walkExprWithKind (parentKind: EntityKind option) = function
-            | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
+            | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges, _), _, r) ->
                 match dotRanges with
                 | [] when isPosInRange r -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
                 | firstDotRange :: _  ->
@@ -737,7 +737,7 @@ module ParsedInput =
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
         
-        let parseLid (LongIdentWithDots(lid, dots)) =            
+        let parseLid (LongIdentWithDots(lid, dots, _)) =            
             let rec collect plid (parts : Ident list) (dots : range list) = 
                 match parts, dots with
                 | [], _ -> Some (plid, None)
@@ -773,7 +773,7 @@ module ParsedInput =
         let (|Class|Interface|Struct|Unknown|Invalid|) synAttributes = 
             let (|SynAttr|_|) name (attr : SynAttribute) = 
                 match attr with
-                | {TypeName = LongIdentWithDots([x], _)} when x.idText = name -> Some ()
+                | {TypeName = LongIdentWithDots([x], _, _)} when x.idText = name -> Some ()
                 | _ -> None
             
             let rec getKind isClass isInterface isStruct = 
@@ -826,8 +826,8 @@ module ParsedInput =
 
         let (|Operator|_|) name e = 
             match e with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _), rhs, _) 
-                when ident.idText = name -> Some (lhs, rhs)
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.OperatorName operatorName, lhs, _), rhs, _) 
+                when operatorName.Ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
         // checks if we are in a range operator
@@ -1211,7 +1211,7 @@ module ParsedInput =
             for ident in longIdent do
                 identsByEndPos[ident.idRange.End] <- longIdent
     
-        let addLongIdentWithDots (LongIdentWithDots (longIdent, lids) as value) =
+        let addLongIdentWithDots (LongIdentWithDots (longIdent, lids, _) as value) =
             match longIdent with
             | [] -> ()
             | [_] as idents -> identsByEndPos[value.Range.End] <- idents

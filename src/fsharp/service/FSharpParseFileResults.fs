@@ -172,6 +172,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
             | SynExpr.Ident ident -> Some ident.idRange
+            
+            | SynExpr.OperatorName operatorName -> Some operatorName.Ident.idRange
         
             | SynExpr.LongIdent (_, _, _, range) -> Some range
 
@@ -497,6 +499,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.LibraryOnlyStaticOptimization _
                   | SynExpr.Null _
                   | SynExpr.Ident _
+                  | SynExpr.OperatorName _
                   | SynExpr.ImplicitZero _
                   | SynExpr.Const _ -> 
                      ()

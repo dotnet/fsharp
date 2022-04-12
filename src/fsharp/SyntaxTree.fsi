@@ -36,13 +36,11 @@ type LongIdent = Ident list
 /// if dotRanges.Length = lid.Length, then the parser must have reported an error, so the typechecker is allowed
 /// more freedom about typechecking these expressions.
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
+/// 
+/// The `operatorName` is duplication information of one of the idents of id, if it indeed is an operator name.
 type LongIdentWithDots =
     | //[<Experimental("This construct is subject to change in future versions of FSharp.Compiler.Service and should only be used if no adequate alternative is available.")>]
-      LongIdentWithDots of
-        leadingId: LongIdent *
-        operatorName: OperatorName option *
-        trailingId: LongIdent *
-        dotRanges: range list
+      LongIdentWithDots of id: LongIdent * dotRanges: range list * operatorName: OperatorName option
 
     /// Gets the syntax range of this construct
     member Range: range

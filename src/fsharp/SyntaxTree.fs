@@ -36,40 +36,27 @@ type OperatorName =
         | OperatorName.Operator(id=id) -> id
 
 type LongIdentWithDots =
-    | LongIdentWithDots of
-        leadingId: LongIdent *
-        operatorName: OperatorName option *
-        trailingId: LongIdent *
-        dotRanges: range list
+    | LongIdentWithDots of id: LongIdent * dotRanges: range list * operatorName: OperatorName option
 
     member this.Range =
        match this with
-       | LongIdentWithDots(leading, opName, trailing, dots) ->
-           let identRange (i:Ident) = i.idRange
-           [ yield! (List.map identRange leading)
-             yield! (Option.map (fun (opName: OperatorName) -> opName.Range) opName |> Option.toList)
-             yield! (List.map identRange trailing)
-             yield! dots ]
-           |> List.reduce unionRanges
+       | LongIdentWithDots([], _, _) -> failwith "rangeOfLidwd"
+       | LongIdentWithDots([id], [], _) -> id.idRange
+       | LongIdentWithDots([id], [m], _) -> unionRanges id.idRange m
+       | LongIdentWithDots(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
+       | LongIdentWithDots(h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
 
-    member this.Lid =
-        match this with
-        | LongIdentWithDots(leading, None, trailing, _) -> leading @ trailing
-        | LongIdentWithDots(leading, Some opName, trailing, _) -> [ yield! leading; yield opName.Ident; yield! trailing ]
+    member this.Lid = match this with LongIdentWithDots(lid, _, _) -> lid
 
-    member this.ThereIsAnExtraDotAtTheEnd =
-        match this with LongIdentWithDots(leading, opName, trailing, dots) ->
-            let parts = leading.Length + (match opName with | Some _ -> 1 | None -> 0) + trailing.Length
-            parts = dots.Length
+    member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithDots(lid, dots, _) -> lid.Length = dots.Length
 
     member this.RangeWithoutAnyExtraDot =
        match this with
-       | LongIdentWithDots(leading, opName, trailing, _dots) ->
-           let identRange (i:Ident) = i.idRange
-           [ yield! (List.map identRange leading)
-             yield! (Option.map (fun (opName: OperatorName) -> opName.Range) opName |> Option.toList)
-             yield! (List.map identRange trailing) ]
-           |> List.reduce unionRanges
+       | LongIdentWithDots([], _, _) -> failwith "rangeOfLidwd"
+       | LongIdentWithDots([id], _, _) -> id.idRange
+       | LongIdentWithDots(h :: t, dotRanges, _) ->
+           let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
+           unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 
 [<RequireQualifiedAccess>]

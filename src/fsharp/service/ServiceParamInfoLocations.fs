@@ -59,8 +59,8 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some ([id.idText], id.idRange)
-        | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
-        | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
+        | SynExpr.LongIdent (_, LongIdentWithDots(lid, _, _), _, lidRange) 
+        | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
         | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr 
         | _ -> None
@@ -71,8 +71,8 @@ module internal ParameterLocationsImpl =
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =
         match synType with 
-        | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id], _)), _, _) -> Some id.idText 
-        | SynType.LongIdent(LongIdentWithDots([id], _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
+        | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id], _, _)), _, _) -> Some id.idText 
+        | SynType.LongIdent(LongIdentWithDots([id], _, _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
         | _ -> None
 
     let getNamedParamName e =
@@ -88,13 +88,13 @@ module internal ParameterLocationsImpl =
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
                                     SynExpr.Ident op, 
-                                    SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
+                                    SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _, _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
 
     let getTypeName synType =
         match synType with
-        | SynType.LongIdent(LongIdentWithDots(ids, _)) -> ids |> pathOfLid
+        | SynType.LongIdent(LongIdentWithDots(ids, _, _)) -> ids |> pathOfLid
         | _ -> [""] // TODO type name for other cases, see also unit test named "ParameterInfo.LocationOfParams.AfterQuicklyTyping.CallConstructorViaLongId.Bug94333"
 
     let handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt : _ option) =
@@ -169,7 +169,7 @@ module internal ParameterLocationsImpl =
 
     let (|StaticParameters|_|) pos (StripParenTypes synType) =
         match synType with
-        | SynType.App(StripParenTypes (SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd)), Some(openm), args, commas, closemOpt, _pf, wholem) ->
+        | SynType.App(StripParenTypes (SynType.LongIdent(LongIdentWithDots(lid, _, _) as lidwd)), Some(openm), args, commas, closemOpt, _pf, wholem) ->
             let lidm = lidwd.Range
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
             if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then

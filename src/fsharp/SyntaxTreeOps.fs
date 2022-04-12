@@ -46,12 +46,12 @@ let mkSynIdGet m n = SynExpr.Ident (mkSynId m n)
 let mkSynLidGet m path n =
     let lid = pathToSynLid m path @ [mkSynId m n]
     let dots = List.replicate (lid.Length - 1) m
-    SynExpr.LongIdent (false, LongIdentWithDots(lid, dots), None, m)
+    SynExpr.LongIdent (false, LongIdentWithDots(lid, dots, None), None, m)
 
 let mkSynIdGetWithAlt m id altInfo =
     match altInfo with
     | None -> SynExpr.Ident id
-    | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], []), altInfo, m)
+    | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], [], None), altInfo, m)
 
 let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.idRange)
 
@@ -61,19 +61,21 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], [], None), None, id.idRange)
+    | SynExpr.OperatorName operatorName -> Some (false, LongIdentWithDots([operatorName.Ident], [], Some operatorName), None, operatorName.Ident.idRange)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (false, LongIdentWithDots([id], _), None, _) -> Some id
+    | SynExpr.LongIdent (false, LongIdentWithDots([id], _,_), None, _) -> Some id
     | SynExpr.Ident id -> Some id
+    | SynExpr.OperatorName operatorName -> Some operatorName.Ident
     | _ -> None
 
 let (|SynBinOp|_|) input =
     match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
-        Some (synId, x1, x2)
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.OperatorName operatorName, x1, _m1), x2, _m2) ->
+        Some (operatorName.Ident, x1, x2)
     | _ -> None
 
 let (|SynPipeRight|_|) input =
@@ -170,7 +172,7 @@ let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, S
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _, _); argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -224,7 +226,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -413,26 +415,41 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
 
 let mkSynDot dotm m l r =
     match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
+    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots, operatorName), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm]), None, m)
+        SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm], operatorName), None, m)
     | SynExpr.Ident id ->
-        SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm]), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
+        SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm], None), None, m)
+    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots, operatorName), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm]), m)
+        SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm], operatorName), m)
     | expr ->
-        SynExpr.DotGet (expr, dotm, LongIdentWithDots([r], []), m)
+        SynExpr.DotGet (expr, dotm, LongIdentWithDots([r], [], None), m)
+
+// TODO: should this raise a parsing error when we have something like `(<>).(++)`?
+
+let mkSynDotWithOperatorName dotm m l (operatorName: OperatorName) =
+    match l with
+    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots, None), None, _) ->
+        // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
+        SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[operatorName.Ident], dots@[dotm], Some operatorName), None, m)
+    | SynExpr.Ident id ->
+        SynExpr.LongIdent (false, LongIdentWithDots([id;operatorName.Ident], [dotm], Some operatorName), None, m)
+    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots, None), _) ->
+        // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+        SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[operatorName.Ident], dots@[dotm], Some operatorName), m)
+    | expr ->
+        SynExpr.DotGet (expr, dotm, LongIdentWithDots([operatorName.Ident], [], Some operatorName), m)
 
 let mkSynDotMissing dotm m l =
     match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
+    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots, operatorName), None, _) ->
          // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm]), None, m)
+         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm], operatorName), None, m)
     | SynExpr.Ident id ->
-        SynExpr.LongIdent (false, LongIdentWithDots([id], [dotm]), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+        SynExpr.LongIdent (false, LongIdentWithDots([id], [dotm], None), None, m)
+    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots, operatorName), _) ->
+        SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm], operatorName), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr ->
         SynExpr.DiscardAfterMissingQualificationAfterDot (expr, m)
 
@@ -762,6 +779,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LibraryOnlyStaticOptimization _
           | SynExpr.Null _
           | SynExpr.Ident _
+          | SynExpr.OperatorName _
           | SynExpr.ImplicitZero _
           | SynExpr.Const _ -> false
 

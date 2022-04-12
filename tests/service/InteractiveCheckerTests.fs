@@ -18,7 +18,7 @@ open FSharp.Compiler.Text.Range
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
-let internal longIdentWithDotsToString (LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
+let internal longIdentWithDotsToString (LongIdentWithDots (longIdent, _, _)) = longIdentToString longIdent
 
 let internal posToTuple (pos: pos) = (pos.Line, pos.Column)
 let internal rangeToTuple (range: range) = (posToTuple range.Start, posToTuple range.End)
