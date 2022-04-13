@@ -137,11 +137,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.OperatorName operatorName, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
                     match argExpr with
                     | SynExpr.App(_, _, _, SynExpr.Paren(expr, _, _, _), _) when rangeContainsPos expr.Range pos ->
                         None
                     | _ ->
+                        let ident = operatorName.Ident
                         if ident.idText = "op_PipeRight" then
                             Some (ident, 1)
                         elif ident.idText = "op_PipeRight2" then

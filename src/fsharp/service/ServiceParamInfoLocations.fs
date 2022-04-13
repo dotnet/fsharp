@@ -59,6 +59,7 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some ([id.idText], id.idRange)
+        | SynExpr.OperatorName operatorName -> Some ([operatorName.Ident.idText], operatorName.Range)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
