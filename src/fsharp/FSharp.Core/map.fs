@@ -538,6 +538,26 @@ module MapTree =
           interface System.IDisposable with 
               member _.Dispose() = ()}
 
+    let rec leftmost m =
+        if isEmpty m then 
+            throwKeyNotFound()
+        else if m.Height = 1 then
+            (m.Key, m.Value)
+        else
+           let nd = asNode m
+           if isNull nd.Left then (m.Key, m.Value)
+           else leftmost nd.Left 
+        
+    let rec rightmost m =
+        if isEmpty m then 
+            throwKeyNotFound()
+        else if m.Height = 1 then
+            (m.Key, m.Value)
+        else
+           let nd = asNode m
+           if isNull nd.Right then (m.Key, m.Value)
+           else rightmost nd.Right 
+
 [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
 [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
 [<Sealed>]
@@ -691,6 +711,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.Keys = KeyCollection(m) :> ICollection<'Key>
     
     member m.Values = ValueCollection(m) :> ICollection<'Value>
+    
+    member m.MinKeyValue = MapTree.leftmost tree
+    member m.MaxKeyValue = MapTree.rightmost tree
 
     static member ofList l : Map<'Key, 'Value> = 
        let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
@@ -1006,3 +1029,9 @@ module Map =
 
     [<CompiledName("Values")>]
     let values (table: Map<_, _>) = table.Values
+    
+    [<CompiledName("MinKeyValue")>]
+    let minKeyValue (table: Map<_,_>) = table.MinKeyValue
+
+    [<CompiledName("MaxKeyValue")>]
+    let maxKeyValue (table: Map<_,_>) = table.MaxKeyValue
