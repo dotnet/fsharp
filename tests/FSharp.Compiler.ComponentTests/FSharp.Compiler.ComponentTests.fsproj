@@ -25,6 +25,7 @@
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
+    <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
@@ -137,6 +138,9 @@
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="EmittedIL\**\*.fs" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="EmittedIL\**\*.cs" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
     <None Include="EmittedIL\ForLoop\*.bsl">

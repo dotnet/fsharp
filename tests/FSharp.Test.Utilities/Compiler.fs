@@ -265,7 +265,9 @@ module rec Compiler =
         fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
 
     let FsFromPath (path: string) : CompilationUnit =
-        fsFromString (SourceFromPath path) |> FS
+        fsFromString (SourceFromPath path)
+        |> FS
+        |> withName (Path.GetFileNameWithoutExtension(path))
 
     let CSharp (source: string) : CompilationUnit =
         csFromString (SourceCodeFileKind.Fs({FileName="test.cs"; SourceText=Some source })) |> CS

@@ -6,6 +6,7 @@ module A
 type VectorFloat(x:float,y:float,z:float) = 
     member a.X = x
 
+[<NoComparison>]
 type OctantBoundary = 
  { Min : VectorFloat; 
    Max : VectorFloat }

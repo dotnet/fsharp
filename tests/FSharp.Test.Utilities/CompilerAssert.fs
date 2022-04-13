@@ -258,13 +258,14 @@ module rec CompilerAssertHelpers =
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
-            let asm = ctxt.LoadFromAssemblyPath(assembly)
-            let entryPoint = asm.EntryPoint
             ctxt.add_Resolving(fun ctxt name ->
                 deps
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
+
+            let asm = ctxt.LoadFromAssemblyPath(assembly)
+            let entryPoint = asm.EntryPoint
             let args = mkDefaultArgs entryPoint
             (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
