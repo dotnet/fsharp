@@ -18,6 +18,23 @@ type Ident (text: string, range: range) =
 
 type LongIdent = Ident list
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+ type SynOperatorName =
+     | ActivePattern of id: Ident
+     | PartialActivePattern of id: Ident
+     | Operator of id: Ident
+     member this.Range: range =
+         match this with
+         | SynOperatorName.ActivePattern(id=id)
+         | SynOperatorName.PartialActivePattern(id=id)
+         | SynOperatorName.Operator(id=id) -> id.idRange
+
+     member this.Ident: Ident =
+         match this with
+         | SynOperatorName.ActivePattern(id=id)
+         | SynOperatorName.PartialActivePattern(id=id)
+         | SynOperatorName.Operator(id=id) -> id
+
 type LongIdentWithDots =
     | LongIdentWithDots of id: LongIdent * dotRanges: range list
 
@@ -666,7 +683,6 @@ type SynExpr =
         ident: Ident
 
     | LongIdent of
-        isOptional: bool *
         longDotId: LongIdentWithDots *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         range: range
@@ -858,6 +874,22 @@ type SynExpr =
         isControlFlow: bool *
         innerExpr: SynExpr
 
+    | Operator of
+        operatorName: SynOperatorName *
+        range: range
+
+    | DotGetOperator of
+        pref: SynExpr *
+        dot: range *
+        lpr: range *
+        operator: SynOperatorName *
+        rpr: range *
+        range: range
+
+    | Optional of
+        expr: SynExpr *
+        range: range
+
     member e.Range =
         match e with
         | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
@@ -926,7 +958,10 @@ type SynExpr =
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
-        | SynExpr.InterpolatedString (range=m) -> m
+        | SynExpr.InterpolatedString (range=m)
+        | SynExpr.Operator(range=m)
+        | SynExpr.DotGetOperator(range=m)
+        | SynExpr.Optional(range=m) -> m
         | SynExpr.Ident id -> id.idRange
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
@@ -937,7 +972,7 @@ type SynExpr =
                 unionRanges expr.Range lidwd.RangeWithoutAnyExtraDot
             else
                 m
-        | SynExpr.LongIdent (_, lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
+        | SynExpr.LongIdent (lidwd, _, _) -> lidwd.RangeWithoutAnyExtraDot
         | SynExpr.DiscardAfterMissingQualificationAfterDot (expr, _) -> expr.Range
         | _ -> e.Range
 
@@ -1075,6 +1110,24 @@ type SynPat =
         accessibility: SynAccess option *
         range: range
 
+    | Operator of
+        operator: SynOperatorName *
+        accessibility: SynAccess option *
+        range: range
+
+    | DotGetOperator of
+        pref: SynPat *
+        dot: range *
+        lpr: range *
+        operator: SynOperatorName *
+        rpr: range *
+        range: range
+
+    | LongIdent of
+        longDotId: LongIdentWithDots *
+        accessibility: SynAccess option *
+        range: range
+
     | Typed of
         pat: SynPat *
         targetType: SynType *
@@ -1100,8 +1153,8 @@ type SynPat =
         rhsPat: SynPat *
         range: range
 
-    | LongIdent of
-        longDotId: LongIdentWithDots *
+    | ParametersOwner of
+        pattern: SynPat *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
@@ -1167,6 +1220,8 @@ type SynPat =
       | SynPat.Ands (range=m)
       | SynPat.As (range=m)
       | SynPat.LongIdent (range=m)
+      | SynPat.Operator (range=m)
+      | SynPat.DotGetOperator(range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)
       | SynPat.Typed (range=m)
@@ -1179,6 +1234,7 @@ type SynPat =
       | SynPat.InstanceMember (range=m)
       | SynPat.OptionalVal (range=m)
       | SynPat.Paren (range=m)
+      | SynPat.ParametersOwner(range=m)
       | SynPat.FromParseError (range=m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1539,7 +1595,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        pat: SynPat *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
@@ -1551,7 +1607,7 @@ type SynValSig =
         withKeyword: range option *
         range: range
 
-    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
+    member x.RangeOfId  = let (SynValSig(pat=pat)) = x in pat.Range
 
     member x.SynInfo = let (SynValSig(arity=v)) = x in v
 

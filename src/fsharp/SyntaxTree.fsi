@@ -17,6 +17,20 @@ type Ident =
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
 
+/// Represents an operator identifier in F# code
+/// Parenthesis not included
+ [<RequireQualifiedAccess; NoEquality; NoComparison>]
+ type SynOperatorName =
+     /// |A|B|
+     | ActivePattern of id: Ident
+     /// |A|_|
+     | PartialActivePattern of id: Ident
+     /// >=>
+     | Operator of id: Ident
+
+     member Range: range
+     member Ident: Ident
+
 /// Represents a long identifier with possible '.' at end.
 ///
 /// Typically dotRanges.Length = lid.Length-1, but they may be same if (incomplete) code ends in a dot, e.g. "Foo.Bar."
@@ -814,11 +828,9 @@ type SynExpr =
 
     /// F# syntax: ident.ident...ident
     ///
-    /// isOptional: true if preceded by a '?' for an optional named parameter
     /// altNameRefCell: Normally 'None' except for some compiler-generated
     /// variables in desugaring pattern matching. See SynSimplePat.Id
     | LongIdent of
-        isOptional: bool *
         longDotId: LongIdentWithDots *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         range: range
@@ -1054,6 +1066,25 @@ type SynExpr =
         isControlFlow: bool *
         innerExpr: SynExpr
 
+    /// Operator name
+    | Operator of
+        operatorName: SynOperatorName *
+        range: range
+
+    /// example Fantomas.SourceParser.(|EmptyFile|_|)
+    | DotGetOperator of
+        pref: SynExpr *
+        dot: range *
+        lpr: range *
+        operator: SynOperatorName *
+        rpr: range *
+        range: range
+
+    /// ?x or ?(+)
+    | Optional of
+        expr: SynExpr *
+        range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -1201,6 +1232,27 @@ type SynPat =
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range
+    
+    /// A operator 'ident'
+    | Operator of
+        operator: SynOperatorName *
+        accessibility: SynAccess option *
+        range: range
+
+    /// _.(+)
+    | DotGetOperator of
+        pref: SynPat *
+        dot: range *
+        lpr: range *
+        operator: SynOperatorName *
+        rpr: range *
+        range: range
+
+    /// A long identifier pattern 
+    | LongIdent of
+        longDotId: LongIdentWithDots *
+        accessibility: SynAccess option *
+        range: range
 
     /// A typed pattern 'pat : type'
     | Typed of
@@ -1233,8 +1285,8 @@ type SynPat =
         range: range
 
     /// A long identifier pattern possibly with argument patterns
-    | LongIdent of
-        longDotId: LongIdentWithDots *
+    | ParametersOwner of
+        pattern: SynPat *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
@@ -1693,7 +1745,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        pat: SynPat *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
