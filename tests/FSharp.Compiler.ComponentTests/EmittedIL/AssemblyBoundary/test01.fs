@@ -8,4 +8,3 @@
 //<Expects status="success"></Expects>
 
 (new N.L1.T()).Method(10) |> ignore
-

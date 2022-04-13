@@ -260,15 +260,15 @@ let IsIdentifierName (name: string) =
     not (IsUnencodedLegacyOpName name) &&
     let nameLen = name.Length
     nameLen > 0 && 
-    IsIdentifierFirstCharacter name.[0] &&
-    let rec loop i = (i >= nameLen || (IsIdentifierPartCharacter(name.[i]) && loop (i+1)))
+    IsIdentifierFirstCharacter name[0] &&
+    let rec loop i = (i >= nameLen || (IsIdentifierPartCharacter(name[i]) && loop (i+1)))
     loop 1
 
 let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
     if idx = name.Length - 1 then
         seenNonOpChar
     else
-        let c = name.[idx]
+        let c = name[idx]
         if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
             false
         else
@@ -278,7 +278,7 @@ let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
 let IsActivePatternName (name: string) =
     // The name must contain at least one character between the starting and ending delimiters.
     let nameLen = name.Length
-    if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
+    if nameLen < 3 || name[0] <> '|' || name[nameLen - 1] <> '|' then
         false
     else
         isCoreActivePatternName name 1 false
@@ -300,7 +300,7 @@ let IsOperatorDisplayName (name: string) =
         if idx = endIndex then
             true
         else
-            let c = name.[idx]
+            let c = name[idx]
             if not (opCharSet.Contains(c)) || c = ' ' then
                 false
             else
@@ -358,7 +358,7 @@ let compileCustomOpName =
             let opLength = op.Length
             let sb = StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
             for i = 0 to opLength - 1 do
-                let c = op.[i]
+                let c = op[i]
                 match t2.TryGetValue c with
                 | true, x ->
                     sb.Append(x) |> ignore
@@ -491,7 +491,7 @@ let AddBackticksToIdentifierIfNeeded (name: string) : string =
 let NormalizeIdentifierBackticks (name: string) : string =
     let s =
         if name.StartsWithOrdinal("``") && name.EndsWithOrdinal("``") then
-            name.[2..name.Length - 3]
+            name[2..name.Length - 3]
         else name
     AddBackticksToIdentifierIfNeeded s
 
@@ -557,7 +557,7 @@ let isTildeOnlyString (s: string) =
     let rec loop (s: string) idx =
         if idx >= s.Length then
             true
-        elif s.[idx] <> '~' then
+        elif s[idx] <> '~' then
             false
         else
             loop s (idx + 1)
@@ -567,12 +567,12 @@ let IsValidPrefixOperatorUse s =
     if String.IsNullOrEmpty s then false else
     match s with 
     | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
-    | _ -> s.[0] = '!' || isTildeOnlyString s
+    | _ -> s[0] = '!' || isTildeOnlyString s
 
 let IsValidPrefixOperatorDefinitionName s = 
     if String.IsNullOrEmpty s then false else
 
-    match s.[0] with
+    match s[0] with
     | '~' ->
         isTildeOnlyString s ||
 
@@ -673,7 +673,7 @@ let CompilerGeneratedName nm =
 let GetBasicNameOfPossibleCompilerGeneratedName (name: string) =
         match name.IndexOf(compilerGeneratedMarker, StringComparison.Ordinal) with 
         | -1 | 0 -> name
-        | n -> name.[0..n-1]
+        | n -> name[0..n-1]
 
 let CompilerGeneratedNameSuffix (basicName: string) suffix =
     basicName+compilerGeneratedMarker+suffix
@@ -691,7 +691,7 @@ let TryDemangleGenericNameAndPos (n: string) =
     let mutable res = pos < n.Length - 1
     let mutable i = pos + 1
     while res && i < n.Length do
-        let char = n.[i]
+        let char = n[i]
         if not (char >= '0' && char <= '9') then
             res <- false
         i <- i + 1
@@ -755,7 +755,7 @@ let SplitNamesForILPath (s : string) : string list =
         
 /// Return a string array delimited by the given separator.
 /// Note that a quoted string is not going to be mangled into pieces. 
-let inline isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
+let inline isNotQuotedQuotation (text: string) n = n > 0 && text[n-1] <> '\\'
 
 let splitAroundQuotation (text: string) (separator: char) =
     let length = text.Length
@@ -763,7 +763,7 @@ let splitAroundQuotation (text: string) (separator: char) =
     let mutable insideQuotation = false
     let mutable start = 0
     for i = 0 to length - 1 do
-        match text.[i], insideQuotation with
+        match text[i], insideQuotation with
         // split when seeing a separator
         | c, false when c = separator -> 
             result.Add(text.Substring(start, i - start))
@@ -788,7 +788,7 @@ let splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
     if count <= 1 then [| text |] else
     let mangledText  = splitAroundQuotation text separator
     match mangledText.Length > count with
-    | true -> Array.append mangledText.[0..(count-2)] [| mangledText.[(count-1)..] |> String.concat (Char.ToString separator) |]
+    | true -> Array.append mangledText[0..(count-2)] [| mangledText[(count-1)..] |> String.concat (Char.ToString separator) |]
     | false -> mangledText
 
 [<Literal>]
@@ -819,7 +819,7 @@ let ActivePatternInfoOfValName nm (m: range) =
         if n > 0 then 
             let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + n))
             let m2 = Range.mkRange mp.FileName (Position.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
-            (nm.[0..n-1], m1) :: loop nm.[n+1..] m2
+            (nm[0..n-1], m1) :: loop nm[n+1..] m2
         else
             let m1 = Range.mkRange mp.FileName mp.Start (Position.mkPos mp.StartLine (mp.StartColumn + nm.Length))
             [(nm, m1)]
@@ -827,7 +827,7 @@ let ActivePatternInfoOfValName nm (m: range) =
     if IsActivePatternName nm then 
         // Skip the '|' at each end when recovering ranges
         let m0 = Range.mkRange m.FileName (Position.mkPos m.StartLine (m.StartColumn + 1)) (Position.mkPos m.EndLine (m.EndColumn - 1)) 
-        let names = loop nm.[1..nm.Length-2] m0
+        let names = loop nm[1..nm.Length-2] m0
         let resH, resT = List.frontAndBack names
         Some(if fst resT = "_" then APInfo(false, resH, m) else APInfo(true, names, m))
     else 
@@ -840,7 +840,7 @@ let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then
-            Some(nm, v.[1..v.Length-2].Replace("\\\\", "\\").Replace("\\\"", "\""))
+            Some(nm, v[1..v.Length-2].Replace("\\\\", "\\").Replace("\\\"", "\""))
         else
             Some(nm, v)
     | _ -> None
@@ -854,9 +854,9 @@ let demangleProvidedTypeName (typeLogicalName: string) =
         match pieces with
         | [| x; "" |] -> x,  [| |]
         | _ ->
-            let argNamesAndValues = pieces.[1..] |> Array.choose tryDemangleStaticStringArg
+            let argNamesAndValues = pieces[1..] |> Array.choose tryDemangleStaticStringArg
             if argNamesAndValues.Length = (pieces.Length - 1) then
-                pieces.[0], argNamesAndValues
+                pieces[0], argNamesAndValues
             else
                 typeLogicalName, [| |]
     else 
@@ -899,7 +899,7 @@ let mkUnionCaseFieldName =
     fun nFields i ->
         match nFields with
         | 0 | 1 -> "Item"
-        | _ -> if i < 10 then names.[i] else "Item" + string (i + 1)
+        | _ -> if i < 10 then names[i] else "Item" + string (i + 1)
 
 /// Reuses generated exception field name objects for common field numbers
 let mkExceptionFieldName =
@@ -908,7 +908,7 @@ let mkExceptionFieldName =
         |> Array.map (fun i -> "Data" + string i)
 
     fun i ->
-        if i < 10 then names.[i] else "Data" + string i
+        if i < 10 then names[i] else "Data" + string i
 
 /// The prefix of the names used for the fake namespace path added to all dynamic code entries in FSI.EXE
 let FsiDynamicModulePrefix = "FSI_"

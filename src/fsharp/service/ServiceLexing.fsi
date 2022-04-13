@@ -578,4 +578,4 @@ type public FSharpToken =
 type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
-    static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
+    static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit

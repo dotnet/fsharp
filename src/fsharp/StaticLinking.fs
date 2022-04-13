@@ -48,8 +48,8 @@ type TypeForwarding (tcImports: TcImports) =
             let parts =  tref.FullName.Split([|'.'|])
             match parts.Length with
             | 0 -> None
-            | 1 -> Some (Array.empty<string>, parts.[0])
-            | n -> Some (parts.[0..n-2], parts.[n-1])
+            | 1 -> Some (Array.empty<string>, parts[0])
+            | n -> Some (parts[0..n-2], parts[n-1])
 
         let  scoref = tref.Scope
         match scoref with
@@ -224,7 +224,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                 let ilAssemRef = List.head remaining
                 remaining <- List.tail remaining
                 if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then
-                    depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                    depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                 else
                     if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                         match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly=false) with
@@ -271,7 +271,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                                       MethodReferences = [| |]
                                       FieldReferences = [||] }
 
-                            depModuleTable.[ilAssemRef.Name] <-
+                            depModuleTable[ilAssemRef.Name] <-
                                 { refs=refs
                                   name=ilAssemRef.Name
                                   ccu=ccu
@@ -284,7 +284,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
 
                         | None ->
                             warning(Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies(ilAssemRef.Name), rangeStartup))
-                            depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                            depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
             done
         end
 
@@ -293,13 +293,13 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         // Add edges from modules to the modules that depend on them
         for KeyValue(_, n) in depModuleTable do
             for aref in n.refs.AssemblyReferences do
-                let n2 = depModuleTable.[aref.Name]
+                let n2 = depModuleTable[aref.Name]
                 n2.edges <- n :: n2.edges
 
         // Find everything that depends on FSharp.Core
         let roots =
             [ if tcConfig.standalone && depModuleTable.ContainsKey (GetFSharpCoreLibraryName()) then
-                  yield depModuleTable.[GetFSharpCoreLibraryName()]
+                  yield depModuleTable[GetFSharpCoreLibraryName()]
               for n in tcConfig.extraStaticLinkRoots  do
                   match depModuleTable.TryFind n with
                   | Some x -> yield x

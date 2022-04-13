@@ -58,7 +58,7 @@ module IncrementalBuilderEventTesting =
         // called by the product, to note when a parse/typecheck happens for a file
         member this.Add(filename:'T) =
             numAdds <- numAdds + 1
-            data.[curIndex] <- Some filename
+            data[curIndex] <- Some filename
             curIndex <- (curIndex + 1) % MAX
         member this.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
@@ -71,7 +71,7 @@ module IncrementalBuilderEventTesting =
             while remaining <> 0 do
                 if i < 0 then
                     i <- MAX - 1
-                match data.[i] with
+                match data[i] with
                 | None -> ()
                 | Some x -> s <- x :: s
                 i <- i - 1
@@ -96,7 +96,14 @@ module IncrementalBuildSyntaxTree =
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
-    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, source: FSharpSource, isLastCompiland) =
+    type SyntaxTree (
+            tcConfig: TcConfig,
+            fileParsed: Event<string>,
+            lexResourceManager,
+            sourceRange: range,
+            source: FSharpSource,
+            isLastCompiland
+        ) =
 
         let filename = source.FilePath
         let mutable weakCache: WeakReference<_> option = None
@@ -128,11 +135,11 @@ module IncrementalBuildSyntaxTree =
                         use text = source.GetTextContainer()
                         match text with
                         | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
+                            ParseOneInputStream(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
                         | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, sourceText)
+                            ParseOneInputSourceText(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, sourceText)
                         | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+                            ParseOneInputFile(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
                 fileParsed.Trigger filename
 
@@ -479,7 +486,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
-                        TypeCheckOneInput
+                        CheckOneInput
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0),
                                 tcConfig, tcImports,
                                 tcGlobals,
@@ -857,17 +864,17 @@ module IncrementalBuilderHelpers =
         let results = results |> List.ofSeq
 
         // Get the state at the end of the type-checking of the last file
-        let finalBoundModel = boundModels.[boundModels.Length-1]
+        let finalBoundModel = boundModels[boundModels.Length-1]
 
         let! finalInfo = finalBoundModel.GetOrComputeTcInfo()
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState =
-            TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
+            CheckMultipleInputsFinish (results, finalInfo.tcState)
 
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt =
             try
-                let tcState, tcAssemblyExpr, ccuContents = TypeCheckClosedInputSetFinish (mimpls, tcState)
+                let tcState, tcAssemblyExpr, ccuContents = CheckClosedInputSetFinish (mimpls, tcState)
 
                 let generatedCcu = tcState.Ccu.CloneWithFinalizedContents(ccuContents)
 
@@ -1008,11 +1015,11 @@ type IncrementalBuilderState =
 module IncrementalBuilderStateHelpers =
 
     let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: blockbuilder<GraphNode<BoundModel>>) i =
-        let fileInfo = initialState.fileNames.[i]
+        let fileInfo = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
             | 0 (* first file *) -> initialBoundModel
-            | _ -> boundModels.[i - 1]
+            | _ -> boundModels[i - 1]
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
@@ -1022,7 +1029,7 @@ module IncrementalBuilderStateHelpers =
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: blockbuilder<GraphNode<BoundModel>>) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
-            let! _ = boundModels.[boundModels.Count - 1].GetOrComputeValue()
+            let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
                 boundModels.ToImmutable()
                 |> Block.map (fun x -> x.TryPeekValue().Value)
@@ -1040,11 +1047,11 @@ module IncrementalBuilderStateHelpers =
         })
 
     and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
-        let currentStamp = state.stampedFileNames.[slot]
+        let currentStamp = state.stampedFileNames[slot]
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot].TryPeekValue() with
+            match state.boundModels[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 let newBoundModel = boundModel.ClearTcInfoExtras()
@@ -1060,10 +1067,10 @@ module IncrementalBuilderStateHelpers =
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask cache initialState.fileNames.[slot + j]
-                    stampedFileNames.[slot + j] <- stamp
-                    logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels (slot + j)
+                    let stamp = StampFileNameTask cache initialState.fileNames[slot + j]
+                    stampedFileNames[slot + j] <- stamp
+                    logicalStampedFileNames[slot + j] <- stamp
+                    boundModels[slot + j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels (slot + j)
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
@@ -1092,12 +1099,12 @@ module IncrementalBuilderStateHelpers =
         initialState.referencedAssemblies
         |> Block.iteri (fun i asmInfo ->
 
-            let currentStamp = state.stampedReferencedAssemblies.[i]
+            let currentStamp = state.stampedReferencedAssemblies[i]
             let stamp = StampReferencedAssemblyTask cache asmInfo
 
             if currentStamp <> stamp then
                 referencesUpdated <- true
-                stampedReferencedAssemblies.[i] <- stamp
+                stampedReferencedAssemblies[i] <- stamp
         )
 
         if referencesUpdated then
@@ -1160,9 +1167,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     let projectChecked = initialState.projectChecked
 
     let tryGetSlot (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot].TryPeekValue() with
+        match state.boundModels[slot].TryPeekValue() with
         | ValueSome boundModel ->
-            (boundModel, state.stampedFileNames.[slot])
+            (boundModel, state.stampedFileNames[slot])
             |> Some
         | _ ->
             None
@@ -1180,8 +1187,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             if targetSlot < 0 then
                 return Some(initialBoundModel, defaultTimeStamp)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetOrComputeValue()
-                return Some(boundModel, state.stampedFileNames.[targetSlot])
+                let! boundModel = state.boundModels[targetSlot].GetOrComputeValue()
+                return Some(boundModel, state.stampedFileNames[targetSlot])
         }
 
     let MaxTimeStampInDependencies stamps =
@@ -1361,7 +1368,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetParseResultsForFile filename =
         let slotOfFile = builder.GetSlotOfFileName filename
-        let fileInfo = fileNames.[slotOfFile]
+        let fileInfo = fileNames[slotOfFile]
         // re-parse on demand instead of retaining
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
@@ -1371,19 +1378,25 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateIncrementalBuilderForProjectOptions
-                      (legacyReferenceResolver, defaultFSharpBinariesDir,
-                       frameworkTcImportsCache: FrameworkImportsCache,
-                       loadClosureOpt: LoadClosure option,
-                       sourceFiles: string list,
-                       commandLineArgs: string list,
-                       projectReferences, projectDirectory,
-                       useScriptResolutionRules, keepAssemblyContents,
-                       keepAllBackgroundResolutions,
-                       tryGetMetadataSnapshot, suggestNamesForErrors,
-                       keepAllBackgroundSymbolUses,
-                       enableBackgroundItemKeyStoreAndSemanticClassification,
-                       enablePartialTypeChecking: bool,
-                       dependencyProvider) =
+        (
+            legacyReferenceResolver,
+            defaultFSharpBinariesDir,
+            frameworkTcImportsCache: FrameworkImportsCache,
+            loadClosureOpt: LoadClosure option,
+            sourceFiles: string list,
+            commandLineArgs: string list,
+            projectReferences,
+            projectDirectory,
+            useScriptResolutionRules,
+            keepAssemblyContents,
+            keepAllBackgroundResolutions,
+            tryGetMetadataSnapshot,
+            suggestNamesForErrors,
+            keepAllBackgroundSymbolUses,
+            enableBackgroundItemKeyStoreAndSemanticClassification,
+            enablePartialTypeChecking: bool,
+            dependencyProvider
+        ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
@@ -1406,7 +1419,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 let getSwitchValue switchString =
                     match commandLineArgs |> List.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
-                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
+                    | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
                     | _ -> None
 
                 let sdkDirOverride =
@@ -1438,9 +1451,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
 
-                tcConfigB.conditionalCompilationDefines <-
+                tcConfigB.conditionalDefines <-
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
-                    define :: tcConfigB.conditionalCompilationDefines
+                    define :: tcConfigB.conditionalDefines
 
                 tcConfigB.projectReferences <- projectReferences
 

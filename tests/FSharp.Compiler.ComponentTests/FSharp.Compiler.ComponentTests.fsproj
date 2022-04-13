@@ -26,6 +26,7 @@
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
+    <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
     <Compile Include="EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs" />
@@ -137,11 +138,20 @@
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="EmittedIL\**\*.fs" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="EmittedIL\**\*.cs" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="EmittedIL\ForLoop\*.bsl">
+      <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
+
 </Project>

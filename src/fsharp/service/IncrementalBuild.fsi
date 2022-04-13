@@ -237,9 +237,9 @@ type internal IncrementalBuilder =
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
-          LegacyReferenceResolver *
+          legacyReferenceResolver: LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
-          FrameworkImportsCache *
+          frameworkTcImportsCache: FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *
           sourceFiles:string list *
           commandLineArgs:string list *

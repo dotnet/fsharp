@@ -101,13 +101,13 @@ type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int
 let bytesToIFH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_FILE_HEADER.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_FILE_HEADER"
-    IMAGE_FILE_HEADER( bytesToWord(buffer.[offset], buffer.[offset+1]), // Machine
-            bytesToWord(buffer.[offset+2], buffer.[offset+3]), // NumberOfSections
-            bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // TimeDateStamp
-            bytesToDWord(buffer.[offset+8], buffer.[offset+9], buffer.[offset+10], buffer.[offset+11]), // PointerToSymbolTable
-            bytesToDWord(buffer.[offset+12], buffer.[offset+13], buffer.[offset+14], buffer.[offset+15]), // NumberOfSymbols
-            bytesToWord(buffer.[offset+16], buffer.[offset+17]), // SizeOfOptionalHeader
-            bytesToWord(buffer.[offset+18], buffer.[offset+19])) // Characteristics
+    IMAGE_FILE_HEADER( bytesToWord(buffer[offset], buffer[offset+1]), // Machine
+            bytesToWord(buffer[offset+2], buffer[offset+3]), // NumberOfSections
+            bytesToDWord(buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]), // TimeDateStamp
+            bytesToDWord(buffer[offset+8], buffer[offset+9], buffer[offset+10], buffer[offset+11]), // PointerToSymbolTable
+            bytesToDWord(buffer[offset+12], buffer[offset+13], buffer[offset+14], buffer[offset+15]), // NumberOfSymbols
+            bytesToWord(buffer[offset+16], buffer[offset+17]), // SizeOfOptionalHeader
+            bytesToWord(buffer[offset+18], buffer[offset+19])) // Characteristics
 
 type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32, pr: int32, pln: int32, nr: int16, nl: int16, c: int32) =
         let mutable name = n
@@ -186,16 +186,16 @@ type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32
 let bytesToISH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SECTION_HEADER.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_SECTION_HEADER"
-    IMAGE_SECTION_HEADER(bytesToQWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3], buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // Name
-            bytesToDWord(buffer.[offset+8], buffer.[offset+9], buffer.[offset+10], buffer.[offset+11]), // AddressInfo
-            bytesToDWord(buffer.[offset+12], buffer.[offset+13], buffer.[offset+14], buffer.[offset+15]), // VirtualAddress
-            bytesToDWord(buffer.[offset+16], buffer.[offset+17], buffer.[offset+18], buffer.[offset+19]), // SizeOfRawData
-            bytesToDWord(buffer.[offset+20], buffer.[offset+21], buffer.[offset+22], buffer.[offset+23]), // PointerToRawData
-            bytesToDWord(buffer.[offset+24], buffer.[offset+25], buffer.[offset+26], buffer.[offset+27]), // PointerToRelocations
-            bytesToDWord(buffer.[offset+28], buffer.[offset+29], buffer.[offset+30], buffer.[offset+31]), // PointerToLineNumbers
-            bytesToWord(buffer.[offset+32], buffer.[offset+33]), // NumberOfRelocations
-            bytesToWord(buffer.[offset+34], buffer.[offset+35]), // NumberOfLineNumbers
-            bytesToDWord(buffer.[offset+36], buffer.[offset+37], buffer.[offset+38], buffer.[offset+39])) // Characteristics
+    IMAGE_SECTION_HEADER(bytesToQWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3], buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]), // Name
+            bytesToDWord(buffer[offset+8], buffer[offset+9], buffer[offset+10], buffer[offset+11]), // AddressInfo
+            bytesToDWord(buffer[offset+12], buffer[offset+13], buffer[offset+14], buffer[offset+15]), // VirtualAddress
+            bytesToDWord(buffer[offset+16], buffer[offset+17], buffer[offset+18], buffer[offset+19]), // SizeOfRawData
+            bytesToDWord(buffer[offset+20], buffer[offset+21], buffer[offset+22], buffer[offset+23]), // PointerToRawData
+            bytesToDWord(buffer[offset+24], buffer[offset+25], buffer[offset+26], buffer[offset+27]), // PointerToRelocations
+            bytesToDWord(buffer[offset+28], buffer[offset+29], buffer[offset+30], buffer[offset+31]), // PointerToLineNumbers
+            bytesToWord(buffer[offset+32], buffer[offset+33]), // NumberOfRelocations
+            bytesToWord(buffer[offset+34], buffer[offset+35]), // NumberOfLineNumbers
+            bytesToDWord(buffer[offset+36], buffer[offset+37], buffer[offset+38], buffer[offset+39])) // Characteristics
 
 type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) =
         let mutable name = n
@@ -245,12 +245,12 @@ type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) 
 let bytesToIS (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SYMBOL.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_SYMBOL"
-    IMAGE_SYMBOL( bytesToQWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3], buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // Name
-            bytesToDWord(buffer.[offset+8], buffer.[offset+9], buffer.[offset+10], buffer.[offset+11]), // Value
-            bytesToWord(buffer.[offset+12], buffer.[offset+13]), // SectionNumber
-            bytesToWord(buffer.[offset+14], buffer.[offset+15]), // Type
-            buffer.[offset+16], // StorageClass
-            buffer.[offset+17]) // NumberOfAuxSymbols
+    IMAGE_SYMBOL( bytesToQWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3], buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]), // Name
+            bytesToDWord(buffer[offset+8], buffer[offset+9], buffer[offset+10], buffer[offset+11]), // Value
+            bytesToWord(buffer[offset+12], buffer[offset+13]), // SectionNumber
+            bytesToWord(buffer[offset+14], buffer[offset+15]), // Type
+            buffer[offset+16], // StorageClass
+            buffer[offset+17]) // NumberOfAuxSymbols
 
 type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
     let mutable virtualAddress = va // Also RelocCount
@@ -286,9 +286,9 @@ type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
 let bytesToIR (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RELOCATION.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RELOCATION"
-    IMAGE_RELOCATION( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]),
-            bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]),
-            bytesToWord(buffer.[offset+8], buffer.[offset+9]))
+    IMAGE_RELOCATION( bytesToDWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3]),
+            bytesToDWord(buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]),
+            bytesToWord(buffer[offset+8], buffer[offset+9]))
 
 type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne: int16, nie: int16) =
     let mutable characteristics = c
@@ -337,12 +337,12 @@ type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne:
 let bytesToIRD (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DIRECTORY"
-    IMAGE_RESOURCE_DIRECTORY( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // Characteristics
-        bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // TimeDateStamp
-        bytesToWord(buffer.[offset+8], buffer.[offset+9]), // MajorVersion
-        bytesToWord(buffer.[offset+10], buffer.[offset+11]), // MinorVersion
-        bytesToWord(buffer.[offset+12], buffer.[offset+13]), // NumberOfNamedEntries
-        bytesToWord(buffer.[offset+14], buffer.[offset+15])) // NumberOfIdEntries
+    IMAGE_RESOURCE_DIRECTORY( bytesToDWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3]), // Characteristics
+        bytesToDWord(buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]), // TimeDateStamp
+        bytesToWord(buffer[offset+8], buffer[offset+9]), // MajorVersion
+        bytesToWord(buffer[offset+10], buffer[offset+11]), // MinorVersion
+        bytesToWord(buffer[offset+12], buffer[offset+13]), // NumberOfNamedEntries
+        bytesToWord(buffer[offset+14], buffer[offset+15])) // NumberOfIdEntries
 
 type IMAGE_RESOURCE_DIRECTORY_ENTRY(n: int32, o: int32) =
     let mutable name = n
@@ -373,8 +373,8 @@ type IMAGE_RESOURCE_DIRECTORY_ENTRY(n: int32, o: int32) =
 let bytesToIRDE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY_ENTRY.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DIRECTORY_ENTRY"
-    IMAGE_RESOURCE_DIRECTORY_ENTRY( bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // Name
-        bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7])) // Offset
+    IMAGE_RESOURCE_DIRECTORY_ENTRY( bytesToDWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3]), // Name
+        bytesToDWord(buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7])) // Offset
 
 type IMAGE_RESOURCE_DATA_ENTRY(o: int32, s: int32, c: int32, r: int32) =
     let mutable offsetToData = o
@@ -407,10 +407,10 @@ type IMAGE_RESOURCE_DATA_ENTRY(o: int32, s: int32, c: int32, r: int32) =
 let bytesToIRDataE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DATA_ENTRY.Width then
         invalidArg "buffer" "buffer too small to fit an IMAGE_RESOURCE_DATA_ENTRY"
-    IMAGE_RESOURCE_DATA_ENTRY(bytesToDWord(buffer.[offset], buffer.[offset+1], buffer.[offset+2], buffer.[offset+3]), // OffsetToData
-        bytesToDWord(buffer.[offset+4], buffer.[offset+5], buffer.[offset+6], buffer.[offset+7]), // Size
-        bytesToDWord(buffer.[offset+8], buffer.[offset+9], buffer.[offset+10], buffer.[offset+11]), // CodePage
-        bytesToDWord(buffer.[offset+12], buffer.[offset+13], buffer.[offset+14], buffer.[offset+15])) // Reserved
+    IMAGE_RESOURCE_DATA_ENTRY(bytesToDWord(buffer[offset], buffer[offset+1], buffer[offset+2], buffer[offset+3]), // OffsetToData
+        bytesToDWord(buffer[offset+4], buffer[offset+5], buffer[offset+6], buffer[offset+7]), // Size
+        bytesToDWord(buffer[offset+8], buffer[offset+9], buffer[offset+10], buffer[offset+11]), // CodePage
+        bytesToDWord(buffer[offset+12], buffer[offset+13], buffer[offset+14], buffer[offset+15])) // Reserved
 
 
 type ResFormatHeader() =
@@ -487,7 +487,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         if (tid &&& 0x80000000) <> 0 then // REVIEW: Are names and types mutually exclusive?  The C++ code didn't seem to think so, but I can't find any documentation
             resHdr.TypeID <- 0
             let mtid = tid &&& 0x7fffffff
-            cType <- bytesToDWord(pbLinkedResource.[mtid], pbLinkedResource.[mtid+1], pbLinkedResource.[mtid+2], pbLinkedResource.[mtid+3])
+            cType <- bytesToDWord(pbLinkedResource[mtid], pbLinkedResource[mtid+1], pbLinkedResource[mtid+2], pbLinkedResource[mtid+3])
             wzType <- Bytes.zeroCreate ((cType + 1) * 2)
             Bytes.blit pbLinkedResource 4 wzType 0 (cType * 2)
         else
@@ -496,7 +496,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         if (nid &&& 0x80000000) <> 0 then
             resHdr.NameID <- 0
             let mnid = nid &&& 0x7fffffff
-            cName <- bytesToDWord(pbLinkedResource.[mnid], pbLinkedResource.[mnid+1], pbLinkedResource.[mnid+2], pbLinkedResource.[mnid+3])
+            cName <- bytesToDWord(pbLinkedResource[mnid], pbLinkedResource[mnid+1], pbLinkedResource[mnid+2], pbLinkedResource[mnid+3])
             wzName <- Bytes.zeroCreate ((cName + 1) * 2)
             Bytes.blit pbLinkedResource 4 wzName 0 (cName * 2)
         else
@@ -562,7 +562,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         //---- Header done, now data
         // just copying to make the code a bit cleaner - can blit if this ends up being a liability
-        let pbData = pbLinkedResource.[(dataEntry.OffsetToData - ulLinkedResourceBaseRVA) ..]
+        let pbData = pbLinkedResource[(dataEntry.OffsetToData - ulLinkedResourceBaseRVA) ..]
         SaveChunk(pbData, dataEntry.Size)
 
         dwFiller <- dataEntry.Size &&& 0x3
@@ -657,17 +657,17 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)
-                                pResNodes.[nResNodes] <- rfn
+                                pResNodes[nResNodes] <- rfn
                                 nResNodes <- nResNodes + 1
                 else
                     if (not skipResource) then
                         let rfn = ResFormatNode(dwTypeID, dwNameID, 0, pirdeName.OffsetToData, pbLinkedResource)
-                        pResNodes.[nResNodes] <- rfn
+                        pResNodes[nResNodes] <- rfn
                         nResNodes <- nResNodes + 1
         else
             if (not skipResource) then
                 let rfn = ResFormatNode(dwTypeID, 0, 0, pirdeType.OffsetToData, pbLinkedResource) // REVIEW: I believe these 0s are what's causing the duplicate res naming problems
-                pResNodes.[nResNodes] <- rfn
+                pResNodes[nResNodes] <- rfn
                 nResNodes <- nResNodes + 1
 
     // Ok, all tree leaves are in ResFormatNode structs, and nResNodes ptrs are in pResNodes
@@ -675,7 +675,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
     if nResNodes <> 0 then
         size <- size + ResFormatHeader.Width ; // sizeof ResFormatHeader
         for i = 0 to (nResNodes - 1) do
-            size <- size + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0)
+            size <- size + pResNodes[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, Unchecked.defaultof<byte[]>, 0)
 
     let pResBuffer = Bytes.zeroCreate size
 
@@ -689,7 +689,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
         resBufferOffset <- resBufferOffset + ResFormatHeader.Width
 
         for i = 0 to (nResNodes - 1) do
-            resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
+            resBufferOffset <- resBufferOffset + pResNodes[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
 
     pResBuffer
 

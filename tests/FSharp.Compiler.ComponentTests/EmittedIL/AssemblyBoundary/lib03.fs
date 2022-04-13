@@ -14,8 +14,8 @@ module L3 =
     let internal x5 = C3                // type is internal
     let f5 (x:obj) = unbox x = x5       // f5 rhs contains internals
 
-    let internal a6 = ref true
-    let f6() = !a6                      // f6 rhs contains internals
+    let mutable internal a6 = true
+    let f6() = a6                       // f6 rhs contains internals
     
     exception internal E of int
 

@@ -2103,7 +2103,7 @@ module TastDefinitionPrinting =
                     | [_] -> 
                         nameL
                     | _ ->
-                        let innerPath = path.[..path.Length - 2]
+                        let innerPath = path[..path.Length - 2]
                         let innerPathL = innerPath |> List.map (ConvertNameToDisplayLayout (tagNamespace >> wordL))
                         sepListL SepL.dot innerPathL ^^ SepL.dot ^^ nameL
 

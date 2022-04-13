@@ -588,12 +588,11 @@ type SynExpr =
         range: range
 
     | Match of
-        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: range *
         clauses: SynMatchClause list *
-        range: range 
+        range: range *
+        trivia: SynExprMatchTrivia
 
     | Do of
         expr: SynExpr *
@@ -797,12 +796,11 @@ type SynExpr =
         trivia: SynExprLetOrUseBangTrivia
 
     | MatchBang of
-        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: range *
         clauses: SynMatchClause list *
-        range: range
+        range: range *
+        trivia: SynExprMatchBangTrivia
 
     | DoBang of
         expr: SynExpr *
