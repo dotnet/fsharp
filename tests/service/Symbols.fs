@@ -3967,3 +3967,26 @@ val (&): e1: bool -> e2: bool -> bool
             assertRange (13, 62) (13, 63) rpr
         | _ ->
             Assert.Fail "Could not get valid AST"
+
+    // TODO: should this also contain SynExpr.OperatorName
+    // Ident was compiled and this information is now lost
+    
+    [<Test>]
+    [<Ignore "AST is kept as it originally was">]
+    let ``named parameter`` () =
+        let ast = getParseResults """
+f(x=4)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr(expr = SynExpr.App(argExpr = SynExpr.Paren(expr = SynExpr.App(funcExpr=
+                    SynExpr.App(funcExpr=SynExpr.OperatorName(OperatorName.Operator(lpr, ident, rpr)))))))
+                ])
+            ])) ->
+            assertRange (2, 1) (2, 2) lpr
+            Assert.AreEqual("op_Equality", ident.idText)
+            assertRange (2, 5) (2, 6) rpr
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
