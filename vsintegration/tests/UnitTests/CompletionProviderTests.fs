@@ -755,14 +755,7 @@ let ``Completion list on record field type at declaration site contains modules,
     let fileContents = """
 type A<'lType> = { Field: l }
 """
-    VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
-
-[<Test>]
-let ``Completion list on record field type at declaration site contains type parameter``() =
-    let fileContents = """
-type A<'keyType> = { Field: key }
-"""
-    VerifyCompletionList(fileContents, "Field: key", ["keyType"], [])
+    VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
 let ``No completion on union case identifier at declaration site``() =
@@ -822,7 +815,7 @@ type A =
 [<Test>]
 let ``Completion list in generic function body contains type parameter``() =
     let fileContents = """
-let null<'wrappedType> () =
+let Null<'wrappedType> () =
     Unchecked.defaultof<wrapp>
 """
     VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
@@ -842,6 +835,14 @@ type A<'wrappedType> () =
     member _.Null () = Unchecked.defaultof<wrapp>
 """
     VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in type application contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+let emptyMap<'keyType, 'lValueType> () =
+    Map.empty<'keyType, l>
+"""
+    VerifyCompletionList(fileContents, ", l", ["LanguagePrimitives"; "List"; "lValueType"], ["let"; "log"])
 
 #if EXE
 ShouldDisplaySystemNamespace()
