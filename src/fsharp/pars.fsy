@@ -4442,7 +4442,8 @@ atomicExpr:
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
   | QMARK nameop 
-      { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false }
+      { SynExpr.Optional($2) take an SynExpr
+       // SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false }
 
   | atomicExpr QMARK dynamicArg
       { let arg1, hpa1 = $1
@@ -4485,7 +4486,7 @@ atomicExpr:
       { $1, false }
 
 atomicExprQualification:
-  | identOrOp 
+  | identOrOpExpr 
       { let idm = rhs parseState 1 
         (fun e lhsm dotm -> mkSynDot dotm lhsm e $1) }
 
@@ -4517,7 +4518,14 @@ atomicExprQualification:
             // Note that "*" is parsed as an expression (it is allowed in "foo.[3,*]")
             match $2 with
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
-                mkSynDot dotm lhsm e (ident(CompileOpName "*", opm))
+                let rightExpr =
+                    let lpr = rhs parseState 1
+                    let starIdent = ident(CompileOpName "*", opm)
+                    let operatorExpr = SynExpr.Operator(SynOperatorName.Operator(starIdent), opm)
+                    let rpr = rhs parseState 3
+                    let pr = unionRanges lpr rpr
+                    SynExpr.Paren(operatorExpr, lpr, Some rpr, pr)
+                mkSynDot dotm lhsm e rightExpr
             | _ ->
                 if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
                     mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (lhs parseState) 
@@ -5580,26 +5588,40 @@ path:
        let (LongIdentWithDots(lid, dotms)) = $1 in LongIdentWithDots(lid, dotms @ [rhs parseState 2])  } 
 
 
-/* An operator name, with surrounnding parentheses */
-opName: 
-  | LPAREN operatorName rparen  
-     {  ident(CompileOpName $2, rhs parseState 2) }
+/* An operator name, with surrounding parentheses */
+opName:
+  | LPAREN operatorName rparen
+     { let ident = ident(CompileOpName $2, rhs parseState 2)
+       rhs parseState 1, SynOperatorName.Operator(ident), rhs parseState 3 }
 
-  | LPAREN error rparen  
-     {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName()); ident(CompileOpName "****", rhs parseState 2) }
+  | LPAREN error rparen
+    {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName())
+       let ident = ident(CompileOpName "****", rhs parseState 2)
+       rhs parseState 1, SynOperatorName.Operator(ident), rhs parseState 3 }
 
   | LPAREN_STAR_RPAREN
-     {  ident(CompileOpName "*", rhs parseState 1) }
+    { let m= rhs parseState 1
+      let lpr = mkFileIndexRange m.FileIndex m.Start m.Start
+      let mStar = mkFileIndexRange m.FileIndex (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn - 1))
+      let ident = ident(CompileOpName "*", mStar)
+      let rpr = mkFileIndexRange m.FileIndex m.End m.End
+      lpr, SynOperatorName.Operator(ident), rpr }
 
   /* active pattern name */
-  | LPAREN activePatternCaseNames BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|")
-       ident(text, rhs2 parseState 2 3) }
-                         
+  | LPAREN activePatternCaseNames BAR rparen
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|")
+       let ident = ident(text, rhs2 parseState 2 3)
+       let rpr = rhs parseState 4
+       lpr, SynOperatorName.ActivePattern(ident), rpr }
+
   /* partial active pattern name */
-  | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
-       ident(text, rhs2 parseState 2 5) }
+  | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
+       let ident = ident(text, rhs2 parseState 2 5)
+       let rpr = rhs parseState 6
+       lpr, SynOperatorName.PartialActivePattern(ident), rpr }
 
 /* An operator name, without surrounding parentheses */
 operatorName: 
@@ -5702,12 +5724,14 @@ activePatternCaseNames:
      { $3 :: $1 }
 
 /* A single item that is an identifier or operator name */
-identOrOp: 
+identOrOpExpr: 
   | ident  
-     { $1 } 
+     { SynExpr.Ident($1) } 
 
   | opName 
-     { $1 }
+     { let lpr, operatorName, rpr = $1
+       let m = rhs parseState 1
+       SynExpr.Paren(SynExpr.Operator(operatorName, operatorName.Range), lpr, Some rpr, m) }
 
 /* An A.B.C path ending in an identifier or operator name */
 /* Note, only used in atomicPatternLongIdent */
@@ -5725,9 +5749,9 @@ pathOp:
      { (* silent recovery *) LongIdentWithDots([$1], [rhs parseState 2]) }  
 
 
-/* nameop is identOrOp not used as part of a path */
+/* nameop is identOrOpExpr not used as part of a path */
 nameop: 
-  | identOrOp { $1 } 
+  | identOrOpExpr { $1 } 
 
 identExpr:
   | ident

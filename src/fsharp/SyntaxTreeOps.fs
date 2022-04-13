@@ -412,18 +412,30 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     | SynExpr.App (_, _, SynExpr.DotGet (e, _, v, _), x, _)  -> SynExpr.DotNamedIndexedPropertySet (e, v, x, r, m)
     | l  -> SynExpr.Set (l, r, m)
 
-let mkSynDot dotm m l r =
-    match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
-        // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm]), None, m)
-    | SynExpr.Ident id ->
-        SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm]), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
-        // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm]), m)
-    | expr ->
-        SynExpr.DotGet (expr, dotm, LongIdentWithDots([r], []), m)
+let mkSynDot dotm m (l: SynExpr) (r: SynExpr) =
+    match r with
+    | SynExpr.Ident r ->
+        match l with
+        | SynExpr.LongIdent (LongIdentWithDots(lid, dots), None, _) ->
+            // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
+            SynExpr.LongIdent (LongIdentWithDots(lid@[r], dots@[dotm]), None, m)
+        | SynExpr.Ident id ->
+            SynExpr.LongIdent (LongIdentWithDots([id;r], [dotm]), None, m)
+        | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
+            // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+            SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm]), m)
+        | expr ->
+            SynExpr.DotGet (expr, dotm, LongIdentWithDots([r], []), m)
+    | SynExpr.Paren(SynExpr.Operator(operatorName = operator), lpr, rpr, pr) ->
+        let m = unionRanges l.Range r.Range
+        let rpr = Option.defaultValue pr rpr
+        SynExpr.DotGetOperator(l, dotm, lpr, operator, rpr, m)
+    | _ ->
+        // TODO: the parser will only send an SynExpr.Ident or SynExpr.Paren(SynExpr.Operator)) as r
+        // What should be constructed here?
+        // Report error?
+        let m = unionRanges l.Range r.Range
+        SynExpr.FromParseError(SynExpr.Const(SynConst.Unit, Range.Zero), m)
 
 let mkSynDotMissing dotm m l =
     match l with
