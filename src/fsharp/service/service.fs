@@ -1193,11 +1193,12 @@ type FSharpChecker(legacyReferenceResolver,
     /// For example, the type provider approvals file may have changed.
     member ic.InvalidateAll() =
         ic.ClearCaches()
-            
+
     member ic.ClearCaches() =
         let utok = AnyCallerThread
         braceMatchCache.Clear(utok)
-        backgroundCompiler.ClearCaches() 
+        backgroundCompiler.ClearCaches()
+        ClearAllILModuleReaderCache()
 
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
