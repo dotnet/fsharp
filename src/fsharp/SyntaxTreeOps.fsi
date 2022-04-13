@@ -300,3 +300,5 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+
+val prependIdentInPattern: ident: Ident -> dotm: range -> pat: SynPat -> SynPat

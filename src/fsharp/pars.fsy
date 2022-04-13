@@ -2174,12 +2174,15 @@ atomicPatternLongIdent:
   | UNDERSCORE DOT pathOp
      { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
           raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
-       let (LongIdentWithDots(lid, dotms)) = $3
-       (None, LongIdentWithDots(ident("_", rhs parseState 1)::lid, rhs parseState 2::dotms)) }
+          
+       let underscore = ident("_", rhs parseState 1)
+       let dotm = rhs parseState 2
+       None, prependIdentInPattern underscore dotm $3 }
 
   | GLOBAL DOT pathOp
-     { let (LongIdentWithDots(lid, dotms)) = $3
-       (None, LongIdentWithDots(ident(MangledGlobalName, rhs parseState 1) :: lid, rhs parseState 2 :: dotms)) }
+     { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
+       let dotm = rhs parseState 2
+       None, prependIdentInPattern globalIdent dotm $3 }
 
   | pathOp
      { (None, $1) }
@@ -2187,8 +2190,10 @@ atomicPatternLongIdent:
   | access UNDERSCORE DOT pathOp
      { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
           raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedSymbolDot())
-       let (LongIdentWithDots(lid, dotms)) = $4
-       (Some($1), LongIdentWithDots(ident("_", rhs parseState 2)::lid, rhs parseState 3::dotms)) }  
+          
+       let underscore = ident("_", rhs parseState 2)
+       let dotm = rhs parseState 3
+       (Some($1), prependIdentInPattern underscore dotm $4 }  
 
   | access pathOp
      { (Some($1), $2) }
@@ -3293,44 +3298,44 @@ namePatPair:
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
-      { let vis, lid = $1
-        SynPat.LongIdent (lid, None, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
+      { let vis, pat = $1
+        SynPat.ParametersOwner (pat, None, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
 
   | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs %prec pat_app
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $3
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.ParametersOwner (lid, None, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $4
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.ParametersOwner (pat, None, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $4
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.ParametersOwner (pat, None, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $2
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.ParametersOwner (pat, None, None, None, args, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $3
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.ParametersOwner (pat, None, None, None, args, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
-      { let vis, lid = $1
+      { let vis, pat = $1
         let args, argsM = $3
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.ParametersOwner (pat, None, None, None, args, vis, m) }
 
   | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst 
       { SynPat.IsInst($2, lhs parseState) }
@@ -3386,10 +3391,13 @@ atomicPattern:
       { SynPat.OptionalVal($2, lhs parseState) } 
 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
-      { let vis, lidwd = $1 
-        if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
-        then mkSynPatMaybeVar lidwd vis (lhs parseState)
-        else mkSynPatVar vis (List.head lidwd.Lid) }
+      { let vis, pat = $1
+        match pat with
+        | SynPat.LongIdent(longDotId = lidwd) ->
+          if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
+          then mkSynPatMaybeVar lidwd vis (lhs parseState)
+          else mkSynPatVar vis (List.head lidwd.Lid)
+        | _ -> pat }
 
   | constant 
       { SynPat.Const (fst $1, snd $1) }
@@ -5746,17 +5754,13 @@ identOrOpPat:
 /* An A.B.C path ending in an identifier or operator name */
 /* Note, only used in atomicPatternLongIdent */
 pathOp: 
-  | ident  
-     { LongIdentWithDots([$1], []) }
-
-  | opName 
-     { LongIdentWithDots([$1], []) }
+  | identOrOpPat { $1 }
 
   | ident DOT pathOp 
-     { let (LongIdentWithDots(lid, dotms)) = $3 in LongIdentWithDots($1 :: lid, rhs parseState 2 :: dotms) } 
+     { prependIdentInPattern $1 (rhs parseState 2) $3 }
 
   | ident DOT error  
-     { (* silent recovery *) LongIdentWithDots([$1], [rhs parseState 2]) }  
+     { (* silent recovery *) SynPat.LongIdent(LongIdentWithDots([$1], [rhs parseState 2]), None, rhs2 parseState 2) }  
 
 
 identExpr:

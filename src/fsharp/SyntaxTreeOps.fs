@@ -900,3 +900,29 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
+
+let prependIdentInPattern (ident: Ident) (dotm: range) (pat: SynPat): SynPat =
+    let m = unionRanges ident.idRange pat.Range
+    
+    match pat with
+    | SynPat.Named (ident=lastIdent) ->
+        SynPat.LongIdent(LongIdentWithDots([ ident; lastIdent ], [ dotm ]), None, m)
+    | SynPat.LongIdent(LongIdentWithDots(lids, dots), access, _) ->
+        SynPat.LongIdent(LongIdentWithDots(ident::lids, dotm::dots), access, m)
+    | SynPat.Paren(SynPat.Operator(operator = operator; accessibility = access) as patOp, pr) ->
+        let lpr, rpr =
+                mkRange pr.FileName pr.Start (Position.mkPos pr.StartLine (pr.StartColumn + 1)),
+                mkRange pr.FileName (Position.mkPos pr.EndLine (pr.EndColumn - 1)) pr.End
+
+        SynPat.DotGetOperator(
+            SynPat.Named(ident, false, access, ident.idRange),
+            dotm,
+            lpr,
+            operator,
+            rpr,
+            m
+        )
+    | _ ->
+        // TODO: this again should not be allowed to happen
+        // Raise parse error?
+        SynPat.Const(SynConst.Unit, m)
