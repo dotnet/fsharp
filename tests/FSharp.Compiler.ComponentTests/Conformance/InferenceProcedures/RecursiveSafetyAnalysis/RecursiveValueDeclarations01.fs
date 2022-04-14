@@ -31,4 +31,3 @@ let rec f x tenv =
  | _ -> 2
 and g tenv = true
 
-exit 0
