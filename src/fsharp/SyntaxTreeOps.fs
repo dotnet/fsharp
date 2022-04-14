@@ -70,6 +70,12 @@ let (|SingleIdent|_|) inp =
     | SynExpr.Ident id -> Some id
     | _ -> None
 
+let (|SingleIdentInPat|_|) (pat:SynPat) : Ident option =
+    match pat with
+    | SynPat.Named(ident = ident) 
+    | SynPat.LongIdent(longDotId = LongIdentWithDots([ident], [])) -> Some ident
+    | _ -> None
+
 let (|SynBinOp|_|) input =
     match input with
     | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
@@ -170,7 +176,7 @@ let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, S
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.ParametersOwner (pattern = SynPat.Named _; argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'

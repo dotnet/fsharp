@@ -46,6 +46,8 @@ val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimpl
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
+val (|SingleIdentInPat|_|): pat: SynPat -> Ident option
+
 /// This affects placement of debug points
 val IsControlFlowExpression: e:SynExpr -> bool
 
@@ -142,7 +144,7 @@ val mkSynDelay: m:range -> e:SynExpr -> SynExpr
 
 val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
-val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
+val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:SynExpr -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
