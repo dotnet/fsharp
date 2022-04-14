@@ -1,3 +1,5 @@
+namespace SomethingPithy
+
 // #in #BindingExpressions
 //
 // This provides conformance testing for capture of local mutable values in closures
@@ -21,12 +23,6 @@
 //<Expects status="warning" span="(308,22-308,23)" id="FS3180">The mutable local 'x' is implicitly allocated as a reference cell because it has been captured by a closure. This warning is for informational purposes only to indicate where implicit allocations are performed.</Expects>
 //<Expects status="warning" span="(322,22-322,23)" id="FS3180">The mutable local 'x' is implicitly allocated as a reference cell because it has been captured by a closure. This warning is for informational purposes only to indicate where implicit allocations are performed.</Expects>
 //<Expects status="warning" span="(333,22-333,23)" id="FS3180">The mutable local 'x' is implicitly allocated as a reference cell because it has been captured by a closure. This warning is for informational purposes only to indicate where implicit allocations are performed.</Expects>
-
-
-
-
-
-
 
 module ExecTests =
 
@@ -336,4 +332,4 @@ module WhileLoop =
 
 
 module ExitModule =
-    exit (if ExecTests.check() then 0 else 1)
+    if ExecTests.check() then () else failwith "Failed"

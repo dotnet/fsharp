@@ -7,7 +7,7 @@
 //<Expects status="error" span="(13,5-13,10)" id="FS0020">The result of this expression has type 'bool' and is implicitly ignored\. Consider using 'ignore' to discard this value explicitly, e\.g\. 'expr \|> ignore', or 'let' to bind the result to a name, e\.g\. 'let result = expr'.$</Expects>
 //
 
-module D =
+module D
     let a = 3 in
         a + 1 |> ignore
     a > 4

@@ -9,8 +9,8 @@ open FSharp.Test.Compiler
 module StructTypes =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/StructTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/StructTypes", Includes=[|"Overload_Equals.fs"|])>]
-    let ``StructTypes - Overload_Equals.fs - --warnaserror+ --nowarn:988`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_Equals.fs"|])>]
+    let ``StructTypes - Overload_Equals_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
@@ -19,8 +19,8 @@ module StructTypes =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/StructTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/StructTypes", Includes=[|"Overload_GetHashCode.fs"|])>]
-    let ``StructTypes - Overload_GetHashCode.fs - --warnaserror+ --nowarn:988`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_GetHashCode.fs"|])>]
+    let ``StructTypes - Overload_GetHashCode_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
@@ -29,8 +29,8 @@ module StructTypes =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/StructTypes)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/StructTypes", Includes=[|"Overload_ToString.fs"|])>]
-    let ``StructTypes - Overload_ToString.fs - --warnaserror+ --nowarn:988`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Overload_ToString.fs"|])>]
+    let ``StructTypes - Overload_ToString_f`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--warnaserror+"; "--nowarn:988"]
