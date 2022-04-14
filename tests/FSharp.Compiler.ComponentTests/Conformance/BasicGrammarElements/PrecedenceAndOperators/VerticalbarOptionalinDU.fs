@@ -5,5 +5,3 @@
 
 type Monchrome = 
      Black = 0
-
-exit 0

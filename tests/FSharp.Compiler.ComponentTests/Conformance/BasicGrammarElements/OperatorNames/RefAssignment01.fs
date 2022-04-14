@@ -14,5 +14,3 @@ let y = ref 0
 y :=
     let (b, _, _) = tup
     b
-
-exit 0

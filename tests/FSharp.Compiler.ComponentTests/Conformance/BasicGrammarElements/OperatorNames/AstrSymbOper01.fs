@@ -6,6 +6,4 @@
 
 let (*) x y = x + y
 
-if 5 * 5 <> 10 then exit 1
-
-exit 0
+if 5 * 5 <> 10 then failwith "Failed: : 1"

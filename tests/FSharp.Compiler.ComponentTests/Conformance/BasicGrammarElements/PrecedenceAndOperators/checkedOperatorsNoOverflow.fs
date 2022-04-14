@@ -9,7 +9,7 @@ let testNoOverflow op overflowArg =
         let r = op overflowArg 
         ()
     with
-        | :? OverflowException -> exit 1
+        | :? OverflowException -> failwith "Failed: 1"
 
 type T(x : float) =
     member this.Data = x
@@ -58,5 +58,3 @@ testNoOverflow int32 (T(-2147483647.0))
 testNoOverflow int64 (T(-8446744073709551615.0))
 testNoOverflow nativeint (T(-2147483647.0))
 testNoOverflow sbyte (T(-127.0))
-
-exit 0

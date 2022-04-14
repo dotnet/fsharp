@@ -5,5 +5,6 @@
 module TestModule
 // Const
 let (!$%&*+-./<=>?@^|~) = "jibberish"
-if (!$%&*+-./<=>?@^|~) <> "jibberish" then exit 0
+if (!$%&*+-./<=>?@^|~) <> "jibberish" then ()
 
+failwith "Failed: : 1"

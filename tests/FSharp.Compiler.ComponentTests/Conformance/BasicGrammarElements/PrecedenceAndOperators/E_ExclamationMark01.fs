@@ -14,4 +14,5 @@ let (!!!) x y = List.item y x
 let err = [1 .. 10] !! 2            // error
 let err2 = [1 .. 10] !!! 2          // error
 
-exit 1
+failwith "Failed: 1"
+

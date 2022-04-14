@@ -5,7 +5,7 @@ let testOverflow op overflowArg =
     try 
         let r = op overflowArg 
         printfn "%A" overflowArg
-        exit 1
+        failwith "Failed: 1"
     with
         | :? OverflowException -> ()
 
@@ -17,7 +17,7 @@ let testOverflow2 op overflowArg =
         try 
             let r = op overflowArg 
             printfn "%A" overflowArg
-            exit 1
+            failwith "Failed: 2"
         with
             | :? OverflowException -> ()
 
@@ -108,5 +108,3 @@ testOverflow uint16 (T(-65536.0))
 testOverflow uint32 (T(-4294967296.0))
 testOverflow uint64 (T(-18446744073709551616.0))
 testOverflow2 unativeint (T(-4294967296.0))
-
-exit 0

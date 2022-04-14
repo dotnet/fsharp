@@ -7,8 +7,6 @@ type Variable<'a>() =
     static member New<'T>() = new Variable<'T>()
     static member NewDouble() = new Variable<double>()   
     member this.Named(x:string) = this
-    
+
 let v2  = Variable<int>.New<double>().Named("v")
 let v3  = Variable<int>.NewDouble().Named("v")
-
-exit 0

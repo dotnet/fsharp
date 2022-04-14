@@ -12,5 +12,3 @@ let a, b = Test(1), Test(2)
 
 let _ = ( a == b ) 
 let _ = ( a != b )
-
-exit 0

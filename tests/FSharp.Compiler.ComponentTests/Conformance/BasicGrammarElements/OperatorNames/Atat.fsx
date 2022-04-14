@@ -14,4 +14,3 @@ let main() =
     |> Seq.iter @@ printf "%s"
 
 main()
-
