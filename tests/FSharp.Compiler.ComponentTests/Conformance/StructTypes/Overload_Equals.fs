@@ -7,8 +7,3 @@ type S3 =
     member this.Equals(s:char) = true
     //member this.Equals(s:S3) = 1.
     member this.Equals(?s:char) = true
-
-#if INTERACTIVE
-;;
-exit 0;;
-#endif
