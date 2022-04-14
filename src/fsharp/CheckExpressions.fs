@@ -5055,15 +5055,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
         
     | SynPat.Named (id, isMemberThis, vis, m) ->
-        if String.isLeadingIdentifierCharacterUpperCase id.idText then
-            // might be an active pattern, treat as TcPatLongIdent
-            TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty ([id], None, SynArgPats.Pats [], vis, m)
-        else
-            let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
-            let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
-            (fun values -> TPat_as (pat' values, bindf values, m)),
-            acc
-
+        TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (id, isMemberThis, vis, m)
+        
     | SynPat.Operator(operator, vis, m) ->
         let bindf, names, takenNames = TcPatBindingName cenv env operator.Ident ty false vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
@@ -5243,6 +5236,16 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
         | _ -> false
     with _ -> false
 
+and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (id, isMemberThis, vis, m) =
+    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+    | Item.ActivePatternCase apref as item ->
+        TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, item, apref, SynArgPats.Pats [], m)
+    | _ ->
+        let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
+        let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
+        
+        (fun values -> TPat_as (pat' values, bindf values, m)), acc
+
 /// Check a long identifier in a pattern
 and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longId, tyargs, args, vis, m) =
     if tyargs.IsSome then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
@@ -5256,6 +5259,7 @@ and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, take
 
     match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
     | Item.NewDef id ->
+        // hier
         TcPatLongIdentNewDef warnOnUpperForId warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (vis, id, args, m)
 
     | Item.ActivePatternCase apref as item ->
