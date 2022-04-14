@@ -714,16 +714,38 @@ let simpleIndexCompare (idx1: int) (idx2: int) =
 // The various keys for the various caches.
 //---------------------------------------------------------------------
 
+
+[<Struct>]
 type TypeDefAsTypIdx = TypeDefAsTypIdx of ILBoxity * ILGenericArgs * int
+
+[<Struct>]
 type TypeRefAsTypIdx = TypeRefAsTypIdx of ILBoxity * ILGenericArgs * int
+
+[<Struct>]
 type BlobAsMethodSigIdx = BlobAsMethodSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsFieldSigIdx = BlobAsFieldSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsPropSigIdx = BlobAsPropSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsLocalSigIdx = BlobAsLocalSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type MemberRefAsMspecIdx = MemberRefAsMspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type MemberRefAsFspecIdx = MemberRefAsFspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * idx: int * valIdx: int32
+
+[<Struct>]
 type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag * idx: int
 
 //---------------------------------------------------------------------
