@@ -570,7 +570,7 @@ type Foo() =
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
                     SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
                     ) ])
              ]) ])) ->
             assertRange (4, 31) (4, 35) mWith
@@ -591,7 +591,7 @@ type Foo() =
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
                     SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
                     ) ])
              ]) ])) ->
             assertRange (4, 36) (4, 40) mWith
@@ -614,8 +614,8 @@ type Foo() =
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
                     SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(propertyKeyword=Some(PropertyKeyword.With mWith))))
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
                     ) ])
              ]) ])) ->
             assertRange (5, 8) (5, 12) mWith
@@ -3030,7 +3030,7 @@ match x with
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Expr(
-                expr = SynExpr.Match(clauses = [ SynMatchClause(pat = SynPat.LongIdent(argPats = SynArgPats.NamePatPairs(pats = [ _, mEquals ,_ ])))])
+                expr = SynExpr.Match(clauses = [ SynMatchClause(pat = SynPat.ParametersOwner(argPats = SynArgPats.NamePatPairs(pats = [ _, mEquals ,_ ])))])
             )
         ]) ])) ->
             assertRange (3, 7) (3, 8) mEquals
