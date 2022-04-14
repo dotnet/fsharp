@@ -524,10 +524,13 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   match expr with
                   | SynExpr.ArbitraryAfterError _ 
                   | SynExpr.LongIdent _
+                  | SynExpr.DotGetOperator _
                   | SynExpr.LibraryOnlyILAssembly _
                   | SynExpr.LibraryOnlyStaticOptimization _
                   | SynExpr.Null _
                   | SynExpr.Ident _
+                  | SynExpr.Operator _
+                  | SynExpr.Optional _
                   | SynExpr.ImplicitZero _
                   | SynExpr.Const _ -> 
                      ()
