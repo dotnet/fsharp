@@ -2515,7 +2515,8 @@ module BindingNormalization =
                          memberFlags.MemberKind <> SynMemberKind.ClassConstructor) ->
                 NormalizeStaticMemberBinding cenv (Option.get memberFlagsOpt) valSynData id vis inferredTyparDecls [] m rhsExpr
 
-            | SynPat.LongIdent(LongIdentWithDots([thisId; memberId], []), vis, m)
+            // e.g. "member this.Text = "" "
+            | SynPat.LongIdent(LongIdentWithDots(id = [thisId; memberId]), vis, m)
                 when
                    (match memberFlagsOpt with
                     | None -> false
