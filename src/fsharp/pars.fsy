@@ -1461,7 +1461,7 @@ namedModuleDefnBlock:
          // However in that case we do use type name lookup to make the resolution.
 
          match $2 with 
-         | [ SynModuleDecl.Expr (LongOrSingleIdent(false, LongIdentWithDots(path, _), None, _), _) ] -> 
+         | [ SynModuleDecl.Expr (LongOrSingleIdent(LongIdentWithDots(path, _), None, _), _) ] -> 
              Choice1Of2  path
          | _ -> 
              Choice2Of2 $2 
@@ -4858,7 +4858,7 @@ recdExpr:
 recdExprCore:
   | appExpr EQUALS declExprBlock recdExprBindings opt_seps_recd
      { match $1 with 
-       | LongOrSingleIdent(false, (LongIdentWithDots(_, _) as f), None, m) ->  
+       | LongOrSingleIdent((LongIdentWithDots(_, _) as f), None, m) ->  
             let f = mkRecdField f
             let mEquals = rhs parseState 2
             let l = List.rev $4

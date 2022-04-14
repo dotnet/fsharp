@@ -156,7 +156,7 @@ let IsDebugPointBinding synPat synExpr =
     // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
     let isFunction = 
         match synPat with 
-        | SynPat.LongIdent (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
+        | SynPat.ParametersOwner (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
         | _ -> false
     not isFunction
 
@@ -171,7 +171,7 @@ let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
 let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
-let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
+let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, vis, m)
 
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
@@ -230,7 +230,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.ParametersOwner(pattern = SingleIdentInPat id; typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -617,12 +617,12 @@ module SynInfo =
 
         let infosForExplicitArgs =
             match pat with
-            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
+            | Some(SynPat.ParametersOwner(argPats=SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
             | _ -> []
 
         let explicitArgsAreSimple =
             match pat with
-            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
+            | Some(SynPat.ParametersOwner(argPats=SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
             | _ -> true
 
         let retInfo = InferSynReturnData retInfo
@@ -781,6 +781,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LibraryOnlyStaticOptimization _
           | SynExpr.Null _
           | SynExpr.Ident _
+          | SynExpr.Operator _
+          | SynExpr.Optional _
           | SynExpr.ImplicitZero _
           | SynExpr.Const _ -> false
 
@@ -794,6 +796,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Do (e, _)
           | SynExpr.Assert (e, _)
           | SynExpr.DotGet (e, _, _, _)
+          | SynExpr.DotGetOperator(pref = e)
           | SynExpr.LongIdentSet (_, e, _)
           | SynExpr.New (_, _, e, _)
           | SynExpr.TypeApp (e, _, _, _, _, _, _)
@@ -915,7 +918,7 @@ let prependIdentInPattern (ident: Ident) (dotm: range) (pat: SynPat): SynPat =
         SynPat.LongIdent(LongIdentWithDots([ ident; lastIdent ], [ dotm ]), None, m)
     | SynPat.LongIdent(LongIdentWithDots(lids, dots), access, _) ->
         SynPat.LongIdent(LongIdentWithDots(ident::lids, dotm::dots), access, m)
-    | SynPat.Paren(SynPat.Operator(operator = operator; accessibility = access) as patOp, pr) ->
+    | SynPat.Paren(SynPat.Operator(operator = operator; accessibility = access), pr) ->
         let lpr, rpr =
                 mkRange pr.FileName pr.Start (Position.mkPos pr.StartLine (pr.StartColumn + 1)),
                 mkRange pr.FileName (Position.mkPos pr.EndLine (pr.EndColumn - 1)) pr.End

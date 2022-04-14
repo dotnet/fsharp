@@ -42,7 +42,7 @@ val mkSynSimplePatVar: isOpt:bool -> id:Ident -> SynSimplePat
 val mkSynCompGenSimplePatVar: id:Ident -> SynSimplePat
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
-val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * range) option
+val (|LongOrSingleIdent|_|): inp:SynExpr -> (LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * range) option
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
