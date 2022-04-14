@@ -5055,10 +5055,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
         
     | SynPat.Named (id, isMemberThis, vis, m) ->
-        let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
-        let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
-        (fun values -> TPat_as (pat' values, bindf values, m)),
-        acc
+        if String.isLeadingIdentifierCharacterUpperCase id.idText then
+            // might be an active pattern, treat as TcPatLongIdent
+            TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty ([id], None, SynArgPats.Pats [], vis, m)
+        else
+            let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
+            let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
+            (fun values -> TPat_as (pat' values, bindf values, m)),
+            acc
 
     | SynPat.Operator(operator, vis, m) ->
         let bindf, names, takenNames = TcPatBindingName cenv env operator.Ident ty false vis topValInfo vFlags (names, takenNames)
