@@ -63,6 +63,9 @@ let (|LongOrSingleIdent|_|) inp =
     | SynExpr.Optional(ident, _) -> Some (true, LongIdentWithDots([ident],[]), None, ident.idRange)
     | SynExpr.LongIdent (lidwd, altId, _m) -> Some (false, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
     | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Operator(operatorName = operator) -> Some (false, LongIdentWithDots([operator.Ident], []), None, operator.Ident.idRange)
+    // TODO:??
+    // | SynExpr.DotGetOperator(LongOrSingleIdent , _, _, operator, _, _) -> 
     | _ -> None
 
 let (|LongOrSingleIdentInPat|_|) (pat: SynPat) =
@@ -77,6 +80,7 @@ let (|SingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (LongIdentWithDots([id], _), None, _) -> Some id
     | SynExpr.Ident id -> Some id
+    | SynExpr.Operator(operatorName = operator) -> Some operator.Ident
     | _ -> None
 
 let (|SingleIdentInPat|_|) (pat:SynPat) : Ident option =

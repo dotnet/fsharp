@@ -2515,6 +2515,15 @@ module BindingNormalization =
                          memberFlags.MemberKind <> SynMemberKind.ClassConstructor) ->
                 NormalizeStaticMemberBinding cenv (Option.get memberFlagsOpt) valSynData id vis inferredTyparDecls [] m rhsExpr
 
+            | SynPat.LongIdent(LongIdentWithDots([thisId; memberId], []), vis, m)
+                when
+                   (match memberFlagsOpt with
+                    | None -> false
+                    | Some memberFlags ->
+                         memberFlags.MemberKind <> SynMemberKind.Constructor &&
+                         memberFlags.MemberKind <> SynMemberKind.ClassConstructor) ->
+                NormalizeInstanceMemberBinding cenv (Option.get memberFlagsOpt) valSynData thisId memberId None vis inferredTyparDecls [] m rhsExpr
+            
             | SynPat.Typed(pat', x, y) ->
                 let (NormalizedBindingPat(pat'', e'', valSynData, typars)) = normPattern pat'
                 NormalizedBindingPat(SynPat.Typed(pat'', x, y), e'', valSynData, typars)
@@ -5202,19 +5211,22 @@ and ConvSynPatToSynExpr x =
     | SynPat.Const (c, m) -> SynExpr.Const (c, m)
     | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
     | SynPat.Typed (p, cty, m) -> SynExpr.Typed (ConvSynPatToSynExpr p, cty, m)
-    | SynPat.ParametersOwner (pattern = SynPat.LongIdent(longDotId=LongIdentWithDots(longId, dotms) as lidwd); argPats=args; accessibility=None; range=m) ->
-        let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
-        let e =
-            if dotms.Length = longId.Length then
-                let e = SynExpr.LongIdent (LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
-                SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
-            else SynExpr.LongIdent (lidwd, None, m)
-        List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
+    | SynPat.LongIdent(LongIdentWithDots(longId, dotms) as lidwd, None, m) ->
+        if dotms.Length = longId.Length then
+            let e = SynExpr.LongIdent (LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
+            SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+        else
+            SynExpr.LongIdent (lidwd, None, m)
+
     | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map ConvSynPatToSynExpr args, [], m)
     | SynPat.Paren (p, _) -> ConvSynPatToSynExpr p
     | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map ConvSynPatToSynExpr args, m)
     | SynPat.QuoteExpr (e,_) -> e
     | SynPat.Null m -> SynExpr.Null m
+    | SynPat.ParametersOwner (pattern = pat; argPats=args; accessibility=None; range=m) ->
+        let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
+        let e = ConvSynPatToSynExpr pat
+        List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
     | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
 
 and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =

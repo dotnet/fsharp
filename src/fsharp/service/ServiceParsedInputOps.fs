@@ -826,8 +826,8 @@ module ParsedInput =
 
         let (|Operator|_|) name e = 
             match e with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _), rhs, _) 
-                when ident.idText = name -> Some (lhs, rhs)
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Operator(operatorName = operator), lhs, _), rhs, _) 
+                when operator.Ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
         // checks if we are in a range operator
