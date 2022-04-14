@@ -331,9 +331,9 @@ let opNameParenGet  = CompileOpName parenGet
 
 let opNameQMark = CompileOpName qmark
 
-let mkSynOperator opm oper = mkSynIdGet opm (CompileOpName oper)
+let mkSynOperator (opm: range) (oper: string): SynExpr = SynExpr.Operator(SynOperatorName.Operator(mkSynId opm (CompileOpName oper)), opm)
 
-let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
+let mkSynInfix (opm: range) (l: SynExpr) (oper: string) (r: SynExpr): SynExpr =
     let firstTwoRange = unionRanges l.Range opm
     let wholeRange = unionRanges l.Range r.Range
     let app1 = SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator opm oper, l, firstTwoRange)
