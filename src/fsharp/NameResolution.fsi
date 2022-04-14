@@ -563,6 +563,9 @@ val internal ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameRes
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType  : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
+/// Return the cases for the given union
+val internal ResolveUnionCasesOfType           : NameResolver -> range -> AccessorDomain -> TType -> TyconRef -> Item list
+
 /// Specifies extra work to do after overload resolution 
 [<RequireQualifiedAccess>]
 type AfterResolution =

@@ -87,6 +87,8 @@ type InfoReader =
     /// Read the record or class fields of a type, including inherited ones. Cache the result for monomorphic types.
     member GetRecordOrClassFieldsOfType: optFilter:string option * ad:AccessorDomain * m:range * ty:TType -> RecdFieldInfo list
 
+    member GetUnionCasesOfType: ad: AccessorDomain * m: range * ty: TType -> UnionCaseInfo list
+
     /// Check if the given language feature is supported by the runtime.
     member IsLanguageFeatureRuntimeSupported: langFeature:Features.LanguageFeature -> bool
 

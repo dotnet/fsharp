@@ -52,6 +52,9 @@ type public CompletionContext =
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
 
+    /// Completing a pattern in a match clause (e.g. match expr with Som| -> () | _ -> ())
+    | MatchClause of rangeOfMatchedExpr: range
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }

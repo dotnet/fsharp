@@ -367,6 +367,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     if not fdef.IsCompilerGenerated then
                         yield MakeRecdFieldInfo g ty tcref fdef ]
 
+    /// Get the F#-declared union cases
+    let GetImmediateIntrinsicUnionCasesOfType _ad _m ty =
+        match tryTcrefOfAppTy g ty with 
+        | ValueNone -> []
+        | ValueSome tcref -> 
+            tcref.UnionCasesAsRefList
+            |> List.map (fun caseRef -> UnionCaseInfo (argsOfAppTy g ty, caseRef))
 
     /// The primitive reader for the method info sets up a hierarchy
     let GetIntrinsicMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
@@ -385,6 +392,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter, ad), m, ty) =
         FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
     
+    let GetIntrinsicUnionCaseInfosUncached (ad, m, ty) =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicUnionCasesOfType ad m ty @ acc) g amap m AllowMultiIntfInstantiations.Yes ty []
+
     let GetEntireTypeHierarchyUncached (allowMultiIntfInst, m, ty) =
         FoldEntireHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty  [] 
 
@@ -677,6 +687,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
     let mostSpecificOverrideMethodInfoCache = MakeInfoCache GetIntrinsicMostSpecificOverrideMethodSetsUncached hashFlags0
+    let unionCaseInfoCache = MakeInfoCache GetIntrinsicUnionCaseInfosUncached hashFlags3
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
@@ -709,6 +720,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Read the record or class fields of a type, including inherited ones. Cache the result for monomorphic types.
     member _.GetRecordOrClassFieldsOfType (optFilter, ad, m, ty) =
         recdOrClassFieldInfoCache.Apply(((optFilter, ad), m, ty))
+
+    member _.GetUnionCasesOfType (ad, m, ty) =
+        unionCaseInfoCache.Apply((ad, m, ty))
 
     /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member _.GetILFieldInfosOfType (optFilter, ad, m, ty) =

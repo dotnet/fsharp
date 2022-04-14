@@ -3829,6 +3829,16 @@ let ResolveRecordOrClassFieldsOfType (ncenv: NameResolver) m ad ty statics =
     |> List.filter (fun rfref -> rfref.IsStatic = statics && IsFieldInfoAccessible ad rfref)
     |> List.map Item.RecdField
 
+/// Returns cases for the given union
+let ResolveUnionCasesOfType (ncenv: NameResolver) m ad ty tcRef =
+    if IsTyconReprAccessible ncenv.amap m ad tcRef then
+        let requiresQualifiedAccess = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tcRef.Attribs
+
+        ncenv.InfoReader.GetUnionCasesOfType (ad, m, ty)
+        |> List.map (fun caseInfo -> Item.UnionCase (caseInfo, requiresQualifiedAccess))
+    else
+        []
+
 [<RequireQualifiedAccess>]
 type ResolveCompletionTargets =
     | All of (MethInfo -> TType -> bool)

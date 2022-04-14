@@ -641,6 +641,42 @@ type internal TypeCheckInfo
         let items = items |> RemoveExplicitlySuppressed g
         items, nenv.DisplayEnv, m
 
+    /// Find union cases and compatible active patterns in the best naming environment.
+    let GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
+        let rec doesActivePatternTakeTypeAsInput g ty paramType =
+            match paramType with
+            | TType_var (typar, _) ->
+                match typar.Solution with
+                | Some paramType ->
+                    doesActivePatternTakeTypeAsInput g ty paramType
+                | _ -> false
+            | TType_fun (domainType, rangeType, _) ->
+                if typeEquiv g domainType ty then
+                    true
+                else
+                    doesActivePatternTakeTypeAsInput g ty rangeType
+            | _ -> false
+
+        let _, quals = GetExprTypingForPosition cursorPos
+
+        match quals with
+        | [| ty, nenv, ad, m |] ->
+            match tryTcrefOfAppTy nenv.DisplayEnv.g ty with
+            | ValueSome tcRef when tcRef.IsUnionTycon ->
+                let cases = ResolveUnionCasesOfType ncenv m ad ty tcRef
+                let activePatterns =
+                    nenv.ePatItems
+                    |> Seq.choose (fun x ->
+                        match x.Value with
+                        | Item.ActivePatternCase item when doesActivePatternTakeTypeAsInput nenv.DisplayEnv.g ty item.ActivePatternVal.Type ->
+                            Some x.Value
+                        | _ -> None)
+                    |> Seq.toList
+
+                Some (cases @ activePatterns, nenv.DisplayEnv, m)
+            | _ -> None
+        | _ -> None
+
     /// Resolve a location and/or text to items.
     //   Three techniques are used
     //        - look for an exact known name resolution from type checking
@@ -975,6 +1011,16 @@ type internal TypeCheckInfo
                 | Some (items, denv, m) ->
                     Some (List.map ItemWithNoInst items, denv, m)
                     |> Option.map toCompletionItems
+
+            // Completion at ' match x with S... -> () '
+            | Some (CompletionContext.MatchClause range) ->
+                match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition range.End with
+                | Some (items, denv, range) ->
+                    toCompletionItems (List.map ItemWithNoInst items, denv, range)
+                    |> Some
+                | _ ->
+                    // Fall back to regular completions when we're not matching against a DU
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
