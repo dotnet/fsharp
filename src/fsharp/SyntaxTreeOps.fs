@@ -68,7 +68,9 @@ let (|LongOrSingleIdent|_|) inp =
 let (|LongOrSingleIdentInPat|_|) (pat: SynPat) =
     match pat with
     | SynPat.LongIdent(longDotId = LongIdentWithDots(lids,_)) -> Some lids
-    | SynPat.Named (ident = ident) -> Some [ident]
+    | SynPat.Named (ident = ident) -> Some [ ident ]
+    | SynPat.Paren(SynPat.Operator(operator = operator), _)
+    | SynPat.Operator(operator = operator) -> Some [ operator.Ident ]
     | _ -> None
 
 let (|SingleIdent|_|) inp =
@@ -81,6 +83,8 @@ let (|SingleIdentInPat|_|) (pat:SynPat) : Ident option =
     match pat with
     | SynPat.Named(ident = ident) 
     | SynPat.LongIdent(longDotId = LongIdentWithDots([ident], [])) -> Some ident
+    | SynPat.Paren(SynPat.Operator(operator = operator), _)
+    | SynPat.Operator(operator = operator) -> Some operator.Ident
     | _ -> None
 
 let (|SynBinOp|_|) input =

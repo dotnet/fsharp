@@ -233,17 +233,17 @@ module NavigationImpl =
                              [ createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access) ]
                          | SynMemberDefn.AutoProperty(ident=id; accessibility=access) -> 
                              [ createMember(id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access) ]
-                         | SynMemberDefn.AbstractSlot(SynValSig(ident=id; synType=ty; accessibility=access), _, _) ->
+                         | SynMemberDefn.AbstractSlot(SynValSig(pat = SingleIdentInPat id; synType=ty; accessibility=access), _, _) ->
                              [ createMember(id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access) ]
                          | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
                          | SynMemberDefn.Interface(members=Some(membs)) ->
                              processMembers membs enclosingEntityKind |> snd
                          | _ -> [] 
                      // can happen if one is a getter and one is a setter
-                     | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1))) as binding1)
-                        SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2))) as binding2)] ->
+                     | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(pattern = LongOrSingleIdentInPat lid1; extraId=Some(info1))) as binding1)
+                        SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(pattern = LongOrSingleIdentInPat lid2; extraId=Some(info2))) as binding2)] ->
                          // ensure same long id
-                         assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
+                         assert((lid1,lid2) ||> List.forall2 (fun x y -> x.idText = y.idText))
                          // ensure one is getter, other is setter
                          assert((info1.idText = "set" && info2.idText = "get") ||
                                 (info2.idText = "set" && info1.idText = "get"))
@@ -392,7 +392,7 @@ module NavigationImpl =
         and processSigMembers (members: SynMemberSig list): list<NavigationItem * int> = 
             [ for memb in members do
                  match memb with
-                 | SynMemberSig.Member(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _, _) ->
+                 | SynMemberSig.Member(SynValSig.SynValSig(pat = SingleIdentInPat id; accessibility=access; range=m), _, _) ->
                      yield createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, access)
                  | SynMemberSig.ValField(SynField(_, _, Some(rcid), ty, _, _, access, _), _) ->
                      yield createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
@@ -400,7 +400,7 @@ module NavigationImpl =
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedSigDeclarations decls = decls |> List.collect (function
-            | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _) ->
+            | SynModuleSigDecl.Val(SynValSig.SynValSig(pat = SingleIdentInPat id; accessibility=access; range=m), _) ->
                 [ createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Module, false, access) ]
             | _ -> [] )        
 
@@ -540,8 +540,9 @@ module NavigateTo =
             | _ -> ()
             { Type = containerType; Name = formatLongIdent lid }
     
-        let addValSig kind (SynValSig(ident=id)) isSig container = 
-            addIdent kind id isSig container
+        let addValSig kind (SynValSig(pat = pat)) isSig container =
+            ((|SingleIdentInPat|_|) pat)
+            |> Option.iter (fun id -> addIdent kind id isSig container)
         
         let addField(SynField(_, _, id, _, _, _, _, _)) isSig container = 
             match id with
