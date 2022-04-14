@@ -10,8 +10,8 @@ module TypeFunctions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"typeofInCustomAttributes001.fs"|])>]
-    let ``TypeFunctions - typeofInCustomAttributes001.fs - `` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeofInCustomAttributes001.fs"|])>]
+    let ``typeofInCustomAttributes001_fs`` compilation =
         compilation
         |> asFsx
         |> compile
@@ -20,8 +20,8 @@ module TypeFunctions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
     //<Expects id="FS0704" span="(9,16-9,17)" status="error">Expected type, not unit-of-measure</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"E_typeof_measure_01.fs"|])>]
-    let ``TypeFunctions - E_typeof_measure_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_measure_01.fs"|])>]
+    let ``E_typeof_measure_01_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -33,8 +33,8 @@ module TypeFunctions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
     //<Expects id="FS0929" span="(7,6-7,7)" status="error">This type requires a definition</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"E_typeof_undefined_01.fs"|])>]
-    let ``TypeFunctions - E_typeof_undefined_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_undefined_01.fs"|])>]
+    let ``E_typeof_undefined_01_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -46,8 +46,8 @@ module TypeFunctions =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"typeof_anonymous_01.fs"|])>]
-    let ``TypeFunctions - typeof_anonymous_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeof_anonymous_01.fs"|])>]
+    let ``typeof_anonymous_01_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -56,8 +56,8 @@ module TypeFunctions =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"typeof_class_01.fs"|])>]
-    let ``TypeFunctions - typeof_class_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeof_class_01.fs"|])>]
+    let ``typeof_class_01_fs`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -66,8 +66,8 @@ module TypeFunctions =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"typeof_interface_01.fs"|])>]
-    let ``TypeFunctions - typeof_interface_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeof_interface_01.fs"|])>]
+    let ``typeof_interface_01_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
@@ -76,8 +76,8 @@ module TypeFunctions =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/DeclarationElements/LetBindings/TypeFunctions)
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings/TypeFunctions", Includes=[|"typeof_struct_01.fs"|])>]
-    let ``TypeFunctions - typeof_struct_01.fs - --test:ErrorRanges`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeof_struct_01.fs"|])>]
+    let ``typeof_struct_01_fs - --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]

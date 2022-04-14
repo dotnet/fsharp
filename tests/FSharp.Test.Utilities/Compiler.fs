@@ -924,25 +924,35 @@ module rec Compiler =
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
-            let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-            
+
+            // (Error 67, Line 14, Col 3, Line 14, Col 24, "This type test or downcast will always hold")
+            let errorMessage error =
+                let { Error = err; Range = range; Message = message } = error
+                let errorType =
+                    match err with
+                    | ErrorType.Error n -> $"Error {n}"
+                    | ErrorType.Warning n-> $"Warning {n}"
+                    | ErrorType.Hidden n-> $"Hidden {n}"
+                    | ErrorType.Information n-> $"Information {n}"
+                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")"""
+
+            let expectedErrors = expected |> List.map (fun error -> errorMessage error)
+            let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b sourceErrors expectedErrors)
+
             // For lists longer than 100 errors:
-            errors |> List.iter System.Diagnostics.Debug.WriteLine
+            expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count" expected.Length errors.Length
+            checkEqual "Errors count" expectedErrors.Length sourceErrors.Length
 
-            (errors, expected)
-            ||> List.iter2 (fun actualError expectedError ->
-                           let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
-                           let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
-                           checkEqual "Error" expectedError actualError
-                           checkEqual "ErrorRange" expectedRange actualRange
-                           checkEqual "Message" expectedMessage actualMessage)
-            ()
+            (sourceErrors, expectedErrors)
+            ||> List.iter2 (fun actual expected ->
+
+                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with

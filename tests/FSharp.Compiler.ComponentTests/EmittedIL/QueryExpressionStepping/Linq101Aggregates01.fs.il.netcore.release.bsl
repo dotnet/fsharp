@@ -51,13 +51,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Linq101Aggregates01 created
 }
 .module Linq101Aggregates01.exe
-// MVID: {624A540B-94AA-CBF9-A745-03830B544A62}
+// MVID: {62576664-EFF6-58B9-A745-038364665762}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000250CFC00000
+// Image base: 0x000001FDBA3D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -7368,4 +7368,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\release\net6.0\tests\EmittedIL\QueryExpressionStepping\Linq101Aggregates01_fs\Linq101Aggregates01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\QueryExpressionStepping\Linq101Aggregates01_fs\Linq101Aggregates01.res
