@@ -29,19 +29,16 @@ and InterfaceType<'a> =
     abstract Ident : 'a
 
 let test1 = new ClassType<int>(3)
-if test1.Value <> 3 then exit 1
+if test1.Value <> 3 then failwith "Failed: 1"
 
 let test2 = { field1 = 41; field2 = test1 }
-if test2.GetField2() <> test1 then exit 1
+if test2.GetField2() <> test1 then failwith "Failed: 1"
 
 let test3 = Case3("du type", test2)
-if test3 = Case1("foo", new AbbrevType1(4)) then exit 1
+if test3 = Case1("foo", new AbbrevType1(4)) then failwith "Failed: 3"
 
 let test4 = new AnotherClassType<float>(3.141)
-if test4.X <> 3.141 then exit 1
+if test4.X <> 3.141 then failwith "Failed: 4"
 
 let test5 = test4 :> InterfaceType<float>
-if test5.Ident <> 3.141 then exit 1
-
-exit 0
-
+if test5.Ident <> 3.141 then failwith "Failed: 5"

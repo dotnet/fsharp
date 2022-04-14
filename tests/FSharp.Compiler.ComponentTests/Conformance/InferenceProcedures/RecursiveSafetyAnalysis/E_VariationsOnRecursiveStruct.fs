@@ -5,5 +5,3 @@
 [<Struct>]
 type S2 (def : S2) =
   member s.XYZ = def
-
-exit 1
