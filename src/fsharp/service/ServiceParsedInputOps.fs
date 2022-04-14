@@ -215,7 +215,7 @@ module ParsedInput =
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
-            | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
+            | SynExpr.LongIdent (longDotId = LongIdentWithDots(longIdent, _)) -> 
                 let _, r = CheckLongIdent longIdent
                 Some r
             | SynExpr.LongIdentSet (LongIdentWithDots(longIdent, _), synExpr, _range) -> 
@@ -308,7 +308,7 @@ module ParsedInput =
                 match expr with
                 | SynExpr.Paren (e, _, _, _) when foundCandidate -> 
                     TryGetExpression foundCandidate e
-                | SynExpr.LongIdent (_isOptional, LongIdentWithDots(lid, _), _altNameRefCell, _m) -> 
+                | SynExpr.LongIdent (longDotId = LongIdentWithDots(lid, _)) -> 
                     getLidParts lid |> Some
                 | SynExpr.DotGet (leftPart, _, LongIdentWithDots(lid, _), _) when (rangeContainsPos (rangeOfLid lid) pos) || foundCandidate -> 
                     // requested position is at the lid part of the DotGet
@@ -380,7 +380,7 @@ module ParsedInput =
                             | Some (n, _) -> Some ((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
                                                                               || (posGeq (List.item (n+1) lid).idRange.Start pos))  // foo.$bar
                         match expr with
-                        | SynExpr.LongIdent (_isOptional, lidwd, _altNameRefCell, _m) ->
+                        | SynExpr.LongIdent (longDotId = lidwd) ->
                             traverseLidOrElse None lidwd
                         | SynExpr.LongIdentSet (lidwd, exprRhs, _m) ->
                             [ dive lidwd lidwd.Range (traverseLidOrElse None)
@@ -548,7 +548,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
         and walkExprWithKind (parentKind: EntityKind option) = function
-            | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
+            | SynExpr.LongIdent (LongIdentWithDots(_, dotRanges), _, r) ->
                 match dotRanges with
                 | [] when isPosInRange r -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
                 | firstDotRange :: _  ->
@@ -880,10 +880,10 @@ module ParsedInput =
             | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // A<_>()
                 Some (endOfClosingTokenOrIdent mGreaterThan id, findSetters arg)
-            | SynExpr.App (_, false, SynExpr.LongIdent (_, lid, _, _), arg, _) -> 
+            | SynExpr.App (_, false, SynExpr.LongIdent (longDotId = lid), arg, _) -> 
                 // A.B()
                 Some (endOfLastIdent lid, findSetters arg)
-            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.LongIdent (_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _) -> 
+            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.LongIdent (longDotId = lid), _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // A.B<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
             | _ -> None
@@ -1353,7 +1353,7 @@ module ParsedInput =
                 walkType ty
                 List.iter walkBinding bindings
                 List.iter walkInterfaceImpl ifaces
-            | SynExpr.LongIdent (_, ident, _, _) -> addLongIdentWithDots ident
+            | SynExpr.LongIdent (longDotId = ident) -> addLongIdentWithDots ident
             | SynExpr.For (ident=ident; identBody=e1; toBody=e2; doBody=e3) ->
                 addIdent ident
                 List.iter walkExpr [e1; e2; e3]

@@ -173,7 +173,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             match expr with
             | SynExpr.Ident ident -> Some ident.idRange
         
-            | SynExpr.LongIdent (_, _, _, range) -> Some range
+            | SynExpr.LongIdent (range = range) -> Some range
 
             | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                 getIdentRangeForFuncExprInApp traverseSynExpr expr pos

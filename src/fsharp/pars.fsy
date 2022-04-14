@@ -4449,7 +4449,7 @@ atomicExpr:
       { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
-  | QMARK identOrOpExpr 
+  | QMARK ident 
       { let m = rhs2 parseState 1 2
         SynExpr.Optional($2, m), false }
 

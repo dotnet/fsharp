@@ -853,7 +853,7 @@ module InterfaceStubGenerator =
                 | SynExpr.Ident _ident ->
                     None
 
-                | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> 
+                | SynExpr.LongIdent _ -> 
                     None
 
                 | SynExpr.LongIdentSet (_longIdent, synExpr, _range) ->

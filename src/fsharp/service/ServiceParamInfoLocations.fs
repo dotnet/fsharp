@@ -59,7 +59,7 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some ([id.idText], id.idRange)
-        | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
+        | SynExpr.LongIdent (LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
         | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr 
@@ -80,15 +80,15 @@ module internal ParameterLocationsImpl =
         // f(x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
+                                    SynExpr.Operator(operatorName = SynOperatorName.Operator(op)), 
                                     SynExpr.Ident n, 
                                     _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
-                                    SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
+                                    SynExpr.Operator(operatorName = SynOperatorName.Operator(op)),
+                                    SynExpr.Optional(n, _), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
 

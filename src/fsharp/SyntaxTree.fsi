@@ -1080,9 +1080,9 @@ type SynExpr =
         rpr: range *
         range: range
 
-    /// ?x or ?(+)
+    /// ?x
     | Optional of
-        expr: SynExpr *
+        ident: Ident *
         range: range
 
     /// Gets the syntax range of this construct

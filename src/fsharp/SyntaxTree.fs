@@ -887,7 +887,7 @@ type SynExpr =
         range: range
 
     | Optional of
-        expr: SynExpr *
+        ident: Ident *
         range: range
 
     member e.Range =
