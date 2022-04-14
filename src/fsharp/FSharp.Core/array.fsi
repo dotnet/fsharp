@@ -769,7 +769,7 @@ module Array =
     /// Evaluates to <c>false</c>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate:('T -> bool) -> array:'T[] -> bool
+    val inline exists: predicate:('T -> bool) -> array:'T[] -> bool
 
     /// <summary>Tests if any pair of corresponding elements of the arrays satisfies the given predicate.</summary>
     ///
