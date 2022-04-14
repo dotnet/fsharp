@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.DeclarationElements.LetBindings
+namespace FSharp.Compiler.ComponentTests.Conformance.DeclarationElements
 
 open Xunit
 open FSharp.Test
@@ -8,8 +8,8 @@ open FSharp.Test.Compiler
 
 module UseBindings =
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings", Includes=[|"UseBindingDiscard01.fs"|])>]
-    let ``UseBindings - UseBindingDiscard01.fs - Compiles`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard01.fs"|])>]
+    let ``UseBindings - UseBindingDiscard01_fs - Current LangVersion`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--langversion:preview"]
@@ -17,8 +17,8 @@ module UseBindings =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../../resources/tests/Conformance/DeclarationElements/LetBindings", Includes=[|"UseBindingDiscard01.fs"|])>]
-    let ``UseBindings - UseBindingDiscard01.fs - Bad LangVersion`` compilation =
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard01.fs"|])>]
+    let ``UseBindings - UseBindingDiscard01_fs - Bad LangVersion`` compilation =
         compilation
         |> asFsx
         |> withOptions ["--langversion:5.0"]

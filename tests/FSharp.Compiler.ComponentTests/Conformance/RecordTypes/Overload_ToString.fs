@@ -7,7 +7,3 @@ type R =
     member this.ToString(s:char) = true
     member this.ToString() =       true
     member this.ToString(?s:char) = true
-
-#if INTERACTIVE
-exit 0;;
-#endif
