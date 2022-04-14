@@ -11471,6 +11471,16 @@ and AnalyzeRecursiveDecl
                  memberFlagsOpt, thisIdOpt, bindingAttribs,
                  valSynInfo, ty, bindingRhs, mBinding, explicitTyparInfo)
 
+        | SynPat.Paren (SynPat.Operator _ as pat', _) -> analyzeRecursiveDeclPat tpenv pat'
+
+        | SynPat.Operator (operator, vis2, _) ->
+            AnalyzeRecursiveStaticMemberOrValDecl
+                (cenv, envinner, tpenv, declKind,
+                 newslotsOK, overridesOK, tcrefContainerInfo,
+                 vis1, operator.Ident, vis2, declaredTypars,
+                 memberFlagsOpt, thisIdOpt, bindingAttribs,
+                 valSynInfo, ty, bindingRhs, mBinding, explicitTyparInfo)
+        
         | SynPat.InstanceMember(thisId, memberId, toolId, vis2, _) ->
             AnalyzeRecursiveInstanceMemberDecl
                 (cenv, envinner, tpenv, declKind,
