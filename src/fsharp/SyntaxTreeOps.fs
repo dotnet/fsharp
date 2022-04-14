@@ -60,8 +60,15 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 let (|LongOrSingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (lidwd, altId, _m) -> Some (lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Optional(ident, _) -> Some (true, LongIdentWithDots([ident],[]), None, ident.idRange)
+    | SynExpr.LongIdent (lidwd, altId, _m) -> Some (false, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
+    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | _ -> None
+
+let (|LongOrSingleIdentInPat|_|) (pat: SynPat) =
+    match pat with
+    | SynPat.LongIdent(longDotId = LongIdentWithDots(lids,_)) -> Some lids
+    | SynPat.Named (ident = ident) -> Some [ident]
     | _ -> None
 
 let (|SingleIdent|_|) inp =
@@ -406,7 +413,7 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
     match l with
     //| SynExpr.Paren (l2, m2)  -> mkSynAssign m l2 r
-    | LongOrSingleIdent(v, None, _)  -> SynExpr.LongIdentSet (v, r, m)
+    | LongOrSingleIdent(false, v, None, _)  -> SynExpr.LongIdentSet (v, r, m)
     | SynExpr.DotGet (e, _, v, _)  -> SynExpr.DotSet (e, v, r, m)
     | SynExpr.DotIndexedGet (e1, e2, mDot, mLeft)  -> SynExpr.DotIndexedSet (e1, e2, r, mLeft, mDot, m)
     | SynExpr.LibraryOnlyUnionCaseFieldGet (x, y, z, _) -> SynExpr.LibraryOnlyUnionCaseFieldSet (x, y, z, r, m)

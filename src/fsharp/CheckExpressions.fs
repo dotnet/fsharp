@@ -2474,7 +2474,7 @@ module BindingNormalization =
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
             match pat with
             | SynPat.FromParseError(p, _) -> normPattern p
-            | SynPat.LongIdent (LongIdentWithDots(longId, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.ParametersOwner (LongOrSingleIdentInPat longId, _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -4093,7 +4093,15 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv valSpfn attrs =
     let g = cenv.g
-    let (SynValSig(ident=id; explicitValDecls=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = valSpfn
+    let (SynValSig(pat = pat; explicitValDecls=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = valSpfn
+    let id =
+        match pat with
+        | SingleIdentInPat id -> id
+        | _ ->
+            // TODO: introduce a new one of these things?
+            error(Error(FSComp.SR.tcAttributeIsNotValidForLanguageElementUseDo(), pat.Range))
+            Ident("?", pat.Range)
+
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
@@ -4621,7 +4629,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
 
     | SynType.LongIdent lidwd ->
         let m = lidwd.Range
-        TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent (false, lidwd, None, m), m)) idOpt container
+        TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent (lidwd, None, m), m)) idOpt container
 
     | _ ->
         fail()
@@ -5042,6 +5050,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_as (pat' values, bindf values, m)),
         acc
 
+    | SynPat.Operator(operator, vis, m) ->
+        let bindf, names, takenNames = TcPatBindingName cenv env operator.Ident ty false vis topValInfo vFlags (names, takenNames)
+        let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
+        (fun values -> TPat_as (pat' values, bindf values, m)),
+        acc
+    
     | SynPat.OptionalVal (id, m) ->
         errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
         let bindf, names, takenNames = TcPatBindingName cenv env id ty false None topValInfo vFlags (names, takenNames)
@@ -5079,9 +5093,28 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
 
-    | SynPat.LongIdent (longDotId=longDotId; typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
+    | SynPat.ParametersOwner (pattern = pat; typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
+        let longDotId =
+            match pat with
+            | LongOrSingleIdentInPat longDotId -> longDotId
+            | _ ->
+                // TODO: this again should be happening, throw something more specific?
+                errorR (Error(FSComp.SR.tcInvalidPattern(), m))
+                []
+
         TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, tyargs, args, vis, m)
 
+    | SynPat.LongIdent(LongIdentWithDots(id = longDotId), vis, m) ->
+        TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, None, SynArgPats.Pats [], vis, m)
+    
+    | SynPat.DotGetOperator(pref = pat; operator = operator; range = m) ->
+        let longDotId, vis =
+            match pat with
+            | SynPat.Named(ident = ident; accessibility = vis) -> [ ident; operator.Ident ], vis
+            | _ -> [ operator.Ident ], None
+
+        TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, None, SynArgPats.Pats [], vis, m)
+    
     | SynPat.QuoteExpr(_, m) ->
         errorR (Error(FSComp.SR.tcInvalidPattern(), m))
         (fun _ -> TPat_error m), (tpenv, names, takenNames)
@@ -5169,13 +5202,13 @@ and ConvSynPatToSynExpr x =
     | SynPat.Const (c, m) -> SynExpr.Const (c, m)
     | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
     | SynPat.Typed (p, cty, m) -> SynExpr.Typed (ConvSynPatToSynExpr p, cty, m)
-    | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, dotms) as lidwd; argPats=args; accessibility=None; range=m) ->
+    | SynPat.ParametersOwner (pattern = SynPat.LongIdent(longDotId=LongIdentWithDots(longId, dotms) as lidwd); argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
         let e =
             if dotms.Length = longId.Length then
-                let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
+                let e = SynExpr.LongIdent (LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
                 SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
-            else SynExpr.LongIdent (false, lidwd, None, m)
+            else SynExpr.LongIdent (lidwd, None, m)
         List.fold (fun f x -> mkSynApp1 f (ConvSynPatToSynExpr x) m) e args
     | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map ConvSynPatToSynExpr args, [], m)
     | SynPat.Paren (p, _) -> ConvSynPatToSynExpr p
@@ -5194,9 +5227,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
     with _ -> false
 
 /// Check a long identifier in a pattern
-and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, tyargs, args, vis, m) =
-    let (LongIdentWithDots(longId, _)) = longDotId
-    
+and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longId, tyargs, args, vis, m) =
     if tyargs.IsSome then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
 
     let warnOnUpperForId =
@@ -5636,8 +5667,9 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
         if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
         // Check to see if pattern translation decided to use an alternative identifier.
         match altNameRefCellOpt with
-        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> 
-            TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, LongIdentWithDots([altId], []), None, mLongId)) delayed
+        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} ->
+            let expr = if isOpt then SynExpr.Optional(altId, mLongId) else SynExpr.LongIdent (LongIdentWithDots([altId], []), None, mLongId)
+            TcExprThen cenv overallTy env tpenv isArg expr delayed
         | _ -> TcLongIdentThen cenv overallTy env tpenv longId delayed
 
     // f x
@@ -5869,7 +5901,9 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     match synExpr with
     // ( * )
     | SynExpr.Paren(SynExpr.IndexRange (None, opm, None, _m1, _m2, _), _, _, _) ->
-        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
+        let replacementExpr =
+            let ident = ident(CompileOpName "*", opm)
+            SynExpr.Operator(SynOperatorName.Operator(ident), opm)
         TcExpr cenv overallTy env tpenv replacementExpr
 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) ->
@@ -5880,7 +5914,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcExpr cenv overallTy env tpenv expr2
 
     | SynExpr.DotIndexedGet _ | SynExpr.DotIndexedSet _
-    | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
+    | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _
+    | SynExpr.Operator _ | SynExpr.Optional _ |SynExpr.DotGetOperator _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
         TcNonControlFlowExpr env <| fun env ->
@@ -6606,7 +6641,7 @@ and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
         | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
         | Some xsId -> 
             mkSynApp1
-                (mkSynDot range range xsId (mkSynId (range.MakeSynthetic()) "GetReverseIndex"))
+                (mkSynDot range range xsId (SynExpr.Ident(mkSynId (range.MakeSynthetic()) "GetReverseIndex")))
                 sliceArgs
                 range
 
@@ -8855,6 +8890,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.TypeTest (synExpr, _, _)
         | SynExpr.Upcast (synExpr, _, _)
         | SynExpr.DotGet (synExpr, _, _, _)
+        | SynExpr.DotGetOperator(pref = synExpr)
         | SynExpr.Downcast (synExpr, _, _)
         | SynExpr.InferredUpcast (synExpr, _)
         | SynExpr.InferredDowncast (synExpr, _)
@@ -8865,6 +8901,8 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.InterpolatedString _
         | SynExpr.Null _
         | SynExpr.Ident _
+        | SynExpr.Operator _
+        | SynExpr.Optional _
         | SynExpr.Const _
         | SynExpr.LongIdent _ -> true
 

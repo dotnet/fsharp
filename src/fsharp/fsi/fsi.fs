@@ -1840,7 +1840,7 @@ type internal FsiDynamicCompiler
     member _.CreateDebuggerBreak (m: range) =
         let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
         let dots = List.replicate (breakPath.Length - 1) m
-        let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
+        let methCall = SynExpr.LongIdent (LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
         let args = SynExpr.Const (SynConst.Unit, m)
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
         SynModuleDecl.Expr(breakStatement, m)
