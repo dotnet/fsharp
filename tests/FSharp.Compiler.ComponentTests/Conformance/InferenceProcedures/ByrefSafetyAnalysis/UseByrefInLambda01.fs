@@ -10,5 +10,4 @@ let testFunc =
         let byrefVal = &x
         byrefVal
 
-if testFunc () <> 0 then exit 1
-exit 0
+if testFunc () <> 0 then failwith "Failed"

@@ -9,5 +9,3 @@ module M
 let inline try_parse x = (^a: (static member TryParse: string -> bool * ^a) x)
 let _, x = try_parse "4" 
 let z = x + 1
-
-exit 0
