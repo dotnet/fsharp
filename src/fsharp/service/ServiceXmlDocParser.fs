@@ -22,10 +22,15 @@ module XmlDocParsing =
         match pat with
         | SynPat.As (_, SynPat.Named(id,_isTheThisVar,_access,_range), _)
         | SynPat.Named (id,_isTheThisVar,_access,_range) -> [id.idText]
+        | SynPat.LongIdent(longDotId = LongIdentWithDots(lid, _)) -> List.map (fun (id:Ident) -> id.idText) lid
+        | SynPat.Operator(operator, _, _) -> [ operator.Ident.idText ]
         | SynPat.Typed(pat,_type,_range) -> digNamesFrom pat
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
-        | SynPat.LongIdent(argPats=ConstructorPats pats) -> 
-            pats |> List.collect digNamesFrom 
+        | SynPat.ParametersOwner(pattern = pat; argPats=ConstructorPats pats) -> 
+            pat::pats |> List.collect digNamesFrom
+        | SynPat.DotGetOperator (pref = pref; operator = operator) ->
+            [ yield! digNamesFrom pref
+              yield operator.Ident.idText ]
         | SynPat.Tuple(_,pats,_range) -> pats |> List.collect digNamesFrom 
         | SynPat.Paren(pat,_range) -> digNamesFrom pat
         | SynPat.OptionalVal (id, _) -> [id.idText]
