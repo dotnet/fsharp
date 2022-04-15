@@ -5244,6 +5244,9 @@ and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNam
     | Item.UnionCase _ | Item.ExnCase _ as item ->
         TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags (tpenv, names, takenNames) ty (id.idRange, item, SynArgPats.Pats [], m)
 
+    | Item.Value vref ->
+        TcPatLongIdentLiteral warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, vref, SynArgPats.Pats [], m)
+
     | _ ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
