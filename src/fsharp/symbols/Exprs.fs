@@ -512,13 +512,13 @@ module FSharpExprConvert =
         let g = cenv.g
         if g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing) && not env.suppressWitnesses then 
             let witnessExprs = 
-                match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs with
+                match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs, tyargs with
                 // There is a case where optimized code makes expressions that do a shift-left on the 'char'
                 // type.  There is no witness for this case.  This is due to the code
                 //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
                 // in FSharp.Core. 
-                | ErrorResult _  when vref.LogicalName =  "op_LeftShift" && tyargs.Length = 1 -> []
-                | res -> CommitOperationResult res
+                | ErrorResult _, [_]  when vref.LogicalName =  "op_LeftShift" -> []
+                | res, _ -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
                 match arg with 

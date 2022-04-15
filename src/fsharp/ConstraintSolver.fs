@@ -1699,11 +1699,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                           | "?>="  | "?>"  | "?<="  | "?<"  | "?="  | "?<>" 
                           | ">=?"  | ">?"  | "<=?"  | "<?"  | "=?"  | "<>?" 
                           | "?>=?" | "?>?" | "?<=?" | "?<?" | "?=?" | "?<>?" ->
-                             if tys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
-                             else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
+                             match tys with
+                             | [_] -> FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
+                             | _ -> FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ -> 
-                             if tys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
-                             else FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
+                             match tys with
+                             | [_] -> FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                             | _ -> FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       return! ErrorD(ConstraintSolverError(err, m, m2))
 
           | _ -> 
