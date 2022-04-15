@@ -5240,6 +5240,10 @@ and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNam
     match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
     | Item.ActivePatternCase apref as item ->
         TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, item, apref, SynArgPats.Pats [], m)
+
+    | Item.UnionCase _ | Item.ExnCase _ as item ->
+        TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags (tpenv, names, takenNames) ty (id.idRange, item, SynArgPats.Pats [], m)
+
     | _ ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
@@ -5259,7 +5263,6 @@ and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, take
 
     match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
     | Item.NewDef id ->
-        // hier
         TcPatLongIdentNewDef warnOnUpperForId warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (vis, id, args, m)
 
     | Item.ActivePatternCase apref as item ->
