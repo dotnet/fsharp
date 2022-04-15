@@ -1,11 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 #light
 
-// Test generated hashing implementations.
-// Test by making sure the hashes of each function is the same.
-
-#light
-
 // Sanity check generated equality
 
 // *** Tupes ***
