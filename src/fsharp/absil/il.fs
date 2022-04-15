@@ -1030,6 +1030,16 @@ type ILAttributesStored =
        | Reader f -> ILAttributes (f metadataIndex)
        | Given attrs -> attrs
 
+[<Struct>]
+type ILAttributesStoredWithIndex =
+    val CustomAttrsStored: ILAttributesStored
+    val Index: int
+
+    new (attrs, index) = { CustomAttrsStored = attrs; Index = index }
+
+    member this.CustomAttrs =
+        this.CustomAttrsStored.GetCustomAttrs(this.Index)
+
 let emptyILCustomAttrs = ILAttributes [| |]
 
 let mkILCustomAttrsFromArray (attrs: ILAttribute[]) =
@@ -1042,6 +1052,9 @@ let mkILCustomAttrs l =
 
 let emptyILCustomAttrsStored =
     ILAttributesStored.Given emptyILCustomAttrs
+
+let emptyILCustomAttrsStoredWithIndex =
+    ILAttributesStoredWithIndex(emptyILCustomAttrsStored, -1)
 
 let storeILCustomAttrs (attrs: ILAttributes) =
     if attrs.AsArray().Length = 0 then emptyILCustomAttrsStored else ILAttributesStored.Given attrs
@@ -1546,6 +1559,7 @@ type ILParameter =
       MetadataIndex: int32 }
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrsStoredWithIndex = ILAttributesStoredWithIndex(x.CustomAttrsStored, x.MetadataIndex)
 
 type ILParameters = list<ILParameter>
 
@@ -1557,6 +1571,7 @@ type ILReturn =
       MetadataIndex: int32 }
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrsStoredWithIndex = ILAttributesStoredWithIndex(x.CustomAttrsStored, x.MetadataIndex)
 
     member x.WithCustomAttrs(customAttrs) = { x with CustomAttrsStored = storeILCustomAttrs customAttrs }
 
