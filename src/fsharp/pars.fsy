@@ -3409,6 +3409,8 @@ atomicPattern:
           if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
           then mkSynPatMaybeVar lidwd vis (lhs parseState)
           else mkSynPatVar vis (List.head lidwd.Lid)
+        | SynPat.Named(ident, isThisVal, _, m) -> SynPat.Named(ident, isThisVal, vis, m)
+        | SynPat.Operator(operator, _, m) -> SynPat.Operator(operator, vis, m)
         | _ -> pat }
 
   | constant 

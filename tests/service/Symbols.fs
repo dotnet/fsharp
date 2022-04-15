@@ -3038,6 +3038,27 @@ match x with
 
     [<Test>]
     let ``SynPat.Or contains the range of the bar`` () =
+        let ast = 
+            getParseResults
+                """
+let internal ifElseCtx a b = 2
+let private ifRagnarokElse = ifElseCtx 3 4
+"""
+
+        match ast with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [
+                SynBinding(headPat = SynPat.ParametersOwner(pattern = SynPat.Named _; accessibility = Some SynAccess.Internal))
+            ])
+            SynModuleDecl.Let(bindings = [
+                SynBinding(headPat = SynPat.Named(_, _, Some SynAccess.Private, _))
+            ])
+        ]) ])) ->
+            Assert.Pass()
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``access modifier is in SynPat.Named`` () =
         let parseResults = 
             getParseResults
                 """

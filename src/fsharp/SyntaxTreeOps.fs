@@ -929,8 +929,8 @@ let prependIdentInPattern (ident: Ident) (dotm: range) (pat: SynPat): SynPat =
     let m = unionRanges ident.idRange pat.Range
     
     match pat with
-    | SynPat.Named (ident=lastIdent) ->
-        SynPat.LongIdent(LongIdentWithDots([ ident; lastIdent ], [ dotm ]), None, m)
+    | SynPat.Named (ident=lastIdent; accessibility = vis) ->
+        SynPat.LongIdent(LongIdentWithDots([ ident; lastIdent ], [ dotm ]), vis, m)
     | SynPat.LongIdent(LongIdentWithDots(lids, dots), access, _) ->
         SynPat.LongIdent(LongIdentWithDots(ident::lids, dotm::dots), access, m)
     | SynPat.Paren(SynPat.Operator(operator = operator; accessibility = access), pr) ->
