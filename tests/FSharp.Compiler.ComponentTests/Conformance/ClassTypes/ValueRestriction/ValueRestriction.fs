@@ -21,7 +21,7 @@ module ValueRestriction =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction01_fsx"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction01.fsx"|])>]
     let ``MemberOrFunction01.fsx`` compilation =
         compilation
         |> asFsx
