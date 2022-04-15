@@ -25,6 +25,5 @@ let testFunc() =
 
 let result = testFunc()
 printfn "%s" result
-if result <> "Language [C#]. Exception text [Who would want to program in anything other than F#?]" then exit 1
+if result <> "Language [C#]. Exception text [Who would want to program in anything other than F#?]" then failwith "Failed: 1"
 
-exit 0

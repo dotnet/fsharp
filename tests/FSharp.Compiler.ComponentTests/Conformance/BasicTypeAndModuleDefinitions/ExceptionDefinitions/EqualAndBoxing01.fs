@@ -9,4 +9,4 @@ let e2 = E(11)
 let t1 = e1.Equals(box e2)        // expect: false, no exception!
 let t2 = e1.Equals(box e1)        // expect: true, no exception!
 
-(if not t1 && t2 then 0 else 1) |> exit
+if t1 && t2 then failwith "Failed: 1"

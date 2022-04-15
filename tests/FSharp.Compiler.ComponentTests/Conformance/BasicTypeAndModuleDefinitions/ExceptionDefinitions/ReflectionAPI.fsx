@@ -9,4 +9,4 @@ let p = Microsoft.FSharp.Reflection.FSharpType.IsExceptionRepresentation(typeof<
 let p' = Microsoft.FSharp.Reflection.FSharpType.IsExceptionRepresentation(typeof<E'>)
 let p'' = Microsoft.FSharp.Reflection.FSharpType.IsExceptionRepresentation(typeof<System.Exception>)
 
-(if p && p' && (not p'') then 0 else 1) |> exit
+if not(p && p' && (not p'')) then failwith "Failed: 1"

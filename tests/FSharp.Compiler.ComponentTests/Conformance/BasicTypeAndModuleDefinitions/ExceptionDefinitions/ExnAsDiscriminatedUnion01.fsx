@@ -8,7 +8,9 @@ exception E1
 exception E2 of int
 exception E3 of int * int
 exception E4 of (int * int) 
+[<NoEquality; NoComparison>]
 exception E5 of (int -> int)
+[<NoEquality; NoComparison>]
 exception E6 of (int -> int) * (int -> int)
 exception E7 of (int * int) * int
 
@@ -30,4 +32,4 @@ let m e = match e with
                 | E7(x,y)   -> x = (1,2) && y = 3
                 | _         -> false
 
-(if (m e1) && (m e2) && (m e3) && (m e4) && (m e5) && (m e6) && (m e7) then 0 else 1 ) |> exit 
+if not((m e1) && (m e2) && (m e3) && (m e4) && (m e5) && (m e6) && (m e7)) then failwith "Failed: 1"

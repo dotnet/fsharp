@@ -16,12 +16,12 @@ let p = match e with
 
 // Expected NOT to match
 let p' = match e' with
-        | Failure(_) -> false
-        | _ -> true
+         | Failure(_) -> false
+         | _ -> true
 
 // Expected to match           
 let p'' = match e'' with
           | Failure(_) -> true
           | _ -> false
 
-(if p && p' && p'' then 0 else 1) |> exit
+if not (p && p' && p'') then failwith "Failed: 1"

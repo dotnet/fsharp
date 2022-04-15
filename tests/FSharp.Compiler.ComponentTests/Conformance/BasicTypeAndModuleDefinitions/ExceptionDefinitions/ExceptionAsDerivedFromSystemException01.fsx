@@ -26,4 +26,4 @@ let r2 = try
            | :? E1 -> false
            | :? E2 -> true
 
-(if r1 && r2 then 0 else 1) |> exit
+if not (r1 && r2) then failwith "Failed: 1"

@@ -15,11 +15,11 @@ let result =
     | AAA(V3 = ""; V2 = 10; V1 = 5) -> 0
     | _ -> 1
 
-if result <> 0 then exit 1
+if result <> 0 then failwith "Failed: 1"
 
 let x = AAA(5, V2 = 10, V3 = "")
 let (AAA(V3 = y)) = x
-if y <> "" then exit 1
+if y <> "" then failwith "Failed: 2"
 
 exception CCC of bField : bool * iField : int
 

@@ -4,4 +4,4 @@
 
 let p = (typeof<exn>).FullName = "System.Exception"
 
-(if p then 0 else 1) |> exit
+if not (p) then failwith "Failed: 1"

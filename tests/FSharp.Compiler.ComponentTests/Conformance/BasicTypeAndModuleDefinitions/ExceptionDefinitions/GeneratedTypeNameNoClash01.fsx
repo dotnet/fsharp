@@ -9,5 +9,3 @@ type EException = | EE
 
 let _ = E("")     // exception
 let _ = EE        // DU
-
-exit 0

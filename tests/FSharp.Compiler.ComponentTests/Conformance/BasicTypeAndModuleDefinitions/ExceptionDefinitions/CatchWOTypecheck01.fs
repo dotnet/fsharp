@@ -22,6 +22,4 @@ let test() =
     | NumIsOddException(3, "X is odd!")     ->  1
     | _                                     -> -1
 
-if test() <> 1 then exit 1
-
-exit 0
+if test() <> 1 then failwith "Failed: 1"

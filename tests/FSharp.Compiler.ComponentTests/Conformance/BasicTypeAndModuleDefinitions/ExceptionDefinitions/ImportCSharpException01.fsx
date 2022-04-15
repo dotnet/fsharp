@@ -3,8 +3,6 @@
 //<Expects status="success"></Expects>
 #light
 
-#r "CSharpException.dll"
-
 // F# exception definition + abbreviation
 exception E = CSharpException.CSharpException
 
@@ -20,4 +18,4 @@ let r2 = try
             | E as c -> c.Message = "C#Exception"
             | _ -> false
     
-(if r1 && r2 then 0 else 1) |> exit
+if not (r1 && r2) then failwith "Failed: 1"

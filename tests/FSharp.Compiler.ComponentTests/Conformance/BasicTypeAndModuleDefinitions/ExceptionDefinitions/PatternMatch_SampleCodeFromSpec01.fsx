@@ -10,5 +10,3 @@ try
     raise (Error(3, "well that didn't work did it"))
 with 
     | Error(sev, msg) -> printfn "severity = %d, message = %s" sev msg
-
-exit 0
