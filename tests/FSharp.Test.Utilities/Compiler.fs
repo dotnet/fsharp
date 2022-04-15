@@ -934,7 +934,7 @@ module rec Compiler =
                     | ErrorType.Warning n-> $"Warning {n}"
                     | ErrorType.Hidden n-> $"Hidden {n}"
                     | ErrorType.Information n-> $"Information {n}"
-                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")"""
+                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""". Replace("\r\n", "\n")
 
             let expectedErrors = expected |> List.map (fun error -> errorMessage error)
             let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
