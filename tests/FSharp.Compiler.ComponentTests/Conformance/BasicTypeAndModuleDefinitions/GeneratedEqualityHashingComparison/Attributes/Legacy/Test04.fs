@@ -14,4 +14,4 @@ module M04 =
   let v1 = not (r1 = r2)  // expected true
   let v2 = r2 = r2b       // expected true
   let v3 = r1 < r2        // expected true
-  (if v1 && v2 && v3 then 0 else 1) |> exit
+  if not (v1 && v2 && v3) then failwith "Failed: 1"
