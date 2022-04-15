@@ -9540,9 +9540,9 @@ and TcMethodApplication
                 (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
 
     let CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
-       let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-       curriedMethodArgAttribs.Length = 1 &&
-       curriedMethodArgAttribs.Head.Length = n
+       match calledMeth.GetParamAttribs(cenv.amap, mItem) with
+       | [argAttribs] -> argAttribs.Length = n
+       | _ -> false
 
     let GenerateMatchingSimpleArgumentTypes (calledMeth: MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
