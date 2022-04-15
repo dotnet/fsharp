@@ -272,7 +272,7 @@ module ExceptionDefinition =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 39, Line 6, Col 9, Line 6, Col 21, "The value or constructor 'MatchFailure' is not defined. Maybe you want one of the following:\r\n   MatchFailureException")
+            (Error 39, Line 6, Col 9, Line 6, Col 21, "The value or constructor 'MatchFailure' is not defined. Maybe you want one of the following:\n   MatchFailureException")
         ]
 
     // SOURCE=E_MustStartWithCap01.fs                                                          # E_MustStartWithCap01

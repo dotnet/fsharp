@@ -15,4 +15,4 @@ module M25 =
   printfn "v1=%b" v1
   printfn "v2=%b" v2
   printfn "v3=%b" v3
-  (if v1 && v2 && v3 then 0 else 1) |> exit
+  if not (v1 && v2 && v3) then failwith "Failed: 1"
