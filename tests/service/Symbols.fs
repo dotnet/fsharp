@@ -4176,3 +4176,26 @@ type X() =
             assertRange (4, 53) (4, 56) mAnd
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``qualified operator expression`` () =
+        let ast = getParseResults """
+let PowByte (x:byte) n = Checked.( * ) x
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [
+                    SynBinding(expr = SynExpr.App(funcExpr = SynExpr.DotGetOperator(SynExpr.Ident checkedIdent, mDot, lpr, SynOperatorName.Operator(operatorIdent), rpr, m)))
+                ])
+            ])
+            ])) ->
+            Assert.AreEqual("Checked", checkedIdent.idText)
+            assertRange (2, 32) (2, 33) mDot
+            assertRange (2, 33) (2, 34) lpr
+            Assert.AreEqual("op_Multiply", operatorIdent.idText)
+            assertRange (2, 37) (2, 38) rpr
+            assertRange (2, 25) (2, 38) m
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"

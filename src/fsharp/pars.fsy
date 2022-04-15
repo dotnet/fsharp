@@ -4540,17 +4540,17 @@ atomicExprQualification:
             SynExpr.LibraryOnlyUnionCaseFieldGet (e, mkSynCaseName lhsm opNameCons, (fst $5), lhsm)) }
 
   | LPAREN  typedSequentialExpr rparen  
-      { (fun e lhsm dotm -> 
+      { let lpr = rhs parseState 1
+        let rpr = rhs parseState 3
+        let pr = unionRanges lpr rpr
+        (fun e lhsm dotm -> 
             // Check for expr.( * )
             // Note that "*" is parsed as an expression (it is allowed in "foo.[3,*]")
             match $2 with
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
                 let rightExpr =
-                    let lpr = rhs parseState 1
                     let starIdent = ident(CompileOpName "*", opm)
                     let operatorExpr = SynExpr.Operator(SynOperatorName.Operator(starIdent), opm)
-                    let rpr = rhs parseState 3
-                    let pr = unionRanges lpr rpr
                     SynExpr.Paren(operatorExpr, lpr, Some rpr, pr)
                 mkSynDot dotm lhsm e rightExpr
             | _ ->
