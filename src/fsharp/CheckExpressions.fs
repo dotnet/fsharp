@@ -5207,7 +5207,8 @@ and ConvSynPatToSynExpr x =
     match x with
     | SynPat.FromParseError(p, _) -> ConvSynPatToSynExpr p
     | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-    | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
+    | SynPat.Named (id, _, None, _) 
+    | SynPat.Operator(SynOperatorName.Operator(id), None, _) -> SynExpr.Ident id
     | SynPat.Typed (p, cty, m) -> SynExpr.Typed (ConvSynPatToSynExpr p, cty, m)
     | SynPat.LongIdent(LongIdentWithDots(longId, dotms) as lidwd, None, m) ->
         if dotms.Length = longId.Length then
