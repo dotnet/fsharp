@@ -597,8 +597,9 @@ type OptionalArgInfo =
                         match ilParam.Marshal with
                         | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
-                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute ilParam.CustomAttrs then WrapperForIUnknown
-                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute ilParam.CustomAttrs then WrapperForIDispatch
+                            let attrs = ilParam.CustomAttrs
+                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute attrs then WrapperForIUnknown
+                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute attrs then WrapperForIDispatch
                             else MissingValue
                     else
                         DefaultValue
@@ -1450,9 +1451,10 @@ type MethInfo =
         match x with
         | ILMeth(g, ilMethInfo, _) ->
             [ [ for p in ilMethInfo.ParamMetadata do
-                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
+                 let attrs = p.CustomAttrs
+                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute attrs
                  let reflArgInfo =
-                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
@@ -1461,9 +1463,9 @@ type MethInfo =
                  // Note: we get default argument values from VB and other .NET language metadata
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
-                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
-                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
-                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
+                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
+                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
+                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
