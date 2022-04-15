@@ -4146,3 +4146,33 @@ f(?x = 7)
             assertRange (2,1) (2,9) pr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``object model with two members`` () =
+        let ast = getParseResults """
+type X() =
+    let mutable allowInto = 0
+    member _.AllowIntoPattern with get() = allowInto and set v = allowInto <- v
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types(typeDefns = [
+                    SynTypeDefn.SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members =[
+                        SynMemberDefn.ImplicitCtor _
+                        SynMemberDefn.LetBindings _
+                        SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.ParametersOwner(pattern = SynPat.LongIdent(longDotId = LongIdentWithDots(id = [ _ ; allowIntoPatternGet ]))
+                                                                                                      propertyKeyword = Some (PropertyKeyword.With mWith))))
+                        SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.ParametersOwner(pattern = SynPat.LongIdent(longDotId = LongIdentWithDots(id = [ _ ; allowIntoPatternSet ]))
+                                                                                                      propertyKeyword = Some (PropertyKeyword.And mAnd))))
+                    ]))
+                ])
+            ])
+            ])) ->
+            Assert.AreEqual("AllowIntoPattern", allowIntoPatternGet.idText)
+            assertRange (4, 30) (4, 34) mWith
+            Assert.AreEqual("AllowIntoPattern", allowIntoPatternSet.idText)
+            assertRange (4, 53) (4, 56) mAnd
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"

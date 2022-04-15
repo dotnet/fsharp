@@ -1885,7 +1885,9 @@ memberCore:
                              let rec go p = 
                                  match p with 
                                  | SynPat.LongIdent (longDotId=LongIdentWithDots([id], _)) -> id.idText
-                                 | SynPat.Named (nm, _, _, _) | SynPat.As (_, SynPat.Named (nm, _, _, _), _) -> nm.idText
+                                 | SynPat.Named (ident = nm) 
+                                 | SynPat.As (_, SynPat.Named (ident = nm), _)
+                                 | SynPat.ParametersOwner(pattern = SynPat.Named(ident = nm)) -> nm.idText
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
                                  | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
@@ -1997,6 +1999,7 @@ memberCore:
                          match bindingPatOuter with 
                          | SynPat.ParametersOwner (pat, _, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  pat, lidVisOuter
                          | SynPat.Named (id, isThisVal, visOuter, m) | SynPat.As(_, SynPat.Named (id, isThisVal, visOuter, m), _) -> SynPat.Named(id, isThisVal, visOuter, m), visOuter
+                         | SynPat.LongIdent(longDotId, visOuter, m) -> SynPat.LongIdent(longDotId, visOuter, m), visOuter
                          | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
                      // Merge the visibility from the outer point with the inner point, e.g.
