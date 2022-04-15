@@ -44,7 +44,7 @@ module ValueRestriction =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ValueRestriction)
     //<Expects status="success"></Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MemberOrFunction02.fsx"|])>]
-    let ``"MemberOrFunction02_fsx`` compilation =
+    let ``MemberOrFunction02_fsx`` compilation =
         compilation
         |> asFsx
         |> withOptions ["-a"; "--test:ErrorRanges"; "--warnaserror+"]
