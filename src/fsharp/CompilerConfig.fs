@@ -60,8 +60,11 @@ let TryResolveFileUsingPaths(paths: string seq, m, name) =
     let () =
         try FileSystem.IsPathRootedShim name |> ignore
         with :? ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
-    if FileSystem.IsPathRootedShim name && FileSystem.FileExistsShim name
-    then Some name
+    if FileSystem.IsPathRootedShim name then
+        if FileSystem.FileExistsShim name then
+            Some name
+        else
+            None
     else
         let res = paths |> Seq.tryPick (fun path ->
             let n = Path.Combine(path, name)
