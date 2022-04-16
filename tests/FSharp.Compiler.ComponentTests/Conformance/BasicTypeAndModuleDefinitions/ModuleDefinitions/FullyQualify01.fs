@@ -10,13 +10,10 @@ module Test =
             module C =
                 module D =
                     let counter =
-                        let x = ref 0
-                        (fun () -> x := !x + 1; !x)
+                        let mutable x = 0
+                        (fun () -> x <- x + 1; x)
 
     open A.B.C.D
-    if counter() <> 1 then exit 1
+    if counter() <> 1 then failwith "Failed 1"
 
-    if A.B.C.D.counter() <> 2 then exit 1
-
-
-    exit 0
+    if A.B.C.D.counter() <> 2 then failwith "Failed 2"

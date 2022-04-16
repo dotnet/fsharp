@@ -15,4 +15,4 @@ module B =
 open B
 
 // ... bringing x into scope
-exit x
+if x <> 0 then failwith "Failed: 1"

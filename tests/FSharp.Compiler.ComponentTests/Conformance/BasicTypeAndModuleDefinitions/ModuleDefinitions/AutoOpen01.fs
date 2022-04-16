@@ -11,4 +11,4 @@ module M =
 // While processing the anonomous module (this file) nested module M
 // will automatically be opened, bringing x into scope.
 
-exit x
+if x <> 0 then failwith "Failed: 1"

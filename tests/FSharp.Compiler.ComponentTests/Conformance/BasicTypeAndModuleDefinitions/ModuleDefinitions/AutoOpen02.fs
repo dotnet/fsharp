@@ -12,4 +12,4 @@ module A =
 // Since module A is not opened, B shouldn't
 // be auto opened, leading to the build error.
 
-exit x
+if x <> 0 then failwith "Failed: 1"

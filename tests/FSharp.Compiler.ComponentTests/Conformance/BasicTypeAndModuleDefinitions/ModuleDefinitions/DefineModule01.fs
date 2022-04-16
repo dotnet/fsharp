@@ -20,10 +20,8 @@ module MyModule =
 
 
 
-    if x <> 1 then exit 1
-    if MyNestedModule.f x <> 2 then exit 1
+    if x <> 1 then failwith "Failed: 1"
+    if MyNestedModule.f x <> 2 then failwith "Failed: 2"
 
-    if MyOtherNestedModule.MyOtherNestedModuleTwo.x <> 10 then exit 1
-    if MyNestedModule.f MyOtherNestedModule.MyOtherNestedModuleTwo.x <> 11 then exit 1
-
-    exit 0
+    if MyOtherNestedModule.MyOtherNestedModuleTwo.x <> 10 then failwith "Failed: 3"
+    if MyNestedModule.f MyOtherNestedModule.MyOtherNestedModuleTwo.x <> 11 then failwith "Failed: 4"
