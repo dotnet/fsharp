@@ -934,6 +934,86 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
+    let makePathAbsolute path =
+        ComputeMakePathAbsolute data.implicitIncludeDir path
+
+    let targetFrameworkDirectories =
+        try
+          [
+            // Check if we are given an explicit framework root - if so, use that
+            match clrRootValue with
+            | Some x ->
+                let clrRoot = makePathAbsolute x
+                yield clrRoot
+                let clrFacades = Path.Combine(clrRoot, "Facades")
+                if FileSystem.DirectoryExistsShim(clrFacades) then yield clrFacades
+
+            | None ->
+// "there is no really good notion of runtime directory on .NETCore"
+#if NETSTANDARD
+                let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
+#else
+                let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+#endif
+                let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
+                let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
+                let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
+
+                match data.resolutionEnvironment with
+                | LegacyResolutionEnvironment.CompilationAndEvaluation ->
+                    // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
+                    //
+                    // In the current way of doing things, F# Interactive refers to implementation assemblies.
+                    yield runtimeRoot
+                    if FileSystem.DirectoryExistsShim runtimeRootFacades then
+                        yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                    if FileSystem.DirectoryExistsShim runtimeRootWPF then
+                        yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
+
+                    match data.FxResolver.GetFrameworkRefsPackDirectory() with
+                    | Some path when FileSystem.DirectoryExistsShim(path) ->
+                        yield path
+                    | _ -> ()
+
+                | LegacyResolutionEnvironment.EditingOrCompilation _ ->
+#if ENABLE_MONO_SUPPORT
+                    if runningOnMono then
+                        // Default compilation-time references on Mono
+                        //
+                        // On Mono, the default references come from the implementation assemblies.
+                        // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
+                        yield runtimeRoot
+                        if FileSystem.DirectoryExistsShim runtimeRootFacades then
+                            yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                        if FileSystem.DirectoryExistsShim runtimeRootWPF then
+                            yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
+                        // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
+                        let runtimeRootApi = runtimeRootWithoutSlash + "-api"
+                        let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
+                        if FileSystem.DirectoryExistsShim runtimeRootApi then
+                            yield runtimeRootApi
+                        if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
+                             yield runtimeRootApiFacades
+                    else
+#endif
+                        // Default compilation-time references on .NET Framework
+                        //
+                        // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
+                        let frameworkRoot = data.legacyReferenceResolver.Impl.DotNetFrameworkReferenceAssembliesRootDirectory
+                        let frameworkRootVersion = Path.Combine(frameworkRoot, targetFrameworkVersionValue)
+                        yield frameworkRootVersion
+                        let facades = Path.Combine(frameworkRootVersion, "Facades")
+                        if FileSystem.DirectoryExistsShim facades then
+                            yield facades
+                        match data.FxResolver.GetFrameworkRefsPackDirectory() with
+                        | Some path when FileSystem.DirectoryExistsShim(path) ->
+                            yield path
+                        | _ -> ()
+                  ]
+        with e ->
+            errorRecovery e range0; []
+
+
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member x.FxResolver = data.FxResolver
     member x.primaryAssembly = data.primaryAssembly
@@ -1079,81 +1159,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member tcConfig.GetTargetFrameworkDirectories() =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        try
-          [
-            // Check if we are given an explicit framework root - if so, use that
-            match tcConfig.clrRoot with
-            | Some x ->
-                let clrRoot = tcConfig.MakePathAbsolute x
-                yield clrRoot
-                let clrFacades = Path.Combine(clrRoot, "Facades")
-                if FileSystem.DirectoryExistsShim(clrFacades) then yield clrFacades
-
-            | None ->
-// "there is no really good notion of runtime directory on .NETCore"
-#if NETSTANDARD
-                let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
-#else
-                let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
-                let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
-
-                match tcConfig.resolutionEnvironment with
-                | LegacyResolutionEnvironment.CompilationAndEvaluation ->
-                    // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
-                    //
-                    // In the current way of doing things, F# Interactive refers to implementation assemblies.
-                    yield runtimeRoot
-                    if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                        yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-                    if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                        yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-
-                    match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
-                    | Some path when FileSystem.DirectoryExistsShim(path) ->
-                        yield path
-                    | _ -> ()
-
-                | LegacyResolutionEnvironment.EditingOrCompilation _ ->
-#if ENABLE_MONO_SUPPORT
-                    if runningOnMono then
-                        // Default compilation-time references on Mono
-                        //
-                        // On Mono, the default references come from the implementation assemblies.
-                        // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
-                        yield runtimeRoot
-                        if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                            yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-                        if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                            yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-                        // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
-                        let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                        let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-                        if FileSystem.DirectoryExistsShim runtimeRootApi then
-                            yield runtimeRootApi
-                        if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
-                             yield runtimeRootApiFacades
-                    else
-#endif
-                        // Default compilation-time references on .NET Framework
-                        //
-                        // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
-                        let frameworkRoot = tcConfig.legacyReferenceResolver.Impl.DotNetFrameworkReferenceAssembliesRootDirectory
-                        let frameworkRootVersion = Path.Combine(frameworkRoot, tcConfig.targetFrameworkVersion)
-                        yield frameworkRootVersion
-                        let facades = Path.Combine(frameworkRootVersion, "Facades")
-                        if FileSystem.DirectoryExistsShim facades then
-                            yield facades
-                        match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
-                        | Some path when FileSystem.DirectoryExistsShim(path) ->
-                            yield path
-                        | _ -> ()
-                  ]
-        with e ->
-            errorRecovery e range0; []
+        targetFrameworkDirectories
 
     member tcConfig.ComputeLightSyntaxInitialStatus filename =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -1193,8 +1199,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
           yield tcConfig.fsharpBinariesDir ]
 
     member tcConfig.MakePathAbsolute path =
-        let result = ComputeMakePathAbsolute tcConfig.implicitIncludeDir path
-        result
+        makePathAbsolute path
 
     member _.ResolveSourceFile(m, filename, pathLoadedFrom) =
         data.ResolveSourceFile(m, filename, pathLoadedFrom)
