@@ -16,5 +16,3 @@ type C = class
             interface System.IComparable with   
                 member x.CompareTo(y:obj) = 0
          end
-
-exit 0

@@ -11,4 +11,4 @@ type R = { f : int } with
 let a = { f = 1 }
 let b = { f = 2 }
 
-(if a < b && b < a then 0 else 1) |> exit
+if not (a < b && b < a) then failwith "Failed: 1"
