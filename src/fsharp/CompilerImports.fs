@@ -319,6 +319,8 @@ type TcConfig with
 
             let searchPaths =
                 seq {
+                    yield! tcConfig.GetSearchPathsForLibraryFiles()
+
                     // if this is a #r reference (not from dummy range), make sure the directory of the declaring
                     // file is included in the search path. This should ideally already be one of the search paths, but
                     // during some global checks it won't be. We append to the end of the search list so that this is the last
@@ -328,8 +330,6 @@ type TcConfig with
                         not (equals r rangeStartup) &&
                         not (equals r rangeCmdArgs) &&
                         FileSystem.IsPathRootedShim r.FileName
-
-                    yield! tcConfig.GetSearchPathsForLibraryFiles()
 
                     if isPoundRReference m then
                         yield Path.GetDirectoryName(m.FileName)
