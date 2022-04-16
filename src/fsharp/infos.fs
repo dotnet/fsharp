@@ -2159,7 +2159,7 @@ type PropInfo =
             // A getter has signature  { OptionalObjectType } -> Unit -> PropertyType
             // A getter indexer has signature  { OptionalObjectType } -> TupledIndexerArguments -> PropertyType
             match ArgInfosOfMember g vref with
-            | [_ :: _] -> true
+            | [argInfos] -> not (List.isEmpty argInfos)
             | _ -> false
         | FSProp(g, _, _, Some vref) ->
             // A setter has signature  { OptionalObjectType } -> PropertyType -> Void

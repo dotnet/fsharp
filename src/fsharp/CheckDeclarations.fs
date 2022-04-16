@@ -4655,14 +4655,13 @@ module TcDeclarations =
 
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            let res = ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No
             let _, tcref =
-                match res, inSig, longPath with
-                | Result res, _, _ -> res
-                | res, true, [_] ->
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+                | Result res -> res
+                | res when inSig && List.isSingleItem longPath ->
                     errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
                     ForceRaise res
-                | res, _, _ -> ForceRaise res
+                | res -> ForceRaise res
             tcref
 
         let isInterfaceOrDelegateOrEnum = 

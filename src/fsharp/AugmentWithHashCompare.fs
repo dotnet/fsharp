@@ -376,10 +376,8 @@ let mkUnionCompare g tcref (tycon: Tycon) =
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
-    let expr = 
-        match ucases with
-        | [_] -> expr
-        | _ ->
+    let expr =
+        if List.isSingleItem ucases then expr else
 
         let tagsEqTested = 
             mkCond DebugPointAtBinding.NoneAtSticky m g.int_ty  
@@ -440,10 +438,8 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
-    let expr = 
-        match ucases with
-        | [_] -> expr
-        | _ ->
+    let expr =
+        if List.isSingleItem ucases then expr else
 
         let tagsEqTested = 
             mkCond DebugPointAtBinding.NoneAtSticky m g.int_ty  
@@ -503,10 +499,8 @@ let mkUnionEquality g tcref (tycon: Tycon) =
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
-    let expr = 
-        match ucases with
-        | [_] -> expr
-        | _ ->
+    let expr =
+        if List.isSingleItem ucases then expr else
 
         let tagsEqTested = 
           mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty  
@@ -568,10 +562,8 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
-    let expr = 
-        match ucases with
-        | [_] -> expr
-        | _ ->
+    let expr =
+        if List.isSingleItem ucases then expr else
 
         let tagsEqTested = 
           mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty  

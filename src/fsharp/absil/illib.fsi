@@ -206,6 +206,8 @@ module internal List =
 
     val internal allEqual: xs:'T list -> bool when 'T: equality
 
+    val isSingleItem: xs: 'T list -> bool
+
 module internal ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

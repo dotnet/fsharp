@@ -164,7 +164,7 @@ module DispatchSlotChecking =
         match vsl with 
         | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
-            let vs = match vs, argInfos with | [_], [] -> [] | _ -> vs
+            let vs = if List.isSingleItem vs && argInfos.IsEmpty then [] else vs
             let implKind = 
                 if isInterfaceTy g implty then 
                     CanImplementAnyInterfaceSlot 

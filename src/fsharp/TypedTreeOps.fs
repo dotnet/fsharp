@@ -2851,7 +2851,7 @@ module SimplifyTypes =
             simplify &&
             isTTyparCoercesToType tpc && 
             Zset.contains tp singletons && 
-            match tp.Constraints with [_] -> true | _ -> false)
+            List.isSingleItem tp.Constraints)
         let inplace = inplace |> List.map (function tp, TyparConstraint.CoercesTo(ty, _) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
         { singletons = singletons
@@ -9275,8 +9275,8 @@ type Entity with
  
             let argInfos = ArgInfosOfMember g vref 
             match argInfos with
-            | [argInfo] ->
-                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfo) argtys &&  
+            | [argInfos] ->
+                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys &&  
                 membInfo.MemberFlags.IsOverrideOrExplicitImpl
             | _ -> false) 
     
@@ -9290,7 +9290,7 @@ type Entity with
 
             let argInfos = ArgInfosOfMember g vref
             match argInfos with
-            | [argInfo] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfo) argtys
+            | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys
             | _ -> false) 
 
 
