@@ -4,5 +4,3 @@
 
 let a = Foo()
 let b = a.x
-
-exit 0

@@ -5,5 +5,3 @@
 //<Expects status="success"></Expects>
 
 let a = global.Foo()
-
-exit 0

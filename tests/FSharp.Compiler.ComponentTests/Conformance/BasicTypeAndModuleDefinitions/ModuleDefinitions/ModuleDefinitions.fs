@@ -308,6 +308,7 @@ module ModuleDefinitions =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo1.fs"))
             |> withOptimize
             |> asLibrary
+
         let libFoo2 =
             FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo2.fs"))
             |> withOptimize
