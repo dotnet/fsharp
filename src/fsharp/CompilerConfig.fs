@@ -66,11 +66,9 @@ let TryResolveFileUsingPaths(paths: string seq, m, name) =
         else
             None
     else
-        let res = paths |> Seq.tryPick (fun path ->
+        paths |> Seq.tryFind (fun path ->
             let n = Path.Combine(path, name)
-            if FileSystem.FileExistsShim n then Some n
-            else None)
-        res
+            FileSystem.FileExistsShim n)
 
 /// Will raise FileNameNotResolved if the filename was not found
 let ResolveFileUsingPaths(paths, m, name) =
