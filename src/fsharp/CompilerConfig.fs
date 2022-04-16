@@ -56,7 +56,7 @@ exception FileNameNotResolved of (*filename*) string * (*description of searched
 exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
 
 /// Will return None if the filename is not found.
-let TryResolveFileUsingPaths(paths: string seq, m, name) =
+let TryResolveFileUsingPaths(paths, m, name) =
     let () =
         try FileSystem.IsPathRootedShim name |> ignore
         with :? ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
@@ -66,9 +66,11 @@ let TryResolveFileUsingPaths(paths: string seq, m, name) =
         else
             None
     else
-        paths |> Seq.tryFind (fun path ->
+        let res = paths |> Seq.tryPick (fun path ->
             let n = Path.Combine(path, name)
-            FileSystem.FileExistsShim n)
+            if FileSystem.FileExistsShim n then Some n
+            else None)
+        res
 
 /// Will raise FileNameNotResolved if the filename was not found
 let ResolveFileUsingPaths(paths, m, name) =
