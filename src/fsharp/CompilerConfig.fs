@@ -56,17 +56,17 @@ exception FileNameNotResolved of (*filename*) string * (*description of searched
 exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
 
 /// Will return None if the filename is not found.
-let TryResolveFileUsingPaths(paths, m, name) =
+let TryResolveFileUsingPaths(paths: string seq, m, name) =
     let () =
         try FileSystem.IsPathRootedShim name |> ignore
         with :? ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
     if FileSystem.IsPathRootedShim name && FileSystem.FileExistsShim name
     then Some name
     else
-        let res = paths |> List.tryPick (fun path ->
-                    let n = Path.Combine (path, name)
-                    if FileSystem.FileExistsShim n then Some n
-                    else None)
+        let res = paths |> Seq.tryPick (fun path ->
+            let n = Path.Combine(path, name)
+            if FileSystem.FileExistsShim n then Some n
+            else None)
         res
 
 /// Will raise FileNameNotResolved if the filename was not found
@@ -709,7 +709,8 @@ type TcConfigBuilder =
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        ResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, nm)
+        let paths = seq { yield! tcConfigB.includes; yield pathLoadedFrom }
+        ResolveFileUsingPaths(paths, m, nm)
 
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames sourceFiles =
@@ -786,7 +787,8 @@ type TcConfigBuilder =
             warning(Error(FSComp.SR.buildInvalidFilename originalPath, m))
         else
             let path =
-                match TryResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, originalPath) with
+                let paths = seq { yield! tcConfigB.includes; yield pathLoadedFrom }
+                match TryResolveFileUsingPaths(paths, m, originalPath) with
                 | Some path -> path
                 | None ->
                         // File doesn't exist in the paths. Assume it will be in the load-ed from directory.
