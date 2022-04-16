@@ -8,4 +8,4 @@ module m =
             let f x = x + 1
 
 open m
-(if f(1) = 2 then 0 else 1) |> exit
+if f(1) <> 2 then failwith "Failed: 1"

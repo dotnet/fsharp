@@ -5,5 +5,5 @@
 
 open N.m1
 
-(if f(1)=2 then 0 else 1) |> exit
+if f(1)<>2 then failwith "Failed: 1"
     

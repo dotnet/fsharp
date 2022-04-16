@@ -138,145 +138,147 @@ module ModuleDefinitions =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LightSyntax01.fsx"|])>]
     let ``LightSyntax01_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleAbbreviationWithModule01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                # ModuleAbbreviationWithModule01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleAbbreviationWithModule01.fs"|])>]
     let ``ModuleAbbreviationWithModule01_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE="Module_internal01.fs Module_internalConsumer01.fs"                                                          # Module_internal01
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Module_internal01.fs"|])>]
     let ``Module_internal01_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleSuffix02.fsx                                                                                           # ModuleSuffix02.fsx
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix02"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix02.fsx"|])>]
     let ``ModuleSuffix02_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // NoMT SOURCE=ModuleSuffix03.fsx PRECMD="\$FSC_PIPE -a ModuleSuffix03Lib.fsx" SCFLAGS="-r:ModuleSuffix03Lib.dll"      # ModuleSuffix03.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix03.fsx"|])>]
     let ``ModuleSuffix03_fsx`` compilation =
+        let lib =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "ModuleSuffix03Lib.fsx"))
+            |> withOptimize
+            |> asLibrary
+
         compilation
-        |> asExe
-        |> compile
+        |> withReferences [lib]
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleSuffix04.fsx                                                                                           # ModuleSuffix04.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleSuffix04.fsx"|])>]
     let ``ModuleSuffix04_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleWithExpression01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                        # ModuleWithExpression01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleWithExpression01.fs"|])>]
     let ``ModuleWithExpression01_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=ModuleWithExpression02.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                                        # ModuleWithExpression02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ModuleWithExpression02.fs"|])>]
     let ``ModuleWithExpression02_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> asFsx
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ExceptionDefinition.fsx                                                                           # Production_ExceptionDefinition.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ExceptionDefinition.fsx"|])>]
     let ``Production_ExceptionDefinition_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ImportDeclaration.fsx                                                                             # Production_ImportDeclaration.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ImportDeclaration.fsx"|])>]
-    let ``Production_ImportDeclaration.fsx`` compilation =
+    let ``Production_ImportDeclaration_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_LetBindings_Binding.fsx                                                                           # Production_LetBindings_Binding.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_LetBindings_Binding.fsx"|])>]
     let ``Production_LetBindings_Binding_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_LetBindings_SideEff.fsx                                                                           # Production_LetBindings_SideEff.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_LetBindings_SideEff.fsx"|])>]
-    let ``Production_LetBindings_SideEff.fsx`` compilation =
+    let ``Production_LetBindings_SideEff_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ModuleAbbreviation.fsx                                                                            # Production_ModuleAbbreviation.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ModuleAbbreviation.fsx"|])>]
     let ``Production_ModuleAbbreviation_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_ModuleDefinition.fsx                                                                              # Production_ModuleDefinition.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_ModuleDefinition.fsx"|])>]
     let ``Production_ModuleDefinition_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_OCamlCompat.fsx                                                                                   # Production_OCamlCompat.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_OCamlCompat.fsx"|])>]
     let ``Production_OCamlCompat_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> withOcamlCompat
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=Production_TypeDefinitions.fsx                                                                               # Production_TypeDefinitions.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Production_TypeDefinitions.fsx"|])>]
     let ``Production_TypeDefinitions_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=W_ModuleAbbreviationWithNamespace01.fs COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"                           # W_ModuleAbbreviationWithNamespace01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_ModuleAbbreviationWithNamespace01.fs"|])>]
     let ``W_ModuleAbbreviationWithNamespace01_fs`` compilation =
         compilation
-        |> asExe
-        |> compile
-        |> shouldSucceed
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 965, Line 8, Col 1, Line 9, Col 26, "The path 'Microsoft.FSharp.Core' is a namespace. A module abbreviation may not abbreviate a namespace.")
+        ]
 
     // SOURCE=W_Production_OCamlCompat.fsx SCFLAGS="--test:ErrorRanges"                                                    # W_Production_OCamlCompat.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Production_OCamlCompat.fsx"|])>]
     let ``W_Production_OCamlCompat_fsx`` compilation =
         compilation
-        |> asExe
-        |> compile
-        |> shouldSucceed
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 62, Line 14, Col 13, Line 14, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 18, Col 13, Line 18, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 22, Col 13, Line 22, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 26, Col 13, Line 26, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 30, Col 13, Line 30, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 35, Col 13, Line 35, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+            (Warning 62, Line 39, Col 13, Line 39, Col 19, "This construct is for ML compatibility. The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'.")
+        ]
 
     // 
     // #These 2 are not actual testcases, just test libraries for the next 2
@@ -285,15 +287,33 @@ module ModuleDefinitions =
     // SOURCE=SameTypeInTwoReferences01.fs SCFLAGS="-r:LibFoo1.dll -r:LibFoo2.dll"                                         # SameTypeInTwoReferences01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SameTypeInTwoReferences01.fs"|])>]
     let ``SameTypeInTwoReferences01_fs`` compilation =
+        let libFoo1 =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo1.fs"))
+            |> withOptimize
+            |> asLibrary
+        let libFoo2 =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo2.fs"))
+            |> withOptimize
+            |> asLibrary
+
         compilation
-        |> asExe
-        |> compile
+        |> withReferences [libFoo1; libFoo2]
+        |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=SameTypeInTwoReferences02.fs SCFLAGS="-r:LibFoo2.dll -r:LibFoo1.dll"                                         # SameTypeInTwoReferences02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SameTypeInTwoReferences02.fs"|])>]
     let ``SameTypeInTwoReferences02_fs`` compilation =
+        let libFoo1 =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo1.fs"))
+            |> withOptimize
+            |> asLibrary
+        let libFoo2 =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "LibFoo2.fs"))
+            |> withOptimize
+            |> asLibrary
+
         compilation
-        |> asExe
-        |> compile
+        |> withReferences [libFoo2; libFoo1]
+        |> verifyCompileAndRun
         |> shouldSucceed
