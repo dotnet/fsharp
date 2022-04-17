@@ -15,5 +15,3 @@ type C<'a when 'a :> IB>() =
 
 // Abbreviation: the constraints on the right-hand-side are sufficient
 type D<'b when 'b :> IB> = C<'b>
-
-exit 0

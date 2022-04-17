@@ -15,4 +15,4 @@ type Q = M1.M2.M3.TypeNestedInModules
 let q = Q.A
 let q' = M1.M2.M3.TypeNestedInModules.A
 
-(if q = q' then 0 else 1) |> exit
+if q <> q' then failwith "Failed: 1"

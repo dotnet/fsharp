@@ -6,4 +6,3 @@
 let T = null
 type T = System.Numerics.BigInteger       // ok - no conflict
 
-exit 0
