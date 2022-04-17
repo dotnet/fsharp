@@ -386,7 +386,7 @@ module internal FileSystemUtils =
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
 
-    let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
+    let checkSuffix (x:string) (y:string) = x.EndsWithOrdinalIgnoreCase(y)
 
     let hasExtensionWithValidate (validate:bool) (s:string) =
         if validate then (checkPathForIllegalChars s)
@@ -417,7 +417,7 @@ module internal FileSystemUtils =
         s.Trim( [|' '; '\"'|] )
 
     let hasSuffixCaseInsensitive suffix filename = (* case-insensitive *)
-        checkSuffix (String.lowercase filename) (String.lowercase suffix)
+        checkSuffix filename suffix
 
     let isDll file = hasSuffixCaseInsensitive ".dll" file
 
