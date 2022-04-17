@@ -561,9 +561,9 @@ type TcConfigProvider =
     /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder: TcConfigBuilder -> TcConfigProvider
 
-val TryResolveFileUsingPaths: paths: string list * m: range * name: string -> string option
+val TryResolveFileUsingPaths: paths: string seq * m: range * name: string -> string option
 
-val ResolveFileUsingPaths: paths: string list * m: range * name: string -> string
+val ResolveFileUsingPaths: paths: string seq * m: range * name: string -> string
 
 val GetWarningNumber: m: range * warningNumber: string -> int option
 
