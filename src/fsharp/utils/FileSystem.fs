@@ -416,10 +416,7 @@ module internal FileSystemUtils =
     let trimQuotes (s:string) =
         s.Trim( [|' '; '\"'|] )
 
-    let hasSuffixCaseInsensitive suffix filename = (* case-insensitive *)
-        checkSuffix filename suffix
-
-    let isDll file = hasSuffixCaseInsensitive ".dll" file
+    let isDll file = checkSuffix file ".dll"
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IAssemblyLoader =

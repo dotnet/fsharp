@@ -126,9 +126,6 @@ module internal FileSystemUtils =
     /// Trim the quotes and spaces from either end of a string
     val trimQuotes: string -> string
 
-    /// Checks whether filename ends in suffix, ignoring case.
-    val hasSuffixCaseInsensitive: string -> string -> bool
-
     /// Checks whether file is dll (ends in .dll)
     val isDll: string -> bool
 
