@@ -1643,8 +1643,7 @@ module internal ParseAndCheckFile =
         member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
-        let lower = String.lowercase fileName
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix lower) FSharpLightSyntaxFileSuffixes
+        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpLightSyntaxFileSuffixes
         let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
         LightSyntaxStatus(lightStatus, true)
 

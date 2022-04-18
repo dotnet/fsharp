@@ -106,6 +106,7 @@ module internal FileSystemUtils =
 
     /// <c>checkSuffix f s</c> returns True if filename "f" ends in suffix "s",
     /// e.g. checkSuffix "abc.fs" ".fs" returns true.
+    /// Disregards casing, e.g. checkSuffix "abc.Fs" ".fs" returns true.
     val checkSuffix: string -> string -> bool
 
     /// <c>chopExtension f</c> removes the extension from the given
@@ -124,9 +125,6 @@ module internal FileSystemUtils =
 
     /// Trim the quotes and spaces from either end of a string
     val trimQuotes: string -> string
-
-    /// Checks whether filename ends in suffix, ignoring case.
-    val hasSuffixCaseInsensitive: string -> string -> bool
 
     /// Checks whether file is dll (ends in .dll)
     val isDll: string -> bool

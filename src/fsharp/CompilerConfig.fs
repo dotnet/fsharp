@@ -720,7 +720,7 @@ type TcConfigBuilder =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(), rangeCmdArgs))
         let ext() = match tcConfigB.target with CompilerTarget.Dll -> ".dll" | CompilerTarget.Module -> ".netmodule" | CompilerTarget.ConsoleExe | CompilerTarget.WinExe -> ".exe"
-        let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (FileSystemUtils.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
+        let implFiles = sourceFiles |> List.filter (fun fileName -> List.exists (FileSystemUtils.checkSuffix fileName) FSharpImplFileSuffixes)
         let outfile =
             match tcConfigB.outputFile, List.rev implFiles with
             | None, [] -> "out" + ext()
@@ -1168,8 +1168,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.ComputeLightSyntaxInitialStatus filename =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        let lower = String.lowercase filename
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix lower) FSharpLightSyntaxFileSuffixes
+        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix filename) FSharpLightSyntaxFileSuffixes
         if lightOnByDefault then (tcConfig.light <> Some false) else (tcConfig.light = Some true )
 
     member tcConfig.GetAvailableLoadedSources() =

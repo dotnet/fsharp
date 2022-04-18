@@ -43,8 +43,7 @@ let CanonicalizeFilename filename =
     String.capitalize (try FileSystemUtils.chopExtension basic with _ -> basic)
 
 let IsScript filename =
-    let lower = String.lowercase filename
-    FSharpScriptFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)
+    FSharpScriptFileSuffixes |> List.exists (FileSystemUtils.checkSuffix filename)
 
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
@@ -115,8 +114,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
 
     | ParsedImplFileFragment.AnonModule (defs, m)->
         let isLast, isExe = isLastCompiland
-        let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)) then
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix filename)) then
             match defs with
             | SynModuleDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
@@ -145,8 +143,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
 
     | ParsedSigFileFragment.AnonModule (defs, m) ->
         let isLast, isExe = isLastCompiland
-        let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)) then
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix filename)) then
             match defs with
             | SynModuleSigDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
@@ -273,7 +270,6 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: E
     //        # 1000 "Line01.fs"
     //    then it also asserts. But these are edge cases that can be fixed later, e.g. in bug 4651.
     //System.Diagnostics.Debug.Assert(System.IO.Path.IsPathRooted filename, sprintf "should be absolute: '%s'" filename)
-    let lower = String.lowercase filename
 
     // Delay sending errors and warnings until after the file is parsed. This gives us a chance to scrape the
     // #nowarn declarations for the file
@@ -284,18 +280,18 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: E
     let mutable scopedPragmas = []
     try
         let input =
-            if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
+            if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix filename) then
                 if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     errorR(Error(FSComp.SR.buildInvalidSourceFileExtensionML filename, rangeStartup))
                 else
                     mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
 
             // Call the appropriate parser - for signature files or implementation files
-            if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
+            if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix filename) then
                 let impl = Parser.implementationFile lexer lexbuf
                 let tripleSlashComments = LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl, lexbuf, tripleSlashComments)
-            elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
+            elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix filename) then
                 let intfs = Parser.signatureFile lexer lexbuf
                 let tripleSlashComments =  LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs, lexbuf, tripleSlashComments)
@@ -350,8 +346,7 @@ let ReportParsingStatistics res =
         printfn "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
 
 let EmptyParsedInput(filename, isLastCompiland) =
-    let lower = String.lowercase filename
-    if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
+    if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix filename) then
         ParsedInput.SigFile(
             ParsedSigFileInput(
                 filename,
@@ -432,9 +427,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, filenam
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
 
 let checkInputFile (tcConfig: TcConfig) filename =
-    let lower = String.lowercase filename
-
-    if List.exists (FileSystemUtils.checkSuffix lower) ValidSuffixes then
+    if List.exists (FileSystemUtils.checkSuffix filename) ValidSuffixes then
         if not(FileSystem.FileExistsShim filename) then
             error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
     else

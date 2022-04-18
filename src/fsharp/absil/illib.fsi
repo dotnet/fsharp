@@ -61,6 +61,8 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinal: value:string -> bool
 
+        member inline EndsWithOrdinalIgnoreCase: value:string -> bool
+
     type Async with
         /// Runs the computation synchronously, always starting on the current thread.
         static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
