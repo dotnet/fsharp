@@ -7,5 +7,4 @@
 module M = 
     printfn "hello"
     let x = 1
-    exit 0
 

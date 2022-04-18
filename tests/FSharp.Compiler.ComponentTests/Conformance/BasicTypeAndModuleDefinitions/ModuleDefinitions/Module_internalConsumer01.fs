@@ -9,4 +9,4 @@ open Module1
 
 let y = f 1
 
-exit <| if y = 1 then 0 else 1
+if y <> 1 then failwith "Failed: 1"
