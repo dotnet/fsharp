@@ -115,8 +115,7 @@ module IncrementalBuildSyntaxTree =
 
             try
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-                let lower = String.lowercase filename
-                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)
+                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix filename)
                 let input =
                     if canSkip then
                         ParsedInput.ImplFile(
