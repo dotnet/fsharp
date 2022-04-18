@@ -22,6 +22,4 @@ let testPassed =
         -> true
 
 
-if not testPassed then exit 1
-
-exit 0
+if not testPassed then failwith "Failed: 1"

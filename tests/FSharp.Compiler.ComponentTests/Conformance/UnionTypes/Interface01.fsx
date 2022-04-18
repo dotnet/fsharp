@@ -18,4 +18,4 @@ type T1 = | C of int * int
 let d = C(1,2)
 let i = d :> I
 
-(if i.S() then 0 else 1) |> exit
+if i.S() then 0 else failwith "Failed: 1"

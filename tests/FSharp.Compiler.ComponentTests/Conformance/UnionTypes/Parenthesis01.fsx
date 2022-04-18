@@ -14,5 +14,3 @@ let y1 = D(a) // ok
 match x with
 | C(x,y) -> ()
 | D(z) -> ()
-
-exit 0

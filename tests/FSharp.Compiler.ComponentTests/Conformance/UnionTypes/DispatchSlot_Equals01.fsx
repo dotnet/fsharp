@@ -23,4 +23,4 @@ let r4 = not (t1.Equals(t4))
 let r5 = t1.Equals(t1)
 let r6 = not (t1.Equals(t3))
 
-(if r1 && r2 && r3 && r4 && r5 && r6  then 0 else 1) |> exit
+if r1 && r2 && r3 && r4 && r5 && r6  then 0 else failwith "Failed: 1"

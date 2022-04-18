@@ -18,4 +18,4 @@ let e =
     with
        | err -> printfn "FAIL: Equals threw! (%s)" err.Message
                 1
-exit e
+if e <> 0 then failwith $"Failed: {e}"

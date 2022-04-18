@@ -15,4 +15,4 @@ let z1 = (A1) x2  // OK - same as above
 let y2 = A2 x3    // OK
 let z2 = (A2) x3  // OK - same as above
 
-(if (y1 = z1) && (y2 = z2) then 0 else 1) |> exit
+if (y1 = z1) && (y2 = z2) then 0 else failwith "Failed: 1"

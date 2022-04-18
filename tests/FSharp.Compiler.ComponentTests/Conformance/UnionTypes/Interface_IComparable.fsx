@@ -28,5 +28,4 @@ let t2 = i2.CompareTo(p) = 0        // true
 
 let t3 = i2.CompareTo(q) <> 0       // true
 
-(if t1 && t2 && t3 then 0 else 1) |> exit
-
+if t1 && t2 && t3 then 0 else failwith "Failed: 1"

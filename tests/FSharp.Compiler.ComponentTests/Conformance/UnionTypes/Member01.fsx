@@ -21,4 +21,4 @@ type T2 = | C of int * int
 let e = E(1,2)
 let d = D(1,2)
 
-(if T2.M(e) && d.M(d) then 0 else 1) |> exit
+if T2.M(e) && d.M(d) then 0 else failwith "Failed: 1"

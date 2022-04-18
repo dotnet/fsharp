@@ -12,4 +12,4 @@ type T1 = | C of int * int
 
 let d = D(1,2)
 
-(if d.ToString()="Hello" && d.Equals(null) && d.GetHashCode()=1 then 0 else 1) |> exit
+if d.ToString()="Hello" && d.Equals(null) && d.GetHashCode()=1 then 0 else failwith "Failed: 1"

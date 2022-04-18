@@ -15,5 +15,3 @@ type T = | Uppercase
 
 let p = İ(0)
 
-exit 0
-

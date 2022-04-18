@@ -15,6 +15,6 @@ let m =
 
 let (Case1(Named1 = x)) = o
 if x = 7 then ()
-else exit 1
+else failwith "Failed: 1"
 
-exit m
+if m <> 0 then failwith $"Failed: {m}"

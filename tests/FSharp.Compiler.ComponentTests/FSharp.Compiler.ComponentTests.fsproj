@@ -162,6 +162,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\Override01.fsx" />
+    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
+    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />

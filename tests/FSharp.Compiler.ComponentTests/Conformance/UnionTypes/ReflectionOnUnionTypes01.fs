@@ -14,6 +14,4 @@ let res =
     uci.[0].GetCustomAttributes().Length >= 1 &&
     uci.[1].GetCustomAttributes().Length >= 1
 
-if not res then exit 1
-
-exit 0
+if not res then failwith "Failed: 1"

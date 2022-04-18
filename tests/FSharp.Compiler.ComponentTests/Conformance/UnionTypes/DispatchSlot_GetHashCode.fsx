@@ -10,5 +10,5 @@ type T1 = | A
 type T2 = | A
           | C 
 
-(if (T1.A.GetHashCode() <> T1.B.GetHashCode()) &&
-    (T2.A.GetHashCode() <> T2.C.GetHashCode()) then 0 else 1) |> exit
+if (T1.A.GetHashCode() <> T1.B.GetHashCode()) &&
+    (T2.A.GetHashCode() <> T2.C.GetHashCode()) then 0 else failwith "Failed: 1"

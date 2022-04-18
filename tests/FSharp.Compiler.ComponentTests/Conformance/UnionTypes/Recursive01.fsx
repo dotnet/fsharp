@@ -21,5 +21,5 @@ and
                           
 let c = E(T(Sum(E(N(1)),E(N(2)))))
 
-(if c.Eval() = 3 then 0 else 1) |> exit
+if c.Eval() = 3 then 0 else failwith "Failed: 1"
 

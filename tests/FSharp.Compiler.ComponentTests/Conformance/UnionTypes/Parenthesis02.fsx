@@ -10,4 +10,4 @@ let a = 1,2
 let x1 = C(a)     // ok!
 let x2 = C(1,2)
 
-(if x1 = x2 then 0 else 1) |> exit 
+if x1 = x2 then 0 else failwith "Failed: 1"

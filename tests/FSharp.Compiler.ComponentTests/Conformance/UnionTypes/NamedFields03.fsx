@@ -6,7 +6,7 @@ let checkType (o : obj) ty =
     if o.GetType() = ty then ()
     else
         printfn "Actual type %A" (o.GetType())
-        exit 1
+        failwith "Failed: 1"
 
 let Value = 10
 let o = Some(Value = 1) // name matches, assume it is named field syntax
@@ -45,5 +45,3 @@ checkType o6 (typeof<MyDU<string>>)
 
 let o7 = Case1(2, 3, true, (V4 = ""))
 checkType o7 (typeof<MyDU<bool>>)
-
-exit 0
