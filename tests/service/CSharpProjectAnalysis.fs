@@ -120,6 +120,32 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
             "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
             "member StaticMember"; "NestedEnumClass"|]
 
+
+[<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Test that symbols of csharp inner classes/enums are reported from dervied generic class`` () =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let content = """
+module NestedEnumClass
+open FSharp.Compiler.Service.Tests
+
+let _ = CSharpGenericOuterClass<int>
+let _ = CSharpGenericOuterClass<int>.InnerEnum.Case1
+let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
+"""
+
+    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
+    results.GetAllUsesOfAllSymbols()
+    |> Array.map (fun su -> su.Symbol.ToString())
+    |> shouldEqual 
+        [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
+          "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
+          "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";
+          "CSharpGenericOuterClass`1"; "int"; "CSharpGenericOuterClass`1"; "InnerClass";
+          "member StaticMember"; "NestedEnumClass"|]
+
 [<Test>]
 #if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
