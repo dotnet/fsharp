@@ -6,7 +6,3 @@ type DU = | A
           member this.Equals(s:char) = true
           //member this.Equals(s:DU) = 1.
           member this.Equals(?s:char) = true
-
-#if INTERACTIVE
-exit 0;;
-#endif
