@@ -179,25 +179,25 @@ module Test =
         IL_001f:  stloc.1
         .try
         {
-          IL_0020:  ldloca.s   V_1
-          IL_0022:  call       instance bool valuetype [runtime]System.Span`1/Enumerator<object>::MoveNext()
-          IL_0027:  brfalse.s  IL_003e
+          IL_0020:  br.s       IL_0035
 
-          IL_0029:  ldloca.s   V_1
-          IL_002b:  call       instance !0& valuetype [runtime]System.Span`1/Enumerator<object>::get_Current()
-          IL_0030:  stloc.3
-          IL_0031:  ldloc.3
-          IL_0032:  ldobj      [runtime]System.Object
-          IL_0037:  call       void [runtime]System.Console::WriteLine(object)
-          IL_003c:  br.s       IL_0020
+          IL_0022:  ldloca.s   V_1
+          IL_0024:  call       instance !0& valuetype [runtime]System.Span`1/Enumerator<object>::get_Current()
+          IL_0029:  stloc.3
+          IL_002a:  ldloc.3
+          IL_002b:  ldobj      [runtime]System.Object
+          IL_0030:  call       void [runtime]System.Console::WriteLine(object)
+          IL_0035:  ldloca.s   V_1
+          IL_0037:  call       instance bool valuetype [runtime]System.Span`1/Enumerator<object>::MoveNext()
+          IL_003c:  brtrue.s   IL_0022
 
           IL_003e:  leave.s    IL_0041
 
-        }
+        }  
         finally
         {
           IL_0040:  endfinally
-        }
+        }  
         IL_0041:  ret
       }
 """

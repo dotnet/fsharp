@@ -33,22 +33,22 @@
 }
 .mresource public FSharpSignatureData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000000 Length: 0x00000265
+  // Offset: 0x00000000 Length: 0x00000273
   // WARNING: managed resource file FSharpSignatureData.NoBoxingOnDispose01 created
 }
 .mresource public FSharpOptimizationData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000270 Length: 0x0000007F
+  // Offset: 0x00000278 Length: 0x0000007F
   // WARNING: managed resource file FSharpOptimizationData.NoBoxingOnDispose01 created
 }
 .module NoBoxingOnDispose01.exe
-// MVID: {624E232E-1E04-1DE3-A745-03832E234E62}
+// MVID: {625064D9-1DEF-36DA-A745-0383D9645062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000195A83C0000
+// Image base: 0x000001CC2A200000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,7 +59,7 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  f1<T>(class [System.Collections]System.Collections.Generic.List`1<!!T> x) cil managed
   {
-    // Code size       47 (0x2f)
+    // Code size       46 (0x2e)
     .maxstack  3
     .locals init (class [System.Collections]System.Collections.Generic.List`1<!!T> V_0,
              valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T> V_1,
@@ -71,28 +71,27 @@
     IL_0008:  stloc.1
     .try
     {
-      IL_0009:  ldloca.s   V_1
-      IL_000b:  call       instance bool valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>::MoveNext()
-      IL_0010:  brfalse.s  IL_001e
+      IL_0009:  br.s       IL_0014
 
-      IL_0012:  ldloca.s   V_1
-      IL_0014:  call       instance !0 valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>::get_Current()
-      IL_0019:  stloc.2
-      IL_001a:  nop
-      IL_001b:  nop
-      IL_001c:  br.s       IL_0009
+      IL_000b:  ldloca.s   V_1
+      IL_000d:  call       instance !0 valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>::get_Current()
+      IL_0012:  stloc.2
+      IL_0013:  nop
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  call       instance bool valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>::MoveNext()
+      IL_001b:  brtrue.s   IL_000b
 
-      IL_001e:  leave.s    IL_002e
+      IL_001d:  leave.s    IL_002d
 
     }  // end .try
     finally
     {
-      IL_0020:  ldloca.s   V_1
-      IL_0022:  constrained. valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>
-      IL_0028:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
-      IL_002d:  endfinally
+      IL_001f:  ldloca.s   V_1
+      IL_0021:  constrained. valuetype [System.Collections]System.Collections.Generic.List`1/Enumerator<!!T>
+      IL_0027:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
+      IL_002c:  endfinally
     }  // end handler
-    IL_002e:  ret
+    IL_002d:  ret
   } // end of method NoBoxingOnDispose01::f1
 
 } // end of class NoBoxingOnDispose01

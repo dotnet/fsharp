@@ -4,10 +4,10 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern mscorlib
+.assembly extern System.Runtime
 {
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 6:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -25,55 +25,55 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Linq101Ordering01
 {
-  // Offset: 0x00000000 Length: 0x000003DE
+  // Offset: 0x00000000 Length: 0x000003F0
   // WARNING: managed resource file FSharpSignatureData.Linq101Ordering01 created
 }
 .mresource public FSharpOptimizationData.Linq101Ordering01
 {
-  // Offset: 0x000003E8 Length: 0x00000134
+  // Offset: 0x000003F8 Length: 0x00000134
   // WARNING: managed resource file FSharpOptimizationData.Linq101Ordering01 created
 }
 .module Linq101Ordering01.exe
-// MVID: {624665AE-649A-6956-A745-0383AE654662}
+// MVID: {624FDC53-B572-8A75-A745-038353DC4F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A90000
+// Image base: 0x000002BC4BA30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed Linq101Ordering01
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'Pipe #1 input at line 10@11'
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum'
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field public class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum'
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public string current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method public specialname rtspecialname 
-            instance void  .ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum',
+            instance void  .ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum',
                                  int32 pc,
                                  string current) cil managed
     {
@@ -81,7 +81,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0002:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
       IL_0009:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
@@ -94,9 +94,9 @@
     } // end of method 'Pipe #1 input at line 10@11'::.ctor
 
     .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
+            GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (string V_0,
                string V_1)
@@ -111,64 +111,63 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
       IL_0026:  ldarg.0
       IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
-      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_002c:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldnull
-      IL_008e:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldnull
+      IL_008d:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #1 input at line 10@11'::GenerateNext
 
     .method public strict virtual instance void 
@@ -176,8 +175,8 @@
     {
       // Code size       124 (0x7c)
       .maxstack  6
-      .locals init (class [mscorlib]System.Exception V_0,
-               class [mscorlib]System.Exception V_1)
+      .locals init (class [System.Runtime]System.Exception V_0,
+               class [System.Runtime]System.Exception V_1)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
       IL_0006:  ldc.i4.3
@@ -219,8 +218,8 @@
         IL_0043:  ldc.i4.3
         IL_0044:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
         IL_0049:  ldarg.0
-        IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+        IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0054:  nop
         IL_0055:  nop
         IL_0056:  ldarg.0
@@ -232,9 +231,9 @@
         IL_0064:  leave.s    IL_0070
 
       }  // end .try
-      catch [mscorlib]System.Object 
+      catch [System.Runtime]System.Object 
       {
-        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_0066:  castclass  [System.Runtime]System.Exception
         IL_006b:  stloc.1
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
@@ -293,8 +292,8 @@
     .method public strict virtual instance string 
             get_LastGenerated() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -302,17 +301,17 @@
       IL_0006:  ret
     } // end of method 'Pipe #1 input at line 10@11'::get_LastGenerated
 
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 
+    .method public strict virtual instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 
             GetFreshEnumerator() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldnull
-      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #1 input at line 10@11'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #1 input at line 10@11'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                                 int32,
                                                                                                 string)
       IL_0008:  ret
@@ -327,8 +326,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -361,20 +360,20 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum'
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field public class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum'
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public string current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method public specialname rtspecialname 
-            instance void  .ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum',
+            instance void  .ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum',
                                  int32 pc,
                                  string current) cil managed
     {
@@ -382,7 +381,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0002:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
       IL_0009:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
@@ -395,9 +394,9 @@
     } // end of method 'Pipe #2 input at line 17@18'::.ctor
 
     .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
+            GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (string V_0,
                string V_1)
@@ -412,64 +411,63 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
       IL_0026:  ldarg.0
       IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
-      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_002c:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldnull
-      IL_008e:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldnull
+      IL_008d:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #2 input at line 17@18'::GenerateNext
 
     .method public strict virtual instance void 
@@ -477,8 +475,8 @@
     {
       // Code size       124 (0x7c)
       .maxstack  6
-      .locals init (class [mscorlib]System.Exception V_0,
-               class [mscorlib]System.Exception V_1)
+      .locals init (class [System.Runtime]System.Exception V_0,
+               class [System.Runtime]System.Exception V_1)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
       IL_0006:  ldc.i4.3
@@ -520,8 +518,8 @@
         IL_0043:  ldc.i4.3
         IL_0044:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
         IL_0049:  ldarg.0
-        IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+        IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0054:  nop
         IL_0055:  nop
         IL_0056:  ldarg.0
@@ -533,9 +531,9 @@
         IL_0064:  leave.s    IL_0070
 
       }  // end .try
-      catch [mscorlib]System.Object 
+      catch [System.Runtime]System.Object 
       {
-        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_0066:  castclass  [System.Runtime]System.Exception
         IL_006b:  stloc.1
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
@@ -594,8 +592,8 @@
     .method public strict virtual instance string 
             get_LastGenerated() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -603,17 +601,17 @@
       IL_0006:  ret
     } // end of method 'Pipe #2 input at line 17@18'::get_LastGenerated
 
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 
+    .method public strict virtual instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 
             GetFreshEnumerator() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldnull
-      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #2 input at line 17@18'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #2 input at line 17@18'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                                 int32,
                                                                                                 string)
       IL_0008:  ret
@@ -628,8 +626,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -643,7 +641,7 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0001:  callvirt   instance int32 [System.Runtime]System.String::get_Length()
       IL_0006:  ret
     } // end of method 'Pipe #2 input at line 17@19-1'::Invoke
 
@@ -663,14 +661,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -706,8 +704,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -745,8 +743,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -779,20 +777,20 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [Utils]Utils/Product>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 'enum'
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field public class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 'enum'
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public class [Utils]Utils/Product current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method public specialname rtspecialname 
-            instance void  .ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 'enum',
+            instance void  .ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 'enum',
                                  int32 pc,
                                  class [Utils]Utils/Product current) cil managed
     {
@@ -800,7 +798,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0002:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
       IL_0009:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
@@ -813,9 +811,9 @@
     } // end of method 'Pipe #4 input at line 43@44'::.ctor
 
     .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>& next) cil managed
+            GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (class [Utils]Utils/Product V_0,
                class [Utils]Utils/Product V_1)
@@ -830,64 +828,63 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
       IL_0026:  ldarg.0
       IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
-      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_002c:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
+      IL_0031:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldnull
-      IL_008e:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldnull
+      IL_008d:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #4 input at line 43@44'::GenerateNext
 
     .method public strict virtual instance void 
@@ -895,8 +892,8 @@
     {
       // Code size       124 (0x7c)
       .maxstack  6
-      .locals init (class [mscorlib]System.Exception V_0,
-               class [mscorlib]System.Exception V_1)
+      .locals init (class [System.Runtime]System.Exception V_0,
+               class [System.Runtime]System.Exception V_1)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
       IL_0006:  ldc.i4.3
@@ -938,8 +935,8 @@
         IL_0043:  ldc.i4.3
         IL_0044:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
         IL_0049:  ldarg.0
-        IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
+        IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
         IL_0054:  nop
         IL_0055:  nop
         IL_0056:  ldarg.0
@@ -951,9 +948,9 @@
         IL_0064:  leave.s    IL_0070
 
       }  // end .try
-      catch [mscorlib]System.Object 
+      catch [System.Runtime]System.Object 
       {
-        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_0066:  castclass  [System.Runtime]System.Exception
         IL_006b:  stloc.1
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
@@ -1012,8 +1009,8 @@
     .method public strict virtual instance class [Utils]Utils/Product 
             get_LastGenerated() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1021,17 +1018,17 @@
       IL_0006:  ret
     } // end of method 'Pipe #4 input at line 43@44'::get_LastGenerated
 
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 
+    .method public strict virtual instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> 
             GetFreshEnumerator() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldnull
-      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #4 input at line 43@44'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
+      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #4 input at line 43@44'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                                 int32,
                                                                                                 class [Utils]Utils/Product)
       IL_0008:  ret
@@ -1046,8 +1043,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1082,20 +1079,20 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum'
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field public class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum'
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field public string current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method public specialname rtspecialname 
-            instance void  .ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 'enum',
+            instance void  .ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 'enum',
                                  int32 pc,
                                  string current) cil managed
     {
@@ -1103,7 +1100,7 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0002:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
       IL_0009:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
@@ -1116,9 +1113,9 @@
     } // end of method 'Pipe #5 input at line 51@52'::.ctor
 
     .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
+            GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (string V_0,
                string V_1)
@@ -1133,64 +1130,63 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
       IL_0026:  ldarg.0
       IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_digits()
-      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_002c:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldnull
-      IL_008e:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldnull
+      IL_008d:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #5 input at line 51@52'::GenerateNext
 
     .method public strict virtual instance void 
@@ -1198,8 +1194,8 @@
     {
       // Code size       124 (0x7c)
       .maxstack  6
-      .locals init (class [mscorlib]System.Exception V_0,
-               class [mscorlib]System.Exception V_1)
+      .locals init (class [System.Runtime]System.Exception V_0,
+               class [System.Runtime]System.Exception V_1)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
       IL_0006:  ldc.i4.3
@@ -1241,8 +1237,8 @@
         IL_0043:  ldc.i4.3
         IL_0044:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
         IL_0049:  ldarg.0
-        IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+        IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0054:  nop
         IL_0055:  nop
         IL_0056:  ldarg.0
@@ -1254,9 +1250,9 @@
         IL_0064:  leave.s    IL_0070
 
       }  // end .try
-      catch [mscorlib]System.Object 
+      catch [System.Runtime]System.Object 
       {
-        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_0066:  castclass  [System.Runtime]System.Exception
         IL_006b:  stloc.1
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
@@ -1315,8 +1311,8 @@
     .method public strict virtual instance string 
             get_LastGenerated() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1324,17 +1320,17 @@
       IL_0006:  ret
     } // end of method 'Pipe #5 input at line 51@52'::get_LastGenerated
 
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<string> 
+    .method public strict virtual instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<string> 
             GetFreshEnumerator() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldnull
-      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #5 input at line 51@52'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+      IL_0003:  newobj     instance void Linq101Ordering01/'Pipe #5 input at line 51@52'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                                 int32,
                                                                                                 string)
       IL_0008:  ret
@@ -1349,8 +1345,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1364,7 +1360,7 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.1
-      IL_0001:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0001:  callvirt   instance int32 [System.Runtime]System.String::get_Length()
       IL_0006:  ret
     } // end of method 'Pipe #5 input at line 51@53-1'::Invoke
 
@@ -1387,8 +1383,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1421,14 +1417,14 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1464,8 +1460,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1497,29 +1493,29 @@
   } // end of class 'Pipe #6 input at line 59@61-1'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #6 input at line 59@62-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal>
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [System.Runtime]System.Decimal>
   {
     .field static assembly initonly class Linq101Ordering01/'Pipe #6 input at line 59@62-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [System.Runtime]System.Decimal>::.ctor()
       IL_0006:  ret
     } // end of method 'Pipe #6 input at line 59@62-2'::.ctor
 
-    .method public strict virtual instance valuetype [mscorlib]System.Decimal 
+    .method public strict virtual instance valuetype [System.Runtime]System.Decimal 
             Invoke(class [Utils]Utils/Product p) cil managed
     {
       // Code size       9 (0x9)
       .maxstack  8
       IL_0000:  ldarg.1
       IL_0001:  tail.
-      IL_0003:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
+      IL_0003:  callvirt   instance valuetype [System.Runtime]System.Decimal [Utils]Utils/Product::get_UnitPrice()
       IL_0008:  ret
     } // end of method 'Pipe #6 input at line 59@62-2'::Invoke
 
@@ -1542,8 +1538,8 @@
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -1707,30 +1703,30 @@
 } // end of class Linq101Ordering01
 
 .class private abstract auto ansi sealed '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> words@8
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedWords@9
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedWords2@16
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> products@23
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [Utils]Utils/Product[] sortedProducts@24
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [Utils]Utils/Product[] sortedProducts2@42
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> digits@49
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedDigits@50
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [Utils]Utils/Product[] sortedProducts3@58
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
   .method public static void  main@() cil managed
   {
     .entrypoint
@@ -1745,17 +1741,17 @@
              class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> V_6,
              class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> V_7,
              class [Utils]Utils/Product[] V_8,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<string> V_9,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<string> V_9,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<string> V_11,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<string> V_11,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_12,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_13,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_13,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_14,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_15,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_15,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_16,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<string> V_17,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<string> V_17,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_18,
-             class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_19,
+             class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_19,
              class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_20)
     IL_0000:  ldstr      "cherry"
     IL_0005:  ldstr      "apple"
@@ -1776,17 +1772,17 @@
     IL_0033:  ldnull
     IL_0034:  ldc.i4.0
     IL_0035:  ldnull
-    IL_0036:  newobj     instance void Linq101Ordering01/'Pipe #1 input at line 10@11'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_0036:  newobj     instance void Linq101Ordering01/'Pipe #1 input at line 10@11'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                               int32,
                                                                                               string)
-    IL_003b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_003b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0>)
     IL_0040:  ldsfld     class Linq101Ordering01/'Pipe #1 input at line 10@12-1' Linq101Ordering01/'Pipe #1 input at line 10@12-1'::@_instance
-    IL_0045:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_004a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0045:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [System.Runtime]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_004a:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_004f:  stloc.s    V_9
     IL_0051:  ldloc.s    V_9
-    IL_0053:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0053:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0058:  dup
     IL_0059:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedWords@9
     IL_005e:  stloc.1
@@ -1796,17 +1792,17 @@
     IL_0068:  ldnull
     IL_0069:  ldc.i4.0
     IL_006a:  ldnull
-    IL_006b:  newobj     instance void Linq101Ordering01/'Pipe #2 input at line 17@18'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_006b:  newobj     instance void Linq101Ordering01/'Pipe #2 input at line 17@18'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                               int32,
                                                                                               string)
-    IL_0070:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0070:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0>)
     IL_0075:  ldsfld     class Linq101Ordering01/'Pipe #2 input at line 17@19-1' Linq101Ordering01/'Pipe #2 input at line 17@19-1'::@_instance
-    IL_007a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_007f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_007a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [System.Runtime]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_007f:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_0084:  stloc.s    V_11
     IL_0086:  ldloc.s    V_11
-    IL_0088:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0088:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_008d:  dup
     IL_008e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedWords2@16
     IL_0093:  stloc.2
@@ -1821,21 +1817,21 @@
     IL_00ab:  ldloc.s    V_14
     IL_00ad:  ldloc.s    V_14
     IL_00af:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
-    IL_00b4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00b4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [System.Runtime]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00b9:  ldloc.s    V_14
     IL_00bb:  newobj     instance void Linq101Ordering01/'Pipe #3 input at line 25@26'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_00c0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
+    IL_00c0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
     IL_00c5:  ldsfld     class Linq101Ordering01/'Pipe #3 input at line 25@27-1' Linq101Ordering01/'Pipe #3 input at line 25@27-1'::@_instance
-    IL_00ca:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_00ca:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00cf:  ldsfld     class Linq101Ordering01/'Pipe #3 input at line 25@28-2' Linq101Ordering01/'Pipe #3 input at line 25@28-2'::@_instance
-    IL_00d4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_00d9:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_00d4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_00d9:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_00de:  stloc.s    V_13
     IL_00e0:  ldloc.s    V_13
-    IL_00e2:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00e2:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00e7:  dup
     IL_00e8:  stsfld     class [Utils]Utils/Product[] '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedProducts@24
     IL_00ed:  stloc.s    V_4
@@ -1845,17 +1841,17 @@
     IL_00f8:  ldnull
     IL_00f9:  ldc.i4.0
     IL_00fa:  ldnull
-    IL_00fb:  newobj     instance void Linq101Ordering01/'Pipe #4 input at line 43@44'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
+    IL_00fb:  newobj     instance void Linq101Ordering01/'Pipe #4 input at line 43@44'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                               int32,
                                                                                               class [Utils]Utils/Product)
-    IL_0100:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0100:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable>::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0>)
     IL_0105:  ldsfld     class Linq101Ordering01/'Pipe #4 input at line 43@45-1' Linq101Ordering01/'Pipe #4 input at line 43@45-1'::@_instance
-    IL_010a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortByDescending<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_010f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_010a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortByDescending<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_010f:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_0114:  stloc.s    V_15
     IL_0116:  ldloc.s    V_15
-    IL_0118:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0118:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_011d:  dup
     IL_011e:  stsfld     class [Utils]Utils/Product[] '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedProducts2@42
     IL_0123:  stloc.s    V_5
@@ -1900,20 +1896,20 @@
     IL_01a1:  ldnull
     IL_01a2:  ldc.i4.0
     IL_01a3:  ldnull
-    IL_01a4:  newobj     instance void Linq101Ordering01/'Pipe #5 input at line 51@52'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_01a4:  newobj     instance void Linq101Ordering01/'Pipe #5 input at line 51@52'::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerator`1<string>,
                                                                                               int32,
                                                                                               string)
-    IL_01a9:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_01a9:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::.ctor(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0>)
     IL_01ae:  ldsfld     class Linq101Ordering01/'Pipe #5 input at line 51@53-1' Linq101Ordering01/'Pipe #5 input at line 51@53-1'::@_instance
-    IL_01b3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_01b3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [System.Runtime]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_01b8:  ldsfld     class Linq101Ordering01/'Pipe #5 input at line 51@54-2' Linq101Ordering01/'Pipe #5 input at line 51@54-2'::@_instance
-    IL_01bd:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenBy<string,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_01c2:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_01bd:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenBy<string,class [System.Runtime]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_01c2:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_01c7:  stloc.s    V_17
     IL_01c9:  ldloc.s    V_17
-    IL_01cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_01d0:  dup
     IL_01d1:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedDigits@50
     IL_01d6:  stloc.s    V_7
@@ -1925,24 +1921,24 @@
     IL_01e5:  ldloc.s    V_20
     IL_01e7:  ldloc.s    V_20
     IL_01e9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
-    IL_01ee:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01ee:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [System.Runtime]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_01f3:  ldloc.s    V_20
     IL_01f5:  newobj     instance void Linq101Ordering01/'Pipe #6 input at line 59@60'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_01fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
+    IL_01fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
     IL_01ff:  ldsfld     class Linq101Ordering01/'Pipe #6 input at line 59@61-1' Linq101Ordering01/'Pipe #6 input at line 59@61-1'::@_instance
-    IL_0204:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_0204:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0209:  ldsfld     class Linq101Ordering01/'Pipe #6 input at line 59@62-2' Linq101Ordering01/'Pipe #6 input at line 59@62-2'::@_instance
-    IL_020e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenByDescending<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,valuetype [mscorlib]System.Decimal>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_020e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenByDescending<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,valuetype [System.Runtime]System.Decimal>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0213:  ldsfld     class Linq101Ordering01/'Pipe #6 input at line 59@63-3' Linq101Ordering01/'Pipe #6 input at line 59@63-3'::@_instance
-    IL_0218:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
-                                                                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_021d:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0218:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
+    IL_021d:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [System.Runtime]System.Collections.IEnumerable>::get_Source()
     IL_0222:  stloc.s    V_19
     IL_0224:  ldloc.s    V_19
-    IL_0226:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0226:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [Utils]Utils/Product>(class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_022b:  dup
     IL_022c:  stsfld     class [Utils]Utils/Product[] '<StartupCode$Linq101Ordering01>'.$Linq101Ordering01::sortedProducts3@58
     IL_0231:  stloc.s    V_8

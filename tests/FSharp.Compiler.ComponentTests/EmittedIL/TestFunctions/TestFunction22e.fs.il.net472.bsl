@@ -28,22 +28,22 @@
 }
 .mresource public FSharpSignatureData.TestFunction22e
 {
-  // Offset: 0x00000000 Length: 0x00000191
+  // Offset: 0x00000000 Length: 0x000001A3
   // WARNING: managed resource file FSharpSignatureData.TestFunction22e created
 }
 .mresource public FSharpOptimizationData.TestFunction22e
 {
-  // Offset: 0x00000198 Length: 0x00000056
+  // Offset: 0x000001A8 Length: 0x00000056
   // WARNING: managed resource file FSharpOptimizationData.TestFunction22e created
 }
 .module TestFunction22e.exe
-// MVID: {624F8F70-13DB-1CD5-A745-0383708F4F62}
+// MVID: {62506722-13DB-1CD5-A745-038322675062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03E50000
+// Image base: 0x02DF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,16 +64,15 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
+    // Code size       11 (0xb)
     .maxstack  8
-    IL_0000:  ldc.i4.1
-    IL_0001:  brfalse.s  IL_000b
+    IL_0000:  br.s       IL_0007
 
-    IL_0003:  call       void [mscorlib]System.Console::WriteLine()
-    IL_0008:  nop
-    IL_0009:  br.s       IL_0000
+    IL_0002:  call       void [mscorlib]System.Console::WriteLine()
+    IL_0007:  ldc.i4.1
+    IL_0008:  brtrue.s   IL_0002
 
-    IL_000b:  ret
+    IL_000a:  ret
   } // end of method $TestFunction22e::main@
 
 } // end of class '<StartupCode$TestFunction22e>'.$TestFunction22e

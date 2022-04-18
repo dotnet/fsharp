@@ -28,22 +28,22 @@
 }
 .mresource public FSharpSignatureData.NonTrivialBranchingBindingInEnd04
 {
-  // Offset: 0x00000000 Length: 0x00000279
+  // Offset: 0x00000000 Length: 0x00000283
   // WARNING: managed resource file FSharpSignatureData.NonTrivialBranchingBindingInEnd04 created
 }
 .mresource public FSharpOptimizationData.NonTrivialBranchingBindingInEnd04
 {
-  // Offset: 0x00000280 Length: 0x000000A6
+  // Offset: 0x00000288 Length: 0x000000A6
   // WARNING: managed resource file FSharpOptimizationData.NonTrivialBranchingBindingInEnd04 created
 }
 .module NonTrivialBranchingBindingInEnd04.exe
-// MVID: {624FA9CC-1571-A7F7-A745-0383CCA94F62}
+// MVID: {62507741-1571-A7F7-A745-038341775062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00DB0000
+// Image base: 0x02AE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -184,7 +184,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       222 (0xde)
+    // Code size       221 (0xdd)
     .maxstack  7
     .locals init (int32 V_0)
     IL_0000:  ldc.i4.8
@@ -228,47 +228,46 @@
     IL_0062:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_current@9()
     IL_0067:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
     IL_006c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$NonTrivialBranchingBindingInEnd04>'.$NonTrivialBranchingBindingInEnd04::next@9
-    IL_0071:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_next@9()
-    IL_0076:  brfalse.s  IL_00c1
+    IL_0071:  br.s       IL_00b9
 
-    IL_0078:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_current@9()
-    IL_007d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0082:  stloc.0
-    IL_0083:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
-    IL_0088:  ldloc.0
-    IL_0089:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
-    IL_008e:  ldloc.0
-    IL_008f:  ldelem     [mscorlib]System.Int32
-    IL_0094:  call       int32[] NonTrivialBranchingBindingInEnd04::get_w()
-    IL_0099:  ldloc.0
-    IL_009a:  ldelem     [mscorlib]System.Int32
-    IL_009f:  add
-    IL_00a0:  stelem     [mscorlib]System.Int32
-    IL_00a5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_next@9()
-    IL_00aa:  call       void NonTrivialBranchingBindingInEnd04::set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_00af:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_current@9()
-    IL_00b4:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00b9:  call       void NonTrivialBranchingBindingInEnd04::set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
-    IL_00be:  nop
-    IL_00bf:  br.s       IL_0071
+    IL_0073:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_current@9()
+    IL_0078:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_007d:  stloc.0
+    IL_007e:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
+    IL_0083:  ldloc.0
+    IL_0084:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
+    IL_0089:  ldloc.0
+    IL_008a:  ldelem     [mscorlib]System.Int32
+    IL_008f:  call       int32[] NonTrivialBranchingBindingInEnd04::get_w()
+    IL_0094:  ldloc.0
+    IL_0095:  ldelem     [mscorlib]System.Int32
+    IL_009a:  add
+    IL_009b:  stelem     [mscorlib]System.Int32
+    IL_00a0:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_next@9()
+    IL_00a5:  call       void NonTrivialBranchingBindingInEnd04::set_current@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
+    IL_00aa:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_current@9()
+    IL_00af:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00b4:  call       void NonTrivialBranchingBindingInEnd04::set_next@9(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>)
+    IL_00b9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> NonTrivialBranchingBindingInEnd04::get_next@9()
+    IL_00be:  brtrue.s   IL_0073
 
+    IL_00c0:  nop
     IL_00c1:  nop
-    IL_00c2:  nop
-    IL_00c3:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
-    IL_00c8:  ldc.i4.0
-    IL_00c9:  ldelem     [mscorlib]System.Int32
-    IL_00ce:  ldc.i4.3
-    IL_00cf:  bne.un.s   IL_00d5
+    IL_00c2:  call       int32[] NonTrivialBranchingBindingInEnd04::get_r()
+    IL_00c7:  ldc.i4.0
+    IL_00c8:  ldelem     [mscorlib]System.Int32
+    IL_00cd:  ldc.i4.3
+    IL_00ce:  bne.un.s   IL_00d4
 
-    IL_00d1:  ldc.i4.0
-    IL_00d2:  nop
-    IL_00d3:  br.s       IL_00d7
+    IL_00d0:  ldc.i4.0
+    IL_00d1:  nop
+    IL_00d2:  br.s       IL_00d6
 
-    IL_00d5:  ldc.i4.1
-    IL_00d6:  nop
-    IL_00d7:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00dc:  pop
-    IL_00dd:  ret
+    IL_00d4:  ldc.i4.1
+    IL_00d5:  nop
+    IL_00d6:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00db:  pop
+    IL_00dc:  ret
   } // end of method $NonTrivialBranchingBindingInEnd04::main@
 
 } // end of class '<StartupCode$NonTrivialBranchingBindingInEnd04>'.$NonTrivialBranchingBindingInEnd04
