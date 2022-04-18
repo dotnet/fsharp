@@ -517,7 +517,7 @@ module FSharpExprConvert =
                 // type.  There is no witness for this case.  This is due to the code
                 //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
                 // in FSharp.Core. 
-                | ErrorResult _  when vref.LogicalName = "op_LeftShift" && List.isSingleItem tyargs -> []
+                | ErrorResult _  when vref.LogicalName = "op_LeftShift" && List.isSingleton tyargs -> []
                 | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 

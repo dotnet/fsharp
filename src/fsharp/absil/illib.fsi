@@ -206,7 +206,7 @@ module internal List =
 
     val internal allEqual: xs:'T list -> bool when 'T: equality
 
-    val isSingleItem: xs: 'T list -> bool
+    val isSingleton: xs: 'T list -> bool
 
 module internal ResizeArray =
 

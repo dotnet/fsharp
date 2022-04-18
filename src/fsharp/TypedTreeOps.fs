@@ -2851,7 +2851,7 @@ module SimplifyTypes =
             simplify &&
             isTTyparCoercesToType tpc && 
             Zset.contains tp singletons && 
-            List.isSingleItem tp.Constraints)
+            List.isSingleton tp.Constraints)
         let inplace = inplace |> List.map (function tp, TyparConstraint.CoercesTo(ty, _) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
         { singletons = singletons

@@ -473,7 +473,7 @@ module List =
         | [] -> true
         | h::t -> t |> List.forall (fun h2 -> h = h2)
 
-    let isSingleItem xs =
+    let isSingleton xs =
         match xs with
         | [_] -> true
         | _ -> false
