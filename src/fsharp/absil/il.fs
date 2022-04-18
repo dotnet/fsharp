@@ -1030,7 +1030,6 @@ type ILAttributesStored =
        | Reader f -> ILAttributes (f metadataIndex)
        | Given attrs -> attrs
 
-
 let emptyILCustomAttrs = ILAttributes [| |]
 
 let mkILCustomAttrsFromArray (attrs: ILAttribute[]) =

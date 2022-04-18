@@ -289,13 +289,6 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray()
 FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList()
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: ILAttributes CustomAttrs
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: ILAttributes get_CustomAttrs()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: ILAttributesStored CustomAttrsStored
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: ILAttributesStored get_CustomAttrsStored()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: Int32 Index
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: Int32 get_Index()
-FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex: Void .ctor(ILAttributesStored, Int32)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -1196,8 +1189,6 @@ FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributes get_CustomAttrs()
 FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributesStored CustomAttrsStored
 FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributesStored get_CustomAttrsStored()
-FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributesStoredWithIndex CustomAttrsStoredWithIndex
-FSharp.Compiler.AbstractIL.IL+ILParameter: ILAttributesStoredWithIndex get_CustomAttrsStoredWithIndex()
 FSharp.Compiler.AbstractIL.IL+ILParameter: ILType Type
 FSharp.Compiler.AbstractIL.IL+ILParameter: ILType get_Type()
 FSharp.Compiler.AbstractIL.IL+ILParameter: Int32 MetadataIndex
@@ -1274,8 +1265,6 @@ FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributes get_CustomAttrs()
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributesStored CustomAttrsStored
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributesStored get_CustomAttrsStored()
-FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributesStoredWithIndex CustomAttrsStoredWithIndex
-FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributesStoredWithIndex get_CustomAttrsStoredWithIndex()
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILReturn WithCustomAttrs(ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILType Type
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILType get_Type()
@@ -1779,7 +1768,6 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttribElem
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttribute
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributes
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributesStored
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributesStoredWithIndex
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingConv
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingSignature
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImport
@@ -1838,8 +1826,6 @@ FSharp.Compiler.AbstractIL.IL: ILAttributes get_emptyILCustomAttrs()
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrs(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute])
 FSharp.Compiler.AbstractIL.IL: ILAttributes mkILCustomAttrsFromArray(ILAttribute[])
 FSharp.Compiler.AbstractIL.IL: ILAttributesStored storeILCustomAttrs(ILAttributes)
-FSharp.Compiler.AbstractIL.IL: ILAttributesStoredWithIndex emptyILCustomAttrsStoredWithIndex
-FSharp.Compiler.AbstractIL.IL: ILAttributesStoredWithIndex get_emptyILCustomAttrsStoredWithIndex()
 FSharp.Compiler.AbstractIL.IL: ILEventDefs emptyILEvents
 FSharp.Compiler.AbstractIL.IL: ILEventDefs get_emptyILEvents()
 FSharp.Compiler.AbstractIL.IL: ILEventDefs mkILEvents(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILEventDef])
