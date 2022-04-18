@@ -48,7 +48,7 @@ val TcOpenModuleOrNamespaceDecl: TcResultsSink  -> TcGlobals -> ImportMap -> ran
 
 val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
 
-val TypeCheckOneImplFile: 
+val CheckOneImplFile: 
     TcGlobals *
     NiceNameGenerator *
     ImportMap *
@@ -63,7 +63,7 @@ val TypeCheckOneImplFile:
     ParsedImplFileInput
         -> Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
-val TypeCheckOneSigFile : 
+val CheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool
       -> TcEnv                             
       -> ParsedSigFileInput

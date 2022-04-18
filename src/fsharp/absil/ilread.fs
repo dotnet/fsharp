@@ -218,7 +218,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
             ByteMemory.FromArray(strongBytes).AsReadOnly()
 
 
-let seekReadByte (mdv: BinaryView) addr = mdv.[addr]
+let seekReadByte (mdv: BinaryView) addr = mdv[addr]
 let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes(addr, len)
 let seekReadInt32 (mdv: BinaryView) addr = mdv.ReadInt32 addr
 let seekReadUInt16 (mdv: BinaryView) addr = mdv.ReadUInt16 addr
@@ -296,7 +296,7 @@ let sigptrCheck (bytes: byte[]) sigptr =
 
 let sigptrGetByte (bytes: byte[]) sigptr =
     sigptrCheck bytes sigptr
-    bytes.[sigptr], sigptr + 1
+    bytes[sigptr], sigptr + 1
 
 let sigptrGetBool bytes sigptr =
     let b0, sigptr = sigptrGetByte bytes sigptr
@@ -317,10 +317,10 @@ let sigptrGetInt16 bytes sigptr =
 
 let sigptrGetInt32 bytes sigptr =
     sigptrCheck bytes sigptr
-    let b0 = bytes.[sigptr]
-    let b1 = bytes.[sigptr+1]
-    let b2 = bytes.[sigptr+2]
-    let b3 = bytes.[sigptr+3]
+    let b0 = bytes[sigptr]
+    let b1 = bytes[sigptr+1]
+    let b2 = bytes[sigptr+2]
+    let b3 = bytes[sigptr+3]
     let res = int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
     res, sigptr + 4
 
@@ -385,7 +385,7 @@ let sigptrGetBytes n (bytes: byte[]) sigptr =
     else
         let res = Bytes.zeroCreate n
         for i = 0 to (n - 1) do
-            res.[i] <- bytes.[sigptr + i]
+            res[i] <- bytes[sigptr + i]
         res, sigptr + n
 
 let sigptrGetString n bytes sigptr =
@@ -583,15 +583,15 @@ let fillInstrs () =
         if i > 0xff then
             assert (i >>>& 8 = 0xfe)
             let i = (i &&& 0xff)
-            match twoByteInstrTable.[i] with
+            match twoByteInstrTable[i] with
             | I_invalid_instr -> ()
             | _ -> dprintn ("warning: duplicate decode entries for "+string i)
-            twoByteInstrTable.[i] <- f
+            twoByteInstrTable[i] <- f
         else
-            match oneByteInstrTable.[i] with
+            match oneByteInstrTable[i] with
             | I_invalid_instr -> ()
             | _ -> dprintn ("warning: duplicate decode entries for "+string i)
-            oneByteInstrTable.[i] <- f
+            oneByteInstrTable[i] <- f
     List.iter addInstr (instrs())
     List.iter (fun (x, mk) -> addInstr (x, I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
     oneByteInstrs <- Some oneByteInstrTable
@@ -600,12 +600,12 @@ let fillInstrs () =
 let rec getOneByteInstr i =
     match oneByteInstrs with
     | None -> fillInstrs(); getOneByteInstr i
-    | Some t -> t.[i]
+    | Some t -> t[i]
 
 let rec getTwoByteInstr i =
     match twoByteInstrs with
     | None -> fillInstrs(); getTwoByteInstr i
-    | Some t -> t.[i]
+    | Some t -> t[i]
 
 //---------------------------------------------------------------------
 //
@@ -714,16 +714,38 @@ let simpleIndexCompare (idx1: int) (idx2: int) =
 // The various keys for the various caches.
 //---------------------------------------------------------------------
 
+
+[<Struct>]
 type TypeDefAsTypIdx = TypeDefAsTypIdx of ILBoxity * ILGenericArgs * int
+
+[<Struct>]
 type TypeRefAsTypIdx = TypeRefAsTypIdx of ILBoxity * ILGenericArgs * int
+
+[<Struct>]
 type BlobAsMethodSigIdx = BlobAsMethodSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsFieldSigIdx = BlobAsFieldSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsPropSigIdx = BlobAsPropSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type BlobAsLocalSigIdx = BlobAsLocalSigIdx of numtypars: int * blobIdx: int32
+
+[<Struct>]
 type MemberRefAsMspecIdx = MemberRefAsMspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type MemberRefAsFspecIdx = MemberRefAsFspecIdx of numtypars: int * idx: int
+
+[<Struct>]
 type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * idx: int * valIdx: int32
+
+[<Struct>]
 type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag * idx: int
 
 //---------------------------------------------------------------------
@@ -749,7 +771,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
             res
         | _ ->
             let res = f idx
-            cache.[idx] <- res
+            cache[idx] <- res
             res
 
 let mkCacheGeneric lowMem _inbase _nm _sz =
@@ -773,7 +795,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
             v
         | _ ->
             let res = f idx
-            cache.[idx] <- res
+            cache[idx] <- res
             res
 
 //-----------------------------------------------------------------------
@@ -1076,7 +1098,7 @@ let seekReadIdx big mdv (addr: byref<int>) =
     if big then seekReadInt32Adv mdv &addr else seekReadUInt16AsInt32Adv mdv &addr
 
 let seekReadUntaggedIdx (tab: TableName) (ctxt: ILMetadataReader) mdv (addr: byref<int>) =
-    seekReadIdx ctxt.tableBigness.[tab.Index] mdv &addr
+    seekReadIdx ctxt.tableBigness[tab.Index] mdv &addr
 
 let seekReadResolutionScopeIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadTaggedIdx mkResolutionScopeTag 2 ctxt.rsBigness mdv &addr
 let seekReadTypeDefOrRefOrSpecIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadTaggedIdx mkTypeDefOrRefOrSpecTag 2 ctxt.tdorBigness mdv &addr
@@ -2334,8 +2356,8 @@ and seekReadParamExtras (ctxt: ILMetadataReader) mdv (retRes: byref<ILReturn>, p
                         MetadataIndex = idx}
    elif seq > Array.length paramsRes then dprintn "bad seq num. for param"
    else
-       paramsRes.[seq - 1] <-
-          { paramsRes.[seq - 1] with
+       paramsRes[seq - 1] <-
+          { paramsRes[seq - 1] with
                Marshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None)
                Default = (if hasDefault then Some (seekReadConstant ctxt (TaggedIndex(hc_ParamDef, idx))) else None)
                Name = readStringHeapOption ctxt nameIdx
@@ -2592,12 +2614,12 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
        | true, l -> l
        | _ ->
            let lab = generateCodeLabel()
-           labelsOfRawOffsets.[rawOffset] <- lab
+           labelsOfRawOffsets[rawOffset] <- lab
            lab
 
    let markAsInstructionStart rawOffset ilOffset =
        let lab = rawToLabel rawOffset
-       ilOffsetsOfLabels.[lab] <- ilOffset
+       ilOffsetsOfLabels[lab] <- ilOffset
 
    let ibuf = ResizeArray<_>(sz/2)
    let mutable curr = 0
@@ -3039,8 +3061,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
                     let key = (tryStart, tryFinish)
                     match sehMap.TryGetValue key with
-                    | true, prev -> sehMap.[key] <- prev @ [clause]
-                    | _ -> sehMap.[key] <- [clause])
+                    | true, prev -> sehMap[key] <- prev @ [clause]
+                    | _ -> sehMap[key] <- [clause])
                   clauses
                 ([], sehMap) ||> Seq.fold (fun acc (KeyValue(key, bs)) -> [ for b in bs -> {Range=key; Clause=b}: ILExceptionSpec ] @ acc)
              seh <- sehClauses
@@ -3183,7 +3205,7 @@ and seekReadNestedExportedTypes ctxt (exported: _ []) (nested: Lazy<_ []>) paren
       (lazy
             nested.Force().[parentIdx-1]
             |> List.map (fun i ->
-                let flags, _tok, nameIdx, namespaceIdx, _implIdx = exported.[i-1]
+                let flags, _tok, nameIdx, namespaceIdx, _implIdx = exported[i-1]
                 { Name = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                   Access = (match typeAccessOfFlags flags with
                             | ILTypeDefAccess.Nested n -> n
@@ -3204,14 +3226,14 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
             let nested = lazy (
                 let nested = [| for _i in 1..numRows -> [] |]
                 for i = 1 to numRows do
-                    let flags,_,_,_,TaggedIndex(tag, idx) = exported.[i-1]
+                    let flags,_,_,_,TaggedIndex(tag, idx) = exported[i-1]
                     if not (isTopTypeDef flags) && (tag = i_ExportedType) then
-                        nested.[idx-1] <- i :: nested.[idx-1]
+                        nested[idx-1] <- i :: nested[idx-1]
                 nested)
 
             // return top exported types
             [ for i = 1 to numRows do
-                let flags, _tok, nameIdx, namespaceIdx, implIdx = exported.[i-1]
+                let flags, _tok, nameIdx, namespaceIdx, implIdx = exported[i-1]
                 let (TaggedIndex(tag, _idx)) = implIdx
 
                 // if not a nested type
@@ -3281,7 +3303,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
               let c= seekReadByteAsInt32 mdv (pos + 8 + n)
               if c = 0 then
                   fin <- true
-              elif n >= Array.length name || c <> name.[n] then
+              elif n >= Array.length name || c <> name[n] then
                   res <- false
               n <- n + 1
           if res then Some(offset + metadataPhysLoc, length)
@@ -3386,11 +3408,11 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
         for i = 0 to 63 do
             if (valid &&& (int64 1 <<< i)) <> int64 0 then
                 present <- i :: present
-                numRows.[i] <- (seekReadInt32 mdv prevNumRowIdx)
+                numRows[i] <- (seekReadInt32 mdv prevNumRowIdx)
                 prevNumRowIdx <- prevNumRowIdx + 4
         List.rev present, numRows, prevNumRowIdx
 
-    let getNumRows (tab: TableName) = tableRowCount.[tab.Index]
+    let getNumRows (tab: TableName) = tableRowCount[tab.Index]
     let numTables = tablesPresent.Length
     let stringsBigness = (heapSizes &&& 1) <> 0
     let guidsBigness = (heapSizes &&& 2) <> 0
@@ -3498,7 +3520,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
             | GGuid -> (if guidsBigness then 4 else 2)
             | Blob -> (if blobsBigness then 4 else 2)
             | SString -> (if stringsBigness then 4 else 2)
-            | SimpleIndex tab -> (if tableBigness.[tab.Index] then 4 else 2)
+            | SimpleIndex tab -> (if tableBigness[tab.Index] then 4 else 2)
             | TypeDefOrRefOrSpec -> (if tdorBigness then 4 else 2)
             | TypeOrMethodDef -> (if tomdBigness then 4 else 2)
             | HasConstant -> (if hcBigness then 4 else 2)
@@ -3519,8 +3541,8 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
          let res = Array.create 64 0x0
          let mutable prevTablePhysLoc = startOfTables
          for i = 0 to 63 do
-             res.[i] <- prevTablePhysLoc
-             prevTablePhysLoc <- prevTablePhysLoc + (tableRowCount.[i] * tableRowSizes.[i])
+             res[i] <- prevTablePhysLoc
+             prevTablePhysLoc <- prevTablePhysLoc + (tableRowCount[i] * tableRowSizes[i])
          res
 
     let inbase = FileSystemUtils.fileNameOfPath fileName + ": "
@@ -3553,7 +3575,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
     let cacheMethodSemanticsRow = mkCacheInt32 reduceMemoryUsage inbase "MethodSemantics Rows" (getNumRows TableNames.MethodSemantics / 20 + 1)
     let cacheTypeDefRow = mkCacheInt32 reduceMemoryUsage inbase "ILTypeDef Rows" (getNumRows TableNames.TypeDef / 20 + 1)
 
-    let rowAddr (tab: TableName) idx = tablePhysLocations.[tab.Index] + (idx - 1) * tableRowSizes.[tab.Index]
+    let rowAddr (tab: TableName) idx = tablePhysLocations[tab.Index] + (idx - 1) * tableRowSizes[tab.Index]
 
     // Build the reader context
     // Use an initialization hole
@@ -4026,7 +4048,7 @@ let OpenILModuleReader fileName opts =
         let ilModuleReader = ilModuleReader :> ILModuleReader
         if keyOk then
             ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
-            ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
+            ilModuleReaderCache2[key] <- System.WeakReference<_>(ilModuleReader)
         ilModuleReader
 
 
@@ -4056,7 +4078,7 @@ let OpenILModuleReader fileName opts =
         // Readers with PDB reader disposal logic don't go in the cache. Note the PDB reader is only used in static linking.
         if keyOk && opts.pdbDirPath.IsNone then
             ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
-            ilModuleReaderCache2.[key] <- WeakReference<_>(ilModuleReader)
+            ilModuleReaderCache2[key] <- WeakReference<_>(ilModuleReader)
 
         ilModuleReader
 

@@ -1835,7 +1835,7 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
                 MakeAndPublishSimpleVals cenv env names
 
             if nameResolutions.Count <> 0 then
-                let _, _, _, _, _, _, ad, m1, _replacing = nameResolutions.[0]
+                let _, _, _, _, _, _, ad, m1, _replacing = nameResolutions[0]
                 // mergedNameEnv - name resolution env that contains all names
                 // mergedRange - union of ranges of names
                 let mergedNameEnv, mergedRange =
@@ -2971,16 +2971,20 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
 
     let g = cenv.g
 
-    let conditionalCallDefineOpt = TryFindMethInfoStringAttribute g m g.attrib_ConditionalAttribute minfo
+    let shouldEraseCall =
+        match cenv.conditionalDefines with
+        | None -> false
+        | Some defines ->
 
-    match conditionalCallDefineOpt, cenv.conditionalDefines with
-    | Some d, Some defines when not (List.contains d defines) ->
+        match TryFindMethInfoStringAttribute g m g.attrib_ConditionalAttribute minfo with
+        | None -> false
+        | Some d -> not (List.contains d defines)
 
+    if shouldEraseCall then
         // Methods marked with 'Conditional' must return 'unit'
         UnifyTypes cenv env m g.unit_ty (minfo.GetFSharpReturnTy(cenv.amap, m, minst))
         mkUnit g m, g.unit_ty
-
-    | _ ->
+    else
 #if !NO_TYPEPROVIDERS
         match minfo with
         | ProvidedMeth(_, mi, _, _) ->
@@ -4394,7 +4398,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, tupInfo, unsortedFieldIds)
 
         // Sort into canonical order
-        let sortedFieldTys, sortedCheckedArgTys = List.zip args args' |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds.[i].idText) |> List.map snd |> List.unzip
+        let sortedFieldTys, sortedCheckedArgTys = List.zip args args' |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
 
         sortedFieldTys |> List.iteri (fun i (x,_) ->
             let item = Item.AnonRecdField(anonInfo, sortedCheckedArgTys, i, x.idRange)
@@ -4653,7 +4657,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
             let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
             let spName = sp.PUntaint((fun sp -> sp.Name), m)
             if i < unnamedArgs.Length then
-                let v = unnamedArgs.[i]
+                let v = unnamedArgs[i]
                 let v, _tpenv = TcStaticConstantParameter cenv env tpenv spKind v None container
                 v
             else
@@ -5252,7 +5256,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, t
 
     match args with
     | SynArgPats.Pats _ -> ()
-    | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern apinfo.ActiveTags.[idx], m))
+    | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern apinfo.ActiveTags[idx], m))
 
     let args = GetSynArgPatterns args
 
@@ -5344,15 +5348,15 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags (tpenv, name
 
                     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, emptyTyparInst, ItemOccurence.Pattern, ad)
 
-                    match box result.[idx] with
-                    | Null -> result.[idx] <- pat
+                    match box result[idx] with
+                    | Null -> result[idx] <- pat
                     | NonNull _ ->
                         extraPatterns.Add pat
                         errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce id.idText, id.idRange))
 
             for i = 0 to numArgTys - 1 do
-                if isNull (box result.[i]) then
-                    result.[i] <- SynPat.Wild (m.MakeSynthetic())
+                if isNull (box result[i]) then
+                    result[i] <- SynPat.Wild (m.MakeSynthetic())
 
             let extraPatterns = List.ofSeq extraPatterns
 
@@ -5896,7 +5900,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
-    | SynExpr.Match (_mMatch, spMatch, synInputExpr, _mWith, synClauses, _m) ->
+    | SynExpr.Match (spMatch, synInputExpr, synClauses, _m, _trivia) ->
 
         let inputExpr, inputTy, tpenv =
             let env = { env with eIsControlFlow = false }
@@ -7739,7 +7743,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         let sortedIndexedArgs =
             unsortedFieldIdsAndSynExprsGiven
             |> List.indexed
-            |> List.sortBy (fun (i,_) -> unsortedFieldIds.[i].idText)
+            |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText)
 
         // Map from sorted indexes to unsorted indexes
         let sigma = List.map fst sortedIndexedArgs |> List.toArray
@@ -7752,7 +7756,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         let unsortedFieldTys =
             sortedFieldTys
             |> List.indexed
-            |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+            |> List.sortBy (fun (sortedIdx, _) -> sigma[sortedIdx])
             |> List.map snd
 
         let flexes = unsortedFieldTys |> List.map (fun _ -> true)
@@ -7831,7 +7835,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         let unsortedFieldTysAll =
             sortedFieldTysAll
             |> List.indexed
-            |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+            |> List.sortBy (fun (sortedIdx, _) -> sigma[sortedIdx])
             |> List.map snd
 
         let unsortedFieldTysGiven =
@@ -7854,8 +7858,8 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
             unsortedIdAndExprsAll
             |> Array.mapi (fun unsortedIdx (_, expr) ->
                 match expr with
-                | Choice1Of2 _ -> unsortedFieldExprsGiven.[unsortedIdx]
-                | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr g subExpr) unsortedFieldTysAll.[unsortedIdx]; subExpr)
+                | Choice1Of2 _ -> unsortedFieldExprsGiven[unsortedIdx]
+                | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr g subExpr) unsortedFieldTysAll[unsortedIdx]; subExpr)
             |> List.ofArray
 
         // Permute the expressions to sorted order in the TAST
@@ -8593,7 +8597,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                 // first: put all positional arguments
                 let mutable currentIndex = 0
                 for arg in unnamedArgs do
-                    fittedArgs.[currentIndex] <- arg
+                    fittedArgs[currentIndex] <- arg
                     currentIndex <- currentIndex + 1
 
                 let SEEN_NAMED_ARGUMENT = -1
@@ -8605,8 +8609,8 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                 for _, id, arg in namedCallerArgs do
                     match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
                     | Some i ->
-                        if isNull(box fittedArgs.[i]) then
-                            fittedArgs.[i] <- arg
+                        if isNull(box fittedArgs[i]) then
+                            fittedArgs[i] <- arg
                             let argItem =
                                 match item with
                                 | Item.UnionCase (uci, _) -> Item.UnionCaseField (uci, i)
@@ -8625,14 +8629,14 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                         let isSpecialCaseForBackwardCompatibility =
                             (currentIndex <> SEEN_NAMED_ARGUMENT) &&
                             (currentIndex < numArgTys) &&
-                            match stripTyEqns g argTys.[currentIndex] with
+                            match stripTyEqns g argTys[currentIndex] with
                             | TType_app(tcref, _, _) -> tyconRefEq g g.bool_tcr tcref || tyconRefEq g g.system_Bool_tcref tcref
                             | TType_var _ -> true
                             | _ -> false
 
                         if isSpecialCaseForBackwardCompatibility then
-                            assert (isNull(box fittedArgs.[currentIndex]))
-                            fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parameters
+                            assert (isNull(box fittedArgs[currentIndex]))
+                            fittedArgs[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parameters
                             currentIndex <- currentIndex + 1
                         else
                             match item with
@@ -8729,7 +8733,7 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
         | Some minfoAfterStaticArguments ->
 
             // Replace the resolution including the static parameters, plus the extra information about the original method info
-            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos[0])
             CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, [], ItemOccurence.Use, env.eAccessRights)
 
             match otherDelayed with
@@ -8756,7 +8760,7 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
 
     | _ ->
 #if !NO_TYPEPROVIDERS
-        if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then
+        if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
 #endif
         TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic delayed
@@ -9181,12 +9185,12 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with
         | Some minfoAfterStaticArguments ->
             // Replace the resolution including the static parameters, plus the extra information about the original method info
-            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos[0])
             CallNameResolutionSinkReplacing cenv.tcSink (mExprAndItem, env.NameEnv, item, [], ItemOccurence.Use, env.eAccessRights)
 
             TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag delayed
         | None ->
-        if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then
+        if not minfos.IsEmpty && minfos[0].ProvidedStaticParameterInfo.IsSome then
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
 #endif
 
@@ -9488,19 +9492,23 @@ and TcMethodApplication
 
             let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
 
+            let singleMethodCurriedArgs =
+                match candidates with
+                | [calledMeth] when List.forall isNil namedCurriedCallerArgs  ->
+                    let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+                    match curriedCalledArgs with
+                    | [arg :: _] when isSimpleFormalArg arg -> Some(curriedCalledArgs)
+                    | _ -> None
+                | _ -> None
+
             // "single named item" rule. This is where we have a single accessible method
             //      member x.M(arg1)
             // being used with
             //      x.M (x, y)
             // Without this rule this requires
             //      x.M ((x, y))
-            match candidates with
-            | [calledMeth]
-                  when (namedCurriedCallerArgs |> List.forall isNil &&
-                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                        curriedCalledArgs.Length = 1 &&
-                        curriedCalledArgs.Head.Length = 1 &&
-                        curriedCalledArgs.Head.Head |> isSimpleFormalArg) ->
+            match singleMethodCurriedArgs, unnamedCurriedCallerArgs with
+            | Some [[_]], _ ->
                 let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
                 let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
                 (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
@@ -9512,15 +9520,7 @@ and TcMethodApplication
             // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p"
             // Without this rule this requires
             //      x.M (fst p, snd p)
-            | [calledMeth]
-                  when (namedCurriedCallerArgs |> List.forall isNil &&
-                        unnamedCurriedCallerArgs.Length = 1 &&
-                        unnamedCurriedCallerArgs.Head.Length = 1 &&
-                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                        curriedCalledArgs.Length = 1 &&
-                        curriedCalledArgs.Head.Length > 1 &&
-                        curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
-
+            | Some [_ :: args], [[_]] when List.forall isSimpleFormalArg args ->
                 // The call lambda has function type
                 let exprTy = mkFunTy g (NewInferenceType g) exprTy.Commit
 
@@ -9540,9 +9540,9 @@ and TcMethodApplication
                 (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
 
     let CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
-       let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-       curriedMethodArgAttribs.Length = 1 &&
-       curriedMethodArgAttribs.Head.Length = n
+       match calledMeth.NumArgs with
+       | [argAttribs] -> argAttribs = n
+       | _ -> false
 
     let GenerateMatchingSimpleArgumentTypes (calledMeth: MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
@@ -9977,7 +9977,7 @@ and TcUnnamedMethodArg cenv env (lambdaPropagationInfo, tpenv) (i, j, CallerArg(
     // Try to find the lambda propagation info for the corresponding unnamed argument at this position
     let lambdaPropagationInfoForArg =
         [| for unnamedInfo, _ in lambdaPropagationInfo ->
-             if i < unnamedInfo.Length && j < unnamedInfo.[i].Length then unnamedInfo.[i].[j] else NoInfo |]
+             if i < unnamedInfo.Length && j < unnamedInfo[i].Length then unnamedInfo[i][j] else NoInfo |]
     TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(argTy, mArg, isOpt, argExpr))
 
 and TcMethodNamedArgs cenv env lambdaPropagationInfo tpenv args =
@@ -10014,16 +10014,16 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
 
                 if prefixOfLambdaArgsForEachOverload.Length > 0 then
-                    let numLambdaVars = prefixOfLambdaArgsForEachOverload.[0].Length
+                    let numLambdaVars = prefixOfLambdaArgsForEachOverload[0].Length
                     // Fold across the lambda var positions checking if all method overloads imply the same argument type for a lambda variable.
                     // If so, force the caller to have a function type that looks like the calledLambdaArgTy.
                     // The loop variable callerLambdaTyOpt becomes None if something failed.
                     let rec loop callerLambdaTy lambdaVarNum =
                         if lambdaVarNum < numLambdaVars then
-                            let calledLambdaArgTy = prefixOfLambdaArgsForEachOverload.[0].[lambdaVarNum]
+                            let calledLambdaArgTy = prefixOfLambdaArgsForEachOverload[0][lambdaVarNum]
                             let allRowsGiveSameArgumentType =
                                 prefixOfLambdaArgsForEachOverload
-                                |> Array.forall (fun row -> typeEquiv g calledLambdaArgTy row.[lambdaVarNum])
+                                |> Array.forall (fun row -> typeEquiv g calledLambdaArgTy row[lambdaVarNum])
 
                             if allRowsGiveSameArgumentType then
                                 // Force the caller to be a function type.

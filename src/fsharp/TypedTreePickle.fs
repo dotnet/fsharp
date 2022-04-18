@@ -76,7 +76,7 @@ type Table<'T> =
     member tbl.Add x =
         let n = tbl.count
         tbl.count <- tbl.count + 1
-        tbl.tbl.[x] <- n
+        tbl.tbl[x] <- n
         tbl.rows.Add x
         n
     member tbl.FindOrAdd x =
@@ -144,7 +144,7 @@ type NodeInTable<'Data, 'Node> =
       IsLinked : 'Node -> bool
       Name : string
       Nodes : 'Node[] }
-    member x.Get n = x.Nodes.[n]
+    member x.Get n = x.Nodes[n]
     member x.Count = x.Nodes.Length
 
     static member Create (mkEmpty, lnk, isLinked, nm, n) =
@@ -475,7 +475,7 @@ let encode_uniq (tbl: Table<_>) key = tbl.FindOrAdd key
 let lookup_uniq st tbl n =
     let arr = tbl.itbl_rows
     if n < 0 || n >= arr.Length then ufailwith st ("lookup_uniq in table "+tbl.itbl_name+" out of range, n = "+string n+ ", sizeof(tab) = " + string (Array.length arr))
-    arr.[n]
+    arr[n]
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle arrays and lists. For lists use the same binary format as arrays so we can switch
@@ -484,7 +484,7 @@ let lookup_uniq st tbl n =
 
 let p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
-        f x.[i] st
+        f x[i] st
 
 let p_array f (x: 'T[]) st =
     p_int x.Length st
@@ -581,7 +581,7 @@ let p_hole2 () =
 let u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
-        res.[i] <- f st
+        res[i] <- f st
     res
 
 let u_array f st =
@@ -633,7 +633,7 @@ let u_array_revi f st =
     let n = u_int st
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
-        res.[i] <- f st (n-1-i)
+        res[i] <- f st (n-1-i)
     res
 
 // Mark up default constraints with a priority in reverse order: last gets 0 etc. See comment on TyparConstraint.DefaultsTo
@@ -1240,8 +1240,8 @@ let simple_instrs =
     ]
 
 let encode_table = Dictionary<_, _>(300, HashIdentity.Structural)
-let _ = List.iter (fun (icode, i) -> encode_table.[i] <- icode) simple_instrs
-let encode_instr si = encode_table.[si]
+let _ = List.iter (fun (icode, i) -> encode_table[i] <- icode) simple_instrs
+let encode_instr si = encode_table[si]
 let isNoArgInstr s = encode_table.ContainsKey s
 
 let decoders =
@@ -1281,7 +1281,7 @@ let decoders =
 
 let decode_tab =
     let tab = Array.init 256 (fun n -> (fun st -> ufailwith st ("no decoder for instruction "+string n)))
-    let add_instr (icode, f) =  tab.[icode] <- f
+    let add_instr (icode, f) =  tab[icode] <- f
     List.iter add_instr decoders
     List.iter (fun (icode, mk) -> add_instr (icode, (fun _ -> mk))) simple_instrs
     tab
@@ -1324,7 +1324,7 @@ let p_ILInstr x st =
 
 let u_ILInstr st =
     let n = u_byte st
-    decode_tab.[n] st
+    decode_tab[n] st
 
 
 

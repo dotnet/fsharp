@@ -318,20 +318,22 @@ type TcConfig with
            || isNetModule then
 
             let searchPaths =
-                // if this is a #r reference (not from dummy range), make sure the directory of the declaring
-                // file is included in the search path. This should ideally already be one of the search paths, but
-                // during some global checks it won't be. We append to the end of the search list so that this is the last
-                // place that is checked.
-                let isPoundRReference (r: range) =
-                    not (equals r range0) &&
-                    not (equals r rangeStartup) &&
-                    not (equals r rangeCmdArgs) &&
-                    FileSystem.IsPathRootedShim r.FileName
+                seq {
+                    yield! tcConfig.GetSearchPathsForLibraryFiles()
 
-                if isPoundRReference m then
-                    tcConfig.GetSearchPathsForLibraryFiles() @ [Path.GetDirectoryName(m.FileName)]
-                else
-                    tcConfig.GetSearchPathsForLibraryFiles()
+                    // if this is a #r reference (not from dummy range), make sure the directory of the declaring
+                    // file is included in the search path. This should ideally already be one of the search paths, but
+                    // during some global checks it won't be. We append to the end of the search list so that this is the last
+                    // place that is checked.
+                    let isPoundRReference (r: range) =
+                        not (equals r range0) &&
+                        not (equals r rangeStartup) &&
+                        not (equals r rangeCmdArgs) &&
+                        FileSystem.IsPathRootedShim r.FileName
+
+                    if isPoundRReference m then
+                        yield Path.GetDirectoryName(m.FileName)
+                }
 
             let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
             match resolved with
@@ -455,7 +457,7 @@ type TcConfig with
                 |> Array.filter(fun (_, refs)->refs |> isNil |> not)
 
             let toMsBuild = [|0..groupedReferences.Length-1|]
-                             |> Array.map(fun i->(p13 groupedReferences.[i]), (p23 groupedReferences.[i]), i)
+                             |> Array.map(fun i->(p13 groupedReferences[i]), (p23 groupedReferences[i]), i)
                              |> Array.filter (fun (_, i0, _)->resolvedAsFile|>Array.exists(fun (i1, _) -> i0=i1)|>not)
                              |> Array.map(fun (ref, _, i)->ref, string i)
 
@@ -466,7 +468,7 @@ type TcConfig with
                 resolutions
                     |> Array.map(fun resolvedFile ->
                                     let i = int resolvedFile.baggage
-                                    let _, maxIndexOfReference, ms = groupedReferences.[i]
+                                    let _, maxIndexOfReference, ms = groupedReferences[i]
                                     let assemblyResolutions =
                                         ms|>List.map(fun originalReference ->
                                                     Debug.Assert(FileSystem.IsPathRootedShim(resolvedFile.itemSpec), sprintf "msbuild-resolved path is not absolute: '%s'" resolvedFile.itemSpec)
@@ -1141,7 +1143,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             match generatedTypeRoots.TryGetValue ilTyRef with
             | true, (index, _) -> index
             | false, _ -> generatedTypeRoots.Count
-        generatedTypeRoots.[ilTyRef] <- (index, root)
+        generatedTypeRoots[ilTyRef] <- (index, root)
 
     member tcImports.ProviderGeneratedTypeRoots =
       tciLock.AcquireLock <| fun tcitok ->
@@ -1206,8 +1208,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 if not (auxModTable.ContainsKey key) then
                     let resolution = tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.RaiseError, AssemblyReference(m, key, None)) |> Option.get
                     let ilModule, _ = tcImports.OpenILBinaryModule(ctok, resolution.resolvedPath, m)
-                    auxModTable.[key] <- ilModule
-                auxModTable.[key]
+                    auxModTable[key] <- ilModule
+                auxModTable[key]
 
             | _ ->
                 error(InternalError("Unexpected ILScopeRef.Local or ILScopeRef.Assembly in exported type table", m))
