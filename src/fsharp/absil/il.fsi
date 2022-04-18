@@ -852,15 +852,6 @@ type ILAttributes =
 [<NoEquality; NoComparison>]
 type ILAttributesStored
 
-[<Struct>]
-type ILAttributesStoredWithIndex =
-    val CustomAttrsStored: ILAttributesStored
-    val Index: int
-
-    new: ILAttributesStored * int -> ILAttributesStoredWithIndex
-
-    member CustomAttrs: ILAttributes
-
 
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -877,7 +868,6 @@ type ILParameter =
       MetadataIndex: int32 }
 
     member CustomAttrs: ILAttributes
-    member CustomAttrsStoredWithIndex: ILAttributesStoredWithIndex
 
 type ILParameters = ILParameter list
 
@@ -892,7 +882,6 @@ type ILReturn =
       MetadataIndex: int32  }
 
     member CustomAttrs: ILAttributes
-    member CustomAttrsStoredWithIndex: ILAttributesStoredWithIndex
 
     member WithCustomAttrs: customAttrs: ILAttributes -> ILReturn
 
@@ -1936,7 +1925,6 @@ val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
 val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
-val emptyILCustomAttrsStoredWithIndex: ILAttributesStoredWithIndex
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
