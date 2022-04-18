@@ -28,22 +28,22 @@
 }
 .mresource public FSharpSignatureData.ListExpressionStepping03
 {
-  // Offset: 0x00000000 Length: 0x000002B6
+  // Offset: 0x00000000 Length: 0x000002C4
   // WARNING: managed resource file FSharpSignatureData.ListExpressionStepping03 created
 }
 .mresource public FSharpOptimizationData.ListExpressionStepping03
 {
-  // Offset: 0x000002C0 Length: 0x000000AC
+  // Offset: 0x000002C8 Length: 0x000000AC
   // WARNING: managed resource file FSharpOptimizationData.ListExpressionStepping03 created
 }
 .module ListExpressionStepping03.exe
-// MVID: {62465220-15D3-26BB-A745-038320524662}
+// MVID: {62500EE7-15D3-26BB-A745-0383E70E5062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03530000
+// Image base: 0x025F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,40 +59,38 @@
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             f2() cil managed
     {
-      // Code size       72 (0x48)
+      // Code size       70 (0x46)
       .maxstack  5
       .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_0,
                valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_1)
       IL_0000:  ldc.i4.0
       IL_0001:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::.ctor(!0)
       IL_0006:  stloc.0
-      IL_0007:  nop
-      IL_0008:  ldloc.0
-      IL_0009:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-      IL_000e:  ldc.i4.4
-      IL_000f:  bge.s      IL_0040
+      IL_0007:  br.s       IL_0035
 
-      IL_0011:  ldloc.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-      IL_0018:  ldc.i4.1
-      IL_0019:  add
-      IL_001a:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
-      IL_001f:  ldstr      "hello"
-      IL_0024:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0029:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_002e:  pop
-      IL_002f:  ldloca.s   V_1
-      IL_0031:  ldloc.0
-      IL_0032:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
-      IL_0037:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_003c:  nop
-      IL_003d:  nop
-      IL_003e:  br.s       IL_0008
+      IL_0009:  ldloc.0
+      IL_000a:  ldloc.0
+      IL_000b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+      IL_0010:  ldc.i4.1
+      IL_0011:  add
+      IL_0012:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::set_contents(!0)
+      IL_0017:  ldstr      "hello"
+      IL_001c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_0021:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0026:  pop
+      IL_0027:  ldloca.s   V_1
+      IL_0029:  ldloc.0
+      IL_002a:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+      IL_002f:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_0034:  nop
+      IL_0035:  ldloc.0
+      IL_0036:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>::get_contents()
+      IL_003b:  ldc.i4.4
+      IL_003c:  blt.s      IL_0009
 
-      IL_0040:  ldloca.s   V_1
-      IL_0042:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-      IL_0047:  ret
+      IL_003e:  ldloca.s   V_1
+      IL_0040:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_0045:  ret
     } // end of method ListExpressionSteppingTest3::f2
 
   } // end of class ListExpressionSteppingTest3
