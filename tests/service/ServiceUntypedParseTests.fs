@@ -1506,6 +1506,15 @@ let (x, y: string) = (12, "hello")
         Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for argument 'x'")
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected annotation for argument 'y'")
 
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - binding - second value annotated``() =
+        let source = """
+let x: int = 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
+
+
 module LambdaRecognition =
     [<Test>]
     let ``IsBindingALambdaAtPosition - recognize a lambda``() =

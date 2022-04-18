@@ -402,8 +402,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         result.IsSome
 
     member _.IsTypeAnnotationGivenAtPosition pos =
-        let result =
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+        let walker =
+            { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.Typed (_expr, _typeExpr, range) when Position.posEq range.Start pos ->
@@ -416,6 +416,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | _ ->
                         let exprFunc pat =
                             match pat with
+                            // (s: string)
                             | SynSimplePat.Typed (_pat, _targetExpr, range) when Position.posEq range.Start pos ->
                                 Some range
                             | _ ->
@@ -424,10 +425,18 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         pats |> List.tryPick exprFunc
 
                 override _.VisitPat(_path, defaultTraverse, pat) =
+                    // (s: string)
                     match pat with
                     | SynPat.Typed (_pat, _targetType, range) when Position.posEq range.Start pos ->
                         Some range
-                    | _ -> defaultTraverse pat })
+                    | _ -> defaultTraverse pat
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    // let x : int = 12
+                    match binding with
+                    | SynBinding(headPat = SynPat.Named (range = patRange); returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> Some patRange
+                    | _ -> defaultTraverse binding
+            }
+        let result = SyntaxTraversal.Traverse(pos, input, walker)
         result.IsSome
 
         member _.IsBindingALambdaAtPosition pos =
