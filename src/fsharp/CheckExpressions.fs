@@ -2532,6 +2532,9 @@ module BindingNormalization =
             | SynPat.Attrib(_, _, m) ->
                 error(Error(FSComp.SR.tcAttributesInvalidInPatterns(), m))
 
+            | SynPat.Paren(pat = SynPat.Operator(operator, vis, _)) ->
+                NormalizedBindingPat(SynPat.Named(operator.Ident, false, vis, pat.Range), rhsExpr, valSynData, inferredTyparDecls)
+            
             | _ ->
                 NormalizedBindingPat(pat, rhsExpr, valSynData, inferredTyparDecls)
         normPattern pat
