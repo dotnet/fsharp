@@ -476,6 +476,11 @@ module List =
         | [] -> true
         | h::t -> t |> List.forall (fun h2 -> h = h2)
 
+    let isSingleton xs =
+        match xs with
+        | [_] -> true
+        | _ -> false
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

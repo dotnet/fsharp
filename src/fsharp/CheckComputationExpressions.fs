@@ -326,9 +326,15 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         |> dict
 
     /// Decide if the identifier represents a use of a custom query operator
-    let tryGetDataForCustomOperation (nm: Ident) = 
+    let tryGetDataForCustomOperation (nm: Ident) =
+        let isOpDataCountAllowed opDatas =
+            match opDatas with
+            | [_] -> true
+            | _ :: _ -> cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations
+            | _ -> false
+
         match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
-        | true, opDatas when (opDatas.Length = 1 || (opDatas.Length > 0 && cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations)) -> 
+        | true, opDatas when isOpDataCountAllowed opDatas -> 
             for opData in opDatas do
                 let opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo = opData
                 if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
@@ -1907,10 +1913,10 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             //
             // This transformation is visible in quotations and thus needs to remain.
             | (TPat_as (TPat_wild _, PBind (v, _), _), 
-                vs, 
+                [_],
                 DebugPoints(Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
-                    when vs.Length = 1 && valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
-                    
+                    when valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
+
                 // The debug point mFor is attached to the 'map'
                 // The debug point mIn is attached to the lambda
                 // Note: the 'yield' part of the debug point for 'yield expr' is currently lost in debug points. 

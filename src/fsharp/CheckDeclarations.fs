@@ -4658,7 +4658,7 @@ module TcDeclarations =
             let _, tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res -> res
-                | res when inSig && longPath.Length = 1 ->
+                | res when inSig && List.isSingleton longPath ->
                     errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
                     ForceRaise res
                 | res -> ForceRaise res
