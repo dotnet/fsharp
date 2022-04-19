@@ -50,9 +50,9 @@ module Basic =
             (Error 646, Line 7, Col 13, Line 7, Col 16, "Multiple visibility attributes have been specified for this identifier. 'let' bindings in classes are always private, as are any 'let' bindings inside expressions.")
         ]
 
-    //SOURCE=E_privateThingsInaccessible.fs                                           # E_PrivateThingsInaccessible.fs
+    //SOURCE=E_privateThingsInaccessible.fs                                           # E_privateThingsInaccessible.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible.fs"|])>]
-    let ``E_PrivateThingsInaccessible_fs`` compilation =
+    let ``E_privateThingsInaccessible_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail
@@ -62,8 +62,8 @@ module Basic =
             (Error 491, Line 23, Col 17, Line 23, Col 34, "The member or object constructor 'PrivateMethod' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
         ]
 
-    //SOURCE=E_privateThingsInaccessible02.fs SCFLAGS="--test:ErrorRanges"            # E_PrivateThingsInaccessible02.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible02.fs"|])>]
+    //SOURCE=E_privateThingsInaccessible02.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible02.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible02.fs"|])>]
     let ``E_PrivateThingsInaccessible02_fs`` compilation =
         compilation
         |> verifyCompile
@@ -77,8 +77,8 @@ module Basic =
             (Error 1094, Line 30, Col 17, Line 30, Col 20, "The value 'g' is not accessible from this code location")
         ]
 
-    //SOURCE=E_privateThingsInaccessible03.fs SCFLAGS="--test:ErrorRanges"            # E_PrivateThingsInaccessible03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible03.fs"|])>]
+    //SOURCE=E_privateThingsInaccessible03.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible03.fs"|])>]
     let ``E_PrivateThingsInaccessible03_fs`` compilation =
         compilation
         |> verifyCompile
@@ -89,8 +89,8 @@ module Basic =
             (Error 39, Line 15, Col 13, Line 15, Col 26, "The value, namespace, type or module 'PrivateModule' is not defined.")
         ]
 
-    //SOURCE=E_privateThingsInaccessible04.fs SCFLAGS="--test:ErrorRanges"            # E_PrivateThingsInaccessible04.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible04.fs"|])>]
+    //SOURCE=E_privateThingsInaccessible04.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible04.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible04.fs"|])>]
     let ``E_PrivateThingsInaccessible04_fs`` compilation =
         compilation
         |> verifyCompile
@@ -102,8 +102,8 @@ module Basic =
             (Error 39, Line 29, Col 17, Line 29, Col 18, "The value or constructor 'g' is not defined.")
         ]
 
-    //SOURCE=E_privateThingsInaccessible05.fs SCFLAGS="--test:ErrorRanges"            # E_PrivateThingsInaccessible05.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible05.fs"|])>]
+    //SOURCE=E_privateThingsInaccessible05.fs SCFLAGS="--test:ErrorRanges"            # E_privateThingsInaccessible05.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible05.fs"|])>]
     let ``E_PrivateThingsInaccessible05_fs`` compilation =
         compilation
         |> verifyCompile
