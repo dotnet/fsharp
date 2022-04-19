@@ -5238,21 +5238,26 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
     with _ -> false
 
 and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (id, isMemberThis, vis, m) =
-    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
-    | Item.ActivePatternCase apref as item ->
-        TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, item, apref, SynArgPats.Pats [], m)
-
-    | Item.UnionCase _ | Item.ExnCase _ as item ->
-        TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags (tpenv, names, takenNames) ty (id.idRange, item, SynArgPats.Pats [], m)
-
-    | Item.Value vref ->
-        TcPatLongIdentLiteral warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, vref, SynArgPats.Pats [], m)
-
-    | _ ->
+    let defaultTc () =
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
         
         (fun values -> TPat_as (pat' values, bindf values, m)), acc
+    
+    if not isMemberThis then
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+        | Item.ActivePatternCase apref as item ->
+            TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, item, apref, SynArgPats.Pats [], m)
+
+        | Item.UnionCase _ | Item.ExnCase _ as item ->
+            TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags (tpenv, names, takenNames) ty (id.idRange, item, SynArgPats.Pats [], m)
+
+        | Item.Value vref ->
+            TcPatLongIdentLiteral warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, vref, SynArgPats.Pats [], m)
+        | _ ->
+             defaultTc ()
+    else
+         defaultTc ()
 
 /// Check a long identifier in a pattern
 and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longId, tyargs, args, vis, m) =
@@ -11597,7 +11602,13 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     let mangledId = ident(vspec.LogicalName, vspec.Range)
     // Reconstitute the binding with the unique name
-    let revisedBinding = NormalizedBinding (vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, mkSynPatVar vis2 mangledId, bindingRhs, mBinding, spBind)
+    let revisedBinding =
+        let pat =
+            match binding with
+            | NormalizedBinding(pat = SynPat.InstanceMember _) ->
+                SynPat.Named (mangledId, true, vis2, mangledId.idRange)
+            | _ -> mkSynPatVar vis2 mangledId
+        NormalizedBinding (vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, pat, bindingRhs, mBinding, spBind)
 
     // Create the RecursiveBindingInfo to use in later phases
     let rbinfo =
