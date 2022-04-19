@@ -272,7 +272,9 @@ module SyntaxTraversal =
                     |> pick expr
 
                 | SynExpr.Typed (synExpr, synType, _range) ->
-                    [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
+                    match traverseSynExpr synExpr with
+                    | None -> traverseSynType synType
+                    | x -> x
 
                 | SynExpr.Tuple (_, synExprList, _, _range) 
                 | SynExpr.ArrayOrList (_, synExprList, _range) ->
@@ -448,8 +450,8 @@ module SyntaxTraversal =
                     match synSimplePats with
                     | SynSimplePats.SimplePats(pats,_) ->
                         match visitor.VisitSimplePats(path, pats) with
-                        | Some x -> Some x
                         | None -> traverseSynExpr synExpr
+                        | x -> x
                     | _ -> traverseSynExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch,_argm,synMatchClauseList,_spBind,_wholem) -> 
@@ -484,11 +486,11 @@ module SyntaxTraversal =
 
                 | SynExpr.LetOrUse (_, isRecursive, synBindingList, synExpr, range, _) -> 
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
-                    | Some x -> Some x
                     | None ->
                         [yield! synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
                          yield dive synExpr synExpr.Range traverseSynExpr]
                         |> pick expr
+                    | x -> x
 
                 | SynExpr.TryWith (tryExpr=synExpr; withCases=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
@@ -643,7 +645,9 @@ module SyntaxTraversal =
                     | SynArgPats.NamePatPairs (ps, _) ->
                         ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
                 | SynPat.Typed (p, ty, _) ->
-                    [ traversePat path p; traverseSynType path ty ] |> List.tryPick id
+                    match traversePat path p with
+                    | None -> traverseSynType path ty
+                    | x -> x
                 | _ -> None
                 
             visitor.VisitPat (origPath, defaultTraverse, pat)
@@ -802,10 +806,10 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynBinding b :: origPath
                 match b with
                 | SynBinding(headPat=synPat; expr=synExpr) ->
-                    [ traversePat path synPat
-                      traverseSynExpr path synExpr ]
-                    |> List.tryPick id
-            visitor.VisitBinding(origPath, defaultTraverse,b)
+                    match traversePat path synPat with
+                    | None -> traverseSynExpr path synExpr
+                    | x -> x
+            visitor.VisitBinding(origPath, defaultTraverse ,b)
 
         match parseTree with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = l))-> 
