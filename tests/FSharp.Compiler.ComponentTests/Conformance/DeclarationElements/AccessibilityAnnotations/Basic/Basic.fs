@@ -51,7 +51,7 @@ module Basic =
         ]
 
     //SOURCE=E_privateThingsInaccessible.fs                                           # E_privateThingsInaccessible.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_PrivateThingsInaccessible.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_privateThingsInaccessible.fs"|])>]
     let ``E_privateThingsInaccessible_fs`` compilation =
         compilation
         |> verifyCompile
