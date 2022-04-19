@@ -156,7 +156,6 @@
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-    <None Include="**\*.fs;**\*.fsx" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
