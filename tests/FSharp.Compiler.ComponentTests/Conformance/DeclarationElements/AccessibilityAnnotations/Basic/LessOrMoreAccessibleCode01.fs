@@ -17,6 +17,4 @@ let internal a = HelperModule.make 2
 
 let b = Module.makeData 1
 
-if HelperModule.handle a <> 2 || Module.getInt b <> 1 then exit 1
-
-exit 0
+if HelperModule.handle a <> 2 || Module.getInt b <> 1 then failwith "Failed: 1"
