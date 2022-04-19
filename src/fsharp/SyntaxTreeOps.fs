@@ -236,7 +236,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Attrib(p2, attribs, m),
         laterF
 
-    | SynPat.Named (v, thisV, _, m) ->
+    | SynPat.Named (v, thisV, _, m) when (not (String.isLeadingIdentifierCharacterUpperCase v.idText)) ->
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
