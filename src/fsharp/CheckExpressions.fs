@@ -5244,7 +5244,7 @@ and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNam
         
         (fun values -> TPat_as (pat' values, bindf values, m)), acc
     
-    let isNotMember = not isMemberThis && not (Option.isSome env.eCallerMemberName)
+    let isNotMember = Option.isNone topValInfo
     
     if isNotMember then
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
@@ -11604,13 +11604,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     let mangledId = ident(vspec.LogicalName, vspec.Range)
     // Reconstitute the binding with the unique name
-    let revisedBinding =
-        let pat =
-            match binding with
-            | NormalizedBinding(pat = SynPat.InstanceMember _) ->
-                SynPat.Named (mangledId, true, vis2, mangledId.idRange)
-            | _ -> mkSynPatVar vis2 mangledId
-        NormalizedBinding (vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, pat, bindingRhs, mBinding, spBind)
+    let revisedBinding = NormalizedBinding (vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, mkSynPatVar vis2 mangledId, bindingRhs, mBinding, spBind)
 
     // Create the RecursiveBindingInfo to use in later phases
     let rbinfo =
