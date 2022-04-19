@@ -722,7 +722,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | Some witnessArgIdx -> 
         
                 let witnessR = QP.mkVar witnessArgIdx
-                let args = if args.Length = 0 then [ mkUnit g m ] else args
+                let args = if List.isEmpty args then [ mkUnit g m ] else args
                 let argsR = ConvExprs cenv env args
                 (witnessR, argsR) ||> List.fold (fun fR argR -> QP.mkApp (fR, argR))
         
