@@ -14,12 +14,12 @@ type C private (x : int) =
 
 // OK: Access public ctor
 let t1 = new A(1)
-if t1.Value <> 1 then exit 1
+if t1.Value <> 1 then failwith "Failed: 1"
 
 // OK: Access internal ctor
 let t2 = new B(2)
-if t2.Value <> 2 then exit 1
+if t2.Value <> 2 then failwith "Failed: 2"
 
 // ERROR: Access private ctor
 let t3 = new C(3)
-if t3.Value <> 3 then exit 1
+if t3.Value <> 3 then failwith "Failed: 3"

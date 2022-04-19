@@ -22,5 +22,3 @@ module Module2 =
     let x = new Module1.Foo()
     let test3 = x.PrivateMethod()
 
-    // Shouldn't compile and get this far
-    exit 1

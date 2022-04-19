@@ -30,12 +30,7 @@ module Module2 =
 
     let test8 = PublicModule.x            // OK
     let test9 = PublicModule.f 2          // OK
-    
-    // Shouldn't compile and get this far
-    exit 1
 
-// Shouldn't compile and get this far
-exit 1
 
 
 
