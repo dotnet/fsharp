@@ -162,7 +162,6 @@
     <None Include="**\*.fs;**\*.fsx" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx" Exclude="@(Compile)">
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
