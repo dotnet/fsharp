@@ -12,6 +12,6 @@ end
 try
     let r1 = DerivedClass().SomeMethod()
     let r2 = DerivedClass.AnotherMethod()
-    exit <| if r1 <> 3 && r2 <> 3 then 1 else 0
+    if r1 <> 3 && r2 <> 3 then failwith "Failed: 1"
 with
-    | :? System.MethodAccessException -> exit 1
+    | :? System.MethodAccessException -> failwith "Failed: 1"
