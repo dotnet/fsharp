@@ -14,4 +14,3 @@ type Foo() =
     [<Conditional("Debug")>]
     member x.Gar() = ()
 
-exit 0

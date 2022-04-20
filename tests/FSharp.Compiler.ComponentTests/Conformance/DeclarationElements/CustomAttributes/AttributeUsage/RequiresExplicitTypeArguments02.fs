@@ -19,4 +19,4 @@ type E() =
 let f (x : #D) =
     x.Foo<int>(42) + x.Foo(42, 1)
     
-exit <| if f (E()) <> "thirdother" then 1 else 0
+if f (E()) <> "thirdother" then failwith "Failed: 1" else ()

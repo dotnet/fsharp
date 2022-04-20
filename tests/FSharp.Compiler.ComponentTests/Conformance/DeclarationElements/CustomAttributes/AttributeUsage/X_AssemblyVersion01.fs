@@ -7,5 +7,3 @@ do
     ()
 
 let asm = System.Reflection.Assembly.GetExecutingAssembly().GetName()
-
-exit 0

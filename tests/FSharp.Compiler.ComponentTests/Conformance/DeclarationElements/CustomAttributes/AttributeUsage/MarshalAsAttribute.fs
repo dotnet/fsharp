@@ -35,7 +35,7 @@ module Program =
         let size = Marshal.SizeOf(err)
         let expectedsize = if System.IntPtr.Size = 4 then 536 else 544
         if (size = expectedsize) then 
-                                       exit 0 
-                                 else 
-                                       printfn "Error: expected size (%A) <> actual size (%A)" expectedsize size 
-                                       exit 1
+            0
+        else 
+            printfn "Error: expected size (%A) <> actual size (%A)" expectedsize size 
+            failwith "Failed: 1"

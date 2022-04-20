@@ -17,5 +17,3 @@ type T2=class end
 (* doesn't work, but should *)
 [<Any [| 42 |]>]
 type T3 = class end
-
-exit 0

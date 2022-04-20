@@ -7,4 +7,4 @@ do
 
 let asm = System.Reflection.Assembly.GetExecutingAssembly().GetName()
 
-exit <| if (asm.Version.ToString() = "1.1.9365.33000") then 0 else 1
+if (asm.Version.ToString() = "1.1.9365.33000") then () else failwith "Failed: 1"

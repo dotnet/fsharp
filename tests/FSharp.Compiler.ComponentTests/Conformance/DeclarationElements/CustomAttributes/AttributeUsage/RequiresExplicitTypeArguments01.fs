@@ -8,9 +8,9 @@ type A() =
     member x.Foo<'a>(y:'a, ?z:int) = "second"
 
 let a = new A()    
-if a.Foo<int>(42) <> "first" then exit 1
-if a.Foo(42, 0) <> "second" then exit 1
-if a.Foo<int>(42, 0) <> "second" then exit 1
+if a.Foo<int>(42) <> "first" then failwith "Failed: 1"
+if a.Foo(42, 0) <> "second" then failwith "Failed: 2"
+if a.Foo<int>(42, 0) <> "second" then failwith "Failed: 3"
 
 type B() =
     [<RequiresExplicitTypeArgumentsAttribute>]
@@ -19,7 +19,5 @@ type B() =
     member x.Foo<'a>(y:'a, ?z:int) = "second"
 
 let b = new B()    
-if b.Foo<int>(42) <> "first" then exit 1    
-if b.Foo<int>(42, 0) <> "second" then exit 1
-
-exit 0
+if b.Foo<int>(42) <> "first" then failwith "Failed: 4"
+if b.Foo<int>(42, 0) <> "second" then failwith "Failed: 5"

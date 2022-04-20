@@ -47,4 +47,4 @@ let test1 =
     |> Seq.length
     |> (=) 6
     
-if not test1 then exit 1
+if not test1 then failwith "Failed: 1"

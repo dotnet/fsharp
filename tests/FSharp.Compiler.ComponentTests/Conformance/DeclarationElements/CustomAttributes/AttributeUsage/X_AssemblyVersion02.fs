@@ -5,5 +5,3 @@
 [<assembly:System.Reflection.AssemblyFileVersionAttribute("9.8.*.6")>]
 do 
     ()
-
-exit 0
