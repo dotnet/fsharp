@@ -814,7 +814,7 @@ type BackgroundCompiler(
         | None -> 
             return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
         | Some builder -> 
-            let! tcProj, ilAssemRef, _, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
+            let! tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = DummyFileNameForRangesWithoutASpecificLocation
 
@@ -829,6 +829,12 @@ type BackgroundCompiler(
             let diagnostics =
                 [| yield! creationDiags;
                     yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, true, fileName, tcErrors, suggestNamesForErrors) |]
+
+            let getAssemblyData() = 
+                match tcAssemblyDataOpt with
+                | ProjectAssemblyDataResult.Available data -> Some data
+                | _ -> None
+
             let results = 
                 FSharpCheckProjectResults
                     (options.ProjectFileName,
@@ -836,7 +842,7 @@ type BackgroundCompiler(
                     keepAssemblyContents,
                     diagnostics, 
                     Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
-                        (Choice1Of2 builder), topAttribs, ilAssemRef, 
+                        (Choice1Of2 builder), topAttribs, getAssemblyData, ilAssemRef, 
                         tcEnvAtEnd.AccessRights, tcAssemblyExprOpt,
                         Array.ofList tcDependencyFiles,
                         options))

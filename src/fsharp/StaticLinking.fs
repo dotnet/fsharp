@@ -357,6 +357,11 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
         id
     else
         (fun ilxMainModule  ->
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.None -> ()
+            | _ ->
+                error(Error(FSComp.SR.optsInvalidRefAssembly(), rangeCmdArgs))
+
             ReportTime tcConfig "Find assembly references"
 
             let dependentILModules = FindDependentILModulesForStaticLinking (ctok, tcConfig, tcImports, ilGlobals, ilxMainModule)

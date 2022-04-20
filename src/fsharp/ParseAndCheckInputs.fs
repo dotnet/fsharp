@@ -36,6 +36,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 
 let CanonicalizeFilename filename =
@@ -827,6 +828,11 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsImplicitOpenDeclarations = openDecls0
     }
 
+/// Dummy typed impl file that contains no definitions and is not used for emitting any kind of assembly.
+let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
+    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [], Map.empty)
+
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInput
     (
@@ -906,10 +912,7 @@ let CheckOneInput
               // Typecheck the implementation file
               let typeCheckOne =
                   if skipImplIfSigExists && hadSig then
-                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
-                    let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [], Map.empty)
-
-                    (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
+                    (EmptyTopAttrs, CreateEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Cancellable.ret
                   else
                     CheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, tcState.tcsImplicitOpenDeclarations, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring, tcImplEnv, rootSigOpt, file)

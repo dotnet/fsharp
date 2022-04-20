@@ -17,6 +17,10 @@ open System.Collections.Immutable
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
+open System.Reflection
+open System.Reflection.Metadata
+open System.Reflection.PortableExecutable
+
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
 open System.Reflection.Metadata
@@ -94,15 +98,15 @@ module rec Compiler =
 
     type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
 
-    type SymbolType = 
-        | MemberOrFunctionOrValue of string 
-        | Entity of string 
-        | GenericParameter of string 
-        | Parameter of string 
-        | StaticParameter of string 
+    type SymbolType =
+        | MemberOrFunctionOrValue of string
+        | Entity of string
+        | GenericParameter of string
+        | Parameter of string
+        | StaticParameter of string
         | ActivePatternCase of string
-        | UnionCase of string 
-        | Field of string 
+        | UnionCase of string
+        | Field of string
 
         member this.FullName () =
             match this with
@@ -268,6 +272,21 @@ module rec Compiler =
         fsFromString (SourceFromPath path)
         |> FS
         |> withName (Path.GetFileNameWithoutExtension(path))
+
+    let FSharpWithInputAndOutputPath (src: string) (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
+        let compileDirectory = Path.GetDirectoryName(outputFilePath)
+        let name = Path.GetFileName(outputFilePath)
+        {
+            Source            = SourceCodeFileKind.Create(inputFilePath, src)
+            AdditionalSources = []
+            Baseline          = None
+            Options           = defaultOptions
+            OutputType        = Library
+            OutputDirectory   = Some(DirectoryInfo(compileDirectory))
+            Name              = Some name
+            IgnoreWarnings    = false
+            References        = []
+        } |> FS
 
     let CSharp (source: string) : CompilationUnit =
         csFromString (SourceCodeFileKind.Fs({FileName="test.cs"; SourceText=Some source })) |> CS
@@ -543,6 +562,26 @@ module rec Compiler =
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
 
+    let private getAssemblyInBytes (result: CompilationResult) =
+        match result with
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | Some filePath -> File.ReadAllBytes(filePath)
+            | _ -> failwith "Output path not found."
+        | _ ->
+            failwith "Compilation has errors."
+
+    let compileGuid (cUnit: CompilationUnit) : Guid =
+        let bytes =
+            compile cUnit
+            |> shouldSucceed
+            |> getAssemblyInBytes
+
+        use reader1 = new PEReader(bytes.ToImmutableArray())
+        let reader1 = reader1.GetMetadataReader()
+
+        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
         let fileName = fsSource.Source.ChangeExtension.GetSourceFileName
@@ -756,6 +795,8 @@ module rec Compiler =
             | Some p -> ILChecker.checkIL p il
         | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
 
+    let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
+
     let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
         match baseline with
         | None -> failwith "Baseline was not provided."
@@ -916,7 +957,7 @@ module rec Compiler =
         let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
                 if not (List.exists (fun (el: ErrorInfo) ->
-                    let msg = el.Message 
+                    let msg = el.Message
                     msg = exp) source) then
                     failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
