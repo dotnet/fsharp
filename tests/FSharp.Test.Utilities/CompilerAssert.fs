@@ -621,6 +621,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
 
     static member DefaultProjectOptions = defaultProjectOptions
 
+    static member GenerateFsInputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+
+    static member GenerateDllOutputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
@@ -964,7 +970,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
