@@ -22,15 +22,9 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.Interop" Version="$(MicrosoftVisualStudioShellInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.OLE.Interop" Version="$(MicrosoftVisualStudioOLEInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
     <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop" Version="$(MicrosoftVisualStudioTextManagerInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
-<!--
-    <PackageReference Include="Microsoft.MSXML" Version="$(MicrosoftMSXMLVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
--->    <PackageReference Include="VSSDK.DebuggerVisualizers" Version="$(VSSDKDebuggerVisualizersVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="VSSDK.VSLangProj.11" Version="$(VSSDKVSLangProj11Version)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
   </ItemGroup>
 
-  <!-- New VS does not allow embedded interop assemblies ... this turns of the target that turns it on -->
+  <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->
   <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
 
 </Project>
