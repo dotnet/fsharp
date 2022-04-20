@@ -402,7 +402,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
-    member _.IsVoid = (typeof<Void>.Equals x || (x.Namespace = "System" && x.Name = "Void"))
+    member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
 
     member _.IsGenericParameter = x.IsGenericParameter
 

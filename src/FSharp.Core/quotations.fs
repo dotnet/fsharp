@@ -1409,7 +1409,7 @@ module Patterns =
         | Ambiguous of 'R
 
     let typeEquals (ty1: Type) (ty2: Type) =
-        ty1.Equals ty2
+        Type.op_Equality (ty1, ty2)
 
     let typesEqual (tys1: Type list) (tys2: Type list) =
         (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
