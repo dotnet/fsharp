@@ -81,14 +81,14 @@ val ExistsHeadTypeInEntireHierarchy: g:TcGlobals -> amap:ImportMap -> m:range ->
 val ImportILTypeFromMetadata: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-val ImportILTypeFromMetadataWithAttributes: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> cattrs:ILAttributes -> TType
+val ImportILTypeFromMetadataWithAttributes: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> getCattrs: (unit -> ILAttributes) -> TType
 
 /// Get the parameter type of an IL method.
-val ImportParameterTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> cattrs:ILAttributes -> scoref:ILScopeRef -> tinst:TType list -> mist:TType list -> TType
+val ImportParameterTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> getCattrs: (unit -> ILAttributes) -> scoref:ILScopeRef -> tinst:TType list -> mist:TType list -> TType
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> cattrs:ILAttributes -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> TType option
+val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> getCattrs: (unit -> ILAttributes) -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> TType option
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes

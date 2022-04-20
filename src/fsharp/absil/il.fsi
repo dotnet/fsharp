@@ -865,6 +865,7 @@ type ILParameter =
       IsOptional: bool
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 }
+
     member CustomAttrs: ILAttributes
 
 type ILParameters = ILParameter list
