@@ -398,7 +398,7 @@ module rec Compiler =
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement where applicable."
+        | _ -> failwith "TODO: Implement asLibrary where applicable."
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
