@@ -273,11 +273,11 @@ module rec Compiler =
         |> FS
         |> withName (Path.GetFileNameWithoutExtension(path))
 
-    let FSharpWithInputAndOutputPath (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
+    let FSharpWithInputAndOutputPath (src: string) (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
         let compileDirectory = Path.GetDirectoryName(outputFilePath)
         let name = Path.GetFileName(outputFilePath)
         {
-            Source            = SourceFromPath inputFilePath
+            Source            = SourceCodeFileKind.Create(inputFilePath, src)
             AdditionalSources = []
             Baseline          = None
             Options           = defaultOptions

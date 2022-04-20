@@ -24,14 +24,12 @@ let test() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath, src)
-
         let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--deterministic"]
             |> compileGuid
         let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--deterministic"]
             |> compileGuid
 
@@ -52,14 +50,12 @@ let test() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath, src)
-
         let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--deterministic"]
             |> compileGuid
         let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--deterministic";"--platform:Itanium"]
             |> compileGuid
 
@@ -84,14 +80,12 @@ let test() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath, src)
-
         let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
         let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
 
@@ -116,14 +110,12 @@ let test() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath, src)
-
         let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
         let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--refonly";"--deterministic";"--platform:Itanium"]
             |> compileGuid
 
@@ -145,10 +137,8 @@ let test() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath, src)
-
         let mvid1 =
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            FSharpWithInputAndOutputPath src inputFilePath outputFilePath
             |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
 
@@ -165,16 +155,14 @@ let test2() =
     Console.WriteLine("Hello World!")
             """
 
-        File.WriteAllText(inputFilePath2, src2)
-
         let mvid2 =
-            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
+            FSharpWithInputAndOutputPath src2 inputFilePath2 outputFilePath2
             |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
 
         // Two different compilations should _not_ produce the same MVID
         Assert.AreNotEqual(mvid1, mvid2)
-
+(*
     [<Test; Ignore("TEMP: skip until sigdata cleanup work is done.")>]
     let ``Reference assemblies should be deterministic when only private function name is different with the same function name length`` () =
         let inputFilePath = CompilerAssert.GenerateFsInputPath()
@@ -579,3 +567,4 @@ let test() =
         Assert.AreEqual(mvid1, mvid2)
 
     // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
+*)

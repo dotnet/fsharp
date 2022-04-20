@@ -493,13 +493,9 @@ module rec CompilerAssertHelpers =
         res, (deps @ deps2)
 
     let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let outputDirectory =
-            match cmpl with
-            | Compilation(_, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
-
         let disposals = ResizeArray()
         try
+            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
             disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
