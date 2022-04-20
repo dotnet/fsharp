@@ -1,8 +1,11 @@
-*.fs
-*.fsx
+**/*.fs
+**/*.fsx
 
 # absil  (to investigate)
 **/ilread.fsi
+
+# fsharp  (to investigate)
+**/range.fsi
 
 # utils  (to investigate)
 **/prim-parsing.fsi
