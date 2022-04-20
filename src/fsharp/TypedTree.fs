@@ -2213,7 +2213,7 @@ type Typar =
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar = 
-        { typar_id = Unchecked.defaultof<_>
+        { typar_id = SynIdentOrOperatorName.Ident(String.Empty, Range.Zero)
           typar_flags = Unchecked.defaultof<_>
           typar_stamp = -1L
           typar_solution = Unchecked.defaultof<_>
