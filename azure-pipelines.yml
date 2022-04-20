@@ -264,6 +264,32 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
+        # Check code formatting
+        - job: CheckCodeFormatting
+          pool:
+            vmImage: $(UbuntuMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool install
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Install tools
+          - script: dotnet fantomas src\fsharp --check
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check code formatting (run dotnet fantomas src\fsharp to fix)
+
         # Linux
         - job: Linux
           pool:
