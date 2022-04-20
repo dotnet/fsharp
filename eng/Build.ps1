@@ -226,7 +226,7 @@ function BuildSolution([string] $solutionName) {
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
-        /p:IsGraphBuild=$True `
+        /graph
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
