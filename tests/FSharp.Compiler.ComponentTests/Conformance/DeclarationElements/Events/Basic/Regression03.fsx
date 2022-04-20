@@ -20,6 +20,6 @@ unsubsribe.Dispose()
 
 btn.PerformClick()
 
-if counter <> 0 then exit 1;;
+if counter <> 0 then failwith "Failed: 1";;
 
 #q;;

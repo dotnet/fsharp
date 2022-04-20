@@ -35,7 +35,7 @@ pinkSqueekyToy.Squeek.Publish.AddHandler(eventHandler1)
 // Poke the toy, which should cause it to squeek
 m_eventFlag1 <- None
 pinkSqueekyToy.ApplyAction(Poke)
-if m_eventFlag1 <> Some(Poke) then exit 1
+if m_eventFlag1 <> Some(Poke) then failwith "Failed: 1"
 
 // Now add another event handler
 let mutable m_eventFlag2 : Action option = None
@@ -48,8 +48,8 @@ m_eventFlag1 <- None
 m_eventFlag2 <- None
 
 pinkSqueekyToy.ApplyAction(Squeeze)
-if m_eventFlag1 <> Some(Squeeze) then exit 1
-if m_eventFlag2 <> Some(Squeeze) then exit 1
+if m_eventFlag1 <> Some(Squeeze) then failwith "Failed: 2"
+if m_eventFlag2 <> Some(Squeeze) then failwith "Failed: 3"
  
 // Remove one of the event handlers
 pinkSqueekyToy.Squeek.Publish.RemoveHandler(eventHandler1)
@@ -58,8 +58,8 @@ m_eventFlag2 <- None
 
 // Event handler 1 should not have fired.
 pinkSqueekyToy.ApplyAction(Squeeze)
-if m_eventFlag1 <> None then exit 1
-if m_eventFlag2 <> Some(Squeeze) then exit 1
+if m_eventFlag1 <> None then failwith "Failed: 4"
+if m_eventFlag2 <> Some(Squeeze) then failwith "Failed: 5"
 
 // Remove the last event handler
 pinkSqueekyToy.Squeek.Publish.RemoveHandler(eventHandler2)
@@ -68,8 +68,6 @@ m_eventFlag2 <- None
 
 // Event handler 1 should not have fired.
 pinkSqueekyToy.ApplyAction(Squeeze)
-if m_eventFlag1 <> None then exit 1
-if m_eventFlag2 <> None then exit 1
-
-exit 0
+if m_eventFlag1 <> None then failwith "Failed: 6"
+if m_eventFlag2 <> None then failwith "Failed: 7"
 

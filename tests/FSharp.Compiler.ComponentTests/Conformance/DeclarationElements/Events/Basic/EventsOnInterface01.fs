@@ -37,16 +37,14 @@ type MagicLamp =
 
 
 // Verify it works
-let setArgs = ref ("", 0)
+let mutable setArgs = "", 0
         
 let lamp = new MagicLamp()
 let magicalLamp = lamp :> IHaveMagicalProperties
         
-let eventHandler = MagicalResult(fun sender msg res -> setArgs := (msg, res))
+let eventHandler = MagicalResult(fun sender msg res -> setArgs <- (msg, res))
 magicalLamp.GoodThingHappened.AddHandler eventHandler
 
 magicalLamp.Rub()
         
-if !setArgs <> ("A genie appears!", 3) then exit 1
-
-exit 0
+if setArgs <> ("A genie appears!", 3) then failwith "Failed: 1"

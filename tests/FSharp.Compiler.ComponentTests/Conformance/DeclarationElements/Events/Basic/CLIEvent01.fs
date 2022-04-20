@@ -20,5 +20,3 @@ and Registry() =
         member x.Use() = 
           fun w -> 
             w.SomethingHappened.Add(fun _ -> ()) }
-
-exit 0

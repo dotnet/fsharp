@@ -16,5 +16,3 @@ type Param<'a>() =
 let x = Param<unit>()
 let y = Param<int>()
 let z = Param<string>()
-
-exit 0
