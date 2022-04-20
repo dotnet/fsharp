@@ -43,12 +43,12 @@ type internal FSharpAsyncQuickInfoSource
             let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Precise, true, true, nameof(FSharpAsyncQuickInfoSource))
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAsyncQuickInfoSource)) |> liftAsync
-            let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
+            let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.Range.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
             match res with
             | ToolTipText []
             | ToolTipText [ToolTipElement.None] -> return! None
             | _ ->
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.Range.EndColumn, textLineString, symbol.FullIsland)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
                 return { StructuredText = res
                          Span = symbolSpan

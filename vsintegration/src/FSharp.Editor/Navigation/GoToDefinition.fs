@@ -183,7 +183,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
-            let idRange = lexerSymbol.Ident.idRange
+            let idRange = lexerSymbol.Ident.Range
 
             let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(nameof(GoToDefinition)) |> liftAsync
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
@@ -234,10 +234,10 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let preferSignature = isSignatureFile originDocument.FilePath
                 
             let! lexerSymbol = originDocument.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
-            let idRange = lexerSymbol.Ident.idRange
+            let idRange = lexerSymbol.Ident.Range
 
             let! _, checkFileResults = originDocument.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, preferSignature)
+            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLineString, lexerSymbol.FullIsland, preferSignature)
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
 
             match declarations with
@@ -286,7 +286,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                             let navItem = FSharpGoToDefinitionNavigableItem (implDocument, implTextSpan)
                             return (FSharpGoToDefinitionResult.NavigableItem(navItem), idRange)
                         else // jump from implementation to the corresponding signature
-                            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineString, lexerSymbol.FullIsland, true)
+                            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLineString, lexerSymbol.FullIsland, true)
                             match declarations with
                             | FindDeclResult.DeclFound targetRange -> 
                                 let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
@@ -530,14 +530,14 @@ module internal FSharpQuickInfo =
 
             let extQuickInfoText = 
                 extCheckFileResults.GetToolTip
-                    (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                    (declRange.StartLine, extLexerSymbol.Ident.Range.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT)
 
             match extQuickInfoText with
             | ToolTipText []
             | ToolTipText [ToolTipElement.None] -> return! None
             | extQuickInfoText  ->
                 let! extSymbolUse =
-                    extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland)
+                    extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.Range.EndColumn, extLineText, extLexerSymbol.FullIsland)
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
 
                 return { StructuredText = extQuickInfoText
@@ -560,7 +560,7 @@ module internal FSharpQuickInfo =
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, true, true, userOpName)
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
             let! sourceText = document.GetTextAsync cancellationToken
-            let idRange = lexerSymbol.Ident.idRange  
+            let idRange = lexerSymbol.Ident.Range  
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()

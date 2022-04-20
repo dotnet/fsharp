@@ -60,7 +60,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpDocumentHighlightsService)) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.Range.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 
                 [| for symbolUse in symbolUses do

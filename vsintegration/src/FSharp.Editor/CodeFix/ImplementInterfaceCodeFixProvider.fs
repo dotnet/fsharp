@@ -174,7 +174,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)
             let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.Range.EndColumn, lineContents, symbol.FullIsland)
             let! entity, displayContext = 
                 match symbolUse.Symbol with
                 | :? FSharpEntity as entity -> 

@@ -52,8 +52,8 @@ type internal FSharpFindUsagesService
             let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, "findReferencedSymbolsAsync")
             
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpFindUsagesService)) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
-            let declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.Range.EndColumn, textLine, symbol.FullIsland)
+            let declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.Range.EndColumn, textLine, symbol.FullIsland, false)
             let tags = FSharpGlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 

@@ -256,7 +256,7 @@ type internal FSharpSignatureHelpProvider
                 }
 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
                 not (PrettyNaming.IsOperatorDisplayName mfv.DisplayName) &&
@@ -265,7 +265,7 @@ type internal FSharpSignatureHelpProvider
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
-                let tooltip = checkFileResults.GetToolTip(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                let tooltip = checkFileResults.GetToolTip(fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
                 | ToolTipText []
                 | ToolTipText [ToolTipElement.None] -> return! None

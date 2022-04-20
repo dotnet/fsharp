@@ -30,7 +30,7 @@ module internal SymbolHelpers =
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.Range.EndColumn, textLine.ToString(), symbol.FullIsland)
             let! ct = Async.CancellationToken |> liftAsync
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken=ct)
             return symbolUses
@@ -107,7 +107,7 @@ module internal SymbolHelpers =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(userOpName) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.Range.EndColumn, textLine.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution

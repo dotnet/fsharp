@@ -42,7 +42,7 @@ type internal FSharpMakeDeclarationMutableFixProvider
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpMakeDeclarationMutableFixProvider)) |> liftAsync
-            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
+            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with
             // Only do this for symbols in the same file. That covers almost all cases anyways.

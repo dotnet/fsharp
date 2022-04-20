@@ -152,7 +152,7 @@ type internal InlineRenameService
             let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(InlineRenameService))
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(InlineRenameService)) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.Range.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
 
             let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)

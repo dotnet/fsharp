@@ -21,7 +21,7 @@ type FSharpParseFileResults with
                         // Check if it's an operator
                         match pat with
                         | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) when id.idText.StartsWith("op_") ->
-                            if Position.posEq id.idRange.Start pos then
+                            if Position.posEq id.Range.Start pos then
                                 Some binding.RangeOfBindingWithRhs
                             else
                                 defaultTraverse binding
@@ -35,7 +35,7 @@ type FSharpParseFileResults with
                 match expr with
                 | SynExpr.DotGet(expr, _, _, range) ->
                     match expr with
-                    | SynExpr.TypeApp(SynExpr.Ident(ident), _, typeArgs, _, _, _, _) ->
+                    | SynExpr.TypeApp(SynExpr.IdentOrOperatorName (ident), _, typeArgs, _, _, _, _) ->
                         let onlyOneTypeArg =
                             match typeArgs with
                             | [] -> false

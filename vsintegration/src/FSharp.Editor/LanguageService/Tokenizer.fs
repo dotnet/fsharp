@@ -42,10 +42,10 @@ type internal LexerSymbolKind =
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
       /// Last part of `LongIdent`
-      Ident: Ident
+      Ident: SynIdentOrOperatorName
       /// All parts of `LongIdent`
       FullIsland: string list }
-    member x.Range: Range = x.Ident.idRange
+    member x.Range: Range = x.Ident.Range
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =
@@ -720,7 +720,8 @@ module internal Tokenizer =
             let identStr = lineStr.Substring(token.LeftColumn, token.MatchedLength)
             {   Kind = token.Kind
                 Ident = 
-                    Ident(identStr, 
+                    SynIdentOrOperatorName.Ident(
+                        identStr,
                         Range.mkRange 
                             fileName 
                             (Position.mkPos (linePos.Line + 1) token.LeftColumn)

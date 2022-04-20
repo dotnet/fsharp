@@ -94,7 +94,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! symbol = 
                 maybe {
                     let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-                    return checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
+                    return checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.Range.EndColumn, line.ToString(), lexerSymbol.FullIsland)
                 }
 
             do! Option.guard symbol.IsNone
@@ -130,7 +130,7 @@ type internal FSharpAddOpenCodeFixProvider
                     longIdent
                     |> List.map (fun ident ->
                         { Ident = ident.idText
-                          Resolved = not (ident.idRange = unresolvedIdentRange)})
+                          Resolved = not (ident.Range = unresolvedIdentRange)})
                     |> List.toArray)
                                                     
             let insertionPoint = 

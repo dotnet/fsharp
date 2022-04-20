@@ -44,7 +44,7 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
 
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> liftAsync
-            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
+            let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with
             | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->

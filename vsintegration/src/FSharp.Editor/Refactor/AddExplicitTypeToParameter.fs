@@ -34,7 +34,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddExplicitTypeToParameterRefactoring))
 
             let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddExplicitTypeToParameterRefactoring)) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
             let isValidParameterWithoutTypeAnnotation (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                 let isLambdaIfFunction =
