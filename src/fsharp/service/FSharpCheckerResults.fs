@@ -1033,8 +1033,6 @@ type internal TypeCheckInfo
 
             // Completion at '(x: ...)"
             | Some CompletionContext.PatternType
-            // Completion at 'Unchecked.defaultof<str| >'
-            | Some CompletionContext.TypeApp
             // Completion at  '| Case1 of ...'
             | Some CompletionContext.UnionCaseFieldsDeclaration
             // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
