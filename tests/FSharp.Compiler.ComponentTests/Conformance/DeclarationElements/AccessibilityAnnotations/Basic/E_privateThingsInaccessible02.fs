@@ -32,5 +32,3 @@ module Module1 =
     let test8 = M.PublicModule.x            // OK
     let test9 = M.PublicModule.f 2          // OK
 
-// Shouldn't compile and get this far
-exit 1

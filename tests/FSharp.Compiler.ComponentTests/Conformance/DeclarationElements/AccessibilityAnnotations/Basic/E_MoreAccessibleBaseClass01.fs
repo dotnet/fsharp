@@ -13,5 +13,3 @@ type C2() =
 
 
 let c = C2()
-
-exit 1

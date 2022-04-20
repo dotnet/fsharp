@@ -15,5 +15,3 @@ end
 
 let r3 = DerivedClass().SomeMethod2()
 let r4 = DerivedClass.AnotherMethod2()
-
-exit 1

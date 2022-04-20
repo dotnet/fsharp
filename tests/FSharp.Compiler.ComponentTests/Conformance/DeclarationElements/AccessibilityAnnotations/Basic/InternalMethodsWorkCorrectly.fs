@@ -19,6 +19,5 @@ module testModule =
 
     let result = x.InternalMethod_GetDevoweledString()
     
-    if result <> InternalModule.deVowelStr startingValue then exit 1
-    
-    exit 0
+    if result <> InternalModule.deVowelStr startingValue then failwith "Failed: 1"
+
