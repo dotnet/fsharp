@@ -70,7 +70,7 @@ let QualFileNameOfImpls filename specs =
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrependPathToQualFileName x (QualifiedNameOfFile q) =
-    ComputeQualifiedNameOfFileFromUniquePath (q.idRange, pathOfLid x@[q.idText])
+    ComputeQualifiedNameOfFileFromUniquePath (q.Range, pathOfLid x@[q.idText])
 
 let PrependPathToImpl x (SynModuleOrNamespace(p, b, c, d, e, f, g, h)) =
     SynModuleOrNamespace(x@p, b, c, d, e, f, g, h)
@@ -107,7 +107,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
         let lid =
             match lid with
             | [id] when kind.IsModule && id.idText = MangledGlobalName ->
-                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.Range))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
         SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
@@ -136,7 +136,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
         let lid =
             match lid with
             | [id] when kind.IsModule && id.idText = MangledGlobalName ->
-                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
+                error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.Range))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
         SynModuleOrNamespaceSig(lid, isRec, SynModuleOrNamespaceKind.NamedModule, decls, xmlDoc, attribs, access, m)
@@ -244,7 +244,7 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
         else
             let count = paths.Count + 1
             let id = qualNameOfFile.Id
-            let qualNameOfFileT = if count = 1 then qualNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
+            let qualNameOfFileT = if count = 1 then qualNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.Range))
             let moduleNamesDictT = moduleNamesDict.Add(qualNameOfFile.Text, paths.Add(path, qualNameOfFileT))
             qualNameOfFileT, moduleNamesDictT
     | _ ->

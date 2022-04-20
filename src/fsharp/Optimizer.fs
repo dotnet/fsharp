@@ -444,7 +444,7 @@ type MethodEnv =
 
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
-      latestBoundId: Ident option
+      latestBoundId: SynIdentOrOperatorName option
 
       /// The set of lambda IDs we've inlined to reach this point. Helps to prevent recursive inlining 
       dontInline: Zset<Unique>  

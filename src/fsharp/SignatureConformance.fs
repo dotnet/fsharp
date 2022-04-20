@@ -287,14 +287,14 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                           checkAttribs aenv implArgInfo.Attribs sigArgInfo.Attribs (fun attribs -> 
                               match implArgInfo.Name, sigArgInfo.Name with 
                               | Some iname, Some sname when sname.idText <> iname.idText -> 
-                                   warning(Error (FSComp.SR.ArgumentsInSigAndImplMismatch(sname.idText, iname.idText), iname.idRange))
+                                   warning(Error (FSComp.SR.ArgumentsInSigAndImplMismatch(sname.idText, iname.idText), iname.Range))
                               | _ -> ()
                               
                               let sigHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute sigArgInfo.Attribs
                               let implHasInlineIfLambda = HasFSharpAttribute g g.attrib_InlineIfLambdaAttribute implArgInfo.Attribs
                               let m = 
                                   match implArgInfo.Name with 
-                                  | Some iname-> iname.idRange
+                                  | Some iname-> iname.Range
                                   | None -> implVal.Range
                               if sigHasInlineIfLambda && not implHasInlineIfLambda then 
                                   errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))

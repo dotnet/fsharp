@@ -50,7 +50,7 @@ let TcClassRewriteStackGuardDepth = StackGuard.GetDepthOption "TcClassRewrite"
 //------------------------------------------------------------------------- 
 
 type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range * OpenDeclaration list ref
-type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
+type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of SynIdentOrOperatorName * LongIdent * range
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
@@ -258,7 +258,7 @@ let BuildRootModuleExpr enclosingNamespacePath (cpath: CompilationPath) mexpr =
         |> snd
 
 /// Try to take the "FSINNN" prefix off a namespace path
-let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) = 
+let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: SynIdentOrOperatorName list) = 
     match enclosingNamespacePath with 
     | p :: rest when
         g.isInteractive &&
@@ -276,7 +276,7 @@ let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
 
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     let item = Item.ModuleOrNamespaces modrefs
-    CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
+    CallNameResolutionSink tcSink (id.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
     env
 
 /// Adjust the TcEnv to account for opening the set of modules or namespaces implied by an `open` declaration
@@ -376,18 +376,18 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
 
 exception NotUpperCaseConstructor of range
 
-let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
+let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: SynIdentOrOperatorName) = 
     // type names '[]' etc. are used in fslib
     if not g.compilingFslib && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
-        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
+        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.Range))
 
-let CheckDuplicates (idf: _ -> Ident) k elems = 
+let CheckDuplicates (idf: _ -> SynIdentOrOperatorName) k elems = 
     elems |> List.iteri (fun i uc1 -> 
         elems |> List.iteri (fun j uc2 -> 
             let id1 = (idf uc1)
             let id2 = (idf uc2)
             if j > i && id1.idText = id2.idText then 
-                errorR (Duplicate(k, id1.idText, id1.idRange))))
+                errorR (Duplicate(k, id1.idText, id1.Range))))
     elems
 
 
@@ -450,16 +450,16 @@ module TcRecdUnionAndEnumDeclarations =
     // Bind other elements of type definitions (constructors etc.)
     //------------------------------------------------------------------------- 
 
-    let CheckUnionCaseName (cenv: cenv) (id: Ident) =
+    let CheckUnionCaseName (cenv: cenv) (id: SynIdentOrOperatorName) =
         let g = cenv.g
         let name = id.idText
         if name = "Tags" then
-            errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(name, "Tags"), id.idRange))
+            errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(name, "Tags"), id.Range))
 
         CheckNamespaceModuleOrTypeName g id
 
         if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
-            errorR(NotUpperCaseConstructor(id.idRange))
+            errorR(NotUpperCaseConstructor(id.Range))
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
@@ -468,10 +468,10 @@ module TcRecdUnionAndEnumDeclarations =
             | true, synField ->
                 match sf, synField with
                 | SynField(_, _, Some id, _, _, _, _, _), SynField(_, _, Some _, _, _, _, _, _) ->
-                    error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
+                    error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.Range))
                 | SynField(_, _, Some id, _, _, _, _, _), SynField(_, _, None, _, _, _, _, _)
                 | SynField(_, _, None, _, _, _, _, _), SynField(_, _, Some id, _, _, _, _, _) ->
-                    error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
+                    error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.Range))
                 | _ -> assert false
             | _ ->
                 seen.Add(f.LogicalName, sf))
@@ -492,7 +492,7 @@ module TcRecdUnionAndEnumDeclarations =
                     match idOpt, parent with
                     | Some fieldId, Parent tcref ->
                         let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
-                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                        CallNameResolutionSink cenv.tcSink (fieldId.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
                         TcNamedFieldDecl cenv env parent false tpenv fld
                     | _ ->
                         TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
@@ -537,7 +537,7 @@ module TcRecdUnionAndEnumDeclarations =
             let v = TcConst cenv fieldTy m env v
             let vis, _ = ComputeAccessAndCompPath env None m None None parent
             let vis = CombineReprAccess parent vis
-            if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.idRange))
+            if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.Range))
             let doc = xmldoc.ToXmlDoc(true, Some [])
             Construct.NewRecdField true (Some v) id false thisTy false false [] attrs doc vis false
       
@@ -585,12 +585,12 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
 // Bind 'open' declarations
 //------------------------------------------------------------------------- 
 
-let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : Ident list) =
+let TcOpenLidAndPermitAutoResolve tcSink (env: TcEnv) amap (longId : SynIdentOrOperatorName list) =
     let ad = env.AccessRights
     match longId with
     | [] -> []
     | id :: rest ->
-        let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+        let m = longId |> List.map (fun id -> id.Range) |> List.reduce unionRanges
         match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.NameEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
@@ -787,7 +787,7 @@ module IncrClassChecking =
             let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
             let id = ident ("new", m)
 
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.idRange
+            CheckForNonAbstractInterface ModuleOrMemberBinding tcref memberFlags id.Range
             let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, attribs, [], memberFlags, valSynData, id, false)
             let partialValReprInfo = TranslateTopValSynInfo m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = TypeScheme(copyOfTyconTypars, ctorTy)
@@ -809,7 +809,7 @@ module IncrClassChecking =
                 let cctorTy = mkFunTy g g.unit_ty g.unit_ty
                 let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
                 let id = ident ("cctor", m)
-                CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
+                CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.Range
                 let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [(*no attributes*)], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
                 let partialValReprInfo = TranslateTopValSynInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = TypeScheme(copyOfTyconTypars, cctorTy)
@@ -2978,8 +2978,8 @@ module TyconConstraintInference =
 // Helpers for modules, types and exception declarations
 //------------------------------------------------------------------------- 
 
-let ComputeModuleName (longPath: Ident list) = 
-    if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidModuleName(), (List.head longPath).idRange))
+let ComputeModuleName (longPath: SynIdentOrOperatorName list) = 
+    if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidModuleName(), (List.head longPath).Range))
     longPath.Head 
 
 let CheckForDuplicateConcreteType env nm m = 
@@ -3006,8 +3006,8 @@ module TcExceptionDeclarations =
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
-        CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
-        CheckForDuplicateConcreteType env id.idText id.idRange
+        CheckForDuplicateConcreteType env (id.idText + "Exception") id.Range
+        CheckForDuplicateConcreteType env id.idText id.Range
         let repr = TExnFresh (Construct.MakeRecdFieldsTable [])
         let doc = doc.ToXmlDoc(true, Some [])
         Construct.NewExn cpath id vis repr attrs doc
@@ -3025,7 +3025,7 @@ module TcExceptionDeclarations =
                     let tcref = mkLocalTyconRef exnc
                     let thisTypInst, _ = generalizeTyconRef g tcref
                     let item = Item.RecdField (RecdFieldInfo (thisTypInst, RecdFieldRef (tcref, fieldId.idText)))
-                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                    CallNameResolutionSink cenv.tcSink (fieldId.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
                 | _ -> ()
 
                 TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef)
@@ -3069,7 +3069,7 @@ module TcExceptionDeclarations =
         exnc.SetExceptionInfo repr 
 
         let item = Item.ExnCase(mkLocalTyconRef exnc)
-        CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+        CallNameResolutionSink cenv.tcSink (id.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
         args'
 
     let private TcExnDefnCore (cenv: cenv) env parent synExnDefnRepr =
@@ -3137,13 +3137,13 @@ module EstablishTypeDefinitionCores =
         | SecondPass 
 
     /// Compute the mangled name of a type definition. 'doErase' is true for all type definitions except type abbreviations.
-    let private ComputeTyconName (longPath: Ident list, doErase: bool, typars: Typars) = 
-        if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidTypeExtension(), longPath.Head.idRange))
+    let private ComputeTyconName (longPath: SynIdentOrOperatorName list, doErase: bool, typars: Typars) = 
+        if longPath.Length <> 1 then error(Error(FSComp.SR.tcInvalidTypeExtension(), longPath.Head.Range))
         let id = longPath.Head
         let erasedArity = 
             if doErase then typars |> Seq.sumBy (fun tp -> if tp.IsErased then 0 else 1) 
             else typars.Length
-        mkSynId id.idRange (if erasedArity = 0 then id.idText else id.idText + "`" + string erasedArity)
+        mkSynId id.Range (if erasedArity = 0 then id.idText else id.idText + "`" + string erasedArity)
  
     let private GetTyconAttribs g attrs = 
         let hasClassAttr = HasFSharpAttribute g g.attrib_ClassAttribute attrs
@@ -3180,7 +3180,7 @@ module EstablishTypeDefinitionCores =
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(), m))
             k
 
-    let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner: TcEnv, id: Ident) synTyconRepr =
+    let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner: TcEnv, id: SynIdentOrOperatorName) synTyconRepr =
         match synTyconRepr with 
         | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(LongIdentWithDots([unionCaseName], _))), m) 
                               when 
@@ -3231,7 +3231,7 @@ module EstablishTypeDefinitionCores =
                   let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
-                      let m = names[arg].Ident.idRange
+                      let m = names[arg].SynIdentOrOperatorName.Range
                       if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.TyparsNoRange)) then
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
@@ -3328,10 +3328,10 @@ module EstablishTypeDefinitionCores =
         let modKind = ComputeModuleOrNamespaceKind g true typeNames modAttrs id.idText
         let modName = AdjustModuleName modKind id.idText
 
-        let vis, _ = ComputeAccessAndCompPath envInitial None id.idRange vis None parent
+        let vis, _ = ComputeAccessAndCompPath envInitial None id.Range vis None parent
              
-        CheckForDuplicateModule envInitial id.idText id.idRange
-        let id = ident (modName, id.idRange)
+        CheckForDuplicateModule envInitial id.idText id.Range
+        let id = ident (modName, id.Range)
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName g id
 
@@ -3360,8 +3360,8 @@ module EstablishTypeDefinitionCores =
         let id = ComputeTyconName (id, (match synTyconRepr with SynTypeDefnSimpleRepr.TypeAbbrev _ -> false | _ -> true), checkedTypars)
 
         // Augmentations of type definitions are allowed within the same file as long as no new type representation or abbreviation is given 
-        CheckForDuplicateConcreteType env id.idText id.idRange
-        let vis, cpath = ComputeAccessAndCompPath env None id.idRange synVis None parent
+        CheckForDuplicateConcreteType env id.idText id.Range
+        let vis, cpath = ComputeAccessAndCompPath env None id.Range synVis None parent
 
         // Establish the visibility of the representation, e.g.
         //   type R = 
@@ -3378,7 +3378,7 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
          
-        let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
+        let visOfRepr, _ = ComputeAccessAndCompPath env None id.Range synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -3407,7 +3407,7 @@ module EstablishTypeDefinitionCores =
             | _ -> []
         let doc = doc.ToXmlDoc(true, Some paramNames )
         Construct.NewTycon
-            (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
+            (cpath, id.idText, id.Range, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              doc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmtyp)
 
     //-------------------------------------------------------------------------
@@ -4007,7 +4007,7 @@ module EstablishTypeDefinitionCores =
                     // Report to both - as in previous function
                     let item = Item.UnionCase(info, false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
-                    CallEnvSink cenv.tcSink (unionCase.Id.idRange, nenv', ad)
+                    CallEnvSink cenv.tcSink (unionCase.Id.Range, nenv', ad)
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
@@ -4112,7 +4112,7 @@ module EstablishTypeDefinitionCores =
                                   let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
                                       let ty = names[arg].Type
-                                      let id = names[arg].Ident
+                                      let id = names[arg].SynIdentOrOperatorName
                                       let taccess = TAccess [envinner.eAccessPath]
                                       yield Construct.NewRecdField false None id false ty false false [] [] XmlDoc.Empty taccess true ]
                     
@@ -4854,7 +4854,7 @@ module TcDeclarations =
                 let rec postAutoProps memb =
                     match memb with 
                     | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; xmlDoc=xmlDoc; accessibility=access; getSetRange=mGetSetOpt) ->
-                        let mMemberPortion = id.idRange
+                        let mMemberPortion = id.Range
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                         let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
@@ -4871,7 +4871,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGet 
                             | SynMemberKind.PropertyGetSet -> 
                                 let getter = 
-                                    let rhsExpr = SynExpr.Ident fldId
+                                    let rhsExpr = SynExpr.IdentOrOperatorName fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member), SynBindingTrivia.Zero)
@@ -4885,7 +4885,7 @@ module TcDeclarations =
                                 let setter = 
                                     let vId = ident("v", mMemberPortion)
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
-                                    let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
+                                    let rhsExpr = mkSynAssign (SynExpr.IdentOrOperatorName fldId) (SynExpr.IdentOrOperatorName vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
@@ -5205,10 +5205,10 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 CheckNamespaceModuleOrTypeName g id
                 let modKind = EstablishTypeDefinitionCores.ComputeModuleOrNamespaceKind g true typeNames attribs id.idText
                 let modName = EstablishTypeDefinitionCores.AdjustModuleName modKind id.idText
-                CheckForDuplicateConcreteType env modName id.idRange
+                CheckForDuplicateConcreteType env modName id.Range
 
                 // Now typecheck the signature, accumulating and then recording the submodule description. 
-                let id = ident (modName, id.idRange)
+                let id = ident (modName, id.Range)
 
                 let mty = Construct.NewEmptyModuleOrNamespaceType modKind
                 let doc = xml.ToXmlDoc(true, Some [])
@@ -5351,7 +5351,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
                       let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) = exnRepr
-                      let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
+                      let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.Range)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
                       decls, (false, false)
 
@@ -5521,11 +5521,11 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let modKind = EstablishTypeDefinitionCores.ComputeModuleOrNamespaceKind g true typeNames modAttrs id.idText
               let modName = EstablishTypeDefinitionCores.AdjustModuleName modKind id.idText
               CheckForDuplicateConcreteType env modName im
-              CheckForDuplicateModule env id.idText id.idRange
-              let vis, _ = ComputeAccessAndCompPath env None id.idRange vis None parent
+              CheckForDuplicateModule env id.idText id.Range
+              let vis, _ = ComputeAccessAndCompPath env None id.Range vis None parent
              
               let endm = m.EndRange
-              let id = ident (modName, id.idRange)
+              let id = ident (modName, id.Range)
 
               CheckNamespaceModuleOrTypeName g id
 
@@ -5689,7 +5689,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
                   let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
-                  let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
+                  let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.Range)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
 

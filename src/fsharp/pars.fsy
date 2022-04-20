@@ -198,7 +198,7 @@ let checkForMultipleAugmentations m a1 a2 =
 
 let rangeOfLongIdent(lid:LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
-    (lid.Head.idRange, lid) ||> unionRangeWithListBy (fun id -> id.idRange) 
+    (lid.Head.Range, lid) ||> unionRangeWithListBy (fun id -> id.Range) 
 
 %} 
 
@@ -324,7 +324,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <ParsedImplFile> implementationFile
 %type <ParsedSigFile> signatureFile
 %type <ParsedScriptInteraction> interaction
-%type <Ident> ident
+%type <SynIdentOrOperatorName> ident
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfnList
 %type <SynArgPats * Range> atomicPatsOrNamePatPairs
@@ -1125,13 +1125,13 @@ classMemberSpfnGetSet:
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
   | nameop 
-    { (let (id:Ident) = $1 
+    { (let (id:SynIdentOrOperatorName) = $1 
        if id.idText = "get" then SynMemberKind.PropertyGet 
        else if id.idText = "set" then SynMemberKind.PropertySet 
        else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | nameop COMMA nameop
-    { let (id:Ident) = $1 
+    { let (id:SynIdentOrOperatorName) = $1 
       if not ((id.idText = "get" && $3.idText = "set") ||
               (id.idText = "set" && $3.idText = "get")) then 
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
@@ -1393,7 +1393,7 @@ moduleDefn:
             match vis with
             | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
             | None -> ()
-            [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
+            [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.Range) ) ]
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
@@ -2878,7 +2878,7 @@ cPrototype:
             SynExpr.App (
                 ExprAtomicFlag.NonAtomic,
                 false,
-                SynExpr.Ident (ident("failwith", rhs parseState 6)),
+                SynExpr.IdentOrOperatorName (SynIdentOrOperatorName.Ident("failwith", rhs parseState 6)),
                 SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
@@ -4438,18 +4438,18 @@ atomicExpr:
         $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }
 
   | BASE DOT atomicExprQualification 
-      { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
+      { let arg1 = SynExpr.IdentOrOperatorName (SynIdentOrOperatorName.Ident("base", rhs parseState 1))
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
   | QMARK nameop 
-      { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false }
+      { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs2 parseState 1 2), false }
 
   | atomicExpr QMARK dynamicArg
       { let arg1, hpa1 = $1
         mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1 }
 
   | GLOBAL
-      { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1)), false }
+      { SynExpr.IdentOrOperatorName (SynIdentOrOperatorName.Ident(MangledGlobalName, rhs parseState 1)), false }
 
   | identExpr
       { $1, false }
@@ -4512,12 +4512,14 @@ atomicExprQualification:
             SynExpr.LibraryOnlyUnionCaseFieldGet (e, mkSynCaseName lhsm opNameCons, (fst $5), lhsm)) }
 
   | LPAREN  typedSequentialExpr rparen  
-      { (fun e lhsm dotm -> 
+      { let lpr = rhs parseState 1
+        let rpr = rhs parseState 3
+        (fun e lhsm dotm -> 
             // Check for expr.( * )
             // Note that "*" is parsed as an expression (it is allowed in "foo.[3,*]")
             match $2 with
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
-                mkSynDot dotm lhsm e (ident(CompileOpName "*", opm))
+                mkSynDot dotm lhsm e (SynIdentOrOperatorName.Operator(Some lpr, CompileOpName "*", opm, Some rpr))
             | _ ->
                 if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
                     mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (lhs parseState) 
@@ -5032,7 +5034,7 @@ braceBarExprCore:
        let flds = 
            flds |> List.choose (function 
              | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
+             | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.Range)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 3
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -5043,7 +5045,7 @@ braceBarExprCore:
        let flds = 
            flds |> List.choose (function 
              | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
+             | SynExprRecordField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.Range)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 2
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -5562,7 +5564,7 @@ staticallyKnownHeadTypar:
 
 ident: 
   | IDENT 
-     { ident($1, rhs parseState 1) } 
+     { SynIdentOrOperatorName.Ident($1, rhs parseState 1) } 
 
 /* A A.B.C path used to an identifier */
 path: 
@@ -5580,26 +5582,37 @@ path:
        let (LongIdentWithDots(lid, dotms)) = $1 in LongIdentWithDots(lid, dotms @ [rhs parseState 2])  } 
 
 
-/* An operator name, with surrounnding parentheses */
-opName: 
-  | LPAREN operatorName rparen  
-     {  ident(CompileOpName $2, rhs parseState 2) }
+/* An operator name, with surrounding parentheses */
+opName:
+  | LPAREN operatorName rparen
+     { SynIdentOrOperatorName.Operator(Some (rhs parseState 1), CompileOpName $2, rhs parseState 2, Some (rhs parseState 3)) }
 
-  | LPAREN error rparen  
-     {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName()); ident(CompileOpName "****", rhs parseState 2) }
+  | LPAREN error rparen
+    {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName())
+       SynIdentOrOperatorName.Operator(Some (rhs parseState 1), CompileOpName "****", rhs parseState 2, Some (rhs parseState 3)) }
 
   | LPAREN_STAR_RPAREN
-     {  ident(CompileOpName "*", rhs parseState 1) }
+    { let m= rhs parseState 1
+      let lpr = mkFileIndexRange m.FileIndex m.Start m.Start
+      let mStar = mkFileIndexRange m.FileIndex (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn - 1))
+      let rpr = mkFileIndexRange m.FileIndex m.End m.End
+      SynIdentOrOperatorName.Operator(Some lpr, CompileOpName "*", mStar, Some rpr) }
 
   /* active pattern name */
-  | LPAREN activePatternCaseNames BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|")
-       ident(text, rhs2 parseState 2 3) }
-                         
+  | LPAREN activePatternCaseNames BAR rparen
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|")
+       let mText = rhs2 parseState 2 3
+       let rpr = rhs parseState 4
+       SynIdentOrOperatorName.ActivePattern(lpr, text, mText, rpr) }
+
   /* partial active pattern name */
-  | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen 
-     { let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
-       ident(text, rhs2 parseState 2 5) }
+  | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen
+     { let lpr = rhs parseState 1
+       let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
+       let mText = rhs2 parseState 2 5
+       let rpr = rhs parseState 6
+       SynIdentOrOperatorName.PartialActivePattern(lpr, text, mText, rpr) }
 
 /* An operator name, without surrounding parentheses */
 operatorName: 
@@ -5731,13 +5744,10 @@ nameop:
 
 identExpr:
   | ident
-     { SynExpr.Ident($1) }
+     { SynExpr.IdentOrOperatorName($1) }
 
   | opName
-     { let m = lhs parseState
-       let mLparen = mkFileIndexRange m.FileIndex m.Start (mkPos m.StartLine (m.StartColumn + 1))
-       let mRparen = mkFileIndexRange m.FileIndex (mkPos m.EndLine (m.EndColumn - 1)) m.End
-       SynExpr.Paren(SynExpr.Ident($1), mLparen, Some mRparen, m) }
+     { SynExpr.IdentOrOperatorName($1) }
 
 topSeparator: 
   | SEMICOLON { } 

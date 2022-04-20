@@ -69,7 +69,7 @@ type CalledArg =
       IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
-      NameOpt: Ident option
+      NameOpt: SynIdentOrOperatorName option
       CalledArgumentType : TType }
 
 let CalledArg (pos, isParamArray, optArgInfo, callerInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
@@ -88,7 +88,7 @@ let CalledArg (pos, isParamArray, optArgInfo, callerInfo, isInArg, isOutArg, nam
 type AssignedCalledArg<'T> = 
 
     { /// The identifier for a named argument, if any
-      NamedArgIdOpt : Ident option
+      NamedArgIdOpt : SynIdentOrOperatorName option
 
       /// The called argument in the method
       CalledArg: CalledArg 
@@ -105,14 +105,14 @@ type AssignedItemSetterTarget =
     | AssignedRecdFieldSetter of RecdFieldInfo 
 
 /// Represents the resolution of a caller argument as a named-setter argument
-type AssignedItemSetter<'T> = AssignedItemSetter of Ident * AssignedItemSetterTarget * CallerArg<'T> 
+type AssignedItemSetter<'T> = AssignedItemSetter of SynIdentOrOperatorName * AssignedItemSetterTarget * CallerArg<'T> 
 
 type CallerNamedArg<'T> = 
-    | CallerNamedArg of Ident * CallerArg<'T>  
+    | CallerNamedArg of SynIdentOrOperatorName * CallerArg<'T>  
 
-    member x.Ident = (let (CallerNamedArg(id, _)) = x in id)
+    member x.SynIdentOrOperatorName = (let (CallerNamedArg(id, _)) = x in id)
 
-    member x.Name = x.Ident.idText
+    member x.Name = x.SynIdentOrOperatorName.idText
 
     member x.CallerArg = (let (CallerNamedArg(_, a)) = x in a)
 
@@ -610,7 +610,7 @@ type CalledMeth<'T>
                 let returnedObjTy = methodRetTy
                 unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id, e) as arg) -> 
                     let nm = id.idText
-                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
+                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.Range returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
                     | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 

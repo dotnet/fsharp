@@ -34,11 +34,11 @@ type OverrideCanImplement =
     
 /// The overall information about a method implementation in a class or object expression 
 type OverrideInfo = 
-    | Override of OverrideCanImplement * TyconRef * Ident * (Typars * TyparInst) * TType list list * TType option * bool * bool
+    | Override of OverrideCanImplement * TyconRef * SynIdentOrOperatorName * (Typars * TyparInst) * TType list list * TType option * bool * bool
     member x.CanImplement = let (Override(a, _, _, _, _, _, _, _)) = x in a
     member x.BoundingTyconRef = let (Override(_, ty, _, _, _, _, _, _)) = x in ty
     member x.LogicalName = let (Override(_, _, id, _, _, _, _, _)) = x in id.idText
-    member x.Range = let (Override(_, _, id, _, _, _, _, _)) = x in id.idRange
+    member x.Range = let (Override(_, _, id, _, _, _, _, _)) = x in id.Range
     member x.IsFakeEventProperty = let (Override(_, _, _, _, _, _, b, _)) = x in b
     member x.ArgTypes = let (Override(_, _, _, _, b, _, _, _)) = x in b
     member x.ReturnType = let (Override(_, _, _, _, _, b, _, _)) = x in b
@@ -152,9 +152,9 @@ module DispatchSlotChecking =
         Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, (memberMethodTypars, memberToParentInst), argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
+    let GetObjectExprOverrideInfo g amap (implty, id: SynIdentOrOperatorName, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
         // Dissect the type. The '0' indicates there are no enclosing generic class type parameters relevant here.
-        let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.idRange
+        let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.Range
         let argTys = argInfos |> List.mapSquared fst
         // Dissect the implementation
         let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda g amap arityInfo (rhsExpr, ty)
@@ -175,7 +175,7 @@ module DispatchSlotChecking =
             let overrideByInfo = Override(implKind, tcrefOfAppTy g implty, id, (tps, []), argTys, retTy, isFakeEventProperty, false)
             overrideByInfo, (baseValOpt, thisv, vs, bindingAttribs, rhsExpr)
         | _ -> 
-            error(InternalError("Unexpected shape for object expression override", id.idRange))
+            error(InternalError("Unexpected shape for object expression override", id.Range))
           
     /// Check if an override matches a dispatch slot by name
     let IsNameMatch (dispatchSlot: MethInfo) (overrideBy: OverrideInfo) = 
@@ -884,7 +884,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
     
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData) =
+let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: SynIdentOrOperatorName, bindm, typToSearchForAbstractMembers, valSynData) =
     let minfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
@@ -899,7 +899,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, _k, _valSynData) = 
+let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: SynIdentOrOperatorName, bindm, typToSearchForAbstractMembers, _k, _valSynData) = 
     let pinfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 

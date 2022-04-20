@@ -10,13 +10,29 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
 
-[<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
-type Ident (text: string, range: range) =
-     member _.idText = text
-     member _.idRange = range
-     override _.ToString() = text
+[<NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
+type SynIdentOrOperatorName =
+     | Ident of text: string * range: range
+     | ActivePattern of lpr: range * text: string * textRange: range * rpr: range
+     | PartialActivePattern of lpr: range * text: string * textRange: range * rpr: range 
+     | Operator of lpr: range option * text: string * textRange: range * rpr: range option
+     member this.idText =
+         match this with
+         | SynIdentOrOperatorName.Ident(text=text)
+         | SynIdentOrOperatorName.ActivePattern(text=text)
+         | SynIdentOrOperatorName.PartialActivePattern(text=text)
+         | SynIdentOrOperatorName.Operator(text=text) -> text
+     member this.Range =
+         match this with
+         | Ident (range = m) -> m
+         | ActivePattern(lpr, _, _, rpr)
+         | PartialActivePattern(lpr, _, _, rpr)
+         | Operator(Some lpr, _, _, Some rpr) -> unionRanges lpr rpr
+         | Operator(textRange = m) -> m
+         
+     override this.ToString() = this.idText
 
-type LongIdent = Ident list
+type LongIdent = SynIdentOrOperatorName list
 
 type LongIdentWithDots =
     | LongIdentWithDots of id: LongIdent * dotRanges: range list
@@ -24,10 +40,10 @@ type LongIdentWithDots =
     member this.Range =
        match this with
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], []) -> id.idRange
-       | LongIdentWithDots([id], [m]) -> unionRanges id.idRange m
-       | LongIdentWithDots(h :: t, []) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithDots(h :: t, dotRanges) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
+       | LongIdentWithDots([id], []) -> id.Range
+       | LongIdentWithDots([id], [m]) -> unionRanges id.Range m
+       | LongIdentWithDots(h :: t, []) -> unionRanges h.Range (List.last t).Range
+       | LongIdentWithDots(h :: t, dotRanges) -> unionRanges h.Range (List.last t).Range |> unionRanges (List.last dotRanges)
 
     member this.Lid = match this with LongIdentWithDots(lid, _) -> lid
 
@@ -36,10 +52,10 @@ type LongIdentWithDots =
     member this.RangeWithoutAnyExtraDot =
        match this with
        | LongIdentWithDots([], _) -> failwith "rangeOfLidwd"
-       | LongIdentWithDots([id], _) -> id.idRange
+       | LongIdentWithDots([id], _) -> id.Range
        | LongIdentWithDots(h :: t, dotRanges) ->
            let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
-           unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
+           unionRanges h.Range (List.last t).Range |> unionRanges (List.last nonExtraDots)
 
 [<RequireQualifiedAccess>]
 type ParserDetail =
@@ -55,12 +71,12 @@ type TyparStaticReq =
 
 [<NoEquality; NoComparison>]
 type SynTypar =
-    | SynTypar of ident: Ident * staticReq: TyparStaticReq * isCompGen: bool
+    | SynTypar of ident: SynIdentOrOperatorName * staticReq: TyparStaticReq * isCompGen: bool
 
     member this.Range =
         match this with
         | SynTypar(id, _, _) ->
-            id.idRange
+            id.Range
 
 [<Struct; RequireQualifiedAccess>]
 type SynStringKind =
@@ -383,7 +399,7 @@ type SynType =
 
     | AnonRecd of
         isStruct: bool *
-        fields:(Ident * SynType) list *
+        fields:(SynIdentOrOperatorName * SynType) list *
         range: range
 
     | Array of
@@ -492,7 +508,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * range option * SynExpr) list *
+        recordFields:(SynIdentOrOperatorName * range option * SynExpr) list *
         range: range
 
     | ArrayOrList of
@@ -514,7 +530,7 @@ type SynExpr =
 
     | ObjExpr of
         objType: SynType *
-        argOptions:(SynExpr * Ident option) option *
+        argOptions:(SynExpr * SynIdentOrOperatorName option) option *
         withKeyword: range option *
         bindings: SynBinding list *
         members: SynMemberDefn list *
@@ -531,7 +547,7 @@ type SynExpr =
     | For of
         forDebugPoint: DebugPointAtFor *
         toDebugPoint: DebugPointAtInOrTo *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         equalsRange: range option *
         identBody: SynExpr *
         direction: bool *
@@ -662,8 +678,8 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
-    | Ident of
-        ident: Ident
+    | IdentOrOperatorName of
+        identOrOperatorName: SynIdentOrOperatorName
 
     | LongIdent of
         isOptional: bool *
@@ -927,7 +943,7 @@ type SynExpr =
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
-        | SynExpr.Ident id -> id.idRange
+        | SynExpr.IdentOrOperatorName id -> id.Range
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -982,12 +998,12 @@ type SynExprRecordField =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
-    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
+    | FillExpr of fillExpr: SynExpr * qualifiers: SynIdentOrOperatorName option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
     | Id of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         isCompilerGenerated: bool *
         isThisVal: bool *
@@ -1013,9 +1029,9 @@ type SynSimplePat =
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
 
-    | Undecided of Ident
+    | Undecided of SynIdentOrOperatorName
 
-    | Decided of Ident
+    | Decided of SynIdentOrOperatorName
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynStaticOptimizationConstraint =
@@ -1051,7 +1067,7 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * range * SynPat) list *
+        pats: (SynIdentOrOperatorName * range * SynPat) list *
         range: range
 
     member x.Patterns =
@@ -1070,7 +1086,7 @@ type SynPat =
         range: range
 
     | Named of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range
@@ -1103,7 +1119,7 @@ type SynPat =
     | LongIdent of
         longDotId: LongIdentWithDots *
         propertyKeyword: PropertyKeyword option *
-        extraId: Ident option * // holds additional ident for tooling
+        extraId: SynIdentOrOperatorName option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
         accessibility: SynAccess option *
@@ -1124,14 +1140,14 @@ type SynPat =
         range: range
 
     | Record of
-        fieldPats: ((LongIdent * Ident) * range * SynPat) list *
+        fieldPats: ((LongIdent * SynIdentOrOperatorName) * range * SynPat) list *
         range: range
 
     | Null of
         range: range
 
     | OptionalVal of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         range: range
 
     | IsInst of
@@ -1148,9 +1164,9 @@ type SynPat =
         range: range
 
     | InstanceMember of
-        thisId: Ident *
-        memberId: Ident *
-        toolingId: Ident option * // holds additional ident for tooling
+        thisId: SynIdentOrOperatorName *
+        memberId: SynIdentOrOperatorName *
+        toolingId: SynIdentOrOperatorName option * // holds additional ident for tooling
         accessibility: SynAccess option *
         range: range
 
@@ -1222,7 +1238,7 @@ type SynAttribute =
 
       ArgExpr: SynExpr
 
-      Target: Ident option
+      Target: SynIdentOrOperatorName option
 
       AppliesToGetterAndSetter: bool
 
@@ -1244,7 +1260,7 @@ type SynValData =
     | SynValData of
         memberFlags: SynMemberFlags option *
         valInfo: SynValInfo *
-        thisIdOpt: Ident option
+        thisIdOpt: SynIdentOrOperatorName option
 
     member x.SynValInfo = (let (SynValData(_flags, synValInfo, _)) = x in synValInfo)
 
@@ -1395,7 +1411,7 @@ type SynTypeDefnSimpleRepr =
 
     | General of
         kind: SynTypeDefnKind *
-        inherits: (SynType * range * Ident option) list *
+        inherits: (SynType * range * SynIdentOrOperatorName option) list *
         slotsigs: (SynValSig * SynMemberFlags) list *
         fields: SynField list *
         isConcrete: bool *
@@ -1434,7 +1450,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1450,7 +1466,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1512,7 +1528,7 @@ type SynField =
     | SynField of
         attributes: SynAttributes *
         isStatic: bool *
-        idOpt: Ident option *
+        idOpt: SynIdentOrOperatorName option *
         fieldType: SynType *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
@@ -1539,7 +1555,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
@@ -1551,7 +1567,7 @@ type SynValSig =
         withKeyword: range option *
         range: range
 
-    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
+    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.Range
 
     member x.SynInfo = let (SynValSig(arity=v)) = x in v
 
@@ -1577,9 +1593,9 @@ type SynArgInfo =
     | SynArgInfo of
         attributes: SynAttributes *
         optional: bool *
-        ident: Ident option
+        ident: SynIdentOrOperatorName option
 
-    member x.Ident : Ident option = let (SynArgInfo(_,_,id)) = x in id
+    member x.Ident : SynIdentOrOperatorName option = let (SynArgInfo(_,_,id)) = x in id
 
     member x.Attributes : SynAttributes = let (SynArgInfo(attrs,_,_)) = x in attrs
 
@@ -1669,14 +1685,14 @@ type SynMemberDefn =
         accessibility: SynAccess option *
         attributes: SynAttributes *
         ctorArgs: SynSimplePats *
-        selfIdentifier: Ident option *
+        selfIdentifier: SynIdentOrOperatorName option *
         xmlDoc: PreXmlDoc *
         range: range
 
     | ImplicitInherit of
         inheritType: SynType *
         inheritArgs: SynExpr *
-        inheritAlias: Ident option *
+        inheritAlias: SynIdentOrOperatorName option *
         range: range
 
     | LetBindings of
@@ -1698,7 +1714,7 @@ type SynMemberDefn =
 
     | Inherit of
         baseType: SynType *
-        asIdent: Ident option *
+        asIdent: SynIdentOrOperatorName option *
         range: range
 
     | ValField of
@@ -1713,7 +1729,7 @@ type SynMemberDefn =
     | AutoProperty of
         attributes: SynAttributes *
         isStatic: bool *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         typeOpt: SynType option *
         propKind: SynMemberKind *
         memberFlags:(SynMemberKind -> SynMemberFlags) *
@@ -1745,7 +1761,7 @@ type SynMemberDefns = SynMemberDefn list
 type SynModuleDecl =
 
     | ModuleAbbrev of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         longId: LongIdent *
         range: range
 
@@ -1826,7 +1842,7 @@ type SynExceptionSig =
 type SynModuleSigDecl =
 
     | ModuleAbbrev of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         longId: LongIdent *
         range: range
 
@@ -2000,13 +2016,13 @@ type ScopedPragma =
 
 [<NoEquality; NoComparison>]
 type QualifiedNameOfFile =
-    | QualifiedNameOfFile of Ident
+    | QualifiedNameOfFile of SynIdentOrOperatorName
 
     member x.Text = (let (QualifiedNameOfFile t) = x in t.idText)
 
     member x.Id = (let (QualifiedNameOfFile t) = x in t)
 
-    member x.Range = (let (QualifiedNameOfFile t) = x in t.idRange)
+    member x.Range = (let (QualifiedNameOfFile t) = x in t.Range)
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput =

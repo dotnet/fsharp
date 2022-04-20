@@ -152,7 +152,7 @@ type EntityRef with
         | ERefLocal _ -> mkLocalTyconRef x
         | ERefNonLocal nlr -> mkNonLocalTyconRefPreResolved x nlr x.LogicalName
 
-    member tcref.RecdFieldRefInNestedTycon tycon (id: Ident) = RecdFieldRef (tcref.NestedTyconRef tycon, id.idText)
+    member tcref.RecdFieldRefInNestedTycon tycon (id: SynIdentOrOperatorName) = RecdFieldRef (tcref.NestedTyconRef tycon, id.idText)
 
 /// Make a reference to a union case for type in a module or namespace
 let mkModuleUnionCaseRef (modref: ModuleOrNamespaceRef) tycon uc = 

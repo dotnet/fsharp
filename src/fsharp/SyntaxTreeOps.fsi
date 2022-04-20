@@ -13,38 +13,38 @@ type SynArgNameGenerator =
     member New: unit -> string
     member Reset: unit -> unit
     
-val ident: s:string * r:range -> Ident
+val ident: s:string * r:range -> SynIdentOrOperatorName
 
-val textOfId: id:Ident -> string
+val textOfId: id:SynIdentOrOperatorName -> string
 
-val pathOfLid: lid:Ident list -> string list
+val pathOfLid: lid:SynIdentOrOperatorName list -> string list
 
-val arrPathOfLid: lid:Ident list -> string []
+val arrPathOfLid: lid:SynIdentOrOperatorName list -> string []
 
 val textOfPath: path:seq<string> -> string
 
-val textOfLid: lid:Ident list -> string
+val textOfLid: lid:SynIdentOrOperatorName list -> string
 
-val rangeOfLid: lid:Ident list -> range
+val rangeOfLid: lid:SynIdentOrOperatorName list -> range
 
-val mkSynId: m:range -> s:string -> Ident
+val mkSynId: m:range -> s:string -> SynIdentOrOperatorName
 
-val pathToSynLid: m:range -> p:string list -> Ident list
+val pathToSynLid: m:range -> p:string list -> SynIdentOrOperatorName list
 
 val mkSynIdGet: m:range -> n:string -> SynExpr
 
 val mkSynLidGet: m:range -> path:string list -> n:string -> SynExpr
 
-val mkSynIdGetWithAlt: m:range -> id:Ident -> altInfo:SynSimplePatAlternativeIdInfo ref option -> SynExpr
+val mkSynIdGetWithAlt: m:range -> id:SynIdentOrOperatorName -> altInfo:SynSimplePatAlternativeIdInfo ref option -> SynExpr
 
-val mkSynSimplePatVar: isOpt:bool -> id:Ident -> SynSimplePat
+val mkSynSimplePatVar: isOpt:bool -> id:SynIdentOrOperatorName -> SynSimplePat
 
-val mkSynCompGenSimplePatVar: id:Ident -> SynSimplePat
+val mkSynCompGenSimplePatVar: id:SynIdentOrOperatorName -> SynSimplePat
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * range) option
 
-val (|SingleIdent|_|): inp:SynExpr -> Ident option
+val (|SingleIdent|_|): inp:SynExpr -> SynIdentOrOperatorName option
 
 /// This affects placement of debug points
 val IsControlFlowExpression: e:SynExpr -> bool
@@ -55,11 +55,11 @@ val IsDebugPointBinding: synPat: SynPat -> synExpr: SynExpr -> bool
 
 val mkSynAnonField: ty:SynType * xmlDoc:PreXmlDoc -> SynField
 
-val mkSynNamedField: ident:Ident * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
+val mkSynNamedField: ident:SynIdentOrOperatorName * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
 
-val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
+val mkSynPatVar: vis:SynAccess option -> id:SynIdentOrOperatorName -> SynPat
 
-val mkSynThisPatVar: id:Ident -> SynPat
+val mkSynThisPatVar: id:SynIdentOrOperatorName -> SynPat
 
 val mkSynPatMaybeVar: lidwd:LongIdentWithDots -> vis:SynAccess option -> m:range -> SynPat
 
@@ -110,7 +110,7 @@ val mkSynPrefixPrim: opm:range -> m:range -> oper:string -> x:SynExpr -> SynExpr
 
 val mkSynPrefix: opm:range -> m:range -> oper:string -> x:SynExpr -> SynExpr
 
-val mkSynCaseName: m:range -> n:string -> Ident list
+val mkSynCaseName: m:range -> n:string -> SynIdentOrOperatorName list
 
 val mkSynApp1: f:SynExpr -> x1:SynExpr -> m:range -> SynExpr
 
@@ -142,7 +142,7 @@ val mkSynDelay: m:range -> e:SynExpr -> SynExpr
 
 val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
-val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
+val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:SynIdentOrOperatorName -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 

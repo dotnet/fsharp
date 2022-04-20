@@ -55,7 +55,7 @@ val mkLambdaTy: TcGlobals -> Typars -> TTypes -> TType -> TType
 val mkMultiLambdaTy: TcGlobals -> range -> Val list -> TType -> TType
 
 /// Module publication, used while compiling fslib.
-val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
+val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> SynIdentOrOperatorName list -> CompilationPath -> XmlDoc -> unit 
 
 /// Ignore 'Expr.Link' in an expression
 val stripExpr: Expr -> Expr
@@ -1220,13 +1220,13 @@ val ComputeImplementationHidingInfoAtAssemblyBoundary: ModuleOrNamespaceExpr -> 
 val mkRepackageRemapping: SignatureRepackageInfo -> Remap 
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
-val wrapModuleOrNamespaceExprInNamespace: Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
+val wrapModuleOrNamespaceExprInNamespace: SynIdentOrOperatorName -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
 
 /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
-val wrapModuleOrNamespaceTypeInNamespace: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType * ModuleOrNamespace  
+val wrapModuleOrNamespaceTypeInNamespace: SynIdentOrOperatorName -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespaceType * ModuleOrNamespace  
 
 /// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
-val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
+val wrapModuleOrNamespaceType: SynIdentOrOperatorName -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
 
 /// Given an implementation, fetch its recorded signature
 val SigTypeOfImplFile: TypedImplFile -> ModuleOrNamespaceType
@@ -2259,7 +2259,7 @@ val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
+val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> SynIdentOrOperatorName[] -> Exprs -> TType list -> Expr 
 
 val AdjustValForExpectedArity: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 

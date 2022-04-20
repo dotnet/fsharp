@@ -1182,7 +1182,7 @@ module PrintTastMemberOrVals =
             | SynMemberKind.PropertyGet ->
                 if isNil argInfos then
                     // use error recovery because intellisense on an incomplete file will show this
-                    errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.idRange))
+                    errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.Range))
                     let nameL = layoutMemberName denv v [] tagProperty v.DisplayNameCoreMangled
                     let resL =
                         if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
@@ -1206,7 +1206,7 @@ module PrintTastMemberOrVals =
             | SynMemberKind.PropertySet ->
                 if argInfos.Length <> 1 || isNil argInfos.Head then
                     // use error recovery because intellisense on an incomplete file will show this
-                    errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), v.Id.idRange))
+                    errorR(Error(FSComp.SR.tastInvalidFormForPropertySetter(), v.Id.Range))
                     let nameL = layoutMemberName denv v [] tagProperty v.DisplayNameCoreMangled
                     let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
                     emptyTyparInst, resL

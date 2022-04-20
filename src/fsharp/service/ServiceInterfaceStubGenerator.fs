@@ -506,7 +506,7 @@ module InterfaceStubGenerator =
         | SynPat.LongIdent(longDotId=LongIdentWithDots(xs, _)) ->
 //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
-            Some(last.idText, last.idRange)
+            Some(last.idText, last.Range)
         | _ -> 
             None
 
@@ -850,7 +850,7 @@ module InterfaceStubGenerator =
                     | None ->
                         List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.Ident _ident ->
+                | SynExpr.IdentOrOperatorName _ident ->
                     None
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> 

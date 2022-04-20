@@ -314,7 +314,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _, _, _, m) -> Some m
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
-        | Item.ArgName (id, _, _) -> Some id.idRange
+        | Item.ArgName (id, _, _) -> Some id.Range
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
@@ -592,7 +592,7 @@ module internal SymbolHelpers =
               | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
                     (nm1 = nm2) && typarRefEq tp1 tp2
               | Item.ModuleOrNamespaces(modref1 :: _), Item.ModuleOrNamespaces(modref2 :: _) -> fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef modref2
-              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.idRange id2.idRange && id1.idText = id2.idText
+              | Item.SetterArg(id1, _), Item.SetterArg(id2, _) -> Range.equals id1.Range id2.Range && id1.idText = id2.idText
               | Item.MethodGroup(_, meths1, _), Item.MethodGroup(_, meths2, _) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -635,7 +635,7 @@ module internal SymbolHelpers =
               | Item.CustomOperation (_, _, Some minfo) -> minfo.ComputeHashCode()
               | Item.CustomOperation (_, _, None) -> 1
               | Item.ModuleOrNamespaces(modref :: _) -> hash (fullDisplayTextOfModRef modref)          
-              | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
+              | Item.SetterArg(id, _) -> hash (id.Range, id.idText)
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | Item.Value vref | Item.CustomBuilder (_, vref) -> hash vref.LogicalName

@@ -2657,7 +2657,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, ow
 
     member _.DeclarationLocation =
         match topArgInfo.Name with
-        | Some v -> v.idRange
+        | Some v -> v.Range
         | None ->
 
         match ownerRangeOpt with

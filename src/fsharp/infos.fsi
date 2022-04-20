@@ -190,7 +190,7 @@ type ReflectedArgInfo =
 /// Partial information about a parameter returned for use by the Language Service
 [<NoComparison; NoEquality>]
 type ParamNameAndType =
-    | ParamNameAndType of Ident option * TType
+    | ParamNameAndType of SynIdentOrOperatorName option * TType
 
     static member FromArgInfo: ty:TType * argInfo:ArgReprInfo -> ParamNameAndType
 
@@ -209,7 +209,7 @@ type ParamData =
       isOut: bool *
       optArgInfo: OptionalArgInfo * 
       callerInfo: CallerInfo *
-      nameOpt: Ident option * 
+      nameOpt: SynIdentOrOperatorName option * 
       reflArgInfo: ReflectedArgInfo *
       ttype: TType
 

@@ -74,7 +74,7 @@ type TcEnv =
       // 
       // Of the two, 'ePath' is the one that's barely used. It's only 
       // used by UpdateAccModuleOrNamespaceType to modify the CCU while compiling FSharp.Core
-      ePath: Ident list 
+      ePath: SynIdentOrOperatorName list 
 
       eCompPath: CompilationPath 
 
@@ -120,7 +120,7 @@ exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
-exception Recursion of DisplayEnv * Ident * TType * TType * range
+exception Recursion of DisplayEnv * SynIdentOrOperatorName * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 exception LetRecCheckedAtRuntime of range
@@ -137,7 +137,7 @@ exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * str
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
-exception VarBoundTwice of Ident
+exception VarBoundTwice of SynIdentOrOperatorName
 exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
@@ -373,7 +373,7 @@ type ValSpecResult =
     | ValSpecResult of
         altActualParent: ParentRef *
         memberInfoOpt: PreValMemberInfo option *
-        id: Ident *
+        id: SynIdentOrOperatorName *
         enclosingDeclaredTypars: Typars *
         declaredTypars: Typars *
         ty: TType *
@@ -442,7 +442,7 @@ type RecursiveBindingInfo =
 /// Represents the results of the first phase of preparing simple values from a pattern
 [<Sealed>]
 type PrelimValScheme1 =
-    member Ident: Ident
+    member SynIdentOrOperatorName: SynIdentOrOperatorName
     member Type: TType
 
 /// Represents the results of the first phase of preparing bindings
@@ -452,7 +452,7 @@ type CheckedBindingInfo
 /// Represnts the results of the second phase of checking simple values
 type ValScheme = 
     | ValScheme of 
-        id: Ident * 
+        id: SynIdentOrOperatorName * 
         typeScheme: TypeScheme * 
         topValInfo: ValReprInfo option * 
         memberInfo: PreValMemberInfo option * 
@@ -597,7 +597,7 @@ val InferGenericArityFromTyScheme: TypeScheme -> partialValReprInfo: PartialValR
 
 /// Locate the environment within a particular namespace path, used to process a
 /// 'namespace' declaration.
-val LocateEnv: ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list -> TcEnv
+val LocateEnv: ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: SynIdentOrOperatorName list -> TcEnv
 
 /// Make the check for safe initialization of a member
 val MakeCheckSafeInit: g: TcGlobals -> tinst: TypeInst -> safeInitInfo: SafeInitData -> reqExpr: Expr -> expr: Expr -> Expr
@@ -606,27 +606,27 @@ val MakeCheckSafeInit: g: TcGlobals -> tinst: TypeInst -> safeInitInfo: SafeInit
 val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: ParentRef * inSig: bool * declKind: DeclKind * vrec: ValRecursiveScopeInfo * vscheme: ValScheme * attrs: Attribs * doc: XmlDoc * konst: Const option * isGeneratedEventVal: bool -> Val
 
 /// Make an initial 'base' value
-val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
+val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> SynIdentOrOperatorName option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
 val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
-val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option
+val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: SynIdentOrOperatorName option -> thisTy: TType -> Val option
 
 /// Make initial information for a member value
-val MakeMemberDataAndMangledNameForMemberVal: g: TcGlobals * tcref: TyconRef * isExtrinsic: bool * attrs: Attribs * optImplSlotTys: TType list * memberFlags: SynMemberFlags * valSynData: SynValInfo * id: Ident * isCompGen: bool -> PreValMemberInfo
+val MakeMemberDataAndMangledNameForMemberVal: g: TcGlobals * tcref: TyconRef * isExtrinsic: bool * attrs: Attribs * optImplSlotTys: TType list * memberFlags: SynMemberFlags * valSynData: SynValInfo * id: SynIdentOrOperatorName * isCompGen: bool -> PreValMemberInfo
 
 /// Return a new environment suitable for processing declarations in the interior of a type definition
 val MakeInnerEnvForTyconRef: env: TcEnv -> tcref: TyconRef -> isExtrinsicExtension: bool -> TcEnv
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
 /// including creating an accumulator for the module type.
-val MakeInnerEnv: addOpenToNameEnv: bool -> env: TcEnv -> nm: Ident -> modKind: ModuleOrNamespaceKind -> TcEnv * ModuleOrNamespaceType ref
+val MakeInnerEnv: addOpenToNameEnv: bool -> env: TcEnv -> nm: SynIdentOrOperatorName -> modKind: ModuleOrNamespaceKind -> TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
 /// given that the accumulator for the module type already exisits.
-val MakeInnerEnvWithAcc: addOpenToNameEnv: bool -> env: TcEnv -> nm: Ident -> mtypeAcc: ModuleOrNamespaceType ref -> modKind: ModuleOrNamespaceKind -> TcEnv
+val MakeInnerEnvWithAcc: addOpenToNameEnv: bool -> env: TcEnv -> nm: SynIdentOrOperatorName -> mtypeAcc: ModuleOrNamespaceType ref -> modKind: ModuleOrNamespaceKind -> TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
 /// is appplied.
@@ -699,7 +699,7 @@ val TryTcStmt: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExp
 /// Check a pattern being used as a pattern match
 val TcMatchPattern: cenv:TcFileState -> inputTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> pat:SynPat * optWhenExpr:SynExpr option -> Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv    
 
-val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
+val (|BinOpExpr|_|): SynExpr -> (SynIdentOrOperatorName * SynExpr * SynExpr) option
 
 /// Check a set of let bindings
 val TcLetBindings: cenv:TcFileState -> env:TcEnv -> containerInfo:ContainerInfo -> declKind:DeclKind -> tpenv:UnscopedTyparEnv -> binds:SynBinding list * bindsm:range * scopem:range -> ModuleOrNamespaceExpr list * TcEnv * UnscopedTyparEnv

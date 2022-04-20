@@ -101,7 +101,7 @@ val mkNonLocalTyconRefPreResolved: x:NonNullSlot<Entity> -> nleref:NonLocalEntit
 
 type EntityRef with
     member NestedTyconRef: x:Entity -> EntityRef
-    member RecdFieldRefInNestedTycon: tycon:Entity -> id:Ident -> RecdFieldRef
+    member RecdFieldRefInNestedTycon: tycon:Entity -> id:SynIdentOrOperatorName -> RecdFieldRef
 
 /// Make a reference to a union case for type in a module or namespace
 val mkModuleUnionCaseRef: modref:ModuleOrNamespaceRef -> tycon:Entity -> uc:UnionCase -> UnionCaseRef val VRefLocal: x:NonNullSlot<Val> -> ValRef

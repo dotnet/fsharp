@@ -91,7 +91,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     Some longIdentWithDots.Range
                 | SynPat.As (rhsPat=SynPat.Named (ident=ident; isThisVal=false))
                 | SynPat.Named (ident, false, _, _) ->
-                    Some ident.idRange
+                    Some ident.Range
                 | _ ->
                     None
 
@@ -137,7 +137,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.IdentOrOperatorName ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
                     match argExpr with
                     | SynExpr.App(_, _, _, SynExpr.Paren(expr, _, _, _), _) when rangeContainsPos expr.Range pos ->
                         None
@@ -171,7 +171,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     member _.TryRangeOfFunctionOrMethodBeingApplied pos =
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
-            | SynExpr.Ident ident -> Some ident.idRange
+            | SynExpr.IdentOrOperatorName ident -> Some ident.Range
         
             | SynExpr.LongIdent (_, _, _, range) -> Some range
 
@@ -308,7 +308,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
         let (|Ident|_|) ofName =
-            function | SynExpr.Ident ident when ident.idText = ofName -> Some ()
+            function | SynExpr.IdentOrOperatorName ident when ident.idText = ofName -> Some ()
                      | _ -> None
         let (|InfixAppOfOpEqualsGreater|_|) =
           function | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, Ident "op_EqualsGreater", actualParamListExpr, _), actualLambdaBodyExpr, _) ->
@@ -357,9 +357,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                | SynExpr.App(_, false, SynExpr.IdentOrOperatorName funcIdent, expr, _) ->
                     if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
-                        Some funcIdent.idRange
+                        Some funcIdent.Range
                     else
                         None
                 | _ -> defaultTraverse expr })
@@ -368,7 +368,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                | SynExpr.App(_, false, SynExpr.IdentOrOperatorName funcIdent, expr, _) ->
                     if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
                         Some expr.Range
                     else
@@ -392,7 +392,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         for group in info do
                             for arg in group do
                                 match arg.Ident with
-                                | Some ident when rangeContainsPos ident.idRange pos ->
+                                | Some ident when rangeContainsPos ident.Range pos ->
                                     found <- true
                                 | _ -> ()
                         if found then Some range else None
@@ -527,7 +527,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.LibraryOnlyILAssembly _
                   | SynExpr.LibraryOnlyStaticOptimization _
                   | SynExpr.Null _
-                  | SynExpr.Ident _
+                  | SynExpr.IdentOrOperatorName _
                   | SynExpr.ImplicitZero _
                   | SynExpr.Const _ -> 
                      ()

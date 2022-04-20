@@ -23,7 +23,7 @@ val IsScript: string -> bool
 
 val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> QualifiedNameOfFile
 
-val PrependPathToInput: Ident list -> ParsedInput -> ParsedInput
+val PrependPathToInput: SynIdentOrOperatorName list -> ParsedInput -> ParsedInput
 
 /// State used to de-deduplicate module names along a list of file names
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>

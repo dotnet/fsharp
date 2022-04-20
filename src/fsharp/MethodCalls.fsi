@@ -50,16 +50,16 @@ type CalledArg =
       IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
-      NameOpt: Ident option
+      NameOpt: SynIdentOrOperatorName option
       CalledArgumentType: TType }
 
-val CalledArg: pos:struct (int * int) * isParamArray:bool * optArgInfo:OptionalArgInfo * callerInfo:CallerInfo * isInArg:bool * isOutArg:bool * nameOpt:Ident option * reflArgInfo:ReflectedArgInfo * calledArgTy:TType -> CalledArg
+val CalledArg: pos:struct (int * int) * isParamArray:bool * optArgInfo:OptionalArgInfo * callerInfo:CallerInfo * isInArg:bool * isOutArg:bool * nameOpt:SynIdentOrOperatorName option * reflArgInfo:ReflectedArgInfo * calledArgTy:TType -> CalledArg
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
 type AssignedCalledArg<'T> =
     { /// The identifier for a named argument, if any
-      NamedArgIdOpt : Ident option
+      NamedArgIdOpt : SynIdentOrOperatorName option
 
       /// The called argument in the method
       CalledArg: CalledArg 
@@ -77,14 +77,14 @@ type AssignedItemSetterTarget =
 /// Represents the resolution of a caller argument as a named-setter argument
 type AssignedItemSetter<'T> =
     | AssignedItemSetter of
-      Ident * AssignedItemSetterTarget * CallerArg<'T>
+      SynIdentOrOperatorName * AssignedItemSetterTarget * CallerArg<'T>
 
 type CallerNamedArg<'T> =
-    | CallerNamedArg of Ident * CallerArg<'T>
+    | CallerNamedArg of SynIdentOrOperatorName * CallerArg<'T>
 
     member CallerArg: CallerArg<'T>
 
-    member Ident: Ident
+    member SynIdentOrOperatorName: SynIdentOrOperatorName
 
     member Name: string
   
@@ -283,7 +283,7 @@ type CalledMeth<'T> =
 
     member infoReader: InfoReader
   
-val NamesOfCalledArgs: calledArgs:CalledArg list -> Ident list
+val NamesOfCalledArgs: calledArgs:CalledArg list -> SynIdentOrOperatorName list
 
 type ArgumentAnalysis =
     | NoInfo
@@ -291,7 +291,7 @@ type ArgumentAnalysis =
     | CallerLambdaHasArgTypes of TType list
     | CalledArgMatchesType of adjustedCalledArgTy: TType * noEagerConstraintApplication: bool
 
-val ExamineMethodForLambdaPropagation: g: TcGlobals -> m: range -> meth:CalledMeth<SynExpr> -> ad:AccessorDomain -> (ArgumentAnalysis list list * (Ident * ArgumentAnalysis) list list) option
+val ExamineMethodForLambdaPropagation: g: TcGlobals -> m: range -> meth:CalledMeth<SynExpr> -> ad:AccessorDomain -> (ArgumentAnalysis list list * (SynIdentOrOperatorName * ArgumentAnalysis) list list) option
 
 /// Is this a 'base' call
 val IsBaseCall: objArgs:Expr list -> bool

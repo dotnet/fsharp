@@ -466,7 +466,7 @@ type EntityFlags(flags: int64) =
 exception UndefinedName of 
     depth: int * 
     error: (string -> string) * 
-    id: Ident * 
+    id: SynIdentOrOperatorName * 
     suggestions: Suggestions
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
@@ -502,7 +502,7 @@ type CompilationPath =
 
     member x.MangledPath = List.map fst x.AccessPath
 
-    member x.NestedPublicPath (id: Ident) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
+    member x.NestedPublicPath (id: SynIdentOrOperatorName) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
 
     member x.ParentCompPath = 
         let a, _ = List.frontAndBack x.AccessPath
@@ -1635,7 +1635,7 @@ type UnionCase =
       mutable XmlDocSig: string
 
       /// Name/range of the case 
-      Id: Ident 
+      Id: SynIdentOrOperatorName 
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
@@ -1651,7 +1651,7 @@ type UnionCase =
     }
 
     /// Get the declaration location of the union case
-    member uc.Range = uc.Id.idRange
+    member uc.Range = uc.Id.Range
 
     /// Get the definition location of the union case
     member uc.DefinitionRange = 
@@ -1752,7 +1752,7 @@ type RecdField =
       mutable rfield_fattribs: Attribs 
 
       /// Name/declaration-location of the field 
-      rfield_id: Ident
+      rfield_id: SynIdentOrOperatorName
 
       rfield_name_generated: bool
 
@@ -1771,7 +1771,7 @@ type RecdField =
     member v.FieldAttribs = v.rfield_fattribs
 
     /// Get the declaration location of the field 
-    member v.Range = v.rfield_id.idRange
+    member v.Range = v.rfield_id.Range
 
     /// Get the definition location of the field 
     member v.DefinitionRange = 
@@ -2092,7 +2092,7 @@ type Typar =
     {
       /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
       /// The identifier for the type parameter
-      mutable typar_id: Ident 
+      mutable typar_id: SynIdentOrOperatorName 
        
       /// The flag data for the type parameter
       mutable typar_flags: TyparFlags
@@ -2115,7 +2115,7 @@ type Typar =
     member x.Name = x.typar_id.idText
 
     /// The range of the identifier for the type parameter definition
-    member x.Range = x.typar_id.idRange
+    member x.Range = x.typar_id.Range
 
     /// The identifier for a type parameter definition
     member x.Id = x.typar_id
@@ -4114,7 +4114,7 @@ type AnonRecdTypeInfo =
 
       mutable TupInfo: TupInfo
 
-      mutable SortedIds: Ident[]
+      mutable SortedIds: SynIdentOrOperatorName[]
 
       mutable Stamp: Stamp
 
@@ -4122,7 +4122,7 @@ type AnonRecdTypeInfo =
     }
 
     /// Create an AnonRecdTypeInfo from the basic data
-    static member Create(ccu: CcuThunk, tupInfo, ids: Ident[]) = 
+    static member Create(ccu: CcuThunk, tupInfo, ids: SynIdentOrOperatorName[]) = 
         let sortedIds = ids |> Array.sortBy (fun id -> id.idText)
         // Hash all the data to form a unique stamp
         let stamp = 
@@ -4533,7 +4533,7 @@ type ArgReprInfo =
 
       /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
-      mutable Name: Ident option
+      mutable Name: SynIdentOrOperatorName option
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4545,7 +4545,7 @@ type ArgReprInfo =
 /// compiled as "real" IL type parameters, specifically for values with 
 /// ValReprInfo. Any information here is propagated from signature through
 /// to the compiled code.
-type TyparReprInfo = TyparReprInfo of Ident * TyparKind
+type TyparReprInfo = TyparReprInfo of SynIdentOrOperatorName * TyparKind
 
 type Typars = Typar list
  
@@ -5664,12 +5664,12 @@ type Construct() =
 #endif
 
     /// Create a new entity node for a module or namespace
-    static member NewModuleOrNamespace cpath access (id: Ident) (xml: XmlDoc) attribs mtype = 
+    static member NewModuleOrNamespace cpath access (id: SynIdentOrOperatorName) (xml: XmlDoc) attribs mtype = 
         let stamp = newStamp() 
         // Put the module suffix on if needed 
         Tycon.New "mspec"
           { entity_logical_name=id.idText
-            entity_range = id.idRange
+            entity_range = id.Range
             entity_stamp=stamp
             entity_modul_contents = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
@@ -5735,12 +5735,12 @@ type Construct() =
           OtherRangeOpt = None } 
 
     /// Create a new TAST Entity node for an F# exception definition
-    static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
+    static member NewExn cpath (id: SynIdentOrOperatorName) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp=newStamp()
             entity_attribs=attribs
             entity_logical_name=id.idText
-            entity_range=id.idRange
+            entity_range=id.Range
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_modul_contents = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)

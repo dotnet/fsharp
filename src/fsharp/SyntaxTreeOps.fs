@@ -21,7 +21,7 @@ type SynArgNameGenerator() =
 
 let ident (s, r) = Ident(s, r)
 
-let textOfId (id: Ident) = id.idText
+let textOfId (id: SynIdentOrOperatorName) = id.idText
 
 let pathOfLid lid = List.map textOfId lid
 
@@ -31,17 +31,17 @@ let textOfPath path = String.concat "." path
 
 let textOfLid lid = textOfPath (pathOfLid lid)
 
-let rangeOfLid (lid: Ident list) =
+let rangeOfLid (lid: SynIdentOrOperatorName list) =
     match lid with
     | [] -> failwith "rangeOfLid"
-    | [id] -> id.idRange
-    | h :: t -> unionRanges h.idRange (List.last t).idRange
+    | [id] -> id.Range
+    | h :: t -> unionRanges h.Range (List.last t).Range
 
 let mkSynId m s = Ident(s, m)
 
 let pathToSynLid m p = List.map (mkSynId m) p
 
-let mkSynIdGet m n = SynExpr.Ident (mkSynId m n)
+let mkSynIdGet m n = SynExpr.IdentOrOperatorName (mkSynId m n)
 
 let mkSynLidGet m path n =
     let lid = pathToSynLid m path @ [mkSynId m n]
@@ -50,29 +50,29 @@ let mkSynLidGet m path n =
 
 let mkSynIdGetWithAlt m id altInfo =
     match altInfo with
-    | None -> SynExpr.Ident id
+    | None -> SynExpr.IdentOrOperatorName id
     | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], []), altInfo, m)
 
-let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.idRange)
+let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.Range)
 
-let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false, id.idRange)
+let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false, id.Range)
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.IdentOrOperatorName id -> Some (false, LongIdentWithDots([id], []), None, id.Range)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (false, LongIdentWithDots([id], _), None, _) -> Some id
-    | SynExpr.Ident id -> Some id
+    | SynExpr.IdentOrOperatorName id -> Some id
     | _ -> None
 
 let (|SynBinOp|_|) input =
     match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.IdentOrOperatorName synId, x1, _m1), x2, _m2) ->
         Some (synId, x1, x2)
     | _ -> None
 
@@ -118,7 +118,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
-    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
+    | SynExpr.App (_, _, SynExpr.IdentOrOperatorName _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
     | SynExpr.LetOrUseBang _
     | SynExpr.Match _
@@ -161,9 +161,9 @@ let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, 
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
-let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
+let mkSynPatVar vis (id: SynIdentOrOperatorName) = SynPat.Named (id, false, vis, id.Range)
 
-let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
+let mkSynThisPatVar (id: SynIdentOrOperatorName) = SynPat.Named (id, true, None, id.Range)
 
 let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
 
@@ -252,7 +252,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                     SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange, { MatchKeyword = artificialMatchRange
                                                                                                                 WithKeyword = artificialMatchRange }))
 
-        SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
+        SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.Range), fn
 
 let appFunOpt funOpt x = match funOpt with None -> x | Some f -> f x
 
@@ -331,7 +331,8 @@ let opNameParenGet  = CompileOpName parenGet
 
 let opNameQMark = CompileOpName qmark
 
-let mkSynOperator opm oper = mkSynIdGet opm (CompileOpName oper)
+let mkSynOperator opm oper =
+    SynExpr.IdentOrOperatorName(SynIdentOrOperatorName.Operator(None, CompileOpName oper, opm, None))
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
@@ -417,7 +418,7 @@ let mkSynDot dotm m l r =
     | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm]), None, m)
-    | SynExpr.Ident id ->
+    | SynExpr.IdentOrOperatorName id ->
         SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm]), None, m)
     | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
@@ -430,7 +431,7 @@ let mkSynDotMissing dotm m l =
     | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
          // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
          SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm]), None, m)
-    | SynExpr.Ident id ->
+    | SynExpr.IdentOrOperatorName id ->
         SynExpr.LongIdent (false, LongIdentWithDots([id], [dotm]), None, m)
     | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
         SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
@@ -762,7 +763,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LibraryOnlyILAssembly _
           | SynExpr.LibraryOnlyStaticOptimization _
           | SynExpr.Null _
-          | SynExpr.Ident _
+          | SynExpr.IdentOrOperatorName _
           | SynExpr.ImplicitZero _
           | SynExpr.Const _ -> false
 

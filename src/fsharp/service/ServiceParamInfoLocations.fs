@@ -58,7 +58,7 @@ module internal ParameterLocationsImpl =
     let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
-        | SynExpr.Ident id -> Some ([id.idText], id.idRange)
+        | SynExpr.IdentOrOperatorName id -> Some ([id.idText], id.Range)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
@@ -75,19 +75,20 @@ module internal ParameterLocationsImpl =
         | SynType.LongIdent(LongIdentWithDots([id], _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
         | _ -> None
 
+    // TODO: a strong pattern match could be used here.
     let getNamedParamName e =
         match e with
         // f(x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
-                                    SynExpr.Ident n, 
+                                    SynExpr.IdentOrOperatorName op, 
+                                    SynExpr.IdentOrOperatorName n, 
                                     _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
+                                    SynExpr.IdentOrOperatorName op, 
                                     SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
@@ -201,7 +202,7 @@ module internal ParameterLocationsImpl =
                     | _ -> traverseSynExpr synExpr
 
             // EXPR<  = error recovery of a form of half-written TypeApp
-            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
+            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.IdentOrOperatorName op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
                 // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with
@@ -211,7 +212,7 @@ module internal ParameterLocationsImpl =
                     if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
-                        | Some(lid, lidRange) -> Some (ParameterLocations(lid, lidRange, op.idRange.Start, [], [ wholem.End ], false, []))
+                        | Some(lid, lidRange) -> Some (ParameterLocations(lid, lidRange, op.Range.Start, [], [ wholem.End ], false, []))
                         | None -> None
                     else
                         None

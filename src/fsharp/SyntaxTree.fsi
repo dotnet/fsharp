@@ -7,15 +7,25 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.SyntaxTrivia
 
+// TODO: the text is currently compiled using CompileOpName
+// Not sure if we want this in the untyped tree like this.
+
 /// Represents an identifier in F# code
-[<Struct; NoEquality; NoComparison>]
-type Ident =
-     new: text: string * range: range -> Ident
+[<NoEquality; NoComparison>]
+type SynIdentOrOperatorName =
+     | Ident of text: string * range: range
+     /// (|A|B|)
+     | ActivePattern of lpr: range * text: string * textRange: range * rpr: range
+     /// (|A|_|)
+     | PartialActivePattern of lpr: range * text: string * textRange: range * rpr: range 
+     /// (>=>)
+     | Operator of lpr: range option * text: string * textRange: range * rpr: range option
+    
      member idText: string
-     member idRange: range
+     member Range: range
        
 /// Represents a long identifier e.g. 'A.B.C'
-type LongIdent = Ident list
+type LongIdent = SynIdentOrOperatorName list
 
 /// Represents a long identifier with possible '.' at end.
 ///
@@ -61,7 +71,7 @@ type TyparStaticReq =
 /// Represents a syntactic type parameter
 [<NoEquality; NoComparison>]
 type SynTypar =
-    | SynTypar of ident: Ident * staticReq: TyparStaticReq * isCompGen: bool
+    | SynTypar of ident: SynIdentOrOperatorName * staticReq: TyparStaticReq * isCompGen: bool
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -472,7 +482,7 @@ type SynType =
     /// F# syntax: struct {| id: type; ...; id: type |}
     | AnonRecd of
         isStruct: bool *
-        fields:(Ident * SynType) list *
+        fields:(SynIdentOrOperatorName * SynType) list *
         range: range
 
     /// F# syntax: type[]
@@ -589,7 +599,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * range option * SynExpr) list *
+        recordFields:(SynIdentOrOperatorName * range option * SynExpr) list *
         range: range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
@@ -619,7 +629,7 @@ type SynExpr =
     /// F# syntax: { new ... with ... }
     | ObjExpr of
         objType: SynType *
-        argOptions:(SynExpr * Ident option) option *
+        argOptions:(SynExpr * SynIdentOrOperatorName option) option *
         withKeyword: range option *
         bindings: SynBinding list *
         members: SynMemberDefn list *
@@ -638,7 +648,7 @@ type SynExpr =
     | For of
         forDebugPoint: DebugPointAtFor *
         toDebugPoint: DebugPointAtInOrTo *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         equalsRange: range option *
         identBody: SynExpr *
         direction: bool *
@@ -809,8 +819,8 @@ type SynExpr =
 
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
-    | Ident of
-        ident: Ident
+    | IdentOrOperatorName of
+        identOrOperatorName: SynIdentOrOperatorName
 
     /// F# syntax: ident.ident...ident
     ///
@@ -1088,7 +1098,7 @@ type SynExprRecordField =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
-    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
+    | FillExpr of fillExpr: SynExpr * qualifiers: SynIdentOrOperatorName option
 
 /// Represents a syntax tree for simple F# patterns
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1107,7 +1117,7 @@ type SynSimplePat =
     /// isThisVal: true if 'this' variable in member
     /// isOptional: true if a '?' is in front of the name
     | Id of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         isCompilerGenerated: bool *
         isThisVal: bool *
@@ -1133,10 +1143,10 @@ type SynSimplePat =
 type SynSimplePatAlternativeIdInfo =
 
     /// We have not decided to use an alternative name in the pattern and related expression
-    | Undecided of Ident
+    | Undecided of SynIdentOrOperatorName
 
     /// We have decided to use an alternative name in the pattern and related expression
-    | Decided of Ident
+    | Decided of SynIdentOrOperatorName
 
 /// Represents a syntax tree for a static optimization constraint in the F# core library
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1177,7 +1187,7 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * range * SynPat) list *
+        pats: (SynIdentOrOperatorName * range * SynPat) list *
         range: range
 
     member Patterns: SynPat list
@@ -1197,7 +1207,7 @@ type SynPat =
 
     /// A name pattern 'ident' 
     | Named of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range
@@ -1236,7 +1246,7 @@ type SynPat =
     | LongIdent of
         longDotId: LongIdentWithDots *
         propertyKeyword: PropertyKeyword option *
-        extraId: Ident option * // holds additional ident for tooling
+        extraId: SynIdentOrOperatorName option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
         accessibility: SynAccess option *
@@ -1261,7 +1271,7 @@ type SynPat =
 
     /// A record pattern
     | Record of
-        fieldPats: ((LongIdent * Ident) * range * SynPat) list *
+        fieldPats: ((LongIdent * SynIdentOrOperatorName) * range * SynPat) list *
         range: range
 
     /// The 'null' pattern
@@ -1270,7 +1280,7 @@ type SynPat =
 
     /// '?id' -- for optional argument names
     | OptionalVal of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         range: range
 
     /// A type test pattern ':? type '
@@ -1291,9 +1301,9 @@ type SynPat =
 
     /// Used internally in the type checker
     | InstanceMember of
-        thisId: Ident *
-        memberId: Ident *
-        toolingId: Ident option * // holds additional ident for tooling
+        thisId: SynIdentOrOperatorName *
+        memberId: SynIdentOrOperatorName *
+        toolingId: SynIdentOrOperatorName option * // holds additional ident for tooling
         accessibility: SynAccess option *
         range: range
 
@@ -1348,7 +1358,7 @@ type SynAttribute =
       ArgExpr: SynExpr
 
       /// Target specifier, e.g. "assembly", "module", etc.
-      Target: Ident option
+      Target: SynIdentOrOperatorName option
 
       /// Is this attribute being applied to a property getter or setter?
       AppliesToGetterAndSetter: bool
@@ -1376,7 +1386,7 @@ type SynValData =
     | SynValData of
         memberFlags: SynMemberFlags option *
         valInfo: SynValInfo *
-        thisIdOpt: Ident option
+        thisIdOpt: SynIdentOrOperatorName option
 
     member SynValInfo: SynValInfo
 
@@ -1537,7 +1547,7 @@ type SynTypeDefnSimpleRepr =
     /// type representation which the type checker splits out from the "ObjectModel" cases of type definitions.
     | General of
         kind: SynTypeDefnKind *
-        inherits: (SynType * range * Ident option) list *
+        inherits: (SynType * range * SynIdentOrOperatorName option) list *
         slotsigs: (SynValSig * SynMemberFlags) list *
         fields: SynField list *
         isConcrete: bool *
@@ -1575,7 +1585,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1591,7 +1601,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1660,7 +1670,7 @@ type SynField =
     | SynField of
         attributes: SynAttributes *
         isStatic: bool *
-        idOpt: Ident option *
+        idOpt: SynIdentOrOperatorName option *
         fieldType: SynType *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
@@ -1693,7 +1703,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
@@ -1729,9 +1739,9 @@ type SynArgInfo =
     | SynArgInfo of
         attributes: SynAttributes *
         optional: bool *
-        ident: Ident option
+        ident: SynIdentOrOperatorName option
 
-    member Ident: Ident option
+    member Ident: SynIdentOrOperatorName option
 
     member Attributes: SynAttributes
 
@@ -1833,7 +1843,7 @@ type SynMemberDefn =
         accessibility: SynAccess option *
         attributes: SynAttributes *
         ctorArgs: SynSimplePats *
-        selfIdentifier: Ident option *
+        selfIdentifier: SynIdentOrOperatorName option *
         xmlDoc: PreXmlDoc *
         range: range
 
@@ -1841,7 +1851,7 @@ type SynMemberDefn =
     | ImplicitInherit of
         inheritType: SynType *
         inheritArgs: SynExpr *
-        inheritAlias: Ident option *
+        inheritAlias: SynIdentOrOperatorName option *
         range: range
 
     /// A 'let' definition within a class
@@ -1867,7 +1877,7 @@ type SynMemberDefn =
     /// An 'inherit' definition within a class
     | Inherit of
         baseType: SynType *
-        asIdent: Ident option *
+        asIdent: SynIdentOrOperatorName option *
         range: range
 
     /// A 'val' definition within a class
@@ -1885,7 +1895,7 @@ type SynMemberDefn =
     | AutoProperty of
         attributes: SynAttributes *
         isStatic: bool *
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         typeOpt: SynType option *
         propKind: SynMemberKind *
         memberFlags:(SynMemberKind -> SynMemberFlags) *
@@ -1908,7 +1918,7 @@ type SynModuleDecl =
 
     /// A module abbreviation definition 'module X = A.B.C'
     | ModuleAbbrev of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         longId: LongIdent *
         range: range
 
@@ -1992,7 +2002,7 @@ type SynModuleSigDecl =
 
     /// A module abbreviation definition within a module or namespace in a signature file
     | ModuleAbbrev of
-        ident: Ident *
+        ident: SynIdentOrOperatorName *
         longId: LongIdent *
         range: range
 
@@ -2183,13 +2193,13 @@ type ScopedPragma =
 /// Represents a qualifying name for anonymous module specifications and implementations,
 [<NoEquality; NoComparison>]
 type QualifiedNameOfFile =
-    | QualifiedNameOfFile of Ident
+    | QualifiedNameOfFile of SynIdentOrOperatorName
 
     /// The name of the file 
     member Text: string
 
     /// The identifier for the name of the file 
-    member Id: Ident
+    member Id: SynIdentOrOperatorName
 
     /// Gets the syntax range of this construct
     member Range: range

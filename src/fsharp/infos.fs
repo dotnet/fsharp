@@ -640,7 +640,7 @@ type ReflectedArgInfo =
 /// Partial information about a parameter returned for use by the Language Service
 [<NoComparison; NoEquality>]
 type ParamNameAndType =
-    | ParamNameAndType of Ident option * TType
+    | ParamNameAndType of SynIdentOrOperatorName option * TType
 
     static member FromArgInfo (ty, argInfo : ArgReprInfo) = ParamNameAndType(argInfo.Name, ty)
     static member FromMember isCSharpExtMem g vref = GetArgInfosOfMember isCSharpExtMem g vref |> List.mapSquared ParamNameAndType.FromArgInfo
@@ -656,7 +656,7 @@ type ParamData =
         isOut: bool *
         optArgInfo: OptionalArgInfo *
         callerInfo: CallerInfo *
-        nameOpt: Ident option *
+        nameOpt: SynIdentOrOperatorName option *
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 

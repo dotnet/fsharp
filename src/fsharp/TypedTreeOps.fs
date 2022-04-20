@@ -1200,7 +1200,7 @@ let mkMultiLambdaTy g m vs rty = mkFunTy g (typeOfLambdaArg m vs) rty
 /// particular point in order to do this.
 let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)) xml =
     let scoref = ccu.ILScopeRef 
-    let rec loop prior_cpath (path: Ident list) cpath (modul: ModuleOrNamespace) =
+    let rec loop prior_cpath (path: SynIdentOrOperatorName list) cpath (modul: ModuleOrNamespace) =
         let mtype = modul.ModuleOrNamespaceType 
         match path, cpath with 
         | hpath :: tpath, (_, mkind) :: tcpath -> 
@@ -3941,7 +3941,7 @@ module DebugPrint =
 
     let recdFieldRefL (rfref: RecdFieldRef) = wordL (tagText rfref.FieldName)
 
-    let identL (id: Ident) = wordL (tagText id.idText)
+    let identL (id: SynIdentOrOperatorName) = wordL (tagText id.idText)
 
     // Note: We need nice printing of constants in order to print literals and attributes 
     let constL c =
@@ -4345,9 +4345,9 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
     Construct.NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
 
-let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr = 
+let wrapModuleOrNamespaceExprInNamespace (id: SynIdentOrOperatorName) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
-    TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
+    TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.Range)
 
 // cleanup: make this a property
 let SigTypeOfImplFile (TImplFile (implExprWithSig=mexpr)) = mexpr.Type 
@@ -7224,7 +7224,7 @@ let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, un
     let core = Expr.Op (TOp.Recd (lnk, tcref), tinst, sortedArgExprs, m)
     mkLetsBind m unsortedArgBinds core
 
-let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) (unsortedIds: Ident[]) (unsortedFieldExprs: Expr list) unsortedArgTys =
+let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) (unsortedIds: SynIdentOrOperatorName[]) (unsortedFieldExprs: Expr list) unsortedArgTys =
     let sortedRecdFields = unsortedFieldExprs |> List.indexed |> Array.ofList |> Array.sortBy (fun (i,_) -> unsortedIds[i].idText)
     let sortedArgTys = unsortedArgTys |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds[i].idText) |> List.map snd
 

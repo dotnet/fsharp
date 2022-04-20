@@ -1148,7 +1148,7 @@ type FSharpOpenDeclaration =
     internal new: target: SynOpenDeclTarget * range: range option * modules: FSharpEntity list * types: FSharpType list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
 
     /// The syntactic target of the declaration
-    member LongId: Ident list
+    member LongId: SynIdentOrOperatorName list
 
     /// The syntactic target of the declaration
     member Target: SynOpenDeclTarget

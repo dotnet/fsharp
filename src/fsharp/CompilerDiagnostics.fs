@@ -155,12 +155,12 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
 
       | FieldNotContained(_, _, _, arf, _, _) -> Some arf.Range
       | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
-      | ConstrNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
+      | ConstrNotContained(_, _, _, aval, _, _) -> Some aval.Id.Range
       | ExnconstrNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
       | VarBoundTwice id
       | UndefinedName(_, _, id, _) ->
-          Some id.idRange
+          Some id.Range
 
       | Duplicate(_, _, m)
       | NameClash(_, _, _, m, _, _, _)

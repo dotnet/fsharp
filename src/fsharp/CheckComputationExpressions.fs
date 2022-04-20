@@ -326,7 +326,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         |> dict
 
     /// Decide if the identifier represents a use of a custom query operator
-    let tryGetDataForCustomOperation (nm: Ident) =
+    let tryGetDataForCustomOperation (nm: SynIdentOrOperatorName) =
         let isOpDataCountAllowed opDatas =
             match opDatas with
             | [_] -> true
@@ -338,13 +338,13 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             for opData in opDatas do
                 let opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo = opData
                 if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
-                     errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+                     errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.Range))
                 if not (cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations) then
                     match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
                     | true, [_] -> ()
-                    | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
+                    | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.Range))
             Some opDatas
-        | true, opData :: _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some [opData]
+        | true, opData :: _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.Range)); Some [opData]
         | _ -> None
 
     /// Decide if the identifier represents a use of a custom query operator
@@ -361,48 +361,48 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         v0
 
     // Check for the MaintainsVariableSpace on custom operation
-    let customOperationMaintainsVarSpace (nm: Ident) = 
+    let customOperationMaintainsVarSpace (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpace)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpace)
 
-    let customOperationMaintainsVarSpaceUsingBind (nm: Ident) = 
+    let customOperationMaintainsVarSpaceUsingBind (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpaceUsingBind)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpaceUsingBind)
 
-    let customOperationIsLikeZip (nm: Ident) = 
+    let customOperationIsLikeZip (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeZip)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeZip)
 
-    let customOperationIsLikeJoin (nm: Ident) = 
+    let customOperationIsLikeJoin (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeJoin)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeJoin)
 
-    let customOperationIsLikeGroupJoin (nm: Ident) = 
+    let customOperationIsLikeGroupJoin (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin)
 
-    let customOperationJoinConditionWord (nm: Ident) = 
+    let customOperationJoinConditionWord (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, joinConditionWord, _methInfo) -> joinConditionWord)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, joinConditionWord, _methInfo) -> joinConditionWord)
              |> function None -> "on" | Some v -> v
         | _ -> "on"  
 
-    let customOperationAllowsInto (nm: Ident) = 
+    let customOperationAllowsInto (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some opDatas ->
-            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto)
+            opDatas |> customOperationCheckValidity nm.Range (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto)
 
     let customOpUsageText nm = 
         match tryGetDataForCustomOperation nm with
@@ -431,7 +431,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
 
-    let tryGetArgAttribsForCustomOperator (nm: Ident) = 
+    let tryGetArgAttribsForCustomOperator (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | Some argInfos -> 
             argInfos 
@@ -442,7 +442,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             |> Some
         | _ -> None
 
-    let tryGetArgInfosForCustomOperator (nm: Ident) = 
+    let tryGetArgInfosForCustomOperator (nm: SynIdentOrOperatorName) = 
         match tryGetDataForCustomOperation nm with 
         | Some argInfos -> 
             argInfos 
@@ -456,7 +456,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             |> Some
         | _ -> None
 
-    let tryExpectedArgCountForCustomOperator (nm: Ident) = 
+    let tryExpectedArgCountForCustomOperator (nm: SynIdentOrOperatorName) = 
         match tryGetArgAttribsForCustomOperator nm with 
         | None -> None
         | Some argInfosForOverloads -> 
@@ -482,7 +482,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 None
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
-    let isCustomOperationProjectionParameter i (nm: Ident) = 
+    let isCustomOperationProjectionParameter i (nm: SynIdentOrOperatorName) = 
         match tryGetArgInfosForCustomOperator nm with
         | None -> false
         | Some argInfosForOverloads ->
@@ -497,7 +497,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             else 
                 let opDatas = (tryGetDataForCustomOperation nm).Value
                 let opName, _, _, _, _, _, _, _j, _ = opDatas[0]
-                errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+                errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.Range))
                 false
 
     let (|ForEachThen|_|) e = 
@@ -525,7 +525,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             match e with 
             | SynExpr.App (_, _, SynExpr.App (_, _, e1, SingleIdent opName, _), e2, _) when opName.idText = customOperationJoinConditionWord nm -> 
                 let item = Item.CustomOperation (opName.idText, (fun () -> None), None)
-                CallNameResolutionSink cenv.tcSink (opName.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
+                CallNameResolutionSink cenv.tcSink (opName.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
                 Some (e1, e2)
             | _ -> None
 
@@ -533,13 +533,13 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     let (|IntoSuffix|_|) (e: SynExpr) = 
         match e with 
         | SynExpr.App (_, _, SynExpr.App (_, _, x, SingleIdent nm2, _), ExprAsPat intoPat, _) when nm2.idText = CustomOperations.Into -> 
-            Some (x, nm2.idRange, intoPat)
+            Some (x, nm2.Range, intoPat)
         | _ -> 
             None
 
     let arbPat (m: range) = mkSynPatVar None (mkSynId (m.MakeSynthetic()) "_missingVar")
 
-    let MatchIntoSuffixOrRecover alreadyGivenError (nm: Ident) (e: SynExpr) = 
+    let MatchIntoSuffixOrRecover alreadyGivenError (nm: SynIdentOrOperatorName) (e: SynExpr) = 
         match e with 
         | IntoSuffix (x, intoWordRange, intoPat) -> 
             // record the "into" as a custom operation for colorization
@@ -548,7 +548,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             (x, intoPat, alreadyGivenError)
         | _ -> 
             if not alreadyGivenError then 
-                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             (e, arbPat e.Range, true)
 
     let MatchOnExprOrRecover alreadyGivenError nm (onExpr: SynExpr) = 
@@ -558,7 +558,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | _ -> 
             if not alreadyGivenError then 
                 suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv onExpr) |> ignore
-                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             (arbExpr("_innerSource", onExpr.Range), mkSynBifix onExpr.Range "=" (arbExpr("_keySelectors", onExpr.Range)) (arbExpr("_keySelector2", onExpr.Range)))
 
     let JoinOrGroupJoinOp detector e = 
@@ -567,11 +567,11 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             Some(nm, innerSourcePat, mJoinCore, false)
         // join with bad pattern (gives error on "join" and continues)
         | SynExpr.App (_, _, CustomOpId detector nm, _innerSourcePatExpr, mJoinCore) ->
-            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             Some(nm, arbPat mJoinCore, mJoinCore, true)
         // join (without anything after - gives error on "join" and continues)
         | CustomOpId detector nm -> 
-            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             Some(nm, arbPat e.Range, e.Range, true)
         | _ -> 
             None
@@ -589,7 +589,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             Some(nm, innerSourcePat, innerSource, keySelectors, mJoinCore)
         | JoinOp (nm, innerSourcePat, mJoinCore, alreadyGivenError) ->
             if alreadyGivenError then 
-                errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+                errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             Some (nm, innerSourcePat, arbExpr("_innerSource", e.Range), arbKeySelectors e.Range, mJoinCore)
         | _ -> None
 
@@ -601,7 +601,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             Some (nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore)
         | GroupJoinOp (nm, innerSourcePat, mGroupJoinCore, alreadyGivenError) ->
             if alreadyGivenError then 
-               errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+               errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             Some (nm, innerSourcePat, arbExpr("_innerSource", e.Range), arbKeySelectors e.Range, arbPat e.Range, mGroupJoinCore)
         | _ -> 
             None
@@ -624,7 +624,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
         // zip (without secondSource or in - gives error)
         | CustomOpId customOperationIsLikeZip nm -> 
-                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+                errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
                 Some(nm, arbPat e.Range, arbExpr("_secondSource", e.Range), None, None, e.Range)
 
         // zip secondSource (without in - gives error)
@@ -647,7 +647,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
              -> Some (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
         | JoinOrGroupJoinOrZipClause(nm, pat2, expr2, expr3, pat3opt, mOpCore) when strict -> 
-            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+            errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
             Some (true, arbPat e.Range, arbExpr("_outerSource", e.Range), nm, pat2, expr2, expr3, pat3opt, mOpCore, arbExpr("_innerComp", e.Range))
 
         | _ -> 
@@ -689,8 +689,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
         | [] -> SynExpr.Const (SynConst.Unit, m)
-        | [v] -> SynExpr.Ident v.Id
-        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
+        | [v] -> SynExpr.IdentOrOperatorName v.Id
+        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.IdentOrOperatorName v.Id)), [], m)  
 
     let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
@@ -802,7 +802,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         // zip expr1 expr2 (fun pat1 pat3 -> ...)
         | ForEachThenJoinOrGroupJoinOrZipClause true (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) -> 
 
-            if q = CustomOperationsMode.Denied then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.idRange))
+            if q = CustomOperationsMode.Denied then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.Range))
             let firstSource = mkSourceExprConditional isFromSource firstSource
             let secondSource = mkSourceExpr secondSource
 
@@ -836,7 +836,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
               // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
             match tryGetDataForCustomOperation nm with 
-            | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.idRange))
+            | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.Range))
             | Some opDatas -> 
             let opName, _, _, _, _, _, _, _, methInfo = opDatas[0]
 
@@ -845,7 +845,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
             // of type variables in the quick info provided in the IDE.
-            CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (nm.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
             let mkJoinExpr keySelector1 keySelector2 innerPat e = 
                 let mSynthetic = mOpCore.MakeSynthetic()
@@ -1249,8 +1249,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             let bindExpr =
                 let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, transNoQueryOps innerComp, innerComp.Range, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
-                let consumeExpr = mkSynCall "Using" mBind [SynExpr.Ident(id); consumeExpr ]
-                let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
+                let consumeExpr = mkSynCall "Using" mBind [SynExpr.IdentOrOperatorName(id); consumeExpr ]
+                let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, consumeExpr, id.Range, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
                 let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
                 mkSynCall "Bind" mBind [rhsExpr; consumeExpr]
                 |> addBindDebugPoint spBind
@@ -1503,10 +1503,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
             // of type variables in the quick info provided in the IDE.
-            CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
+            CallNameResolutionSink cenv.tcSink (nm.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
             if isLikeZip || isLikeJoin || isLikeGroupJoin then
-                errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
+                errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.Range))
                 match optionalCont with 
                 | None -> 
                     // we are about to drop the 'opExpr' AST on the floor. we've already reported an error. attempt to get name resolutions before dropping it
@@ -1536,7 +1536,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                             mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                         else 
                             let expectedArgCount = defaultArg expectedArgCount 0
-                            errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
+                            errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.Range))
                             mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
                     | _ -> failwith "unreachable"
 

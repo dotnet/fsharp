@@ -51,7 +51,7 @@ let internal identsAndRanges (input: ParsedInput) =
         let xs = moduleDecls |> List.collect extractFromModuleDecl
         if longIdent.IsEmpty then xs
         else
-            (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce unionRanges)) :: xs
+            (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.Range) |> List.reduce unionRanges)) :: xs
 
     match input with
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = modulesOrNamespaces)) ->

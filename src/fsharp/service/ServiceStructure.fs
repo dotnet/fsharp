@@ -48,7 +48,7 @@ module Structure =
     let longIdentRange (longId:LongIdent) =
         match longId with 
         | [] -> range0
-        | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
+        | head :: _ -> Range.startToEnd head.Range (List.last longId).Range
 
     /// Calculate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
@@ -289,7 +289,7 @@ module Structure =
             | SynExpr.App (atomicFlag, isInfix, funcExpr, argExpr, r) ->
                 // seq exprs, custom operators, etc
                 if ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
-                   && (function SynExpr.Ident _    -> true  | _ -> false) funcExpr
+                   && (function SynExpr.IdentOrOperatorName _    -> true  | _ -> false) funcExpr
                    && (function SynExpr.ComputationExpr _ -> false | _ -> true ) argExpr then
                    // if the argExpr is a computation expression another match will handle the outlining
                    // these cases must be removed to prevent creating unnecessary tags for the same scope
@@ -830,7 +830,7 @@ module Structure =
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
             | SynModuleSigDecl.Val (SynValSig(attributes=attrs; ident=ident; range=valrange), r) ->
-                let collapse = Range.endToEnd ident.idRange valrange
+                let collapse = Range.endToEnd ident.Range valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs
             | SynModuleSigDecl.Types (typeSigs, _) ->
