@@ -263,7 +263,7 @@ and ConvWitnessInfo cenv env m traitInfo =
     let env = { env with suppressWitnesses = true }
     // First check if this is a witness in ReflectedDefinition code
     if env.witnessesInScope.ContainsKey witnessInfo then 
-        let witnessArgIdx = env.witnessesInScope.[witnessInfo]
+        let witnessArgIdx = env.witnessesInScope[witnessInfo]
         QP.mkVar witnessArgIdx
     // Otherwise it is a witness in a quotation literal 
     else
@@ -531,7 +531,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let rgtypR = ConvILTypeRef cenv tref
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
-            QP.mkRecdGet(rgtypR, anonInfo.SortedNames.[n], tyargsR, argsR)
+            QP.mkRecdGet(rgtypR, anonInfo.SortedNames[n], tyargsR, argsR)
 
         | TOp.UnionCaseFieldGet (ucref, n), tyargs, [e] ->
             ConvUnionFieldGet cenv env m ucref n tyargs e
@@ -610,7 +610,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ExnFieldGet (tcref, i), [], [obj] ->
             let exnc = stripExnEqns tcref
-            let fspec = exnc.TrueInstanceFieldsAsList.[i]
+            let fspec = exnc.TrueInstanceFieldsAsList[i]
             let parentTyconR = ConvTyconRef cenv tcref m
             let propRetTypeR = ConvType cenv env m fspec.FormalType
             let callArgR = ConvExpr cenv env obj
@@ -722,7 +722,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | Some witnessArgIdx -> 
         
                 let witnessR = QP.mkVar witnessArgIdx
-                let args = if args.Length = 0 then [ mkUnit g m ] else args
+                let args = if List.isEmpty args then [ mkUnit g m ] else args
                 let argsR = ConvExprs cenv env args
                 (witnessR, argsR) ||> List.fold (fun fR argR -> QP.mkApp (fR, argR))
         
@@ -926,14 +926,14 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     let g = cenv.g
     let v = vref.Deref
     if env.isinstVals.ContainsVal v then
-        let ty, e = env.isinstVals.[v]
+        let ty, e = env.isinstVals[v]
         ConvExpr cenv env (mkCallUnbox g m ty e)
     elif env.substVals.ContainsVal v then
-        let e = env.substVals.[v]
+        let e = env.substVals[v]
         ConvExpr cenv env e
     elif env.vs.ContainsVal v then
         if not (List.isEmpty tyargs) then wfail(InternalError("ignoring generic application of local quoted variable", m))
-        QP.mkVar(env.vs.[v])
+        QP.mkVar(env.vs[v])
     elif v.IsCtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
         QP.mkThisVar(ConvType cenv env m v.Type)
     else
@@ -1090,7 +1090,7 @@ and ConvDecisionTree cenv env tgs typR x =
                       // Decompile cached isinst tests
                       match e1 with
                       | Expr.Val (vref, _, _) when env.isinstVals.ContainsVal vref.Deref  ->
-                          let ty, e =  env.isinstVals.[vref.Deref]
+                          let ty, e =  env.isinstVals[vref.Deref]
                           let tyR = ConvType cenv env m ty
                           let eR = ConvExpr cenv env e
                           // note: reverse the branches - a null test is a failure of an isinst test
@@ -1116,7 +1116,7 @@ and ConvDecisionTree cenv env tgs typR x =
         EmitDebugInfoIfNecessary cenv env m converted
 
       | TDSuccess (args, n) ->
-          let (TTarget(vars, rhs, _)) = tgs.[n]
+          let (TTarget(vars, rhs, _)) = tgs[n]
           // TAST stores pattern bindings in reverse order for some reason
           // Reverse them here to give a good presentation to the user
           let args = List.rev args
@@ -1169,7 +1169,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
             | _ ->
                 let idx = cenv.referencedTypeDefs.Count
                 cenv.referencedTypeDefs.Add tr
-                cenv.referencedTypeDefsTable.[tr] <- idx
+                cenv.referencedTypeDefsTable[tr] <- idx
                 idx
         QP.Idx idx
 

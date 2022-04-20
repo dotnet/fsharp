@@ -132,7 +132,7 @@ type CompilerService() =
     let parsingOptions =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
-            ConditionalCompilationDefines = []
+            ConditionalDefines = []
             ErrorSeverityOptions = FSharpDiagnosticOptions.Default
             LangVersionText = "default"
             IsInteractive = false

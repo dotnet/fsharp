@@ -164,7 +164,7 @@ module DispatchSlotChecking =
         match vsl with 
         | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
-            let vs = if vs.Length = 1 && argInfos.IsEmpty then [] else vs
+            let vs = if List.isSingleton vs && argInfos.IsEmpty then [] else vs
             let implKind = 
                 if isInterfaceTy g implty then 
                     CanImplementAnyInterfaceSlot 
@@ -398,7 +398,7 @@ module DispatchSlotChecking =
 
             if missingOverloadImplementation.Count = 1 then
                 // only one missing override, we have specific message for that
-                let signature = (snd missingOverloadImplementation.[0]).Value
+                let signature = (snd missingOverloadImplementation[0]).Value
                 if messageWithInterfaceSuggestion then 
                     fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
                 else

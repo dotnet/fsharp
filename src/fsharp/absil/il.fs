@@ -160,7 +160,7 @@ type LazyOrderedMultiMap<'Key, 'Data when 'Key : equality>(keyf : 'Data -> 'Key,
                     match t.TryGetValue key with
                     | true, v -> v
                     | _ -> []
-                t.[key] <- y :: v)
+                t[key] <- y :: v)
             t)
 
     member self.Entries() = lazyItems.Force()
@@ -238,7 +238,7 @@ module SHA1 =
 
     let shaRead8 sha =
         let s = sha.stream
-        let b = if sha.pos >= s.Length then shaAfterEof sha else int32 s.[sha.pos]
+        let b = if sha.pos >= s.Length then shaAfterEof sha else int32 s[sha.pos]
         sha.pos <- sha.pos + 1
         b
 
@@ -264,16 +264,16 @@ module SHA1 =
         let w = Array.create 80 0x00
         while (not sha.eof) do
             for i = 0 to 15 do
-                w.[i] <- shaRead32 sha
+                w[i] <- shaRead32 sha
             for t = 16 to 79 do
-                w.[t] <- rotLeft32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
+                w[t] <- rotLeft32 (w[t-3] ^^^ w[t-8] ^^^ w[t-14] ^^^ w[t-16]) 1
             a <- h0
             b <- h1
             c <- h2
             d <- h3
             e <- h4
             for t = 0 to 79 do
-                let temp = (rotLeft32 a 5) + f (t, b, c, d) + e + w.[t] + k t
+                let temp = (rotLeft32 a 5) + f (t, b, c, d) + e + w[t] + k t
                 e <- d
                 d <- c
                 c <- rotLeft32 b 30
@@ -458,7 +458,7 @@ type ILAssemblyRef(data) =
                           else Convert.ToInt32 'a' + (digit - 10)
                       Convert.ToChar digitc
                   for i = 0 to pkt.Length-1 do
-                      let v = pkt.[i]
+                      let v = pkt[i]
                       addC (convDigit (int32 v / 16))
                       addC (convDigit (int32 v % 16))
             // retargetable can be true only for system assemblies that definitely have Version
@@ -1804,11 +1804,11 @@ type ILMethodDefs(f : unit -> ILMethodDef[]) =
             let arr = array.Value
             let t = Dictionary<_, _>()
             for i = arr.Length - 1 downto 0 do
-                let y = arr.[i]
+                let y = arr[i]
                 let key = y.Name
                 match t.TryGetValue key with
-                | true, m -> t.[key] <- y :: m
-                | _ -> t.[key] <- [y]
+                | true, m -> t[key] <- y :: m
+                | _ -> t[key] <- [y]
             t)
 
     interface IEnumerable with
@@ -1876,7 +1876,7 @@ type ILEventDefs =
 
     member x.AsList() = let (ILEvents t) = x in t.Entries()
 
-    member x.LookupByName s = let (ILEvents t) = x in t.[s]
+    member x.LookupByName s = let (ILEvents t) = x in t[s]
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option,
@@ -1926,7 +1926,7 @@ type ILPropertyDefs =
 
     member x.AsList() = let (ILProperties t) = x in t.Entries()
 
-    member x.LookupByName s = let (ILProperties t) = x in t.[s]
+    member x.LookupByName s = let (ILProperties t) = x in t[s]
 
 let convertFieldAccess (ilMemberAccess: ILMemberAccess) =
     match ilMemberAccess with
@@ -1985,7 +1985,7 @@ type ILFieldDefs =
 
     member x.AsList() = let (ILFields t) = x in t.Entries()
 
-    member x.LookupByName s = let (ILFields t) = x in t.[s]
+    member x.LookupByName s = let (ILFields t) = x in t[s]
 
 type ILMethodImplDef =
     { Overrides: ILOverridesSpec
@@ -2198,7 +2198,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
         let t = Dictionary<_, _>(HashIdentity.Structural)
         for pre in arr do
             let key = pre.Namespace, pre.Name
-            t.[key] <- pre
+            t[key] <- pre
         ReadOnlyDictionary t)
 
     member x.AsArray() = [| for pre in array.Value -> pre.GetTypeDef() |]
@@ -2216,7 +2216,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
 
     member x.FindByName nm =
         let ns, n = splitILTypeName nm
-        dict.Value.[(ns, n)].GetTypeDef()
+        dict.Value[(ns, n)].GetTypeDef()
 
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
@@ -2760,21 +2760,21 @@ let mkNormalNewobj mspec = I_newobj (mspec, None)
 
 let ldargs = [| for i in 0 .. 128 -> I_ldarg (uint16 i) |]
 
-let mkLdarg i = if 0us < i && i < uint16 ldargs.Length then ldargs.[int i] else I_ldarg i
+let mkLdarg i = if 0us < i && i < uint16 ldargs.Length then ldargs[int i] else I_ldarg i
 
 let mkLdarg0 = mkLdarg 0us
 
 let ldlocs = [| for i in 0 .. 512 -> I_ldloc (uint16 i) |]
 
-let mkLdloc i = if 0us < i && i < uint16 ldlocs.Length then ldlocs.[int i] else I_ldloc i
+let mkLdloc i = if 0us < i && i < uint16 ldlocs.Length then ldlocs[int i] else I_ldloc i
 
 let stlocs = [| for i in 0 .. 512 -> I_stloc (uint16 i) |]
 
-let mkStloc i = if 0us < i && i < uint16 stlocs.Length then stlocs.[int i] else I_stloc i
+let mkStloc i = if 0us < i && i < uint16 stlocs.Length then stlocs[int i] else I_stloc i
 
 let ldi32s = [| for i in 0 .. 256 -> AI_ldc (DT_I4, ILConst.I4 i) |]
 
-let mkLdcInt32 i = if 0 < i && i < ldi32s.Length then ldi32s.[i] else AI_ldc (DT_I4, ILConst.I4 i)
+let mkLdcInt32 i = if 0 < i && i < ldi32s.Length then ldi32s[i] else AI_ldc (DT_I4, ILConst.I4 i)
 
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 
@@ -3154,7 +3154,7 @@ let mdef_code2code f (md: ILMethodDef) =
 let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let instrs = Array.ofList instrs
     let n = instrs.Length
-    match c2.Instrs.[0] with
+    match c2.Instrs[0] with
     // If there is a sequence point as the first instruction then keep it at the front
     | I_seqpoint _ as i0 ->
         let labels =
@@ -3162,7 +3162,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
             for kvp in c2.Labels do dict.Add (kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n)
             dict
         { c2 with Labels = labels
-                  Instrs = Array.concat [| [|i0|] ; instrs ; c2.Instrs.[1..] |] }
+                  Instrs = Array.concat [| [|i0|] ; instrs ; c2.Instrs[1..] |] }
     | _ ->
         let labels =
             let dict = Dictionary.newWithSize c2.Labels.Count
@@ -3556,7 +3556,7 @@ let sigptr_get_ieee64 bytes sigptr =
 let sigptr_get_intarray n (bytes: byte[]) sigptr =
     let res = Bytes.zeroCreate n
     for i = 0 to n - 1 do
-        res.[i] <- bytes.[sigptr + i]
+        res[i] <- bytes[sigptr + i]
     res, sigptr + n
 
 let sigptr_get_string n bytes sigptr =
@@ -3746,17 +3746,17 @@ let parseILVersion (vstr : string) =
     if versionComponents.Length > 2 then
       let defaultBuild = uint16 tspan.Days % UInt16.MaxValue - 1us
       let defaultRevision = uint16 (DateTime.UtcNow.TimeOfDay.TotalSeconds / 2.0) % UInt16.MaxValue - 1us
-      if versionComponents.[2] = "*" then
+      if versionComponents[2] = "*" then
         if versionComponents.Length > 3 then
           failwith "Invalid version format"
         else
           // set the build number to the number of days since Jan 1, 2000
-          versionComponents.[2] <- defaultBuild.ToString()
+          versionComponents[2] <- defaultBuild.ToString()
           // Set the revision number to number of seconds today / 2
           vstr <- String.Join (".", versionComponents) + "." + defaultRevision.ToString()
-      elif versionComponents.Length > 3 && versionComponents.[3] = "*" then
+      elif versionComponents.Length > 3 && versionComponents[3] = "*" then
         // Set the revision number to number of seconds today / 2
-        versionComponents.[3] <- defaultRevision.ToString()
+        versionComponents[3] <- defaultRevision.ToString()
         vstr <- String.Join (".", versionComponents)
 
     let version = Version vstr
@@ -3911,10 +3911,10 @@ type ILTypeSigParser (tstring : string) =
     let nil = '\r' // cannot appear in a type sig
 
     // take a look at the next value, but don't advance
-    let peek() = if currentPos < (tstring.Length-1) then tstring.[currentPos+1] else nil
-    let peekN skip = if currentPos < (tstring.Length - skip) then tstring.[currentPos+skip] else nil
+    let peek() = if currentPos < (tstring.Length-1) then tstring[currentPos+1] else nil
+    let peekN skip = if currentPos < (tstring.Length - skip) then tstring[currentPos+skip] else nil
     // take a look at the current value, but don't advance
-    let here() = if currentPos < tstring.Length then tstring.[currentPos] else nil
+    let here() = if currentPos < tstring.Length then tstring[currentPos] else nil
     // move on to the next character
     let step() = currentPos <- currentPos+1
     // ignore the current lexeme
@@ -3923,7 +3923,7 @@ type ILTypeSigParser (tstring : string) =
     let drop() = skip() ; step() ; skip()
     // return the current lexeme, advance
     let take() =
-        let s = if currentPos < tstring.Length then tstring.[startPos..currentPos] else ""
+        let s = if currentPos < tstring.Length then tstring[startPos..currentPos] else ""
         drop()
         s
 
@@ -4141,9 +4141,9 @@ let decodeILAttribData (ca: ILAttribute) =
             let unqualified_tname, rest =
                 let pieces = qualified_tname.Split ','
                 if pieces.Length > 1 then
-                    pieces.[0], Some (String.concat "," pieces.[1..])
+                    pieces[0], Some (String.concat "," pieces[1..])
                 else
-                    pieces.[0], None
+                    pieces[0], None
             let scoref =
                 match rest with
                 | Some aname -> ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName (AssemblyName aname))
@@ -4235,7 +4235,9 @@ and refs_of_fref s x =
     refs_of_typ s x.Type
     s.refsFs.Add x |> ignore
 
-and refs_of_ospec s (OverridesSpec (mref, ty)) = refs_of_mref s mref; refs_of_typ s ty
+and refs_of_ospec s (OverridesSpec (mref, ty)) =
+    refs_of_mref s mref
+    refs_of_typ s ty
 
 and refs_of_mspec s (x: ILMethodSpec) =
     refs_of_mref s x.MethodRef
@@ -4254,13 +4256,27 @@ and refs_of_token s x =
     | ILToken.ILMethod mr -> refs_of_mspec s mr
     | ILToken.ILField fr -> refs_of_fspec s fr
 
+and refs_of_attrib_elem s (e: ILAttribElem) =
+    match e with
+    | Type (Some ty) -> refs_of_typ s ty
+    | TypeRef (Some tref) -> refs_of_tref s tref
+    | Array (ty, els) ->
+        refs_of_typ s ty 
+        refs_of_attrib_elems s els
+    | _ -> ()
+    
+and refs_of_attrib_elems s els =
+    els |> List.iter (refs_of_attrib_elem s)
+
 and refs_of_custom_attr s (cattr: ILAttribute) =
     refs_of_mspec s cattr.Method
+    refs_of_attrib_elems s cattr.Elements 
 
 and refs_of_custom_attrs s (cas : ILAttributes) =
-    Array.iter (refs_of_custom_attr s) (cas.AsArray())
+    cas.AsArray() |> Array.iter (refs_of_custom_attr s)
 
-and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso
+and refs_of_varargs s tyso =
+    Option.iter (refs_of_tys s) tyso
 
 and refs_of_instr s x =
     match x with
@@ -4402,6 +4418,7 @@ and refs_of_resources s (tab: ILResources) =
 and refs_of_modul s m =
     refs_of_types s m.TypeDefs
     refs_of_resources s m.Resources
+    refs_of_custom_attrs s m.CustomAttrs
     Option.iter (refs_of_manifest s) m.Manifest
 
 and refs_of_manifest s (m: ILAssemblyManifest) =

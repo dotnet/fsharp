@@ -41,7 +41,7 @@ RelaxWhitespace2.fs (2742,9)-(2744,13) typecheck warning Incomplete pattern matc
 RelaxWhitespace2.fs (3391,13)-(3391,14) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 RelaxWhitespace2.fs (3394,13)-(3394,14) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 RelaxWhitespace2.fs (3397,13)-(3397,14) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
-RelaxWhitespace2.fs (3403,21)-(3403,22) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
+RelaxWhitespace2.fs (3401,13)-(3406,21) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 RelaxWhitespace2.fs (3410,13)-(3415,20) typecheck warning Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 RelaxWhitespace2.fs (3713,1)-(3713,9) typecheck warning Incomplete pattern matches on this expression. For example, the value '{ y=0 }' may indicate a case not covered by the pattern(s).
 RelaxWhitespace2.fs (3720,1)-(3720,9) typecheck warning Incomplete pattern matches on this expression.

@@ -127,6 +127,7 @@ namespace FSharp.Compiler.Symbols
 
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =
+
         val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
         val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc

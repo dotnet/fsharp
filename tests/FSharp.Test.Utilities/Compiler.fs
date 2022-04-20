@@ -25,6 +25,7 @@ module rec Compiler =
     type BaselineFile =
         {
             FilePath: string
+            BslSource: string
             Content: string option
         }
 
@@ -233,7 +234,6 @@ module rec Compiler =
                 EndLine     = range.EndLine     - adjust
                 EndColumn   = range.EndColumn   + 1 }
 
-
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
 
@@ -265,14 +265,15 @@ module rec Compiler =
         fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
 
     let FsFromPath (path: string) : CompilationUnit =
-        fsFromString (SourceFromPath path) |> FS
+        fsFromString (SourceFromPath path)
+        |> FS
+        |> withName (Path.GetFileNameWithoutExtension(path))
 
     let CSharp (source: string) : CompilationUnit =
         csFromString (SourceCodeFileKind.Fs({FileName="test.cs"; SourceText=Some source })) |> CS
 
     let CSharpFromPath (path: string) : CompilationUnit =
         csFromString (SourceFromPath path) |> CS
-
 
     let asFsx (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -312,6 +313,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
+
+    let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
@@ -766,6 +770,14 @@ module rec Compiler =
                     let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
+                        // Failed try update baselines if required
+                        // If we are here then the il file has been produced we can write it back to the baseline location
+                        // if the environment variable TEST_UPDATE_BSL has been set
+                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
+                            match baseline with
+                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                                | None -> ()
+
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
 
@@ -773,7 +785,7 @@ module rec Compiler =
         match cUnit with
         | FS fs ->
             match fs |> compileFSharp  with
-            | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+            | CompilationResult.Failure a -> failwith $"Build failure: {a}"
             | CompilationResult.Success s -> verifyFSILBaseline fs.Baseline s
         | _ -> failwith "Baseline tests are only supported for F#."
 
@@ -785,6 +797,7 @@ module rec Compiler =
 
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
+    | VerifySequencePoints of (Line * Col * Line * Col) list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -838,11 +851,24 @@ module rec Compiler =
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
+
+        let sequencePoints = 
+            [ for sp in reader.MethodDebugInformation do
+                let mdi = reader.GetMethodDebugInformation sp
+                yield! mdi.GetSequencePoints() ]
+            |> List.sortBy (fun sp -> sp.StartLine)
+            |> List.map (fun sp -> (Line sp.StartLine, Col sp.StartColumn, Line sp.EndLine, Col sp.EndColumn) )
+        
+        if sequencePoints <> expectedSequencePoints then
+            failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
+
 
     let private verifyPdbOptions reader options =
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
+            | VerifySequencePoints sp -> verifySequencePoints reader sp
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
@@ -901,25 +927,35 @@ module rec Compiler =
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
-            let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-            
+
+            // (Error 67, Line 14, Col 3, Line 14, Col 24, "This type test or downcast will always hold")
+            let errorMessage error =
+                let { Error = err; Range = range; Message = message } = error
+                let errorType =
+                    match err with
+                    | ErrorType.Error n -> $"Error {n}"
+                    | ErrorType.Warning n-> $"Warning {n}"
+                    | ErrorType.Hidden n-> $"Hidden {n}"
+                    | ErrorType.Information n-> $"Information {n}"
+                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
+
+            let expectedErrors = expected |> List.map (fun error -> errorMessage error)
+            let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b sourceErrors expectedErrors)
+
             // For lists longer than 100 errors:
-            errors |> List.iter System.Diagnostics.Debug.WriteLine
+            expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count" expected.Length errors.Length
+            checkEqual "Errors count" expectedErrors.Length sourceErrors.Length
 
-            (errors, expected)
-            ||> List.iter2 (fun actualError expectedError ->
-                           let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
-                           let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
-                           checkEqual "Error" expectedError actualError
-                           checkEqual "ErrorRange" expectedRange actualRange
-                           checkEqual "Message" expectedMessage actualMessage)
-            ()
+            (sourceErrors, expectedErrors)
+            ||> List.iter2 (fun actual expected ->
+
+                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
