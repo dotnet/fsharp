@@ -951,6 +951,7 @@ let prependIdentInPattern (ident: Ident) (dotm: range) (pat: SynPat): SynPat =
             lpr,
             operator,
             rpr,
+            None,
             m
         )
     | _ ->

@@ -4079,7 +4079,7 @@ type X with
                 SynModuleDecl.Types(typeDefns = [
                     SynTypeDefn(members = [
                         SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.ParametersOwner(pattern =
-                            SynPat.DotGetOperator(SynPat.Named _, mDot, lpr, SynOperatorName.Operator(operatorIdent), rpr, m))))
+                            SynPat.DotGetOperator(SynPat.Named _, mDot, lpr, SynOperatorName.Operator(operatorIdent), rpr, _, m))))
                     ])
                     ]
                 )
@@ -4197,5 +4197,39 @@ let PowByte (x:byte) n = Checked.( * ) x
             Assert.AreEqual("op_Multiply", operatorIdent.idText)
             assertRange (2, 37) (2, 38) rpr
             assertRange (2, 25) (2, 38) m
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``active pattern identifier in private member`` () =
+        let ast = getParseResults """
+type A() =
+    member private _.(|
+        A'
+    |) = (|
+        Lazy
+    |)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types(typeDefns = [
+                    SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                        SynMemberDefn.ImplicitCtor _
+                        SynMemberDefn.Member(memberDefn = SynBinding(
+                            headPat = SynPat.DotGetOperator(pref = SynPat.Named(ident = underscoreIdent)
+                                                            operator = SynOperatorName.ActivePattern(aQuoteIdent)
+                                                            accessibility = Some SynAccess.Private
+                                                            range = mDotGetOperator)
+                        ))
+                    ]))
+                ])
+            ])
+            ])) ->
+            ()
+            Assert.AreEqual("_", underscoreIdent.idText)
+            Assert.AreEqual("|A'|", aQuoteIdent.idText)
+            assertRange (3, 19) (5, 6) mDotGetOperator
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"

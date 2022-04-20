@@ -3414,6 +3414,7 @@ atomicPattern:
           else mkSynPatVar vis (List.head lidwd.Lid)
         | SynPat.Named(ident, isThisVal, _, m) -> SynPat.Named(ident, isThisVal, vis, m)
         | SynPat.Operator(operator, _, m) -> SynPat.Operator(operator, vis, m)
+        | SynPat.DotGetOperator(pref, dot, lpr, operator, rpr, _, m) -> SynPat.DotGetOperator(pref, dot, lpr, operator, rpr, vis, m)
         | _ -> pat }
 
   | constant 

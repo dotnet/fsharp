@@ -1121,6 +1121,7 @@ type SynPat =
         lpr: range *
         operator: SynOperatorName *
         rpr: range *
+        accessibility: SynAccess option *
         range: range
 
     | LongIdent of

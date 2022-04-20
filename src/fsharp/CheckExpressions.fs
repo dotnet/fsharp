@@ -2470,6 +2470,13 @@ module BindingNormalization =
         let ad = env.AccessRights
         let (SynValData(memberFlagsOpt, _, _)) = valSynData
         let rec normPattern pat =
+            let memberflagNotConstructor =
+                match memberFlagsOpt with
+                | None -> false
+                | Some memberFlags ->
+                     memberFlags.MemberKind <> SynMemberKind.Constructor &&
+                     memberFlags.MemberKind <> SynMemberKind.ClassConstructor
+
             // One major problem with versions of F# prior to 1.9.x was that data constructors easily 'pollute' the namespace
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
             match pat with
@@ -2506,24 +2513,25 @@ module BindingNormalization =
             // Object constructors are normalized in TcLetrecBindings
             // Here we are normalizing member definitions with simple (not long) ids,
             // e.g. "static member x = 3" and "member x = 3" (instance with missing "this." comes through here. It is trapped and generates a warning)
-            | SynPat.Named(id, false, vis, m)
-                when
-                   (match memberFlagsOpt with
-                    | None -> false
-                    | Some memberFlags ->
-                         memberFlags.MemberKind <> SynMemberKind.Constructor &&
-                         memberFlags.MemberKind <> SynMemberKind.ClassConstructor) ->
+            | SynPat.Named(id, false, vis, m) when memberflagNotConstructor ->
                 NormalizeStaticMemberBinding cenv (Option.get memberFlagsOpt) valSynData id vis inferredTyparDecls [] m rhsExpr
 
             // e.g. "member this.Text = "" "
-            | SynPat.LongIdent(LongIdentWithDots(id = [thisId; memberId]), vis, m)
-                when
-                   (match memberFlagsOpt with
-                    | None -> false
-                    | Some memberFlags ->
-                         memberFlags.MemberKind <> SynMemberKind.Constructor &&
-                         memberFlags.MemberKind <> SynMemberKind.ClassConstructor) ->
+            | SynPat.LongIdent(LongIdentWithDots(id = [thisId; memberId]), vis, m) when memberflagNotConstructor ->
                 NormalizeInstanceMemberBinding cenv (Option.get memberFlagsOpt) valSynData thisId memberId None vis inferredTyparDecls [] m rhsExpr
+            
+            // e.g. "member _.(|A'|) = ...
+            | SynPat.DotGetOperator(pat, _, _, operator, _, vis, m) when memberflagNotConstructor ->
+                let thisId =
+                    // SynPat is expected to be Named here.
+                    // SynPat.DotGetOperator is only created in prependIdentInPattern in SyntaxTreeOps.
+                    match pat with
+                    | SynPat.Named(ident = id) -> id
+                    | _ -> 
+                        // TODO: proper error message?
+                        error (Error(FSComp.SR.tcInvalidPattern(), pat.Range))
+                    
+                NormalizeInstanceMemberBinding cenv (Option.get memberFlagsOpt) valSynData thisId operator.Ident None vis inferredTyparDecls [] m rhsExpr
             
             | SynPat.Typed(pat', x, y) ->
                 let (NormalizedBindingPat(pat'', e'', valSynData, typars)) = normPattern pat'
@@ -5117,11 +5125,11 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
     | SynPat.LongIdent(LongIdentWithDots(id = longDotId), vis, m) ->
         TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, None, SynArgPats.Pats [], vis, m)
     
-    | SynPat.DotGetOperator(pref = pat; operator = operator; range = m) ->
-        let longDotId, vis =
+    | SynPat.DotGetOperator(pref = pat; operator = operator; accessibility = vis; range = m) ->
+        let longDotId =
             match pat with
-            | SynPat.Named(ident = ident; accessibility = vis) -> [ ident; operator.Ident ], vis
-            | _ -> [ operator.Ident ], None
+            | SynPat.Named(ident = ident) -> [ ident; operator.Ident ]
+            | _ -> [ operator.Ident ]
 
         TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, None, SynArgPats.Pats [], vis, m)
     
