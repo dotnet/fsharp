@@ -27,4 +27,3 @@ let test (x : ABC.ABC.Foo2) =
 
 test x1
 
-exit 0

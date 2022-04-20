@@ -63,7 +63,7 @@ module Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-#if !NETCORE
+#if !NETSTANDARD && !NETCOREAPP
     // NoMT	SOURCE=Regression03.fsx COMPILE_ONLY=1 FSIMODE=PIPE SCFLAGS="--nologo"	# Regression03.fsx
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Regression03.fsx"|])>]
     let ``Regression03_fsx`` compilation =
@@ -87,6 +87,7 @@ module Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+#if !NETCOREAPP && !NETSTANDARD
     // SOURCE=SanityCheck02.fs PEVER=/MD		# SanityCheck02.fs - /MD
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
     let ``SanityCheck02_fs_peverify`` compilation =
@@ -95,3 +96,4 @@ module Basic =
         |> withOptions ["--nowarn:988"]
         |> PEVerifier.verifyPEFile
         |> PEVerifier.shouldSucceed
+#endif

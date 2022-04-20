@@ -7,5 +7,3 @@ open System.Collections
 open Generic
 
 let t = new List<int>()
-
-exit 0

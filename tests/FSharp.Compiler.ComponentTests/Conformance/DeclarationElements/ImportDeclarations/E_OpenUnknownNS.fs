@@ -6,4 +6,3 @@
 
 open SomeUnknownNamespace.SomeUnknownModule
 
-exit 1
