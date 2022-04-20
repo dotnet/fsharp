@@ -24,10 +24,9 @@ type SynIdentOrOperatorName =
          | SynIdentOrOperatorName.Operator(text=text) -> text
      member this.Range =
          match this with
-         | Ident (range = m) -> m
-         | ActivePattern(lpr, _, _, rpr)
-         | PartialActivePattern(lpr, _, _, rpr)
-         | Operator(Some lpr, _, _, Some rpr) -> unionRanges lpr rpr
+         | Ident (range = m)
+         | ActivePattern(textRange = m)
+         | PartialActivePattern(textRange = m)
          | Operator(textRange = m) -> m
          
      override this.ToString() = this.idText
