@@ -26,21 +26,18 @@ let oval = new COval()
 let circle = new CCircle()
 
 // Non virtual methods
-if shape.Name() <> "shape" then exit 1
-if oval.Name() <> "shape.oval" then exit 1
-if circle.Name() <> "shape.oval.circle" then exit 1
+if shape.Name() <> "shape" then failwith "Failed: 1"
+if oval.Name() <> "shape.oval" then failwith "Failed: 2"
+if circle.Name() <> "shape.oval.circle" then failwith "Failed: 3"
 
 // Virtual methods
-if shape.GetKind() <> Shape then exit 1
-if oval.GetKind() <> Oval then exit 1
-if circle.GetKind() <> Circle then exit 1
+if shape.GetKind() <> Shape then failwith "Failed: 4"
+if oval.GetKind() <> Oval then failwith "Failed: 5"
+if circle.GetKind() <> Circle then failwith "Failed: 6"
 
 // Dispatch once cast tests
 let circleAsShape = circle :> CShape
 // Name isn't declared virtual, so we get base types behavior
-if circleAsShape.Name() <> "shape" then exit 1
+if circleAsShape.Name() <> "shape" then failwith "Failed: 7"
 // GetKind is virtual, so we should get correct method
-if circleAsShape.GetKind() <> Circle then exit 1
-
-exit 0
- 
+if circleAsShape.GetKind() <> Circle then failwith "Failed: 8"
