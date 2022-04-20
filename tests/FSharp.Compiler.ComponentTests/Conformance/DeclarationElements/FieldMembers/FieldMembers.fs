@@ -20,7 +20,7 @@ module FieldMembers =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=DefaultValue01.fs	# DefaultValue01.fs
+    // SOURCE=DefaultValue01.fs	# DefaultValue01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DefaultValue01.fs"|])>]
     let ``DefaultValue01_fs`` compilation =
         compilation

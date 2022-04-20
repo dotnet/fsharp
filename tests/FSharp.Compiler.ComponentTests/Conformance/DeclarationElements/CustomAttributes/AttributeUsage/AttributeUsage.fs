@@ -20,7 +20,7 @@ module AttributeUsage =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=AssemblyVersion01.fs							# AssemblyVersion01.fs
+    // SOURCE=AssemblyVersion01.fs							# AssemblyVersion01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion01.fs"|])>]
     let ``AssemblyVersion01_fs`` compilation =
         compilation

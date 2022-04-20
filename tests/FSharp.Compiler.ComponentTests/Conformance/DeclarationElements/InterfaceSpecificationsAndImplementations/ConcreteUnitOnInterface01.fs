@@ -19,7 +19,4 @@ let x = new t()
 let itx = x :> IT<state>
 
 let result = itx.Init(())
-if result <> () then exit 1
-
-
-exit 0
+if result <> () then failwith "Failed: 1"

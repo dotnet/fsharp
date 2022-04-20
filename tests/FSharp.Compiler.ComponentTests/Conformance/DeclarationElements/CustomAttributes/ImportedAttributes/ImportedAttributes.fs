@@ -20,7 +20,7 @@ module ImportedAttributes =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=FieldOffset01.fs SCFLAGS="" PEVER=/MD 	# FieldOffset01.fs
+    // SOURCE=FieldOffset01.fs SCFLAGS="" PEVER=/MD 	# FieldOffset01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FieldOffset01.fs"|])>]
     let ``FieldOffset01_fs`` compilation =
         compilation

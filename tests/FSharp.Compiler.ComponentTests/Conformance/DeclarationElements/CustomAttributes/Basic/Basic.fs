@@ -20,7 +20,7 @@ module Basic =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=ArrayParam.fs							# ArrayParam.fs
+    // SOURCE=ArrayParam.fs							# ArrayParam.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArrayParam.fs"|])>]
     let ``ArrayParam_fs`` compilation =
         compilation

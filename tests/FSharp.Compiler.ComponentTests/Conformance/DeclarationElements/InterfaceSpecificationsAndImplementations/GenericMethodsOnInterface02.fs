@@ -15,11 +15,9 @@ end
 
 let test = (new Derived()) :> IFoo
 
-if test.Ignore<(int -> int)> (fun x -> x * x) <> () then exit 1
-if test.Ignore<int>           4               <> () then exit 1
-if test.Ignore<string>        ""              <> () then exit 1
+if test.Ignore<(int -> int)> (fun x -> x * x) <> () then failwith "Failed: 1"
+if test.Ignore<int>           4               <> () then failwith "Failed: 2"
+if test.Ignore<string>        ""              <> () then failwith "Failed: 3"
 
 // Note the double () which is parens about value 'unit' to disambiguate a zero-arg function call
-if test.Ignore<unit>          (())            <> () then exit 1
-
-exit 0
+if test.Ignore<unit>          (())            <> () then failwith "Failed: 4"

@@ -22,12 +22,10 @@ let x = new Test()
 let itx = x :> ITest
 
 let result = itx.Foo(5)
-if result <> [5; 5; 5] then exit 1
+if result <> [5; 5; 5] then failwith "Failed: 1"
 
 let result2 : unit option = itx.Bar("string")
-if result2 <> None then exit 1
+if result2 <> None then failwith "Failed: 2"
 
 let result2b : int option = itx.Bar( () )
-if result2b <> None then exit 1
-
-exit 0
+if result2b <> None then failwith "Failed: 3"

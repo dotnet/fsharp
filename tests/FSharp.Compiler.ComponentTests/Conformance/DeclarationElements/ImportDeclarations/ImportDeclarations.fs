@@ -20,7 +20,7 @@ module ImportDeclarations =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=E_OpenTwice.fs        SCFLAGS="--warnaserror+ --test:ErrorRanges"		# E_OpenTwice.fs
+    // SOURCE=E_OpenTwice.fs        SCFLAGS="--warnaserror+ --test:ErrorRanges"		# E_OpenTwice.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_OpenTwice.fs"|])>]
     let ``E_OpenTwice_fs`` compilation =
         compilation

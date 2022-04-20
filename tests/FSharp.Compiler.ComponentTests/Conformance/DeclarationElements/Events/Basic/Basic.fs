@@ -21,7 +21,6 @@ module Basic =
         |> compileAndRun
 
     // SOURCE=CLIEvent01.fs		# CLIEvent01.fs
-    // SOURCE=CLIEvent01.fs		# CLIEvent01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIEvent01.fs"|])>]
     let ``CLIEvent01_fs`` compilation =
         compilation
