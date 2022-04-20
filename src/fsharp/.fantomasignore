@@ -1,0 +1,25 @@
+*.fs
+*.fsx
+
+# absil  (to investigate)
+**/ilread.fsi
+
+# utils  (to investigate)
+**/prim-parsing.fsi
+**/TaggedCollections.fsi
+
+# https://github.com/fsprojects/fantomas/issues/1974
+**/ParseHalpers.fsi
+
+# service  (to investigate)
+**/ServiceDeclarationLists.fsi
+
+# FSharp.Core (to investigate)
+**/fslib-extra-pervasives.fsi
+**/Nullable.fsi
+**/prim-types-prelude.fsi
+**/prim-types.fsi
+**/list.fsi
+**/Query.fsi
+**/resumable.fsi
+**/async.fsi
