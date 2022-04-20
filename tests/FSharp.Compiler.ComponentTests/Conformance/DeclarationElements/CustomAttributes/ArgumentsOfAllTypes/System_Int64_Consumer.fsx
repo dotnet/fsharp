@@ -5,5 +5,5 @@ module C_System_Int64 =
     type T() = member __.M() = true
     
     let t = new T()
-    exit <| if t.M() then 0 else 1
+    if t.M() then 0 else failwith "Failed: 1"
 
