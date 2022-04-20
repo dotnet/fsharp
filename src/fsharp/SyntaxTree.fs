@@ -8,6 +8,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SyntaxTrivia
 
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident (text: string, range: range) =
@@ -115,9 +116,9 @@ type SynConst =
 
     | UInt16s of uint16[]
 
-    | Measure of constant: SynConst * constantRange: Range * SynMeasure
+    | Measure of constant: SynConst * constantRange: range * SynMeasure
     
-    | SourceIdentifier of constant: string * value: string * range: Range
+    | SourceIdentifier of constant: string * value: string * range: range
 
     member c.Range dflt =
         match c with
@@ -174,11 +175,6 @@ type DebugPointAtTarget =
     | No
 
 [<RequireQualifiedAccess>]
-type DebugPointAtSwitch =
-    | Yes of range
-    | No
-
-[<RequireQualifiedAccess>]
 type DebugPointAtSequential =
     | SuppressNeither
     | SuppressStmt
@@ -188,8 +184,11 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    | Body
     | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtLeafExpr =
+    | Yes of range
 
 [<RequireQualifiedAccess>]
 type DebugPointAtWith =
@@ -199,11 +198,15 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
-    | Body
     | No
 
 [<RequireQualifiedAccess>]
 type DebugPointAtFor =
+    | Yes of range: range
+    | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
@@ -244,10 +247,16 @@ type ExprAtomicFlag =
 [<RequireQualifiedAccess>]
 type SynBindingKind =
 
+    // Indicates 'expr' in a module, via ElimSynModuleDeclExpr
     | StandaloneExpression
 
     | Normal
 
+    // Covers 'do expr' in class or let-rec but not in a module.
+    //
+    // Note, in a module 'expr' corresponds to SynModuleDecl.Expr
+    // Note, in a module 'do expr' corresponds to SynModuleDecl.Expr with expression SynExpr.Do
+    // These are eliminated to bindings with 'StandaloneExpression' by ElimSynModuleDeclExpr
     | Do
 
 [<NoEquality; NoComparison>]
@@ -483,7 +492,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * SynExpr) list *
+        recordFields:(Ident * range option * SynExpr) list *
         range: range
 
     | ArrayOrList of
@@ -494,7 +503,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(RecordFieldName * SynExpr option * BlockSeparator option) list *
+        recordFields: SynExprRecordField list *
         range: range
 
     | New of
@@ -506,7 +515,9 @@ type SynExpr =
     | ObjExpr of
         objType: SynType *
         argOptions:(SynExpr * Ident option) option *
+        withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -519,7 +530,9 @@ type SynExpr =
 
     | For of
         forDebugPoint: DebugPointAtFor *
+        toDebugPoint: DebugPointAtInOrTo *
         ident: Ident *
+        equalsRange: range option *
         identBody: SynExpr *
         direction: bool *
         toBody: SynExpr *
@@ -528,6 +541,7 @@ type SynExpr =
 
     | ForEach of
         forDebugPoint: DebugPointAtFor *
+        inDebugPoint: DebugPointAtInOrTo *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -561,10 +575,10 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: Range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
-        range: range
+        range: range *
+        trivia: SynExprLambdaTrivia
 
     | MatchLambda of
         isExnMatch: bool *
@@ -577,7 +591,8 @@ type SynExpr =
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
-        range: range 
+        range: range *
+        trivia: SynExprMatchTrivia
 
     | Do of
         expr: SynExpr *
@@ -608,23 +623,24 @@ type SynExpr =
         isUse: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprLetOrUseTrivia
 
     | TryWith of
         tryExpr: SynExpr *
-        tryRange: range *
         withCases: SynMatchClause list *
-        withRange: range *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        withDebugPoint: DebugPointAtWith
+        withDebugPoint: DebugPointAtWith *
+        trivia: SynExprTryWithTrivia
 
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        finallyDebugPoint: DebugPointAtFinally
+        finallyDebugPoint: DebugPointAtFinally *
+        trivia: SynExprTryFinallyTrivia
 
     | Lazy of
         expr: SynExpr *
@@ -638,17 +654,13 @@ type SynExpr =
         range: range
 
     | IfThenElse of
-        ifKeyword: range *
-        isElif: bool *
         ifExpr: SynExpr *
-        thenKeyword: range *
         thenExpr: SynExpr *
-        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
-        ifToThenRange: range *
-        range: range
+        range: range *
+        trivia: SynExprIfThenElseTrivia
 
     | Ident of
         ident: Ident
@@ -778,15 +790,17 @@ type SynExpr =
         isFromSource: bool *
         pat: SynPat *
         rhs: SynExpr *
-        andBangs:(DebugPointAtBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs: SynExprAndBang list *
         body:SynExpr *
-        range: range 
+        range: range *
+        trivia: SynExprLetOrUseBangTrivia
 
     | MatchBang of
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
-        range: range
+        range: range *
+        trivia: SynExprMatchBangTrivia
 
     | DoBang of
         expr: SynExpr *
@@ -838,6 +852,11 @@ type SynExpr =
         contents: SynInterpolatedStringPart list *
         synStringKind :SynStringKind *
         range: range
+
+    | DebugPoint of
+        debugPoint: DebugPointAtLeafExpr *
+        isControlFlow: bool *
+        innerExpr: SynExpr
 
     member e.Range =
         match e with
@@ -909,6 +928,7 @@ type SynExpr =
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with
@@ -929,7 +949,7 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) ->
             e1.RangeOfFirstPortion
-        | SynExpr.ForEach (_, _, _, pat, _, _, r) ->
+        | SynExpr.ForEach (pat=pat; range=r) ->
             let start = r.Start
             let e = (pat.Range: range).Start
             mkRange r.FileName start e
@@ -939,6 +959,25 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
+
+[<NoEquality; NoComparison>]
+type SynExprAndBang =
+    | SynExprAndBang of
+        debugPoint: DebugPointAtBinding *
+        isUse: bool *
+        isFromSource: bool *
+        pat: SynPat *
+        body: SynExpr *
+        range: range *
+        trivia: SynExprAndBangTrivia
+
+[<NoEquality; NoComparison>]
+type SynExprRecordField =
+    | SynExprRecordField of
+        fieldName: RecordFieldName *
+        equalsRange: range option *
+        expr: SynExpr option *
+        blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
@@ -1012,13 +1051,13 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * SynPat) list *
+        pats: (Ident * range * SynPat) list *
         range: range
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map snd
+        | NamePatPairs (pats, _) -> pats |> List.map (fun (_,_, pat) -> pat)
 
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynPat =
@@ -1049,7 +1088,8 @@ type SynPat =
     | Or of
         lhsPat: SynPat *
         rhsPat: SynPat *
-        range: range
+        range: range *
+        trivia: SynPatOrTrivia
 
     | Ands of
         pats: SynPat list *
@@ -1062,6 +1102,7 @@ type SynPat =
 
     | LongIdent of
         longDotId: LongIdentWithDots *
+        propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -1083,7 +1124,7 @@ type SynPat =
         range: range
 
     | Record of
-        fieldPats: ((LongIdent * Ident) * SynPat) list *
+        fieldPats: ((LongIdent * Ident) * range * SynPat) list *
         range: range
 
     | Null of
@@ -1140,11 +1181,18 @@ type SynPat =
       | SynPat.Paren (range=m)
       | SynPat.FromParseError (range=m) -> m
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type PropertyKeyword =
+    | With of range
+    | And of range
+
 [<NoEquality; NoComparison;>]
 type SynInterfaceImpl =
     | SynInterfaceImpl of
         interfaceTy: SynType *
+        withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1152,14 +1200,14 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: Range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointAtTarget
+        debugPoint: DebugPointAtTarget *
+        trivia: SynMatchClauseTrivia
 
     member this.RangeOfGuardAndRhs =
         match this with
-        | SynMatchClause(_, eo, _, e, _, _) ->
+        | SynMatchClause(whenExpr=eo; resultExpr=e) ->
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
@@ -1214,7 +1262,8 @@ type SynBinding =
         returnInfo: SynBindingReturnInfo option *
         expr: SynExpr  *
         range: range *
-        debugPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding *
+        trivia: SynBindingTrivia
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1233,7 +1282,7 @@ type SynBindingReturnInfo =
         range: range *
         attributes: SynAttributes
 
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       IsInstance: bool
@@ -1245,7 +1294,26 @@ type SynMemberFlags =
       IsFinal: bool
 
       MemberKind: SynMemberKind
+      
+      Trivia: SynMemberFlagsTrivia
     }
+    
+    override this.Equals other =
+        match other with
+        | :? SynMemberFlags as other ->
+            this.IsInstance = other.IsInstance
+            && this.IsDispatchSlot = other.IsDispatchSlot
+            && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
+            && this.IsFinal = other.IsFinal
+            && this.MemberKind = other.MemberKind
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.IsInstance +
+        hash this.IsDispatchSlot +
+        hash this.IsOverrideOrExplicitImpl +
+        hash this.IsFinal +
+        hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberKind =
@@ -1304,7 +1372,7 @@ type SynTypeDefnKind =
     | Union
     | Abbrev
     | Opaque
-    | Augmentation
+    | Augmentation of withKeyword: range
     | IL
     | Delegate of signature: SynType * signatureInfo: SynValInfo
 
@@ -1366,11 +1434,12 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident * 
+        ident: Ident *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynEnumCaseTrivia
 
     member this.Range =
         match this with
@@ -1385,7 +1454,8 @@ type SynUnionCase =
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynUnionCaseTrivia
 
     member this.Range =
         match this with
@@ -1427,7 +1497,9 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
+        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
+        withKeyword: range option *
         members: SynMemberSig list *
         range: range
 
@@ -1476,6 +1548,7 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
+        withKeyword: range option *
         range: range
 
     member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
@@ -1538,6 +1611,7 @@ type SynExceptionDefn =
 
     | SynExceptionDefn of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         range: range
 
@@ -1573,7 +1647,8 @@ type SynTypeDefn =
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     member this.Range =
         match this with
@@ -1617,6 +1692,7 @@ type SynMemberDefn =
 
     | Interface of
         interfaceType: SynType *
+        withKeyword: range option *
         members: SynMemberDefns option *
         range: range
 
@@ -1643,7 +1719,9 @@ type SynMemberDefn =
         memberFlags:(SynMemberKind -> SynMemberFlags) *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
+        equalsRange: range *
         synExpr: SynExpr *
+        withKeyword: range option *
         getSetRange: range option *
         range: range
 
@@ -1676,15 +1754,15 @@ type SynModuleDecl =
         isRecursive: bool *
         decls: SynModuleDecl list *
         isContinuing: bool *
-        range: range
+        range: range *
+        trivia: SynModuleDeclNestedModuleTrivia
 
     | Let of
         isRecursive: bool *
         bindings: SynBinding list *
         range: range
 
-    | DoExpr of
-       debugPoint: DebugPointAtBinding *
+    | Expr of
        expr: SynExpr *
        range: range
 
@@ -1716,7 +1794,7 @@ type SynModuleDecl =
         | SynModuleDecl.ModuleAbbrev (range=m)
         | SynModuleDecl.NestedModule (range=m)
         | SynModuleDecl.Let (range=m)
-        | SynModuleDecl.DoExpr (range=m)
+        | SynModuleDecl.Expr (range=m)
         | SynModuleDecl.Types (range=m)
         | SynModuleDecl.Exception (range=m)
         | SynModuleDecl.Open (range=m)
@@ -1740,6 +1818,7 @@ type SynOpenDeclTarget =
 type SynExceptionSig =
     | SynExceptionSig of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: range option *
         members: SynMemberSig list *
         range: range
 
@@ -1755,7 +1834,8 @@ type SynModuleSigDecl =
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
         moduleDecls: SynModuleSigDecl list *
-        range: range
+        range: range *
+        trivia: SynModuleSigDeclNestedModuleTrivia
 
     | Val of
         valSig: SynValSig * range: range
@@ -1839,8 +1919,8 @@ type SynModuleOrNamespaceSig =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
-     | String of value: string * stringKind: SynStringKind * range: Range
-     | SourceIdentifier of constant: string * value: string * range: Range
+     | String of value: string * stringKind: SynStringKind * range: range
+     | SourceIdentifier of constant: string * value: string * range: range
 
      member this.Range =
          match this with
@@ -1937,7 +2017,8 @@ type ParsedImplFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool)
+        isLastCompiland: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -1946,7 +2027,8 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list
+        modules: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =

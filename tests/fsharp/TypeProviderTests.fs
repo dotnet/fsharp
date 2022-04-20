@@ -26,11 +26,11 @@ open FSharp.Compiler.IO
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSI_BASIC = FSI_CORECLR
+let FSC_OPTIMIZED = FSC_NETCORE (true, false)
+let FSI = FSI_NETCORE
 #else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSI_BASIC = FSI_FILE
+let FSC_OPTIMIZED = FSC_NETFX (true, false)
+let FSI = FSI_NETFX
 #endif
 
 let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
@@ -116,7 +116,7 @@ let helloWorld p =
     let bincompat1 = getfullpath cfg "bincompat1"
 
     Directory.EnumerateFiles(bincompat1 ++ "..", "*.dll")
-    |> Seq.iter (fun from -> Commands.copy_y bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
+    |> Seq.iter (fun from -> Commands.copy bincompat1 from ("." ++ Path.GetFileName(from)) |> ignore)
 
     fscIn cfg bincompat1 "%s" "-g -a -o:test_lib.dll -r:provider.dll" [".." ++ "test.fsx"]
 
@@ -129,8 +129,8 @@ let helloWorld p =
     log "pushd bincompat2"
     let bincompat2 = getfullpath cfg "bincompat2"
 
-    Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll")
-    |> Seq.iter (fun from -> Commands.copy_y bincompat2 from ("." ++ Path.GetFileName(from)) |> ignore)
+    for fromFile in Directory.EnumerateFiles(bincompat2 ++ ".." ++ "bincompat1", "*.dll") do
+        Commands.copy bincompat2 fromFile ("." ++ Path.GetFileName(fromFile)) |> ignore
 
     fscIn cfg bincompat2 "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".." ++ "provider.fsx"]
 
@@ -147,11 +147,11 @@ let helloWorld p =
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
 [<Test>]
-let ``helloWorld fsc`` () = helloWorld FSC_BASIC
+let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
 [<Test>]
-let ``helloWorld fsi`` () = helloWorld FSI_STDIN
+let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
 [<Test>]

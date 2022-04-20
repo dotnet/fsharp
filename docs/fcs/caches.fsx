@@ -1,3 +1,11 @@
+(**
+---
+title: FSharpChecker caches
+category: Language Service Internals
+categoryindex: 300
+index: 1000
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -10,7 +18,7 @@ Each FSharpChecker object maintains a set of caches.  These are
 
 * ``scriptClosureCache`` - an MRU cache of default size ``projectCacheSize`` that caches the 
   computation of GetProjectOptionsFromScript. This computation can be lengthy as it can involve processing the transitive closure
-  of all ``#load`` directives, which in turn can mean parsing an unbounded number of script files
+  of all ``#load`` directives, which in turn can mean parsing an unbounded number of script files.
 
 * ``incrementalBuildersCache`` - an MRU cache of projects where a handle is being kept to their incremental checking state, 
   of default size ``projectCacheSize`` (= 3 unless explicitly set as a parameter).  

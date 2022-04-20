@@ -132,9 +132,19 @@
         <target state="translated">'module' 키워드 오른쪽에 있는 특성</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">'exception' 선언에 대한 'Message' 속성 자동 생성</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">기본 인터페이스 멤버 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -288,13 +298,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">언어 버전 5.0이 필요한 끝 조각화에서는 /langversion:preview를 사용하세요.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">'끝에서부터 조각화' 기능을 사용하려면 언어 버전 '미리 보기'가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">잘못된 지시문 '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">알 수 없는 디버그 지점 '{0}'. 사용 가능한 디버그 지점은 '{1}'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -433,8 +448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">패키지 관리 기능을 사용하려면 언어 버전 5.0이 필요합니다. /langversion:preview를 사용하세요.</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">'패키지 관리' 기능을 사용하려면 언어 버전 5.0 이상이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -647,6 +662,11 @@
         <target state="translated">보간 문자열의 잘못된 정렬</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">멤버 선언이 잘못되었습니다. 멤버 이름이 없거나 괄호가 있습니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">'{0}' 구문은 유효한 다시 시작 가능한 코드에서만 사용할 수 있습니다.</target>
@@ -693,8 +713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:preview 이상이 필요합니다.</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:6.0 이상이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -7623,8 +7643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">구조체 형식을 선언하는 데 사용됩니다. 제네릭 매개 변수 제약 조건에서도 사용됩니다. 모듈 정의에서 OCaml 호환성에 대해 사용됩니다.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">구조체 유형을 선언하는 데 사용됩니다. 일반 매개 변수 제약 조건에서도 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

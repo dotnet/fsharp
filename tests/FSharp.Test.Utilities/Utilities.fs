@@ -30,6 +30,20 @@ module Utilities =
                 cancellationToken)
             task.Result
 
+    /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.
+    type AlreadyLoadedAppDomainResolver () =
+        let resolveHandler =
+            ResolveEventHandler(fun _ args ->
+                let assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                let assembly = assemblies |> Array.tryFind(fun a -> String.Compare(a.FullName, args.Name,StringComparison.OrdinalIgnoreCase) = 0)
+                assembly |> Option.defaultValue Unchecked.defaultof<Assembly>
+                )
+        do AppDomain.CurrentDomain.add_AssemblyResolve(resolveHandler)
+
+        interface IDisposable with
+            member this.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(resolveHandler)
+
+
     [<RequireQualifiedAccess>]
     type TargetFramework =
         | NetStandard20
@@ -93,7 +107,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module TargetFrameworkUtil =
+    module public TargetFrameworkUtil =
 
         let private config = TestFramework.initializeSuite ()
 
@@ -154,7 +168,7 @@ let main argv = 0"""
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
             let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-            let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
+            let projectDirectory = Path.Combine(pathToTemp,Guid.NewGuid().ToString() + ".tmp")
             let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
             try
                 try
@@ -165,7 +179,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -218,85 +232,3 @@ let main argv = 0"""
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
                 | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
                 | TargetFramework.Current -> currentReferencesAsPEs
-
-    type RoslynLanguageVersion = LanguageVersion
-
-    [<Flags>]
-    type CSharpCompilationFlags =
-        | None = 0x0
-        | InternalsVisibleTo = 0x1
-
-    [<RequireQualifiedAccess>]
-    type TestCompilation =
-        | CSharp of CSharpCompilation
-        | IL of ilSource: string * result: Lazy<string * byte []>
-
-        member this.AssertNoErrorsOrWarnings () =
-            match this with
-                | TestCompilation.CSharp c ->
-                    let diagnostics = c.GetDiagnostics ()
-
-                    if not diagnostics.IsEmpty then
-                        NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
-
-                | TestCompilation.IL (_, result) ->
-                    let errors, _ = result.Value
-                    if errors.Length > 0 then
-                        NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
-
-        member this.EmitAsFile (outputPath: string) =
-            match this with
-                | TestCompilation.CSharp c ->
-                    let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
-                    let emitResult = c.Emit outputPath
-                    if not emitResult.Success then
-                        failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
-
-                | TestCompilation.IL (_, result) ->
-                    let (_, data) = result.Value
-                    File.WriteAllBytes (outputPath, data)
-
-    type CSharpLanguageVersion =
-        | CSharp8 = 0
-        | CSharp9 = 1
-
-    [<AbstractClass; Sealed>]
-    type CompilationUtil private () =
-
-        static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences, ?name) =
-            let lv =
-                match lv with
-                    | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-                    | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-                    | _ -> LanguageVersion.Default
-
-            let tf = defaultArg tf TargetFramework.NetStandard20
-            let n = defaultArg name (Guid.NewGuid().ToString ())
-            let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
-            let references = TargetFrameworkUtil.getReferences tf
-            let c =
-                CSharpCompilation.Create(
-                    n,
-                    [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-                    references.As<MetadataReference>().AddRange additionalReferences,
-                    CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-            TestCompilation.CSharp c
-
-        static member CreateILCompilation (source: string) =
-            let compute =
-                lazy
-                    let ilFilePath = tryCreateTemporaryFileName ()
-                    let tmp = tryCreateTemporaryFileName ()
-                    let dllFilePath = Path.ChangeExtension (tmp, ".dll")
-                    try
-                        File.WriteAllText (ilFilePath, source)
-                        let errors = ILChecker.reassembleIL ilFilePath dllFilePath
-                        try
-                           (errors, File.ReadAllBytes dllFilePath)
-                        with
-                            | _ -> (errors, [||])
-                    finally
-                        try File.Delete ilFilePath with | _ -> ()
-                        try File.Delete tmp with | _ -> ()
-                        try File.Delete dllFilePath with | _ -> ()
-            TestCompilation.IL (source, compute)

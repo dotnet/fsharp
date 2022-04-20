@@ -97,7 +97,7 @@ type Diagnostic =
 val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
-val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
+val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * FSharpDiagnosticOptions *ErrorLogger  -> ErrorLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 

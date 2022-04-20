@@ -105,7 +105,7 @@ module public FSharpExprPatterns =
     val (|IfThenElse|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr) option   
 
     /// Matches expressions which are let definitions
-    val (|Let|_|): FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr) * FSharpExpr) option 
+    val (|Let|_|): FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) * FSharpExpr) option 
 
     /// Matches expressions which are calls to members or module-defined functions. When calling curried functions and members the
     /// arguments are collapsed to a single collection of arguments, as done in the compiled version of these.
@@ -127,7 +127,7 @@ module public FSharpExprPatterns =
     val (|Quote|_|): FSharpExpr -> FSharpExpr  option
 
     /// Matches expressions which are let-rec definitions
-    val (|LetRec|_|): FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr) list * FSharpExpr) option 
+    val (|LetRec|_|): FSharpExpr -> ((FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) list * FSharpExpr) option 
 
     /// Matches record expressions 
     val (|NewRecord|_|): FSharpExpr -> (FSharpType * FSharpExpr list) option 
@@ -194,17 +194,20 @@ module public FSharpExprPatterns =
     /// Matches sequential expressions 
     val (|Sequential|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) option 
 
+    /// Matches debug points at leaf expressions in control flow
+    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) option 
+
     /// Matches fast-integer loops (up or down)
-    val (|FastIntegerForLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr * bool) option  
+    val (|FastIntegerForLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * FSharpExpr * bool * DebugPointAtFor * DebugPointAtInOrTo) option  
 
     /// Matches while loops 
-    val (|WhileLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) option 
+    val (|WhileLoop|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtWhile) option 
 
     /// Matches try/finally expressions
-    val (|TryFinally|_|): FSharpExpr -> (FSharpExpr * FSharpExpr) option 
+    val (|TryFinally|_|): FSharpExpr -> (FSharpExpr * FSharpExpr * DebugPointAtTry * DebugPointAtFinally) option 
 
     /// Matches try/with expressions
-    val (|TryWith|_|): FSharpExpr -> (FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr) option 
+    val (|TryWith|_|): FSharpExpr -> (FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtTry * DebugPointAtWith) option 
 
     /// Matches expressions which create an instance of a delegate type
     val (|NewDelegate|_|): FSharpExpr -> (FSharpType * FSharpExpr) option 
@@ -226,3 +229,7 @@ module public FSharpExprPatterns =
 
     /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
     val (|WitnessArg|_|): FSharpExpr -> int option
+
+    /// Matches an expression with a debug point
+    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) option 
+

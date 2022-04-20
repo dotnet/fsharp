@@ -20,7 +20,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -48,8 +48,8 @@ type TypeForwarding (tcImports: TcImports) =
             let parts =  tref.FullName.Split([|'.'|])
             match parts.Length with
             | 0 -> None
-            | 1 -> Some (Array.empty<string>, parts.[0])
-            | n -> Some (parts.[0..n-2], parts.[n-1])
+            | 1 -> Some (Array.empty<string>, parts[0])
+            | n -> Some (parts[0..n-2], parts[n-1])
 
         let  scoref = tref.Scope
         match scoref with
@@ -126,17 +126,17 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
             [ for _, depILModule in dependentILModules do
                 match depILModule.Manifest with
                 | Some m ->
-                    for ca in m.CustomAttrs.AsArray do
+                    for ca in m.CustomAttrs.AsArray() do
                         if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then
                             yield ca
                 | _ -> () ]
 
         let savedResources =
-            let allResources = [ for ccu, m in dependentILModules do for r in m.Resources.AsList do yield (ccu, r) ]
+            let allResources = [ for ccu, m in dependentILModules do for r in m.Resources.AsList() do yield (ccu, r) ]
             // Don't save interface, optimization or resource definitions for provider-generated assemblies.
             // These are "fake".
             let isProvided (ccu: CcuThunk option) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 match ccu with
                 | Some c -> c.IsProviderGenerated
                 | None -> false
@@ -172,22 +172,22 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
 
         let topTypeDefs, normalTypeDefs =
             moduls
-            |> List.map (fun m -> m.TypeDefs.AsList |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name))
+            |> List.map (fun m -> m.TypeDefs.AsList() |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name))
             |> List.unzip
 
         let topTypeDef =
             let topTypeDefs = List.concat topTypeDefs
             mkILTypeDefForGlobalFunctions ilGlobals
-                (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList)),
-                mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
+                (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList())),
+                mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList())))
 
         let ilxMainModule =
             let main =
                 { ilxMainModule with
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
-                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
+                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList() @ savedManifestAttrs)) })
+                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray() ])
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
-                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
+                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList())
                     NativeResources = savedNativeResources }
             Morphs.morphILTypeRefsInILModuleMemoized typeForwarding.TypeForwardILTypeRef main
 
@@ -219,12 +219,12 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities"; "netstandard" ]
 
         begin
-            let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
+            let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences |> Array.toList
             while not (isNil remaining) do
                 let ilAssemRef = List.head remaining
                 remaining <- List.tail remaining
                 if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then
-                    depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                    depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                 else
                     if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                         match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly=false) with
@@ -265,10 +265,13 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                                     warning(Error(FSComp.SR.fscIgnoringMixedWhenLinking ilAssemRef.Name, rangeStartup))
                                     emptyILRefs
                                 else
-                                    { AssemblyReferences = dllInfo.ILAssemblyRefs
-                                      ModuleReferences = [] }
+                                    { AssemblyReferences = dllInfo.ILAssemblyRefs |> List.toArray
+                                      ModuleReferences = [| |]
+                                      TypeReferences = [| |]
+                                      MethodReferences = [| |]
+                                      FieldReferences = [||] }
 
-                            depModuleTable.[ilAssemRef.Name] <-
+                            depModuleTable[ilAssemRef.Name] <-
                                 { refs=refs
                                   name=ilAssemRef.Name
                                   ccu=ccu
@@ -277,11 +280,11 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                                   visited = false }
 
                             // Push the new work items
-                            remaining <- refs.AssemblyReferences @ remaining
+                            remaining <- Array.toList refs.AssemblyReferences @ remaining
 
                         | None ->
                             warning(Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies(ilAssemRef.Name), rangeStartup))
-                            depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                            depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
             done
         end
 
@@ -290,13 +293,13 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         // Add edges from modules to the modules that depend on them
         for KeyValue(_, n) in depModuleTable do
             for aref in n.refs.AssemblyReferences do
-                let n2 = depModuleTable.[aref.Name]
+                let n2 = depModuleTable[aref.Name]
                 n2.edges <- n :: n2.edges
 
         // Find everything that depends on FSharp.Core
         let roots =
             [ if tcConfig.standalone && depModuleTable.ContainsKey (GetFSharpCoreLibraryName()) then
-                  yield depModuleTable.[GetFSharpCoreLibraryName()]
+                  yield depModuleTable[GetFSharpCoreLibraryName()]
               for n in tcConfig.extraStaticLinkRoots  do
                   match depModuleTable.TryFind n with
                   | Some x -> yield x
@@ -336,7 +339,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
 // prior to this point.
 let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) =
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let providerGeneratedAssemblies =
 
         [ // Add all EST-generated assemblies into the static linking set
@@ -347,7 +350,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
     if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             && providerGeneratedAssemblies.IsEmpty
 #endif
             then
@@ -360,7 +363,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
 
             ReportTime tcConfig "Static link"
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             Morphs.enableMorphCustomAttributeData()
             let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies)
 
@@ -458,7 +461,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                           match enc with
                           | [] -> addILTypeDef td tdefs
                           | h :: t ->
-                               let tdefs = tdefs.AsList
+                               let tdefs = tdefs.AsList()
                                let ltdefs, htd, rtdefs =
                                    match tdefs |> trySplitFind (fun td -> td.Name = h) with
                                    | ltdefs, None, rtdefs ->

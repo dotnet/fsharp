@@ -31,21 +31,21 @@ let internal identsAndRanges (input: ParsedInput) =
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
-        let (SynTypeDefn(componentInfo, _repr, _members, _, _)) = typeDefn
+        let (SynTypeDefn(typeInfo=componentInfo)) = typeDefn
         // TODO : repr and members
         extractFromComponentInfo componentInfo
     let rec extractFromModuleDecl (moduleDecl: SynModuleDecl) =
         match moduleDecl with
         | SynModuleDecl.Types(typeDefns, _) -> (typeDefns |> List.collect extractFromTypeDefn)
         | SynModuleDecl.ModuleAbbrev(ident, _, range) -> [ identAndRange (ident.ToString()) range ]
-        | SynModuleDecl.NestedModule(componentInfo, _, decls, _, _) -> (extractFromComponentInfo componentInfo) @ (decls |> List.collect extractFromModuleDecl)
-        | SynModuleDecl.Let(_, _, _) -> failwith "Not implemented yet"
-        | SynModuleDecl.DoExpr(_, _, _range) -> failwith "Not implemented yet"
-        | SynModuleDecl.Exception(_, _range) -> failwith "Not implemented yet"
+        | SynModuleDecl.NestedModule(moduleInfo=componentInfo; decls=decls) -> (extractFromComponentInfo componentInfo) @ (decls |> List.collect extractFromModuleDecl)
+        | SynModuleDecl.Let _ -> failwith "Not implemented yet"
+        | SynModuleDecl.Expr _ -> failwith "Not implemented yet"
+        | SynModuleDecl.Exception _ -> failwith "Not implemented yet"
         | SynModuleDecl.Open(SynOpenDeclTarget.ModuleOrNamespace (lid, range), _) -> [ identAndRange (longIdentToString lid) range ]
         | SynModuleDecl.Open(SynOpenDeclTarget.Type _, _) -> failwith "Not implemented yet"
-        | SynModuleDecl.Attributes(_attrs, _range) -> failwith "Not implemented yet"
-        | SynModuleDecl.HashDirective(_, _range) -> failwith "Not implemented yet"
+        | SynModuleDecl.Attributes _ -> failwith "Not implemented yet"
+        | SynModuleDecl.HashDirective _ -> failwith "Not implemented yet"
         | SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace
     and extractFromModuleOrNamespace (SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, _)) =
         let xs = moduleDecls |> List.collect extractFromModuleDecl
@@ -54,7 +54,7 @@ let internal identsAndRanges (input: ParsedInput) =
             (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce unionRanges)) :: xs
 
     match input with
-    | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, modulesOrNamespaces, _)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(modules = modulesOrNamespaces)) ->
          modulesOrNamespaces |> List.collect extractFromModuleOrNamespace
     | ParsedInput.SigFile _ -> []
 

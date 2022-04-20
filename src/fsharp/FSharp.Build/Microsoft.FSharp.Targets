@@ -51,6 +51,41 @@ this file.
     </PropertyGroup>
 
     <!--
+      Project file properties that control compiler selection:
+      ========================================================
+      Suggest that the compiler used be the desktop framework version.  On computers without Visual Studio these properties is ignored.
+      <FSharpPreferNetFrameworkTools>  boolean: true or false === default value true
+
+      Suggest that the compiler used be the 64 Bit compiler.  On computers without Visual Studio this property is ignored.
+      <FSharpPrefer64BitTools>      boolean: true or false === default value true
+
+      If Shim helpers are present then the values are valid and set by the Microsoft.FSharp.Helpers.props
+    -->
+
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
+        <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
+        <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
+        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
+        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_X86_ToolExe)</FscToolExe>
+        <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' != 'true'">
+        <FscToolPath>$(Fsc_Dotnet_ToolPath)</FscToolPath>
+        <FscToolExe>$(Fsc_Dotnet_ToolExe)</FscToolExe>
+        <DotnetFscCompilerPath>"$(Fsc_Dotnet_DotnetFscCompilerPath)"</DotnetFscCompilerPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <!--- So that the UI can display default values for these properties, specify values when not set -->
+      <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)'!='true'">false</FSharpPreferNetFrameworkTools>
+      <FSharpPrefer64BitTools Condition="'$(FSharpPrefer64BitTools)'!='false'">true</FSharpPrefer64BitTools>
+    </PropertyGroup>
+
+    <!--
       The CreateManifestResourceNames target create the manifest resource names from the .RESX
       files.
       
@@ -328,8 +363,9 @@ this file.
               VisualStudioStyleErrors="$(VisualStudioStyleErrors)"
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)"
+              WarningsNotAsErrors="$(WarningsNotAsErrors)"
               WarnOn="$(WarnOn)"
-              Win32IconFile ="$(ApplicationIcon)"
+              Win32IconFile="$(ApplicationIcon)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)">
           <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
@@ -339,6 +375,7 @@ this file.
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
         </ItemGroup>
 
+       <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />

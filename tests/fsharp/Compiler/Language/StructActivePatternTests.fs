@@ -9,13 +9,15 @@ open FSharp.Test
 [<TestFixture>]
 module StructActivePatternTests =
 
-    let private pass = CompilerAssert.PassWithOptions [| "--langversion:preview" |]
-    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:preview" |]
-    let private run src = CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] ("""
+    let private pass = CompilerAssert.PassWithOptions [||]
+    let private fail = CompilerAssert.TypeCheckWithErrorsAndOptions [||]
+    let private run src = CompilerAssert.CompileExeAndRunWithOptions(
+        [||],
+        ("""
 let fail msg =
     printfn "%s" msg
     failwith msg
-""" + src)
+""" + src))
 
     [<Test>]
     let ``Partial active pattern returns Option`1`` () =
@@ -159,18 +161,18 @@ match ret_attrs, binding_attrs with
 // negative tests
 
     [<Test>]
-    let ``Struct active pattern (no preview)`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+    let ``Struct active pattern (-langversion:5.0)`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0"|]
             """
 [<return:Struct>]
 let (|Foo|_|) x = ValueNone
             """
             [|(FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
-                   "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 'preview' or greater.")|]
+               "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
 
     [<Test>]
     let ``StructAttribute must explicitly target active pattern return value`` () =
-        fail 
+        fail
             """
 [<Struct>]
 let (|Foo|_|) x = ValueNone

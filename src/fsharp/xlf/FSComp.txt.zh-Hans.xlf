@@ -132,9 +132,19 @@
         <target state="translated">"module" 关键字右侧的属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">自动生成“异常”声明的“消息”属性</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">默认接口成员消耗</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -288,13 +298,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">需要语言版本 5.0 才能从末尾切片，请使用 /langversion:preview。</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">“从末尾切片”功能需要语言版本“预览”。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">无效的指令“#{0} {1}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">调试点“{0}”未知。可用的调试点为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -433,8 +448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">包管理功能需要语言版本 5.0，请使用 /langversion:preview</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">“包管理”功能需要语言版本 5.0 或更高版本</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -647,6 +662,11 @@
         <target state="translated">内插字符串中的对齐无效</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">成员声明无效。成员的名称缺失或包含括号。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">构造 "{0}" 只能在有效的可恢复代码中使用。</target>
@@ -693,8 +713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">将方法与 "NoEagerConstraintApplicationAttribute" 配合使用需要 /langversion:preview 或更高版本</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">将方法与 “NoEagerConstraintApplicationAttribute” 配合使用需要 /langversion:6.0 或更高版本</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -7623,8 +7643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">用于声明结构类型。另外，也用于泛型参数约束。用于模块定义中的 OCaml 兼容性。</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">用于声明结构类型。也用于约束泛型参数。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

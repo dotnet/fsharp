@@ -14,6 +14,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 
 open Xunit
 
+#nowarn "3370"
 
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.
@@ -245,19 +246,19 @@ type OperatorsModule2() =
         // lock
         printfn "test8 started"
         let syncRoot = System.Object()
-        let k = ref 0
-        let comp _ = async { return lock syncRoot (fun () -> incr k
+        let mutable k = 0
+        let comp _ = async { return lock syncRoot (fun () -> k <- k + 1
                                                              System.Threading.Thread.Sleep(1)
-                                                             !k ) }
+                                                             k ) }
         let arr = Async.RunSynchronously (Async.Parallel(Seq.map comp [1..50]))
         Assert.AreEqual([|1..50|], Array.sort arr)
         
         // without lock
         let syncRoot = System.Object()
-        let k = ref 0
-        let comp _ = async { do incr k
+        let mutable k = 0
+        let comp _ = async { do k <- k + 1
                              do! Async.Sleep (10)
-                             return !k }
+                             return k }
         let arr = Async.RunSynchronously (Async.Parallel(Seq.map comp [1..100]))
         Assert.AreNotEqual ([|1..100|], Array.sort arr)
         

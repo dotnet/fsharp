@@ -35,6 +35,8 @@ type LanguageFeature =
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
+    | BetterExceptionPrinting
+    | DelegateTypeNameResolutionFix
 
 /// LanguageVersion management
 type LanguageVersion =

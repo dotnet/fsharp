@@ -92,14 +92,14 @@ module internal ProjectFile =
             let fields = line.Split(',')
             if fields.Length < 8 then raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
-                { NugetPackageId = fields.[0]
-                  NugetPackageVersion = fields.[1]
-                  PackageRoot = fields.[2]
-                  FullPath = fields.[3]
-                  AssetType = fields.[4]
-                  IsNotImplementationReference = fields.[5]
-                  InitializeSourcePath = fields.[6]
-                  NativePath = fields.[7]
+                { NugetPackageId = fields[0]
+                  NugetPackageVersion = fields[1]
+                  PackageRoot = fields[2]
+                  FullPath = fields[3]
+                  AssetType = fields[4]
+                  IsNotImplementationReference = fields[5]
+                  InitializeSourcePath = fields[6]
+                  NativePath = fields[7]
                 }
         |]
 
@@ -130,7 +130,6 @@ $(POUND_R)
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
-    <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>                      <!-- Disable preview FSharp.Core for legacy DotNet Sdks -->
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->

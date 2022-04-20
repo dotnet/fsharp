@@ -8,8 +8,6 @@ module Tests.Service.AssemblyContentProviderTests
 #endif
 
 open System
-open System.IO
-open System.Text
 open NUnit.Framework
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -32,33 +30,44 @@ let private projectOptions : FSharpProjectOptions =
 
 let private checker = FSharpChecker.Create()
 
-let (=>) (source: string) (expected: string list) =
-    let lines =
-        use reader = new StringReader(source)
-        [| let mutable line = reader.ReadLine()
-           while not (isNull line) do
-               yield line
-               line <- reader.ReadLine()
-           if source.EndsWith "\n" then
-               // last trailing space not returned
-               // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-               yield "" |]
+let private assertAreEqual (expected, actual) =
+    if actual <> expected then
+        failwithf "\n\nExpected\n\n%A\n\nbut was\n\n%A" expected actual
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunImmediate
-    
-    let checkFileResults =
-        match checkFileAnswer with
-        | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
-        | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
+let private checkFile (source: string) = 
+    let _, checkFileAnswer = 
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) 
+        |> Async.RunImmediate
+
+    match checkFileAnswer with
+    | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
+    | FSharpCheckFileAnswer.Succeeded checkFileResults -> checkFileResults
+
+let private getCleanedFullName (symbol: AssemblySymbol) =
+    symbol.CleanedIdents |> String.concat "."
+
+let private getTopRequireQualifiedAccessParentName (symbol: AssemblySymbol) =
+    symbol.TopRequireQualifiedAccessParent
+    |> Option.defaultValue [||]
+    |> String.concat "."
+
+let private (=>) (source: string) (expected: string list) =
+    let checkFileResults = checkFile source
 
     let actual = 
-        AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
-        |> List.map (fun x -> x.CleanedIdents |> String.concat ".") 
-        |> List.sort
+        checkFileResults.PartialAssemblySignature
+        |> AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full
+        |> List.map getCleanedFullName
 
-    let expected = List.sort expected
+    assertAreEqual (List.sort expected, List.sort actual)
 
-    if actual <> expected then failwithf "\n\nExpected\n\n%A\n\nbut was\n\n%A" expected actual
+let private getSymbolMap (getSymbolProperty: AssemblySymbol -> 'a) (source: string) =
+    let checkFileResults = checkFile source
+
+    checkFileResults.PartialAssemblySignature
+    |> AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full
+    |> List.map (fun s -> getCleanedFullName s, getSymbolProperty s)
+    |> Map.ofList
 
 [<Test>]
 let ``implicitly added Module suffix is removed``() =
@@ -93,3 +102,49 @@ let ``Property getters and setters are removed``() =
     => [ "Test"
          "Test.MyType"
          "Test.MyType.MyProperty" ]
+
+[<Test>]
+let ``TopRequireQualifiedAccessParent property should be valid``() =
+    let source = """
+        module M1 = 
+            let v1 = 1
+
+            module M11 = 
+                let v11 = 1
+
+                module M111 = 
+                    let v111 = 1
+
+            [<RequireQualifiedAccess>]
+            module M12 = 
+                let v12 = 1
+
+                module M121 = 
+                    let v121 = 1
+
+                    [<RequireQualifiedAccess>]
+                    module M1211 = 
+                        let v1211 = 1
+    """
+
+    let expectedResult = 
+        [ 
+            "Test", "";
+            "Test.M1", "";
+            "Test.M1.v1", "";
+            "Test.M1.M11", "";
+            "Test.M1.M11.v11", "";
+            "Test.M1.M11.M111", "";
+            "Test.M1.M11.M111.v111", "";
+            "Test.M1.M12", "";
+            "Test.M1.M12.v12", "Test.M1.M12";
+            "Test.M1.M12.M121", "Test.M1.M12";
+            "Test.M1.M12.M121.v121", "Test.M1.M12";
+            "Test.M1.M12.M121.M1211", "Test.M1.M12";
+            "Test.M1.M12.M121.M1211.v1211", "Test.M1.M12";
+        ]
+        |> Map.ofList
+
+    let actual = source |> getSymbolMap getTopRequireQualifiedAccessParentName
+
+    assertAreEqual (expectedResult, actual)

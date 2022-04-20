@@ -980,48 +980,6 @@ for i in 0..a."]
 
     [<Test>]
     [<Category("Records")>]
-    member public this.``Records.WRONG.MissingBindings``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A = 1; _;  }"], "; _;", ["AAA"; "BBB"]
-                ["let _ = {A = 1; _=; }"], " _=;", ["AAA"; "BBB"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-
-
-    [<Test>]
-    [<Category("Records")>]
-    member public this.``Records.WRONG.IncorrectNameResEnv``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool; CCC : int}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A}"], "_ = {A", ["AAA"; "BBB"; "CCC"]
-                ["let _ = {AAA = 1; }"], "_ = {AAA = 1;", ["AAA"; "BBB"; "CCC"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-    [<Test>]
-    [<Category("Records")>]
     member public this.``Records.WRONG.ErrorsInFirstBinding``() =
         // errors in the first binding are critical now
         let prologue = 
@@ -4257,38 +4215,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "Contains" ] // should contain
           [ ] // should not contain
 
-    [<Test>]
-    member public this.``InDeclaration.Bug3176a``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "aa"       // marker
-          [ "aaaa" ] // should contain
-          [ "bbbb" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176b``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "bb"       // marker
-          [ "bbbb" ] // should contain
-          [ "aaaa" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176c``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type C =";
-            "  val aaaa: int" ]
-          "aa"        // move to marker
-          ["aaaa"] [] // should contain 'aaaa'
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176d``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type DU<'a> =";
-                      "  | DULabel of 'a" ]
-          "DULab"        // move to marker
-          ["DULabel"] [] // should contain 'DULabel'
-          
     [<Test>]
     member public this.``IncompleteIfClause.Bug4594``() = 
         AssertCtrlSpaceCompleteContains 

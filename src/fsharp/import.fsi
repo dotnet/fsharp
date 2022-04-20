@@ -10,7 +10,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -23,11 +23,11 @@ type AssemblyLoader =
 
     abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly MaybeNull> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -61,7 +61,7 @@ val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
 /// Pre-check for ability to import an IL type as an F# type.
 val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Import a provided type as an F# type.
 val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType
 

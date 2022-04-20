@@ -52,7 +52,7 @@ match () with
 | x
 """
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 
@@ -64,7 +64,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -76,7 +76,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _); _ ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _); _ ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -88,7 +88,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=SynPat.Or _;resultExpr=SynExpr.Const _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -100,8 +100,8 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _)
-                             SynMatchClause (_, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _)
+                               SynMatchClause (resultExpr=SynExpr.Const _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -113,9 +113,9 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
-        | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _), _), _) -> ()
+        | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _, _), _), _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
 
@@ -128,11 +128,11 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
         | SynPat.Or
             (SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _),
-             SynPat.Named _, _) -> ()
+             SynPat.Named _, _, _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
 
@@ -144,7 +144,7 @@ match () with
 b
 """
     match getSingleModuleMemberDecls parseResults with
-    | [ SynModuleDecl.DoExpr (_, (SynExpr.Match _ as m), _); SynModuleDecl.DoExpr (_, (SynExpr.Ident _ as i), _) ] ->
+    | [ SynModuleDecl.Expr (expr=(SynExpr.Match _ as m)); SynModuleDecl.Expr (expr=(SynExpr.Ident _ as i)) ] ->
         Assert.True(Position.posLt m.Range.End i.Range.Start)
     | _ -> failwith "Unexpected tree"
 
@@ -158,7 +158,7 @@ let f (x
     match getSingleDeclInModule parseResults with
     | SynModuleDecl.Let (_, [ SynBinding (headPat = headPat) ], _) ->
         match headPat with
-        | SynPat.LongIdent (_, _, _, SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Named _, _), _) ], _, _) -> ()
+        | SynPat.LongIdent (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Named _, _), _) ]) -> ()
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 
@@ -171,7 +171,7 @@ let f (x, y
     match getSingleDeclInModule parseResults with
     | SynModuleDecl.Let (_, [ SynBinding (headPat = headPat) ], _) ->
         match headPat with
-        | SynPat.LongIdent (_, _, _, SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Tuple _, _), _) ], _, _) -> ()
+        | SynPat.LongIdent (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Tuple _, _), _) ]) -> ()
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 

@@ -15,6 +15,8 @@ open FSharp.Compiler.TypeRelations
 //----------------------------------------------------------------------------
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
+let AutoboxRewriteStackGuardDepth = StackGuard.GetDepthOption "AutoboxRewrite"
+
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }
@@ -30,12 +32,12 @@ let DecideEscapes syntacticArgs body =
         v.ValReprInfo.IsNone &&
         not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
-    let frees = freeInExpr CollectLocals body
+    let frees = freeInExpr (CollectLocalsWithStackGuard()) body
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
-let DecideLambda exprF cenv topValInfo expr ety z   = 
-    match expr with 
+let DecideLambda exprF cenv topValInfo expr ety z = 
+    match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
         let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
@@ -60,7 +62,7 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         exprF (exprF z e1) e2
 
-    | TOp.For _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         exprF (exprF (exprF z e1) e2) e3
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
@@ -73,11 +75,12 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF noInterceptF z expr  = 
-    match expr with 
+    let g = cenv.g
+    match stripDebugPoints expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
-        DecideLambda (Some exprF)  cenv topValInfo expr ty z
+        let ty = mkMultiLambdaTy g m argvs rty 
+        DecideLambda (Some exprF) cenv topValInfo expr ty z
 
     | Expr.TyLambda (_, tps, _, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
@@ -140,19 +143,19 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
     // Rewrite uses of mutable values 
     | Expr.Val (ValDeref(v), _, m) when nvs.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = nvs[v]
        Some (mkRefCellGet g m v.Type nve)
 
     // Rewrite assignments to mutable values 
     | Expr.Op (TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when nvs.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = nvs[v]
        let arg = exprF arg 
        Some (mkRefCellSet g m v.Type nve arg)
 
     // Rewrite taking the address of mutable values 
     | Expr.Op (TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when nvs.ContainsVal v -> 
-       let _nv,nve = nvs.[v]
+       let _nv,nve = nvs[v]
        Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
@@ -160,7 +163,7 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
 /// Rewrite bindings for mutable locals which we are transforming
 let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 
     if nvs.ContainsVal v then 
-       let nv, _nve = nvs.[v]
+       let nv, _nve = nvs[v]
        let exprRange = expr.Range
        let expr = exprF expr
        Some(TBind(nv, mkRefCell g exprRange v.Type expr, m))
@@ -190,6 +193,7 @@ let TransformImplFile g amap implFile =
               { PreIntercept = Some(TransformExpr g nvs)
                 PreInterceptBinding = Some(TransformBinding g nvs)
                 PostTransform = (fun _ -> None)
-                IsUnderQuotations = false } 
+                RewriteQuotations = true
+                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

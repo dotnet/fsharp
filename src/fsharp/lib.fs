@@ -341,9 +341,9 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     let tab = Map.ofList nodes
     let nodes = List.map snd nodes
     do for node in nodes do
-        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab.[nodeId])
+        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab[nodeId])
 
-    member g.GetNodeData nodeId = tab.[nodeId].nodeData
+    member g.GetNodeData nodeId = tab[nodeId].nodeData
 
     member g.IterateCycles f =
         let rec trace path node =
@@ -545,18 +545,6 @@ module UnmanagedProcessExecutionOptions =
                             GetLastError().ToString("X").PadLeft(8, '0') + "."))
 
 [<RequireQualifiedAccess>]
-module StackGuard =
-
-    open System.Runtime.CompilerServices
-
-    [<Literal>]
-    let private MaxUncheckedRecursionDepth = 20
-
-    let EnsureSufficientExecutionStack recursionDepth =
-        if recursionDepth > MaxUncheckedRecursionDepth then
-            RuntimeHelpers.EnsureSufficientExecutionStack ()
-
-[<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of Lazy<'T>
@@ -599,18 +587,18 @@ module ArrayParallel =
         let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
         try
             Parallel.For(0, arr.Length, parallelOptions, fun i ->
-                f i arr.[i]
+                f i arr[i]
             ) |> ignore
         with
         | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-            raise(ex.InnerExceptions.[0])
+            raise(ex.InnerExceptions[0])
 
     let inline iter f (arr: 'T []) =
         arr |> iteri (fun _ item -> f item)
 
     let inline mapi f (arr: 'T []) =
         let mapped = Array.zeroCreate arr.Length
-        arr |> iteri (fun i item -> mapped.[i] <- f i item)
+        arr |> iteri (fun i item -> mapped[i] <- f i item)
         mapped
 
     let inline map f (arr: 'T []) =

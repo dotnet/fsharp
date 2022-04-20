@@ -19,6 +19,7 @@ type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
+    | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
 type public CompletionContext = 
@@ -43,6 +44,13 @@ type public CompletionContext =
 
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
+    /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
+    | UnionCaseFieldsDeclaration
+
+    /// Completing a type abbreviation (e.g. type Long = int6|)
+    /// or a single case union without a bar (type SomeUnion = Abc|)
+    | TypeAbbreviationOrSingleCaseUnion
 
 type public ModuleKind =
     { IsAutoOpen: bool
@@ -146,5 +154,5 @@ module internal SourceFileImpl =
 
     val IsInterfaceFile: string -> bool 
 
-    val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
+    val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list
 

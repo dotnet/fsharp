@@ -20,7 +20,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -219,8 +219,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false
@@ -229,8 +229,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
+                let aSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef sigTycon))
                 if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false
@@ -490,7 +490,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TFSharpRecdRepr _ 
               | TFSharpUnionRepr _ 
               | TILObjectRepr _ 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               | TProvidedTypeRepr _ 
               | TProvidedNamespaceRepr _
 #endif
@@ -542,7 +542,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | TMeasureableRepr ty1,  TMeasureableRepr ty2 -> 
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | TNoRepr, TNoRepr -> true
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr info1, TProvidedTypeRepr info2 ->  
                 Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType, info2.ProvidedType)
             | TProvidedNamespaceRepr _, TProvidedNamespaceRepr _ -> 

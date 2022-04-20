@@ -15,9 +15,9 @@ let inline getTestsDirectory src dir = src ++ dir
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
 // Throws exception if it Fails
 let tryCreateTemporaryDirectory () =
-    let path = Path.GetTempPath()
-    let now = DateTime.Now.ToString("yyyy-MM-dd")
-    let directory = Path.Combine(path, "FSharp.Test.Utilities", now)
+    let date() = DateTime.Now.ToString("yyyy-MM-dd")
+    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
     Directory.CreateDirectory(directory).FullName
 
 // Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
@@ -26,6 +26,13 @@ let tryCreateTemporaryFileName () =
     let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
     let filePath = Path.Combine(directory, fileName)
     filePath
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileNameInDirectory (directory) =
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
 
 [<RequireQualifiedAccess>]
 module Commands =
@@ -57,8 +64,8 @@ module Commands =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             // When running tests, we want to roll forward to minor versions (including previews).
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -106,7 +113,7 @@ module Commands =
     let directoryExists workDir path =
         if path |> getfullpath workDir |> Directory.Exists then Some path else None
 
-    let copy_y workDir source dest =
+    let copy workDir source dest =
         log "copy /y %s %s" source dest
         File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
         CmdResult.Success
@@ -216,6 +223,7 @@ type TestConfig =
       FSI : string
 #if !NETCOREAPP
       FSIANYCPU : string
+      FSCANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
@@ -290,9 +298,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net5.0"
-    let fsiArchitecture = "net5.0"
-    let peverifyArchitecture = "net5.0"
+    let fscArchitecture = "net6.0"
+    let fsiArchitecture = "net6.0"
+    let peverifyArchitecture = "net6.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -335,8 +343,9 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
-    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
+    let FSCANYCPU = requireArtifact ("fscAnyCpu" ++ configurationName ++ fscArchitecture ++ "fscAnyCpu.exe")
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
@@ -360,6 +369,7 @@ let config configurationName envVars =
       FSC = FSC
       FSI = FSI
 #if !NETCOREAPP
+      FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -392,6 +402,7 @@ let logConfig (cfg: TestConfig) =
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
+    log "FSCANYCPU                = %s" cfg.FSCANYCPU
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags
@@ -608,20 +619,20 @@ let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
+let fileguard cfg fileName = Commands.getfullpath cfg.Directory fileName |> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
-let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
+let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
-let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
-let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+let copy cfg fromFile toFile = Commands.copy cfg.Directory fromFile toFile |> checkResult
+let copySystemValueTuple cfg = copy cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s:string) = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
     if not <| FileSystem.FileExistsShim(path1) then
@@ -641,8 +652,8 @@ let diff normalize path1 path2 =
                 if x >= 0 then line.Substring(x+cwd.Length) else line
             else line
 
-        let line1 = normalizePath lines1.[i]
-        let line2 = normalizePath lines2.[i]
+        let line1 = normalizePath lines1[i]
+        let line2 = normalizePath lines2[i]
 
         if line1 <> line2 then
             append <| sprintf "diff between [%s] and [%s]" path1 path2
@@ -653,8 +664,8 @@ let diff normalize path1 path2 =
     if lines1.Length <> lines2.Length then
         append <| sprintf "diff between [%s] and [%s]" path1 path2
         append <| sprintf "diff at line %d" minLines
-        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
-        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+        lines1[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
 
     result.ToString()
 

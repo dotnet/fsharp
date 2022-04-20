@@ -402,6 +402,8 @@ Microsoft.FSharp.Collections.MapModule: TState Fold[TKey,T,TState](Microsoft.FSh
 Microsoft.FSharp.Collections.MapModule: Void Iterate[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: System.Collections.Generic.ICollection`1[TKey] Keys[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: System.Collections.Generic.ICollection`1[T] Values[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: System.Tuple`2[TKey,T] MaxKeyValue[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: System.Tuple`2[TKey,T] MinKeyValue[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Contains[T](T, System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists2[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,System.Boolean]], System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
@@ -2494,6 +2496,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
 "
 #if NETCOREAPP
 // This is in netstandard 2.1

@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckExpressions
 
 open System
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler 
@@ -10,6 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -24,7 +26,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -101,6 +103,8 @@ type TcEnv =
 
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
+
+      eIsControlFlow: bool
     } 
 
     member DisplayEnv : DisplayEnv
@@ -180,6 +184,9 @@ type TcFileState =
       /// we infer type parameters 
       mutable recUses: ValMultiMap<Expr ref * range * bool>
       
+      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+      stackGuard: StackGuard
+
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -222,7 +229,10 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
             
+      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+
       isInternalTestSpanStackReferring: bool
+
       // forward call 
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
 
@@ -701,7 +711,7 @@ val TcLetrecBinding: cenv:TcFileState * envRec:TcEnv * scopem:range * extraGener
 val TcLetrecComputeCtorSafeThisValBind: cenv:TcFileState -> safeThisValOpt:Val option -> Binding option    
 
 /// Check a collection of `let rec` bindings
-val TcLetrec: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
+val TcLetrecBindings: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
 
 /// Part of check a collection of recursive bindings that might include members
 val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGeneralizationRecursiveBinding -> PostSpecialValsRecursiveBinding
@@ -709,7 +719,7 @@ val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGenera
 /// Check an inheritance expression or other 'new XYZ()' expression
 val TcNewExpr: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> objTy:TType -> mObjTyOpt:range option -> superInit:bool -> arg:SynExpr -> mWholeExprOrObjTy:range -> Expr * UnscopedTyparEnv    
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Check the application of a provided type to static args
 val TcProvidedTypeAppToStaticConstantArgs: cenv:TcFileState -> env:TcEnv -> optGeneratedTypePath:string list option -> tpenv:UnscopedTyparEnv -> tcref:TyconRef -> args:SynType list -> m:range -> bool * Tainted<ProvidedType> * (unit -> unit)
 #endif

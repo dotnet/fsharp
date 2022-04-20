@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Tokenizing
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 200
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -50,7 +58,7 @@ let tokenizer = sourceTok.CreateLineTokenizer("let answer=42")
 (**
 Now, we can write a simple recursive function that calls `ScanToken` on the `tokenizer`
 until it returns `None` (indicating the end of line). When the function succeeds, it 
-returns `FSharpTokenInfo` object with all the interesting details:
+returns an `FSharpTokenInfo` object with all the interesting details:
 *)
 /// Tokenize a single line of F# code
 let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =

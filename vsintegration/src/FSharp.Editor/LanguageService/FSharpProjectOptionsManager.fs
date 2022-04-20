@@ -114,7 +114,12 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
         match weakPEReferences.TryGetValue comp with
         | true, fsRefProj -> fsRefProj
         | _ ->
+            let mutable strongComp = comp
             let weakComp = WeakReference<Compilation>(comp)
+            let mutable stamp = DateTime.UtcNow
+
+            // Getting a C# reference assembly can fail if there are compilation errors that cannot be resolved.
+            // To mitigate this, we store the last successful compilation of a C# project and re-use it until we get a new successful compilation.
             let getStream =
                 fun ct ->
                     let tryStream (comp: Compilation) =
@@ -124,15 +129,23 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                             let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
 
                             if result.Success then
+                                strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 lastSuccessfulCompilations.[projectId] <- comp
                                 ms.Position <- 0L
                                 ms :> Stream
                                 |> Some
                             else
+                                strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 ms.Dispose() // it failed, dispose of stream
                                 None
                         with
+                        | :? OperationCanceledException ->
+                            // Since we cancelled, do not null out the strong compilation ref and update the stamp.
+                            stamp <- DateTime.UtcNow
+                            ms.Dispose()
+                            None
                         | _ ->
+                            strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                             ms.Dispose() // it failed, dispose of stream
                             None
 
@@ -146,12 +159,14 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                     | _ ->
                         match lastSuccessfulCompilations.TryGetValue(projectId) with
                         | true, comp -> tryStream comp
-                        | _ -> None                           
+                        | _ -> None
+                        
+            let getStamp = fun () -> stamp
 
             let fsRefProj =
                 FSharpReferencedProject.CreatePortableExecutable(
                     referencedProject.OutputFilePath, 
-                    DateTime.UtcNow,
+                    getStamp,
                     getStream
                 )
             weakPEReferences.Add(comp, fsRefProj)
@@ -261,20 +276,20 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                 | Some projectSite ->             
 
                 let otherOptions =
-                    project.ProjectReferences
-                    |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                    |> Array.ofSeq
-                    |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                            |> Array.append (
-                                    // Clear any references from CompilationOptions. 
-                                    // We get the references from Project.ProjectReferences/Project.MetadataReferences.
-                                    projectSite.CompilationOptions
-                                    |> Array.filter (fun x -> not (x.Contains("-r:")))
-                                )
-                        )
+                    [|
+                        // Clear any references from CompilationOptions. 
+                        // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                        for x in projectSite.CompilationOptions do
+                            if not (x.Contains("-r:")) then
+                               x
+
+                        for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                            "-r:" + x.FilePath
+                    
+                        for x in project.ProjectReferences do
+                            "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
+
+                    |]
 
                 let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
@@ -479,53 +494,47 @@ type internal FSharpProjectOptionsManager
         reactor.SetLegacyProjectSite (projectId, projectSite)
 
     /// Clear a project from the project table
-    member this.ClearInfoForProject(projectId:ProjectId) = 
+    member _.ClearInfoForProject(projectId:ProjectId) = 
         reactor.ClearOptionsByProjectId(projectId)
 
-    member this.ClearSingleFileOptionsCache(documentId) =
+    member _.ClearSingleFileOptionsCache(documentId) =
         reactor.ClearSingleFileOptionsCache(documentId)
 
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
-    member this.GetCompilationDefinesForEditingDocument(document:Document) = 
+    member _.GetCompilationDefinesForEditingDocument(document:Document) = 
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
-            | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
-        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
+            | _ ->
+                { FSharpParsingOptions.Default with
+                    IsInteractive = CompilerEnvironment.IsScriptFile document.Name
+                }
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions     
 
-    member this.TryGetOptionsByProject(project) =
+    member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
 
     /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken, userOpName) =
-        async { 
-            match! reactor.TryGetOptionsByDocumentAsync(document, cancellationToken, userOpName) with
-            | Some(parsingOptions, projectOptions) ->
-                return Some(parsingOptions, None, projectOptions)
-            | _ ->
-                return None
-        }
+    member _.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken, userOpName) =
+        reactor.TryGetOptionsByDocumentAsync(document, cancellationToken, userOpName)
 
     /// Get the exact options for a document or project relevant for syntax processing.
     member this.TryGetOptionsForEditingDocumentOrProject(document:Document, cancellationToken, userOpName) = 
-        async {
-            let! result = this.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
-            return result |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
-        }
+        this.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker it doesn't need to recompute the exact project options for a script.
-    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
+    member _.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
         match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
         | Some (_, parsingOptions, _) -> parsingOptions
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
 
-    member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
+    member _.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
         reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
-    member this.ClearAllCaches() =
+    member _.ClearAllCaches() =
         reactor.ClearAllCaches()
 
     member _.Checker = checker

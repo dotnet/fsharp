@@ -5,13 +5,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net5.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <NGenBinary>true</NGenBinary>
     <UseAppHost>true</UseAppHost>
+    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -22,9 +23,6 @@
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
-    <None Include="default.win32manifest">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>

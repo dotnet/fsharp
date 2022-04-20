@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <remarks>
     ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
-    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.Async"/> type.
+    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> type.
     ///
     ///  See also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
     /// </remarks> 
@@ -54,14 +54,19 @@ namespace Microsoft.FSharp.Control
         ///        
         /// If no cancellation token is provided then the default cancellation token is used.
         ///
+        /// The computation is started on the current thread if <see cref="P:System.Threading.SynchronizationContext.Current"/> is null,
+        /// <see cref="P:System.Threading.Thread.CurrentThread"/> has  <see cref="P:System.Threading.Thread.IsThreadPoolThread"/>
+        /// of <c>true</c>, and no timeout is specified. Otherwise the computation is started by queueing a new work item in the thread pool,
+        /// and the current thread is blocked awaiting the completion of the computation.
+        ///
         /// The timeout parameter is given in milliseconds.  A value of -1 is equivalent to
-        /// System.Threading.Timeout.Infinite.</remarks>
+        /// <see cref="F:System.Threading.Timeout.Infinite"/>.
+        /// </remarks>
         ///
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
         /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.
-        /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
+        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>
         ///
@@ -1072,7 +1077,18 @@ namespace Microsoft.FSharp.Control
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="get-response">
+            /// <code lang="fsharp">
+            /// open System.Net
+            /// open System.IO
+            /// let responseStreamToString = fun (responseStream : WebResponse) ->
+            ///     let reader = new StreamReader(responseStream.GetResponseStream())
+            ///     reader.ReadToEnd()
+            /// let webRequest = WebRequest.Create("https://www.w3.org")
+            /// let result = webRequest.AsyncGetResponse() |> Async.RunSynchronously |> responseStreamToString
+            /// </code>
+            /// </example>
+            /// Gets the web response asynchronously and converts response stream to string
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
 
@@ -1084,7 +1100,14 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-string">
+            /// <code lang="fsharp">
+            /// open System
+            /// let client = new WebClient()
+            /// Uri("https://www.w3.org") |> client.AsyncDownloadString |> Async.RunSynchronously
+            /// </code>
+            /// This will download the server response from https://www.w3.org
+            /// </example>
             [<CompiledName("AsyncDownloadString")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadString : address:System.Uri -> Async<string>
 
@@ -1094,7 +1117,16 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-data">
+            /// <code lang="fsharp">
+            /// open System.Net
+            /// open System.Text
+            /// open System
+            /// let client = new WebClient()
+            /// client.AsyncDownloadData(Uri("https://www.w3.org")) |> Async.RunSynchronously |> Encoding.ASCII.GetString 
+            /// </code>
+            /// </example>
+            /// Downloads the data in bytes and decodes it to a string.
             [<CompiledName("AsyncDownloadData")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadData : address:System.Uri -> Async<byte[]>
 
@@ -1105,7 +1137,15 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-file">
+            /// <code lang="fsharp">
+            /// open System.Net
+            /// open System
+            /// let client = new WebClient()
+            /// Uri("https://www.w3.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronously
+            /// </code>
+            /// This will download the server response as a file and output it as output.html
+            /// </example>
             [<CompiledName("AsyncDownloadFile")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadFile : address:System.Uri * fileName: string -> Async<unit>
 

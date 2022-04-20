@@ -208,7 +208,7 @@ let mkUInt64 (v, ty) = CombExpr(UInt64Op v, [ty], [])
 
 let mkSequential (e1, e2)       = CombExpr(SeqOp, [], [e1;e2])
 
-let mkForLoop (x1, x2, x3)       = CombExpr(ForLoopOp, [], [x1;x2;x3])
+let mkIntegerForLoop (x1, x2, x3)       = CombExpr(ForLoopOp, [], [x1;x2;x3])
 
 let mkWhileLoop (e1, e2)        = CombExpr(WhileLoopOp, [], [e1;e2])
 
@@ -273,10 +273,10 @@ module SimplePickle =
             n
 
         member tbl.FindOrAdd x =
-            if tbl.tbl.ContainsKey x then tbl.tbl.[x]
+            if tbl.tbl.ContainsKey x then tbl.tbl[x]
             else tbl.Add x
 
-        member tbl.Find x = tbl.tbl.[x]
+        member tbl.Find x = tbl.tbl[x]
 
         member tbl.ContainsKey x = tbl.tbl.ContainsKey x
 

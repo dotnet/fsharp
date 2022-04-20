@@ -132,9 +132,9 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName isListItem ppF fnF r = 
+    let OutputFullName displayFullName ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
-      if not isListItem then 
+      if not displayFullName then 
         match ppF r with 
         | None -> emptyL
         | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
@@ -145,7 +145,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -153,11 +153,11 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
             let resL = toArray resL
@@ -167,7 +167,7 @@ module DeclarationListHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -198,7 +198,7 @@ module DeclarationListHelpers =
             let tau = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
@@ -215,7 +215,7 @@ module DeclarationListHelpers =
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv infoReader ecref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -353,17 +353,17 @@ module DeclarationListHelpers =
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delty -> 
            let delty, _cxs = PrettyTypes.PrettifyType g delty
-           let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+           let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
            let layout =
                NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
                LeftL.leftParen ^^
-               NicePrint.layoutType denv fty ^^
+               NicePrint.layoutType denv delFuncTy ^^
                RightL.rightParen
            let layout = toArray layout
            ToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, TType_app(tcref, _) :: _)
+        | Item.Types(_, TType_app(tcref, _, _) :: _)
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with
                             // tooltips are space-constrained, so use shorter names
@@ -373,7 +373,7 @@ module DeclarationListHelpers =
                             // be shown in the tip.
                             showDocumentation = false  }
             let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -422,8 +422,8 @@ module DeclarationListHelpers =
                 ToolTipElement.Single (layout, xml)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
-            let argTy = argTys.[i]
-            let nm = anon.SortedNames.[i]
+            let argTy = argTys[i]
+            let nm = anon.SortedNames[i]
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
@@ -445,7 +445,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
         |  _ -> 
             ToolTipElement.None
@@ -593,7 +593,7 @@ module internal DescriptionListsImpl =
         prettyTyparInst, parameters, prettyRetTyL, prettyConstraintsL
                           
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Get the set of static parameters associated with an item
     let StaticParamsOfItem (infoReader:InfoReader) m denv item = 
@@ -682,7 +682,7 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let rtyL = NicePrint.layoutType denv rty
             prettyParams, rtyL
 
@@ -694,7 +694,7 @@ module internal DescriptionListsImpl =
             let apinfo = Option.get (TryGetActivePatternInfo v)
             let aparity = apinfo.Names.Length
             
-            let rty = if aparity <= 1 then resTy else (argsOfAppTy g resTy).[apref.CaseIndex]
+            let rty = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args rty
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
@@ -711,7 +711,7 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.AnonRecdField(_anonInfo, tys, i, _) ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys.[i]
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys[i]
             [], prettyRetTyL
 
         | Item.ILField finfo ->
@@ -769,10 +769,10 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delty
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
@@ -804,7 +804,7 @@ module internal DescriptionListsImpl =
                 else                      FSharpGlyph.Delegate
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr _-> FSharpGlyph.Typedef 
             | TProvidedNamespaceRepr  _-> FSharpGlyph.Typedef  
 #endif
@@ -894,7 +894,7 @@ module internal DescriptionListsImpl =
         | Item.Property(_, pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
@@ -983,10 +983,10 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, TType_app(tcref, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, TType_app(tcref, _, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                | Item.FakeInterfaceCtor (TType_app(tcref, _)) 
-                | Item.DelegateCtor (TType_app(tcref, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                | Item.FakeInterfaceCtor (TType_app(tcref, _, _)) 
+                | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
@@ -1049,7 +1049,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 
                 let cutAttributeSuffix (name: string) =
                     if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && IsAttribute infoReader item.Item then
-                        name.[0..name.Length - "Attribute".Length - 1]
+                        name[0..name.Length - "Attribute".Length - 1]
                     else name
 
                 let textInDeclList = cutAttributeSuffix textInDeclList
@@ -1070,7 +1070,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         match currentNamespace with
                         | Some currentNs ->
                             if ns |> Array.startsWith currentNs then
-                                ns.[currentNs.Length..]
+                                ns[currentNs.Length..]
                             else ns
                         | None -> ns)
                     |> Option.bind (function
@@ -1139,7 +1139,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
-            if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
+            if parms.Length = 1 && parms[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
                 MethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
@@ -1183,7 +1183,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
                         let hasStaticParameters = 
                             match flatItem with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                             | ItemIsProvidedTypeWithStaticArguments m g _ -> false 
 #endif
                             | _ -> true
@@ -1196,7 +1196,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                           staticParameters = StaticParamsOfItem infoReader m denv flatItem
 #else
                           staticParameters = [| |]

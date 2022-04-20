@@ -56,7 +56,7 @@ let VerifyCompletionListWithOptions(fileContents: string, marker: string, expect
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -107,7 +107,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -634,11 +634,18 @@ let _ = fun (p) -> ()
     VerifyNoCompletionList(fileContents, "let _ = fun (p")
 
 [<Test>]
-let ``Provide completion on lambda argument type hint``() =
+let ``No completion on lambda argument name2``() =
     let fileContents = """
-let _ = fun (p:i) -> ()
+let _ = fun (p: int) -> ()
 """
-    VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+    VerifyNoCompletionList(fileContents, "let _ = fun (p")
+
+[<Test>]
+let ``Completions on lambda argument type hint contain modules and types but not keywords or functions``() =
+    let fileContents = """
+let _ = fun (p:l) -> ()
+"""
+    VerifyCompletionList(fileContents, "let _ = fun (p:l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
 let ``Extensions.Bug5162``() =
@@ -735,6 +742,67 @@ let ``Completion list span works with last of multiple enclosed backtick identif
 let x = A.``B C`` + D.``E F``
 """
     VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
+
+[<Test>]
+let ``No completion on record field identifier at declaration site``() =
+    let fileContents = """
+type A = { le: string }
+"""
+    VerifyNoCompletionList(fileContents, "le")
+
+[<Test>]
+let ``Completion list on record field type at declaration site contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A = { Field: l }
+"""
+    VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on union case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C of string
+"""
+    VerifyNoCompletionList(fileContents, "| C")
+
+[<Test>]
+let ``No completion on union case field identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | Case of blah: int * str: int
+"""
+    VerifyNoCompletionList(fileContents, "str")
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A =
+    | Case of blah: int * str: l
+"""
+    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions2``() =
+    let fileContents = """
+type A =
+    | Case of l
+"""
+    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on type alias contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A = l
+"""
+    VerifyCompletionList(fileContents, "= l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on enum case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C = 0
+"""
+    VerifyNoCompletionList(fileContents, "| C")
 
 #if EXE
 ShouldDisplaySystemNamespace()

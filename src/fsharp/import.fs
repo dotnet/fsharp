@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -32,7 +32,7 @@ type AssemblyLoader =
 
     abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
@@ -109,7 +109,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
             fakeTyconRef.Deref
         with _ ->
             error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName), m))
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
     | TProvidedTypeRepr info ->
@@ -148,7 +148,7 @@ let ImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
     | true, tcref -> tcref
     | _ ->
         let tcref = ImportILTypeRefUncached  env m tref
-        env.ILTypeRefToTyconRefCache.[tref] <- tcref
+        env.ILTypeRefToTyconRefCache[tref] <- tcref
         tcref
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
@@ -204,7 +204,7 @@ let rec CanImportILType (env: ImportMap) m ty =
     | ILType.Modified(_, _, ety) -> CanImportILType env m ety
     | ILType.TypeVar _u16 -> true
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 /// Import a provided type reference as an F# type TyconRef
 let ImportProvidedNamedType (env: ImportMap) (m: range) (st: Tainted<ProvidedType>) = 
@@ -323,11 +323,11 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref, [t1;t2]) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
-                        | TType_app (tcref, [t1]) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
-                        | TType_app (tcref, []) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref, []) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
-                        | TType_app (tcref, _) -> 
+                        | TType_app (tcref, [t1;t2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
+                        | TType_app (tcref, [t1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
+                        | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
+                        | TType_app (tcref, _, _) -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
                             Measure.One
                         | _ -> 
@@ -399,15 +399,19 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
          |  None ->
             match mbase.OfType<ProvidedConstructorInfo>() with
             | Some _  -> mbase.PApply((fun _ -> ProvidedType.Void), m)
-            | _ -> failwith "unexpected"
+            | _ -> failwith "ImportProvidedMethodBaseAsILMethodRef - unexpected"
+
      let genericArity = 
         if mbase.PUntaint((fun x -> x.IsGenericMethod), m) then 
             mbase.PUntaint((fun x -> x.GetGenericArguments().Length), m)
         else 0
+
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)
+
      let parameters = 
          [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
               yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m)) ]
+
      mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name), m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
 #endif
 
@@ -459,7 +463,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             match keylist with 
             | [] -> ()
             | key :: rest ->
-                buckets.[key] <-
+                buckets[key] <-
                     match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []
@@ -513,7 +517,7 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
 ///
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
     // We be very careful not to force a read of the type defs here
-    tdefs.AsArrayOfPreTypeDefs
+    tdefs.AsArrayOfPreTypeDefs()
     |> Array.map (fun pre -> (pre.Namespace, (pre.Name, notlazy(scoref, pre))))
     |> Array.toList
     |> ImportILTypeDefList amap m cpath enc
@@ -550,7 +554,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
 
 /// Import the "exported types" table for multi-module assemblies. 
 let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) = 
-    [ for exportedType in exportedTypes.AsList do 
+    [ for exportedType in exportedTypes.AsList() do 
          yield! ImportILAssemblyExportedType amap m auxModLoader scoref exportedType ]
 
 /// Import both the main type definitions and the "exported types" table, i.e. all the 
@@ -566,13 +570,13 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     // Note 'td' may be in another module or another assembly!
     // Note: it is very important that we call auxModLoader lazily
     [ //printfn "reading forwarders..." 
-        for exportedType in exportedTypes.AsList do 
+        for exportedType in exportedTypes.AsList() do 
             let ns, n = splitILTypeName exportedType.Name
             //printfn "found forwarder for %s..." n
             let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
             yield (Array.ofList ns, n), tcref
             let rec nested (nets: ILNestedExportedTypes) enc = 
-                [ for net in nets.AsList do 
+                [ for net in nets.AsList() do 
                     
                     //printfn "found nested forwarder for %s..." net.Name
                     let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create (exportedType.ScopeRef, enc, net.Name))
@@ -598,7 +602,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let ccuData: CcuData = 
         { IsFSharp=false
           UsesFSharp20PlusQuotations=false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           InvalidateEvent=invalidateCcu
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)

@@ -21,6 +21,9 @@ type AsyncType() =
     let ignoreSynchCtx f =
         f ()
 
+    [<VolatileField>]
+    let mutable spinloop = true
+        
     let waitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.True(result, "Task did not finish after waiting for a second.")
@@ -28,11 +31,11 @@ type AsyncType() =
     [<Fact>]
     member _.StartWithContinuations() =
 
-        let whatToDo = ref Exit
+        let mutable whatToDo = Exit
 
         let asyncWorkflow() =
             async {
-                let currentState = !whatToDo
+                let currentState = whatToDo
 
                 // Act
                 let result =
@@ -47,32 +50,32 @@ type AsyncType() =
             }
 
         let onSuccess x   =
-            match !whatToDo with
+            match whatToDo with
             | Cancel | Throw
                 -> Assert.Fail("Expected onSuccess but whatToDo was not Exit", [| whatToDo |])
             | Exit
                 -> ()
 
         let onException x =
-            match !whatToDo with
+            match whatToDo with
             | Exit | Cancel
                 -> Assert.Fail("Expected onException but whatToDo was not Throw", [| whatToDo |])
             | Throw  -> ()
 
         let onCancel x    =
-            match !whatToDo with
+            match whatToDo with
             | Exit | Throw
                 -> Assert.Fail("Expected onCancel but whatToDo was not Cancel", [| whatToDo |])
             | Cancel -> ()
 
         // Run it once.
-        whatToDo := Exit
+        whatToDo <- Exit
         Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
 
-        whatToDo := Cancel
+        whatToDo <- Cancel
         Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
 
-        whatToDo := Throw
+        whatToDo <- Throw
         Async.StartWithContinuations(asyncWorkflow(), onSuccess, onException, onCancel)
 
         ()
@@ -100,16 +103,16 @@ type AsyncType() =
                 | "int32"    -> Async.Sleep(10000000)
                 | "timespan" -> Async.Sleep(10000000.0 |> TimeSpan.FromMilliseconds)
                 | unknown    -> raise (NotImplementedException(unknown))
-            let result = ref ""
+            let mutable result = ""
             use cts = new CancellationTokenSource()
             Async.StartWithContinuations(computation,
-                                            (fun _ -> result := "Ok"),
-                                            (fun _ -> result := "Exception"),
-                                            (fun _ -> result := "Cancel"),
+                                            (fun _ -> result <- "Ok"),
+                                            (fun _ -> result <- "Exception"),
+                                            (fun _ -> result <- "Cancel"),
                                             cts.Token)
             cts.Cancel()
             Async.Sleep(1000) |> Async.RunSynchronously
-            Assert.AreEqual("Cancel", !result)
+            Assert.AreEqual("Cancel", result)
         )
 
     [<Theory>]
@@ -123,18 +126,18 @@ type AsyncType() =
                 | "timespan" -> Async.Sleep(10.0 |> TimeSpan.FromMilliseconds)
                 | unknown    -> raise (NotImplementedException(unknown))
             for i in 1..100 do
-                let result = ref ""
+                let mutable result = ""
                 use completedEvent = new ManualResetEvent(false)
                 use cts = new CancellationTokenSource()
                 Async.StartWithContinuations(computation,
-                                                (fun _ -> result := "Ok"; completedEvent.Set() |> ignore),
-                                                (fun _ -> result := "Exception"; completedEvent.Set() |> ignore),
-                                                (fun _ -> result := "Cancel"; completedEvent.Set() |> ignore),
+                                                (fun _ -> result <- "Ok"; completedEvent.Set() |> ignore),
+                                                (fun _ -> result <- "Exception"; completedEvent.Set() |> ignore),
+                                                (fun _ -> result <- "Cancel"; completedEvent.Set() |> ignore),
                                                 cts.Token)
                 sleep(10)
                 cts.Cancel()
                 completedEvent.WaitOne() |> Assert.True
-                Assert.True(!result = "Cancel" || !result = "Ok")
+                Assert.True(result = "Cancel" || result = "Ok")
         )
 
     [<Theory>]
@@ -179,14 +182,13 @@ type AsyncType() =
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
-        let mutable spinloop = true
         let doSpinloop () = while spinloop do ()
         let a = async {
             cts.CancelAfter (100)
             doSpinloop()
         }
-        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
 
+        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
@@ -201,7 +203,9 @@ type AsyncType() =
             match a.InnerException with
             | :? TaskCanceledException as t -> ()
             | _ -> reraise()
+
         Assert.True (t.IsCompleted, "Task is not completed")
+
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
@@ -278,9 +282,9 @@ type AsyncType() =
     [<Fact>]
     member _.CancellationPropagatesToGroup () =
         let ewh = new ManualResetEvent(false)
-        let cancelled = ref false
+        let mutable cancelled = false
         let a = async {
-                use! holder = Async.OnCancel (fun _ -> cancelled := true)
+                use! holder = Async.OnCancel (fun _ -> cancelled <- true)
                 ewh.Set() |> Assert.True
                 while true do ()
             }
@@ -297,7 +301,7 @@ type AsyncType() =
         with e -> exceptionThrown <- true
         Assert.True (exceptionThrown)
         Assert.True(t.IsCanceled)
-        Assert.True(!cancelled)
+        Assert.True(cancelled)
 
     [<Fact>]
     member _.CreateImmediateAsTask () =
@@ -460,14 +464,14 @@ type AsyncType() =
 
     [<Fact>]
     member _.NonGenericTaskAsyncValue () =
-        let hasBeenCalled = ref false
-        use t = Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
+        let mutable hasBeenCalled = false
+        use t = Task.Factory.StartNew(Action(fun () -> hasBeenCalled <- true))
         let a = async {
                 do! Async.AwaitTask(t)
                 return true
             }
-        let result =Async.RunSynchronously(a)
-        (!hasBeenCalled && result) |> Assert.True
+        let result = Async.RunSynchronously(a)
+        (hasBeenCalled && result) |> Assert.True
 
     [<Fact>]
     member _.NonGenericTaskAsyncValueException () =

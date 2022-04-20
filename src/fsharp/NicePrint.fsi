@@ -109,6 +109,8 @@ val prettyLayoutOfValOrMemberNoInst: denv:DisplayEnv -> infoReader:InfoReader ->
 
 val prettyLayoutOfMemberNoInstShort: denv:DisplayEnv -> v:Val -> Layout
 
+val layoutOfValReturnType: denv:DisplayEnv -> v:ValRef -> Layout
+
 val prettyLayoutOfInstAndSig: denv:DisplayEnv -> TyparInst * TTypes * TType -> TyparInst * (TTypes * TType) * (Layout list * Layout) * Layout
 
 val minimalStringsOfTwoTypes: denv:DisplayEnv -> t1:TType -> t2:TType -> string * string * string

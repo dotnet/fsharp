@@ -2,6 +2,7 @@ use vs
 
 package name=Microsoft.FSharp.Dependencies
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.SDK
@@ -10,6 +11,7 @@ vs.dependencies
 
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v$(VSGeneralVersion)\FSharp"
   file "Microsoft.FSharp.targets" source="$(SetupShimsDir)\Microsoft.FSharp.Shim.targets"
+  file "Microsoft.FSharp.ShimHelpers.props" source="$(SetupShimsDir)\Microsoft.FSharp.ShimHelpers.props"
   file "Microsoft.Portable.FSharp.targets" source="$(SetupShimsDir)\Microsoft.Portable.FSharp.Shim.targets"
   file "Microsoft.FSharp.NetSdk.targets" source="$(SetupShimsDir)\Microsoft.FSharp.NetSdk.Shim.targets"
   file "Microsoft.FSharp.Overrides.NetSdk.targets" source="$(SetupShimsDir)\Microsoft.FSharp.Overrides.NetSdk.Shim.targets"

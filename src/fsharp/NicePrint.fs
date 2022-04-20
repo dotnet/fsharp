@@ -140,7 +140,7 @@ module internal PrintUtilities =
         elif xref.IsTypeAbbrev then
             let ty = xref.TypeAbbrev.Value
             match stripTyEqns denv.g ty with
-            | TType_app(tcref, _) when tcref.IsStructOrEnumTycon ->
+            | TType_app(tcref, _, _) when tcref.IsStructOrEnumTycon ->
                 tagStruct name
             | _ ->
                 tagAlias name
@@ -833,24 +833,24 @@ module PrintTypes =
         match stripTyparEqns ty with 
 
         // Always prefer to format 'byref<ty, ByRefKind.In>' as 'inref<ty>'
-        | ty when isInByrefTy g ty && (match ty with TType_app (tc, _) when g.inref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isInByrefTy g ty && (match ty with TType_app (tc, _, _) when g.inref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy g (destByrefTy g ty))
 
         // Always prefer to format 'byref<ty, ByRefKind.Out>' as 'outref<ty>'
-        | ty when isOutByrefTy g ty && (match ty with TType_app (tc, _) when g.outref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isOutByrefTy g ty && (match ty with TType_app (tc, _, _) when g.outref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy g (destByrefTy g ty))
 
         // Always prefer to format 'byref<ty, ByRefKind.InOut>' as 'byref<ty>'
-        | ty when isByrefTy g ty && (match ty with TType_app (tc, _) when g.byref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
+        | ty when isByrefTy g ty && (match ty with TType_app (tc, _, _) when g.byref_tcr.CanDeref && tyconRefEq g tc g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkByrefTy g (destByrefTy g ty))
 
         // Always prefer 'float' to 'float<1>'
-        | TType_app (tc, args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
+        | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
 
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args)
-        | TType_app (tc, args) ->
+        | TType_app (tc, args, _) ->
           let prefix = usePrefix denv tc
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec prefix args
 
@@ -886,7 +886,7 @@ module PrintTypes =
             bracketIfL (prec <= 4) funcTyL
 
         // Layout a type variable . 
-        | TType_var r ->
+        | TType_var (r, _) ->
             layoutTyparRefWithInfo denv env r
 
         | TType_measure unt -> layoutMeasure denv unt
@@ -1057,11 +1057,13 @@ module PrintTypes =
     /// retTy: return type
     /// genParamTy: generic parameter types
     let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =
+
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
-            let typars = argInfos |> List.choose (function TType.TType_var typar,_ -> Some typar | _ -> None)
+            let typars = argInfos |> List.choose (function TType_var (typar, _),_ -> Some typar | _ -> None)
             let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
+
         let retTy = instType typarInst retTy
         let argInfos = prettyArgInfos denv typarInst argInfos
         let argInfos,retTy,genParamTys, cxs =
@@ -1103,7 +1105,18 @@ module PrintTypes =
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty 
+        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
+
+    let layoutOfValReturnType denv (v: ValRef) =
+        match v.ValReprInfo with 
+        | None ->
+            let _, tau = v.TypeScheme
+            let _argtysl, rty = stripFunTy denv.g tau
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+        | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
+            let tau = v.TauType
+            let _c, rty = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -1494,7 +1507,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1502,7 +1515,7 @@ module InfoMemberPrinting =
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
         let rty = pinfo.GetPropertyType(amap, m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
+        let rty = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty else  rty 
         let rty, _ = PrettyTypes.PrettifyType g rty
         let nameL = ConvertValNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
         let getterSetter =
@@ -1613,7 +1626,7 @@ module TastDefinitionPrinting =
              r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
         | TAsmRepr _ 
         | TMeasureableRepr _ 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | TProvidedTypeRepr _
         | TProvidedNamespaceRepr _
 #endif
@@ -1662,7 +1675,7 @@ module TastDefinitionPrinting =
         let tycon = tcref.Deref
         let repr = tycon.TypeReprInfo
         let isMeasure = (tycon.TypeOrMeasureKind = TyparKind.Measure)
-        let _, ty = generalizeTyconRef tcref 
+        let ty = generalizedTyconRef g tcref 
 
         let start, tagger =
             if isStructTy g ty then
@@ -1827,7 +1840,7 @@ module TastDefinitionPrinting =
             |> List.map snd
 
         let nestedTypeLs =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
                 match tcref.TypeReprInfo with 
@@ -2090,7 +2103,7 @@ module TastDefinitionPrinting =
                     | [_] -> 
                         nameL
                     | _ ->
-                        let innerPath = path.[..path.Length - 2]
+                        let innerPath = path[..path.Length - 2]
                         let innerPathL = innerPath |> List.map (ConvertNameToDisplayLayout (tagNamespace >> wordL))
                         sepListL SepL.dot innerPathL ^^ SepL.dot ^^ nameL
 
@@ -2433,7 +2446,9 @@ let prettyLayoutOfValOrMember denv infoReader typarInst v = PrintTastMemberOrVal
 
 let prettyLayoutOfValOrMemberNoInst denv infoReader v = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader v
 
-let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v 
+let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v
+
+let layoutOfValReturnType denv v = v |> PrintTypes.layoutOfValReturnType denv
 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 
@@ -2485,7 +2500,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
             let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
-            sprintf "%s%s" (stringOfTy denv t1) assemblyName
+            sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName t1, makeName t2, stringOfTyparConstraints denv tpcs)
     

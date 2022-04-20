@@ -158,14 +158,21 @@ type TcConfigBuilder =
       mutable useFsiAuxLib: bool
       mutable framework: bool
       mutable resolutionEnvironment: LegacyResolutionEnvironment
+
       mutable implicitlyResolveAssemblies: bool
+
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
-      mutable conditionalCompilationDefines: string list
+
+      mutable conditionalDefines: string list
+
       /// Sources added into the build with #load
       mutable loadedSources: (range * string * string) list
+
       mutable compilerToolPaths: string  list
+
       mutable referencedDLLs: AssemblyReference  list
+
       mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
@@ -256,12 +263,12 @@ type TcConfigBuilder =
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       mutable showExtensionTypeMessages: bool
 #endif
       mutable pause: bool
       mutable alwaysCallVirt: bool
-      mutable noDebugData: bool
+      mutable noDebugAttributes: bool
 
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
@@ -272,6 +279,7 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
+      mutable fsiMultiAssemblyEmit: bool
       rangeForErrors: range
       sdkDirOverride: string option
 
@@ -356,11 +364,16 @@ type TcConfig =
     member useFsiAuxLib: bool
     member framework: bool
     member implicitlyResolveAssemblies: bool
+
     /// Set if the user has explicitly turned indentation-aware syntax on/off
     member light: bool option
-    member conditionalCompilationDefines: string list
+
+    member conditionalDefines: string list
+
     member subsystemVersion: int * int
+
     member useHighEntropyVA: bool
+
     member compilerToolPaths: string list
     member referencedDLLs: AssemblyReference list
     member reduceMemoryUsage: ReduceMemoryFlag
@@ -447,16 +460,19 @@ type TcConfig =
     member showTimes: bool
     member showLoadedAssemblies: bool
     member continueAfterParseFailure: bool
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member showExtensionTypeMessages: bool
 #endif
     member pause: bool
     member alwaysCallVirt: bool
-    member noDebugData: bool
+    member noDebugAttributes: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool
+
+    /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
+    member fsiMultiAssemblyEmit: bool
 
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
@@ -545,9 +561,9 @@ type TcConfigProvider =
     /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder: TcConfigBuilder -> TcConfigProvider
 
-val TryResolveFileUsingPaths: paths: string list * m: range * name: string -> string option
+val TryResolveFileUsingPaths: paths: string seq * m: range * name: string -> string option
 
-val ResolveFileUsingPaths: paths: string list * m: range * name: string -> string
+val ResolveFileUsingPaths: paths: string seq * m: range * name: string -> string
 
 val GetWarningNumber: m: range * warningNumber: string -> int option
 

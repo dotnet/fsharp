@@ -49,7 +49,7 @@ type internal XmlDocCollector =
 
     member HasComments: grabPointPos: pos -> bool
 
-    member CheckInvalidXmlDocPositions: unit -> unit
+    member CheckInvalidXmlDocPositions: unit -> range list
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
@@ -62,6 +62,8 @@ type public PreXmlDoc =
     static member Create: unprocessedLines:string [] * range:range -> PreXmlDoc
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
+
+    member internal Range: Range
 
     member IsEmpty: bool
 

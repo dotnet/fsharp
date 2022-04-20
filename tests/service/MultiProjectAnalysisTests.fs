@@ -137,10 +137,10 @@ let ``Test multi project 1 basic`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
@@ -332,9 +332,9 @@ let ``Test ManyProjectsStressTest basic`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
 [<Test>]
@@ -346,9 +346,9 @@ let ``Test ManyProjectsStressTest cache too small`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ]
+    [ for x in wholeProjectResults.AssemblySignature.Entities[0].MembersFunctionsAndValues -> x.DisplayName ]
         |> shouldEqual ["p"]
 
 [<Test>]
@@ -794,24 +794,6 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleByGroup.OverallType.Format(divisibleBySymbolUse.Value.DisplayContext) |> shouldEqual "int -> int -> unit option"
     let divisibleByEntity = divisibleByGroup.DeclaringEntity.Value
     divisibleByEntity.ToString() |> shouldEqual "Project3A"
-
-//------------------------------------------------------------------------------------
-
-
-
-[<Test>]
-let ``Test max memory gets triggered`` () =
-    let checker = FSharpChecker.Create()
-    let reached = ref false
-    checker.MaxMemoryReached.Add (fun () -> reached := true)
-    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual false
-    checker.MaxMemory <- 0
-    let wholeProjectResults2 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual true
-    let wholeProjectResults3 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual true
-
 
 //------------------------------------------------------------------------------------
 

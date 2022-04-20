@@ -132,9 +132,19 @@
         <target state="translated">atrybuty po prawej stronie słowa kluczowego "module"</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">Automatyczne generowanie właściwości „Wiadomość“ dla deklaracji „Wyjątek“</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">domyślne użycie składowej interfejsu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -288,13 +298,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Wycinanie od końca wymaga języka w wersji 5.0, użyj parametru /langversion:preview.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">Funkcja „Przycinanie od końca” wymaga „podglądu” wersji językowej.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Nieprawidłowa dyrektywa „#{0} {1}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">Nieznany punkt debugowania „{0}”. Dostępnymi punktami debugowania są „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -433,8 +448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Funkcja zarządzania pakietami wymaga języka w wersji 5.0, użyj parametru /langversion:preview</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">Funkcja „Zarządzanie pakietami” wymaga języka w wersji 5.0 lub nowszej</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -647,6 +662,11 @@
         <target state="translated">Nieprawidłowe wyrównanie w ciągu interpolowanym</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">Nieprawidłowa deklaracja elementu członkowskiego. Brak nazwy elementu członkowskiego lub ma ona nawiasy.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">Konstrukcji "{0}" można używać tylko w prawidłowym kodzie z możliwością wznowienia.</target>
@@ -693,8 +713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">Używanie metod z elementem "NoEagerConstraintApplicationAttribute" wymaga atrybutu /langversion:preview lub nowszego</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">Używanie metod z atrybutem "NoEagerConstraintApplicationAttribute" wymaga parametru /langversion:6.0 lub nowszego</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -7623,8 +7643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">Używane do deklarowania typu struktury, w ograniczeniach parametrów ogólnych oraz na potrzeby zgodności OCami w definicjach modułu.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">Służy do deklarowania typu struktury. Używane również w ogólnych ograniczeniach parametrów.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

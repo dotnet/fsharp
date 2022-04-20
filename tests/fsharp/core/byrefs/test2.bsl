@@ -5,6 +5,12 @@ test2.fsx(199,9,199,20): typecheck warning FS0193: This expression is a function
 
 test2.fsx(214,9,214,24): typecheck warning FS0193: This expression is a function value, i.e. is missing arguments. Its type is inref<int> * int -> unit.
 
+test2.fsx(7,43,7,45): typecheck info FS3370: The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.
+
+test2.fsx(12,26,12,28): typecheck info FS3370: The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.
+
+test2.fsx(12,29,12,30): typecheck info FS3370: The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.
+
 test2.fsx(29,18,29,19): typecheck error FS3209: The address of the variable 'y' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
 
 test2.fsx(36,18,36,19): typecheck error FS3209: The address of the variable 'z' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
@@ -128,3 +134,5 @@ test2.fsx(222,9,222,18): typecheck error FS0412: A type instantiation involves a
 test2.fsx(226,13,226,14): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 test2.fsx(226,17,226,26): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+test2.fsx(276,6,276,7): typecheck info FS3370: The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.

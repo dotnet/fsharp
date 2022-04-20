@@ -10,44 +10,44 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX.Types
 
 /// Make the instruction sequence for a "newdata" operation
-val mkNewData : ILGlobals -> IlxUnionSpec * int -> ILInstr list
+val mkNewData: ilg: ILGlobals -> cuspec: IlxUnionSpec * cidx: int -> ILInstr list
 
 /// Make the instruction sequence for a "isdata" operation
-val mkIsData : ILGlobals -> bool * IlxUnionSpec * int -> ILInstr list
+val mkIsData: ilg: ILGlobals -> avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int -> ILInstr list
 
-/// Make the instruction sequence for a "lddata" operation
-val mkLdData : bool * IlxUnionSpec * int * int -> ILInstr list
+/// Make the instruction for a "lddata" operation
+val mkLdData: avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 
-/// Make the instruction sequence for a "lddataa" operation
-val mkLdDataAddr : bool * IlxUnionSpec * int * int -> ILInstr list
+/// Make the instruction for a "lddataa" operation
+val mkLdDataAddr: avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 
-/// Make the instruction sequence for a "stdata" operation
-val mkStData : IlxUnionSpec * int * int -> ILInstr list
+/// Make the instruction for a "stdata" operation
+val mkStData: cuspec: IlxUnionSpec * cidx: int * fidx: int -> ILInstr
 
 /// Make the instruction sequence for a "brisnotdata" operation
-val mkBrIsData : ILGlobals -> sense: bool -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
+val mkBrIsData: ilg: ILGlobals -> sense: bool -> avoidHelpers: bool * cuspec: IlxUnionSpec * cidx: int * tg: ILCodeLabel -> ILInstr list
 
 /// Make the type definition for a union type
-val mkClassUnionDef : addMethodGeneratedAttrs:(ILMethodDef -> ILMethodDef) * addPropertyGeneratedAttrs:(ILPropertyDef -> ILPropertyDef) * addPropertyNeverAttrs:(ILPropertyDef -> ILPropertyDef) * addFieldGeneratedAttrs:(ILFieldDef -> ILFieldDef) * addFieldNeverAttrs:(ILFieldDef -> ILFieldDef) * mkDebuggerTypeProxyAttribute:(ILType -> ILAttribute) -> ilg:ILGlobals -> tref:ILTypeRef -> td:ILTypeDef -> cud:IlxUnionInfo -> ILTypeDef    
+val mkClassUnionDef: addMethodGeneratedAttrs: (ILMethodDef -> ILMethodDef) * addPropertyGeneratedAttrs: (ILPropertyDef -> ILPropertyDef) * addPropertyNeverAttrs: (ILPropertyDef -> ILPropertyDef) * addFieldGeneratedAttrs: (ILFieldDef -> ILFieldDef) * addFieldNeverAttrs: (ILFieldDef -> ILFieldDef) * mkDebuggerTypeProxyAttribute: (ILType -> ILAttribute) -> ilg: ILGlobals -> tref: ILTypeRef -> td: ILTypeDef -> cud: IlxUnionInfo -> ILTypeDef    
 
 /// Make the IL type for a union type alternative
-val GetILTypeForAlternative : IlxUnionSpec -> int -> ILType
+val GetILTypeForAlternative: cuspec: IlxUnionSpec -> alt: int -> ILType
 
 /// Used to emit instructions (an interface to the IlxGen.fs code generator)
 type ICodeGen<'Mark> = 
     abstract CodeLabel: 'Mark -> ILCodeLabel
     abstract GenerateDelayMark: unit -> 'Mark
     abstract GenLocal: ILType -> uint16
-    abstract SetMarkToHere: 'Mark  -> unit
-    abstract EmitInstr : ILInstr -> unit
-    abstract EmitInstrs : ILInstr list -> unit
-    abstract MkInvalidCastExnNewobj : unit -> ILInstr
+    abstract SetMarkToHere: 'Mark -> unit
+    abstract EmitInstr: ILInstr -> unit
+    abstract EmitInstrs: ILInstr list -> unit
+    abstract MkInvalidCastExnNewobj: unit -> ILInstr
 
 /// Emit the instruction sequence for a "castdata" operation
-val emitCastData : ILGlobals -> ICodeGen<'Mark> -> canfail: bool * avoidHelpers:bool * IlxUnionSpec * int -> unit
+val emitCastData: ilg: ILGlobals -> cg: ICodeGen<'Mark> -> canfail: bool * avoidHelpers: bool * cuspec: IlxUnionSpec * int -> unit
 
 /// Emit the instruction sequence for a "lddatatag" operation
-val emitLdDataTag : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec -> unit
+val emitLdDataTag: ilg: ILGlobals -> cg: ICodeGen<'Mark> -> avoidHelpers: bool * cuspec: IlxUnionSpec -> unit
 
 /// Emit the instruction sequence for a "switchdata" operation
-val emitDataSwitch : ILGlobals -> ICodeGen<'Mark> -> avoidHelpers:bool * IlxUnionSpec * (int * ILCodeLabel) list -> unit
+val emitDataSwitch: ilg: ILGlobals -> cg: ICodeGen<'Mark> -> avoidHelpers: bool * cuspec: IlxUnionSpec * cases: (int * ILCodeLabel) list -> unit

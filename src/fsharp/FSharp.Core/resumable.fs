@@ -69,15 +69,12 @@ and [<AbstractClass>]
 type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// Defines the implementation of the MoveNext method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> unit
 
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
 /// Defines the implementation of the code reun after the creation of a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 [<AutoOpen>]
@@ -86,7 +83,10 @@ module StateMachineHelpers =
     /// Statically determines whether resumable code is being used
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __useResumableCode<'T> : bool = false
-        
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __debugPoint (_name: string) : unit = ()
+
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __resumableEntry () : int option = 
         failwith "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
@@ -213,22 +213,12 @@ module ResumableCode =
                 let mutable __stack_fin = false
                 let mutable __stack_caught = false
                 let mutable __stack_savedExn = Unchecked.defaultof<_>
-                // This is a meaningless assignment but ensures a debug point gets laid down
-                // at the 'try' in the try/with for code as we enter into the handler.
-                __stack_fin <- __stack_fin || __stack_fin
                 try
                     // The try block may contain await points.
                     let __stack_body_fin = body.Invoke(&sm)
                     // If we make it to the assignment we prove we've made a step
                     __stack_fin <- __stack_body_fin
                 with exn -> 
-                    // Note, remarkExpr in the F# compiler detects this pattern as the code
-                    // is inlined and elides the debug sequence point on the code. This is because the inlining will associate
-                    // the sequence point with the 'try' of the TryFinally because that is the range
-                    // given for the whole expression 
-                    //      task.TryWith(....) 
-                    // If you change this code you should check debug sequence points and the generated
-                    // code tests for try/with in tasks.
                     __stack_caught <- true
                     __stack_savedExn <- exn
 
@@ -277,25 +267,12 @@ module ResumableCode =
             if __useResumableCode then 
                 //-- RESUMABLE CODE START
                 let mutable __stack_fin = false
-                // This is a meaningless assignment but ensures a debug point gets laid down
-                // at the 'try' in the try/finally. The 'try' is used as the range for the
-                // F# computation expression desugaring to 'TryFinally' and this range in turn gets applied
-                // to inlined code.
-                __stack_fin <- __stack_fin || __stack_fin
                 try
                     let __stack_body_fin = body.Invoke(&sm)
                     // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
                     // may skip this step.
                     __stack_fin <- __stack_body_fin
                 with _exn ->
-                    // Note, remarkExpr in the F# compiler detects this pattern as the code
-                    // is inlined and elides the debug sequence point on either the 'compensation'
-                    // 'reraise' statement for the code. This is because the inlining will associate
-                    // the sequence point with the 'try' of the TryFinally because that is the range
-                    // given for the whole expression 
-                    //      task.TryFinally(....) 
-                    // If you change this code you should check debug sequence points and the generated
-                    // code tests for try/finally in tasks.
                     let __stack_ignore = compensation.Invoke(&sm)
                     reraise()
 
@@ -315,11 +292,6 @@ module ResumableCode =
                 //-- RESUMABLE CODE START
                 let mutable __stack_fin = false
                 let mutable savedExn = None
-                // This is a meaningless assignment but ensures a debug point gets laid down
-                // at the 'try' in the try/finally. The 'try' is used as the range for the
-                // F# computation expression desugaring to 'TryFinally' and this range in turn gets applied
-                // to inlined code.
-                __stack_fin <- __stack_fin || __stack_fin
                 try
                     let __stack_body_fin = body.Invoke(&sm)
                     // If we make it to the assignment we prove we've made a step, an early 'ret' exit out of the try/with
@@ -332,10 +304,12 @@ module ResumableCode =
                 if __stack_fin then 
                     let __stack_compensation_fin = compensation.Invoke(&sm)
                     __stack_fin <- __stack_compensation_fin
+
                 if __stack_fin then 
                     match savedExn with 
                     | None -> ()
                     | Some exn -> raise exn
+
                 __stack_fin
                 //-- RESUMABLE CODE END
             else
@@ -354,7 +328,13 @@ module ResumableCode =
         // A for loop is just a using statement on the sequence's enumerator...
         Using (sequence.GetEnumerator(), 
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
-            (fun e -> While((fun () -> e.MoveNext()), ResumableCode<'Data, unit>(fun sm -> (body e.Current).Invoke(&sm)))))
+            (fun e ->
+                While(
+                    (fun () -> 
+                        __debugPoint "ForLoop.InOrToKeyword"
+                        e.MoveNext()), 
+                    ResumableCode<'Data, unit>(fun sm -> 
+                        (body e.Current).Invoke(&sm)))))
 
     let YieldDynamic (sm: byref<ResumableStateMachine<'Data>>) : bool = 
         let cont = ResumptionFunc<'Data>(fun _sm -> true)

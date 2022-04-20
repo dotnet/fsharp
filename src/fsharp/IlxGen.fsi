@@ -42,6 +42,9 @@ type internal IlxGenOptions =
       /// Indicates which backend we are generating code for
       ilxBackend: IlxGenBackend
 
+      /// Is --multiemit enabled?
+      fsiMultiAssemblyEmit: bool
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool 
@@ -79,8 +82,6 @@ type public IlxGenResults =
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
     {
-      LookupFieldRef: ILFieldRef -> FieldInfo
-      LookupMethodRef: ILMethodRef -> MethodInfo
       LookupTypeRef: ILTypeRef -> Type
       LookupType: ILType -> Type
     } 

@@ -3,8 +3,9 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal FSharp.Compiler.AccessibilityLogic
 
-open FSharp.Compiler.AbstractIL.IL 
+open Internal.Utilities.Library
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -12,7 +13,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -81,7 +82,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem)     
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef g tcrefViewedFrom) tcrefOfViewedItem)     
 
             let accessibleByInternalsVisibleTo = 
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
@@ -93,7 +94,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 match tcrefViewedFromOption with 
                 | None -> false
                 | Some tcrefViewedFrom ->
-                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef g tcrefViewedFrom) tcrefOfViewedItem    
 
             (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 
@@ -226,7 +227,7 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo, fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedField (amap, tpfi, m) -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
@@ -353,7 +354,7 @@ let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | ILMeth (g, x, _) -> IsILMethInfoAccessible g amap m accessDomainTy ad x 
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
         IsProvidedMemberAccessible amap m ad etmi.ApparentEnclosingType access
@@ -367,14 +368,16 @@ let IsPropInfoAccessible g amap m ad = function
     | FSProp (_, _, Some vrefGet, Some vrefSet) -> 
         // pick most accessible
         IsValAccessible ad vrefGet || IsValAccessible ad vrefSet
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodBase) = 
+                let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo MaybeNull) =
                     match mi with
-                    | null -> None
-                    | mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                    | Null -> None
+                    | NonNull mi -> 
+                        Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+
                 match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                 | x -> x), m)

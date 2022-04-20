@@ -93,12 +93,14 @@ module internal MetadataAsSource =
 
 [<Sealed>]
 [<Export(typeof<FSharpMetadataAsSourceService>); Composition.Shared>]
-type internal FSharpMetadataAsSourceService [<ImportingConstructor>] (projectContextFactory: IWorkspaceProjectContextFactory) =
+type internal FSharpMetadataAsSourceService() =
 
     let serviceProvider = ServiceProvider.GlobalProvider
     let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()
 
     let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+        let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+        let projectContextFactory = componentModel.GetService<IWorkspaceProjectContextFactory>()
         let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
         projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)

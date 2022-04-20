@@ -1037,7 +1037,6 @@ module Test2 =
         match x with
         | UCase1 x -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1121,7 +1120,6 @@ module Test3 =
         match x with
         | { X = x } -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1322,7 +1320,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MPM2ExtP2Ext")
 
@@ -1357,7 +1355,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MP")
 
@@ -1395,7 +1393,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MExtP")
 
@@ -1425,7 +1423,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
@@ -1687,7 +1685,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1813,7 +1811,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1963,7 +1961,7 @@ let x2: string = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2122,7 +2120,7 @@ let x2: float32 = X()
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2163,7 +2161,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2205,7 +2203,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2244,7 +2242,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
@@ -2345,18 +2343,14 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2382,18 +2376,14 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2420,18 +2410,14 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2440,7 +2426,6 @@ open type FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersion50
             |> withReferences [provider;provided]
             |> ignoreWarnings
 

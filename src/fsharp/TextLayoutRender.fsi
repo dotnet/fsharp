@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// DSL to create structured layout objects with optional breaks and render them
+// DSL to create structured layout objects with optional breaks and render them
 namespace FSharp.Compiler.Text
 
 open System.Text

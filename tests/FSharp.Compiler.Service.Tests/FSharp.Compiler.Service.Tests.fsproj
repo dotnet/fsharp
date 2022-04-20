@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net5.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateProgramFile>false</GenerateProgramFile>
@@ -66,6 +67,9 @@
     <Compile Include="..\service\PatternMatchCompilationTests.fs">
       <Link>PatternMatchCompilationTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\CompletionTests.fs">
+      <Link>CompletionTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>
     </Compile>
@@ -74,6 +78,12 @@
     </Compile>
     <Compile Include="..\service\XmlDocTests.fs">
       <Link>XmlDocTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\XmlDocTests - Units of Measure.fs">
+      <Link>XmlDocTests - Units of Measure.fs</Link>
+    </Compile>
+    <Compile Include="..\service\PrettyNaming.fs">
+      <Link>PrettyNaming.fs</Link>
     </Compile>
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>

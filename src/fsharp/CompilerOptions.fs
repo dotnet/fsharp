@@ -162,7 +162,7 @@ let dumpCompilerOptionBlock = function
 let DumpCompilerOptionBlocks blocks = List.iter dumpCompilerOptionBlock blocks
 
 let isSlashOpt (opt:string) =
-    opt.[0] = '/' && (opt.Length = 1 || not (opt.[1..].Contains "/"))
+    opt[0] = '/' && (opt.Length = 1 || not (opt[1..].Contains "/"))
 
 module ResponseFile =
 
@@ -198,25 +198,25 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
   let parseOption (s: string) =
     // grab the option token
     let opts = s.Split([|':'|])
-    let mutable opt = opts.[0]
+    let mutable opt = opts[0]
     if opt = "" then
         ()
     // if it doesn't start with a '-' or '/', reject outright
-    elif opt.[0] <> '-' && opt.[0] <> '/' then
+    elif opt[0] <> '-' && opt[0] <> '/' then
       opt <- ""
     elif opt <> "--" then
       // is it an abbreviated or MSFT-style option?
       // if so, strip the first character and move on with your life
       if opt.Length = 2 || isSlashOpt opt then
-        opt <- opt.[1 ..]
+        opt <- opt[1 ..]
       // else, it should be a non-abbreviated option starting with "--"
       elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
-        opt <- opt.[2 ..]
+        opt <- opt[2 ..]
       else
         opt <- ""
 
     // get the argument string
-    let optArgs = if opts.Length > 1 then String.Join(":", opts.[1 ..]) else ""
+    let optArgs = if opts.Length > 1 then String.Join(":", opts[1 ..]) else ""
     opt, optArgs
 
   let getOptionArg compilerOption (argString: string) =
@@ -234,12 +234,12 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
   let getSwitchOpt (opt: string) =
     // if opt is a switch, strip the  '+' or '-'
     if opt <> "--" && opt.Length > 1 && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-")) then
-      opt.[0 .. opt.Length - 2]
+      opt[0 .. opt.Length - 2]
     else
       opt
 
   let getSwitch (s: string) =
-    let s = (s.Split([|':'|])).[0]
+    let s = (s.Split([|':'|]))[0]
     if s <> "--" && s.EndsWithOrdinal("-") then OptionSwitch.Off else OptionSwitch.On
 
   let rec processArg args =
@@ -353,7 +353,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               let rest = exec args in rest // arguments taken, rest remaining
           | _ :: more -> attempt more
           | [] ->
-              if opt.Length = 0 || opt.[0] = '-' || isSlashOpt opt
+              if opt.Length = 0 || opt[0] = '-' || isSlashOpt opt
                then
                   // want the whole opt token - delimiter and all
                   let unrecOpt = opt.Split([|':'|]).[0]
@@ -827,7 +827,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 // OptionBlock: Language
 //----------------------
 
-let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
+let defineSymbol tcConfigB s = tcConfigB.conditionalDefines <- s :: tcConfigB.conditionalDefines
 
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
     CompilerOption
@@ -846,7 +846,8 @@ let setLanguageVersion specifiedVersion =
         exit 0
 
     if specifiedVersion = "?" then dumpAllowedValues ()
-    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then ()
+    elif not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
     languageVersion
 
 let languageFlags tcConfigB =
@@ -1057,7 +1058,8 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None)
     CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some s), None, None)
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None)
-    CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None) ]
+    CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None)
+  ]
 
 let internalFlags (tcConfigB:TcConfigBuilder) =
   [
@@ -1200,7 +1202,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
     CompilerOption
        ("msbuildresolution", tagNone,
-        OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false),
+        OptionUnit (fun () -> tcConfigB.useSimpleResolution <- false),
         Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None)
 
     CompilerOption
@@ -1210,8 +1212,8 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("nodebugdata", tagNone,
-        OptionUnit (fun () -> tcConfigB.noDebugData<-true),
-        Some(InternalCommandLineOption("--nodebugdata", rangeCmdArgs)), None)
+        OptionUnit (fun () -> tcConfigB.noDebugAttributes <- true),
+        Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)), None)
 
     testFlag tcConfigB  ] @
 
@@ -1242,7 +1244,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
         OptionUnit  (fun () -> tcConfigB.showTimes <- true),
         Some(InternalCommandLineOption("times", rangeCmdArgs)), None)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // "Display information about extension type resolution")
     CompilerOption
        ("showextensionresolution", tagNone,
@@ -1518,14 +1520,14 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string []) =
     let mutable arga: string[] = Array.create len ""
 
     while i < len do
-        if not(abbrevArgs.Contains(args.[i])) || i = (len - 1)  then
-            arga.[idx] <- args.[i]
+        if not(abbrevArgs.Contains(args[i])) || i = (len - 1)  then
+            arga[idx] <- args[i]
             i <- i+1
         else
-            arga.[idx] <- args.[i] + ":" + args.[i+1]
+            arga[idx] <- args[i] + ":" + args[i+1]
             i <- i + 2
         idx <- idx + 1
-    Array.toList arga.[0 .. (idx - 1)]
+    Array.toList arga[0 .. (idx - 1)]
 
 // OptionBlock: QA options
 //------------------------
@@ -1689,12 +1691,12 @@ let ReportTime (tcConfig:TcConfig) descr =
 
         match tPrev, nPrev with
         | Some (timePrev, gcPrev:int []), Some prevDescr ->
-            let spanGC = [| for i in 0 .. maxGen -> GC.CollectionCount i - gcPrev.[i] |]
+            let spanGC = [| for i in 0 .. maxGen -> GC.CollectionCount i - gcPrev[i] |]
             dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d"
                 timeNow (timeNow - timePrev)
                 wsNow
             dprintf " G0: %3d G1: %2d G2: %2d [%s]\n"
-                spanGC.[Operators.min 0 maxGen] spanGC.[Operators.min 1 maxGen] spanGC.[Operators.min 2 maxGen]
+                spanGC[Operators.min 0 maxGen] spanGC[Operators.min 1 maxGen] spanGC[Operators.min 2 maxGen]
                 prevDescr
 
         | _ -> ()

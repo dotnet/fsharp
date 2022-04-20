@@ -105,11 +105,11 @@ module TcResolutionsExtensions =
                     if cnrs.Length = 1 then
                         cnrs
                     elif cnrs.Length = 2 then
-                        match cnrs.[0].Item, cnrs.[1].Item with
+                        match cnrs[0].Item, cnrs[1].Item with
                         | Item.Value _, Item.CustomBuilder _ ->
-                            [| cnrs.[1] |]
+                            [| cnrs[1] |]
                         | Item.CustomBuilder _, Item.Value _ ->
-                            [| cnrs.[0] |]
+                            [| cnrs[0] |]
                         | _ ->
                             cnrs
                     else
@@ -138,7 +138,7 @@ module TcResolutionsExtensions =
                     protectAssemblyExplorationNoReraise false false (fun () -> ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
-                    let ty = generalizedTyconRef tyconRef
+                    let ty = generalizedTyconRef g tyconRef
                     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                     isStructTy g underlyingTy
 
@@ -211,7 +211,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.RecordField
 
                     | Item.AnonRecdField(_, tys, idx, m), _, _, _, _, _ ->
-                        let ty = tys.[idx]
+                        let ty = tys[idx]
 
                         // It's not currently possible for anon record fields to be mutable, but they can be ref cells
                         if isRefCellTy g ty then
@@ -251,7 +251,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _, _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->
@@ -283,7 +283,7 @@ module TcResolutionsExtensions =
                                     SemanticClassificationType.Delegate
                             | TAsmRepr _ -> SemanticClassificationType.TypeDef
                             | TMeasureableRepr _-> SemanticClassificationType.TypeDef 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                             | TProvidedTypeRepr _-> SemanticClassificationType.TypeDef 
                             | TProvidedNamespaceRepr  _-> SemanticClassificationType.TypeDef  
 #endif

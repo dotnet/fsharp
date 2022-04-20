@@ -457,7 +457,7 @@ match Unchecked.defaultof<int> with
 """
     assertHasSymbolUsages ["a"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(2,6--2,25): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(2,6--2,30): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(6,2--6,6): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
     ]
 
@@ -1257,7 +1257,7 @@ let y as ?z = 8
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 20 - limit the right of 'as' patterns to only variable patterns in F# 5`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResults50 """
 let f : obj -> _ =
     function
     | :? int as i -> i
@@ -1267,5 +1267,5 @@ let f : obj -> _ =
 """
     assertHasSymbolUsages ["i"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 'preview' or greater."
+        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 6.0 or greater."
     ]

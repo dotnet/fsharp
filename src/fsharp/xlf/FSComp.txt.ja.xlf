@@ -132,9 +132,19 @@
         <target state="translated">'module' キーワードの右側の属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">既定のインターフェイス メンバーの消費</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -288,13 +298,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">言語バージョン 5.0 が必要な最後からのスライスで、/langversion:preview を使用してください。</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">'from the end slicing' (最後からのスライス) 機能には、言語バージョン 'preview' が必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">無効なディレクティブ '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">不明なデバッグ ポイントの `{0}`。使用可能なデバッグ ポイントは `{1}` です。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -433,8 +448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -647,6 +662,11 @@
         <target state="translated">補間された文字列内の配置が無効です</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">メンバーの宣言が無効です。メンバーの名前が見つからないか、かっこが含まれています。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">コンストラクト '{0}' は、有効な再開可能コードでのみ使用できます。</target>
@@ -693,8 +713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">'NoEagerConstraintApplicationAttribute' を指定してメソッドを使用するには、/langversion:preview 以降が必要です</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute' を指定してメソッドを使用するには、/langversion:6.0 以降が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -7623,8 +7643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">構造体型の宣言に使用します。ジェネリック パラメーターの制約にも使用します。モジュール定義の OCaml の互換性を保つために使用します。</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">構造体型を宣言するために使用されます。ジェネリック パラメーター制約でも使用されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

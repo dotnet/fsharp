@@ -5,13 +5,16 @@ module internal FSharp.Compiler.Detuple
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Xml
+
+let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
@@ -107,7 +110,7 @@ open FSharp.Compiler.TypedTreeOps
 //
 // 4. Fixup defn bindings.
 //
-//    [[DEFN: fOrig  = LAM tps. lam x1 ...xp xq...xN. body ]]
+//    [[DEFN: fOrig = LAM tps. lam x1 ...xp xq...xN. body ]]
 //    ->
 //           transformedVal = LAM tps. lam [[FORMALS: yb1...ybp]] xq...xN. [[REBINDS x1, yb1 ... xp, ybp]] [[FIX: body]]
 //
@@ -150,7 +153,7 @@ open FSharp.Compiler.TypedTreeOps
 let (|TyappAndApp|_|) e = 
     match e with 
     | Expr.App (f, fty, tys, args, m)       -> 
-        match stripExpr f with
+        match stripDebugPoints (stripExpr f) with
         | Expr.App (f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
@@ -163,7 +166,7 @@ module GlobalUsageAnalysis =
     let GetValsBoundInExpr expr =
        let folder = {ExprFolder0 with valBindingSiteIntercept = bindAccBounds}
        let z0 = Zset.empty valOrder
-       let z  = FoldExpr folder z0 expr
+       let z = FoldExpr folder z0 expr
        z
 
     type accessor = TupleGet of int * TType list
@@ -174,24 +177,31 @@ module GlobalUsageAnalysis =
     ///      where first accessor in list applies first to the v/app.
     ///   (b) log it's binding site representation.
     type Results =
-       { ///  v -> context / APP inst args 
+       {
+         ///  v -> context / APP inst args 
          Uses     : Zmap<Val, (accessor list * TType list * Expr list) list>
+
          /// v -> binding repr 
          Defns     : Zmap<Val, Expr>                                        
+
          /// bound in a decision tree? 
-         DecisionTreeBindings    : Zset<Val>                                    
+         DecisionTreeBindings: Zset<Val>                                    
+
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val, bool * Vals>
-         TopLevelBindings : Zset<Val>
-         IterationIsAtTopLevel      : bool }
+         RecursiveBindings: Zmap<Val, bool * Vals>
+
+         TopLevelBindings: Zset<Val>
+
+         IterationIsAtTopLevel: bool
+       }
 
     let z0 =
-       { Uses     = Zmap.empty valOrder
-         Defns     = Zmap.empty valOrder
-         RecursiveBindings  = Zmap.empty valOrder
-         DecisionTreeBindings    = Zset.empty valOrder
+       { Uses = Zmap.empty valOrder
+         Defns = Zmap.empty valOrder
+         RecursiveBindings = Zmap.empty valOrder
+         DecisionTreeBindings = Zset.empty valOrder
          TopLevelBindings = Zset.empty valOrder
-         IterationIsAtTopLevel      = true }
+         IterationIsAtTopLevel = true }
 
     /// Log the use of a value with a particular tuple shape at a callsite
     /// Note: this routine is called very frequently
@@ -218,7 +228,7 @@ module GlobalUsageAnalysis =
     let logRecBindings z binds =
         let vs = valsOfBinds binds
         {z with RecursiveBindings = (z.RecursiveBindings, vs) ||> List.fold (fun mubinds v -> Zmap.add v (true, vs) mubinds)
-                Defns    = (z.Defns, binds) ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
+                Defns = (z.Defns, binds) ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
     let foldUnderLambda f z x =
@@ -288,15 +298,15 @@ module GlobalUsageAnalysis =
           let context = []
           recognise context origExpr
 
-      let targetIntercept exprF z = function TTarget(_argvs, body, _, _) -> Some (foldUnderLambda exprF z body)
+      let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
       
       {ExprFolder0 with
-         exprIntercept    = exprUsageIntercept
+         exprIntercept = exprUsageIntercept
          nonRecBindingsIntercept = logNonRecBinding
-         recBindingsIntercept    = logRecBindings
+         recBindingsIntercept = logRecBindings
          valBindingSiteIntercept = logBinding
-         targetIntercept  = targetIntercept
+         targetIntercept = targetIntercept
          tmethodIntercept = tmethodIntercept
       }
 
@@ -312,7 +322,7 @@ module GlobalUsageAnalysis =
 let internalError str = raise(Failure(str))
 
 let mkLocalVal m name ty topValInfo =
-    let compgen    = false
+    let compgen = false
     Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
 
 /// Represents inferred information about a tuple value
@@ -363,8 +373,8 @@ let rebuildTS g m ts vs =
       | v :: vs, UnknownTS   -> (exprForVal m v, v.Type), vs
       | vs, TupleTS tss -> 
           let xtys, vs = List.mapFold rebuild vs tss
-          let xs, tys  = List.unzip xtys
-          let x  = mkRefTupled g m xs tys
+          let xs, tys = List.unzip xtys
+          let x = mkRefTupled g m xs tys
           let ty = mkRefTupledTy g tys
           (x, ty), vs
    
@@ -465,14 +475,14 @@ let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list
     let tys1r = List.collect fst tyfringes  (* types for collapsed initial r args *)
     let tysrN = List.skip tyfringes.Length x1Ntys    (* types for remaining args *)
     let argtys = tys1r @ tysrN
-    let fCty  = mkLambdaTy tps argtys rty
+    let fCty = mkLambdaTy g tps argtys rty
     let transformedVal =
         // Ensure that we have an g.CompilerGlobalState
         assert(g.CompilerGlobalState |> Option.isSome)
         mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
     { transformCallPattern = callPattern
-      transformedFormals      = transformedFormals
-      transformedVal         = transformedVal }
+      transformedFormals = transformedFormals
+      transformedVal = transformedVal }
 
 
 //-------------------------------------------------------------------------
@@ -493,7 +503,7 @@ let rec zipTupleStructureAndType g ts ty =
 
 and zipTupleStructuresAndTypes g tss tys =
     let tstys = List.map2 (zipTupleStructureAndType g) tss tys  // assumes tss tys same length 
-    let tss  = List.map fst tstys         
+    let tss = List.map fst tstys         
     let tys = List.collect snd tstys       // link fringes 
     tss, tys
 
@@ -544,20 +554,27 @@ let decideFormalSuggestedCP g z tys vss =
 //-------------------------------------------------------------------------
 
 let decideTransform g z v callPatterns (m, tps, vss: Val list list, rty) =
-    let tys = List.map (typeOfLambdaArg m) vss       (* arg types *)
-    (* NOTE: 'a in arg types may have been instanced at different tuples... *)
-    (*       commonCallPattern has to handle those cases. *)
-    let callPattern           = commonCallPattern callPatterns                   // common CallPattern 
-    let callPattern           = List.truncate vss.Length callPattern            // restricted to max nArgs 
+    let tys = List.map (typeOfLambdaArg m) vss
+
+    // NOTE: 'a in arg types may have been instanced at different tuples... 
+    //       commonCallPattern has to handle those cases.
+    let callPattern = commonCallPattern callPatterns                   
+
+    // Restrict to max nArgs 
+    let callPattern = List.truncate vss.Length callPattern
+
     // Get formal callPattern by defn usage of formals 
-    let formalCallPattern     = decideFormalSuggestedCP g z tys vss 
-    let callPattern           = List.truncate callPattern.Length formalCallPattern
+    let formalCallPattern = decideFormalSuggestedCP g z tys vss 
+    let callPattern = List.truncate callPattern.Length formalCallPattern
+
     // Zip with information about known args 
     let callPattern, tyfringes = zipCallPatternArgTys m g callPattern vss
+
     // Drop trivial tail AND 
-    let callPattern           = minimalCallPattern callPattern                     
+    let callPattern = minimalCallPattern callPattern                     
+
     // Shorten tyfringes (zippable) 
-    let tyfringes    = List.truncate callPattern.Length tyfringes       
+    let tyfringes = List.truncate callPattern.Length tyfringes       
     if isTrivialCP callPattern then
         None // no transform 
     else
@@ -592,7 +609,7 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
         match List.concat vss with
         | []      -> None // defn has no term args 
         | arg1 :: _ -> // consider f 
-          let m   = arg1.Range                       // mark of first arg, mostly for error reporting 
+          let m = arg1.Range                       // mark of first arg, mostly for error reporting 
           let callPatterns = sitesCPs sites                   // callPatterns from sites 
           decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
   
@@ -684,7 +701,7 @@ let rec collapseArg env bindings ts (x: Expr) =
     | TupleTS tss, x                      -> 
         // project components 
         let bindings, x = noEffectExpr env bindings x
-        let env  = suffixE env "_p" 
+        let env = suffixE env "_p" 
         let xty = tyOfExpr env.eg x
         let xtys = destRefTupleTy env.eg xty
         let bindings, xs = buildProjections env bindings x xtys
@@ -695,7 +712,7 @@ and collapseArgs env bindings n callPattern args =
     | [], args        -> bindings, args
     | ts :: tss, arg :: args -> 
         let env1 = suffixE env (string n)
-        let bindings, xty  = collapseArg  env1 bindings ts    arg     
+        let bindings, xty = collapseArg  env1 bindings ts    arg     
         let bindings, xtys = collapseArgs env  bindings (n+1) tss args
         bindings, xty @ xtys
     | _ts :: _tss, []            -> 
@@ -718,12 +735,12 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
         match hasTransfrom penv f with
         | Some trans -> 
             // fix it 
-            let callPattern       = trans.transformCallPattern 
-            let transformedVal       = trans.transformedVal         
-            let fCty     = transformedVal.Type
-            let fCx      = exprForVal vm transformedVal
+            let callPattern = trans.transformCallPattern 
+            let transformedVal = trans.transformedVal         
+            let fCty = transformedVal.Type
+            let fCx = exprForVal vm transformedVal
             (* [[f tps args ]] -> transformedVal tps [[COLLAPSED: args]] *)
-            let env      = {prefix = "arg";m = m;eg=penv.g}
+            let env = {prefix = "arg";m = m;eg=penv.g}
             let bindings = []
             let bindings, args = collapseArgs env bindings 0 callPattern args
             let bindings = List.rev bindings
@@ -768,6 +785,7 @@ let transRebind ybi xi =
 //
 
 let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
+     let g = penv.g
      let m = fOrig.Range
      match hasTransfrom penv fOrig with
      | None ->
@@ -777,21 +795,21 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          // fOrig has transform 
          let tps, vss, body, rty = stripTopLambda (repr, fOrig.Type) 
          // transformedVal is curried version of fOrig 
-         let transformedVal    = trans.transformedVal
+         let transformedVal = trans.transformedVal
          // fCBody - parts - formals 
          let transformedFormals = trans.transformedFormals 
-         let p     = transformedFormals.Length
+         let p = transformedFormals.Length
          if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" 
-         let xqNs  = List.skip p vss  
-         let x1ps  = List.truncate p vss  
-         let y1Ps  = List.concat (List.map2 transFormal transformedFormals x1ps)
+         let xqNs = List.skip p vss  
+         let x1ps = List.truncate p vss  
+         let y1Ps = List.concat (List.map2 transFormal transformedFormals x1ps)
          let formals = y1Ps @ xqNs
          // fCBody - parts 
          let rebinds = List.concat (List.map2 transRebind transformedFormals x1ps)
          // fCBody - rebuild 
          // fCBody = TLambda tps. Lam formals. let rebinds in body 
-         let rbody, rt  = mkLetsBind            m rebinds body, rty   
-         let bind      = mkMultiLambdaBind transformedVal letSeqPtOpt m tps formals (rbody, rt)
+         let rbody, rt = mkLetsBind m rebinds body, rty
+         let bind = mkMultiLambdaBind g transformedVal letSeqPtOpt m tps formals (rbody, rt)
          // result 
          bind
 
@@ -841,10 +859,13 @@ let postTransformExpr (penv: penv) expr =
     | _ -> None
   
 let passImplFile penv assembly = 
-    assembly |> RewriteImplFile { PreIntercept =None
-                                  PreInterceptBinding=None
-                                  PostTransform= postTransformExpr penv
-                                  IsUnderQuotations=false } 
+    let rwenv =
+        { PreIntercept = None
+          PreInterceptBinding = None
+          PostTransform = postTransformExpr penv
+          RewriteQuotations = false
+          StackGuard = StackGuard(DetupleRewriteStackGuardDepth) } 
+    assembly |> RewriteImplFile rwenv
 
 //-------------------------------------------------------------------------
 // entry point

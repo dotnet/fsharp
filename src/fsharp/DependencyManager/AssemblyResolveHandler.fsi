@@ -14,4 +14,7 @@ type AssemblyResolveHandler =
     /// Construct a new DependencyProvider
     new: assemblyProbingPaths: AssemblyResolutionProbe -> AssemblyResolveHandler
 
+    /// Construct a new DependencyProvider
+    internal new: assemblyProbingPaths: AssemblyResolutionProbe option -> AssemblyResolveHandler
+
     interface IDisposable

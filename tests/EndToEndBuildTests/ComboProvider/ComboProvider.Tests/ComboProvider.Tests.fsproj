@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">net5.0</TargetFramework>
+    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">net6.0</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionProperty)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
   </PropertyGroup>
 

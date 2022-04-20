@@ -1,6 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-extern alias Shell14;
-
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -60,11 +58,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // if this happens - we need to cancel current transaction,
                     // otherwise it will hold current hierarchy node. After move operation is completed - current node will become invalid => may lead to ObjectDisposedExceptions.
                     // Since error is not appear directly in the code - we check if old and new labels match and if yes - treat it as reason that error happens
-                    tree.CommitRename ( Shell14::Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
+                    tree.CommitRename ( Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
                     var node = root.ItemIdMap[id];
                     if (node != null && node.GetEditLabel() == oldName )
                     {
-                        tree.CancelRename ( Shell14::Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
+                        tree.CancelRename ( Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
                     }
                     return node;
                 }

@@ -35,7 +35,7 @@ val GetAttribInfosOfProp: amap:Import.ImportMap -> m:range -> pinfo:PropInfo -> 
 
 val GetAttribInfosOfEvent: amap:Import.ImportMap -> m:range -> einfo:EventInfo -> AttribInfo list
 
-#if NO_EXTENSIONTYPING
+#if NO_TYPEPROVIDERS
 val TryBindMethInfoAttribute: g:TcGlobals -> m:range -> BuiltinAttribInfo -> minfo:MethInfo -> f1:(ILAttribElem list * ILAttributeNamedArg list -> 'a option) -> f2:(Attrib -> 'a option) -> f3: _ -> 'a option
 #else
 val TryBindMethInfoAttribute: g:TcGlobals -> m:range -> BuiltinAttribInfo -> minfo:MethInfo -> f1:(ILAttribElem list * ILAttributeNamedArg list -> 'a option) -> f2:(Attrib -> 'a option) -> f3:(obj option list * (string * obj option) list -> 'a option) -> 'a option
@@ -79,3 +79,4 @@ val IsSecurityAttribute: g:TcGlobals -> amap:Import.ImportMap -> casmap:Dictiona
 
 val IsSecurityCriticalAttribute: g:TcGlobals -> Attrib -> bool
 
+val IsAssemblyVersionAttribute: g:TcGlobals -> Attrib -> bool

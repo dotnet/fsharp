@@ -9,18 +9,22 @@ open System.Reflection
 open System.Text
 open System.Runtime.CompilerServices
 
-exception IllegalFileNameChar of string * char
+exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255
     val get: byte[] -> int -> int
+
     val zeroCreate: int -> byte[]
+
     /// each int must be 0 <= x <= 255
     val ofInt32Array: int[] ->  byte[]
+
     /// each int will be 0 <= x <= 255
     val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
     val stringAsUnicodeNullTerminated: string -> byte[]
+
     val stringAsUtf8NullTerminated: string -> byte[]
 
 /// A view over bytes.
@@ -91,7 +95,9 @@ type internal ReadOnlyByteMemory =
 /// MemoryMapped extensions
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
+
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+
         static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
     
 /// Filesystem helpers
@@ -100,6 +106,7 @@ module internal FileSystemUtils =
 
     /// <c>checkSuffix f s</c> returns True if filename "f" ends in suffix "s",
     /// e.g. checkSuffix "abc.fs" ".fs" returns true.
+    /// Disregards casing, e.g. checkSuffix "abc.Fs" ".fs" returns true.
     val checkSuffix: string -> string -> bool
 
     /// <c>chopExtension f</c> removes the extension from the given
@@ -118,9 +125,6 @@ module internal FileSystemUtils =
 
     /// Trim the quotes and spaces from either end of a string
     val trimQuotes: string -> string
-
-    /// Checks whether filename ends in suffix, ignoring case.
-    val hasSuffixCaseInsensitive: string -> string -> bool
 
     /// Checks whether file is dll (ends in .dll)
     val isDll: string -> bool

@@ -51,8 +51,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     member doc.NonEmpty = not doc.IsEmpty
 
     static member Merge (doc1: XmlDoc) (doc2: XmlDoc) =
-        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines,
-               unionRanges doc1.Range doc2.Range)
+        let range = 
+            if doc1.IsEmpty then doc2.Range
+            elif doc2.IsEmpty then doc1.Range
+            else unionRanges doc1.Range doc2.Range
+
+        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, range)
 
     member doc.GetXmlText() =
         if doc.IsEmpty then ""
@@ -149,14 +153,8 @@ type XmlDocCollector() =
     let mutable savedGrabPoints = Dictionary<pos, struct(int * int * bool)>()
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
-    let savedLinesAsArray = lazy (savedLines.ToArray())
-
-    let check() =
-        // can't add more XmlDoc elements to XmlDocCollector after extracting first XmlDoc from the overall results
-        assert (not savedLinesAsArray.IsValueCreated)
 
     member x.AddGrabPoint(pos: pos) =
-        check()
         if currentGrabPointCommentsCount = 0 then () else
         let xmlDocBlock = struct(savedLines.Count - currentGrabPointCommentsCount, savedLines.Count - 1, false)
         savedGrabPoints.Add(pos, xmlDocBlock)
@@ -164,14 +162,12 @@ type XmlDocCollector() =
         delayedGrabPoint <- ValueNone
 
     member x.AddGrabPointDelayed(pos: pos) =
-        check()
         if currentGrabPointCommentsCount = 0 then () else
         match delayedGrabPoint with
         | ValueNone -> delayedGrabPoint <- ValueSome(pos)
         | _ -> ()
 
     member x.AddXmlDocLine(line, range) =
-        check()
         match delayedGrabPoint with
         | ValueNone -> ()
         | ValueSome pos -> x.AddGrabPoint(pos) // Commit delayed grab point
@@ -180,28 +176,44 @@ type XmlDocCollector() =
         currentGrabPointCommentsCount <- currentGrabPointCommentsCount + 1
 
     member x.LinesBefore grabPointPos =
-        let lines = savedLinesAsArray.Force()
         match savedGrabPoints.TryGetValue grabPointPos with
-        | true, struct(startIndex, endIndex, _) -> lines.[startIndex .. endIndex]
+        | true, struct(startIndex, endIndex, _) ->
+            let linesBefore = Array.create (endIndex - startIndex + 1) ("", range0)
+            for i in startIndex .. endIndex do
+                linesBefore[i - startIndex] <- savedLines[i]
+            linesBefore
         | false, _ -> [||]
+
+    member x.LinesRange grabPointPos =
+        match savedGrabPoints.TryGetValue grabPointPos with
+        | true, struct(startIndex, endIndex, _) ->
+            let startRange = savedLines[startIndex] |> snd
+            let endRange = savedLines[endIndex] |> snd
+            unionRanges startRange endRange
+        | false, _ -> range0
 
     member x.SetXmlDocValidity(grabPointPos, isValid) =
         match savedGrabPoints.TryGetValue grabPointPos with
         | true, struct(startIndex, endIndex, _) ->
-            savedGrabPoints.[grabPointPos] <- struct(startIndex, endIndex, isValid)
+            savedGrabPoints[grabPointPos] <- struct(startIndex, endIndex, isValid)
         | _ -> ()
 
     member x.HasComments grabPointPos =
         savedGrabPoints.TryGetValue grabPointPos |> fst
 
-    member x.CheckInvalidXmlDocPositions() =
-        let lines = savedLinesAsArray.Force()
+    member x.CheckInvalidXmlDocPositions() : range list =
+        let comments = ResizeArray<range>(savedLines.Count)
+
         for startIndex, endIndex, isValid in savedGrabPoints.Values do
             if isValid then () else
-            let _, startRange = lines.[startIndex]
-            let _, endRange = lines.[endIndex]
+            let _, startRange = savedLines[startIndex]
+            let _, endRange = savedLines[endIndex]
             let range = unionRanges startRange endRange
             informationalWarning (Error(FSComp.SR.invalidXmlDocPosition(), range))
+            // Collect invalid triple slash comment ranges, to later transform these to trivia 
+            [ startIndex .. endIndex ] |> List.iter (fun idx -> savedLines[idx] |> snd |> comments.Add)
+
+        List.ofSeq comments
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
@@ -226,6 +238,16 @@ type PreXmlDoc =
                 if check then
                    doc.Check(paramNamesOpt)
                 doc
+
+    member internal x.Range =
+        match x with
+        | PreXmlDirect (_, m) -> m
+        | PreXmlMerge(a, b) ->
+            if a.IsEmpty then b.Range
+            elif b.IsEmpty then a.Range
+            else unionRanges a.Range b.Range
+        | PreXmlDocEmpty -> Range.Zero
+        | PreXmlDoc (pos, collector) -> collector.LinesRange pos
 
     member x.IsEmpty =
         match x with
@@ -277,8 +299,8 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             let childNodes = node.ChildNodes
             let lines = Array.zeroCreate childNodes.Count
             for i = 0 to childNodes.Count - 1 do
-                let childNode = childNodes.[i]
-                lines.[i] <- childNode.OuterXml
+                let childNode = childNodes[i]
+                lines[i] <- childNode.OuterXml
             XmlDoc(lines, range0)
         )
 

@@ -247,20 +247,20 @@ function Make-BootstrapBuild() {
     $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net5.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net5.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net5.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net6.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net6.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net6.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.proj`""
     $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 

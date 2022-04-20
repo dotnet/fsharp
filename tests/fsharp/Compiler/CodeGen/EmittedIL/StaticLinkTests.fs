@@ -19,7 +19,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library)
+            Compilation.Create(source, Library)
 
         let module2 =
             let source =
@@ -27,7 +27,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
+            Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, 
             beforeExecute=(fun _ deps ->
@@ -43,7 +43,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library)
+            Compilation.Create(source, Library)
 
         let module2 =
             let source =
@@ -51,7 +51,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
+            Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
 
         Assert.Throws<TargetInvocationException>(fun _ ->
             CompilerAssert.Execute(module2, 
@@ -68,7 +68,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library)
+            Compilation.Create(source, Library)
 
         let module2 =
             let source =
@@ -76,7 +76,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
+            Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
 
         CompilerAssert.Execute module2
 
@@ -93,7 +93,7 @@ module Test =
           let start = 0
           let mutable i = start
           while i < length do
-             output.[i] <- input.[i]
+             output[i] <- input[i]
              i <- i + 1 @>
 
     let bar() = 
@@ -104,7 +104,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library)
+            Compilation.Create(source, Library, options = [|"--langversion:preview"|])
 
         let module2 =
             let source =
@@ -149,7 +149,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
+            Compilation.Create(source, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
@@ -177,7 +177,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library, [|"--optimize+"|])
+            Compilation.Create(source, Library, [|"--optimize+"; "--nowarn:3366"|])
 
         let module2 =
             let source =
@@ -222,7 +222,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference.CreateFSharp(module1, staticLink=true)])
+            Compilation.Create(source, Exe, [|"--optimize+"|], [CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
@@ -236,7 +236,7 @@ let _ = List.iter (fun s -> eprintf "%s" s) ["hello"; " "; "world"]
 let _ = eprintfn "%s" "."
 let _ = exit 0
             """
-        let module1 = Compilation.Create(source, Fsx, Exe, [|"--standalone"|])
+        let module1 = Compilation.Create(source, Exe, [|"--standalone"|])
         CompilerAssert.Execute(module1, newProcess=true)
 
     [<Test>]
@@ -250,6 +250,6 @@ let _ = eprintfn "%s" "."
 let _ = exit 0
             """
 
-        let module1 = Compilation.Create(source, Fsx, Exe, [|"--standalone"; "--optimize+"|])
+        let module1 = Compilation.Create(source, Exe, [|"--standalone"; "--optimize+"|])
 
         CompilerAssert.Execute(module1, newProcess=true)

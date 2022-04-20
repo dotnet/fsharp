@@ -45,6 +45,8 @@ type LanguageFeature =
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
+    | BetterExceptionPrinting
+    | DelegateTypeNameResolutionFix
 
 /// LanguageVersion management
 type LanguageVersion (versionText) =
@@ -53,13 +55,14 @@ type LanguageVersion (versionText) =
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
+    static let languageVersion60 = 6.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion50       // Language version when default specified
+    static let defaultVersion = languageVersion60       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion50   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion60   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 ; languageVersion50 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60 |]
 
     static let features =
         dict [
@@ -82,39 +85,46 @@ type LanguageVersion (versionText) =
             LanguageFeature.NameOf, languageVersion50
             LanguageFeature.StringInterpolation, languageVersion50
 
+            // F# 6.0
+            LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
+            LanguageFeature.RelaxWhitespace2, languageVersion60
+            LanguageFeature.OverloadsForCustomOperations, languageVersion60
+            LanguageFeature.ExpandedMeasurables, languageVersion60
+            LanguageFeature.ResumableStateMachines, languageVersion60
+            LanguageFeature.StructActivePattern, languageVersion60
+            LanguageFeature.PrintfBinaryFormat, languageVersion60
+            LanguageFeature.IndexerNotationWithoutDot, languageVersion60
+            LanguageFeature.RefCellNotationInformationals, languageVersion60
+            LanguageFeature.UseBindingValueDiscard, languageVersion60
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
+            LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
+            LanguageFeature.DelegateTypeNameResolutionFix,languageVersion60
+
             // F# preview
-            LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
-            LanguageFeature.RelaxWhitespace2, previewVersion
-            LanguageFeature.OverloadsForCustomOperations, previewVersion
-            LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.ResumableStateMachines, previewVersion
-            LanguageFeature.StructActivePattern, previewVersion
-            LanguageFeature.PrintfBinaryFormat, previewVersion
-            LanguageFeature.IndexerNotationWithoutDot, previewVersion
-            LanguageFeature.RefCellNotationInformationals, previewVersion
-            LanguageFeature.UseBindingValueDiscard, previewVersion
-            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
-            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
+            LanguageFeature.BetterExceptionPrinting,previewVersion
         ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
 
-    let specified =
-        match versionText with
+    static let getVersionFromString (version:string) =
+        match version.ToUpperInvariant() with
         | "?" -> 0m
-        | "preview" -> previewVersion
-        | "default" -> defaultVersion
-        | "latest" -> latestVersion
-        | "latestmajor" -> latestMajorVersion
+        | "PREVIEW" -> previewVersion
+        | "DEFAULT" -> defaultVersion
+        | "LATEST" -> latestVersion
+        | "LATESTMAJOR" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
-        | "5.0" -> languageVersion50
+        | "5.0" | "5" -> languageVersion50
+        | "6.0" | "6" -> languageVersion60
         | _ -> 0m
 
+    let specified = getVersionFromString versionText
+
     let versionToString v =
-        if v = previewVersion then "'preview'"
+        if v = previewVersion then "'PREVIEW'"
         else string v
 
     let specifiedString = versionToString specified
@@ -127,11 +137,8 @@ type LanguageVersion (versionText) =
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
-        match versionText with
-        | "4.6" -> true
-        | "4.7" -> true
-        | "5.0" -> true
-        | _ -> false
+        let v = getVersionFromString versionText
+        v <> 0.0m && v <= 5.0m
 
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled =
@@ -139,9 +146,8 @@ type LanguageVersion (versionText) =
 
     /// Does the languageVersion support this version string
     member _.ContainsVersion version =
-        match version with
-        | "?" | "preview" | "default" | "latest" | "latestmajor" -> true
-        | _ -> languageVersions.Contains specified
+        let langVersion = getVersionFromString version
+        langVersion <> 0m && languageVersions.Contains langVersion
 
     /// Get a list of valid strings for help text
     member _.ValidOptions = validOptions
@@ -194,6 +200,8 @@ type LanguageVersion (versionText) =
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
+        | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting()
+        | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

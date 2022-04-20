@@ -42,8 +42,6 @@ module EnvMisc =
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
-    let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
-    //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
 //----------------------------------------------------------------------------
 // BackgroundCompiler
@@ -158,7 +156,7 @@ module CompileHelpers =
         // Also, the dynamic assembly creator can't currently handle types called "<Module>" from statically linked assemblies.
         let ilxMainModule = 
             { ilxMainModule with 
-                TypeDefs = ilxMainModule.TypeDefs.AsList |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
+                TypeDefs = ilxMainModule.TypeDefs.AsList() |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
                 Resources=mkILResources [] }
 
         // The function used to resolve types while emitting the code
@@ -168,7 +166,7 @@ module CompileHelpers =
             | None -> None
 
         // Emit the code
-        let _emEnv,execs = ILRuntimeWriter.emitModuleFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILRuntimeWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
+        let _emEnv,execs = ILDynamicAssemblyWriter.EmitDynamicAssemblyFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILDynamicAssemblyWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
 
         // Execute the top-level initialization, if requested
         if execute then 
@@ -180,7 +178,7 @@ module CompileHelpers =
                     raise exn
 
         // Register the reflected definitions for the dynamically generated assembly
-        for resource in ilxMainModule.Resources.AsList do 
+        for resource in ilxMainModule.Resources.AsList() do 
             if IsReflectedDefinitionsResource resource then 
                 Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
@@ -257,8 +255,6 @@ type BackgroundCompiler(
                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
                    if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
-
-                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -269,8 +265,7 @@ type BackgroundCompiler(
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
                             member x.FileName = nm }
                             
-                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
-                    yield
+                | FSharpReferencedProject.PEReference(nm,getStamp,delayedReader) ->
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -285,11 +280,10 @@ type BackgroundCompiler(
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                               }
-                            member x.TryGetLogicalTimeStamp _ = stamp |> Some
+                            member x.TryGetLogicalTimeStamp _ = getStamp() |> Some
                             member x.FileName = nm }
 
                 | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
-                    yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -305,20 +299,30 @@ type BackgroundCompiler(
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
         let! builderOpt, diagnostics = 
-            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                  (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
-                   Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                   options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions,
-                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
-                   enableBackgroundItemKeyStoreAndSemanticClassification,
-                   enablePartialTypeChecking,
-                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions (
+                legacyReferenceResolver,
+                FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                frameworkTcImportsCache,
+                loadClosure,
+                Array.toList options.SourceFiles, 
+                Array.toList options.OtherOptions,
+                projectReferences,
+                options.ProjectDirectory, 
+                options.UseScriptResolutionRules,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                tryGetMetadataSnapshot,
+                suggestNamesForErrors,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
+                (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
 
         match builderOpt with 
         | None -> ()
         | Some builder -> 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
             builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
@@ -541,7 +545,7 @@ type BackgroundCompiler(
                 return None
         }
 
-    member private bc.CheckOneFileImplAux
+    member private _.CheckOneFileImplAux
         (parseResults: FSharpParseFileResults,
          sourceText: ISourceText,
          fileName: string,
@@ -558,26 +562,27 @@ type BackgroundCompiler(
             let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
             let! checkAnswer = 
-                FSharpCheckFileResults.CheckOneFile
-                    (parseResults,
-                        sourceText,
-                        fileName,
-                        options.ProjectFileName, 
-                        tcConfig,
-                        tcPrior.TcGlobals,
-                        tcPrior.TcImports, 
-                        tcInfo.tcState,
-                        tcInfo.moduleNamesDict,
-                        loadClosure,
-                        tcInfo.TcErrors,
-                        options.IsIncompleteTypeCheckEnvironment, 
-                        options, 
-                        builder, 
-                        Array.ofList tcInfo.tcDependencyFiles, 
-                        creationDiags, 
-                        parseResults.Diagnostics, 
-                        keepAssemblyContents,
-                        suggestNamesForErrors) |> NodeCode.FromCancellable
+                FSharpCheckFileResults.CheckOneFile (
+                    parseResults,
+                    sourceText,
+                    fileName,
+                    options.ProjectFileName, 
+                    tcConfig,
+                    tcPrior.TcGlobals,
+                    tcPrior.TcImports, 
+                    tcInfo.tcState,
+                    tcInfo.moduleNamesDict,
+                    loadClosure,
+                    tcInfo.TcErrors,
+                    options.IsIncompleteTypeCheckEnvironment, 
+                    options, 
+                    builder, 
+                    Array.ofList tcInfo.tcDependencyFiles, 
+                    creationDiags, 
+                    parseResults.Diagnostics, 
+                    keepAssemblyContents,
+                    suggestNamesForErrors)
+                |> NodeCode.FromCancellable
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
         }
@@ -930,6 +935,10 @@ type BackgroundCompiler(
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+            parseCacheLock.AcquireLock(fun ltok -> 
+                for sourceFile in options.SourceFiles do
+                    checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options))
+            )
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 
@@ -1017,12 +1026,6 @@ type FSharpChecker(legacyReferenceResolver,
     // This cache is safe for concurrent access.
     let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing) 
 
-    let mutable maxMemoryReached = false
-
-    let mutable maxMB = maxMBDefault
-
-    let maxMemEvent = Event<unit>()
-
     /// Instantiate an interactive checker.    
     static member Create(
                          ?projectCacheSize, 
@@ -1086,10 +1089,9 @@ type FSharpChecker(legacyReferenceResolver,
         let argv = List.ofArray options.OtherOptions
         ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, options.UseScriptResolutionRules)
 
-    member ic.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
+    member _.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseFile(filename, sourceText, options, cache, userOpName)
 
     member ic.ParseFileInProject(filename, source: string, options, ?cache: bool, ?userOpName: string) =
@@ -1191,21 +1193,12 @@ type FSharpChecker(legacyReferenceResolver,
     /// For example, the type provider approvals file may have changed.
     member ic.InvalidateAll() =
         ic.ClearCaches()
-            
+
     member ic.ClearCaches() =
         let utok = AnyCallerThread
         braceMatchCache.Clear(utok)
-        backgroundCompiler.ClearCaches() 
-
-    member _.CheckMaxMemoryReached() =
-        if not maxMemoryReached && GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
-            Trace.TraceWarning("!!!!!!!! MAX MEMORY REACHED, DOWNSIZING F# COMPILER CACHES !!!!!!!!!!!!!!!")
-            // If the maxMB limit is reached, drastic action is taken
-            //   - reduce strong cache sizes to a minimum
-            maxMemoryReached <- true
-            braceMatchCache.Resize(AnyCallerThread, newKeepStrongly=10)
-            backgroundCompiler.DownsizeCaches()
-            maxMemEvent.Trigger( () )
+        backgroundCompiler.ClearCaches()
+        ClearAllILModuleReaderCache()
 
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
@@ -1239,36 +1232,31 @@ type FSharpChecker(legacyReferenceResolver,
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member _.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
         |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member _.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, userOpName)
         |> Async.AwaitNodeCode
             
-    member ic.ParseAndCheckProject(options, ?userOpName: string) =
+    member _.ParseAndCheckProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
         |> Async.AwaitNodeCode
 
-    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
+    member _.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
         |> Async.AwaitNodeCode
 
-    member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
+    member _.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
         |> Async.AwaitNodeCode
 
@@ -1315,11 +1303,11 @@ type FSharpChecker(legacyReferenceResolver,
                 rangeForErrors=range0)
 
         // These defines are implied by the F# compiler
-        tcConfigB.conditionalCompilationDefines <- 
+        tcConfigB.conditionalDefines <- 
             let define = if isInteractive then "INTERACTIVE" else "COMPILED"
-            define :: tcConfigB.conditionalCompilationDefines
+            define :: tcConfigB.conditionalDefines
         if isEditing then 
-            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
+            tcConfigB.conditionalDefines <- "EDITING":: tcConfigB.conditionalDefines
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
@@ -1340,10 +1328,6 @@ type FSharpChecker(legacyReferenceResolver,
 
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
           
-    member _.MaxMemoryReached = maxMemEvent.Publish
-
-    member _.MaxMemory with get() = maxMB and set v = maxMB <- v
-    
     static member Instance with get() = globalInstance.Force()
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
@@ -1398,9 +1382,9 @@ type CompilerEnvironment() =
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    static member GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
-        SourceFileImpl.AdditionalDefinesForUseInEditor(parsingOptions.IsInteractive) @
-        parsingOptions.ConditionalCompilationDefines
+    static member GetConditionalDefinesForEditing (parsingOptions: FSharpParsingOptions) =
+        SourceFileImpl.GetImplicitConditionalDefinesForEditing(parsingOptions.IsInteractive) @
+        parsingOptions.ConditionalDefines
             
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     static member IsCheckerSupportedSubcategory(subcategory:string) =

@@ -78,7 +78,7 @@ exception InternalCommandLineOption of string * range
 let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange e -> RangeFromException e
       | ExtensionTyping.ProvidedTypeResolution(m, _)
 #endif
@@ -207,7 +207,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e ->
           RangeFromException e.InnerException
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | :? TypeProviderError as e -> e.Range |> Some
 #endif
 
@@ -325,7 +325,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | UnresolvedConversionOperator _ -> 93
       // avoid 94-100 for safety
       | ObsoleteError _ -> 101
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange _
       | ExtensionTyping.ProvidedTypeResolution _ -> 103
 #endif
@@ -342,7 +342,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | ErrorWithSuggestions ((n, _), _, _, _) -> n
       | Failure _ -> 192
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
@@ -377,7 +377,8 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
+    | 3390 -> false // xmlDocBadlyFormed - off by default
+    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> 
         (severity = FSharpDiagnosticSeverity.Info) ||
         (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
@@ -731,7 +732,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | ErrorFromAddingConstraint(_, e, _) ->
           OutputExceptionR os e
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange e
 
       | ExtensionTyping.ProvidedTypeResolution(_, e) ->
@@ -756,7 +757,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
               let retTy =
                   knownReturnType
-                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+                  |> Option.defaultValue (TType_var (Typar.NewUnlinked(), 0uy))
 
               let argRepr =
                   callerArgs.ArgumentNamesAndTypes
@@ -1325,7 +1326,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts ->
+                  | TType_app (maybeUnit, [], _) :: ts ->
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1333,7 +1334,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ ->
@@ -1655,7 +1656,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then
+          if showAssertForUnexpectedException.Value then
               Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 
@@ -1824,7 +1825,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | {Exception = :? TypeProviderError as tpe} ->
             tpe.Iter (fun e ->
                 let newErr = {err with Exception = e}
@@ -1920,27 +1921,33 @@ let ReportDiagnosticAsError options (err, severity) =
 // However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger: ErrorLogger) =
+type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
     override x.DiagnosticSink (phasedError, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
             errorLogger.DiagnosticSink (phasedError, severity)
         else
-          let report =
-            let warningNum = GetDiagnosticNumber phasedError
-            match GetRangeOfDiagnostic phasedError with
-            | Some m ->
-                not (scopedPragmas |> List.exists (fun pragma ->
-                    match pragma with
-                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
-                        warningNum = warningNumFromPragma &&
-                        (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        posGeq m.Start pragmaRange.Start))
-            | None -> true
-          if report then errorLogger.DiagnosticSink(phasedError, severity)
+            let report =
+                let warningNum = GetDiagnosticNumber phasedError
+                match GetRangeOfDiagnostic phasedError with
+                | Some m ->
+                    not (scopedPragmas |> List.exists (fun pragma ->
+                        match pragma with
+                        | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
+                            warningNum = warningNumFromPragma &&
+                            (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
+                            posGeq m.Start pragmaRange.Start))
+                | None -> true
+            if report then
+                if ReportDiagnosticAsError diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Error)
+                elif ReportDiagnosticAsWarning diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Warning)
+                elif ReportDiagnosticAsInfo diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, severity)
 
     override x.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) =
-    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) :> ErrorLogger)
+let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger) =
+    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> ErrorLogger)

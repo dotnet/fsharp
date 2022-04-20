@@ -40,7 +40,6 @@ module SignatureGenerationTests =
     [<Test>]
     let ``can generate sigs with comments`` () = 
         """
-/// namespace comments
 namespace Sample
 
 /// exception comments

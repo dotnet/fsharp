@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Anything to do with special names of identifiers and other lexical rules
+// Anything to do with special names of identifiers and other lexical rules
 namespace FSharp.Compiler.Text
 
 open System
@@ -62,13 +62,17 @@ type Position(code:int64) =
 and pos = Position
 
 [<RequireQualifiedAccess>]
-type RangeDebugPointKind =
+type NotedSourceConstruct =
     | None
     | While
     | For
+    | InOrTo
     | Try
     | Binding
     | Finally
+    | With
+    | Combine
+    | DelayOrQuoteOrRun
 
 [<AutoOpen>]
 module RangeImpl =
@@ -91,7 +95,7 @@ module RangeImpl =
     let isSyntheticBitCount = 1
 
     [<Literal>]
-    let debugPointKindBitCount = 3
+    let debugPointKindBitCount = 4
 
     [<Literal>]
     let fileIndexShift   = 0
@@ -133,7 +137,7 @@ module RangeImpl =
     let isSyntheticMask =   0b0000010000000000000000000000000000000000000000000000000000000000L
 
     [<Literal>]
-    let debugPointKindMask= 0b0011100000000000000000000000000000000000000000000000000000000000L
+    let debugPointKindMask= 0b0111100000000000000000000000000000000000000000000000000000000000L
 
     #if DEBUG
     let _ = assert (posBitCount <= 64)
@@ -180,7 +184,7 @@ type FileIndexTable() =
             // Record the non-normalized entry if necessary
             if filePath <> normalizedFilePath then
                 lock fileToIndexTable (fun () ->
-                    fileToIndexTable.[filePath] <- idx)
+                    fileToIndexTable[filePath] <- idx)
 
             // Return the index
             idx
@@ -192,11 +196,11 @@ type FileIndexTable() =
 
                 // Record the normalized entry
                 indexToFileTable.Add normalizedFilePath
-                fileToIndexTable.[normalizedFilePath] <- idx
+                fileToIndexTable[normalizedFilePath] <- idx
 
                 // Record the non-normalized entry if necessary
                 if filePath <> normalizedFilePath then
-                    fileToIndexTable.[filePath] <- idx
+                    fileToIndexTable[filePath] <- idx
 
                 // Return the index
                 idx)
@@ -206,7 +210,7 @@ type FileIndexTable() =
             failwithf "fileOfFileIndex: negative argument: n = %d\n" n
         if n >= indexToFileTable.Count then
             failwithf "fileOfFileIndex: invalid argument: n = %d\n" n
-        indexToFileTable.[n]
+        indexToFileTable[n]
 
 [<AutoOpen>]
 module FileIndex =
@@ -242,82 +246,100 @@ type Range(code1:int64, code2: int64) =
 
     new (fIdx, b:pos, e:pos) = range(fIdx, b.Line, b.Column, e.Line, e.Column)
 
-    member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
+    member _.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 
-    member r.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift)
+    member _.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift)
 
-    member r.EndLine     = int32((code2 &&& heightMask)      >>> heightShift) + r.StartLine
+    member m.EndLine     = int32((code2 &&& heightMask)      >>> heightShift) + m.StartLine
 
-    member r.EndColumn   = int32((code1 &&& endColumnMask)   >>> endColumnShift)
+    member _.EndColumn   = int32((code1 &&& endColumnMask)   >>> endColumnShift)
 
-    member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
+    member _.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
-    member r.DebugPointKind = 
+    member _.NotedSourceConstruct = 
         match int32((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
-        | 1 -> RangeDebugPointKind.While
-        | 2 -> RangeDebugPointKind.For
-        | 3 -> RangeDebugPointKind.Try
-        | 4 -> RangeDebugPointKind.Finally
-        | 5 -> RangeDebugPointKind.Binding
-        | _ -> RangeDebugPointKind.None
+        | 1 -> NotedSourceConstruct.While
+        | 2 -> NotedSourceConstruct.For
+        | 3 -> NotedSourceConstruct.Try
+        | 4 -> NotedSourceConstruct.Finally
+        | 5 -> NotedSourceConstruct.Binding
+        | 6 -> NotedSourceConstruct.InOrTo
+        | 7 -> NotedSourceConstruct.With
+        | 8 -> NotedSourceConstruct.Combine
+        | 9 -> NotedSourceConstruct.DelayOrQuoteOrRun
+        | _ -> NotedSourceConstruct.None
 
-    member r.Start = pos (r.StartLine, r.StartColumn)
+    member m.Start = pos (m.StartLine, m.StartColumn)
 
-    member r.End = pos (r.EndLine, r.EndColumn)
+    member m.End = pos (m.EndLine, m.EndColumn)
 
-    member r.FileIndex = int32(code1 &&& fileIndexMask)
+    member _.FileIndex = int32(code1 &&& fileIndexMask)
 
     member m.StartRange = range (m.FileIndex, m.Start, m.Start)
 
     member m.EndRange = range (m.FileIndex, m.End, m.End)
 
-    member r.FileName = fileOfFileIndex r.FileIndex
+    member m.FileName = fileOfFileIndex m.FileIndex
 
-    member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
+    member m.ShortFileName = Path.GetFileName(fileOfFileIndex m.FileIndex)
 
-    member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+    member _.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
-    member r.IsAdjacentTo(otherRange: Range) =
-        r.FileIndex = otherRange.FileIndex && r.End.Encoding = otherRange.Start.Encoding
+    member m.IsAdjacentTo(otherRange: Range) =
+        m.FileIndex = otherRange.FileIndex && m.End.Encoding = otherRange.Start.Encoding
 
-    member r.NoteDebugPoint(kind) = 
+    member _.NoteSourceConstruct(kind) = 
         let code = 
             match kind with 
-            | RangeDebugPointKind.None -> 0 
-            | RangeDebugPointKind.While -> 1
-            | RangeDebugPointKind.For -> 2
-            | RangeDebugPointKind.Try -> 3
-            | RangeDebugPointKind.Finally -> 4
-            | RangeDebugPointKind.Binding -> 5
-        range(code1, code2 ||| (int64 code <<< debugPointKindShift))
+            | NotedSourceConstruct.None -> 0 
+            | NotedSourceConstruct.While -> 1
+            | NotedSourceConstruct.For -> 2
+            | NotedSourceConstruct.Try -> 3
+            | NotedSourceConstruct.Finally -> 4
+            | NotedSourceConstruct.Binding -> 5
+            | NotedSourceConstruct.InOrTo -> 6
+            | NotedSourceConstruct.With -> 7
+            | NotedSourceConstruct.Combine -> 8
+            | NotedSourceConstruct.DelayOrQuoteOrRun -> 9
+        range(code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
 
-    member r.Code1 = code1
+    member _.Code1 = code1
 
-    member r.Code2 = code2
+    member _.Code2 = code2
 
-    member r.DebugCode =
-        let name = r.FileName
+    member m.DebugCode =
+        let name = m.FileName
         if name = unknownFileName || name = startupFileName || name = commandLineArgsFileName then name else
 
         try
-            let endCol = r.EndColumn - 1
-            let startCol = r.StartColumn - 1
-            if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
-            elif not (FileSystem.FileExistsShim r.FileName) then "non existing file: " + r.FileName
+            let endCol = m.EndColumn - 1
+            let startCol = m.StartColumn - 1
+            if FileSystem.IsInvalidPathShim m.FileName then "path invalid: " + m.FileName
+            elif not (FileSystem.FileExistsShim m.FileName) then "non existing file: " + m.FileName
             else
-              FileSystem.OpenFileForReadShim(r.FileName).ReadLines()
-              |> Seq.skip (r.StartLine - 1)
-              |> Seq.take (r.EndLine - r.StartLine + 1)
+              FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
+              |> Seq.skip (m.StartLine - 1)
+              |> Seq.take (m.EndLine - m.StartLine + 1)
               |> String.concat "\n"
               |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()
 
-    member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
+    member m.ToShortString() = sprintf "(%d,%d--%d,%d)" m.StartLine m.StartColumn m.EndLine m.EndColumn
 
-    override r.Equals(obj) = match obj with :? range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
+    member _.Equals(m2: range) =
+        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        let rcode2 = m2.Code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        code1 = m2.Code1 && code2 = rcode2
 
-    override r.GetHashCode() = hash code1 + hash code2
+    override m.Equals(obj) =
+        match obj with
+        | :? range as m2 -> m.Equals(m2)
+        | _ -> false
+
+    override _.GetHashCode() =
+        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        hash code1 + hash code2
 
     override r.ToString() = sprintf "%s (%d,%d--%d,%d)" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn
 
@@ -373,14 +395,13 @@ module Range =
     let mkRange filePath startPos endPos = range (fileIndexOfFileAux true filePath, startPos, endPos)
 
     let equals (r1: range) (r2: range) =
-        r1.Code1 = r2.Code1 && r1.Code2 = r2.Code2
+        r1.Equals(r2)
 
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
 
-    /// rangeOrder: not a total order, but enough to sort on ranges
-    let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
+    let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, (r.Start, r.End)) (Pair.order (String.order, Pair.order(posOrder, posOrder)))
 
     let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
 
@@ -388,7 +409,7 @@ module Range =
     let unionRanges (m1:range) (m2:range) =
         if m1.FileIndex <> m2.FileIndex then m2 else
         
-        // If all identical then return m1. This preserves DebugPointKind when no merging takes place
+        // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
         if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then m1 else 
 
         let b =

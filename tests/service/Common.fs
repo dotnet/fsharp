@@ -15,6 +15,7 @@ open FSharp.Compiler.Text
 open TestFramework
 open FsUnit
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 type Async with
     static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
@@ -28,39 +29,6 @@ type Async with
             (fun _ -> ts.SetCanceled()),
             cancellationToken)
         task.Result
-
-#if NETCOREAPP
-let readRefs (folder : string) (projectFile: string) =
-    let runProcess (workingDir: string) (exePath: string) (args: string) =
-        let psi = ProcessStartInfo()
-        psi.FileName <- exePath
-        psi.WorkingDirectory <- workingDir
-        psi.RedirectStandardOutput <- false
-        psi.RedirectStandardError <- false
-        psi.Arguments <- args
-        psi.CreateNoWindow <- true
-        psi.UseShellExecute <- false
-
-        use p = new Process()
-        p.StartInfo <- psi
-        p.Start() |> ignore
-        p.WaitForExit()
-
-        let exitCode = p.ExitCode
-        exitCode, ()
-
-    let projFilePath = Path.Combine(folder, projectFile)
-    let runCmd exePath args = runProcess folder exePath ((args |> String.concat " ") + " -restore")
-    let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
-    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
-    match result with
-    | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
-        x
-        |> List.filter (fun s -> s.StartsWith("-r:", StringComparison.Ordinal))
-        |> List.map (fun s -> s.Replace("-r:", ""))
-    | _ -> []
-#endif
-
 
 // Create one global interactive checker instance
 let checker = FSharpChecker.Create()
@@ -107,17 +75,7 @@ let fsCoreDefaultReference() =
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
 let mkStandardProjectReferences () =
-#if NETCOREAPP
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
-            readRefs projDir file
-#else
-            [ yield sysLib "mscorlib"
-              yield sysLib "System"
-              yield sysLib "System.Core"
-              yield sysLib "System.Numerics"
-              yield fsCoreDefaultReference() ]
-#endif
+    TargetFrameworkUtil.currentReferences
 
 let mkProjectCommandLineArgsSilent (dllName, fileNames) =
   let args =
@@ -225,6 +183,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     | res -> failwithf "Parsing did not finish... (%A)" res
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
+let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let parseSourceCode (name: string, code: string) =
@@ -264,9 +223,8 @@ let getSingleDeclInModule (input: ParsedInput) =
 
 let getSingleExprInModule (input: ParsedInput) =
     match getSingleDeclInModule input with
-    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
-
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -314,7 +272,7 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsFSharpUnion then yield "union"
             if v.IsInterface then yield "interface"
             if v.IsMeasure then yield "measure"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             if v.IsProvided then yield "provided"
             if v.IsStaticInstantiation then yield "staticinst"
             if v.IsProvidedAndErased then yield "erased"
@@ -322,6 +280,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
 #endif
             if v.IsUnresolved then yield "unresolved"
             if v.IsValueType then yield "valuetype"
+
+        | :? FSharpActivePatternCase as v ->
+            yield sprintf "apatcase%d" v.Index
 
         | :? FSharpMemberOrFunctionOrValue as v ->
             if v.IsActivePattern then yield "apat"
@@ -372,19 +333,23 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
 
 
 let getParseResults (source: string) =
-    parseSourceCode("/home/user/Test.fsx", source)
+    parseSourceCode("Test.fsx", source)
 
 let getParseResultsOfSignatureFile (source: string) =
-    parseSourceCode("/home/user/Test.fsi", source)
+    parseSourceCode("Test.fsi", source)
 
 let getParseAndCheckResults (source: string) =
-    parseAndCheckScript("/home/user/Test.fsx", source)
+    parseAndCheckScript("Test.fsx", source)
 
 let getParseAndCheckResultsOfSignatureFile (source: string) =
-    parseAndCheckScript("/home/user/Test.fsi", source)
+    parseAndCheckScript("Test.fsi", source)
 
 let getParseAndCheckResultsPreview (source: string) =
-    parseAndCheckScriptPreview("/home/user/Test.fsx", source)
+    parseAndCheckScriptPreview("Test.fsx", source)
+
+let getParseAndCheckResults50 (source: string) =
+    parseAndCheckScript50("Test.fsx", source)
+
 
 let inline dumpErrors results =
     (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
@@ -406,18 +371,29 @@ let getSymbolUsesFromSource (source: string) =
 let getSymbols (symbolUses: seq<FSharpSymbolUse>) =
     symbolUses |> Seq.map (fun symbolUse -> symbolUse.Symbol)
 
-
 let getSymbolName (symbol: FSharpSymbol) =
     match symbol with
     | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
     | :? FSharpEntity as entity -> Some entity.LogicalName
-    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpGenericParameter as genericParameter -> Some genericParameter.Name
     | :? FSharpParameter as parameter -> parameter.Name
-    | :? FSharpStaticParameter as parameter -> Some parameter.Name
-    | :? FSharpActivePatternCase as case -> Some case.Name
-    | :? FSharpUnionCase as case -> Some case.Name
+    | :? FSharpStaticParameter as staticParameter -> Some staticParameter.Name
+    | :? FSharpActivePatternCase as activePatternCase -> Some activePatternCase.Name
+    | :? FSharpUnionCase as unionCase -> Some unionCase.Name
+    | :? FSharpField as field -> Some field.Name
     | _ -> None
 
+let getSymbolFullName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.FullName
+    | :? FSharpEntity as entity -> entity.TryFullName
+    | :? FSharpGenericParameter as genericParameter -> Some genericParameter.FullName
+    | :? FSharpParameter as parameter -> Some parameter.FullName
+    | :? FSharpStaticParameter as staticParameter -> Some staticParameter.FullName
+    | :? FSharpActivePatternCase as activePatternCase -> Some activePatternCase.FullName
+    | :? FSharpUnionCase as unioncase -> Some unioncase.FullName
+    | :? FSharpField as field -> Some field.FullName
+    | _ -> None
 
 let assertContainsSymbolWithName name source =
     getSymbols source
@@ -445,7 +421,6 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
     for name in names do
         Assert.That(Set.contains name symbolNames, name)
 
-
 let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
     getSymbolUses results
     |> Seq.find (fun symbolUse ->
@@ -456,6 +431,10 @@ let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
 let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
+
+let findSymbolUse (evaluateSymbol:FSharpSymbolUse->bool) (results: FSharpCheckFileResults) =
+    let symbolUses = getSymbolUses results
+    symbolUses |> Seq.find (fun symbolUse -> evaluateSymbol symbolUse)
 
 let taggedTextToString (tts: TaggedText[]) =
     tts |> Array.map (fun tt -> tt.Text) |> String.concat ""

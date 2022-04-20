@@ -132,9 +132,19 @@
         <target state="translated">Attribute rechts vom "Module"-Schlüsselwort</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">Automatische Generierung der Eigenschaft „Message“ für „exception“-Deklarationen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -288,13 +298,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Für das vom Ende ausgehende Slicing ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">Für das Feature „Vom Ende ausgehende Slicing“ ist Sprachversion „Vorschau“ erforderlich.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Ungültige Direktive "#{0} {1}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">Unbekannter Debugpunkt „{0}“. Die verfügbaren Debugpunkte sind „{1}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -433,8 +448,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Für das Paketverwaltungsfeature ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">Für das „Paketverwaltungsfeature“ ist Sprachversion 5.0 oder höher erforderlich</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -647,6 +662,11 @@
         <target state="translated">Ungültige Ausrichtung in interpolierter Zeichenfolge.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">Ungültige Memberdeklaration. Der Name des Members fehlt oder ist in Klammern.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">Das Konstrukt "{0}" darf nur in einem gültigen fortsetzbaren Code verwendet werden.</target>
@@ -693,8 +713,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">Die Verwendung von Methoden mit "NoEagerConstraintApplicationAttribute" erfordert "/langversion:preview" oder höher.</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">Die Verwendung von Methoden mit "NoEagerConstraintApplicationAttribute" erfordert /langversion:6.0 oder höher.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -7623,8 +7643,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">Wird verwendet, um einen Strukturtyp zu deklarieren. Wird auch in generischen Parameterbeschränkungen verwendet. Wird für die OCaml-Kompatibilität in Moduldefinitionen verwendet.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">Verwendet zum Deklarieren eines Strukturtyps. Auch verwendet in generischen Parametereinschränkungen.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

@@ -10,7 +10,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
@@ -31,7 +30,7 @@ type internal FSharpCompletionProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
 
-    inherit CompletionProvider()
+    inherit FSharpCompletionProviderBase()
 
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
@@ -43,6 +42,23 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IndexPropName = "Index"
     static let [<Literal>] KeywordDescription = "KeywordDescription"
 
+    // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
+    //
+    // * type Foo() =
+    //       member val a = 12 with get, <<---- Don't commit autocomplete!
+    //
+    // * type MyRecord = { name: <<---- Don't commit autocomplete!
+    //
+    // * type My< <<---- Don't commit autocomplete!
+    //
+    // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
+    //
+    // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
+    static let noCommitOnSpaceRules = 
+        let noCommitChars = [|' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|'|].ToImmutableArray()
+
+        CompletionItemRules.Default.WithCommitCharacterRules(ImmutableArray.Create (CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars)))
+    
     static let keywordCompletionItems =
         FSharpKeywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorDisplayName keyword))
@@ -51,7 +67,7 @@ type internal FSharpCompletionProvider
             FSharpCommonCompletionItem.Create(
                 displayText = keyword,
                 displayTextSuffix = "",
-                rules = CompletionItemRules.Default,
+                rules = noCommitOnSpaceRules,
                 glyph = Nullable Glyph.Keyword,
                 sortText = sprintf "%06d" (1000000 + n))
                 .AddProperty(KeywordDescription, description))
@@ -60,25 +76,6 @@ type internal FSharpCompletionProvider
 
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
         
-    static let noCommitOnSpaceRules = 
-        // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
-        //
-        // * type Foo() =
-        //       member val a = 12 with get, <<---- Don't commit autocomplete!
-        //
-        // * type MyRecord = { name: <<---- Don't commit autocomplete!
-        //
-        // * type My< <<---- Don't commit autocomplete!
-        //
-        // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
-        //
-        // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
-        let noCommitChars = [|' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|'|].ToImmutableArray()
-
-        CompletionItemRules.Default.WithCommitCharacterRules(ImmutableArray.Create (CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars)))
-    
-    static let getRules showAfterCharIsTyped = if showAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
-
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list), intelliSenseOptions: IntelliSenseOptions) =
@@ -100,9 +97,8 @@ type internal FSharpCompletionProvider
                     let documentId, filePath, defines = getInfo()
                     CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
                     (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
-                
 
-    static member ProvideCompletionsAsyncAux(document: Document, caretPosition: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, intellisenseOptions: IntelliSenseOptions) = 
+    static member ProvideCompletionsAsyncAux(document: Document, caretPosition: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list) = 
 
         asyncMaybe {
             let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux") |> liftAsync
@@ -118,7 +114,9 @@ type internal FSharpCompletionProvider
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols)
+            let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
+            let completionContext = ParsedInput.TryGetCompletionContext(completionContextPos, parseResults.ParseTree, line)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols, (completionContextPos, completionContext))
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -155,7 +153,7 @@ type internal FSharpCompletionProvider
                     FSharpCommonCompletionItem.Create(
                         declarationItem.Name,
                         null,
-                        rules = getRules intellisenseOptions.ShowAfterCharIsTyped,
+                        rules = noCommitOnSpaceRules,
                         glyph = Nullable glyph,
                         filterText = filterText,
                         inlineDescription = namespaceName)
@@ -190,8 +188,6 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let completionContext = ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseResults.ParseTree, line)
-
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
@@ -199,7 +195,7 @@ type internal FSharpCompletionProvider
             return results
         }
 
-    override _.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+    override _.ShouldTriggerCompletionImpl(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger) =
         use _logBlock = Logger.LogBlock LogEditorFunctionId.Completion_ShouldTrigger
 
         let getInfo() = 
@@ -222,7 +218,7 @@ type internal FSharpCompletionProvider
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols, settings.IntelliSense)
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols)
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
 

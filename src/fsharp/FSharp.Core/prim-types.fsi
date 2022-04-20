@@ -3,7 +3,7 @@
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
 
-/// <summary>Basic F# type definitions, functions and operators </summary>
+// Basic F# type definitions, functions and operators
 namespace Microsoft.FSharp.Core
 
     open System
@@ -781,7 +781,6 @@ namespace Microsoft.FSharp.Core
     /// <remarks>If the function parameter is called multiple times in the implementation of the function or method this attribute may cause code explosion and slow compilation times.</remarks>
     ///
     /// <category>Attributes</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
     [<Sealed>]
     type InlineIfLambdaAttribute =
@@ -1031,7 +1030,7 @@ namespace Microsoft.FSharp.Core
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type byte<[<Measure>] 'Measure> = byte
-    
+
     /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1041,7 +1040,7 @@ namespace Microsoft.FSharp.Core
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type uint16<[<Measure>] 'Measure> = uint16
-    
+
     /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1051,7 +1050,7 @@ namespace Microsoft.FSharp.Core
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type uint64<[<Measure>] 'Measure> = uint64
-    
+
     /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1061,7 +1060,7 @@ namespace Microsoft.FSharp.Core
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type unativeint<[<Measure>] 'Measure> = unativeint
-    
+
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1070,7 +1069,7 @@ namespace Microsoft.FSharp.Core
     /// <category index="6">Basic Types with Units of Measure</category>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type double<[<Measure>] 'Measure> = float<'Measure>
-    
+
     /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1079,7 +1078,7 @@ namespace Microsoft.FSharp.Core
     /// <category index="6">Basic Types with Units of Measure</category>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type single<[<Measure>] 'Measure> = float32<'Measure>
-    
+
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1088,7 +1087,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int8<[<Measure>] 'Measure> = sbyte<'Measure>
-    
+
     /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1097,7 +1096,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int32<[<Measure>] 'Measure> = int<'Measure>
-    
+
     /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1106,7 +1105,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type uint8<[<Measure>] 'Measure> = byte<'Measure>
-    
+
     /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1275,8 +1274,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result of the comparison.</returns>
         val inline PhysicalEquality: e1: 'T -> e2: 'T -> bool when 'T: not struct
 
-        /// <summary>The physical hash. Hashes on the object identity, except for value types,
-        /// where we hash on the contents.</summary>
+        /// <summary>The physical hash. Hashes on the object identity.</summary>
         ///
         /// <param name="obj">The input object.</param>
         ///
@@ -2771,9 +2769,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="left-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 13       // 00000000000000000000000000001101
-        /// let c = a &lt;&lt; 4   // 00000000000000000000000011010000
+        /// let c = a &lt;&lt;&lt; 4   // 00000000000000000000000011010000
         /// </code>
-        /// Evaluates to 206
+        /// Evaluates to 208
         /// </example>
         val inline (<<<): value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
@@ -2787,9 +2785,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="right-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 206      // 00000000000000000000000011010000
-        /// let c1 = a &gt;&gt; 2  // 00000000000000000000000000110100
+        /// let c1 = a &gt;&gt;&gt; 2  // 00000000000000000000000000110100
         /// // Evaluates to 51
-        /// let c2 = a &gt;&gt; 6  // 00000000000000000000000000000011
+        /// let c2 = a &gt;&gt;&gt; 6  // 00000000000000000000000000000011
         /// Evaluates to 3
         /// </code>
         /// </example>
@@ -3371,7 +3369,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="failwith-example">
         /// <code lang="fsharp">
@@ -3392,7 +3390,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="invalidarg-example">
         /// <code lang="fsharp">
@@ -3415,7 +3413,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
@@ -3605,8 +3603,8 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        ///
-        /// <returns>The result value.</returns>
+        /// 
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
         /// <code lang="fsharp">
@@ -3742,7 +3740,7 @@ namespace Microsoft.FSharp.Core
         ///     .ForAll(fun _ -> counter2.IncrementWithLock())
         /// 
         /// //  Evaluates to 100000 deterministically because the increment to the counter object is locked
-        /// counter.Count
+        /// counter2.Count
         /// </code>
         /// </example>
         /// 
@@ -4722,7 +4720,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedSingle1: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
@@ -4735,7 +4732,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedSingle2: source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
@@ -4748,7 +4744,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedSingle3: source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -4760,7 +4755,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -4772,7 +4766,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -4784,7 +4777,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
 
             /// <summary>Sets a slice of an array</summary>
@@ -4810,7 +4802,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline SetArraySlice3DFixedSingle1: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
@@ -4824,7 +4815,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline SetArraySlice3DFixedSingle2: target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
@@ -4838,7 +4828,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline SetArraySlice3DFixedSingle3: target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -4851,7 +4840,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -4864,7 +4852,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
             val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -4877,8 +4864,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///

@@ -45,6 +45,7 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 type internal FSharpWorkspaceServiceFactory
     [<System.Composition.ImportingConstructor>]
     (
+        metadataAsSourceService: FSharpMetadataAsSourceService
     ) =
 
     // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
@@ -120,7 +121,8 @@ type internal FSharpWorkspaceServiceFactory
                     match checkerSingleton with
                     | Some checker -> checker.Value
                     | _ -> failwith "Checker not set."
-                member _.FSharpProjectOptionsManager = optionsManager.Value } :> _
+                member _.FSharpProjectOptionsManager = optionsManager.Value
+                member _.MetadataAsSource = metadataAsSourceService } :> _
 
 [<Sealed>]
 type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, metadataAsSource: FSharpMetadataAsSourceService) =
@@ -279,7 +281,7 @@ type internal FSharpPackage() as this =
         upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
-    override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+    (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
     override this.CreateLanguageService() = FSharpLanguageService(this)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
     override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =
@@ -298,8 +300,10 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.Initialize() = 
         base.Initialize()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.FSharpCompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.FSharpServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+
+        let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
+        globalOptions.BlockForCompletionItems <- false
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()

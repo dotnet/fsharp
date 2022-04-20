@@ -116,7 +116,7 @@ type Document with
                     let! ct = Async.CancellationToken
                     match! projectOptionsManager.TryGetOptionsForDocumentOrProject(this, ct, userOpName) with
                     | None -> return raise(System.OperationCanceledException("FSharp project options not found."))
-                    | Some(parsingOptions, _, projectOptions) ->
+                    | Some(parsingOptions, projectOptions) ->
                         let result = (service.Checker, projectOptionsManager, parsingOptions, projectOptions)
                         return ProjectCache.Projects.GetValue(this.Project, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(fun _ -> result))
             else
@@ -127,13 +127,18 @@ type Document with
     member this.GetFSharpCompilationDefinesAsync(userOpName) =
         async {
             let! _, _, parsingOptions, _ = this.GetFSharpCompilationOptionsAsync(userOpName)
-            return CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            return CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
         }
 
     /// Get the instance of the FSharpChecker from the workspace by the given F# document.
     member this.GetFSharpChecker() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.Checker
+
+    /// Get the instance of the FSharpMetadataAsSourceService from the workspace by the given F# document.
+    member this.GetFSharpMetadataAsSource() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.MetadataAsSource
 
     /// A non-async call that quickly gets FSharpParsingOptions of the given F# document.
     /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
@@ -201,7 +206,7 @@ type Document with
     /// This is only used for testing purposes. It sets the ProjectCache.Projects with the given FSharpProjectOptions and F# document's project.
     member this.SetFSharpProjectOptionsForTesting(projectOptions: FSharpProjectOptions) =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        let parsingOptions, _, _ = 
+        let parsingOptions, _ = 
             workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
             |> Async.RunImmediateExceptOnUI
             |> Option.get
