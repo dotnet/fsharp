@@ -276,16 +276,17 @@ module rec Compiler =
     let FSharpWithInputAndOutputPath (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
         let compileDirectory = Path.GetDirectoryName(outputFilePath)
         let name = Path.GetFileName(outputFilePath)
-        { Source           = Path(inputFilePath)
-          Baseline         = None
-          Options          = defaultOptions
-          OutputType       = Library
-          SourceKind       = SourceKind.Fs
-          Name             = Some name
-          IgnoreWarnings   = false
-          References       = []
-          OutputDirectory  = Some(DirectoryInfo(compileDirectory)) }
-        |> FS
+        {
+            Source            = SourceFromPath inputFilePath
+            AdditionalSources = []
+            Baseline          = None
+            Options           = defaultOptions
+            OutputType        = Library
+            OutputDirectory   = Some(DirectoryInfo(compileDirectory))
+            Name              = Some name
+            IgnoreWarnings    = false
+            References        = []
+        } |> FS
 
     let CSharp (source: string) : CompilationUnit =
         csFromString (SourceCodeFileKind.Fs({FileName="test.cs"; SourceText=Some source })) |> CS
@@ -561,9 +562,9 @@ module rec Compiler =
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
 
-    let private getAssemblyInBytes (result: TestResult) =
+    let private getAssemblyInBytes (result: CompilationResult) =
         match result with
-        | Success output ->
+        | CompilationResult.Success output ->
             match output.OutputPath with
             | Some filePath -> File.ReadAllBytes(filePath)
             | _ -> failwith "Output path not found."
@@ -1006,7 +1007,7 @@ module rec Compiler =
             match result with
             | CompilationResult.Success _ -> result
             | CompilationResult.Failure r ->
-                let message =
+                let message = 
                     [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
                       match r.Output with
                       | Some (ExecutionOutput output) ->

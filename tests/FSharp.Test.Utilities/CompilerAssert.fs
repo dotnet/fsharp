@@ -495,8 +495,8 @@ module rec CompilerAssertHelpers =
     let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | Compilation(_, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation(_, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let disposals = ResizeArray()
         try
