@@ -1389,7 +1389,7 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3213,typrelMemberHasMultiplePossibleDispatchSlots,"The member '%s' matches multiple overloads of the same method.\nPlease restrict it to one of the following:%s."
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
 3215,parsUnexpectedSymbolEqualsInsteadOfIn,"Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
-3216,packageManagerUnknown,"Package manager key '%s' was not registered in %s. Currently registered: %s"
+3216,packageManagerUnknown,"Package manager key '%s' was not registered in %s. Currently registered: %s. To learn more about extensions, visit: https://aka.ms/dotnetdepmanager"
 3217,packageManagerError,"%s"
 tcAnonRecdInvalid,"Invalid Anonymous Record type declaration."
 tcAnonRecdCcuMismatch,"Two anonymous record types are from different assemblies '%s' and '%s'"
