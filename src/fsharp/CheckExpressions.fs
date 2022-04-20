@@ -10175,7 +10175,8 @@ and CheckRecursiveBindingIds binds =
             match b with
             | SynPat.Named(id, _, _, _)
             | SynPat.As(_, SynPat.Named(id, _, _, _), _)
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) -> id.idText
+            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) 
+            | SynPat.ParametersOwner(pattern = SynPat.Named(ident = id)) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))
