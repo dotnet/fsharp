@@ -713,12 +713,11 @@ type SynExpr =
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
-        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: range *
         clauses: SynMatchClause list *
-        range: range 
+        range: range *
+        trivia: SynExprMatchTrivia
 
     /// F# syntax: do expr
     | Do of
@@ -980,12 +979,11 @@ type SynExpr =
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
-        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: range *
         clauses: SynMatchClause list *
-        range: range
+        range: range *
+        trivia: SynExprMatchBangTrivia
 
     /// F# syntax: do! expr
     /// Computation expressions only
@@ -1929,9 +1927,8 @@ type SynModuleDecl =
         bindings: SynBinding list *
         range: range
 
-    /// A 'do expr' within a module
-    | DoExpr of
-       debugPoint: DebugPointAtBinding *
+    /// An 'expr' within a module.
+    | Expr of
        expr: SynExpr *
        range: range
 

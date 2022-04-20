@@ -155,12 +155,12 @@ and FSharpProjectOptions =
       SourceFiles: string[]
       OtherOptions: string[]
       ReferencedProjects: FSharpReferencedProject[]
-      IsIncompleteTypeCheckEnvironment : bool
-      UseScriptResolutionRules : bool
-      LoadTime : DateTime
-      UnresolvedReferences : FSharpUnresolvedReferencesSet option
+      IsIncompleteTypeCheckEnvironment: bool
+      UseScriptResolutionRules: bool
+      LoadTime: DateTime
+      UnresolvedReferences: FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
-      Stamp : int64 option
+      Stamp: int64 option
     }
 
     static member UseSameProject(options1,options2) =
@@ -679,7 +679,7 @@ type internal TypeCheckInfo
                 nameMatchesResidue n1 ||
                 meths |> List.exists (fun meth ->
                     let tcref = meth.ApparentEnclosingTyconRef
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                     tcref.IsProvided ||
 #endif
                     nameMatchesResidue tcref.DisplayName)
@@ -719,7 +719,7 @@ type internal TypeCheckInfo
         if i >= lineStr.Length then None
         else
         let mutable p = i
-        while p >= 0 && Char.IsWhiteSpace(lineStr.[p]) do
+        while p >= 0 && Char.IsWhiteSpace(lineStr[p]) do
             p <- p - 1
         if p >= 0 then Some p else None
 
@@ -751,7 +751,7 @@ type internal TypeCheckInfo
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp =
                 match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
-                | Some x when x >= 1 && lineStr.[x] = '.' && lineStr.[x - 1] = '.' -> true
+                | Some x when x >= 1 && lineStr[x] = '.' && lineStr[x - 1] = '.' -> true
                 | _ -> false
 
             // if last two chars are .. and we are not in range operator context - no completion
@@ -767,7 +767,7 @@ type internal TypeCheckInfo
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
                     // this allows us to handle cases like: let x . $ = 1
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
-                    | Some p when lineStr.[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                            let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -795,7 +795,7 @@ type internal TypeCheckInfo
                 | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
-                    | Some p when lineStr.[p] = '.' ->
+                    | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
@@ -916,21 +916,28 @@ type internal TypeCheckInfo
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option,
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads,
-                                       getAllSymbols: unit -> AssemblySymbol list)
+                                       completionContextAtPos: (pos * CompletionContext option) option, getAllSymbols: unit -> AssemblySymbol list)
                                        : (CompletionItem list * DisplayEnv * CompletionContext option * range) option =
 
         let loc =
             match colAtEndOfNamesAndResidue with
             | pastEndOfLine when pastEndOfLine >= lineStr.Length -> lineStr.Length
-            | atDot when lineStr.[atDot] = '.' -> atDot + 1
+            | atDot when lineStr[atDot] = '.' -> atDot + 1
             | atStart when atStart = 0 -> 0
             | otherwise -> otherwise - 1
 
         // Look for a "special" completion context
         let completionContext =
-            parseResultsOpt
-            |> Option.map (fun x -> x.ParseTree)
-            |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
+            let pos = mkPos line colAtEndOfNamesAndResidue
+
+            // If the completion context we have computed higher up the stack is for the same position,
+            // reuse it, otherwise recompute
+            match completionContextAtPos with
+            | Some (contextForPos, context) when contextForPos = pos -> context
+            | _ ->
+                parseResultsOpt
+                |> Option.map (fun x -> x.ParseTree)
+                |> Option.bind (fun parseTree -> ParsedInput.TryGetCompletionContext(pos, parseTree, lineStr))
 
         let res =
             match completionContext with
@@ -1096,7 +1103,7 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
     /// Get the auto-complete items at a location
-    member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
+    member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect range0
             (fun () ->
@@ -1105,7 +1112,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line,
                         lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities)
+                        completionContextAtPos, getAllEntities)
 
                 match declItemsOpt with
                 | None -> DeclarationListInfo.Empty
@@ -1132,7 +1139,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr,
                         partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities)
+                        None, getAllEntities)
 
                 match declItemsOpt with
                 | None -> List.Empty
@@ -1273,7 +1280,7 @@ type internal TypeCheckInfo
                     let declItemsOpt =
                         GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                             line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                            ResolveOverloads.Yes, (fun() -> []))
+                            ResolveOverloads.Yes, None, (fun() -> []))
 
                     match declItemsOpt with
                     | None -> ToolTipText []
@@ -1300,7 +1307,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []))
+                        ResolveOverloads.No, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None -> None
@@ -1338,7 +1345,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition(None, namesOpt, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []))
+                        ResolveOverloads.No, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None -> MethodGroup("",[| |])
@@ -1362,7 +1369,7 @@ type internal TypeCheckInfo
                     GetDeclItemsForNamesAtPosition (None, Some names, None,
                         None, line, lineStr, colAtEndOfNames,
                         ResolveTypeNamesToCtors, ResolveOverloads.No,
-                        (fun() -> []))
+                        None, (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([],_,_,_) -> None
@@ -1382,7 +1389,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []))
+                        ResolveOverloads.Yes, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None
@@ -1468,7 +1475,7 @@ type internal TypeCheckInfo
                     |> FindDeclResult.DeclFound
                 | None ->
                     match item.Item with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
                     | Item.CtorGroup  (name, ProvidedMeth _::_   )
                     | Item.MethodGroup(name, ProvidedMeth _::_, _)
@@ -1490,7 +1497,7 @@ type internal TypeCheckInfo
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []))
+                        ResolveOverloads.Yes, None, (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([], _, _, _) -> None
@@ -1546,7 +1553,7 @@ type internal TypeCheckInfo
 
 type FSharpParsingOptions =
     { SourceFiles: string []
-      ConditionalCompilationDefines: string list
+      ConditionalDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
@@ -1560,7 +1567,7 @@ type FSharpParsingOptions =
 
     static member Default =
         { SourceFiles = Array.empty
-          ConditionalCompilationDefines = []
+          ConditionalDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
@@ -1570,7 +1577,7 @@ type FSharpParsingOptions =
 
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
-          ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
+          ConditionalDefines = tcConfig.conditionalDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
@@ -1581,7 +1588,7 @@ type FSharpParsingOptions =
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
-          ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
+          ConditionalDefines = tcConfigB.conditionalDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
@@ -1619,7 +1626,7 @@ module internal ParseAndCheckFile =
                             errorCount <- errorCount + 1
 
                 match exn with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 | { Exception = :? TypeProviderError as tpe } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e
@@ -1641,8 +1648,7 @@ module internal ParseAndCheckFile =
         member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
-        let lower = String.lowercase fileName
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix lower) FSharpLightSyntaxFileSuffixes
+        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpLightSyntaxFileSuffixes
         let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
         LightSyntaxStatus(lightStatus, true)
 
@@ -1651,19 +1657,20 @@ module internal ParseAndCheckFile =
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
-        let defines = (SourceFileImpl.AdditionalDefinesForUseInEditor options.IsInteractive) @ options.ConditionalCompilationDefines
+        let conditionalDefines =
+            SourceFileImpl.GetImplicitConditionalDefinesForEditing options.IsInteractive
+            @ options.ConditionalDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())
-
 
     let createLexbuf langVersion sourceText =
         UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
@@ -1907,7 +1914,7 @@ module internal ParseAndCheckFile =
 
                     use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result =
-                        TypeCheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
+                        CheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
 
                     return result
                 with e ->
@@ -1979,10 +1986,10 @@ type FSharpCheckFileResults
         | Some (scope, _builderOpt) -> Some scope.TcImports
 
     /// Intellisense autocompletions
-    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
+    member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?completionContextAtPos) =
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> DeclarationListInfo.Empty) (fun scope ->
-            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, completionContextAtPos, getAllEntities))
 
     member _.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
         let getAllEntities = defaultArg getAllEntities (fun() -> [])

@@ -255,8 +255,6 @@ type BackgroundCompiler(
                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
                    if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
-
-                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -268,7 +266,6 @@ type BackgroundCompiler(
                             member x.FileName = nm }
                             
                 | FSharpReferencedProject.PEReference(nm,getStamp,delayedReader) ->
-                    yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -287,7 +284,6 @@ type BackgroundCompiler(
                             member x.FileName = nm }
 
                 | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
-                    yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
                               node {
@@ -303,20 +299,30 @@ type BackgroundCompiler(
         let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
         let! builderOpt, diagnostics = 
-            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
-                  (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
-                   Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
-                   options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions,
-                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
-                   enableBackgroundItemKeyStoreAndSemanticClassification,
-                   enablePartialTypeChecking,
-                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions (
+                legacyReferenceResolver,
+                FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                frameworkTcImportsCache,
+                loadClosure,
+                Array.toList options.SourceFiles, 
+                Array.toList options.OtherOptions,
+                projectReferences,
+                options.ProjectDirectory, 
+                options.UseScriptResolutionRules,
+                keepAssemblyContents,
+                keepAllBackgroundResolutions,
+                tryGetMetadataSnapshot,
+                suggestNamesForErrors,
+                keepAllBackgroundSymbolUses,
+                enableBackgroundItemKeyStoreAndSemanticClassification,
+                enablePartialTypeChecking,
+                (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
 
         match builderOpt with 
         | None -> ()
         | Some builder -> 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
             builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
@@ -539,7 +545,7 @@ type BackgroundCompiler(
                 return None
         }
 
-    member private bc.CheckOneFileImplAux
+    member private _.CheckOneFileImplAux
         (parseResults: FSharpParseFileResults,
          sourceText: ISourceText,
          fileName: string,
@@ -556,26 +562,27 @@ type BackgroundCompiler(
             let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
 
             let! checkAnswer = 
-                FSharpCheckFileResults.CheckOneFile
-                    (parseResults,
-                        sourceText,
-                        fileName,
-                        options.ProjectFileName, 
-                        tcConfig,
-                        tcPrior.TcGlobals,
-                        tcPrior.TcImports, 
-                        tcInfo.tcState,
-                        tcInfo.moduleNamesDict,
-                        loadClosure,
-                        tcInfo.TcErrors,
-                        options.IsIncompleteTypeCheckEnvironment, 
-                        options, 
-                        builder, 
-                        Array.ofList tcInfo.tcDependencyFiles, 
-                        creationDiags, 
-                        parseResults.Diagnostics, 
-                        keepAssemblyContents,
-                        suggestNamesForErrors) |> NodeCode.FromCancellable
+                FSharpCheckFileResults.CheckOneFile (
+                    parseResults,
+                    sourceText,
+                    fileName,
+                    options.ProjectFileName, 
+                    tcConfig,
+                    tcPrior.TcGlobals,
+                    tcPrior.TcImports, 
+                    tcInfo.tcState,
+                    tcInfo.moduleNamesDict,
+                    loadClosure,
+                    tcInfo.TcErrors,
+                    options.IsIncompleteTypeCheckEnvironment, 
+                    options, 
+                    builder, 
+                    Array.ofList tcInfo.tcDependencyFiles, 
+                    creationDiags, 
+                    parseResults.Diagnostics, 
+                    keepAssemblyContents,
+                    suggestNamesForErrors)
+                |> NodeCode.FromCancellable
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
             return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
         }
@@ -1088,7 +1095,7 @@ type FSharpChecker(legacyReferenceResolver,
         let argv = List.ofArray options.OtherOptions
         ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, options.UseScriptResolutionRules)
 
-    member ic.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
+    member _.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.ParseFile(filename, sourceText, options, cache, userOpName)
@@ -1192,11 +1199,12 @@ type FSharpChecker(legacyReferenceResolver,
     /// For example, the type provider approvals file may have changed.
     member ic.InvalidateAll() =
         ic.ClearCaches()
-            
+
     member ic.ClearCaches() =
         let utok = AnyCallerThread
         braceMatchCache.Clear(utok)
-        backgroundCompiler.ClearCaches() 
+        backgroundCompiler.ClearCaches()
+        ClearAllILModuleReaderCache()
 
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
@@ -1301,11 +1309,11 @@ type FSharpChecker(legacyReferenceResolver,
                 rangeForErrors=range0)
 
         // These defines are implied by the F# compiler
-        tcConfigB.conditionalCompilationDefines <- 
+        tcConfigB.conditionalDefines <- 
             let define = if isInteractive then "INTERACTIVE" else "COMPILED"
-            define :: tcConfigB.conditionalCompilationDefines
+            define :: tcConfigB.conditionalDefines
         if isEditing then 
-            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
+            tcConfigB.conditionalDefines <- "EDITING":: tcConfigB.conditionalDefines
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
@@ -1380,9 +1388,9 @@ type CompilerEnvironment() =
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    static member GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
-        SourceFileImpl.AdditionalDefinesForUseInEditor(parsingOptions.IsInteractive) @
-        parsingOptions.ConditionalCompilationDefines
+    static member GetConditionalDefinesForEditing (parsingOptions: FSharpParsingOptions) =
+        SourceFileImpl.GetImplicitConditionalDefinesForEditing(parsingOptions.IsInteractive) @
+        parsingOptions.ConditionalDefines
             
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     static member IsCheckerSupportedSubcategory(subcategory:string) =

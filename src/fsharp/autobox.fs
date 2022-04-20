@@ -143,19 +143,19 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
     // Rewrite uses of mutable values 
     | Expr.Val (ValDeref(v), _, m) when nvs.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = nvs[v]
        Some (mkRefCellGet g m v.Type nve)
 
     // Rewrite assignments to mutable values 
     | Expr.Op (TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when nvs.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = nvs[v]
        let arg = exprF arg 
        Some (mkRefCellSet g m v.Type nve arg)
 
     // Rewrite taking the address of mutable values 
     | Expr.Op (TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when nvs.ContainsVal v -> 
-       let _nv,nve = nvs.[v]
+       let _nv,nve = nvs[v]
        Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
@@ -163,7 +163,7 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
 /// Rewrite bindings for mutable locals which we are transforming
 let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 
     if nvs.ContainsVal v then 
-       let nv, _nve = nvs.[v]
+       let nv, _nve = nvs[v]
        let exprRange = expr.Range
        let expr = exprF expr
        Some(TBind(nv, mkRefCell g exprRange v.Type expr, m))
@@ -193,7 +193,7 @@ let TransformImplFile g amap implFile =
               { PreIntercept = Some(TransformExpr g nvs)
                 PreInterceptBinding = Some(TransformBinding g nvs)
                 PostTransform = (fun _ -> None)
-                RewriteQuotations = false
+                RewriteQuotations = true
                 StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

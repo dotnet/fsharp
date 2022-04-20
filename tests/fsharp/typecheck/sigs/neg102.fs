@@ -45,3 +45,13 @@ module FS0104 =
         | System.DateTimeKind.Unspecified -> "Unspecified"
         | System.DateTimeKind.Utc -> "Utc"
         | System.DateTimeKind.Local -> "Local"
+
+module IncompleteMatchWarningAtRightPlace =
+    let f() =
+        match (
+            let value = 5
+            value + 4
+            |> Some
+        )
+        with
+        | None -> ()

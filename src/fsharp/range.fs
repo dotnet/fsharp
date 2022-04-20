@@ -184,7 +184,7 @@ type FileIndexTable() =
             // Record the non-normalized entry if necessary
             if filePath <> normalizedFilePath then
                 lock fileToIndexTable (fun () ->
-                    fileToIndexTable.[filePath] <- idx)
+                    fileToIndexTable[filePath] <- idx)
 
             // Return the index
             idx
@@ -196,11 +196,11 @@ type FileIndexTable() =
 
                 // Record the normalized entry
                 indexToFileTable.Add normalizedFilePath
-                fileToIndexTable.[normalizedFilePath] <- idx
+                fileToIndexTable[normalizedFilePath] <- idx
 
                 // Record the non-normalized entry if necessary
                 if filePath <> normalizedFilePath then
-                    fileToIndexTable.[filePath] <- idx
+                    fileToIndexTable[filePath] <- idx
 
                 // Return the index
                 idx)
@@ -210,7 +210,7 @@ type FileIndexTable() =
             failwithf "fileOfFileIndex: negative argument: n = %d\n" n
         if n >= indexToFileTable.Count then
             failwithf "fileOfFileIndex: invalid argument: n = %d\n" n
-        indexToFileTable.[n]
+        indexToFileTable[n]
 
 [<AutoOpen>]
 module FileIndex =

@@ -262,6 +262,11 @@
         <target state="translated">使用 'nameof'</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="new">Use triple quoted string interpolation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">使用「向上轉型」</target>

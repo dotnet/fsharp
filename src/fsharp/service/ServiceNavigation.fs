@@ -109,11 +109,11 @@ module NavigationImpl =
                 match names.TryGetValue name with
                 | true, count -> count + 1
                 | _ -> 1
-            names.[name] <- count
+            names[name] <- count
             count
         
         let uniqueName name idx = 
-            let total = names.[name]
+            let total = names[name]
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
@@ -682,7 +682,7 @@ module NavigateTo =
                 for t in typeDefs do
                     walkSynTypeDefn t container
             | SynModuleDecl.Attributes _
-            | SynModuleDecl.DoExpr _
+            | SynModuleDecl.Expr _
             | SynModuleDecl.HashDirective _
             | SynModuleDecl.Open _ -> ()
     

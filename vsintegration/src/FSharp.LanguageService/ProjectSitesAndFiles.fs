@@ -46,6 +46,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
+open Microsoft.VisualStudio.FSharp.LanguageService
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -120,105 +121,6 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.ProjectProvider = None
 
     override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
-
-/// Manage Storage of FSharpProjectOptions the options for a project
-type internal FSharpProjectOptionsTable () =
-
-    // A table of information about projects, excluding single-file projects.
-    let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpParsingOptions * IProjectSite option * FSharpProjectOptions>>()
-    let commandLineOptions = new ConcurrentDictionary<ProjectId, string[]*string[]*string[]>()
-
-    /// Re-fetch all of the options for everything that references projectId
-    let refreshInfoForProjectsThatReferenceThisProject (projectId:ProjectId) =
-        for KeyValue(otherProjectId, ((referencedProjectIds, _parsingOptions, _site, _options), refresh)) in projectTable.ToArray() do
-           for referencedProjectId in referencedProjectIds do
-              if referencedProjectId = projectId then 
-                  projectTable.[otherProjectId] <- (refresh true, refresh)
-
-    /// Add or update a project in the project table
-    member _.AddOrUpdateProject(projectId:ProjectId, refresh) =
-        projectTable.[projectId] <- (refresh false, refresh)
-        refreshInfoForProjectsThatReferenceThisProject(projectId)
-
-    /// Clear a project from the project table
-    member this.ClearInfoForProject(projectId:ProjectId) =
-        projectTable.TryRemove(projectId) |> ignore
-        refreshInfoForProjectsThatReferenceThisProject projectId
-
-    /// Get the options for a project
-    member this.TryGetOptionsForProject(projectId:ProjectId) =
-        match projectTable.TryGetValue(projectId) with
-        | true, ((_referencedProjects, parsingOptions, site, projectOptions), _) -> Some (parsingOptions, site, projectOptions)
-        | _ -> None
-
-    /// Given a projectId return the most recent set of command line options for it
-    member _.GetCommandLineOptionsWithProjectId(projectId:ProjectId) =
-        match commandLineOptions.TryGetValue projectId with
-        | true, (sources, references, options) -> sources, references, options
-        | _ -> [||], [||], [||]
-
-    /// Store the command line options for a projectId
-    member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
-        commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
-
-
-let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
-    let hier = workspace.GetHierarchy(project.Id)
-    let getCommandLineOptionsWithProjectId (projectId) =
-        match projectOptionsTable with
-        | Some (options) -> options.GetCommandLineOptionsWithProjectId(projectId) 
-        | None -> [||], [||], [||]
-    {
-        new IProvideProjectSite with
-            member x.GetProjectSite() =
-                let fst (a, _, _) = a
-                let snd (_, b, _) = b
-                let mutable errorReporter = 
-                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
-                    Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
-
-                {
-                    new IProjectSite with
-                        member _.Description = project.Name
-                        member _.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
-                        member _.CompilationOptions =
-                            let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
-                            Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                        member _.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
-                        member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                        member _.ProjectFileName = project.FilePath
-                        member _.AdviseProjectSiteChanges(_,_) = ()
-                        member _.AdviseProjectSiteCleaned(_,_) = ()
-                        member _.AdviseProjectSiteClosed(_,_) = ()
-                        member _.IsIncompleteTypeCheckEnvironment = false
-                        member _.TargetFrameworkMoniker = ""
-                        member _.ProjectGuid =  project.Id.Id.ToString()
-                        member _.LoadTime = System.DateTime.Now
-                        member _.ProjectProvider = Some (x)
-                        member _.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
-                }
-        interface IVsHierarchy with
-            member _.SetSite(psp)                                    = hier.SetSite(psp)
-            member _.GetSite(psp)                                    = hier.GetSite(ref psp)
-            member _.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
-            member _.Close()                                         = hier.Close()
-            member _.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
-            member _.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
-            member _.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
-            member _.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
-            member _.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
-                                                                        hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, 
-                                                                                                ref ppHierarchyNested, ref pitemidNested)
-            member _.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
-            member _.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
-            member _.Unused0()                                       = hier.Unused0()
-            member _.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-            member _.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
-            member _.Unused1()                                       = hier.Unused1()
-            member _.Unused2()                                       = hier.Unused2()
-            member _.Unused3()                                       = hier.Unused3()
-            member _.Unused4()                                       = hier.Unused4()
-    }
 
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource_DEPRECATED objects, IProjectSite objects and FSharpProjectOptions
@@ -317,11 +219,6 @@ type internal ProjectSitesAndFiles() =
             failwith ".fsx or .fsscript should have been treated as implicit project"
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
 
-    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        referencedProvideProjectSites (projectSite, serviceProvider)
-        |> Seq.map (fun (_, _, ps) -> ps.GetProjectSite())
-        |> Seq.toArray
-
     member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
@@ -356,7 +253,7 @@ type internal ProjectSitesAndFiles() =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
         if CompilerEnvironment.MustBeSingleFileProject(filename) then
             let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
-            CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
         else 
             let siteOpt = 
                 match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
@@ -369,7 +266,7 @@ type internal ProjectSitesAndFiles() =
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
             let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilationOptions |> Array.toList)
-            CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
         if CompilerEnvironment.MustBeSingleFileProject(filename) then None

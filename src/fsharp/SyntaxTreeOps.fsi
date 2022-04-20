@@ -46,7 +46,7 @@ val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimpl
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
-/// This affects placement of sequence points
+/// This affects placement of debug points
 val IsControlFlowExpression: e:SynExpr -> bool
 
 // The debug point for a 'let' extends to include the 'let' if we're not defining a function and the r.h.s. is not a control-flow
