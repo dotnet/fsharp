@@ -26,7 +26,8 @@ type SynIdentOrOperatorName =
          match this with
          | Ident (range = m)
          | ActivePattern(textRange = m)
-         | PartialActivePattern(textRange = m)
+         | PartialActivePattern(textRange = m) -> m
+         | Operator(Some lpr, _, _, Some rpr) -> unionRanges lpr rpr
          | Operator(textRange = m) -> m
          
      override this.ToString() = this.idText

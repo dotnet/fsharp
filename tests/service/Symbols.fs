@@ -3815,7 +3815,7 @@ module OperatorName =
             assertRange (2, 1) (2, 2) mText
             Assert.AreEqual("op_Addition", text)
             assertRange (2, 2) (2, 3) rpr
-            assertRange (2, 1) (2, 2) operator.Range
+            assertRange (2, 0) (2, 3) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -3880,7 +3880,8 @@ let (+) a b = a + b
             assertRange (2, 4) (2, 5) lpr
             Assert.AreEqual("op_Addition", text)
             assertRange (2, 5) (2, 6) mText
-            assertRange (2, 5) (2, 6) operator.Range
+            assertRange (2, 6) (2, 7) rpr
+            assertRange (2, 4) (2, 7) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -3947,7 +3948,7 @@ val (&): e1: bool -> e2: bool -> bool
             Assert.AreEqual("op_Amp", text)
             assertRange (3, 5) (3, 6) mText
             assertRange (3, 6) (3, 7) rpr
-            assertRange (3, 5) (3, 6) operator.Range
+            assertRange (3, 4) (3, 7) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -3982,7 +3983,7 @@ val (&): e1: bool -> e2: bool -> bool
             Assert.AreEqual("op_UnaryNegation", text)
             assertRange (12, 59) (12, 61) mText
             assertRange (12, 62) (12, 63) rpr
-            assertRange (12, 59) (12, 61) operator.Range
+            assertRange (12, 57) (12, 63) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -4051,7 +4052,7 @@ op_Addition a b
             assertRange (2,0) (2,1) lpr
             Assert.AreEqual("op_Addition", text)
             assertRange (2,2) (2,3) rpr
-            assertRange (2,1) (2,2) operator.Range
+            assertRange (2,0) (2,3) operator.Range
             Assert.AreEqual("a", a1)
             Assert.AreEqual("b", b1)
 
@@ -4085,7 +4086,7 @@ type X with
             Assert.AreEqual("op_Addition", text)
             assertRange (3, 14) (3, 15) mText
             assertRange (3,15) (3,16) rpr
-            assertRange (3, 14) (3, 15) operator.Range
+            assertRange (3, 13) (3, 16) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -4109,7 +4110,7 @@ nameof(+)
             Assert.AreEqual("op_Addition", text)
             assertRange (2,7) (2,8) mText
             assertRange (2,8) (2,9) rpr
-            assertRange (2,7) (2,8) operator.Range
+            assertRange (2,6) (2,9) operator.Range
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
