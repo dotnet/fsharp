@@ -71,7 +71,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 8, Col 12, Line 8, Col 13, "Unexpected integer literal in union case. Expected identifier, '(', '(*)' or other token.")
+            (Error 10, Line 8, Col 12, Line 8, Col 13, "Unexpected integer literal in union case. Expected identifier, '(' or other token.")
         ]
 
     //SOURCE=E_BeginWithUppercase03.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase03.fsx
@@ -81,7 +81,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 9, Col 12, Line 9, Col 15, "Unexpected string literal in union case. Expected identifier, '(', '(*)' or other token.")
+            (Error 10, Line 9, Col 12, Line 9, Col 15, "Unexpected string literal in union case. Expected identifier, '(' or other token.")
         ]
 
     //SOURCE=E_BeginWithUppercase04.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase04.fsx
@@ -91,7 +91,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 10, Line 9, Col 12, Line 9, Col 13, "Unexpected reserved keyword in union case. Expected identifier, '(', '(*)' or other token.")
+            (Error 10, Line 9, Col 12, Line 9, Col 13, "Unexpected reserved keyword in union case. Expected identifier, '(' or other token.")
         ]
 
     //SOURCE=E_BeginWithUppercaseNoPipe01.fsx SCFLAGS="--test:ErrorRanges"                        # E_BeginWithUppercaseNoPipe01.fsx
