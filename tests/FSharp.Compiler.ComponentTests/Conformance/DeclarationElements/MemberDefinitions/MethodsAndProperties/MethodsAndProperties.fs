@@ -276,8 +276,8 @@ module MethodsAndProperties =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=instMembers-DU.fs			# InstMembers-DU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InstMembers-DU.fs"|])>]
+    // SOURCE=instMembers-DU.fs			# instMembers-DU.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-DU.fs"|])>]
     let ``InstMembers-DU_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
@@ -285,7 +285,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=instMembers-Records.fs			# InstMembers-Records.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InstMembers-Records.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-Records.fs"|])>]
     let ``InstMembers-Records_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
@@ -293,7 +293,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=multiParamIndexer.fs			# MultiParamIndexer.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"MultiParamIndexer.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"multiParamIndexer.fs"|])>]
     let ``MultiParamIndexer_fs`` compilation =
         compilation
         |> verifyCompileAndRun
@@ -349,7 +349,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=staticMembers-class.fs			# StaticMembers-Class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMembers-Class.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-Class.fs"|])>]
     let ``StaticMembers-Class_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
@@ -357,7 +357,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=staticMembers-DU.fs			# StaticMembers-DU.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMembers-DU.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-DU.fs"|])>]
     let ``StaticMembers-DU_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
@@ -373,14 +373,14 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=staticMembers-instance.fs		# StaticMembers-instance.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticMembers-instance.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-instance.fs"|])>]
     let ``StaticMembers-instance_fs`` compilation =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
 
     // SOURCE=tupesAndFuncsAsArgs.fs			# TupesAndFuncsAsArgs.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TupesAndFuncsAsArgs.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"tupesAndFuncsAsArgs.fs"|])>]
     let ``TupesAndFuncsAsArgs_fs`` compilation =
         compilation
         |> verifyCompileAndRun
@@ -394,7 +394,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=typeMethodsCurrable.fs			# TypeMethodsCurrable.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"TypeMethodsCurrable.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"typeMethodsCurrable.fs"|])>]
     let ``TypeMethodsCurrable_fs`` compilation =
         compilation
         |> verifyCompileAndRun
