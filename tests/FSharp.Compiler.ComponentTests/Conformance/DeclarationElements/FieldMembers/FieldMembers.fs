@@ -63,8 +63,8 @@ module FieldMembers =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=StaticField03.fs		# StaticField03.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"StaticField03.fs"|])>]
+    // SOURCE=Staticfield03.fs		# Staticfield03.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Staticfield03.fs"|])>]
     let ``StaticField03_fs`` compilation =
         compilation
         |> verifyCompileAndRun
