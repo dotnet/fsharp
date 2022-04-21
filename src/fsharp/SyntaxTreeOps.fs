@@ -240,6 +240,10 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
+    | SynPat.Named (v, true, _, m) ->
+        SynSimplePat.Id (v, None, false, true, false, m),
+        None
+
     | SynPat.OptionalVal (v, m) ->
         SynSimplePat.Id (v, None, false, false, true, m),
         None
