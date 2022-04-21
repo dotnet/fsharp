@@ -52,7 +52,7 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(adjustedPosition, SymbolLookupKind.Greedy, false, false, nameof(FSharpUseMutationWhenValueIsMutableFixProvider))
             let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsMutable || mfv.HasSetterMethod ->
