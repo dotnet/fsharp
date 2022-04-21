@@ -10,10 +10,8 @@ type Foo() =
 
 
 let test = new Foo()
-if test.DoStuff1(0)      <> "doStuff1-1" then exit 1
-if test.DoStuff1("")     <> "doStuff1-2" then exit 1
+if test.DoStuff1(0)      <> "doStuff1-1" then failwith "Failed: 1"
+if test.DoStuff1("")     <> "doStuff1-2" then failwith "Failed: 2"
 
-if test.DoStuff2(0)      <> "doStuff2-1" then exit 1
-if test.DoStuff2("")     <> "doStuff2-2" then exit 1
-
-exit 0    
+if test.DoStuff2(0)      <> "doStuff2-1" then failwith "Failed: 3"
+if test.DoStuff2("")     <> "doStuff2-2" then failwith "Failed: 4"

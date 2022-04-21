@@ -12,5 +12,5 @@ module M1 =
    let c = C.F('a') = 1  // ok; c is 1
    let d = C.F(1) = 1.1  // ok; d is 1.1
 
-   (if c && d then 0 else 1) |> exit
+   if c && d then () else failwith "Failed: 1"
    

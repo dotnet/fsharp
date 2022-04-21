@@ -12,5 +12,3 @@ let expressionTreeForMethod (mi:MethodInfo) =
     let parameters = mi.GetParameters()
     let paramExprs : Expression[] = parameters |> Array.map (fun pi -> Expression.Parameter(pi.ParameterType, pi.Name) |> asExpr)
     Expression.Call(null , mi, paramExprs)
-    
-exit 0

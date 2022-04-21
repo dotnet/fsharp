@@ -12,5 +12,4 @@ module M2 =
 
     let res = C.F(1,1) = 'b'
 
-    (if res then 0 else 1) |> exit
-    
+    if res then () else failwith "Failed: 1"

@@ -17,5 +17,3 @@ let inline (-->) (x : ^a) (y : ^b) = (^a: (static member once: ^a * ^b -> ^c) (x
 let x = new Foo<int,int>()
 let y = new Foo<int,int>()
 let z = x --> y
-
-exit 0

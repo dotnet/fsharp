@@ -8,4 +8,4 @@ type Foo() =
 
 let f = new Foo()
 
-(if f.SomeMethod(10) && (not (f.SomeMethod(""))) then 0 else 1) |> exit
+if f.SomeMethod(10) && (not (f.SomeMethod(""))) then () else failwith "Failed: 1"

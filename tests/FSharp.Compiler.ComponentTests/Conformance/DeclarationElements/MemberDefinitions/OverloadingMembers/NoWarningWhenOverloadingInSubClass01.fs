@@ -19,5 +19,3 @@ let test = Deriva()
 test.Foo 1 |> ignore
 test.Foo "test" |> ignore
 
-
-exit 0

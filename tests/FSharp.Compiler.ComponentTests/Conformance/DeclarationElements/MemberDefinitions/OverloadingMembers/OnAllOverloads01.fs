@@ -9,5 +9,3 @@ type Test1()  =
 type Test2()  = 
     member x.ChangeText(s: string) = ()
     member x.ChangeText(i: int) = ()
-
-exit 0

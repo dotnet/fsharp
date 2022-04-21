@@ -15,12 +15,10 @@ let test1() =
     let y = x + 2
     let z = y + y
 
-    if x.Value <> 0 then exit 1
-    if y.Value <> 2 then exit 2
-    if z.Value <> 4 then exit 3
+    if x.Value <> 0 then failwith "Failed: 1"
+    if y.Value <> 2 then failwith "Failed: 2"
+    if z.Value <> 4 then failwith "Failed: 3"
     ()
 
 // Run the test    
 test1() 
-
-exit 0

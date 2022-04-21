@@ -10,5 +10,3 @@ type IFoo =
 type Foo() =
   interface IFoo with
     member x.Foo(t, reader) = obj()
-
-exit 1

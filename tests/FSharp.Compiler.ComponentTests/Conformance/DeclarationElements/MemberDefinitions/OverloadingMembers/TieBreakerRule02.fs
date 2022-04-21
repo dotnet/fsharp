@@ -12,5 +12,5 @@ module M3 =
                end
                
     let r = C.F([|1|])
-    
-    (if r = 1 then 0 else 1) |> exit
+    if r = 1 then () else     if r = 1 then () else failwith "Failed: 1"
+

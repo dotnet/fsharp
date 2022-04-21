@@ -8,5 +8,3 @@ type Vector() =
     static member (+)(v1:Vector,v2) = 0
 
 let foo (v1:Vector) v2 : int = v1 + v2
-
-exit 0

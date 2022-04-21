@@ -15,5 +15,3 @@ let map = [GuidWrapper id, GuidWrapper id] |> Map
 let y = map.ToDictionary((fun m -> m.Key.Id), (fun m -> m.Value.Id))
 
 printfn "%A" y
-
-exit 0

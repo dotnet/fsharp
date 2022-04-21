@@ -36,6 +36,4 @@ let a6 = tt0 +++ (fun x -> 18)
 let a7 = g +++ tt1
 
 let res = [a0; a1; a2; a3; a4; a5; a6; a7] |> Set.ofList |> Set.filter (fun a -> a <> 35)
-if res <> Set.empty then exit 1
-
-exit 0
+if res <> Set.empty then failwith "Failed: 1"

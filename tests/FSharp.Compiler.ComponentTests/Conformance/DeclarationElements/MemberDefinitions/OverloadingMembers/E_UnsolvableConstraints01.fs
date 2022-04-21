@@ -7,5 +7,3 @@ type 'a D =
   static member inline (+)(_:^b, _:^b D) : ^b when ^b : (static member (+) : ^b * ^b -> ^b) = failwith "Not implemented"
  
 let f (x:int D) = x + 1
-
-exit 1

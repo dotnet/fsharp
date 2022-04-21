@@ -5,6 +5,3 @@ let reproB1 : int = MyClass.M(box 12)           // typechecks ok
 let reproB2       = MyClass.M<int>(box 12)      // reports field/member M undefined
 let reproB3       = MyClass< >.M<int>(box 12)   // typechecks ok
 let reproB4 :int  = MyClass< >.M<_ >(box 12)    // typechecks ok
-
-
-    

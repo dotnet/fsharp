@@ -10,16 +10,15 @@ module M4 =
     type B() = class
                 inherit A()
                end
-               
+
     type C() = class
-                             
+
                  static member F (x : B) = 1
 
                  static member F (x : A) = 1.1
-               end   
-       
+               end
+
     let r1 = C.F(new B()) = 1
     let r2 = C.F(new A()) = 1.1
-    
-    (if r1 && r2 then 0 else 1) |> exit
-    
+
+    if r1 && r2 then () else failwith "Failed: 1"

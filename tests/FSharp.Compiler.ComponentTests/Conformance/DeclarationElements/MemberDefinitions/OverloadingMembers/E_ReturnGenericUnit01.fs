@@ -22,5 +22,3 @@ type unitBase =
 
 let aUnitBase = new unitBase()
 let r2  = aUnitBase.M()
-
-exit 1

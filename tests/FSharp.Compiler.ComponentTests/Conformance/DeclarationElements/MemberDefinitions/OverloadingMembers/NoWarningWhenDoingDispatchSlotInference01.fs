@@ -9,5 +9,3 @@ type MyTraceListener = class
                         override x.WriteLine (message:string) = ()
                         override x.Fail (message:string) = exit 0
                        end
-
-exit 0
