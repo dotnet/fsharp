@@ -344,6 +344,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputDirectory = Some (DirectoryInfo(path)) }
         | _ -> failwith "withOutputDirectory is only supported on F#"
 
+    let withDefines (defines: string list) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper (defines |> List.map(fun define -> $"--define:{define}")) "withDefines is only supported on F#" cUnit
+
     let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
 
