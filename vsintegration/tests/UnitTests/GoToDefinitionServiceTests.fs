@@ -53,7 +53,7 @@ module GoToDefinitionServiceTests =
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(userOpName)) |> Async.RunSynchronously
 
-            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
+            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.Range.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
             match declarations with
             | FindDeclResult.DeclFound range -> return range
