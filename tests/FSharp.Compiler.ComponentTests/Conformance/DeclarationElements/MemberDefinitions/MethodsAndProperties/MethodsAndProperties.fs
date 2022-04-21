@@ -206,8 +206,8 @@ module MethodsAndProperties =
             (Error 673, Line 9, Col 14, Line 9, Col 22, "This instance member needs a parameter to represent the object being invoked. Make the member static or use the notation 'member x.Member(args) = ...'.")
         ]
 
-    // SOURCE=E_useInstMethodThroughStatic.fs		# E_UseInstMethodThroughStatic.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UseInstMethodThroughStatic.fs"|])>]
+    // SOURCE=E_useInstMethodThroughStatic.fs		# E_useInstMethodThroughStatic.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_useInstMethodThroughStatic.fs"|])>]
     let ``E_UseInstMethodThroughStatic_fs`` compilation =
         compilation
         |> verifyCompile
@@ -216,9 +216,9 @@ module MethodsAndProperties =
             (Error 3214, Line 10, Col 14, Line 10, Col 25, "Method or object constructor 'DoStuff' is not static")
         ]
 
-    // SOURCE=E_useStaticMethodThroughInstance.fs	# E_UseStaticMethodThroughInstance.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_UseStaticMethodThroughInstance.fs"|])>]
-    let ``E_UseStaticMethodThroughInstance_fs`` compilation =
+    // SOURCE=E_useStaticMethodThroughInstance.fs	# E_useStaticMethodThroughInstance.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_useStaticMethodThroughInstance.fs"|])>]
+    let ``E_useStaticMethodThroughInstance_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldFail
@@ -226,9 +226,9 @@ module MethodsAndProperties =
             (Error 493, Line 10, Col 14, Line 10, Col 30, "StaticMethod is not an instance method")
         ]
 
-    // SOURCE=genericGenericClass.fs			# GenericGenericClass.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"GenericGenericClass.fs"|])>]
-    let ``GenericGenericClass_fs`` compilation =
+    // SOURCE=genericGenericClass.fs			# genericGenericClass.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"genericGenericClass.fs"|])>]
+    let ``genericGenericClass_fs`` compilation =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
@@ -268,9 +268,9 @@ module MethodsAndProperties =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=instMembers-class.fs			# InstMembers-Class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InstMembers-Class.fs"|])>]
-    let ``InstMembers-Class_fs`` compilation =
+    // SOURCE=instMembers-class.fs			# instMembers-Class.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-Class.fs"|])>]
+    let ``instMembers-Class_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
@@ -349,7 +349,7 @@ module MethodsAndProperties =
         |> shouldSucceed
 
     // SOURCE=staticMembers-class.fs			# StaticMembers-Class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-Class.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"staticMembers-class.fs"|])>]
     let ``StaticMembers-Class_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
