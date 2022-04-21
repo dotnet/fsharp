@@ -21,7 +21,7 @@ module OffsideExceptions =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; File "RelaxWhitespace2.fs">]
+    [<Theory(Skip = "https://github.com/dotnet/fsharp/pull/12989#issuecomment-1105096500"); File "RelaxWhitespace2.fs">]
     let RelaxWhitespace2 compilation =
         compilation
         |> asFsx
@@ -31,7 +31,7 @@ module OffsideExceptions =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; File "RelaxWhitespace2.fs">]
+    [<Theory(Skip = "https://github.com/dotnet/fsharp/pull/12989#issuecomment-1105096500"); File "RelaxWhitespace2.fs">]
     let RelaxWhitespace2_Warning25 compilation =
         compilation
         |> asFsx
