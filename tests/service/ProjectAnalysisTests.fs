@@ -206,7 +206,7 @@ let ``Test project1 all symbols`` () =
            ("val pair2", "file2", (24, 10), (24, 15), ["val"]);
            ("val pair1", "file2", (24, 4), (24, 9), ["val"]);
            ("val enumValue", "file2", (31, 4), (31, 13), ["val"]);
-           ("val op_PlusPlus", "file2", (33, 5), (33, 7), ["val"]);
+           ("val op_PlusPlus", "file2", (33, 4), (33, 8), ["val"]);
            ("val c1", "file2", (35, 4), (35, 6), ["val"]);
            ("val c2", "file2", (37, 4), (37, 6), ["val"]);
            ("val mmmm1", "file2", (39, 4), (39, 9), ["val"]);
@@ -257,7 +257,7 @@ let ``Test project1 all symbols`` () =
            ("val pair2", "file2", (24, 10), (24, 15), ["val"]);
            ("val pair1", "file2", (24, 4), (24, 9), ["val"]);
            ("val enumValue", "file2", (31, 4), (31, 13), ["val"]);
-           ("val op_PlusPlus", "file2", (33, 5), (33, 7), ["val"]);
+           ("val op_PlusPlus", "file2", (33, 4), (33, 8), ["val"]);
            ("val c1", "file2", (35, 4), (35, 6), ["val"]);
            ("val c2", "file2", (37, 4), (37, 6), ["val"]);
            ("val mmmm1", "file2", (39, 4), (39, 9), ["val"]);
@@ -362,7 +362,7 @@ let ``Test project1 all uses of all signature symbols`` () =
          ("val pair1", [("file2", ((23, 4), (23, 9)))]);
          ("val enumValue", [("file2", ((30, 4), (30, 13)))]);
          ("val op_PlusPlus",
-          [("file2", ((32, 5), (32, 7))); ("file2", ((34, 11), (34, 13)));
+          [("file2", ((32, 4), (32, 8))); ("file2", ((34, 11), (34, 13)));
            ("file2", ((36, 11), (36, 13)))]);
          ("val c1", [("file2", ((34, 4), (34, 6)))]);
          ("val c2", [("file2", ((36, 4), (36, 6)))]);
@@ -527,7 +527,7 @@ let ``Test project1 all uses of all symbols`` () =
                 ((32, 17), (32, 18)), ["val"]);
                ("x", "x", "file2", ((32, 15), (32, 16)), []);
                ("y", "y", "file2", ((32, 19), (32, 20)), []);
-               ("(++)", "N.(++)", "file2", ((32, 5), (32, 7)), ["val"]);
+               ("(++)", "N.(++)", "file2", ((32, 4), (32, 8)), ["val"]);
                ("(++)", "N.(++)", "file2", ((34, 11), (34, 13)), ["val"]);
                ("c1", "N.c1", "file2", ((34, 4), (34, 6)), ["val"]);
                ("(++)", "N.(++)", "file2", ((36, 11), (36, 13)), ["val"]);
