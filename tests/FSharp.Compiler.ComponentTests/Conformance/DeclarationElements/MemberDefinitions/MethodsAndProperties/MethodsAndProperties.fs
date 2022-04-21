@@ -268,9 +268,9 @@ module MethodsAndProperties =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    // SOURCE=instMembers-class.fs			# instMembers-Class.fs
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-Class.fs"|])>]
-    let ``instMembers-Class_fs`` compilation =
+    // SOURCE=instMembers-class.fs			# instMembers-class.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"instMembers-class.fs"|])>]
+    let ``instMembers-class_fs`` compilation =
         compilation
         |> withOptions ["--nowarn:221"]
         |> verifyCompileAndRun
