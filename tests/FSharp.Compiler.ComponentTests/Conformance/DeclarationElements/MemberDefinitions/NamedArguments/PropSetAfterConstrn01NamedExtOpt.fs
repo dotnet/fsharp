@@ -1,7 +1,6 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
 #light
 
-// FSB 1368, named arguments implicitly using property setters for generic class do not typecheck correctly
 
 module GenericClass =
     type S<'a,'b> =
@@ -15,25 +14,21 @@ module GenericClass =
     type S<'a,'b> with
         member x.XProxyIntrinsic with set (v:'a) = x.X  <- v
         member x.YProxyIntrinsic with set (v:'b) = x.Y  <- v
+module GenericClassExt =
+    
     module Extensions =
+        open GenericClass
         type S<'a,'b> with
             member x.XProxyOptional with set (v:'a) = x.X  <- v
             member x.YProxyOptional with set (v:'b) = x.Y  <- v
-    
-    open Extensions
- 
-    // Standard construction
-    let x1 = S<int,string>(1,"1", XProxyIntrinsic = 42, YProxyIntrinsic = "42")
-    if x1.x <> 42   then exit 1
-    if x1.y <> "42" then exit 1
-    
-    let x2 = S<_,_>(1,"1")
-    x2.XProxyOptional <- 43
-    x2.YProxyOptional <- "43"
-    if x2.x <> 43   then exit 1
-    if x2.y <> "43" then exit 1
- 
+
+module Test =
+    open GenericClassExt.Extensions
+    open GenericClass
+    let x1 = S<_,_>(1,"1", XProxyIntrinsic = 44, YProxyIntrinsic = "44")
+    if x1.x <> 44   then failwith "Failed: 1"
+    if x1.y <> "44" then failwith "Failed: 2"
+
     let x3 = S<_,_>(1,"1", XProxyOptional = 44, YProxyOptional = "44")
-    if x3.x <> 44   then exit 1
-    if x3.y <> "44" then exit 1
-    exit 0
+    if x3.x <> 44   then failwith "Failed: 3"
+    if x3.y <> "44" then failwith "Failed: 4"

@@ -12,20 +12,12 @@ module GenericClass =
            member obj.Y with set(v) = obj.y <- v
            new(a,b) = { x=a; y=b }
         end
+    type S<'a,'b> with
+        member x.XProxy with set v = x.X  <- v
+        member x.YProxy with set v = x.Y  <- v
 
     // Standard construction
-    let x1 = S<int,string>(1,"1")
-    if x1.x <> 1   then exit 1
-    if x1.y <> "1" then exit 1
-    
-    // Named-argument constructor
-    let x2 = S<int,string>(b="2",a=2)
-    if x2.x <> 2   then exit 1
-    if x2.y <> "2" then exit 1
-    
-    // Constructor with property setters afterwards
-    let x3 = S<int,string>(3,"3",X= -3, Y= "-3")
-    if x3.x <> -3   then exit 1
-    if x3.y <> "-3" then exit 1
+    let x1 = S<int,string>(1,"1", XProxy = 2, YProxy = "2")
+    if x1.x <> 2   then failwith "Failed: 1"
+    if x1.y <> "2" then failwith "Failed: 2"
 
-    exit 0

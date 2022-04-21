@@ -10,5 +10,3 @@ if r <> 9 then exit 1
 
 let r2 = Foo.DoStuff2(a=[Some("string"); None])
 // Can we verify the type of r2 is a string option list list?
-
-exit 0

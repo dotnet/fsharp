@@ -10,6 +10,4 @@ type Foo() =
     
 let x = new Foo()
 let result = x.MethWithNamedParams(param3="stuff", param2=EType.A, param1 = 10)
-if result <> 16 then exit 1
-
-exit 0
+if result <> 16 then failwith "Failed: 1"

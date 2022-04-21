@@ -15,6 +15,4 @@ let r6 = Foo.MethodWithNamedArgs(two=2, one=1, four=4.0, three=3.0)
 let r7 = Foo.MethodWithNamedArgs(four=4.0, two=2, one=1,  three=3.0)
 
 if r1 <> r2 || r2 <> r3 || r3 <> r4 || r4 <> r5 || r6 <> r7 then
-    exit 1
-    
-exit 0
+    failwith "Failed: 1"

@@ -16,5 +16,3 @@ let y = new Foo() :> IFoo
 y.NamedMeth1(1, 2, arg4=4, arg2=3)  // BUG: What about arg3?
 
 // Prints (1, 3, 2, 4)
-
-exit 0

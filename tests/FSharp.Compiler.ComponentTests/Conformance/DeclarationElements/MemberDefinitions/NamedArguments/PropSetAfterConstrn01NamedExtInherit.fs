@@ -27,8 +27,6 @@ module GenericInheritedClassExt2 =
 
     // Standard construction
     let x1 = GenericInheritedClass2.S(1,"1", A = 2, B = "2",C = [ 3] )
-    if x1.x <> 3   then exit 1
-    if x1.y <> "21" then exit 1
-    if x1.w.Count <> 1 then exit 1
-    exit 0
-
+    if x1.x <> 3   then failwith "Failed: 1"
+    if x1.y <> "21" then failwith "Failed: 2"
+    if x1.w.Count <> 1 then failwith "Failed: 1"
