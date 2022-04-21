@@ -5,7 +5,7 @@
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "6.0.200,
+    "dotnet": "6.0.200",
     "vs": {
       "version": "16.8",
       "components": [
