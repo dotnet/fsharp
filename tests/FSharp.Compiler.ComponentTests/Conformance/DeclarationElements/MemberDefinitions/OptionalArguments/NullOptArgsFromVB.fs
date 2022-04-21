@@ -8,8 +8,8 @@ let validate case actual expected =
     if actual <> expected then
         printfn "  Actual: %O" actual
         printfn "  Expected: %O" expected
-        exit 1
-        
+        failwith "Failed: 1"
+
 let a = VBTestClass()
 
 validate "ByRefNullable1" (a.OptionalNullableRefParam()) (Nullable(130))
@@ -23,5 +23,3 @@ validate "OptionalRefParam3" (a.OptionalRefParam(ref x1)) "aaa edited"
 validate "OptionalRefParam4" x1 "aaa"
 validate "OptionalRefParam5" (a.OptionalRefParam(&x1)) "aaa edited"
 validate "OptionalRefParam6" x1 "aaa edited"
-
-exit 0

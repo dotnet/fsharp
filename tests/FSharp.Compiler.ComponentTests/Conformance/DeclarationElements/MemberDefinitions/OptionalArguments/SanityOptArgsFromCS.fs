@@ -7,5 +7,3 @@ open TestLib
 let a = new T()
 let x = a.NonNullOptArg()
 let y = a.ValueTypeOptArg()
-
-exit 0

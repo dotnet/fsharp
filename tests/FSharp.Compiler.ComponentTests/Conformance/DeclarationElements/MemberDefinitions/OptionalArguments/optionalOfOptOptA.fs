@@ -18,8 +18,6 @@ type Foo<'a>() =
         | None -> false
 
 let tester = new Foo<int>()
-if tester.Test() = true then exit 1
-if tester.Test(Some(Some(Some(1)))) = false then exit 1
-if tester.Test(?param1=Some(Some(Some(Some(1))))) = false then exit 1
-
-exit 0
+if tester.Test() = true then failwith "Failed: 1"
+if tester.Test(Some(Some(Some(1)))) = false then failwith "Failed: 2"
+if tester.Test(?param1=Some(Some(Some(Some(1))))) = false then failwith "Failed: 3"

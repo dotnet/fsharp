@@ -16,4 +16,4 @@ let x = Optional()
 let r = x.Foo(1)
 let r2 = x.Foo(1,2)
 
-exit <| if r = 0 && r2 = 1 then 0 else 1
+if r = 0 && r2 = 1 then () else failwith "Failed: 1"

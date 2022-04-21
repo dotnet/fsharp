@@ -7,5 +7,3 @@ type Foo =
     static member Bar2(?y) = ()
 Foo.Bar(2)
 Foo.Bar2()
-
-exit 0

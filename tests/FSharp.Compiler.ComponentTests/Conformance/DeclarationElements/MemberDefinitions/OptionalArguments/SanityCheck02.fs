@@ -33,18 +33,16 @@ type Foo() =
 let test = new Foo()
 
 // Verify initial values for properties
-if test.Prim <> 1.0         then exit 1
-if test.DU   <> Joe 5       then exit 1
-if test.Obj  <> "default"   then exit 1
-if test.ILO  <> None        then exit 1
+if test.Prim <> 1.0         then failwith "Failed: 1"
+if test.DU   <> Joe 5       then failwith "Failed: 2"
+if test.Obj  <> "default"   then failwith "Failed: 3"
+if test.ILO  <> None        then failwith "Failed: 4"
 
-let x = ref 42
-test.MegaOptParams(x = !x)
+let x = 42
+test.MegaOptParams(x = x)
 
 // Verify default values were obtained, and modifed
-if test.Prim <> 100.0           then exit 1
-if test.DU   <> Jane(Joe(0))    then exit 1
-if test.Obj  <> ""              then exit 1
-if test.ILO  <> Some([1..10])   then exit 1
-
-exit 0
+if test.Prim <> 100.0           then failwith "Failed: 1"
+if test.DU   <> Jane(Joe(0))    then failwith "Failed: 2"
+if test.Obj  <> ""              then failwith "Failed: 3"
+if test.ILO  <> Some([1..10])   then failwith "Failed: 4"

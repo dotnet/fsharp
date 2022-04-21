@@ -6,5 +6,3 @@ module M
 type Foo =
     static member Bar(?x, y) = ()
 Foo.Bar(2)
-
-exit 1

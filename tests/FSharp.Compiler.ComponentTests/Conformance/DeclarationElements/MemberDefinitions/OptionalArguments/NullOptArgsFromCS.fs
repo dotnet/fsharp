@@ -12,8 +12,8 @@ let validate case actual expected =
     if actual <> expected then
         printfn "  Actual: %O" actual
         printfn "  Expected: %O" expected
-        exit 1
-        
+        failwith "Failed: 1"
+
 let a = T()
 
 validate "ValueTypeOptArg1" (a.ValueTypeOptArg()) 100
@@ -45,5 +45,3 @@ validate "Combo4" (a.ComboOptionals("abc", c = 33)) "[] [abc] [33] [200] [] []"
 validate "Combo5" (a.ComboOptionals("abc", d = Nullable(33))) "[] [abc] [100] [33] [] []"
 validate "Combo6" (a.ComboOptionals("abc", e = Nullable(33.3))) "[] [abc] [100] [200] [33.3] []"
 validate "Combo7" (a.ComboOptionals("abc", f = intList)) "[] [abc] [100] [200] [] [System.Collections.Generic.List`1[System.Int32]]"
-
-exit 0

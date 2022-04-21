@@ -21,7 +21,7 @@ type Ballad() =
 
 // As regular params
 let r1 = Ballad.MethWithOptParams(1, ["just"; "regular"; "args"], Some([1..2]))
-if r1 <> 6 then exit 1
+if r1 <> 6 then failwith "Failed: 1"
 
 // As 'None' params
 let r2 = Ballad.MethWithOptParams(?param3=None, ?param1=None, ?param2=None)
@@ -29,18 +29,16 @@ let r2 = Ballad.MethWithOptParams(?param3=None, ?param1=None, ?param2=None)
 
 // As 'Some' params
 let r3 = Ballad.MethWithOptParams(?param1=Some(1), ?param2=Some(["option"; "Some/None"; "args"]), ?param3=Some(Some([1..2])))
-if r3 <> 6 then exit 1
+if r3 <> 6 then failwith "Failed: 2"
 
 // As just regular, named parameters
 let r4 = Ballad.MethWithOptParams(param2=[], param1=0, param3=Some([1..10]))
-if r4 <> 10 then exit 1
+if r4 <> 10 then failwith "Failed: 3"
 
 // All missing parameters
 let r5 = Ballad.MethWithOptParams()
-if r5 <> 0 then exit 1
+if r5 <> 0 then failwith "Failed: 4"
 
 // Some missing, some provided
 let r6 = Ballad.MethWithOptParams(1, param2=["one"], param3=None)
-if r6 <> 2 then exit 1
-
-exit 0
+if r6 <> 2 then failwith "Failed: 5"
