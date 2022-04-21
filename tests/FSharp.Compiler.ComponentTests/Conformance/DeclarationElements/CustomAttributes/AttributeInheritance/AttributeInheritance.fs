@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.Conformance.DeclarationElements.CustomAttributes
+namespace FSharp.Compiler.ComponentTests.Conformance.DeclarationElements.CustomAttributes
 
 open Xunit
 open FSharp.Test
@@ -20,7 +20,7 @@ module AttributeInheritance =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=InheritedAttribute_001.fs  SCFLAGS="--target:library --warnaserror:3242" 	# InheritedAttribute_001.fs
+    // SOURCE=InheritedAttribute_001.fs  SCFLAGS="--target:library --warnaserror:3242" 	# InheritedAttribute_001.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"InheritedAttribute_001.fs"|])>]
     let ``InheritedAttribute_001_fs`` compilation =
         compilation

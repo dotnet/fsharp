@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ComponentTests.Conformance.Conformance.DeclarationElements.CustomAttributes
+namespace FSharp.Compiler.ComponentTests.Conformance.DeclarationElements.CustomAttributes
 
 open Xunit
 open FSharp.Test
@@ -20,7 +20,7 @@ module Basic =
         |> withOptions ["--nowarn:988"]
         |> compileAndRun
 
-        // SOURCE=ArrayParam.fs							# ArrayParam.fs
+    // SOURCE=ArrayParam.fs							# ArrayParam.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ArrayParam.fs"|])>]
     let ``ArrayParam_fs`` compilation =
         compilation
