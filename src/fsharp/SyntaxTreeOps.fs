@@ -81,6 +81,7 @@ let (|LongOrSingleIdentInPat|_|) (pat: SynPat) =
     | SynPat.Named (ident = ident) -> Some [ ident ]
     | SynPat.Paren(SynPat.Operator(operator = operator), _)
     | SynPat.Operator(operator = operator) -> Some [ operator.Ident ]
+    | SynPat.DotGetOperator(SynPat.Named(ident = ident), _, _,operator, _, _, _) -> Some [ ident; operator.Ident ]
     | _ -> None
 
 let (|SingleIdent|_|) inp =
