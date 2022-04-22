@@ -5053,6 +5053,11 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             (fun values -> TPat_isinst (srcTy, tgtTy, Some (pat values), m)), acc
         | _ -> failwith "TcPat"
 
+    | SynPat.As (SynPat.Named (id, isMemberThis, vis, m), (SynPat.Named (ident = id2) as p), _) when String.isLeadingIdentifierCharacterUpperCase id2.idText ->
+        let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
+        let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
+        (fun values -> TPat_as (pat' values, bindf values, m)), acc
+
     | SynPat.As (p, SynPat.Named (id, isMemberThis, vis, m), _)
     | SynPat.As (SynPat.Named (id, isMemberThis, vis, m), p, _) ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
