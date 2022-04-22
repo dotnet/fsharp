@@ -84,16 +84,21 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
     member _.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =
-            match binding with
-            | SynBinding(headPat=headPat) ->
-                match headPat with
+            let rec visit (pat: SynPat) =
+                match pat with
                 | SynPat.LongIdent (longDotId=longIdentWithDots) ->
                     Some longIdentWithDots.Range
                 | SynPat.As (rhsPat=SynPat.Named (ident=ident; isThisVal=false))
                 | SynPat.Named (ident, false, _, _) ->
                     Some ident.idRange
+                | SynPat.Operator(operator, _, _) -> Some operator.Ident.idRange
+                | SynPat.DotGetOperator(range = m) -> Some m
+                | SynPat.ParametersOwner(pattern = pat) -> visit pat
                 | _ ->
                     None
+
+            match binding with
+            | SynBinding(headPat=headPat) -> visit headPat
 
         let rec walkBinding expr workingRange =
             match expr with
@@ -137,11 +142,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Operator(SynOperatorName.Operator _ as operator,_), _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
                     match argExpr with
                     | SynExpr.App(_, _, _, SynExpr.Paren(expr, _, _, _), _) when rangeContainsPos expr.Range pos ->
                         None
                     | _ ->
+                        let ident = operator.Ident
                         if ident.idText = "op_PipeRight" then
                             Some (ident, 1)
                         elif ident.idText = "op_PipeRight2" then
@@ -172,6 +178,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
             | SynExpr.Ident ident -> Some ident.idRange
+        
+            | SynExpr.Operator(operator, _) -> Some operator.Ident.idRange
         
             | SynExpr.LongIdent (range = range) -> Some range
 
@@ -307,11 +315,11 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
 
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
-        let (|Ident|_|) ofName =
-            function | SynExpr.Ident ident when ident.idText = ofName -> Some ()
+        let (|Operator|_|) ofName =
+            function | SynExpr.Operator(operator, _) when operator.Ident.idText = ofName -> Some ()
                      | _ -> None
         let (|InfixAppOfOpEqualsGreater|_|) =
-          function | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, Ident "op_EqualsGreater", actualParamListExpr, _), actualLambdaBodyExpr, _) ->
+          function | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, Operator "op_EqualsGreater", actualParamListExpr, _), actualLambdaBodyExpr, _) ->
                         Some (actualParamListExpr, actualLambdaBodyExpr)
                    | _ -> None
 
@@ -357,9 +365,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
-                    if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
-                        Some funcIdent.idRange
+                | SynExpr.App(_, false, SynExpr.Operator(SynOperatorName.Operator _ as operator, _), expr, _) ->
+                    if operator.Ident.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                        Some operator.Ident.idRange
                     else
                         None
                 | _ -> defaultTraverse expr })
@@ -368,8 +376,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
-                    if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                | SynExpr.App(_, false, SynExpr.Operator(SynOperatorName.Operator _ as operator, _), expr, _) ->
+                    if operator.Ident.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
                         Some expr.Range
                     else
                         None
