@@ -47,6 +47,16 @@ type RecordContext =
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
+type MatchContext =
+    /// Completing the outermost identifier in a match clause pattern
+    /// (e.g. 'match x with Som| y -> ...'
+    /// but not 'match x: int option option with Some (Som| y) -> ...')
+    | ClausePatternOutermostIdentifier of range: range
+
+    /// Completing a match clause guard (e.g. match x with Some y when y| -> ...)
+    | ClauseGuard
+
+[<RequireQualifiedAccess>]
 type CompletionContext = 
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -77,8 +87,8 @@ type CompletionContext =
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
 
-    /// Completing a pattern in a match clause (e.g. 'match expr with Som| -> () | _ -> ()')
-    | MatchClause of rangeOfMatchedExpr: range
+    /// Completing a match expression
+    | Match of context: MatchContext
 
 type ShortIdent = string
 
@@ -966,22 +976,22 @@ module ParsedInput =
                                     match clausePat with
                                     // match x with
                                     // | z| ->
-                                    | SynPat.Named _ -> Some (CompletionContext.MatchClause matchExpr.Range)
+                                    | SynPat.Named (range = range) -> Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier range))
 
                                     // match opt with
                                     // | Som| value ->
-                                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos -> Some (CompletionContext.MatchClause matchExpr.Range)
+                                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos -> Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier lidwd.Range))
 
                                     // match x with
                                     // | Choice1| value
                                     // | Choice2Of3 value ->
                                     | SynPat.Or (lhs, rhs, _, _) ->
                                         match traverse pos defaultTraverse matchExpr lhs with
-                                        | Some _ as x -> x
-                                        | _ -> traverse pos defaultTraverse matchExpr rhs
+                                        | None -> traverse pos defaultTraverse matchExpr rhs
+                                        | x -> x
 
                                     // match x with
-                                    // | (ActivePattern1 & ActivePatte| ) ->
+                                    // | ActivePattern1 & ActivePatte| ->
                                     | SynPat.Ands (pats, _) ->
                                         pats |> List.tryPick (fun pat ->
                                             if rangeContainsPos pat.Range pos then
@@ -989,15 +999,21 @@ module ParsedInput =
                                             else
                                                 None)
 
+                                    // match opt with
+                                    // | (Som| value) ->
+                                    | SynPat.Paren (pat, _) -> traverse pos defaultTraverse matchExpr pat
+
                                     | _ -> defaultTraverse matchExpr
 
-                                let clausePat =
-                                    clauses |> List.tryPick (fun (SynMatchClause (pat = pat)) -> if rangeContainsPos pat.Range pos then Some pat else None)
-
-                                // Proceed with defaultTraverse if the caret is in a guard or clause body
-                                match clausePat with
-                                | Some clausePat -> traverse pos defaultTraverse expr clausePat
-                                | _ -> defaultTraverse expr
+                                clauses
+                                |> List.tryPick (fun (SynMatchClause (pat = pat; whenExpr = whenExpr)) ->
+                                    if rangeContainsPos pat.Range pos then
+                                        traverse pos defaultTraverse expr pat
+                                    elif whenExpr.IsSome && rangeContainsPos whenExpr.Value.Range pos then
+                                        Some (CompletionContext.Match MatchContext.ClauseGuard)
+                                    else
+                                        None)
+                                |> Option.orElseWith (fun () -> defaultTraverse expr)
 
                             | _ -> defaultTraverse expr
 

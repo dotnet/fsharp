@@ -1029,7 +1029,10 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 let textInCode = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
-                    | None -> item.Item.DisplayName
+                    | None ->
+                        match item.Item with
+                        | Item.UnionCase (uci, true) -> $"{uci.Tycon.DisplayName}.{uci.DisplayName}"
+                        | _ -> item.Item.DisplayName
                 textInDeclList, textInCode, items)
 
             // Filter out operators, active patterns (as values)

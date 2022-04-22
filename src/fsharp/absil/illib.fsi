@@ -627,6 +627,8 @@ type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     member AddMany: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
 
+    member ContainsKey: k:'Key -> bool
+
     member TryFind: k:'Key -> 'Value list option
 
     member TryGetValue: k:'Key -> bool * 'Value list

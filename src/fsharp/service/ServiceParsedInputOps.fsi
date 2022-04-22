@@ -22,6 +22,11 @@ type public RecordContext =
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
+type public MatchContext =
+    | ClausePatternOutermostIdentifier of range: range
+    | ClauseGuard
+
+[<RequireQualifiedAccess>]
 type public CompletionContext = 
     /// Completion context cannot be determined due to errors
     | Invalid
@@ -52,8 +57,8 @@ type public CompletionContext =
     /// or a single case union without a bar (type SomeUnion = Abc|)
     | TypeAbbreviationOrSingleCaseUnion
 
-    /// Completing a pattern in a match clause (e.g. match expr with Som| -> () | _ -> ())
-    | MatchClause of rangeOfMatchedExpr: range
+    /// Completing a match expression
+    | Match of context: MatchContext
 
 type public ModuleKind =
     { IsAutoOpen: bool

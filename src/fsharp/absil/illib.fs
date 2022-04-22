@@ -1149,6 +1149,8 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
     member x.AddMany (kvs: _[]) = 
         (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
+    member _.ContainsKey k = contents.ContainsKey k
+
     member _.TryFind k = contents.TryFind k
 
     member _.TryGetValue k = contents.TryGetValue k

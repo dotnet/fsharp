@@ -641,7 +641,7 @@ type internal TypeCheckInfo
         let items = items |> RemoveExplicitlySuppressed g
         items, nenv.DisplayEnv, m
 
-    /// Find union cases and compatible active patterns in the best naming environment.
+    /// Find union cases and compatible active patterns when the item under the cursor position is an identifier with the type of a DU.
     let GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
         let rec doesActivePatternTakeTypeAsInput g ty paramType =
             match paramType with
@@ -657,25 +657,35 @@ type internal TypeCheckInfo
                     doesActivePatternTakeTypeAsInput g ty rangeType
             | _ -> false
 
-        let _, quals = GetExprTypingForPosition cursorPos
+        let resolutions = GetCapturedNameResolutions cursorPos ResolveOverloads.Yes
 
-        match quals with
-        | [| ty, nenv, ad, m |] ->
-            match tryTcrefOfAppTy nenv.DisplayEnv.g ty with
-            | ValueSome tcRef when tcRef.IsUnionTycon ->
-                let cases = ResolveUnionCasesOfType ncenv m ad ty tcRef
-                let activePatterns =
-                    nenv.ePatItems
-                    |> Seq.choose (fun x ->
-                        match x.Value with
-                        | Item.ActivePatternCase item when doesActivePatternTakeTypeAsInput nenv.DisplayEnv.g ty item.ActivePatternVal.Type ->
-                            Some x.Value
-                        | _ -> None)
-                    |> Seq.toList
+        if resolutions.Count = 1 then
+            let res = resolutions[0]
 
-                Some (cases @ activePatterns, nenv.DisplayEnv, m)
+            match res.Item with
+            | Item.Value vref ->
+                let ty = vref.Type
+                let nenv = res.NameResolutionEnv
+                let m = res.Range
+
+                match tryTcrefOfAppTy nenv.DisplayEnv.g ty with
+                | ValueSome tcRef when tcRef.IsUnionTycon ->
+                    let isUnionInScopeAsUnqualified = nenv.eTyconsByAccessNames.ContainsKey tcRef.DisplayName
+                    let cases = ResolveUnionCasesOfType ncenv m res.AccessorDomain ty tcRef
+                    let activePatterns =
+                        nenv.ePatItems
+                        |> Seq.choose (fun x ->
+                            match x.Value with
+                            | Item.ActivePatternCase item when doesActivePatternTakeTypeAsInput nenv.DisplayEnv.g ty item.ActivePatternVal.Type ->
+                                Some x.Value
+                            | _ -> None)
+                        |> Seq.toList
+
+                    Some (isUnionInScopeAsUnqualified, cases @ activePatterns, nenv.DisplayEnv, m)
+                | _ -> None
             | _ -> None
-        | _ -> None
+        else
+            None
 
     /// Resolve a location and/or text to items.
     //   Three techniques are used
@@ -1013,14 +1023,47 @@ type internal TypeCheckInfo
                     |> Option.map toCompletionItems
 
             // Completion at ' match x with S... -> () '
-            | Some (CompletionContext.MatchClause range) ->
+            | Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier range)) when origLongIdentOpt.IsNone || origLongIdentOpt.Value.IsEmpty ->
                 match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition range.End with
-                | Some (items, denv, range) ->
-                    toCompletionItems (List.map ItemWithNoInst items, denv, range)
-                    |> Some
+                | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
+                    let items =
+                        items
+                        |> List.map (fun item ->
+                            let unresolved =
+                                match item with
+                                | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
+                                    Some {
+                                        FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
+                                        Namespace = uci.Tycon.PublicPath |> Option.map (fun x -> x.EnclosingPath) |> Option.defaultValue [||]
+                                        DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
+                                    }
+                                | _ -> None
+
+                            {
+                                ItemWithInst = ItemWithNoInst item
+                                MinorPriority = 0
+                                Kind = CompletionItemKind.Other
+                                IsOwnMember = false
+                                Type = None
+                                Unresolved = unresolved
+                            })
+
+                    Some (items, denv, range)
                 | _ ->
-                    // Fall back to regular completions when we're not matching against a DU
+                    // We're not matching against a DU of a determined type, but at least filter out things that may not appear in a match pattern clause
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
+                    |> Option.map (fun (items, denv, m) ->
+                        items
+                        |> List.filter (fun cItem ->
+                            match cItem.Item with
+                            | Item.Value vref -> vref.LiteralValue.IsSome
+                            | Item.Types (_, types) ->
+                                types |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
+                            | Item.ModuleOrNamespaces _
+                            | Item.ActivePatternCase _
+                            | Item.UnionCase _
+                            | Item.ExnCase _ -> true
+                            | _ -> false), denv, m)
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
