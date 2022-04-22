@@ -100,8 +100,8 @@ let (|SingleIdentInPat|_|) (pat:SynPat) : Ident option =
 
 let (|SynBinOp|_|) input =
     match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
-        Some (synId, x1, x2)
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Operator(synId, _), x1, _m1), x2, _m2) ->
+        Some (synId.Ident, x1, x2)
     | _ -> None
 
 let (|SynPipeRight|_|) input =
