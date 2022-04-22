@@ -264,6 +264,14 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
+            | SynPat.Named(ident = ident; accessibility=None) when (String.isLeadingIdentifierCharacterUpperCase ident.idText) ->
+                // The pattern is 'V' or some other capitalized identifier.
+                // It may be a real variable, in which case we want to maintain its name.
+                // But it may also be a nullary union case or some other identifier.
+                // In this case, we want to use an alternate compiler generated name for the hidden variable.
+                let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
+                let item = mkSynIdGetWithAlt m ident altNameRefCell
+                false, altNameRefCell, ident, item
             | SynPat.Named(ident, _, _, _)
             | SynPat.As(_, SynPat.Named(ident, _, _, _), _) ->
                 // named pats should be referred to as their name in docs, tooltips, etc.
