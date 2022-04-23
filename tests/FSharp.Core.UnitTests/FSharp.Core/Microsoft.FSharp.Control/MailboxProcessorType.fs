@@ -6,8 +6,9 @@
 namespace FSharp.Core.UnitTests.Control
 
 open System
-open Xunit
 open System.Threading
+open System.Threading.Tasks
+open Xunit
 
 type Message = 
     | Increment of int 
@@ -301,6 +302,45 @@ type MailboxProcessorType() =
                     raise <| Exception("Mailbox should not fail!", isErrored.Result)
 
             finishedEv.Reset() |> ignore
+
+    [<Fact>]
+    member this.``After dispose is called, mailbox should stop receiving and processing messages``() = task {
+        let mutable isSkip = false
+        let mutable actualSkipMessagesCount = 0
+        let mutable actualMessagesCount = 0
+        let sleepDueTime = 1000
+        let expectedMessagesCount = 2
+        let mb =
+            MailboxProcessor.Start(fun b ->
+                let rec loop() =
+                     async {
+                        match! b.Receive() with
+                        | Increment _ ->
+                            if isSkip then
+                                actualSkipMessagesCount <- actualSkipMessagesCount + 1
+                                return! loop()
+                            else
+                                do! Async.Sleep sleepDueTime
+                                if isSkip |> not then actualMessagesCount <- actualMessagesCount + 1
+                                return! loop()
+                        | _ -> ()
+                    }
+                loop()
+            )
+        let post() = Increment 1 |> mb.Post
+
+        [1..4] |> Seq.iter (fun _ -> post())
+        do! task {
+            do! Task.Delay (expectedMessagesCount * sleepDueTime + 500)
+            isSkip <- true
+            (mb :> IDisposable).Dispose()
+            post()
+        }
+
+        Assert.Equal(expectedMessagesCount, actualMessagesCount)
+        Assert.Equal(0, actualSkipMessagesCount)
+        Assert.Equal(0, mb.CurrentQueueLength)
+    }
 
     [<Fact>]
     member this.Dispose() =
