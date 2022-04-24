@@ -1,8 +1,7 @@
 // #Regression #Conformance #DataExpressions #Sequences 
 #light
 
-// Verify success with lists over 500 elements
-//<Expects status="success"></Expects>
+// Verify lists can be really, really long
 
 let names = [
             "Aaron";
@@ -1160,5 +1159,6 @@ let names = [
             "Kerry";
             ]
             
+if List.length names <> 1153 then exit 1
 
-exit 1
+exit 0
