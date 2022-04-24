@@ -2,7 +2,7 @@
 #light
 
 // Verify success with lists over 500 elements
-//<Expects id="FS0742" status="success"></Expects>
+//<Expects status="success"></Expects>
 
 let names = [
             "Aaron";
