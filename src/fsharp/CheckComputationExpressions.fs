@@ -2236,8 +2236,6 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
                 else SynExpr.ArrayOrList (isArray, elems, m)
             else 
-                if elems.Length > 500 then 
-                    error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
                 SynExpr.ArrayOrList (isArray, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
