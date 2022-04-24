@@ -58,9 +58,15 @@ module internal ParameterLocationsImpl =
     let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
-        | SynExpr.Ident id -> Some ([id.idText], id.idRange)
-        | SynExpr.LongIdent (LongIdentWithDots(lid, _), _, lidRange) 
+        | SynExpr.Ident id
+        | SynExpr.Optional(id, _) -> Some ([id.idText], id.idRange)
+        | SynExpr.Operator(operator, _) -> Some ([operator.Ident.idText], operator.Ident.idRange)
+        | SynExpr.LongIdent (LongIdentWithDots(lid, _), _, lidRange)
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
+        | SynExpr.DotGetOperator(pref, _, _, operator, _, m) ->
+            match digOutIdentFromFuncExpr pref with
+            | Some (lid, _) -> Some ([ yield! lid; yield operator.Ident.idText ], m)
+            | None -> Some ([operator.Ident.idText], m)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
         | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr 
         | _ -> None
