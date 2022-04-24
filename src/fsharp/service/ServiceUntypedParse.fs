@@ -600,8 +600,8 @@ module UntypedParseImpl =
                     traverseSynExpr synExpr
                 else
                     Some range 
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), rhs, _) 
-                when ident.idText = "op_ArrayLookup" 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Operator(operator, _)), rhs, _) 
+                when operator.Ident.idText = "op_ArrayLookup" 
                      && not(AstTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
                 | None ->
@@ -755,8 +755,8 @@ module UntypedParseImpl =
                                     // the cursor is left of the dot
                                     None
                             | r -> r
-                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), lhs, _m) 
-                            when ident.idText = "op_ArrayLookup" 
+                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Operator(operator, _)), lhs, _m) 
+                            when operator.Ident.idText = "op_ArrayLookup" 
                                  && not(AstTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
                             | None ->
