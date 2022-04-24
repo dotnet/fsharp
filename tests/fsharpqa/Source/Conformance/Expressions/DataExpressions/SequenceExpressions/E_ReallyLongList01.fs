@@ -1,8 +1,8 @@
 // #Regression #Conformance #DataExpressions #Sequences 
 #light
 
-// Verify error with lists over 500 elements
-//<Expects id="FS0742" status="error">This list expression exceeds the maximum size for list literals\. Use an array for larger literals and call Array\.ToList</Expects>
+// Verify success with lists over 500 elements
+//<Expects id="FS0742" status="success"></Expects>
 
 let names = [
             "Aaron";
