@@ -208,7 +208,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
 ### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
 
-1. Perform a clean build of the compiler and FCS from source(as described in this document).
+1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
 2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
 
       ```shell
@@ -348,6 +348,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     | ParsingTypeCheckerFs | 199.4 ms | 3.84 ms | 9.78 ms | 195.5 ms | 4000.0000 | 1000.0000 |     28 MB |
 
 8. Repeat for any number of changes you would like to test.
+9. **Optionally:** benchmark code and results can be included as part of the PR for future reference.
 
 ## Additional resources
 
