@@ -558,6 +558,16 @@ module ParsedInput =
                         parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false))
                     else None
                 | _ -> None
+            | SynExpr.DotGetOperator(LongOrSingleIdent(_, LongIdentWithDots(_, dotRanges), _, _), mDot, _, _, _, m) ->
+                match [ yield! dotRanges; yield mDot ] with
+                | [] when isPosInRange m -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
+                | firstDotRange :: _  ->
+                    let firstPartRange =
+                        mkRange "" m.Start (mkPos firstDotRange.StartLine (firstDotRange.StartColumn - 1))
+                    if isPosInRange firstPartRange then
+                        parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false))
+                    else None
+                | _ -> None
             | SynExpr.Paren (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Quote (_, _, e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Typed (e, _, _) -> walkExprWithKind parentKind e
@@ -595,6 +605,8 @@ module ParsedInput =
             | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElseWith (fun () -> match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
+            | SynExpr.Operator(operator, _) -> ifPosInRange operator.Ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
+            | SynExpr.Optional(ident, _) -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.DotGet (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotSet (e, _, _, _) -> walkExprWithKind parentKind e
@@ -1256,6 +1268,9 @@ module ParsedInput =
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (ident, _, _, _) -> addIdent ident
+            | SynPat.LongIdent(longDotId = LongIdentWithDots(lid, _)) -> List.iter addIdent lid
+            | SynPat.Operator(operator, _, _) -> addIdent operator.Ident
+            | SynPat.DotGetOperator(pref = pref; operator = operator) -> walkPat pref; addIdent operator.Ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t
@@ -1345,6 +1360,7 @@ module ParsedInput =
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident
+            | SynExpr.Operator(operator, _) -> addIdent operator.Ident
             | SynExpr.ObjExpr (objType=ty; argOptions=argOpt; bindings=bindings; members=ms; extraImpls=ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms
                 argOpt |> Option.iter (fun (e, ident) ->
@@ -1354,6 +1370,9 @@ module ParsedInput =
                 List.iter walkBinding bindings
                 List.iter walkInterfaceImpl ifaces
             | SynExpr.LongIdent (longDotId = ident) -> addLongIdentWithDots ident
+            | SynExpr.DotGetOperator(LongOrSingleIdent(_, LongIdentWithDots(lid, dotRanges), _, _), mDot, _, operator, _, _) ->
+                addLongIdentWithDots (LongIdentWithDots([ yield! lid; yield operator.Ident ], [ yield! dotRanges; yield mDot ]))
+            | SynExpr.Optional(ident, _) -> addIdent ident
             | SynExpr.For (ident=ident; identBody=e1; toBody=e2; doBody=e3) ->
                 addIdent ident
                 List.iter walkExpr [e1; e2; e3]
