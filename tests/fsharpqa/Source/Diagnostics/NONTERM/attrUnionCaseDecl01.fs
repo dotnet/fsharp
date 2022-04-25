@@ -1,6 +1,6 @@
 // #Regression #Diagnostics 
 // Regression test for FSharp1.0:3702
-//<Expects id="FS0010" span="(10,5-10,9)" status="error">Incomplete structured construct at or before this point in union case\. Expected identifier, '\(', '\(\*\)' or other token\.$</Expects>
+//<Expects id="FS0010" span="(10,5-10,9)" status="error">Incomplete structured construct at or before this point in union case\. Expected identifier, '\(' or other token\.$</Expects>
 #light
            
     type Stuff = | AnonymousVariableType of string
