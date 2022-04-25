@@ -59,7 +59,7 @@ type ToolTipElement =
 /// Information for building a data tip box.
 type ToolTipText = 
     /// A list of data tip elements to display.
-    | ToolTipText of ToolTipElement list  
+    | ToolTipText of ToolTipElement list
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
@@ -87,7 +87,9 @@ type CompletionItem =
 
 [<AutoOpen>]
 module DeclarationListHelpers =
-    let mutable ToolTipFault  = None
+    let mutable ToolTipFault = None
+
+    let emptyToolTip = ToolTipText []
 
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : ToolTipElement = 
@@ -942,6 +944,8 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
 type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, isError: bool) = 
     static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
 
+    static let empty = DeclarationListInfo ([| |], false, false)
+
     // Check whether this item looks like an operator.
     static let isOperatorItem name (items: CompletionItem list) =
         match items with
@@ -1088,7 +1092,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 [| DeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (ToolTipText [ToolTipElement.CompositionError message]),
                                              FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None) |], false, true)
     
-    static member Empty = DeclarationListInfo([| |], false, false)
+    static member Empty = empty
 
 
 
@@ -1134,6 +1138,8 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
     static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable<ItemWithInst, MethodGroupItem[]>()
 #endif
 
+    static let empty = MethodGroup ("", [| |])
+
     let methods = 
         unsortedMethods 
         // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
@@ -1154,7 +1160,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
     static member Create (infoReader: InfoReader, ad, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
-        if isNil items then MethodGroup("", [| |]) else
+        if isNil items then empty else
         let name = items.Head.Item.DisplayName 
 
         let methods = 
@@ -1210,5 +1216,5 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
         MethodGroup(name, methods)
 
-
+    static member internal Empty = empty
 

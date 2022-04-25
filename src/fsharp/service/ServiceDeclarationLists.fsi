@@ -51,7 +51,7 @@ type public ToolTipElement =
 type public ToolTipText = 
 
     /// A list of data tip elements to display.
-    | ToolTipText of ToolTipElement list  
+    | ToolTipText of ToolTipElement list
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =
@@ -209,6 +209,8 @@ type public MethodGroup =
 
     static member internal Create: InfoReader * AccessorDomain * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
+    static member internal Empty: MethodGroup
+
 module internal DeclarationListHelpers =
     val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
 
@@ -217,4 +219,6 @@ module internal DeclarationListHelpers =
     val RemoveExplicitlySuppressedCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 
     val mutable ToolTipFault: string option
+
+    val emptyToolTip: ToolTipText
 
