@@ -603,7 +603,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
                     yield (Array.ofList enc, exportedType.Name), tcref 
                     yield! nested net.Nested (enc @ [ net.Name ]) ]
             yield! nested exportedType.Nested (ns@[n]) 
-    ] |> Map.ofList
+    ] |> dict
 
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
@@ -616,7 +616,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let mty = ImportILAssemblyTypeDefs(amap, m, auxModuleLoader, aref, ilModule)
     let forwarders = 
         match ilModule.Manifest with 
-        | None -> Map.empty
+        | None -> Dictionary<_,_>(0, HashIdentity.Structural) :> IDictionary<_,_>
         | Some manifest -> ImportILAssemblyTypeForwarders(amap, m, manifest.ExportedTypes)
 
     let ccuData: CcuData = 

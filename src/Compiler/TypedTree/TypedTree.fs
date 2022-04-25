@@ -5292,7 +5292,7 @@ type CcuData =
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
 /// Represents a table of .NET CLI type forwarders for an assembly
-type CcuTypeForwarderTable = Map<string[] * string, Lazy<EntityRef>>
+type CcuTypeForwarderTable = IDictionary<string[] * string, Lazy<EntityRef>>
 
 type CcuReference = string // ILAssemblyRef
 
@@ -5381,7 +5381,7 @@ type CcuThunk =
     member ccu.Contents = ccu.Deref.Contents
 
     /// The table of type forwarders for this assembly
-    member ccu.TypeForwarders: Map<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
+    member ccu.TypeForwarders: IDictionary<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
 
     /// The table of modules and namespaces at the "root" of the assembly
     member ccu.RootModulesAndNamespaces = ccu.Contents.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions
