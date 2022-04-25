@@ -639,10 +639,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         match e with 
         | ForEachThen (isFromSource, firstSourcePat, firstSource, JoinOrGroupJoinOrZipClause(nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore), innerComp) 
             when 
-               (let _firstSourceSimplePats, later1 = 
-                    use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
-                Option.isNone later1)
+               (use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
+                match firstSourcePat with
+                | SynPat.Named _ -> true
+                | _ -> SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat |> snd |> Option.isNone)
 
              -> Some (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
@@ -828,7 +828,12 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         vspecs, envinner)
                 | None -> varSpace
 
-            let firstSourceSimplePats, later1 = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
+            let firstSourceSimplePats, later1 =
+                match firstSourcePat with
+                | SynPat.Named (v, thisV, _, m) ->
+                    SynSimplePats.SimplePats ([SynSimplePat.Id (v, None, false, thisV, false, m)], m), None
+                | _ ->
+                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
             let secondSourceSimplePats, later2 = SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
             if Option.isSome later1 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), firstSourcePat.Range))
