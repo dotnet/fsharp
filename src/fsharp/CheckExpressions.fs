@@ -5279,7 +5279,7 @@ and TcPatNamed warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNam
     
     let isNotMember = Option.isNone topValInfo
     
-    if isNotMember then
+    if isNotMember && String.isLeadingIdentifierCharacterUpperCase id.idText then
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpper false m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
         | Item.ActivePatternCase apref as item ->
             TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty (id.idRange, item, apref, SynArgPats.Pats [], m)
