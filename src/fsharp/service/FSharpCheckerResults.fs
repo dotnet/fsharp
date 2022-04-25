@@ -1246,7 +1246,7 @@ type internal TypeCheckInfo
                         loadClosure.PackageReferences
                         |> Array.tryFind (fun (m, _) -> rangeContainsPos m pos)
                 match matches with
-                | None -> ToolTipText.ToolTipText []
+                | None -> emptyToolTip
                 | Some (_, lines) ->
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
                     ToolTipText.ToolTipText
@@ -1283,7 +1283,7 @@ type internal TypeCheckInfo
                             ResolveOverloads.Yes, None, (fun() -> []))
 
                     match declItemsOpt with
-                    | None -> ToolTipText []
+                    | None -> emptyToolTip
                     | Some(items, denv, _, m) ->
                          ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst)))
 
@@ -1976,6 +1976,8 @@ type FSharpCheckFileResults
         | None -> dflt()
         | Some (scope, _builderOpt) -> f scope
 
+    static let emptyFindDeclResult = FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown "")
+
     member _.Diagnostics = errors
 
     member _.HasFullTypeCheckInfo = details.IsSome
@@ -1998,19 +2000,18 @@ type FSharpCheckFileResults
 
     /// Resolve the names at the given location to give a data tip
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =
-        let dflt = ToolTipText []
         match tokenTagToTokenId tokenTag with
         | TOKEN_IDENT ->
-            threadSafeOp (fun () -> dflt) (fun scope ->
+            threadSafeOp (fun () -> emptyToolTip) (fun scope ->
                 scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT ->
-            threadSafeOp (fun () -> dflt) (fun scope ->
+            threadSafeOp (fun () -> emptyToolTip) (fun scope ->
                 scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ ->
-            dflt
+            emptyToolTip
 
     member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
-        threadSafeOp (fun () -> ToolTipText []) (fun scope ->
+        threadSafeOp (fun () -> emptyToolTip) (fun scope ->
             scope.GetDescription(symbol, inst, displayFullName, range))
 
     member _.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
@@ -2019,13 +2020,11 @@ type FSharpCheckFileResults
 
     // Resolve the names at the given location to a set of methods
     member _.GetMethods(line, colAtEndOfNames, lineText, names) =
-        let dflt = MethodGroup("",[| |])
-        threadSafeOp (fun () -> dflt) (fun scope ->
+        threadSafeOp (fun () -> MethodGroup.Empty) (fun scope ->
             scope.GetMethods (line, lineText, colAtEndOfNames, names))
 
     member _.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) =
-        let dflt = FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown "")
-        threadSafeOp (fun () -> dflt) (fun scope ->
+        threadSafeOp (fun () -> emptyFindDeclResult) (fun scope ->
             scope.GetDeclarationLocation (line, lineText, colAtEndOfNames, names, preferFlag))
 
     member _.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) =
