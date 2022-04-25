@@ -327,6 +327,10 @@ let rec SimplePatsOfPat synArgNameGenerator p =
         SynSimplePats.SimplePats ([], m),
         None
 
+    | SynPat.Named (v, thisV, _, m) ->
+        let sp, laterF = SynSimplePat.Id (v, None, false, thisV, false, m), None
+        SynSimplePats.SimplePats ([sp], m), laterF
+    
     | _ ->
         let m = p.Range
         let sp, laterF = SimplePatOfPat synArgNameGenerator p
