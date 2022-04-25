@@ -176,22 +176,37 @@ VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
 
 It's important to use `Release` if you want to see if your changes have had a noticeable performance impact.
 
-### Performance and debugging
+### Troubleshooting a failed build of the tools
+
+You may run into an issue with a somewhat difficult or cryptic error message, like:
+
+> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe".
+
+Or hard crash on launch ("Unknown Error").
+
+To fix this, delete these folders:
+
+* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)RoslynDev`
+* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
+
+Where `<version>` corresponds to the latest Visual Studio version on your machine.
+
+## Performance and debugging
 
 Use the `Debug` configuration to test your changes locally. It is the default. Do not use the `Release` configuration! Local development and testing of Visual Studio tooling is not designed for the `Release` configuration.
 
-#### Writing and running benchmarks
+### Writing and running benchmarks
 
 Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
-##### Benchmarking and profiling the compiler
+### Benchmarking and profiling the compiler
 
 **NOTE:** When running benchmarks or profiling compiler, and comparing results with upstream version, make sure:
 
 * Always build both versions of compiler/FCS from source and not use pre-built binaries from SDK (SDK binaries are crossgen'd, which can affect performance).
 * To run `Release` build of compiler/FCS.
 
-##### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
+### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
 
 1. Perform a clean build of the compiler and FCS from source(as described in this document).
 2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
@@ -333,21 +348,6 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     | ParsingTypeCheckerFs | 199.4 ms | 3.84 ms | 9.78 ms | 195.5 ms | 4000.0000 | 1000.0000 |     28 MB |
 
 8. Repeat for any number of changes you would like to test.
-
-### Troubleshooting a failed build of the tools
-
-You may run into an issue with a somewhat difficult or cryptic error message, like:
-
-> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe".
-
-Or hard crash on launch ("Unknown Error").
-
-To fix this, delete these folders:
-
-* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)RoslynDev`
-* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
-
-Where `<version>` corresponds to the latest Visual Studio version on your machine.
 
 ## Additional resources
 
