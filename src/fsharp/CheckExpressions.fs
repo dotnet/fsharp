@@ -2516,6 +2516,18 @@ module BindingNormalization =
             | SynPat.Named(id, false, vis, m) when memberflagNotConstructor ->
                 NormalizeStaticMemberBinding cenv (Option.get memberFlagsOpt) valSynData id vis inferredTyparDecls [] m rhsExpr
 
+            | SynPat.Named(id, false, vis, m) when Option.isNone memberFlagsOpt && String.isLeadingIdentifierCharacterUpperCase id.idText ->
+                match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+                | Item.NewDef id ->
+                    if id.idText = opNameCons then
+                        NormalizedBindingPat(pat, rhsExpr, valSynData, inferredTyparDecls)
+                    else
+                        if isObjExprBinding = ObjExprBinding then
+                            errorR(Deprecated(FSComp.SR.tcObjectExpressionFormDeprecated(), m))
+                        MakeNormalizedStaticOrValBinding cenv isObjExprBinding id vis inferredTyparDecls [] rhsExpr valSynData
+                | _ ->
+                    error(Error(FSComp.SR.tcInvalidDeclaration(), m))
+
             // e.g. "member this.Text = "" "
             | SynPat.LongIdent(LongIdentWithDots(id = [thisId; memberId]), vis, m) when memberflagNotConstructor ->
                 NormalizeInstanceMemberBinding cenv (Option.get memberFlagsOpt) valSynData thisId memberId None vis inferredTyparDecls [] m rhsExpr
