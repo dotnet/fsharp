@@ -20,7 +20,7 @@ type FSharpParseFileResults with
                     else
                         // Check if it's an operator
                         match pat with
-                        | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) when id.idText.StartsWith("op_") ->
+                        | SynPat.ParametersOwner(longDotId=LongIdentWithDots([id], _)) when id.idText.StartsWith("op_") ->
                             if Position.posEq id.idRange.Start pos then
                                 Some binding.RangeOfBindingWithRhs
                             else
