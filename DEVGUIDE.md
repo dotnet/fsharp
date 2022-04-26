@@ -45,7 +45,7 @@ Install the latest released [Visual Studio](https://www.visualstudio.com/downloa
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
+You will also need the latest .NET 7 preview SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0) and, if you want to work on `FSharp.Compiler.Service` solution, .NET 6 SDK which can be found [here](https://dotnet.microsoft.com/download/dotnet/6.0).
 
 Building is simple:
 
