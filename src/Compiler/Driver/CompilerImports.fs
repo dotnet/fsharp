@@ -1114,7 +1114,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
                 TryGetILModuleDef = (fun () -> Some ilModule)
-                TypeForwarders = Map.empty
+                TypeForwarders = Dictionary<_,_>(0, HashIdentity.Structural)
                 XmlDocumentationInfo =
                     match tcConfig.xmlDocInfoLoader with
                     | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
