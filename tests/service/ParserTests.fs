@@ -158,7 +158,7 @@ let f (x
     match getSingleDeclInModule parseResults with
     | SynModuleDecl.Let (_, [ SynBinding (headPat = headPat) ], _) ->
         match headPat with
-        | SynPat.LongIdent (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Named _, _), _) ]) -> ()
+        | SynPat.ParametersOwner (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Named _, _), _) ]) -> ()
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 
@@ -171,7 +171,7 @@ let f (x, y
     match getSingleDeclInModule parseResults with
     | SynModuleDecl.Let (_, [ SynBinding (headPat = headPat) ], _) ->
         match headPat with
-        | SynPat.LongIdent (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Tuple _, _), _) ]) -> ()
+        | SynPat.ParametersOwner (argPats=SynArgPats.Pats [ SynPat.FromParseError (SynPat.Paren (SynPat.Tuple _, _), _) ]) -> ()
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 
@@ -182,7 +182,7 @@ let f (x,
 """
 
     match getSingleDeclInModule parseResults with
-    | SynModuleDecl.Let (_, [ SynBinding (headPat = SynPat.LongIdent (argPats = SynArgPats.Pats [ pat ])) ], _) ->
+    | SynModuleDecl.Let (_, [ SynBinding (headPat = SynPat.ParametersOwner (argPats = SynArgPats.Pats [ pat ])) ], _) ->
         match pat with
         | SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _) -> ()
         | _ -> failwith "Unexpected tree"

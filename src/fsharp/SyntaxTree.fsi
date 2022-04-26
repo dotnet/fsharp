@@ -1233,7 +1233,7 @@ type SynPat =
         range: range
 
     /// A long identifier pattern possibly with argument patterns
-    | LongIdent of
+    | ParametersOwner of
         longDotId: LongIdentWithDots *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling

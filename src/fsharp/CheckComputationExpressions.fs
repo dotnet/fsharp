@@ -1237,7 +1237,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
         // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
         | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.Named (ident=id; isThisVal=false) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp)
-        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.LongIdent (longDotId=LongIdentWithDots(id=[id])) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp) ->
+        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.ParametersOwner (longDotId=LongIdentWithDots(id=[id])) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp) ->
 
             let mBind = match spBind with DebugPointAtBinding.Yes m -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), mBind))

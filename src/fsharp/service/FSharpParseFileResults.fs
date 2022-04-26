@@ -87,7 +87,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             match binding with
             | SynBinding(headPat=headPat) ->
                 match headPat with
-                | SynPat.LongIdent (longDotId=longIdentWithDots) ->
+                | SynPat.ParametersOwner (longDotId=longIdentWithDots) ->
                     Some longIdentWithDots.Range
                 | SynPat.As (rhsPat=SynPat.Named (ident=ident; isThisVal=false))
                 | SynPat.Named (ident, false, _, _) ->

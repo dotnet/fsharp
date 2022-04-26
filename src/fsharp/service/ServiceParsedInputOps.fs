@@ -495,7 +495,7 @@ module ParsedInput =
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib(pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
             | SynPat.Or(pat1, pat2, _, _) -> List.tryPick walkPat [pat1; pat2]
-            | SynPat.LongIdent(typarDecls=typars; argPats=ConstructorPats pats; range=r) -> 
+            | SynPat.ParametersOwner(typarDecls=typars; argPats=ConstructorPats pats; range=r) -> 
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () -> 
                     typars 
@@ -1006,10 +1006,10 @@ module ParsedInput =
                             | _ -> defaultTraverse synBinding
 
                         match headPat with
-                        | SynPat.LongIdent(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                        | SynPat.ParametersOwner(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
                             // let fo|o x = ()
                             Some CompletionContext.Invalid
-                        | SynPat.LongIdent(argPats=ctorArgs) ->
+                        | SynPat.ParametersOwner(argPats=ctorArgs) ->
                             match ctorArgs with
                             | SynArgPats.Pats pats ->
                                 pats |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
@@ -1264,7 +1264,7 @@ module ParsedInput =
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [pat1; pat2]
-            | SynPat.LongIdent (longDotId=ident; typarDecls=typars; argPats=ConstructorPats pats) ->
+            | SynPat.ParametersOwner (longDotId=ident; typarDecls=typars; argPats=ConstructorPats pats) ->
                 addLongIdentWithDots ident
                 typars
                 |> Option.iter (fun (ValTyparDecls (typars, constraints, _)) ->

@@ -142,7 +142,7 @@ module NavigationImpl =
                 | _ -> synExpr.Range
 
             match synPat, memberOpt with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
+            | SynPat.ParametersOwner(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | SynMemberKind.ClassConstructor
@@ -158,7 +158,7 @@ module NavigationImpl =
                   | hd :: _ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, enclosingEntityKind, isAbstract, access) ]
-            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), _ -> 
+            | SynPat.ParametersOwner(longDotId=LongIdentWithDots(lid,_); accessibility=access), _ -> 
                 [ createMemberLid(lid, NavigationItemKind.Field, FSharpGlyph.Field, unionRanges (List.head lid).idRange m, enclosingEntityKind, isAbstract, access) ]
             | SynPat.Named (id, _, access, _), _ | SynPat.As(_, SynPat.Named (id, _, access, _), _), _ -> 
                 let glyph = if isMember then FSharpGlyph.Method else FSharpGlyph.Field
@@ -240,8 +240,8 @@ module NavigationImpl =
                              processMembers membs enclosingEntityKind |> snd
                          | _ -> [] 
                      // can happen if one is a getter and one is a setter
-                     | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1))) as binding1)
-                        SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2))) as binding2)] ->
+                     | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid1; extraId=Some(info1))) as binding1)
+                        SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid2; extraId=Some(info2))) as binding2)] ->
                          // ensure same long id
                          assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
                          // ensure one is getter, other is setter
@@ -574,10 +574,10 @@ module NavigateTo =
                     | _ -> NavigableItemKind.ModuleValue
     
             match headPat with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([_; id], _)) ->
+            | SynPat.ParametersOwner(longDotId=LongIdentWithDots([_; id], _)) ->
                 // instance members
                 addIdent kind id false container
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) ->
+            | SynPat.ParametersOwner(longDotId=LongIdentWithDots([id], _)) ->
                 // functions
                 addIdent kind id false container
             | SynPat.Named (id, _, _, _) | SynPat.As(_, SynPat.Named (id, _, _, _), _) ->

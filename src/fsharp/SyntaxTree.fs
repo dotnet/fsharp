@@ -1100,7 +1100,7 @@ type SynPat =
         rhsPat: SynPat *
         range: range
 
-    | LongIdent of
+    | ParametersOwner of
         longDotId: LongIdentWithDots *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
@@ -1166,7 +1166,7 @@ type SynPat =
       | SynPat.Or (range=m)
       | SynPat.Ands (range=m)
       | SynPat.As (range=m)
-      | SynPat.LongIdent (range=m)
+      | SynPat.ParametersOwner (range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)
       | SynPat.Typed (range=m)

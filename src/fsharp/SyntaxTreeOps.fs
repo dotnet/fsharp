@@ -137,7 +137,7 @@ let rec IsControlFlowExpression e =
 //
 // For example
 //    let x = 1 + 1
-// gets extended to inludde the 'let x'.
+// gets extended to include the 'let x'.
 //
 // A corner case: some things that look like simple value bindings get generalized, e.g.
 //    let empty = []
@@ -150,7 +150,7 @@ let IsDebugPointBinding synPat synExpr =
     // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
     let isFunction = 
         match synPat with 
-        | SynPat.LongIdent (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
+        | SynPat.ParametersOwner (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
         | _ -> false
     not isFunction
 
@@ -165,12 +165,12 @@ let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
 let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
-let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
+let mkSynPatMaybeVar lidwd vis m =  SynPat.ParametersOwner (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
 
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.ParametersOwner (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -224,7 +224,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.ParametersOwner(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -599,12 +599,12 @@ module SynInfo =
 
         let infosForExplicitArgs =
             match pat with
-            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
+            | Some(SynPat.ParametersOwner(argPats=SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
             | _ -> []
 
         let explicitArgsAreSimple =
             match pat with
-            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
+            | Some(SynPat.ParametersOwner(argPats=SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
             | _ -> true
 
         let retInfo = InferSynReturnData retInfo

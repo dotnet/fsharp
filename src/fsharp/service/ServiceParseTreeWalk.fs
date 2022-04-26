@@ -639,7 +639,7 @@ module SyntaxTraversal =
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
                 | SynPat.Attrib (p, _, _) -> traversePat path p
-                | SynPat.LongIdent(argPats=args) ->
+                | SynPat.ParametersOwner(argPats=args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
                     | SynArgPats.NamePatPairs (ps, _) ->
@@ -683,8 +683,8 @@ module SyntaxTraversal =
                         match mems |> Seq.toList with
                         | [mem] -> // the typical case, a single member has this range 'r'
                             Some (dive mem r (traverseSynMemberDefn path  traverseInherit))
-                        |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1)))) as mem1
-                            SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
+                        |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid1; extraId=Some(info1)))) as mem1
+                            SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
                             // ensure same long id
                             assert( (lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText) )
                             // ensure one is getter, other is setter
