@@ -1232,9 +1232,20 @@ type SynPat =
         rhsPat: SynPat *
         range: range
 
+    /// Used as namePat in ParametersOwner
+    | Ident of
+        ident: Ident *
+        range: range
+
+    /// Used as namePat in ParametersOwner
+    | LongIdent of
+        longDotId: LongIdentWithDots *
+        range: range
+    
     /// A long identifier pattern possibly with argument patterns
     | ParametersOwner of
-        longDotId: LongIdentWithDots *
+        /// Can be SynPat.Ident or SynPat.LongIdent
+        namePat: SynPat *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"

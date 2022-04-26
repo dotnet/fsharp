@@ -46,6 +46,12 @@ val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimpl
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
+val (|SingleIdentInParametersOwnerNamePat|_|): namePat:SynPat -> Ident option
+
+val (|LongIdentInParametersOwnerNamePat|): namePat:SynPat -> LongIdent
+
+val (|LongIdentWithDotsInParametersOwnerNamePat|): namePat: SynPat -> LongIdentWithDots
+
 /// This affects placement of debug points
 val IsControlFlowExpression: e:SynExpr -> bool
 
@@ -61,7 +67,7 @@ val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
 val mkSynThisPatVar: id:Ident -> SynPat
 
-val mkSynPatMaybeVar: lidwd:LongIdentWithDots -> vis:SynAccess option -> m:range -> SynPat
+val mkSynPatMaybeVar: namePat: SynPat -> vis:SynAccess option -> m:range -> SynPat
 
 val ( |SynPatForConstructorDecl|_| ): x:SynPat -> SynPat option
 
@@ -300,3 +306,5 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+
+val prependIdentInPattern: ident: Ident -> dotm: range -> pat: SynPat -> SynPat

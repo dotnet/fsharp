@@ -41,7 +41,9 @@ module XmlDocParsing =
         | SynPat.QuoteExpr _
         | SynPat.DeprecatedCharRange _
         | SynPat.InstanceMember _
-        | SynPat.FromParseError _ -> []
+        | SynPat.FromParseError _
+        | SynPat.Ident _
+        | SynPat.LongIdent _ -> []
 
     let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput) =
         let indentOf (lineNum: int) =

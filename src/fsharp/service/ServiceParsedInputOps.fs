@@ -1006,7 +1006,7 @@ module ParsedInput =
                             | _ -> defaultTraverse synBinding
 
                         match headPat with
-                        | SynPat.ParametersOwner(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                        | SynPat.ParametersOwner(namePat = pat) when rangeContainsPos pat.Range pos ->
                             // let fo|o x = ()
                             Some CompletionContext.Invalid
                         | SynPat.ParametersOwner(argPats=ctorArgs) ->
@@ -1264,7 +1264,7 @@ module ParsedInput =
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [pat1; pat2]
-            | SynPat.ParametersOwner (longDotId=ident; typarDecls=typars; argPats=ConstructorPats pats) ->
+            | SynPat.ParametersOwner (namePat = LongIdentWithDotsInParametersOwnerNamePat ident; typarDecls=typars; argPats=ConstructorPats pats) ->
                 addLongIdentWithDots ident
                 typars
                 |> Option.iter (fun (ValTyparDecls (typars, constraints, _)) ->

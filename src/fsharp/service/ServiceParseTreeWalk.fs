@@ -683,10 +683,10 @@ module SyntaxTraversal =
                         match mems |> Seq.toList with
                         | [mem] -> // the typical case, a single member has this range 'r'
                             Some (dive mem r (traverseSynMemberDefn path  traverseInherit))
-                        |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid1; extraId=Some(info1)))) as mem1
-                            SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(longDotId=lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
+                        |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(namePat = LongIdentInParametersOwnerNamePat lid1; extraId=Some(info1)))) as mem1
+                            SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.ParametersOwner(namePat = LongIdentInParametersOwnerNamePat lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
                             // ensure same long id
-                            assert( (lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText) )
+                            assert( (lid1,lid2) ||> List.forall2 (fun x y -> x.idText = y.idText) )
                             // ensure one is getter, other is setter
                             assert( (info1.idText="set" && info2.idText="get") ||
                                     (info2.idText="set" && info1.idText="get") )

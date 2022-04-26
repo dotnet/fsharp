@@ -1100,8 +1100,16 @@ type SynPat =
         rhsPat: SynPat *
         range: range
 
-    | ParametersOwner of
+    | Ident of
+        ident: Ident *
+        range: range
+
+    | LongIdent of
         longDotId: LongIdentWithDots *
+        range: range
+    
+    | ParametersOwner of
+        namePat: SynPat *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
@@ -1166,6 +1174,8 @@ type SynPat =
       | SynPat.Or (range=m)
       | SynPat.Ands (range=m)
       | SynPat.As (range=m)
+      | SynPat.Ident(range=m)
+      | SynPat.LongIdent(range=m)
       | SynPat.ParametersOwner (range=m)
       | SynPat.ArrayOrList (range=m)
       | SynPat.Tuple (range=m)

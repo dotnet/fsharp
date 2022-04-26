@@ -189,7 +189,7 @@ let idOfPat (parseState:IParseState) m p =
     | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
         mkSynId r "_"
     | SynPat.Named (id, false, _, _) -> id
-    | SynPat.ParametersOwner(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
+    | SynPat.ParametersOwner(namePat=SingleIdentInParametersOwnerNamePat id; typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
 let checkForMultipleAugmentations m a1 a2 = 
@@ -346,7 +346,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExceptionDefnRepr> exconCore
 %type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
 %type <LongIdentWithDots> path
-%type <LongIdentWithDots> pathOp
+%type <SynPat> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
 %type <range * range option * bool     * SynType list * range list * range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
@@ -1880,7 +1880,7 @@ memberCore:
                        let getset = 
                              let rec go p = 
                                  match p with 
-                                 | SynPat.ParametersOwner (longDotId=LongIdentWithDots([id], _)) -> id.idText
+                                 | SynPat.ParametersOwner (namePat=SingleIdentInParametersOwnerNamePat id) -> id.idText
                                  | SynPat.Named (nm, _, _, _) | SynPat.As (_, SynPat.Named (nm, _, _, _), _) -> nm.idText
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
@@ -1989,10 +1989,10 @@ memberCore:
   
                      let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                  
-                     let lidOuter, lidVisOuter = 
+                     let namePatOuter, lidVisOuter = 
                          match bindingPatOuter with 
-                         | SynPat.ParametersOwner (lid, _, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  lid, lidVisOuter
-                         | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> LongIdentWithDots([id], []), visOuter
+                         | SynPat.ParametersOwner (namePat, _, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  namePat, lidVisOuter
+                         | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> SynPat.Ident(id, m), visOuter
                          | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
                      // Merge the visibility from the outer point with the inner point, e.g.
@@ -2009,7 +2009,7 @@ memberCore:
                      // Replace the "get" or the "set" with the right name
                      let rec go p = 
                          match p with 
-                         | SynPat.ParametersOwner (longDotId=LongIdentWithDots([id], _); typarDecls=tyargs; argPats=SynArgPats.Pats args; accessibility=lidVisInner; range=m) ->  
+                         | SynPat.ParametersOwner (namePat=SingleIdentInParametersOwnerNamePat id; typarDecls=tyargs; argPats=SynArgPats.Pats args; accessibility=lidVisInner; range=m) ->  
                              // Setters have all arguments tupled in their internal form, though they don't 
                              // appear to be tupled from the syntax. Somewhat unfortunate
                              let args = 
@@ -2025,9 +2025,9 @@ memberCore:
                                          raiseParseErrorAt m (FSComp.SR.parsSetSyntax())
                                  else 
                                      args
-                             SynPat.ParametersOwner (lidOuter, withPropertyKeyword, Some(id), tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m)
+                             SynPat.ParametersOwner (namePatOuter, withPropertyKeyword, Some(id), tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m)
                          | SynPat.Named (nm, _, lidVisInner, m)
-                         | SynPat.As (_, SynPat.Named (nm, _, lidVisInner, m), _) -> SynPat.ParametersOwner (lidOuter, None, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
+                         | SynPat.As (_, SynPat.Named (nm, _, lidVisInner, m), _) -> SynPat.ParametersOwner (namePatOuter, None, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
                          | SynPat.Typed (p, ty, m) ->  SynPat.Typed(go p, ty, m)
                          | SynPat.Attrib (p, attribs, m) ->  SynPat.Attrib(go p, attribs, m)
                          | SynPat.Wild(m) ->  SynPat.Wild(m)
@@ -2128,7 +2128,8 @@ classDefnMember:
         let expr = $7
         let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
         let vis = $2 
-        let declPat = SynPat.ParametersOwner (LongIdentWithDots([mkSynId (rhs parseState 3) "new"], []), None, None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
+        let mNew = rhs parseState 3
+        let declPat = SynPat.ParametersOwner (SynPat.Ident(mkSynId mNew "new", mNew), None, None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
         let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
@@ -2174,12 +2175,15 @@ atomicPatternLongIdent:
   | UNDERSCORE DOT pathOp
      { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
           raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
-       let (LongIdentWithDots(lid, dotms)) = $3
-       (None, LongIdentWithDots(ident("_", rhs parseState 1)::lid, rhs parseState 2::dotms)) }
+
+       let underscore = ident("_", rhs parseState 1)
+       let dotm = rhs parseState 2
+       None, prependIdentInPattern underscore dotm $3 }
 
   | GLOBAL DOT pathOp
-     { let (LongIdentWithDots(lid, dotms)) = $3
-       (None, LongIdentWithDots(ident(MangledGlobalName, rhs parseState 1) :: lid, rhs parseState 2 :: dotms)) }
+     { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
+       let dotm = rhs parseState 2
+       None, prependIdentInPattern globalIdent dotm $3 }
 
   | pathOp
      { (None, $1) }
@@ -2187,8 +2191,10 @@ atomicPatternLongIdent:
   | access UNDERSCORE DOT pathOp
      { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
           raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedSymbolDot())
-       let (LongIdentWithDots(lid, dotms)) = $4
-       (Some($1), LongIdentWithDots(ident("_", rhs parseState 2)::lid, rhs parseState 3::dotms)) }  
+
+       let underscore = ident("_", rhs parseState 2)
+       let dotm = rhs parseState 3
+       Some($1), prependIdentInPattern underscore dotm $4 }  
 
   | access pathOp
      { (Some($1), $2) }
@@ -2882,7 +2888,7 @@ cPrototype:
                 SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
-            let bindingPat = SynPat.ParametersOwner (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let bindingPat = SynPat.ParametersOwner (SynPat.Ident(nm, nm.idRange), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding =
@@ -3254,7 +3260,8 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.ParametersOwner (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons, []), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ParametersOwner (SynPat.Ident(ident(opNameCons, mColonColon), mColonColon), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
 
   | tuplePatternElements  %prec pat_tuple 
       { SynPat.Tuple(false, List.rev $1, lhs parseState) }
@@ -3386,10 +3393,16 @@ atomicPattern:
       { SynPat.OptionalVal($2, lhs parseState) } 
 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
-      { let vis, lidwd = $1 
-        if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
-        then mkSynPatMaybeVar lidwd vis (lhs parseState)
-        else mkSynPatVar vis (List.head lidwd.Lid) }
+      { let vis, pat = $1
+        let isSingle, headIdent =
+            match pat with
+            | SynPat.Ident(id, _) -> true, id
+            | SynPat.LongIdent(LongIdentWithDots(id = idents), _) -> isNilOrSingleton idents, idents.[0]
+            | _ -> true, ident("", rhs parseState 1)
+
+        if not isSingle || String.isLeadingIdentifierCharacterUpperCase headIdent.idText
+        then mkSynPatMaybeVar pat vis (lhs parseState)
+        else mkSynPatVar vis headIdent }
 
   | constant 
       { SynPat.Const (fst $1, snd $1) }
@@ -3493,7 +3506,8 @@ parenPattern:
         SynPat.Attrib($2, $1, lhsm) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.ParametersOwner (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons, []), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ParametersOwner (SynPat.Ident(ident(opNameCons,mColonColon), mColonColon), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
 
   | constrPattern { $1 }
 
@@ -5713,16 +5727,18 @@ identOrOp:
 /* Note, only used in atomicPatternLongIdent */
 pathOp: 
   | ident  
-     { LongIdentWithDots([$1], []) }
+     { SynPat.Ident($1, $1.idRange) }
 
   | opName 
-     { LongIdentWithDots([$1], []) }
+     { SynPat.Ident($1, $1.idRange) }
 
   | ident DOT pathOp 
-     { let (LongIdentWithDots(lid, dotms)) = $3 in LongIdentWithDots($1 :: lid, rhs parseState 2 :: dotms) } 
+     { prependIdentInPattern $1 (rhs parseState 2) $3 } 
 
   | ident DOT error  
-     { (* silent recovery *) LongIdentWithDots([$1], [rhs parseState 2]) }  
+     { (* silent recovery *) 
+       let m = rhs2 parseState 1 2
+       SynPat.LongIdent(LongIdentWithDots([$1], [rhs parseState 2]), m) }  
 
 
 /* nameop is identOrOp not used as part of a path */

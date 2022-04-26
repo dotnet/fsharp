@@ -70,6 +70,24 @@ let (|SingleIdent|_|) inp =
     | SynExpr.Ident id -> Some id
     | _ -> None
 
+let (|SingleIdentInParametersOwnerNamePat|_|) (namePat:SynPat) =
+    match namePat with
+    | SynPat.Ident(ident, _)
+    | SynPat.LongIdent(longDotId = LongIdentWithDots([ident], _)) -> Some ident
+    | _ -> None
+
+let (|LongIdentInParametersOwnerNamePat|) (namePat:SynPat) =
+    match namePat with
+    | SynPat.Ident(ident, _) -> [ident]
+    | SynPat.LongIdent(longDotId = LongIdentWithDots(lids, _)) -> lids
+    | _ -> []
+
+let (|LongIdentWithDotsInParametersOwnerNamePat|) (namePat: SynPat) =
+    match namePat with
+    | SynPat.Ident(ident, _) -> LongIdentWithDots([ident], [])
+    | SynPat.LongIdent(longIdentWithDots, _) -> longIdentWithDots
+    | _ -> LongIdentWithDots([], [])
+
 let (|SynBinOp|_|) input =
     match input with
     | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
@@ -165,12 +183,12 @@ let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
 let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
-let mkSynPatMaybeVar lidwd vis m =  SynPat.ParametersOwner (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
+let mkSynPatMaybeVar namePat vis m =  SynPat.ParametersOwner (namePat, None, None, None, SynArgPats.Pats [], vis, m)
 
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.ParametersOwner (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.ParametersOwner (namePat=SingleIdentInParametersOwnerNamePat _; argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -224,7 +242,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.ParametersOwner(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.ParametersOwner(namePat=SingleIdentInParametersOwnerNamePat id; typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -888,3 +906,16 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
+
+let prependIdentInPattern (ident: Ident) (dotm: range) (pat: SynPat): SynPat =
+    let m = unionRanges ident.idRange pat.Range
+
+    match pat with
+    | SynPat.Ident (ident=lastIdent) ->
+        SynPat.LongIdent(LongIdentWithDots([ ident; lastIdent ], [ dotm ]), m)
+    | SynPat.LongIdent(LongIdentWithDots(lids, dots), _) ->
+        SynPat.LongIdent(LongIdentWithDots(ident::lids, dotm::dots), m)
+    | _ ->
+        // TODO: create specific error?
+        errorR(Error((9001, "Unexpected pattern in prependIdentInPattern"), m))
+        SynPat.Const(SynConst.Unit, m)

@@ -480,8 +480,8 @@ module Structure =
               
                   let collapse =
                     match synPat with
-                    | SynPat.ParametersOwner(longDotId=longIdent) ->
-                       Range.endToEnd longIdent.Range d.Range
+                    | SynPat.ParametersOwner(namePat = pat) ->
+                       Range.endToEnd pat.Range d.Range
                     | _ -> Range.endToEnd bindingRange d.Range
 
                   rcheck Scope.Member Collapse.Below range collapse
