@@ -18,6 +18,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -169,14 +175,9 @@
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
+    <Compile Include="Miscellaneous\ListLiterals.fs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
