@@ -43,9 +43,6 @@
     <Compile Include="..\service\PerfTests.fs">
       <Link>PerfTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\NojafTests.fs">
-      <Link>NojafTests.fs</Link>
-    </Compile>
     <Compile Include="..\service\InteractiveCheckerTests.fs">
       <Link>InteractiveCheckerTests.fs</Link>
     </Compile>
