@@ -8,6 +8,9 @@
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net6.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <!-- NU1504 reports duplicate package download for various packages.
+         Disabling this warning until https://github.com/dotnet/sdk/issues/24747 is fixed.-->
+    <NoWarn>$(NoWarn);NU1504</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
