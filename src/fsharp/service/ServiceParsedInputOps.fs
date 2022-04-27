@@ -852,11 +852,11 @@ module ParsedInput =
                 setters
             | _ -> emptyStringSet
 
-        let endOfLastIdent (lid: LongIdentWithDots) = 
-            let last = List.last lid.Lid
+        let endOfLastIdent (lid: LongIdentWithTrivia) = 
+            let last = List.last lid.LongIdent
             last.idRange.End
 
-        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithDots) =
+        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithTrivia) =
             match mClosing with
             | Some m -> m.End
             | None -> endOfLastIdent lid

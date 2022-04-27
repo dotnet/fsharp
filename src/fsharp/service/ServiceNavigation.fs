@@ -243,7 +243,7 @@ module NavigationImpl =
                      | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1))) as binding1)
                         SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2))) as binding2)] ->
                          // ensure same long id
-                         assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
+                         assert((lid1.LongIdent,lid2.LongIdent) ||> List.forall2 (fun x y -> x.idText = y.idText))
                          // ensure one is getter, other is setter
                          assert((info1.idText = "set" && info2.idText = "get") ||
                                 (info2.idText = "set" && info1.idText = "get"))

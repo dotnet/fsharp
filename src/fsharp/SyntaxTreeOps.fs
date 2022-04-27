@@ -888,3 +888,8 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
+
+let prependIdentInLongIdentWithTrivia (ident, identTrivia) dotm lid =
+    match lid with
+    | LongIdentWithTrivia(lid, dots, trivia) ->
+        LongIdentWithTrivia(ident :: lid, dotm :: dots, identTrivia :: trivia)

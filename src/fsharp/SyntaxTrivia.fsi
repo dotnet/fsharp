@@ -5,6 +5,15 @@ namespace rec FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
+type IdentTrivia =
+    /// The ident originally had a different notation
+    | OriginalNotation of text: string
+    /// The ident originally had a different notation and parenthesis
+    | OriginalNotationWithParen of lpr: range * text:string * rpr: range
+    /// The ident had parenthesis
+    | HasParenthesis of lpr: range * rpr: range
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
     | If of expr:IfDirectiveExpression * range:range
     | Else of range:range

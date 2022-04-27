@@ -7663,7 +7663,7 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, m
                         // we assume that parse errors were already reported
                         raise (ReportedError None)
 
-                    yield (List.frontAndBack lidwd.Lid, v)
+                    yield (List.frontAndBack lidwd.LongIdent, v)
             ]
 
         match flds with

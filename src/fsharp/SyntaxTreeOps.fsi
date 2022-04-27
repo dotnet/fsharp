@@ -42,7 +42,7 @@ val mkSynSimplePatVar: isOpt:bool -> id:Ident -> SynSimplePat
 val mkSynCompGenSimplePatVar: id:Ident -> SynSimplePat
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
-val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * range) option
+val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithTrivia * SynSimplePatAlternativeIdInfo ref option * range) option
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
@@ -61,7 +61,7 @@ val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
 val mkSynThisPatVar: id:Ident -> SynPat
 
-val mkSynPatMaybeVar: lidwd:LongIdentWithDots -> vis:SynAccess option -> m:range -> SynPat
+val mkSynPatMaybeVar: lidwd:LongIdentWithTrivia -> vis:SynAccess option -> m:range -> SynPat
 
 val ( |SynPatForConstructorDecl|_| ): x:SynPat -> SynPat option
 
@@ -300,3 +300,5 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+
+val prependIdentInLongIdentWithTrivia: ident: IdentWithTrivia -> dotm: range -> lid: LongIdentWithTrivia -> LongIdentWithTrivia
