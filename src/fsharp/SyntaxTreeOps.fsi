@@ -31,7 +31,7 @@ val mkSynId: m:range -> s:string -> Ident
 
 val pathToSynLid: m:range -> p:string list -> Ident list
 
-val mkSynIdGet: m:range -> n:string -> SynExpr
+val mkSynIdGet: m:range -> n:string -> IdentTrivia option -> SynExpr
 
 val mkSynLidGet: m:range -> path:string list -> n:string -> SynExpr
 
@@ -142,7 +142,7 @@ val mkSynDelay: m:range -> e:SynExpr -> SynExpr
 
 val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
-val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
+val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:IdentWithTrivia -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 

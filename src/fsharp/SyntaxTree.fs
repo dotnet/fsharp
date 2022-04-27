@@ -682,7 +682,7 @@ type SynExpr =
         trivia: SynExprIfThenElseTrivia
 
     | Ident of
-        ident: Ident
+        ident: IdentWithTrivia
 
     | LongIdent of
         isOptional: bool *
@@ -946,7 +946,7 @@ type SynExpr =
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
-        | SynExpr.Ident id -> id.idRange
+        | SynExpr.Ident (id,_) -> id.idRange
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -1453,7 +1453,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1469,7 +1469,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1558,7 +1558,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
@@ -1570,7 +1570,7 @@ type SynValSig =
         withKeyword: range option *
         range: range
 
-    member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange
+    member x.RangeOfId  = let (SynValSig(ident=(id, _))) = x in id.idRange
 
     member x.SynInfo = let (SynValSig(arity=v)) = x in v
 

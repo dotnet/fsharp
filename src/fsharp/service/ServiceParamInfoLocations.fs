@@ -58,7 +58,7 @@ module internal ParameterLocationsImpl =
     let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
-        | SynExpr.Ident id -> Some ([id.idText], id.idRange)
+        | SynExpr.Ident (id,_) -> Some ([id.idText], id.idRange)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
@@ -80,14 +80,14 @@ module internal ParameterLocationsImpl =
         // f(x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
-                                    SynExpr.Ident n, 
+                                    SynExpr.Ident (op,_), 
+                                    SynExpr.Ident (n,_), 
                                     _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
+                                    SynExpr.Ident (op,_), 
                                     SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
@@ -201,7 +201,7 @@ module internal ParameterLocationsImpl =
                     | _ -> traverseSynExpr synExpr
 
             // EXPR<  = error recovery of a form of half-written TypeApp
-            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
+            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.Ident (op,_), synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
                 // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with

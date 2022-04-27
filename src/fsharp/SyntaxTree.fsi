@@ -823,7 +823,7 @@ type SynExpr =
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
     | Ident of
-        ident: Ident
+        ident: IdentWithTrivia
 
     /// F# syntax: ident.ident...ident
     ///
@@ -1588,7 +1588,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1604,7 +1604,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1706,7 +1706,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: IdentWithTrivia *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
