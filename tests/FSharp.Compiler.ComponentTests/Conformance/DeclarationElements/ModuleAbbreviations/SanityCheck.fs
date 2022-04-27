@@ -17,4 +17,4 @@ module Abbreviated_A_B_C = A.B.C
 let blue = int Abbreviated_A_B_C.X.Blue
 let red = int Abbreviated_A_B.C.X.Red
 
-if (blue = 2) && (red = 1) then 0 else 1
+if (blue = 2) && (red = 1) then () else failwith "Failed: 1"
