@@ -7,6 +7,9 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
+    <!-- NU1504 reports duplicate package download for various packages.
+         Disabling this warning until https://github.com/dotnet/sdk/issues/24747 is fixed.-->
+    <NoWarn>$(NoWarn);NU1504</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
