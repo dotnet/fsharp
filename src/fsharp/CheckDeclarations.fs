@@ -37,7 +37,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -264,7 +264,7 @@ let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) =
         g.isInteractive &&
         not (isNil rest) &&
         p.idText.StartsWithOrdinal FsiDynamicModulePrefix && 
-        p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall Char.IsDigit 
+        p.idText[FsiDynamicModulePrefix.Length..] |> String.forall Char.IsDigit 
         -> Some(p, rest)
     | _ -> None
 
@@ -628,7 +628,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
                 //    Length of reference = longId.Length
                 // So the reference is a "shortened" reference if (p.Length + 1) - 1 = longId.Length
                 (p.Length + 1) - 1 = longId.Length && 
-                fst p.[0] = "Microsoft" 
+                fst p[0] = "Microsoft" 
 
         modref.IsNamespace && 
         p.Length >= longId.Length &&
@@ -2065,7 +2065,7 @@ module MutRecBindingChecking =
 
                         | Phase2BMember idx ->
                             // Phase2C: Fixup member bindings 
-                            let generalizedBinding = generalizedBindingsMap.[idx] 
+                            let generalizedBinding = generalizedBindingsMap[idx] 
                             let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
                             let pgbrind = FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind
                             Phase2CMember pgbrind)
@@ -2074,7 +2074,7 @@ module MutRecBindingChecking =
             // Phase2C: Fixup let bindings 
             (fun bindIdxs -> 
                     [ for idx in bindIdxs do 
-                        let generalizedBinding = generalizedBindingsMap.[idx] 
+                        let generalizedBinding = generalizedBindingsMap[idx] 
                         let vxbind = TcLetrecAdjustMemberForSpecialVals cenv generalizedBinding
                         yield FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock vxbind ])
 
@@ -2784,7 +2784,7 @@ module TyconConstraintInference =
 
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
-                   let tycon, structuralTypes = tab.[tyconStamp] 
+                   let tycon, structuralTypes = tab[tyconStamp] 
 
                    if g.compilingFslib && 
                       AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && 
@@ -2836,7 +2836,7 @@ module TyconConstraintInference =
 
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
-            let tycon, _ = tab.[tyconStamp] 
+            let tycon, _ = tab[tyconStamp] 
             for tp in tycon.Typars(tycon.Range) do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetComparisonDependsOn true
@@ -2912,7 +2912,7 @@ module TyconConstraintInference =
             let newSet = 
                 assumedTycons |> Set.filter (fun tyconStamp -> 
 
-                   let tycon, structuralTypes = tab.[tyconStamp] 
+                   let tycon, structuralTypes = tab[tyconStamp] 
 
                    if g.compilingFslib && 
                       AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon && 
@@ -2965,7 +2965,7 @@ module TyconConstraintInference =
 
         // OK, we're done, Record the results for the type variable which provide the support
         for tyconStamp in uneliminatedTycons do
-            let tycon, _ = tab.[tyconStamp] 
+            let tycon, _ = tab[tyconStamp] 
             for tp in tycon.Typars(tycon.Range) do
                 if assumedTyparsActual.Contains(tp.Stamp) then 
                     tp.SetEqualityDependsOn true
@@ -3230,8 +3230,8 @@ module EstablishTypeDefinitionCores =
               | Some spats -> 
                   let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
                   for arg in ctorArgNames do
-                      let ty = names.[arg].Type
-                      let m = names.[arg].Ident.idRange
+                      let ty = names[arg].Type
+                      let m = names[arg].Ident.idRange
                       if not (isNil (ListSet.subtract typarEq (freeInTypeLeftToRight g false ty) tycon.TyparsNoRange)) then
                           errorR(Error(FSComp.SR.tcStructsMustDeclareTypesOfImplicitCtorArgsExplicitly(), m))   
                       yield (ty, m)
@@ -3249,7 +3249,10 @@ module EstablishTypeDefinitionCores =
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
         else ModuleOrType
 
-    let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
+    let AdjustModuleName modKind nm =
+        match modKind with
+        | FSharpModuleWithSuffix -> nm+FSharpModuleSuffix
+        | _ -> nm
 
     let InstanceMembersNeedSafeInitCheck (cenv: cenv) m thisTy = 
         let g = cenv.g
@@ -3271,22 +3274,33 @@ module EstablishTypeDefinitionCores =
         else
             NoSafeInitInfo
 
+    // We suppress all error reporting for this pre-analysis of the attributes,
+    // in case some attributes involve constructs not already in scope - we are
+    // only looking for the 'Measure' attributes, then we discard the generated type parameters
+    let TyparsAllHaveMeasureDeclEarlyCheck cenv env (TyparDecls synTypars) =
+        suppressErrorReporting (fun () -> 
+            synTypars|> List.forall (fun synTypar ->
+                try
+                    let (SynTyparDecl(Attributes synAttrs, _)) = synTypar
+                    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
+                    HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
+                with _ -> false))
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
                 match d with 
-                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(_, TyparDecls typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
-                    if isAtOriginalTyconDefn && (TcTyparDecls cenv env typars |> List.forall (fun p -> p.Kind = TyparKind.Measure)) then 
+                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=synTypars; longId=ids), _, _, _, _, isAtOriginalTyconDefn), _) -> 
+                    if isAtOriginalTyconDefn && TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then 
                         yield (List.last ids).idText
                 | _ -> () ]
          |> set
 
-    let TypeNamesInNonMutRecDecls defs =
+    let TypeNamesInNonMutRecDecls cenv env defs =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs, _) -> 
-                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=TyparDecls typars; longId=ids); typeRepr=trepr) in typeSpecs do 
-                        if isNil typars then
+                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=synTypars; longId=ids); typeRepr=trepr) in typeSpecs do 
+                        if TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then
                             match trepr with 
                             | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> ()
                             | _ -> yield (List.last ids).idText
@@ -3513,7 +3527,7 @@ module EstablishTypeDefinitionCores =
         tycon.entity_tycon_repr <- repr
         attrs, getFinalAttrs
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
     let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
@@ -3661,7 +3675,7 @@ module EstablishTypeDefinitionCores =
                     // Record the details so we can build correct ILTypeDefs during static linking rewriting
                     if not isSuppressRelocate then 
                         match provAssemStaticLinkInfoOpt with 
-                        | Some provAssemStaticLinkInfo -> provAssemStaticLinkInfo.ILTypeMap.[ilOrigTypeRef] <- ilTgtTyRef
+                        | Some provAssemStaticLinkInfo -> provAssemStaticLinkInfo.ILTypeMap[ilOrigTypeRef] <- ilTgtTyRef
                         | None -> ()
                        
                     ProviderGeneratedType(ilOrigTypeRef, ilTgtTyRef, doNestedTypes nestedTyRef st)
@@ -3681,7 +3695,7 @@ module EstablishTypeDefinitionCores =
 
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
                 match rootProvAssemStaticLinkInfoOpt with 
-                | Some provAssemStaticLinkInfo -> provAssemStaticLinkInfo.ILTypeMap.[ilOrigRootTypeRef] <- ilTgtRootTyRef
+                | Some provAssemStaticLinkInfo -> provAssemStaticLinkInfo.ILTypeMap[ilOrigRootTypeRef] <- ilTgtRootTyRef
                 | None -> ()
 
                 if not inSig then 
@@ -3739,7 +3753,7 @@ module EstablishTypeDefinitionCores =
             
             | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, m) ->
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
               // for a generative provided type definition, then there is no more work to do).
               if (match tycon.entity_tycon_repr with TNoRepr -> true | _ -> false) then 
@@ -4097,8 +4111,8 @@ module EstablishTypeDefinitionCores =
                               if tycon.IsFSharpStructOrEnumTycon then 
                                   let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
                                   for arg in ctorArgNames do
-                                      let ty = names.[arg].Type
-                                      let id = names.[arg].Ident
+                                      let ty = names[arg].Type
+                                      let id = names[arg].Ident
                                       let taccess = TAccess [envinner.eAccessPath]
                                       yield Construct.NewRecdField false None id false ty false false [] [] XmlDoc.Empty taccess true ]
                     
@@ -4644,7 +4658,7 @@ module TcDeclarations =
             let _, tcref =
                 match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res -> res
-                | res when inSig && longPath.Length = 1 ->
+                | res when inSig && List.isSingleton longPath ->
                     errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
                     ForceRaise res
                 | res -> ForceRaise res
@@ -4684,7 +4698,7 @@ module TcDeclarations =
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
-                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 if not (typarsAEquiv g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
@@ -5629,12 +5643,10 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
             if isNil otherDefs then unionRanges firstDef.Range endm
             else unionRanges (List.head otherDefs).Range endm
 
-        // Possibly better:
-        //let scopem = unionRanges h1.Range.EndRange endm
-        
-        let! firstDef', env', envAtEnd' = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+        let! firstDef, env, envAtEnd = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+
         // tail recursive 
-        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
+        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef :: defsSoFar), env, envAtEnd) otherDefs
     | [] -> 
         return List.rev defsSoFar, envAtEnd
  }
@@ -5746,7 +5758,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath doc
 
     // Collect the type names so we can implicitly add the compilation suffix to module names
-    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls defs
+    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls cenv env defs
 
     match mutRecNSInfo with 
     | Some _ -> 
@@ -5771,7 +5783,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
     
 
 //--------------------------------------------------------------------------
-// TypeCheckOneImplFile - Typecheck all the namespace fragments in a file.
+// CheckOneImplFile - Typecheck all the namespace fragments in a file.
 //-------------------------------------------------------------------------- 
 
 
@@ -5954,7 +5966,7 @@ let MakeInitialEnv env =
 
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
-let TypeCheckOneImplFile 
+let CheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
        (g, niceNameGen, amap,
         topCcu,
@@ -6088,7 +6100,7 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+let CheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {     
     let cenv = 
         cenv.Create 

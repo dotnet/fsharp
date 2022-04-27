@@ -170,6 +170,8 @@ let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 [<Literal>]
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 [<Literal>]
+let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -388,7 +390,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let key = (enclosingEntity.LastItemMangledName, memberParentName, compiledName, argCount)
       assert not (v_knownIntrinsics.ContainsKey(key))
       if isKnown && not (v_knownIntrinsics.ContainsKey(key)) then
-          v_knownIntrinsics.[key] <- ValRefForIntrinsic vref
+          v_knownIntrinsics[key] <- ValRefForIntrinsic vref
       vref
 
   let makeIntrinsicValRef info = makeIntrinsicValRefGeneral true info
@@ -426,7 +428,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let mkArrayType rank (ty : TType) : TType =
       assert (rank >= 1 && rank <= 32)
-      TType_app(v_il_arr_tcr_map.[rank - 1], [ty], v_knownWithoutNull)
+      TType_app(v_il_arr_tcr_map[rank - 1], [ty], v_knownWithoutNull)
 
   let mkLazyTy ty = TType_app(lazy_tcr, [ty], v_knownWithoutNull)
 
@@ -1002,7 +1004,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val map_tcr_canon = mk_MFCollections_tcref   fslibCcu "Map`2"
   member _.lazy_tcr_canon = lazy_tcr
   member val refcell_tcr_nice = v_refcell_tcr_nice
-  member val array_tcr_nice = v_il_arr_tcr_map.[0]
+  member val array_tcr_nice = v_il_arr_tcr_map[0]
   member _.option_tcr_nice = v_option_tcr_nice
   member _.valueoption_tcr_nice = v_valueoption_tcr_nice
   member _.list_tcr_nice = v_list_tcr_nice
@@ -1197,7 +1199,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val system_Nullable_tcref = v_nullable_tcr
   member val system_GenericIComparable_tcref = findSysTyconRef sys "IComparable`1"
   member val system_GenericIEquatable_tcref = findSysTyconRef sys "IEquatable`1"
-  member val mk_IComparable_ty = mkSysNonGenericTy sys "IComparable"
+  member val mk_IComparable_ty    = mkSysNonGenericTy sys "IComparable"
+  member val mk_Attribute_ty = mkSysNonGenericTy sys "Attribute"
   member val system_LinqExpression_tcref = v_linqExpression_tcr
 
   member val mk_IStructuralComparable_ty = mkSysNonGenericTy sysCollections "IStructuralComparable"
@@ -1245,7 +1248,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val iltyp_ValueType = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
   member val iltyp_RuntimeFieldHandle = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
-  member val iltyp_RuntimeTypeHandle = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
+  member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
+  member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
 
 
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
@@ -1284,7 +1288,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
-  member val attrib_SkipLocalsInitAttribute = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
+  member val attrib_ReferenceAssemblyAttribute = findSysAttrib "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
+  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
@@ -1676,7 +1681,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let memberName =
           let nm = t.MemberName
           let coreName =
-              if nm.StartsWith "op_" then nm.[3..]
+              if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm

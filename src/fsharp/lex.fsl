@@ -707,51 +707,59 @@ rule token args skip = parse
  | ('#' anywhite* | "#line" anywhite+ ) digit+ anywhite* ('@'? "\"" [^'\n''\r''"']+ '"')? anywhite* newline
      {  let pos = lexbuf.EndPos
         if skip then
-          let s = lexeme lexbuf
-          let rec parseLeadingDirective n =
-            match s.[n] with
-            | c when c >= 'a' && c <= 'z' -> parseLeadingDirective (n+1)
-            | _ -> parseLeadingWhitespace n // goto the next state
+            let s = lexeme lexbuf
+            let rec parseLeadingDirective n =
+                match s.[n] with
+                | c when c >= 'a' && c <= 'z' -> parseLeadingDirective (n+1)
+                | _ -> parseLeadingWhitespace n // goto the next state
 
-          and parseLeadingWhitespace n =
-            match s.[n] with
-            | ' ' | '\t' -> parseLeadingWhitespace (n+1)
-            | _ -> parseLineNumber n n // goto the next state
+            and parseLeadingWhitespace n =
+                match s.[n] with
+                | ' ' | '\t' -> parseLeadingWhitespace (n+1)
+                | _ -> parseLineNumber n n // goto the next state
 
-          and parseLineNumber start n =
-            match s.[n] with
-            | c when c >= '0' && c <= '9' -> parseLineNumber start (n+1)
-            | _ -> let text =  (String.sub s start (n-start))
-                   let lineNumber =
-                       try int32 text
-                       with err -> errorR(Error(FSComp.SR.lexInvalidLineNumber(text), lexbuf.LexemeRange)); 0
-                   lineNumber, parseWhitespaceBeforeFile n // goto the next state
+            and parseLineNumber start n =
+                match s.[n] with
+                | c when c >= '0' && c <= '9' -> parseLineNumber start (n+1)
+                | _ -> 
+                    let text = String.sub s start (n-start)
 
-          and parseWhitespaceBeforeFile n =
-            match s.[n] with
-            | ' ' | '\t' | '@' -> parseWhitespaceBeforeFile (n+1)
-            | '"' -> Some (parseFile (n+1) (n+1))
-            | _ -> None
+                    let lineNumber =
+                        try
+                            int32 text
+                        with err ->
+                            errorR(Error(FSComp.SR.lexInvalidLineNumber(text), lexbuf.LexemeRange))
+                            0
 
-          and parseFile start n =
-            match s.[n] with
-            | '"' -> String.sub s start (n-start)
-            | _ -> parseFile start (n+1)
+                    lineNumber, parseWhitespaceBeforeFile n // goto the next state
 
-          // Call the parser
-          let line,file = parseLeadingDirective 1
+            and parseWhitespaceBeforeFile n =
+                match s.[n] with
+                | ' ' | '\t' | '@' -> parseWhitespaceBeforeFile (n+1)
+                | '"' -> Some (parseFile (n+1) (n+1))
+                | _ -> None
 
-          // Construct the new position
-          if args.applyLineDirectives then
-              lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
-          else
-              // add a newline when we don't apply a directive since we consumed a newline getting here
-              newline lexbuf
-          token args skip lexbuf
+            and parseFile start n =
+                match s.[n] with
+                | '"' -> String.sub s start (n-start)
+                | _ -> parseFile start (n+1)
+
+            // Call the parser
+            let line, file = parseLeadingDirective 1
+
+            // Construct the new position
+            if args.applyLineDirectives then
+                lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> FileIndex.fileIndexOfFile f | None -> pos.FileIndex), line)
+            else
+                // add a newline when we don't apply a directive since we consumed a newline getting here
+                newline lexbuf
+
+            token args skip lexbuf
         else
-          // add a newline when we don't apply a directive since we consumed a newline getting here
-          newline lexbuf
-          HASH_LINE (LexCont.Token (args.ifdefStack, args.stringNest)) }
+            // add a newline when we don't apply a directive since we consumed a newline getting here
+            newline lexbuf
+            HASH_LINE (LexCont.Token (args.ifdefStack, args.stringNest))
+     }
 
  | "<@" { checkExprOp lexbuf; LQUOTE ("<@ @>", false) }
 
@@ -941,7 +949,7 @@ rule token args skip = parse
 
  | anywhite* "#if" anywhite+ anystring
    { let m = lexbuf.LexemeRange
-     let lookup id = List.contains id args.defines
+     let lookup id = List.contains id args.conditionalDefines
      let lexed = lexeme lexbuf
      let isTrue, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
@@ -1019,7 +1027,7 @@ and ifdefSkip n m args skip = parse
        else ifdefSkip n m args skip lexbuf
      else
        let lexed = lexeme lexbuf
-       let lookup id = List.contains id args.defines
+       let lookup id = List.contains id args.conditionalDefines
        let _, expr = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
        LexbufIfdefStore.SaveIfHash(lexbuf, lexed, expr, m)
        let tok = INACTIVECODE(LexCont.EndLine(args.ifdefStack, args.stringNest, LexerEndlineContinuation.Skip(n+1, m)))
@@ -1431,7 +1439,8 @@ and singleLineComment cargs skip = parse
            token args skip lexbuf }
 
  | eof
-     { let _, _n, mStart, mEnd, args = cargs
+     { let buff, _n, mStart, mEnd, args = cargs
+       trySaveXmlDoc lexbuf buff
        LexbufCommentStore.SaveSingleLineComment(lexbuf, mStart, mEnd)
        // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token
        EOF (LexCont.Token(args.ifdefStack, args.stringNest)) }

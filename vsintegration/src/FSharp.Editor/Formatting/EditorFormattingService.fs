@@ -40,7 +40,7 @@ type internal FSharpEditorFormattingService
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 

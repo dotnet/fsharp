@@ -142,6 +142,11 @@
         <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">Das Verwerfen des verwendeten Musters ist verbindlich.</target>
@@ -417,9 +422,29 @@
         <target state="translated">Drucken der abgeleiteten Schnittstellen aller Dateien an zugehörige Signaturdateien</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInvalidRefAssembly">
+        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidRefOut">
+        <source>Invalid reference assembly path'</source>
+        <target state="new">Invalid reference assembly path'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Zeigen Sie die zulässigen Werte für die Sprachversion an. Geben Sie die Sprachversion als "latest" oder "preview" an.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOut">
+        <source>Produce a reference assembly with the specified file path.</source>
+        <target state="new">Produce a reference assembly with the specified file path.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

@@ -197,7 +197,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
-                    let ver = dotnetConfig.[startPos..endPos-1]
+                    let ver = dotnetConfig[startPos..endPos-1]
                     let path = FileSystem.GetFullPathShim(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
                     if FileSystem.DirectoryExistsShim(path) then
                         path, warnings
@@ -408,7 +408,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 match attrOpt with
                 | Some attr ->
                     let fv = (downcast attr : AssemblyFileVersionAttribute).Version.Split([|'.'|]) |> Array.map(fun e ->  Int32.Parse(e))
-                    fv.[0], fv.[1], fv.[2], fv.[3]
+                    fv[0], fv[1], fv[2], fv[3]
                 | _ -> defaultMscorlibVersion
             with _ -> defaultMscorlibVersion
 
@@ -813,7 +813,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let pattern = "\"tfm\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
-                    let tfm = dotnetConfig.[startPos..endPos-1]
+                    let tfm = dotnetConfig[startPos..endPos-1]
                     //printfn "GetTfmAndRid, tfm = '%s'" tfm
                     tfm
                 | None ->

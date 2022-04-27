@@ -152,7 +152,7 @@ type internal IncrementalBuilder =
       /// overall analysis results for the project will be quick.
       member ProjectChecked : IEvent<unit>
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       /// Raised when the build is invalidated.
       member ImportsInvalidatedByTypeProvider : IEvent<unit>
 #endif
@@ -237,9 +237,9 @@ type internal IncrementalBuilder =
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
-          LegacyReferenceResolver *
+          legacyReferenceResolver: LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
-          FrameworkImportsCache *
+          frameworkTcImportsCache: FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *
           sourceFiles:string list *
           commandLineArgs:string list *

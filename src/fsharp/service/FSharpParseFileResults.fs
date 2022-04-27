@@ -21,7 +21,7 @@ module SourceFileImpl =
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
     /// Additional #defines that should be in place when editing a file in a file editor such as VS.
-    let AdditionalDefinesForUseInEditor(isInteractive: bool) =
+    let GetImplicitConditionalDefinesForEditing(isInteractive: bool) =
         if isInteractive then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
@@ -187,11 +187,28 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
 
                 // Special case: `async { ... }` is actually a ComputationExpr inside of the argExpr of a SynExpr.App
-                | SynExpr.ComputationExpr (_, expr, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
+                | SynExpr.ComputationExpr (_, expr, range)
                 | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+                // Yielding values in an array or list that is used as an argument: List.sum [ getVal a b; getVal b c ]
+                | SynExpr.ArrayOrListComputed (_, expr, range) when rangeContainsPos range pos ->
+                    if rangeContainsPos expr.Range pos then
+                        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                    else
+                        (*
+                            In cases like
+
+                            let test () = div [] [
+                                str ""
+                                ; |
+                            ]
+
+                            `ProvideParametersAsyncAux` currently works with the wrong symbol or
+                            doesn't detect the previously applied arguments.
+                            Until that is fixed, don't show any tooltips rather than the wrong signature.
+                        *)
+                        None
 
                 | _ ->
                     match funcExpr with
@@ -204,6 +221,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         // Generally, we want to dive into the func expr to get the range
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
+
+            | SynExpr.Sequential (_, _, expr1, expr2, range) when rangeContainsPos range pos ->
+                if rangeContainsPos expr1.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr1 pos
+                else
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr2 pos
 
             | SynExpr.LetOrUse (bindings=bindings; body=body; range=range) when rangeContainsPos range pos  ->
                 let binding =
@@ -269,7 +292,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             | expr ->
                 traverseSynExpr expr
-                |> Option.map id
 
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
@@ -305,6 +327,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 | SynBinding(kind=SynBindingKind.Normal; expr=InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app) ->
                     Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
                 | _ -> defaultTraverse binding })
+
+    member _.TryRangeOfStringInterpolationContainingPos pos =
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.InterpolatedString(range = range) when rangeContainsPos range pos ->
+                    Some range
+                | _ -> defaultTraverse expr })
 
     member _.TryRangeOfExprInYieldOrReturn pos =
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
@@ -372,8 +402,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         result.IsSome
 
     member _.IsTypeAnnotationGivenAtPosition pos =
-        let result =
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+        let walker =
+            { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.Typed (_expr, _typeExpr, range) when Position.posEq range.Start pos ->
@@ -386,6 +416,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | _ ->
                         let exprFunc pat =
                             match pat with
+                            // (s: string)
                             | SynSimplePat.Typed (_pat, _targetExpr, range) when Position.posEq range.Start pos ->
                                 Some range
                             | _ ->
@@ -394,10 +425,18 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         pats |> List.tryPick exprFunc
 
                 override _.VisitPat(_path, defaultTraverse, pat) =
+                    // (s: string)
                     match pat with
                     | SynPat.Typed (_pat, _targetType, range) when Position.posEq range.Start pos ->
                         Some range
-                    | _ -> defaultTraverse pat })
+                    | _ -> defaultTraverse pat
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    // let x : int = 12
+                    match binding with
+                    | SynBinding(headPat = SynPat.Named (range = patRange); returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> Some patRange
+                    | _ -> defaultTraverse binding
+            }
+        let result = SyntaxTraversal.Traverse(pos, input, walker)
         result.IsSome
 
         member _.IsBindingALambdaAtPosition pos =
