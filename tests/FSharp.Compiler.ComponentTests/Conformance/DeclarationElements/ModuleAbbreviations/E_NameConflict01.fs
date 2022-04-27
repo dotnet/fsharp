@@ -11,6 +11,4 @@ let ListMod x = [x]
 module ListMod = Microsoft.FSharp.Collections.List
 
 // Error: function wins due to name resolution rules
-if ListMod.sum [1; 2; 3] <> 6 then exit 1
-
-exit 1
+if ListMod.sum [1; 2; 3] <> 6 then failwith "Failed: 1"
