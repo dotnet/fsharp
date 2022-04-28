@@ -6,6 +6,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 
 type TupledArgumentLocation = { IsNamedArgument: bool; ArgumentRange: range }
@@ -59,6 +60,7 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some ([id.idText], id.idRange)
+        | SynExpr.LongIdent(_, SynLongIdent([id], [], [ Some _ ]), _, _) -> Some ([id.idText], id.idRange)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 

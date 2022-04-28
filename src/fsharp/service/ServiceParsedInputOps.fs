@@ -215,6 +215,8 @@ module ParsedInput =
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
+            | SynExpr.LongIdent(longDotId = SynLongIdent([id], [], [Some _])) ->
+                 defaultTraverse (SynExpr.Ident(id))
             | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
                 let _, r = CheckLongIdent longIdent
                 Some r
@@ -380,6 +382,8 @@ module ParsedInput =
                             | Some (n, _) -> Some ((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
                                                                               || (posGeq (List.item (n+1) lid).idRange.Start pos))  // foo.$bar
                         match expr with
+                        | SynExpr.LongIdent (longDotId = SynLongIdent([id], [], [Some _])) -> 
+                            defaultTraverse (SynExpr.Ident(id))
                         | SynExpr.LongIdent (_isOptional, lidwd, _altNameRefCell, _m) ->
                             traverseLidOrElse None lidwd
                         | SynExpr.LongIdentSet (lidwd, exprRhs, _m) ->
@@ -548,6 +552,8 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
         and walkExprWithKind (parentKind: EntityKind option) = function
+            | SynExpr.LongIdent(_, SynLongIdent([ident], _, [ Some _]), _, _) ->
+                ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
                 match dotRanges with
                 | [] when isPosInRange r -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
@@ -941,7 +947,8 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
                             // new (... A$)
-                            | SynExpr.Ident id when id.idRange.End = pos ->
+                            | SynExpr.Ident id
+                            | SynExpr.LongIdent(longDotId = SynLongIdent([id], [], [ Some _ ])) when id.idRange.End = pos ->
                                 match path with
                                 | PartOfParameterList None args -> 
                                     Some (CompletionContext.ParameterList args)
