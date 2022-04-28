@@ -494,7 +494,7 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
             | None -> ()
 
             match usesTDC with
-            | ConversionUsed.TypeDirected warn -> warning(warn env.DisplayEnv)
+            | ConversionInfo.TypeDirected warn -> warning(warn env.DisplayEnv)
             | _ -> ()
 
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then

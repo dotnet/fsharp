@@ -107,7 +107,7 @@ type CallerArgs<'T> =
 /// Indicates whether a conversion (e.g. int32 to int64, or op_Implicit) 
 /// has been used in F# code, particularly for method arguments.
 [<RequireQualifiedAccess>]
-type ConversionUsed =
+type ConversionInfo =
     /// Indicates a type-directed conversion, added in F# 6.0.
     | TypeDirected of (DisplayEnv -> exn)
 
@@ -119,20 +119,20 @@ type ConversionUsed =
     /// Indicates either some other conversion that is not relevant to overload resolution logic, or no conversion at all
     | NoneOrOther
 
-    static member Combine: ConversionUsed -> ConversionUsed -> ConversionUsed
+    static member Combine: ConversionInfo -> ConversionInfo -> ConversionInfo
 
-/// Performs a set of constraint solver operations returning ConversionUsed and
+/// Performs a set of constraint solver operations returning ConversionInfo and
 /// combines their results.
-val MapCombineTDCD: mapper:('T -> OperationResult<ConversionUsed>) -> xs:'T list -> OperationResult<ConversionUsed>
+val MapCombineTDCD: mapper:('T -> OperationResult<ConversionInfo>) -> xs:'T list -> OperationResult<ConversionInfo>
 
-/// Performs a set of constraint solver operations returning ConversionUsed and
+/// Performs a set of constraint solver operations returning ConversionInfo and
 /// combines their results.
-val MapCombineTDC2D: mapper:('T -> 'b -> OperationResult<ConversionUsed>) -> xs:'T list -> ys:'b list -> OperationResult<ConversionUsed>
+val MapCombineTDC2D: mapper:('T -> 'b -> OperationResult<ConversionInfo>) -> xs:'T list -> ys:'b list -> OperationResult<ConversionInfo>
 
 type TypeAdjustmentInfo = 
     | TypeAdjustmentInfo of
         adjustedRequiredTy: TType *
-        conversionInfo: ConversionUsed *
+        conversionInfo: ConversionInfo *
         eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
 
 /// F# supports some adhoc conversions to make expression fit known overall type

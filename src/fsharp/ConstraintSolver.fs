@@ -2407,15 +2407,15 @@ and CanMemberSigsMatchUpToCheck
       alwaysCheckReturn 
       // Used to equate the formal method instantiation with the actual method instantiation
       // for a generic method, and the return types
-      (unifyTypes: TType -> TType -> OperationResult<ConversionUsed>)
+      (unifyTypes: TType -> TType -> OperationResult<ConversionInfo>)
       // Used to compare the "obj" type 
-      (subsumeTypes: TType -> TType -> OperationResult<ConversionUsed>)
+      (subsumeTypes: TType -> TType -> OperationResult<ConversionInfo>)
       // Used to convert the "return" for MustConvertTo
-      (subsumeOrConvertTypes: bool -> TType -> TType -> OperationResult<ConversionUsed>)
+      (subsumeOrConvertTypes: bool -> TType -> TType -> OperationResult<ConversionInfo>)
       // Used to convert the arguments
-      (subsumeOrConvertArg: CalledArg -> CallerArg<_> -> OperationResult<ConversionUsed>)
+      (subsumeOrConvertArg: CalledArg -> CallerArg<_> -> OperationResult<ConversionInfo>)
       (reqdRetTyOpt: OverallTy option) 
-      (calledMeth: CalledMeth<_>): OperationResult<ConversionUsed> =
+      (calledMeth: CalledMeth<_>): OperationResult<ConversionInfo> =
         trackErrors {
             let g    = csenv.g
             let amap = csenv.amap
@@ -2473,10 +2473,10 @@ and CanMemberSigsMatchUpToCheck
                                 )
 
 
-                            | _ -> ResultD ConversionUsed.NoneOrOther
+                            | _ -> ResultD ConversionInfo.NoneOrOther
                         else
-                            ResultD ConversionUsed.NoneOrOther
-                    | _ -> ResultD ConversionUsed.NoneOrOther
+                            ResultD ConversionInfo.NoneOrOther
+                    | _ -> ResultD ConversionInfo.NoneOrOther
 
                 let! usesTDC5 =
                     calledMeth.ArgSets |> MapCombineTDCD (fun argSet -> 
@@ -2511,7 +2511,7 @@ and CanMemberSigsMatchUpToCheck
                 let! usesTDC7 =
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
-                        ResultD ConversionUsed.NoneOrOther
+                        ResultD ConversionInfo.NoneOrOther
                     | Some (MustConvertTo(isMethodArg, reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         subsumeOrConvertTypes isMethodArg reqdTy methodRetTy
@@ -2519,8 +2519,8 @@ and CanMemberSigsMatchUpToCheck
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         unifyTypes reqdRetTy.Commit methodRetTy
                     | _ ->
-                        ResultD ConversionUsed.NoneOrOther
-                return Array.reduce ConversionUsed.Combine [| usesTDC1; usesTDC2; usesTDC3; usesTDC4; usesTDC5; usesTDC6; usesTDC7 |]
+                        ResultD ConversionInfo.NoneOrOther
+                return Array.reduce ConversionInfo.Combine [| usesTDC1; usesTDC2; usesTDC3; usesTDC4; usesTDC5; usesTDC6; usesTDC7 |]
         }
 
 // Wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
@@ -2593,7 +2593,7 @@ and ArgsMustSubsumeOrConvert
     | None -> ()
 
     match usesTDC with 
-    | ConversionUsed.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
+    | ConversionInfo.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
     | _ -> ()
 
     do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType
@@ -2629,7 +2629,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         | None -> ()
 
         match usesTDC with 
-        | ConversionUsed.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
+        | ConversionInfo.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
         | _ -> ()
 
         do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
@@ -2640,13 +2640,13 @@ and ArgsMustSubsumeOrConvertWithContextualReport
 and TypesEquiv csenv ndeep trace cxsln ty1 ty2 = 
     trackErrors {
         do! SolveTypeEqualsTypeWithReport csenv ndeep csenv.m trace cxsln ty1 ty2
-        return ConversionUsed.NoneOrOther
+        return ConversionInfo.NoneOrOther
     }
 
 and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     trackErrors {
         do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
-        return ConversionUsed.NoneOrOther
+        return ConversionInfo.NoneOrOther
     }
 
 and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m isMethodArg reqdTy actualTy = 
@@ -2661,7 +2661,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
         | None -> ()
 
         match usesTDC with 
-        | ConversionUsed.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
+        | ConversionInfo.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
         | _ -> ()
 
         do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy 
@@ -2683,7 +2683,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConst
         | None -> ()
 
         match usesTDC with 
-        | ConversionUsed.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
+        | ConversionInfo.TypeDirected warn -> do! WarnD(warn csenv.DisplayEnv)
         | _ -> ()
 
         if not (typeEquiv csenv.g calledArgTy callerArgTy) then 
@@ -3026,7 +3026,7 @@ and ResolveOverloading
                     let otherWarnCount = List.length otherWarnings
 
                     // Prefer methods that don't use type-directed conversion
-                    let c = compare (match usesTDC1 with ConversionUsed.TypeDirected _ -> 0 | _ -> 1) (match usesTDC2 with ConversionUsed.TypeDirected _ -> 0 | _ -> 1)
+                    let c = compare (match usesTDC1 with ConversionInfo.TypeDirected _ -> 0 | _ -> 1) (match usesTDC2 with ConversionInfo.TypeDirected _ -> 0 | _ -> 1)
                     if c <> 0 then c else
 
                     // Prefer methods that don't give "this code is less generic" warnings
@@ -3130,7 +3130,7 @@ and ResolveOverloading
                     if c <> 0 then c else
 
                     // Prefer methods that don't use either nullable adjustment or type-directed conversion
-                    let c = compare (match usesTDC1 with ConversionUsed.NoneOrOther -> 1 | _ -> 0) (match usesTDC2 with ConversionUsed.NoneOrOther -> 1 | _ -> 0)
+                    let c = compare (match usesTDC1 with ConversionInfo.NoneOrOther -> 1 | _ -> 0) (match usesTDC2 with ConversionInfo.NoneOrOther -> 1 | _ -> 0)
                     if c <> 0 then c else
 
                     0

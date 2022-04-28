@@ -230,7 +230,7 @@ type TypeDirectedConversion =
     | Implicit of MethInfo
 
 [<RequireQualifiedAccess>]
-type ConversionUsed =
+type ConversionInfo =
     | TypeDirected of (DisplayEnv -> exn)
     | NullableAdjustment
     | NoneOrOther
@@ -244,31 +244,31 @@ type ConversionUsed =
         | NoneOrOther, NoneOrOther -> a
 
     member tdc.WithNullableAdjustment() =
-        ConversionUsed.Combine tdc ConversionUsed.NullableAdjustment
+        ConversionInfo.Combine tdc ConversionInfo.NullableAdjustment
 
 type TypeAdjustmentInfo = 
     | TypeAdjustmentInfo of
         adjustedRequiredTy: TType *
-        conversionInfo: ConversionUsed *
+        conversionInfo: ConversionInfo *
         eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
 
-    static member Unadjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.NoneOrOther, None)
+    static member Unadjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionInfo.NoneOrOther, None)
 
-    static member Adjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.NoneOrOther, None)
+    static member Adjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionInfo.NoneOrOther, None)
 
-    static member BuiltInTypeDirectedConversion warn reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.TypeDirected(warn TypeDirectedConversion.BuiltIn), None)
+    static member BuiltInTypeDirectedConversion warn reqdTy = TypeAdjustmentInfo(reqdTy, ConversionInfo.TypeDirected(warn TypeDirectedConversion.BuiltIn), None)
 
-    static member ImplictTypeDirectedConversion warn reqdTy minfo eqn = TypeAdjustmentInfo(reqdTy, ConversionUsed.TypeDirected(warn (TypeDirectedConversion.Implicit minfo)), Some eqn)
+    static member ImplictTypeDirectedConversion warn reqdTy minfo eqn = TypeAdjustmentInfo(reqdTy, ConversionInfo.TypeDirected(warn (TypeDirectedConversion.Implicit minfo)), Some eqn)
 
     member adj.WithNullableAdjustment() =
         let (TypeAdjustmentInfo(adjustedTy, tdc, info)) = adj
         TypeAdjustmentInfo(adjustedTy, tdc.WithNullableAdjustment(), info)
 
 let MapCombineTDCD mapper xs =
-    MapReduceD mapper ConversionUsed.NoneOrOther ConversionUsed.Combine xs
+    MapReduceD mapper ConversionInfo.NoneOrOther ConversionInfo.Combine xs
 
 let MapCombineTDC2D mapper xs ys =
-    MapReduce2D mapper ConversionUsed.NoneOrOther ConversionUsed.Combine xs ys
+    MapReduce2D mapper ConversionInfo.NoneOrOther ConversionInfo.Combine xs ys
 
 let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad isMethodArg isConstraint (reqdTy: TType) actualTy m =
     let g = infoReader.g
