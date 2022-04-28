@@ -5857,7 +5857,7 @@ and TcNonControlFlowExpr (env: TcEnv) f =
             let res2 =
                 match res with
                 | IfThenElseExpr _ -> res
-                | FunctionMatchExpr _ -> res
+                | MatchLambdaExpr _ -> res
                 | _ -> mkDebugPoint res.Range res
             res2, tpenv
     else

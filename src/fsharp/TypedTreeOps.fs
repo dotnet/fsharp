@@ -9761,7 +9761,7 @@ let (|IfThenElseExpr|_|) expr =
     | _ -> None
 
 /// Match a functionmatch expression
-let (|FunctionMatchExpr|_|) expr =
+let (|MatchLambdaExpr|_|) expr =
     match expr with
     | Expr.Lambda(_, _, _, _, bodyExpr, _ ,_) ->
         match bodyExpr with
