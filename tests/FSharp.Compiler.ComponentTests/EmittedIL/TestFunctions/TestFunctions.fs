@@ -264,5 +264,7 @@ module TestFunctions =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
     let ``Verify13043_execution`` compilation =
         compilation
-        |> verifyCompileAndRun 
+        |> withDebug
+        |> verifyCompileAndRun
+        |> shouldSucceed
 
