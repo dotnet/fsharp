@@ -105,6 +105,98 @@ extern int AccessibleChildren()"""
             assertRange (2, 0) (3, 31) mb
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``void keyword in extern`` () =
+        let ast = getParseResults """
+[<DllImport(@"__Internal", CallingConvention = CallingConvention.Cdecl)>]
+extern void setCallbridgeSupportTarget(IntPtr newTarget)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(false, [ SynBinding(returnInfo =
+                    Some (SynBindingReturnInfo(typeName =
+                        SynType.App(typeName =
+                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")])))))) ] , _)
+                ])
+            ])) ->
+            Assert.AreEqual("unit", unitIdent.idText)
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``nativeptr in extern`` () =
+        let ast = getParseResults """
+[<DllImport(@"__Internal", CallingConvention = CallingConvention.Cdecl)>]
+extern int AccessibleChildren(int* x)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                    SynPat.LongIdent(argPats = SynArgPats.Pats [
+                        SynPat.Tuple(_, [
+                            SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
+                                SynLongIdent([nativeptrIdent], [], [Some (IdentTrivia.OriginalNotation "*")])
+                                ))))
+                        ], _)
+                    ])) ], _)
+                ])
+            ])) ->
+            Assert.AreEqual("nativeptr", nativeptrIdent.idText)
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``byref in extern`` () =
+        let ast = getParseResults """
+[<DllImport(@"__Internal", CallingConvention = CallingConvention.Cdecl)>]
+extern int AccessibleChildren(obj& x)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                    SynPat.LongIdent(argPats = SynArgPats.Pats [
+                        SynPat.Tuple(_, [
+                            SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
+                                SynLongIdent([byrefIdent], [], [Some (IdentTrivia.OriginalNotation "&")])
+                                ))))
+                        ], _)
+                    ])) ], _)
+                ])
+            ])) ->
+            Assert.AreEqual("byref", byrefIdent.idText)
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``nativeint in extern`` () =
+        let ast = getParseResults """
+[<DllImport(@"__Internal", CallingConvention = CallingConvention.Cdecl)>]
+extern int AccessibleChildren(void* x)
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(false, [ SynBinding(headPat =
+                    SynPat.LongIdent(argPats = SynArgPats.Pats [
+                        SynPat.Tuple(_, [
+                            SynPat.Attrib(pat = SynPat.Typed(targetType = SynType.App(typeName = SynType.LongIdent(
+                                SynLongIdent([nativeintIdent], [], [Some (IdentTrivia.OriginalNotation "void*")])
+                                ))))
+                        ], _)
+                    ])) ], _)
+                ])
+            ])) ->
+            Assert.AreEqual("nativeint", nativeintIdent.idText)
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
 module XmlDocSig =
 
     [<Test>]
@@ -1026,6 +1118,24 @@ do
                             SynExpr.Do(expr = SynExpr.LetOrUse(trivia={ InKeyword = None })))
                     ])
                 ])) ->
+            Assert.Pass()
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``global keyword as SynExpr`` () =
+        let ast =
+            getParseResults """
+global
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Expr(expr =
+                            SynExpr.LongIdent(longDotId = SynLongIdent([mangledGlobal], [], [Some (IdentTrivia.OriginalNotation "global")]))
+                    )])
+                ])) ->
+            Assert.AreEqual("`global`", mangledGlobal.idText)
             Assert.Pass()
         | _ -> Assert.Fail "Could not get valid AST"
 
@@ -3055,6 +3165,43 @@ match x with
         ]) ])) ->
             assertRange (4, 0) (4, 1) mBar
         | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``:: operator in SynPat.LongIdent`` () =
+        let parseResults = 
+            getParseResults
+                """
+let (head::tail) =  [ 1;2;4]
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(
+                bindings = [ SynBinding(headPat = SynPat.Paren(SynPat.LongIdent(longDotId = SynLongIdent([ opColonColonIdent ], _, [ Some (IdentTrivia.OriginalNotation "::") ])), _)) ]
+            )
+        ]) ])) ->
+            Assert.AreEqual("op_ColonColon", opColonColonIdent.idText)
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+    [<Test>]
+    let ``:: operator in match pattern`` () =
+        let parseResults = 
+            getParseResults
+                """
+match x with
+| (head) :: (tail) -> ()
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Expr(
+                expr = SynExpr.Match(clauses = [
+                    SynMatchClause(pat = SynPat.LongIdent(longDotId = SynLongIdent([ opColonColonIdent ], _, [ Some (IdentTrivia.OriginalNotation "::") ])))
+                ])
+            )
+        ]) ])) ->
+            Assert.AreEqual("op_ColonColon", opColonColonIdent.idText)
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
 module Exceptions =
     [<Test>]
@@ -4220,10 +4367,3 @@ type A() =
             assertRange (5, 5) (5, 6) rpr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
-
-
-
-// TODO:
-// add test for global (SynExpr.Ident mangledGlobalName)
-
-// todo add test for a.(0) // op_ArrayLookup

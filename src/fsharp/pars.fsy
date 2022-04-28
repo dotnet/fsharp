@@ -2941,15 +2941,15 @@ cType:
 
   | cType STAR 
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [None])), None, [$1], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [ Some (IdentTrivia.OriginalNotation "*") ])), None, [$1], [], None, true, m) } 
 
   | cType AMP  
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [None])), None, [$1], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [ Some (IdentTrivia.OriginalNotation "&") ])), None, [$1], [], None, true, m) } 
 
   | VOID STAR 
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeint", m)], [], [None])), None, [], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeint", m)], [], [ Some (IdentTrivia.OriginalNotation "void*") ])), None, [], [], None, true, m) } 
 
 
 /* A return type in an 'extern' DllImport function definition */
@@ -2959,7 +2959,7 @@ cRetType:
 
   | opt_attributes VOID  
      { let m = rhs parseState 2 
-       SynReturnInfo((SynType.App(SynType.LongIdent(SynLongIdent([ident("unit", m)], [], [None])), None, [], [], None, false, m), SynArgInfo($1, false, None)), m) } 
+       SynReturnInfo((SynType.App(SynType.LongIdent(SynLongIdent([ident("unit", m)], [], [ Some (IdentTrivia.OriginalNotation "void") ])), None, [], [], None, false, m), SynArgInfo($1, false, None)), m) } 
 
 
 localBindings: 
@@ -3264,7 +3264,7 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
 
   | tuplePatternElements  %prec pat_tuple 
       { SynPat.Tuple(false, List.rev $1, lhs parseState) }
@@ -3503,7 +3503,7 @@ parenPattern:
         SynPat.Attrib($2, $1, lhsm) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
 
   | constrPattern { $1 }
 
