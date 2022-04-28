@@ -2583,7 +2583,7 @@ and ArgsMustSubsumeOrConvert
     let g = csenv.g
     let m = callerArg.Range
 
-    let (AdjustedRequiredTypeInfo(calledArgTy, usesTDC, eqn)) =
+    let (TypeAdjustmentInfo(calledArgTy, usesTDC, eqn)) =
         AdjustCalledArgType csenv.InfoReader ad isConstraint enforceNullableOptionalsKnownTypes calledArg callerArg
 
     match eqn with 
@@ -2619,7 +2619,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         let callerArgTy = callerArg.CallerArgumentType
         let m = callerArg.Range
 
-        let (AdjustedRequiredTypeInfo(calledArgTy, usesTDC, eqn)) =
+        let (TypeAdjustmentInfo(calledArgTy, usesTDC, eqn)) =
             AdjustCalledArgType csenv.InfoReader ad isConstraint true calledArg callerArg
 
         match eqn with 
@@ -2651,7 +2651,7 @@ and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgT
 
 and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m isMethodArg reqdTy actualTy = 
     trackErrors {
-        let (AdjustedRequiredTypeInfo(reqdTy, usesTDC, eqn)) =
+        let (TypeAdjustmentInfo(reqdTy, usesTDC, eqn)) =
             AdjustRequiredTypeForTypeDirectedConversions csenv.InfoReader ad isMethodArg isConstraint reqdTy actualTy m
 
         match eqn with 
@@ -2673,7 +2673,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConst
     trackErrors {
         let callerArgTy = callerArg.CallerArgumentType
         let m = callerArg.Range
-        let (AdjustedRequiredTypeInfo(calledArgTy, usesTDC, eqn)) =
+        let (TypeAdjustmentInfo(calledArgTy, usesTDC, eqn)) =
             AdjustCalledArgType csenv.InfoReader ad isConstraint true calledArg callerArg
 
         match eqn with 

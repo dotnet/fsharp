@@ -121,12 +121,6 @@ type ConversionUsed =
 
     static member Combine: ConversionUsed -> ConversionUsed -> ConversionUsed
 
-type AdjustedRequiredTypeInfo = 
-    | AdjustedRequiredTypeInfo of
-        adjustedRequiredTy: TType *
-        tdcInfo: ConversionUsed *
-        eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
-
 /// Performs a set of constraint solver operations returning ConversionUsed and
 /// combines their results.
 val MapCombineTDCD: mapper:('T -> OperationResult<ConversionUsed>) -> xs:'T list -> OperationResult<ConversionUsed>
@@ -134,6 +128,12 @@ val MapCombineTDCD: mapper:('T -> OperationResult<ConversionUsed>) -> xs:'T list
 /// Performs a set of constraint solver operations returning ConversionUsed and
 /// combines their results.
 val MapCombineTDC2D: mapper:('T -> 'b -> OperationResult<ConversionUsed>) -> xs:'T list -> ys:'b list -> OperationResult<ConversionUsed>
+
+type TypeAdjustmentInfo = 
+    | TypeAdjustmentInfo of
+        adjustedRequiredTy: TType *
+        conversionInfo: ConversionUsed *
+        eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
 
 /// F# supports some adhoc conversions to make expression fit known overall type
 val AdjustRequiredTypeForTypeDirectedConversions:
@@ -144,7 +144,7 @@ val AdjustRequiredTypeForTypeDirectedConversions:
     reqdTy: TType ->
     actualTy:TType ->
     m: range 
-        -> AdjustedRequiredTypeInfo
+        -> TypeAdjustmentInfo
 
 /// F# supports some adhoc conversions to make expression fit known overall type
 val AdjustCalledArgType:
@@ -154,7 +154,7 @@ val AdjustCalledArgType:
     enforceNullableOptionalsKnownTypes:bool ->
     calledArg:CalledArg ->
     callerArg:CallerArg<'T> 
-        -> AdjustedRequiredTypeInfo
+        -> TypeAdjustmentInfo
 
 type CalledMethArgSet<'T> =
     { /// The called arguments corresponding to "unnamed" arguments

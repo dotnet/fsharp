@@ -246,23 +246,23 @@ type ConversionUsed =
     member tdc.WithNullableAdjustment() =
         ConversionUsed.Combine tdc ConversionUsed.NullableAdjustment
 
-type AdjustedRequiredTypeInfo = 
-    | AdjustedRequiredTypeInfo of
+type TypeAdjustmentInfo = 
+    | TypeAdjustmentInfo of
         adjustedRequiredTy: TType *
-        tdcInfo: ConversionUsed *
+        conversionInfo: ConversionUsed *
         eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
 
-    static member Unadjusted reqdTy = AdjustedRequiredTypeInfo(reqdTy, ConversionUsed.NoneOrOther, None)
+    static member Unadjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.NoneOrOther, None)
 
-    static member Adjusted reqdTy = AdjustedRequiredTypeInfo(reqdTy, ConversionUsed.NoneOrOther, None)
+    static member Adjusted reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.NoneOrOther, None)
 
-    static member BuiltInTypeDirectedConversion warn reqdTy = AdjustedRequiredTypeInfo(reqdTy, ConversionUsed.TypeDirected(warn TypeDirectedConversion.BuiltIn), None)
+    static member BuiltInTypeDirectedConversion warn reqdTy = TypeAdjustmentInfo(reqdTy, ConversionUsed.TypeDirected(warn TypeDirectedConversion.BuiltIn), None)
 
-    static member ImplictTypeDirectedConversion warn reqdTy minfo eqn = AdjustedRequiredTypeInfo(reqdTy, ConversionUsed.TypeDirected(warn (TypeDirectedConversion.Implicit minfo)), Some eqn)
+    static member ImplictTypeDirectedConversion warn reqdTy minfo eqn = TypeAdjustmentInfo(reqdTy, ConversionUsed.TypeDirected(warn (TypeDirectedConversion.Implicit minfo)), Some eqn)
 
     member adj.WithNullableAdjustment() =
-        let (AdjustedRequiredTypeInfo(adjustedTy, tdc, info)) = adj
-        AdjustedRequiredTypeInfo(adjustedTy, tdc.WithNullableAdjustment(), info)
+        let (TypeAdjustmentInfo(adjustedTy, tdc, info)) = adj
+        TypeAdjustmentInfo(adjustedTy, tdc.WithNullableAdjustment(), info)
 
 let MapCombineTDCD mapper xs =
     MapReduceD mapper ConversionUsed.NoneOrOther ConversionUsed.Combine xs
@@ -286,13 +286,13 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
                 Error(FSComp.SR.tcImplicitConversionUsedForNonMethodArg(methText, actualTyText, reqdTyText), m)
 
     if isConstraint then 
-        AdjustedRequiredTypeInfo.Unadjusted reqdTy
+        TypeAdjustmentInfo.Unadjusted reqdTy
     else
 
     // Delegate --> function
     if isDelegateTy g reqdTy && isFunTy g actualTy then 
         let adjustedTy = AdjustDelegateTy infoReader actualTy reqdTy m
-        AdjustedRequiredTypeInfo.Adjusted adjustedTy
+        TypeAdjustmentInfo.Adjusted adjustedTy
 
     // (T -> U) --> Expression<T -> U> LINQ-style quotation
     elif isLinqExpressionTy g reqdTy && isDelegateTy g (destLinqExpressionTy g reqdTy) && isFunTy g actualTy then 
@@ -301,27 +301,27 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       AdjustedRequiredTypeInfo.BuiltInTypeDirectedConversion warn g.int32_ty
+       TypeAdjustmentInfo.BuiltInTypeDirectedConversion warn g.int32_ty
 
     // Adhoc int32 --> nativeint
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       AdjustedRequiredTypeInfo.BuiltInTypeDirectedConversion warn  g.int32_ty
+       TypeAdjustmentInfo.BuiltInTypeDirectedConversion warn  g.int32_ty
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       AdjustedRequiredTypeInfo.BuiltInTypeDirectedConversion warn g.int32_ty
+       TypeAdjustmentInfo.BuiltInTypeDirectedConversion warn g.int32_ty
 
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (minfo, eqn) ->
-             AdjustedRequiredTypeInfo.ImplictTypeDirectedConversion warn actualTy minfo eqn
+             TypeAdjustmentInfo.ImplictTypeDirectedConversion warn actualTy minfo eqn
          | None ->
-             AdjustedRequiredTypeInfo.Unadjusted reqdTy
+             TypeAdjustmentInfo.Unadjusted reqdTy
 
     else
-        AdjustedRequiredTypeInfo.Unadjusted reqdTy
+        TypeAdjustmentInfo.Unadjusted reqdTy
 
 // If the called method argument is a delegate type, and the caller is known to be a function type, then the caller may provide a function 
 // If the called method argument is an Expression<T> type, and the caller is known to be a function type, then the caller may provide a T
@@ -331,7 +331,7 @@ let AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote (infoReader: InfoR
 
     if calledArg.ReflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
         let adjustedTy = destQuotedExprTy g calledArgTy
-        AdjustedRequiredTypeInfo.Adjusted adjustedTy
+        TypeAdjustmentInfo.Adjusted adjustedTy
     else
         AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy callerArgTy m
 
@@ -348,17 +348,17 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
             if g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then
                 if isNullableTy g calledArgTy then
                     let adjustedTy = mkOptionTy g (destNullableTy g calledArgTy)
-                    AdjustedRequiredTypeInfo.Adjusted adjustedTy
+                    TypeAdjustmentInfo.Adjusted adjustedTy
                 else
                     let adjustedTy = mkOptionTy g calledArgTy
-                    AdjustedRequiredTypeInfo.Adjusted adjustedTy
+                    TypeAdjustmentInfo.Adjusted adjustedTy
             else
-                AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                TypeAdjustmentInfo.Unadjusted calledArgTy
 
         // FSharpMethod(?x = arg), optional F#-style argument
         | CalleeSide ->
             // In this case, the called argument will already have option type
-            AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+            TypeAdjustmentInfo.Unadjusted calledArgTy
 
         | NotOptional -> 
             // This condition represents an error but the error is raised in later processing
@@ -380,7 +380,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                 //   - inference has worked out the caller type of the argument is Nullable<SomeOtherType>
                 // then use Nullable<SomeTy> as the expected type, with no conversion.
                 if isNullableTy g callerArgTy then
-                    AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                    TypeAdjustmentInfo.Unadjusted calledArgTy
 
                 // If
                 //   - the called argument type is a Nullable<SomeTy>, and
@@ -399,7 +399,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                 // nor its argument type (which must also be a struct). This means an error will result,
                 // but another overload may be relevant. 
                 elif isRefTy g callerArgTy then
-                    AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                    TypeAdjustmentInfo.Unadjusted calledArgTy
 
                 // If 
                 //   - the called argument type is a Nullable<SomeTy>, and
@@ -407,7 +407,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                 //   - we are at the end of overload resolution
                 // then use Nullable<SomeTy> as the expected type.
                 elif enforceNullableOptionalsKnownTypes then 
-                    AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                    TypeAdjustmentInfo.Unadjusted calledArgTy
 
                 else 
                     match calledArg.OptArgInfo with
@@ -418,7 +418,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                     //   - we're at the beginning of overload resolution
                     // then use Nullable<?T> as the required type, without a conversion.
                     | NotOptional when isTyparTy g (destNullableTy g calledArgTy) ->
-                        AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                        TypeAdjustmentInfo.Unadjusted calledArgTy
                     | _ ->
                         // If 
                         //   - the called argument type is a Nullable<SomeType>, and
@@ -429,7 +429,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                         // because we don't yet know if a nullable conversion will apply.
                         let compgenId = mkSynId range0 unassignedTyparName
                         let tp = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
-                        AdjustedRequiredTypeInfo.Adjusted tp
+                        TypeAdjustmentInfo.Adjusted tp
             else
                 AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy calledArg m
 
@@ -468,7 +468,7 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
     let calledArgTy = calledArg.CalledArgumentType
     let callerArgTy = callerArg.CallerArgumentType
     if isConstraint then 
-        AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+        TypeAdjustmentInfo.Unadjusted calledArgTy
     else
 
         // If the called method argument is an inref type, then the caller may provide a byref or value
@@ -479,16 +479,16 @@ let AdjustCalledArgType (infoReader: InfoReader) ad isConstraint enforceNullable
             else 
                 destByrefTy g calledArgTy
 #else
-            AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+            TypeAdjustmentInfo.Unadjusted calledArgTy
 #endif
 
         // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
         elif isByrefTy g calledArgTy then
             if isByrefTy g callerArgTy then 
-                AdjustedRequiredTypeInfo.Unadjusted calledArgTy
+                TypeAdjustmentInfo.Unadjusted calledArgTy
             else
                 let adjustedTy = mkRefCellTy g (destByrefTy g calledArgTy)
-                AdjustedRequiredTypeInfo.Adjusted adjustedTy
+                TypeAdjustmentInfo.Adjusted adjustedTy
 
         else 
             AdjustCalledArgTypeForOptionals infoReader ad enforceNullableOptionalsKnownTypes calledArg calledArgTy callerArg
@@ -889,7 +889,7 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConst
     let countOfCallerLambdaArg = InferLambdaArgsForLambdaPropagation argExpr
 
     // Adjust for Expression<_>, Func<_, _>, ...
-    let (AdjustedRequiredTypeInfo(adjustedCalledArgTy, _, _)) =
+    let (TypeAdjustmentInfo(adjustedCalledArgTy, _, _)) =
         AdjustCalledArgType infoReader ad false false arg.CalledArg arg.CallerArg
 
     if countOfCallerLambdaArg > 0 then 

@@ -484,7 +484,7 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
             ()
         else
             // try adhoc type-directed conversions
-            let (AdjustedRequiredTypeInfo(reqdTy2, usesTDC, eqn)) =
+            let (TypeAdjustmentInfo(reqdTy2, usesTDC, eqn)) =
                 AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights isMethodArg false reqdTy actualTy m
 
             match eqn with
