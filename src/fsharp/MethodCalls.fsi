@@ -104,21 +104,36 @@ type CallerArgs<'T> =
 
     static member Empty: CallerArgs<'T>
   
-/// Indicates whether a type directed conversion (e.g. int32 to int64, or op_Implicit) 
-/// has been used in F# code
+/// Indicates whether a conversion (e.g. int32 to int64, or op_Implicit) 
+/// has been used in F# code, particularly for method arguments.
 [<RequireQualifiedAccess>]
-type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn)
-    | No
-    static member Combine: TypeDirectedConversionUsed -> TypeDirectedConversionUsed -> TypeDirectedConversionUsed
+type ConversionUsed =
+    /// Indicates a type-directed conversion, added in F# 6.0.
+    | TypeDirected of (DisplayEnv -> exn)
 
-/// Performs a set of constraint solver operations returning TypeDirectedConversionUsed and
-/// combines their results.
-val MapCombineTDCD: mapper:('a -> OperationResult<TypeDirectedConversionUsed>) -> xs:'a list -> OperationResult<TypeDirectedConversionUsed>
+    /// Indicates, for example, an int --> Nullable<int> conversion, added in F# 5.0.
+    /// These were implemented before the more general mechanism of type-directed conversions
+    /// and for compatibility are treated slightly differently for method overloading.
+    | NullableAdjustment
 
-/// Performs a set of constraint solver operations returning TypeDirectedConversionUsed and
+    /// Indicates either some other conversion that is not relevant to overload resolution logic, or no conversion at all
+    | NoneOrOther
+
+    static member Combine: ConversionUsed -> ConversionUsed -> ConversionUsed
+
+type AdjustedRequiredTypeInfo = 
+    | AdjustedRequiredTypeInfo of
+        adjustedRequiredTy: TType *
+        tdcInfo: ConversionUsed *
+        eqnInfo: (TType * TType * (DisplayEnv -> unit)) option
+
+/// Performs a set of constraint solver operations returning ConversionUsed and
 /// combines their results.
-val MapCombineTDC2D: mapper:('a -> 'b -> OperationResult<TypeDirectedConversionUsed>) -> xs:'a list -> ys:'b list -> OperationResult<TypeDirectedConversionUsed>
+val MapCombineTDCD: mapper:('T -> OperationResult<ConversionUsed>) -> xs:'T list -> OperationResult<ConversionUsed>
+
+/// Performs a set of constraint solver operations returning ConversionUsed and
+/// combines their results.
+val MapCombineTDC2D: mapper:('T -> 'b -> OperationResult<ConversionUsed>) -> xs:'T list -> ys:'b list -> OperationResult<ConversionUsed>
 
 /// F# supports some adhoc conversions to make expression fit known overall type
 val AdjustRequiredTypeForTypeDirectedConversions:
@@ -129,7 +144,7 @@ val AdjustRequiredTypeForTypeDirectedConversions:
     reqdTy: TType ->
     actualTy:TType ->
     m: range 
-        -> TType * TypeDirectedConversionUsed * (TType * TType * (DisplayEnv -> unit)) option
+        -> AdjustedRequiredTypeInfo
 
 /// F# supports some adhoc conversions to make expression fit known overall type
 val AdjustCalledArgType:
@@ -138,8 +153,8 @@ val AdjustCalledArgType:
     isConstraint:bool ->
     enforceNullableOptionalsKnownTypes:bool ->
     calledArg:CalledArg ->
-    callerArg:CallerArg<'a> 
-        -> TType * TypeDirectedConversionUsed * (TType * TType * (DisplayEnv -> unit)) option
+    callerArg:CallerArg<'T> 
+        -> AdjustedRequiredTypeInfo
 
 type CalledMethArgSet<'T> =
     { /// The called arguments corresponding to "unnamed" arguments
@@ -356,7 +371,7 @@ val AdjustCallerArgExpr:
     callerArgTy:TType -> 
     m:range -> 
     callerArgExpr:Expr -> 
-        'a option * Expr
+        'T option * Expr
 
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
@@ -369,7 +384,7 @@ val AdjustCallerArgs:
     ad:AccessorDomain ->
     calledMeth:CalledMeth<Expr> ->
     objArgs:Expr list ->
-    lambdaVars:'a option ->
+    lambdaVars:'T option ->
     mItem:range ->
     mMethExpr:range ->
        (Expr -> Expr) * Expr list *
@@ -384,7 +399,7 @@ val ILFieldStaticChecks: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader 
 
 val ILFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:range -> finfo:ILFieldInfo -> unit
 
-val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'a option -> objArgs:Expr list -> ad:AccessorDomain -> m:range -> minfo:MethInfo -> unit
+val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'T option -> objArgs:Expr list -> ad:AccessorDomain -> m:range -> minfo:MethInfo -> unit
 
 exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
 

@@ -484,15 +484,19 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
             ()
         else
             // try adhoc type-directed conversions
-            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights isMethodArg false reqdTy actualTy m
+            let (AdjustedRequiredTypeInfo(reqdTy2, usesTDC, eqn)) =
+                AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights isMethodArg false reqdTy actualTy m
+
             match eqn with
             | Some (ty1, ty2, msg) ->
                 UnifyTypes cenv env m ty1 ty2
                 msg env.DisplayEnv
             | None -> ()
+
             match usesTDC with
-            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
-            | TypeDirectedConversionUsed.No -> ()
+            | ConversionUsed.TypeDirected warn -> warning(warn env.DisplayEnv)
+            | _ -> ()
+
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
                 let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
                 warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
