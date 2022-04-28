@@ -42,7 +42,3 @@ printfn "Match: %A" matchResult
 // and this results in a null reference exception
 let functionResult = dropWhileWithFunction condition list
 printfn "Function: %A" functionResult
-
-
-7 |> (fun x -> match x with | 6 -> printfn "6" | _ -> printfn "Not 6")
-
