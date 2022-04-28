@@ -96,7 +96,7 @@ type SyntaxVisitorBase<'T>() =
         None
 
     /// VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
-    abstract VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: LongIdentWithTrivia option -> 'T option
+    abstract VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: SynLongIdent option -> 'T option
     default _.VisitRecordField (path, copyOpt, recordField) =
         ignore (path, copyOpt, recordField)
         None
@@ -439,7 +439,7 @@ module SyntaxTraversal =
                         | _ -> false
                     let ok = 
                         match isPartOfArrayOrList, synExpr with
-                        | false, SynExpr.Ident (ident,_) -> visitor.VisitRecordField(path, None, Some (LongIdentWithDots([ident], [])))
+                        | false, SynExpr.Ident ident -> visitor.VisitRecordField(path, None, Some (LongIdentWithDots([ident], [])))
                         | false, SynExpr.LongIdent (false, lidwd, _, _) -> visitor.VisitRecordField(path, None, Some lidwd)
                         | _ -> None
                     if ok.IsSome then ok

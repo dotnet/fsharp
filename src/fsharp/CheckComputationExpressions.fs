@@ -243,7 +243,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | [arg] -> SynExpr.Paren (SynExpr.Paren (arg, range0, None, m), range0, None, m)
             | args -> SynExpr.Paren (SynExpr.Tuple (false, args, [], m), range0, None, m)
                 
-        let builderVal = mkSynIdGet m builderValName None
+        let builderVal = mkSynIdGet m builderValName
         mkSynApp1 (SynExpr.DotGet (builderVal, range0, LongIdentWithDots([mkSynId m nm], []), m)) args m
 
     let hasMethInfo nm = TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy |> isNil |> not
@@ -689,8 +689,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
         | [] -> SynExpr.Const (SynConst.Unit, m)
-        | [v] -> SynExpr.Ident (v.Id, None)
-        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident (v.Id, None))), [], m)  
+        | [v] -> SynExpr.Ident v.Id
+        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)  
 
     let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
@@ -1249,7 +1249,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             let bindExpr =
                 let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, transNoQueryOps innerComp, innerComp.Range, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
-                let consumeExpr = mkSynCall "Using" mBind [SynExpr.Ident(id, None); consumeExpr ]
+                let consumeExpr = mkSynCall "Using" mBind [SynExpr.Ident id; consumeExpr ]
                 let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
                 let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
                 mkSynCall "Bind" mBind [rhsExpr; consumeExpr]
@@ -1775,7 +1775,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Add a call to 'Quote' if the method is present
     let quotedSynExpr = 
         if isAutoQuote then 
-            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>") None, (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
+            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
         else delayedExpr
             
     // Add a call to 'Run' if the method is present

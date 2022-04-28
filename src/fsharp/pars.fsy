@@ -52,7 +52,7 @@ let rebindRanges first fields lastSep =
         | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, m) :: acc)
     run first fields []
 
-let mkUnderscoreRecdField m = LongIdentWithTrivia([ident("_", m)], [], [None]), false
+let mkUnderscoreRecdField m = SynLongIdent([ident("_", m)], [], [None]), false
 
 let mkRecdField lidwd = lidwd, true
 
@@ -189,7 +189,7 @@ let idOfPat (parseState:IParseState) m p =
     | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
         mkSynId r "_"
     | SynPat.Named (id, false, _, _) -> id
-    | SynPat.LongIdent(longDotId=LongIdentWithTrivia([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
+    | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
 let checkForMultipleAugmentations m a1 a2 = 
@@ -345,8 +345,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExceptionDefn> exconDefn
 %type <SynExceptionDefnRepr> exconCore
 %type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
-%type <LongIdentWithTrivia> path
-%type <LongIdentWithTrivia> pathOp
+%type <SynLongIdent> path
+%type <SynLongIdent> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
 %type <range * range option * bool     * SynType list * range list * range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
@@ -983,7 +983,7 @@ tyconSpfnRhs:
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
-       let invoke = SynMemberSig.Member(SynValSig([], (mkSynId m "Invoke", None), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+       let invoke = SynMemberSig.Member(SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
@@ -1099,7 +1099,7 @@ classMemberSpfn:
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false 
-       let valSpfn = SynValSig ($1, (mkSynId (rhs parseState 3) "new", None), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
 
 
@@ -1125,14 +1125,14 @@ classMemberSpfnGetSet:
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
   | nameop 
-    { (let (id:Ident, _) = $1 
+    { (let (SynIdent(id:Ident, _)) = $1 
        if id.idText = "get" then SynMemberKind.PropertyGet 
        else if id.idText = "set" then SynMemberKind.PropertySet 
        else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | nameop COMMA nameop
-    { let (id:Ident, _) = $1 
-      let (id2, _) = $3
+    { let (SynIdent(id, _)) = $1 
+      let (SynIdent(id2, _)) = $3
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then 
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
@@ -1459,7 +1459,7 @@ namedModuleDefnBlock:
          // However in that case we do use type name lookup to make the resolution.
 
          match $2 with 
-         | [ SynModuleDecl.Expr (LongOrSingleIdent(false, LongIdentWithTrivia(path, _, _), None, _), _) ] -> 
+         | [ SynModuleDecl.Expr (LongOrSingleIdent(false, SynLongIdent(path, _, _), None, _), _) ] -> 
              Choice1Of2  path
          | _ -> 
              Choice2Of2 $2 
@@ -1723,7 +1723,7 @@ tyconDefnRhs:
      { let m = lhs parseState 
        let ty, arity = $3
        (fun nameRange augmentation -> 
-           let valSpfn = SynValSig([], (mkSynId m "Invoke", None), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m) 
+           let valSpfn = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m) 
            let invoke = SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
@@ -1881,7 +1881,7 @@ memberCore:
                        let getset = 
                              let rec go p = 
                                  match p with 
-                                 | SynPat.LongIdent (longDotId=LongIdentWithTrivia([id], _, _)) -> id.idText
+                                 | SynPat.LongIdent (longDotId=SynLongIdent([id], _, _)) -> id.idText
                                  | SynPat.Named (nm, _, _, _) | SynPat.As (_, SynPat.Named (nm, _, _, _), _) -> nm.idText
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
@@ -1993,7 +1993,7 @@ memberCore:
                      let lidOuter, lidVisOuter = 
                          match bindingPatOuter with 
                          | SynPat.LongIdent (lid, _, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  lid, lidVisOuter
-                         | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> LongIdentWithTrivia([id], [], [None]), visOuter
+                         | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> SynLongIdent([id], [], [None]), visOuter
                          | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
                      // Merge the visibility from the outer point with the inner point, e.g.
@@ -2010,7 +2010,7 @@ memberCore:
                      // Replace the "get" or the "set" with the right name
                      let rec go p = 
                          match p with 
-                         | SynPat.LongIdent (longDotId=LongIdentWithTrivia([id], _, _); typarDecls=tyargs; argPats=SynArgPats.Pats args; accessibility=lidVisInner; range=m) ->  
+                         | SynPat.LongIdent (longDotId=SynLongIdent([id], _, _); typarDecls=tyargs; argPats=SynArgPats.Pats args; accessibility=lidVisInner; range=m) ->  
                              // Setters have all arguments tupled in their internal form, though they don't 
                              // appear to be tupled from the syntax. Somewhat unfortunate
                              let args = 
@@ -2129,7 +2129,7 @@ classDefnMember:
         let expr = $7
         let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
         let vis = $2 
-        let declPat = SynPat.LongIdent (LongIdentWithTrivia([mkSynId (rhs parseState 3) "new"], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
+        let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
         let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
@@ -2178,12 +2178,12 @@ atomicPatternLongIdent:
 
        let underscore = ident("_", rhs parseState 1)
        let dotm = rhs parseState 2
-       None, prependIdentInLongIdentWithTrivia (underscore, None) dotm $3 }
+       None, prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) dotm $3 }
 
   | GLOBAL DOT pathOp
      { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
        let dotm = rhs parseState 2
-       None, prependIdentInLongIdentWithTrivia (globalIdent, None) dotm $3 }
+       None, prependIdentInLongIdentWithTrivia (SynIdent(globalIdent, None)) dotm $3 }
 
   | pathOp
      { (None, $1) }
@@ -2194,7 +2194,7 @@ atomicPatternLongIdent:
 
        let underscore = ident("_", rhs parseState 2)
        let dotm = rhs parseState 3
-       Some($1), prependIdentInLongIdentWithTrivia (underscore, None) dotm $4 } 
+       Some($1), prependIdentInLongIdentWithTrivia (SynIdent(underscore, None)) dotm $4 } 
 
   | access pathOp
      { (Some($1), $2) }
@@ -2264,7 +2264,7 @@ inheritsDefn:
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)
        if not $2 then errorR(Error(FSComp.SR.parsTypeNameCannotBeEmpty(), mDecl))
-       SynMemberDefn.Inherit(SynType.LongIdent(LongIdentWithTrivia([], [], [])), None, mDecl) }
+       SynMemberDefn.Inherit(SynType.LongIdent(SynLongIdent([], [], [])), None, mDecl) }
 
 optAsSpec: 
   | asSpec
@@ -2641,26 +2641,26 @@ unionCaseName:
   | LPAREN COLON_COLON rparen  
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3 
-        ident(opNameCons, rhs parseState 2), Some(IdentTrivia.OriginalNotationWithParen(lpr, "::", rpr)) }  
+        SynIdent(ident(opNameCons, rhs parseState 2), Some(IdentTrivia.OriginalNotationWithParen(lpr, "::", rpr))) }  
 
   | LPAREN LBRACK RBRACK  rparen  
       { let lpr = rhs parseState 1
         let rpr = rhs parseState 3
-        ident(opNameNil, rhs2 parseState 2 3), Some(IdentTrivia.OriginalNotationWithParen(lpr, "[]", rpr)) }  
+        SynIdent(ident(opNameNil, rhs2 parseState 2 3), Some(IdentTrivia.OriginalNotationWithParen(lpr, "[]", rpr))) }  
 
 firstUnionCaseDeclOfMany: 
   | ident opt_OBLOCKSEP
       { let trivia: SynUnionCaseTrivia = { BarRange = None }
         let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs parseState 1) |> unionRangeWithXmlDoc xmlDoc
-        Choice2Of2 (SynUnionCase ( [], ($1, None), SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
+        Choice2Of2 (SynUnionCase ( [], (SynIdent($1, None)), SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
         let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
         let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs2 parseState 1 3) |> unionRangeWithXmlDoc xmlDoc
-        Choice1Of2 (SynEnumCase ([], ($1, None), fst $3, snd $3, xmlDoc, mDecl, trivia)) }
+        Choice1Of2 (SynEnumCase ([], SynIdent($1, None), fst $3, snd $3, xmlDoc, mDecl, trivia)) }
 
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
@@ -2670,14 +2670,14 @@ firstUnionCaseDecl:
      { let trivia: SynUnionCaseTrivia = { BarRange = None }
        let xmlDoc = grabXmlDoc(parseState, [], 1)
        let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-       Choice2Of2 (SynUnionCase ( [], ($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
+       Choice2Of2 (SynUnionCase ( [], SynIdent($1, None), SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
         let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
         let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-        Choice1Of2 (SynEnumCase ([], ($1, None), fst $3, snd $3, xmlDoc, mDecl, trivia))  }
+        Choice1Of2 (SynEnumCase ([], SynIdent($1, None), fst $3, snd $3, xmlDoc, mDecl, trivia))  }
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements
@@ -2743,13 +2743,13 @@ exconCore:
 /* Part of an exception definition */
 exconIntro:
   | ident
-      { SynUnionCase([], ($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+      { SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
   | ident OF unionCaseRepr
-      { SynUnionCase([], ($1,None), SynUnionCaseKind.Fields $3, PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+      { SynUnionCase([], SynIdent($1,None), SynUnionCaseKind.Fields $3, PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
   | ident OF recover
-      { SynUnionCase([], ($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+      { SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
 exconRepr: 
   | /* EMPTY */
@@ -2888,11 +2888,11 @@ cPrototype:
             SynExpr.App (
                 ExprAtomicFlag.NonAtomic,
                 false,
-                SynExpr.Ident (ident("failwith", rhs parseState 6), None),
+                SynExpr.Ident (ident("failwith", rhs parseState 6)),
                 SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
-            let bindingPat = SynPat.LongIdent (LongIdentWithTrivia([nm], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let bindingPat = SynPat.LongIdent (SynLongIdent([nm], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding =
@@ -2937,19 +2937,19 @@ cType:
 
   | cType opt_HIGH_PRECEDENCE_APP LBRACK RBRACK 
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(LongIdentWithTrivia([ident("[]", m)], [], [None])), None, [$1], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("[]", m)], [], [None])), None, [$1], [], None, true, m) } 
 
   | cType STAR 
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(LongIdentWithTrivia([ident("nativeptr", m)], [], [None])), None, [$1], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeptr", m)], [], [None])), None, [$1], [], None, true, m) } 
 
   | cType AMP  
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(LongIdentWithTrivia([ident("byref", m)], [], [None])), None, [$1], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("byref", m)], [], [None])), None, [$1], [], None, true, m) } 
 
   | VOID STAR 
      { let m = lhs parseState 
-       SynType.App(SynType.LongIdent(LongIdentWithTrivia([ident("nativeint", m)], [], [None])), None, [], [], None, true, m) } 
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("nativeint", m)], [], [None])), None, [], [], None, true, m) } 
 
 
 /* A return type in an 'extern' DllImport function definition */
@@ -2959,7 +2959,7 @@ cRetType:
 
   | opt_attributes VOID  
      { let m = rhs parseState 2 
-       SynReturnInfo((SynType.App(SynType.LongIdent(LongIdentWithTrivia([ident("unit", m)], [], [None])), None, [], [], None, false, m), SynArgInfo($1, false, None)), m) } 
+       SynReturnInfo((SynType.App(SynType.LongIdent(SynLongIdent([ident("unit", m)], [], [None])), None, [], [], None, false, m), SynArgInfo($1, false, None)), m) } 
 
 
 localBindings: 
@@ -3264,7 +3264,7 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (LongIdentWithTrivia(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
 
   | tuplePatternElements  %prec pat_tuple 
       { SynPat.Tuple(false, List.rev $1, lhs parseState) }
@@ -3503,7 +3503,7 @@ parenPattern:
         SynPat.Attrib($2, $1, lhsm) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (LongIdentWithTrivia(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [None]), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
 
   | constrPattern { $1 }
 
@@ -4054,7 +4054,7 @@ declExpr:
 
   | declExpr COLON_COLON declExpr
      { let tupExpr = SynExpr.Tuple (false, [$1;$3], [rhs parseState 2], unionRanges $1.Range $3.Range)
-       let identExpr = mkSynIdGet (rhs parseState 2) opNameCons (Some (IdentTrivia.OriginalNotation "::"))
+       let identExpr = mkSynOperator (rhs parseState 2) "::"
        SynExpr.App (ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, unionRanges $1.Range $3.Range) }
 
   | declExpr PLUS_MINUS_OP declExpr
@@ -4130,7 +4130,7 @@ declExpr:
 
   | declExpr COLON_COLON OBLOCKEND_COMING_SOON
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("::"))
-       let identExpr = mkSynIdGet (rhs parseState 2) opNameCons (Some (IdentTrivia.OriginalNotation "::"))
+       let identExpr = mkSynOperator (rhs parseState 2) "::"
        let tupExpr = SynExpr.Tuple (false, [$1;(arbExpr("declExprInfix", (rhs parseState 3).StartRange))], [rhs parseState 2], unionRanges $1.Range (rhs parseState 3).StartRange)
        SynExpr.App (ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, unionRanges $1.Range (rhs parseState 3).StartRange) }
 
@@ -4450,19 +4450,21 @@ atomicExpr:
         $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }
 
   | BASE DOT atomicExprQualification 
-      { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1), None)
+      { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
         $3 arg1 (lhs parseState) (rhs parseState 2), false }
 
   | QMARK nameop 
-      { let ident, trivia = $2
-        SynExpr.LongIdent (true, LongIdentWithTrivia([ident], [], [trivia]), None, rhs parseState 2), false }
+      { let (SynIdent(ident, trivia)) = $2
+        SynExpr.LongIdent (true, SynLongIdent([ident], [], [trivia]), None, rhs parseState 2), false }
 
   | atomicExpr QMARK dynamicArg
       { let arg1, hpa1 = $1
         mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1 }
 
   | GLOBAL
-      { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1), Some (IdentTrivia.OriginalNotation "global")), false }
+      { let m = rhs parseState 1
+        let ident = ident(MangledGlobalName, m)
+        SynExpr.LongIdent(false, SynLongIdent([ident], [], [Some (IdentTrivia.OriginalNotation "global")]), None, m), false }
 
   | identExpr
       { $1, false }
@@ -4532,7 +4534,7 @@ atomicExprQualification:
             // Note that "*" is parsed as an expression (it is allowed in "foo.[3,*]")
             match $2 with
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
-                mkSynDot dotm lhsm e (ident(CompileOpName "*", opm), Some(IdentTrivia.OriginalNotationWithParen(lpr, "*", rpr)))
+                mkSynDot dotm lhsm e (SynIdent(ident(CompileOpName "*", opm), Some(IdentTrivia.OriginalNotationWithParen(lpr, "*", rpr))))
             | _ ->
                 if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
                     mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (lhs parseState) 
@@ -4608,19 +4610,19 @@ beginEndExpr:
 quoteExpr:
   | LQUOTE typedSequentialExpr RQUOTE 
       { if $1 <> $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsMismatchedQuote(fst $1))
-        (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)) None, snd $1, $2, false, lhs parseState)) } 
+        (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)), snd $1, $2, false, lhs parseState)) } 
 
   | LQUOTE typedSequentialExpr recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatched(fst $1))  
         let mExpr = rhs2 parseState 1 2
-        exprFromParseError (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)) None, snd $1, $2, false, mExpr))  } 
+        exprFromParseError (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)), snd $1, $2, false, mExpr))  } 
 
   | LQUOTE error RQUOTE 
-      { (* silent recovery *) SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)) None, snd $1, arbExpr("quoteExpr", (rhs parseState 2)), false, lhs parseState)  }  
+      { (* silent recovery *) SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)), snd $1, arbExpr("quoteExpr", (rhs parseState 2)), false, lhs parseState)  }  
 
   | LQUOTE recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatched(fst $1))
-        exprFromParseError (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)) None, snd $1, arbExpr("quoteExpr2", (rhs parseState 1).EndRange), false, rhs parseState 1))  }  
+        exprFromParseError (SynExpr.Quote (mkSynIdGet (lhs parseState) (CompileOpName (fst $1)), snd $1, arbExpr("quoteExpr2", (rhs parseState 1).EndRange), false, rhs parseState 1))  }  
 
 arrayExpr:
   | LBRACK_BAR arrayExprElements BAR_RBRACK 
@@ -4831,7 +4833,7 @@ recdExpr:
   | INHERIT atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType recdExprBindings opt_seps_recd
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e 
        let l = List.rev $5
-       let dummyField = mkRecdField (LongIdentWithTrivia([], [], [])) // dummy identifier, it will be discarded
+       let dummyField = mkRecdField (SynLongIdent([], [], [])) // dummy identifier, it will be discarded
        let l = rebindRanges (dummyField, None, None) l $6 
        let (SynExprRecordField(_, _, _, inheritsSep)) = List.head l
        let bindings = List.tail l
@@ -4843,7 +4845,7 @@ recdExpr:
 recdExprCore:
   | appExpr EQUALS declExprBlock recdExprBindings opt_seps_recd
      { match $1 with 
-       | LongOrSingleIdent(false, (LongIdentWithTrivia _ as f), None, m) ->  
+       | LongOrSingleIdent(false, (SynLongIdent _ as f), None, m) ->  
             let f = mkRecdField f
             let mEquals = rhs parseState 2
             let l = List.rev $4
@@ -5046,8 +5048,8 @@ braceBarExprCore:
      { let orig, flds = $2
        let flds = 
            flds |> List.choose (function 
-             | SynExprRecordField((LongIdentWithTrivia([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((LongIdentWithTrivia([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
+             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
+             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 3
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -5057,8 +5059,8 @@ braceBarExprCore:
        let orig, flds = $2 
        let flds = 
            flds |> List.choose (function 
-             | SynExprRecordField((LongIdentWithTrivia([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
-             | SynExprRecordField((LongIdentWithTrivia([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
+             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
+             | SynExprRecordField((SynLongIdent([id], _, _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 2
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -5183,7 +5185,7 @@ topTupleTypeElements:
 topAppType:
   | attributes appType COLON appType 
      { match $2 with 
-       | SynType.LongIdent(LongIdentWithTrivia([id], _, _)) -> $4, SynArgInfo($1, false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $4, SynArgInfo($1, false, Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | attributes QMARK ident COLON appType 
@@ -5194,7 +5196,7 @@ topAppType:
 
   | appType COLON appType 
      { match $1 with 
-       | SynType.LongIdent(LongIdentWithTrivia([id], _, _)) -> $3, SynArgInfo([], false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $3, SynArgInfo([], false, Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | QMARK ident COLON appType 
@@ -5504,7 +5506,7 @@ dummyTypeArg:
   |  /* EMPTY */
      { let m = rhs parseState 1
        let dummyStatVal = SynType.StaticConstant(SynConst.Int32(0), m)
-       let dummyName = SynType.LongIdent(LongIdentWithTrivia([ident("", m)], [], [None]))
+       let dummyName = SynType.LongIdent(SynLongIdent([ident("", m)], [], [None]))
        let dummyTypeArg = SynType.StaticConstantNamed(dummyName, dummyStatVal, m)
        dummyTypeArg }
 
@@ -5582,17 +5584,17 @@ ident:
 /* A A.B.C path used to an identifier */
 path: 
   | GLOBAL
-      { LongIdentWithTrivia([ident(MangledGlobalName, rhs parseState 1)], [], [None]) }
+      { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [None]) }
 
   | ident  
-     { LongIdentWithTrivia([$1], [], [None]) }
+     { SynLongIdent([$1], [], [None]) }
 
   | path DOT ident  
-     { let (LongIdentWithTrivia(lid, dotms, trivia)) = $1 in LongIdentWithTrivia(lid @ [$3], dotms @ [rhs parseState 2], trivia @ [None]) } 
+     { let (SynLongIdent(lid, dotms, trivia)) = $1 in SynLongIdent(lid @ [$3], dotms @ [rhs parseState 2], trivia @ [None]) } 
 
   | path DOT ends_coming_soon_or_recover  
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
-       let (LongIdentWithTrivia(lid, dotms, trivia)) = $1 in LongIdentWithTrivia(lid, dotms @ [rhs parseState 2], trivia)  } 
+       let (SynLongIdent(lid, dotms, trivia)) = $1 in SynLongIdent(lid, dotms @ [rhs parseState 2], trivia)  } 
 
 
 /* An operator name, with surrounnding parentheses */
@@ -5731,27 +5733,27 @@ activePatternCaseNames:
 /* A single item that is an identifier or operator name */
 identOrOp: 
   | ident  
-     { $1, None } 
+     { SynIdent($1, None) } 
 
   | opName 
      { let ident, trivia = $1
-       ident, Some trivia }
+       SynIdent(ident, Some trivia) }
 
 /* An A.B.C path ending in an identifier or operator name */
 /* Note, only used in atomicPatternLongIdent */
 pathOp: 
   | ident  
-     { LongIdentWithTrivia([$1], [], [None]) }
+     { SynLongIdent([$1], [], [None]) }
 
   | opName 
      { let ident, trivia = $1
-       LongIdentWithTrivia([ident], [], [Some trivia]) }
+       SynLongIdent([ident], [], [Some trivia]) }
 
   | ident DOT pathOp 
-     { prependIdentInLongIdentWithTrivia ($1, None) (rhs parseState 2) $3 }
+     { prependIdentInLongIdentWithTrivia (SynIdent($1, None)) (rhs parseState 2) $3 }
 
   | ident DOT error
-     { (* silent recovery *) LongIdentWithTrivia([$1], [rhs parseState 2], [None]) }  
+     { (* silent recovery *) SynLongIdent([$1], [rhs parseState 2], [None]) }  
 
 
 /* nameop is identOrOp not used as part of a path */
@@ -5760,7 +5762,7 @@ nameop:
 
 identExpr:
   | ident
-     { SynExpr.Ident($1, None) }
+     { SynExpr.Ident($1) }
 
   | opName
      { let m = lhs parseState
@@ -5776,7 +5778,16 @@ identExpr:
            | IdentTrivia.HasParenthesis(lpr, rpr) ->
                lpr, rpr, None
 
-       SynExpr.Paren(SynExpr.Ident(ident, trivia), mLparen, Some mRparen, m) }
+       match trivia with
+       | None -> 
+           SynExpr.Paren(SynExpr.Ident(ident), mLparen, Some mRparen, m)
+       | Some trivia ->
+           SynExpr.Paren(
+               SynExpr.LongIdent(false, SynLongIdent([ident], [], [Some trivia]), None, m),
+               mLparen, 
+               Some mRparen, 
+               m
+           ) }
 
 topSeparator: 
   | SEMICOLON { } 

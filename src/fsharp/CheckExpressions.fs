@@ -2599,7 +2599,7 @@ module EventDeclarationNormalization =
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
                    | SynExpr.Lambda (args=SynSimplePats.SimplePats([], _); body=trueRhsExpr; range=m) ->
-                       let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m), None)) m
+                       let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
                        let bindingRhs = NormalizedBindingRhs([], None, rhsExpr)
@@ -4093,7 +4093,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv valSpfn attrs =
     let g = cenv.g
-    let (SynValSig(ident=(id,_); explicitValDecls=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = valSpfn
+    let (SynValSig(ident=SynIdent(id,_); explicitValDecls=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = valSpfn
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
@@ -5167,7 +5167,7 @@ and ConvSynPatToSynExpr x =
     match x with
     | SynPat.FromParseError(p, _) -> ConvSynPatToSynExpr p
     | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-    | SynPat.Named (id, _, None, _) -> SynExpr.Ident (id,None)
+    | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
     | SynPat.Typed (p, cty, m) -> SynExpr.Typed (ConvSynPatToSynExpr p, cty, m)
     | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, dotms) as lidwd; argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
@@ -5869,7 +5869,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     match synExpr with
     // ( * )
     | SynExpr.Paren(SynExpr.IndexRange (None, opm, None, _m1, _m2, _), _, _, _) ->
-        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm), None)
+        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
         TcExpr cenv overallTy env tpenv replacementExpr
 
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) ->
@@ -6606,7 +6606,7 @@ and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
         | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
         | Some xsId -> 
             mkSynApp1
-                (mkSynDot range range xsId (mkSynId (range.MakeSynthetic()) "GetReverseIndex", None))
+                (mkSynDot range range xsId (SynIdent((mkSynId (range.MakeSynthetic()) "GetReverseIndex"), None)))
                 sliceArgs
                 range
 

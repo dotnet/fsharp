@@ -280,7 +280,7 @@ module ParsedInput =
                     traverseSynExpr synExpr
                 else
                     Some range 
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident (ident, _), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), rhs, _) 
                 when ident.idText = "op_ArrayLookup" 
                      && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
@@ -429,7 +429,7 @@ module ParsedInput =
                                     // the cursor is left of the dot
                                     None
                             | r -> r
-                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident (ident, _), lhs, _m) 
+                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), lhs, _m) 
                             when ident.idText = "op_ArrayLookup" 
                                  && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
@@ -594,7 +594,7 @@ module ParsedInput =
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElseWith (fun () -> match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
-            | SynExpr.Ident (ident,_) -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
+            | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.DotGet (e, _, _, _) -> walkExprWithKind parentKind e
             | SynExpr.DotSet (e, _, _, _) -> walkExprWithKind parentKind e
@@ -826,7 +826,7 @@ module ParsedInput =
 
         let (|Operator|_|) name e = 
             match e with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident (ident, _), lhs, _), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), lhs, _), rhs, _) 
                 when ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
@@ -838,7 +838,7 @@ module ParsedInput =
 
         let (|Setter|_|) e =
             match e with
-            | Operator "op_Equality" (SynExpr.Ident (id,_) , _) -> Some id
+            | Operator "op_Equality" (SynExpr.Ident id , _) -> Some id
             | _ -> None
 
         let findSetters argList =
@@ -852,11 +852,11 @@ module ParsedInput =
                 setters
             | _ -> emptyStringSet
 
-        let endOfLastIdent (lid: LongIdentWithTrivia) = 
+        let endOfLastIdent (lid: SynLongIdent) = 
             let last = List.last lid.LongIdent
             last.idRange.End
 
-        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithTrivia) =
+        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : SynLongIdent) =
             match mClosing with
             | Some m -> m.End
             | None -> endOfLastIdent lid
@@ -874,10 +874,10 @@ module ParsedInput =
             | SynExpr.New (_, SynType.App(StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
-            | SynExpr.App (_, false, SynExpr.Ident (id, _), arg, _) -> 
+            | SynExpr.App (_, false, SynExpr.Ident id, arg, _) -> 
                 // A()
                 Some (id.idRange.End, findSetters arg)
-            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident (id, _), _, _, _, mGreaterThan, _, _), arg, _) -> 
+            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // A<_>()
                 Some (endOfClosingTokenOrIdent mGreaterThan id, findSetters arg)
             | SynExpr.App (_, false, SynExpr.LongIdent (_, lid, _, _), arg, _) -> 
@@ -941,7 +941,7 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
                             // new (... A$)
-                            | SynExpr.Ident (id,_) when id.idRange.End = pos ->
+                            | SynExpr.Ident id when id.idRange.End = pos ->
                                 match path with
                                 | PartOfParameterList None args -> 
                                     Some (CompletionContext.ParameterList args)
@@ -1110,7 +1110,7 @@ module ParsedInput =
                             | _ -> None)
 
                     member _.VisitUnionDefn(_path, cases, _range) =
-                        cases |> List.tryPick (fun (SynUnionCase (ident = (id,_); caseType = caseType)) ->
+                        cases |> List.tryPick (fun (SynUnionCase (ident = SynIdent(id,_); caseType = caseType)) ->
                             if rangeContainsPos id.idRange pos then
                                 // No completions in a union case identifier
                                 Some CompletionContext.Invalid
@@ -1344,7 +1344,7 @@ module ParsedInput =
                 fields |> List.iter (fun (SynExprRecordField(fieldName=(ident, _); expr=e)) ->
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
-            | SynExpr.Ident (ident,_) -> addIdent ident
+            | SynExpr.Ident ident -> addIdent ident
             | SynExpr.ObjExpr (objType=ty; argOptions=argOpt; bindings=bindings; members=ms; extraImpls=ifaces) ->
                 let bindings = unionBindingAndMembers bindings ms
                 argOpt |> Option.iter (fun (e, ident) ->

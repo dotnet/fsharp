@@ -31,7 +31,7 @@ val mkSynId: m:range -> s:string -> Ident
 
 val pathToSynLid: m:range -> p:string list -> Ident list
 
-val mkSynIdGet: m:range -> n:string -> IdentTrivia option -> SynExpr
+val mkSynIdGet: m:range -> n:string -> SynExpr
 
 val mkSynLidGet: m:range -> path:string list -> n:string -> SynExpr
 
@@ -42,7 +42,7 @@ val mkSynSimplePatVar: isOpt:bool -> id:Ident -> SynSimplePat
 val mkSynCompGenSimplePatVar: id:Ident -> SynSimplePat
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
-val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithTrivia * SynSimplePatAlternativeIdInfo ref option * range) option
+val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * SynLongIdent * SynSimplePatAlternativeIdInfo ref option * range) option
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
@@ -61,7 +61,7 @@ val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
 val mkSynThisPatVar: id:Ident -> SynPat
 
-val mkSynPatMaybeVar: lidwd:LongIdentWithTrivia -> vis:SynAccess option -> m:range -> SynPat
+val mkSynPatMaybeVar: lidwd:SynLongIdent -> vis:SynAccess option -> m:range -> SynPat
 
 val ( |SynPatForConstructorDecl|_| ): x:SynPat -> SynPat option
 
@@ -142,7 +142,7 @@ val mkSynDelay: m:range -> e:SynExpr -> SynExpr
 
 val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
-val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:IdentWithTrivia -> SynExpr
+val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:SynIdent -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
@@ -301,4 +301,4 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
 
-val prependIdentInLongIdentWithTrivia: ident: IdentWithTrivia -> dotm: range -> lid: LongIdentWithTrivia -> LongIdentWithTrivia
+val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent

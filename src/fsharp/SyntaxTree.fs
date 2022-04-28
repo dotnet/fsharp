@@ -17,55 +17,57 @@ type Ident (text: string, range: range) =
      member _.idRange = range
      override _.ToString() = text
 
-type IdentWithTrivia = Ident * IdentTrivia option
+type SynIdent =
+    | SynIdent of ident:Ident * trivia:IdentTrivia option
 
 type LongIdent = Ident list
 
-type LongIdentWithTrivia =
-    | LongIdentWithTrivia of id: LongIdent * dotRanges: range list * trivia: IdentTrivia option list
+type SynLongIdent =
+    | SynLongIdent of id: LongIdent * dotRanges: range list * trivia: IdentTrivia option list
 
     member this.Range =
        match this with
-       | LongIdentWithTrivia([], _, _) -> failwith "rangeOfLidwd"
-       | LongIdentWithTrivia([id], [], _) -> id.idRange
-       | LongIdentWithTrivia([id], [m], _) -> unionRanges id.idRange m
-       | LongIdentWithTrivia(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
-       | LongIdentWithTrivia(h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
+       | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+       | SynLongIdent([id], [], _) -> id.idRange
+       | SynLongIdent([id], [m], _) -> unionRanges id.idRange m
+       | SynLongIdent(h :: t, [], _) -> unionRanges h.idRange (List.last t).idRange
+       | SynLongIdent(h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
 
-    member this.LongIdent = match this with LongIdentWithTrivia(lid, _, _) -> lid
+    member this.LongIdent = match this with SynLongIdent(lid, _, _) -> lid
     
-    member this.Dots = match this with LongIdentWithTrivia(dotRanges = dots) -> dots
+    member this.Dots = match this with SynLongIdent(dotRanges = dots) -> dots
     
     member this.Trivia =
         match this with
-        | LongIdentWithTrivia(trivia = trivia) -> List.choose id trivia
+        | SynLongIdent(trivia = trivia) -> List.choose id trivia
 
     member this.IdentsWithTrivia =
-        let (LongIdentWithTrivia(lid, _, trivia)) = this
+        let (SynLongIdent(lid, _, trivia)) = this
         if lid.Length <> trivia.Length then
             failwith "difference between idents and trivia"
         else
             List.zip lid trivia
+            |> List.map SynIdent
 
-    member this.ThereIsAnExtraDotAtTheEnd = match this with LongIdentWithTrivia(lid, dots, _) -> lid.Length = dots.Length
+    member this.ThereIsAnExtraDotAtTheEnd = match this with SynLongIdent(lid, dots, _) -> lid.Length = dots.Length
 
     member this.RangeWithoutAnyExtraDot =
        match this with
-       | LongIdentWithTrivia([], _, _) -> failwith "rangeOfLidwd"
-       | LongIdentWithTrivia([id], _, _) -> id.idRange
-       | LongIdentWithTrivia(h :: t, dotRanges, _) ->
+       | SynLongIdent([], _, _) -> failwith "rangeOfLidwd"
+       | SynLongIdent([id], _, _) -> id.idRange
+       | SynLongIdent(h :: t, dotRanges, _) ->
            let nonExtraDots = if dotRanges.Length = t.Length then dotRanges else List.truncate t.Length dotRanges
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 [<AutoOpen>]
-module LongIdentWithTriviaHelpers =
-    [<Obsolete("Please use LongIdentWithTrivia or define a custom active pattern")>]
+module SynLongIdentHelpers =
+    [<Obsolete("Please use SynLongIdent or define a custom active pattern")>]
     let (|LongIdentWithDots|) =
         function
-        | LongIdentWithTrivia(lid, dots, _) -> lid, dots
+        | SynLongIdent(lid, dots, _) -> lid, dots
 
-    [<Obsolete("Please use LongIdentWithTrivia")>]
-    let LongIdentWithDots (lid, dots) = LongIdentWithTrivia(lid, dots, []) 
+    [<Obsolete("Please use SynLongIdent")>]
+    let LongIdentWithDots (lid, dots) = SynLongIdent(lid, dots, []) 
 
 [<RequireQualifiedAccess>]
 type ParserDetail =
@@ -264,7 +266,7 @@ type SeqExprOnly =
 
 type BlockSeparator = range * pos option
 
-type RecordFieldName = LongIdentWithTrivia * bool
+type RecordFieldName = SynLongIdent * bool
 
 type ExprAtomicFlag =
     | Atomic = 0
@@ -382,7 +384,7 @@ type SynTyparDecls =
 type SynType = 
     
     | LongIdent of
-        longDotId: LongIdentWithTrivia
+        longDotId: SynLongIdent
 
     | App of
         typeName: SynType *
@@ -395,7 +397,7 @@ type SynType =
 
     | LongIdentApp of
         typeName: SynType *
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         lessRange: range option *
         typeArgs: SynType list *
         commaRanges: range list * // interstitial commas
@@ -689,28 +691,28 @@ type SynExpr =
         trivia: SynExprIfThenElseTrivia
 
     | Ident of
-        ident: IdentWithTrivia
+        ident: Ident
 
     | LongIdent of
         isOptional: bool *
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         range: range
 
     | LongIdentSet of
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         expr: SynExpr *
         range: range
 
     | DotGet of
         expr: SynExpr *
         rangeOfDot: range *
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         range: range
 
     | DotSet of
         targetExpr: SynExpr *
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         rhsExpr: SynExpr *
         range: range
 
@@ -734,14 +736,14 @@ type SynExpr =
         range: range
 
     | NamedIndexedPropertySet of
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         expr1: SynExpr *
         expr2: SynExpr *
         range: range
 
     | DotNamedIndexedPropertySet of
         targetExpr: SynExpr *
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         argExpr: SynExpr *
         rhsExpr: SynExpr *
         range: range
@@ -953,7 +955,7 @@ type SynExpr =
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
-        | SynExpr.Ident (id,_) -> id.idRange
+        | SynExpr.Ident id -> id.idRange
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -1127,7 +1129,7 @@ type SynPat =
         range: range
 
     | LongIdent of
-        longDotId: LongIdentWithTrivia *
+        longDotId: SynLongIdent *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
@@ -1244,7 +1246,7 @@ type SynMatchClause =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
-    { TypeName: LongIdentWithTrivia
+    { TypeName: SynLongIdent
 
       ArgExpr: SynExpr
 
@@ -1460,7 +1462,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: IdentWithTrivia *
+        ident: SynIdent *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1476,7 +1478,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: IdentWithTrivia *
+        ident: SynIdent *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1565,7 +1567,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: IdentWithTrivia *
+        ident: SynIdent *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
@@ -1577,7 +1579,7 @@ type SynValSig =
         withKeyword: range option *
         range: range
 
-    member x.RangeOfId  = let (SynValSig(ident=(id, _))) = x in id.idRange
+    member x.RangeOfId  = let (SynValSig(ident=SynIdent(id, _))) = x in id.idRange
 
     member x.SynInfo = let (SynValSig(arity=v)) = x in v
 
