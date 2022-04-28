@@ -9760,6 +9760,18 @@ let (|IfThenElseExpr|_|) expr =
         Some (cond, thenExpr,  elseExpr)
     | _ -> None
 
+/// Match a functionmatch expression
+let (|FunctionMatchExpr|_|) expr =
+    match expr with
+    | Expr.Lambda(_a,_b,_c,_d,bodyExpr,_f,_g) ->
+        match bodyExpr with
+        | Expr.Let (_a, bodyExpr, _c, _d) ->
+            match bodyExpr with
+            | Expr.Match (_a, _b, _c, _d, _e, _f) -> Some(expr)
+            | _ -> None
+        | _ -> None
+    | _ -> None
+
 /// if __useResumableCode then ... else ...
 let (|IfUseResumableStateMachinesExpr|_|) g expr =
     match expr with

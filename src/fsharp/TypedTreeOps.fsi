@@ -2547,5 +2547,8 @@ val mkDebugPoint: m: range -> expr: Expr -> Expr
 /// Match an if...then...else expression or the result of "a && b" or "a || b"
 val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option
 
+/// Match an if...then...else expression or the result of "a && b" or "a || b"
+val (|FunctionMatchExpr|_|): expr: Expr -> Expr option
+
 /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
 val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
