@@ -33,6 +33,12 @@ type LongIdentWithTrivia =
        | LongIdentWithTrivia(h :: t, dotRanges, _) -> unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last dotRanges)
 
     member this.LongIdent = match this with LongIdentWithTrivia(lid, _, _) -> lid
+    
+    member this.Dots = match this with LongIdentWithTrivia(dotRanges = dots) -> dots
+    
+    member this.Trivia =
+        match this with
+        | LongIdentWithTrivia(trivia = trivia) -> List.choose id trivia
 
     member this.IdentsWithTrivia =
         let (LongIdentWithTrivia(lid, _, trivia)) = this
@@ -53,11 +59,12 @@ type LongIdentWithTrivia =
 
 [<AutoOpen>]
 module LongIdentWithTriviaHelpers =
+    [<Obsolete("Please use LongIdentWithTrivia or define a custom active pattern")>]
     let (|LongIdentWithDots|) =
         function
         | LongIdentWithTrivia(lid, dots, _) -> lid, dots
 
-    [<Obsolete("Please use LongIDentWithTrivia")>]
+    [<Obsolete("Please use LongIdentWithTrivia")>]
     let LongIdentWithDots (lid, dots) = LongIdentWithTrivia(lid, dots, []) 
 
 [<RequireQualifiedAccess>]

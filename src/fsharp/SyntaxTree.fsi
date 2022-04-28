@@ -37,6 +37,12 @@ type LongIdentWithTrivia =
     /// Get the long ident for this construct
     member LongIdent: LongIdent
     
+    /// Get the dot ranges
+    member Dots: range list
+    
+    /// Get the trivia of the idents
+    member Trivia: IdentTrivia list
+    
     /// Get the idents with potential trivia attached
     member IdentsWithTrivia: IdentWithTrivia list
 
@@ -48,9 +54,10 @@ type LongIdentWithTrivia =
 
 [<AutoOpen>]
 module LongIdentWithTriviaHelpers =
+    [<Obsolete("Please use LongIdentWithTrivia or define a custom active pattern")>]
     val (|LongIdentWithDots|): LongIdentWithTrivia -> LongIdent * range list
 
-    [<Obsolete("Please use LongIDentWithTrivia")>]
+    [<Obsolete("Please use LongIdentWithTrivia")>]
     val LongIdentWithDots: LongIdent * range list -> LongIdentWithTrivia 
 
 /// Indicates if the construct arises from error recovery

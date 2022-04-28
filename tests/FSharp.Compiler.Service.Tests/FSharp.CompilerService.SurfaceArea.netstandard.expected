@@ -5430,7 +5430,11 @@ FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_LongIdent()
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_id()
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] id
+FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] Trivia
+FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia] get_Trivia()
+FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] Dots
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] dotRanges
+FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_Dots()
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_dotRanges()
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia]] get_trivia()
 FSharp.Compiler.Syntax.LongIdentWithTrivia: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTrivia.IdentTrivia]] trivia
@@ -9158,16 +9162,16 @@ FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Int32 Tag
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: Int32 get_Tag()
 FSharp.Compiler.SyntaxTrivia.ConditionalDirectiveTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.IdentTrivia
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range get_lpr()
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range get_rpr()
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range lpr
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range rpr
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range get_leftParenRange()
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range get_rightParenRange()
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range leftParenRange
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+HasParenthesis: FSharp.Compiler.Text.Range rightParenRange
 FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotation: System.String get_text()
 FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotation: System.String text
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range get_lpr()
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range get_rpr()
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range lpr
-FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range rpr
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range get_leftParenRange()
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range get_rightParenRange()
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range leftParenRange
+FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: FSharp.Compiler.Text.Range rightParenRange
 FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: System.String get_text()
 FSharp.Compiler.SyntaxTrivia.IdentTrivia+OriginalNotationWithParen: System.String text
 FSharp.Compiler.SyntaxTrivia.IdentTrivia+Tags: Int32 HasParenthesis

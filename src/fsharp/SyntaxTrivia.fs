@@ -7,8 +7,8 @@ open FSharp.Compiler.Text
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type IdentTrivia =
     | OriginalNotation of text: string
-    | OriginalNotationWithParen of lpr: range * text:string * rpr: range
-    | HasParenthesis of lpr: range * rpr: range
+    | OriginalNotationWithParen of leftParenRange: range * text:string * rightParenRange: range
+    | HasParenthesis of leftParenRange: range * rightParenRange: range
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =

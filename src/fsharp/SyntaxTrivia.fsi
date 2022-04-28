@@ -6,12 +6,18 @@ open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type IdentTrivia =
-    /// The ident originally had a different notation
+    /// The ident originally had a different notation.
+    /// Example: a + b
+    /// The operator ident will be compiled into "op_Addition", while the original notation was "+"
     | OriginalNotation of text: string
     /// The ident originally had a different notation and parenthesis
-    | OriginalNotationWithParen of lpr: range * text:string * rpr: range
+    /// Example: let (>=>) a b = ...
+    /// The operator ident will be compiled into "op_GreaterEqualsGreater", while the original notation was ">=>" and had parenthesis
+    | OriginalNotationWithParen of leftParenRange: range * text:string * rightParenRange: range
     /// The ident had parenthesis
-    | HasParenthesis of lpr: range * rpr: range
+    /// Example: let (|Odd|Even|) = ...
+    /// The active pattern ident will be "|Odd|Even|", while originally there were parenthesis.
+    | HasParenthesis of leftParenRange: range * rightParenRange: range
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
