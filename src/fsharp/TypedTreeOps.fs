@@ -9763,11 +9763,11 @@ let (|IfThenElseExpr|_|) expr =
 /// Match a functionmatch expression
 let (|FunctionMatchExpr|_|) expr =
     match expr with
-    | Expr.Lambda(_a,_b,_c,_d,bodyExpr,_f,_g) ->
+    | Expr.Lambda(_, _, _, _, bodyExpr, _ ,_) ->
         match bodyExpr with
-        | Expr.Let (_a, bodyExpr, _c, _d) ->
+        | Expr.Let (_, bodyExpr, _, _) ->
             match bodyExpr with
-            | Expr.Match (_a, _b, _c, _d, _e, _f) -> Some(expr)
+            | Expr.Match (_, _, _, _, _, _) -> Some(expr)
             | _ -> None
         | _ -> None
     | _ -> None
