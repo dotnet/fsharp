@@ -25,3 +25,4 @@ type FSharpGlyph =
     | Variable
     | ExtensionMethod
     | Error
+    | TypeParameter
