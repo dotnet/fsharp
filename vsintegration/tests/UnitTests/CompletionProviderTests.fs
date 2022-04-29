@@ -884,9 +884,7 @@ let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
     Some CPat
 
 let (|CPat1|CPat2|) (x: Choice<int, unit>) =
-    match x with
-    | Choice1Of2 _ -> CPat1
-    | _ -> CPat2
+    if true then CPat1 else CPat2
 
 let call (choice: Choice<int, unit>) =
     match choice with
@@ -901,9 +899,7 @@ let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
     Some CPat
 
 let (|CPat1|CPat2|) (x: Choice<int, unit>) =
-    match x with
-    | Choice1Of2 _ -> CPat1
-    | _ -> CPat2
+    if true then CPat1 else CPat2
 
 let call (choice: unit -> Async<Choice<int, unit>>) = async {
     match! choice () with
