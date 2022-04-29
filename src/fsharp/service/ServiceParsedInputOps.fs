@@ -971,9 +971,9 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
 
-                            | SynExpr.Match (expr = expr; clauses = clauses)
-                            | SynExpr.MatchBang (expr = expr; clauses = clauses) ->
-                                let rec traverse pos defaultTraverse (matchExpr: SynExpr) clausePat =
+                            | SynExpr.Match (clauses = clauses)
+                            | SynExpr.MatchBang (clauses = clauses) ->
+                                let rec traverse pos defaultTraverse (expr: SynExpr) clausePat =
                                     match clausePat with
                                     // match x with
                                     // | z| ->
@@ -987,8 +987,8 @@ module ParsedInput =
                                     // | Choice1| value
                                     // | Choice2Of3 value ->
                                     | SynPat.Or (lhs, rhs, _, _) ->
-                                        match traverse pos defaultTraverse matchExpr lhs with
-                                        | None -> traverse pos defaultTraverse matchExpr rhs
+                                        match traverse pos defaultTraverse expr lhs with
+                                        | None -> traverse pos defaultTraverse expr rhs
                                         | x -> x
 
                                     // match x with
@@ -996,15 +996,15 @@ module ParsedInput =
                                     | SynPat.Ands (pats, _) ->
                                         pats |> List.tryPick (fun pat ->
                                             if rangeContainsPos pat.Range pos then
-                                                traverse pos defaultTraverse matchExpr pat
+                                                traverse pos defaultTraverse expr pat
                                             else
                                                 None)
 
                                     // match opt with
                                     // | (Som| value) ->
-                                    | SynPat.Paren (pat, _) -> traverse pos defaultTraverse matchExpr pat
+                                    | SynPat.Paren (pat, _) -> traverse pos defaultTraverse expr pat
 
-                                    | _ -> defaultTraverse matchExpr
+                                    | _ -> defaultTraverse expr
 
                                 clauses
                                 |> List.tryPick (fun (SynMatchClause (pat = pat; whenExpr = whenExpr)) ->

@@ -877,6 +877,107 @@ let emptyMap<'keyType, 'lValueType> () =
 """
     VerifyCompletionList(fileContents, ", l", ["LanguagePrimitives"; "List"; "lValueType"], ["let"; "log"])
 
+[<Test>]
+let ``Completion list in match clause contains only union cases and compatible active pattern when the match expression type is known``() =
+    let fileContents = """
+let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
+    Some CPat
+
+let (|CPat1|CPat2|) (x: Choice<int, unit>) =
+    match x with
+    | Choice1Of2 _ -> CPat1
+    | _ -> CPat2
+
+let call (choice: Choice<int, unit>) =
+    match choice with
+    | C
+"""
+    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1Of2"; "Choice2Of2"; "CPat"; "CPat1"; "CPat2" ])
+
+[<Test>]
+let ``Completion list in match clause contains only union cases and compatible active pattern when the match expression type is known2``() =
+    let fileContents = """
+let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
+    Some CPat
+
+let (|CPat1|CPat2|) (x: Choice<int, unit>) =
+    match x with
+    | Choice1Of2 _ -> CPat1
+    | _ -> CPat2
+
+let call (choice: unit -> Async<Choice<int, unit>>) = async {
+    match! choice () with
+    | C
+"""
+    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1Of2"; "Choice2Of2"; "CPat"; "CPat1"; "CPat2" ])
+
+[<Test>]
+let ``Completion list in match clause contains only union cases and compatible active pattern when the match expression type is known3``() =
+    let fileContents = """
+let call x =
+    match x "" with
+    | None -> ()
+    | s
+"""
+    VerifyCompletionListExactly(fileContents, "| s", [ "None"; "Some" ])
+
+[<Test>]
+let ``Completion list in match clause is empty on the outer identifier when the match expression type is list``() =
+    let fileContents = """
+let call x =
+    match x "" with
+    | [] -> ()
+    | s
+"""
+    VerifyNoCompletionList(fileContents, "| s")
+
+[<Test>]
+let ``Completion list in match clause is not empty on an identifier in a list``() =
+    let fileContents = """
+let call x =
+    match x "" with
+    | [ e ] -> ()
+"""
+    VerifyCompletionList(fileContents, "[ e", [ "Choice1Of2"; "System" ], [])
+
+[<Test>]
+let ``Completion list in match clause is not empty on an identifier in an array``() =
+    let fileContents = """
+let call x =
+    match x "" with
+    | [| e |] -> ()
+"""
+    VerifyCompletionList(fileContents, "[| e", [ "Choice1Of2"; "System" ], [])
+
+[<Test>]
+let ``Completion list in match clause contains only legal items when the match expression type is not known``() =
+    let fileContents = """
+let (|EPat|_|) (str: string) (x: Choice<int, unit>) =
+    Some EPat
+
+let [<Literal>] ELiteral = ""
+
+type EEnum =
+    | A = 0
+
+type EUnion =
+    | ECase
+
+module EMod =
+    let a = ""
+
+type EClass = class end
+
+let eVal = 11
+
+let eFunc x = x + "ff"
+
+let call x =
+    match x with
+    | e
+"""
+    VerifyCompletionList(fileContents, "| e", [ "ELiteral"; "EEnum"; "EUnion"; "ECase"; "EPat"; "MatchFailureException"; "EMod"; "System" ], [ "eVal"; "eFunc"; "EClass" ])
+
 #if EXE
 ShouldDisplaySystemNamespace()
 #endif

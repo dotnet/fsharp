@@ -1036,15 +1036,13 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayNameCore
                 let textInCode = 
-                    match item.Item with
-                    | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
-                    | _ ->
-                        match item.Unresolved with
-                        | Some u -> u.DisplayName
-                        | None ->
-                            match item.Item with
-                            | Item.UnionCase (uci, true) -> $"{uci.Tycon.DisplayName}.{uci.DisplayName}"
-                            | _ -> item.Item.DisplayName
+                    match item.Unresolved with
+                    | Some u -> u.DisplayName
+                    | None ->
+                        match item.Item with
+                        | Item.UnionCase (uci, true) -> $"{uci.Tycon.DisplayName}.{uci.DisplayName}"
+                        | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
+                        | _ -> item.Item.DisplayName
                 textInDeclList, textInCode, items)
 
             // Filter out operators, active patterns (as values)
