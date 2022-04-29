@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Verify13043 created
 }
 .module Verify13043.exe
-// MVID: {626B3AAF-9119-C695-A745-0383AF3A6B62}
+// MVID: {626B56D8-9119-C695-A745-0383D8566B62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03AC0000
+// Image base: 0x032C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -124,25 +124,30 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition
+    .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> f
     .method assembly specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition) cil managed
+            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> condition,
+                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> f) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       14 (0xe)
+      // Code size       21 (0x15)
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
       IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> Verify13043/'f@27-1'::condition
-      IL_000d:  ret
+      IL_000d:  ldarg.0
+      IL_000e:  ldarg.2
+      IL_000f:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> Verify13043/'f@27-1'::f
+      IL_0014:  ret
     } // end of method 'f@27-1'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> _arg1) cil managed
     {
-      // Code size       62 (0x3e)
+      // Code size       72 (0x48)
       .maxstack  6
       .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
@@ -172,17 +177,20 @@
       IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> Verify13043/'f@27-1'::condition
       IL_0029:  ldloc.3
       IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_002f:  brfalse.s  IL_0036
+      IL_002f:  brfalse.s  IL_0040
 
-      IL_0031:  ldloc.2
-      IL_0032:  starg.s    _arg1
-      IL_0034:  br.s       IL_0000
-
-      IL_0036:  ldloc.3
+      IL_0031:  ldarg.0
+      IL_0032:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> Verify13043/'f@27-1'::f
       IL_0037:  ldloc.2
-      IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+      IL_0038:  tail.
+      IL_003a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::Invoke(!0)
+      IL_003f:  ret
+
+      IL_0040:  ldloc.3
+      IL_0041:  ldloc.2
+      IL_0042:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_003d:  ret
+      IL_0047:  ret
     } // end of method 'f@27-1'::Invoke
 
   } // end of class 'f@27-1'
@@ -305,17 +313,19 @@
                                 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       17 (0x11)
+    // Code size       18 (0x12)
     .maxstack  4
     .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>> V_0)
     IL_0000:  ldarg.0
-    IL_0001:  newobj     instance void Verify13043/'f@27-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>)
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
-    IL_0008:  ldarg.1
-    IL_0009:  tail.
-    IL_000b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::Invoke(!0)
-    IL_0010:  ret
+    IL_0001:  ldloc.0
+    IL_0002:  newobj     instance void Verify13043/'f@27-1'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>,
+                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>)
+    IL_0007:  stloc.0
+    IL_0008:  ldloc.0
+    IL_0009:  ldarg.1
+    IL_000a:  tail.
+    IL_000c:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>>::Invoke(!0)
+    IL_0011:  ret
   } // end of method Verify13043::dropWhileWithFunction
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
