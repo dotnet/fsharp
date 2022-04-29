@@ -18,7 +18,8 @@ type public InheritanceContext =
 type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: CompletionPath
+    | Empty
+    | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
