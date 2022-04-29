@@ -638,9 +638,9 @@ type internal TypeCheckInfo
         GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
 
     /// Find record fields in the best naming environment.
-    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid) =
+    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, fieldsOnly) =
         let (nenv, ad),m = GetBestEnvForPos cursorPos
-        let items = ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false fieldsOnly
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         let items = items |> RemoveExplicitlySuppressed g
@@ -959,6 +959,21 @@ type internal TypeCheckInfo
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
 
+    /// Find record fields in the best naming environment.
+    let GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems =
+        // An empty record expression may be completed into something like these:
+        // { XXX = ... }
+        // { xxx with XXX ... }
+        // Provide both expression items in scope and available record fields.
+        let (nenv, _), m = GetBestEnvForPos cursorPos
+
+        let fieldItems, _, _ = GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, true)
+        let fieldCompletionItems, _, _ as fieldsResult = (fieldItems, nenv.DisplayEnv, m) |> toCompletionItems
+
+        match envItems with
+        | Some(items, denv, m) -> Some(fieldCompletionItems @ items, denv, m)
+        | _ -> Some(fieldsResult)
+
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option,
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads,
@@ -1009,19 +1024,30 @@ type internal TypeCheckInfo
                 |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
-                // { x. } can be either record construction or computation expression. Try to get all visible record fields first
-                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
-                | [],_,_ ->
-                    // no record fields found, return completion list as if we were outside any computation expression
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
-                | result -> Some(result)
+            | Some(CompletionContext.RecordField(RecordContext.New((plid, _), isFirstField))) ->
+                if isFirstField then
+                    let cursorPos = mkPos line loc
+                    let envItems = GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun () -> [])
+                    GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems
+                else
+                    // { x. } can be either record construction or computation expression. Try to get all visible record fields first
+                    match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false) |> toCompletionItems with
+                    | [],_,_ ->
+                        // no record fields found, return completion list as if we were outside any computation expression
+                        GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
+                    | result -> Some(result)
+
+            // Completion at '{ ... }'
+            | Some(CompletionContext.RecordField RecordContext.Empty) ->
+                let cursorPos = mkPos line loc
+                let envItems = GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun () -> [])
+                GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems 
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) ->
                 match GetRecdFieldsForExpr(r) with
                 | None ->
-                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
+                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
                 | Some (items, denv, m) ->
                     Some (List.map ItemWithNoInst items, denv, m)
@@ -1072,7 +1098,7 @@ type internal TypeCheckInfo
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
+                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], false))
                 |> Option.map toCompletionItems
 
             // No completion at '...: string'

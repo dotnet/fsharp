@@ -43,7 +43,8 @@ type InheritanceContext =
 type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: CompletionPath
+    | Empty
+    | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
@@ -1015,6 +1016,9 @@ module ParsedInput =
                                         None)
                                 |> Option.orElseWith (fun () -> defaultTraverse expr)
 
+                            | SynExpr.Record(None, None, [], _) ->
+                                Some(CompletionContext.RecordField RecordContext.Empty)
+
                             // Unchecked.defaultof<str$>
                             | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
                                 Some CompletionContext.PatternType
@@ -1027,7 +1031,22 @@ module ParsedInput =
                             match path with
                             | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo=SynComponentInfo(longId=[id]))) :: _ ->  
                                 RecordContext.Constructor(id.idText)
-                            | _ -> RecordContext.New completionPath
+
+                            | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
+                                let isFirstField = 
+                                    match field, fields with
+                                    | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
+                                    | _ -> false
+
+                                RecordContext.New(completionPath, isFirstField)
+
+                            // Unfinished `{ xxx }` expression considered a record field by the tree walker. 
+                            | SyntaxNode.SynExpr(SynExpr.ComputationExpr _) :: _ ->
+                                RecordContext.New(completionPath, true)
+
+                            | _ ->
+                                RecordContext.New(completionPath, false)
+
                         match field with
                         | Some field -> 
                             match parseLid field with

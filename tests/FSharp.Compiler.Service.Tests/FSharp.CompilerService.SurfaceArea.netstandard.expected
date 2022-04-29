@@ -3540,11 +3540,14 @@ FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: System.Tuple`2[Micros
 FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
 FSharp.Compiler.EditorServices.RecordContext+Declaration: Boolean get_isInIdentifier()
 FSharp.Compiler.EditorServices.RecordContext+Declaration: Boolean isInIdentifier
+FSharp.Compiler.EditorServices.RecordContext+New: Boolean get_isFirstField()
+FSharp.Compiler.EditorServices.RecordContext+New: Boolean isFirstField
 FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] get_path()
 FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Constructor
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 CopyOnUpdate
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Declaration
+FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Empty
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 New
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(FSharp.Compiler.EditorServices.RecordContext)
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object)
@@ -3552,15 +3555,19 @@ FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object, Syst
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsConstructor
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsCopyOnUpdate
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsDeclaration
+FSharp.Compiler.EditorServices.RecordContext: Boolean IsEmpty
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsNew
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsConstructor()
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsCopyOnUpdate()
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsDeclaration()
+FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsEmpty()
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsNew()
+FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext Empty
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewConstructor(System.String)
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewCopyOnUpdate(FSharp.Compiler.Text.Range, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewDeclaration(Boolean)
-FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewNew(System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
+FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewNew(System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]], Boolean)
+FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext get_Empty()
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+Constructor
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+Declaration
