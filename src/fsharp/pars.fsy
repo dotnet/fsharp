@@ -188,7 +188,7 @@ let idOfPat (parseState:IParseState) m p =
     match p with
     | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
         mkSynId r "_"
-    | SynPat.Named (id, false, _, _) -> id
+    | SynPat.Named (SynIdent(id,_), false, _, _) -> id
     | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
@@ -1882,7 +1882,7 @@ memberCore:
                              let rec go p = 
                                  match p with 
                                  | SynPat.LongIdent (longDotId=SynLongIdent([id], _, _)) -> id.idText
-                                 | SynPat.Named (nm, _, _, _) | SynPat.As (_, SynPat.Named (nm, _, _, _), _) -> nm.idText
+                                 | SynPat.Named (SynIdent(nm, _), _, _, _) | SynPat.As (_, SynPat.Named (SynIdent(nm, _), _, _, _), _) -> nm.idText
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
                                  | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
@@ -1993,7 +1993,7 @@ memberCore:
                      let lidOuter, lidVisOuter = 
                          match bindingPatOuter with 
                          | SynPat.LongIdent (lid, _, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  lid, lidVisOuter
-                         | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> SynLongIdent([id], [], [None]), visOuter
+                         | SynPat.Named (SynIdent(id, _), _, visOuter, m) | SynPat.As(_, SynPat.Named (SynIdent(id, _), _, visOuter, m), _) -> SynLongIdent([id], [], [None]), visOuter
                          | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
                      // Merge the visibility from the outer point with the inner point, e.g.
@@ -2027,8 +2027,8 @@ memberCore:
                                  else 
                                      args
                              SynPat.LongIdent (lidOuter, withPropertyKeyword, Some(id), tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m)
-                         | SynPat.Named (nm, _, lidVisInner, m)
-                         | SynPat.As (_, SynPat.Named (nm, _, lidVisInner, m), _) -> SynPat.LongIdent (lidOuter, None, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
+                         | SynPat.Named (_, _, lidVisInner, m)
+                         | SynPat.As (_, SynPat.Named (_, _, lidVisInner, m), _) -> SynPat.LongIdent (lidOuter, None, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
                          | SynPat.Typed (p, ty, m) ->  SynPat.Typed(go p, ty, m)
                          | SynPat.Attrib (p, attribs, m) ->  SynPat.Attrib(go p, attribs, m)
                          | SynPat.Wild(m) ->  SynPat.Wild(m)
@@ -2927,7 +2927,7 @@ externArg:
      { let m = lhs parseState in SynPat.Typed(SynPat.Wild m, $2, m) |> addAttribs $1 }
 
   | opt_attributes cType ident 
-     { let m = lhs parseState in SynPat.Typed(SynPat.Named ($3, false, None, m), $2, m) |> addAttribs $1 }
+     { let m = lhs parseState in SynPat.Typed(SynPat.Named (SynIdent($3, None), false, None, m), $2, m) |> addAttribs $1 }
 
 /* An type in an 'extern' DllImport function definition */
 cType: 
@@ -3206,7 +3206,7 @@ bindingPattern:
 simplePattern:
   | ident
       { let m = rhs parseState 1 
-        SynPat.Named($1, false, None, m) }
+        SynPat.Named(SynIdent($1, None), false, None, m) }
 
   | QMARK ident
       { SynPat.OptionalVal($2, rhs parseState 2) }
@@ -3397,9 +3397,12 @@ atomicPattern:
 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
       { let vis, lidwd = $1 
-        if not (isNilOrSingleton lidwd.LongIdent) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.LongIdent).idText
-        then mkSynPatMaybeVar lidwd vis (lhs parseState)
-        else mkSynPatVar vis (List.head lidwd.LongIdent) }
+        if not (isNilOrSingleton lidwd.LongIdent) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.LongIdent).idText then 
+            mkSynPatMaybeVar lidwd vis (lhs parseState)
+        else 
+           let synIdent = List.head lidwd.IdentsWithTrivia
+           let (SynIdent(id, _)) = synIdent
+           SynPat.Named (synIdent, false, vis, id.idRange) }
 
   | constant 
       { SynPat.Const (fst $1, snd $1) }
@@ -5597,7 +5600,7 @@ path:
        let (SynLongIdent(lid, dotms, trivia)) = $1 in SynLongIdent(lid, dotms @ [rhs parseState 2], trivia)  } 
 
 
-/* An operator name, with surrounnding parentheses */
+/* An operator name, with surrounding parentheses */
 opName: 
   | LPAREN operatorName rparen  
      { let lpr = rhs parseState 1

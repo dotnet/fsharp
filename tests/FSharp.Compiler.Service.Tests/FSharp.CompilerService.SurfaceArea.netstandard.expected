@@ -7926,8 +7926,8 @@ FSharp.Compiler.Syntax.SynPat+LongIdent: Microsoft.FSharp.Core.FSharpOption`1[FS
 FSharp.Compiler.Syntax.SynPat+LongIdent: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynValTyparDecls] typarDecls
 FSharp.Compiler.Syntax.SynPat+Named: Boolean get_isThisVal()
 FSharp.Compiler.Syntax.SynPat+Named: Boolean isThisVal
-FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.Ident get_ident()
-FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.Ident ident
+FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.SynIdent get_ident()
+FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Syntax.SynIdent ident
 FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynPat+Named: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynPat+Named: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
@@ -8042,7 +8042,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewFromParseError(F
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewInstanceMember(FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewIsInst(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewLongIdent(FSharp.Compiler.Syntax.SynLongIdent, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.PropertyKeyword], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynValTyparDecls], FSharp.Compiler.Syntax.SynArgPats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewNamed(FSharp.Compiler.Syntax.Ident, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewNamed(FSharp.Compiler.Syntax.SynIdent, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewNull(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewOptionalVal(FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewOr(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia)

@@ -2506,7 +2506,7 @@ module BindingNormalization =
             // Object constructors are normalized in TcLetrecBindings
             // Here we are normalizing member definitions with simple (not long) ids,
             // e.g. "static member x = 3" and "member x = 3" (instance with missing "this." comes through here. It is trapped and generates a warning)
-            | SynPat.Named(id, false, vis, m)
+            | SynPat.Named(SynIdent(id,_), false, vis, m)
                 when
                    (match memberFlagsOpt with
                     | None -> false
@@ -2573,7 +2573,7 @@ module EventDeclarationNormalization =
         match declPattern with
         | SynPat.FromParseError(p, _) -> RenameBindingPattern f p
         | SynPat.Typed(pat', _, _) -> RenameBindingPattern f pat'
-        | SynPat.Named (id, x2, vis2, m) -> SynPat.Named (ident(f id.idText, id.idRange), x2, vis2, m)
+        | SynPat.Named (SynIdent(id,_), x2, vis2, m) -> SynPat.Named (SynIdent(ident(f id.idText, id.idRange), None), x2, vis2, m)
         | SynPat.InstanceMember(thisId, id, toolId, vis2, m) -> SynPat.InstanceMember(thisId, ident(f id.idText, id.idRange), toolId, vis2, m)
         | _ -> error(Error(FSComp.SR.tcOnlySimplePatternsInLetRec(), declPattern.Range))
 
@@ -5024,8 +5024,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             (fun values -> TPat_isinst (srcTy, tgtTy, Some (pat values), m)), acc
         | _ -> failwith "TcPat"
 
-    | SynPat.As (p, SynPat.Named (id, isMemberThis, vis, m), _)
-    | SynPat.As (SynPat.Named (id, isMemberThis, vis, m), p, _) ->
+    | SynPat.As (p, SynPat.Named (SynIdent(id,_), isMemberThis, vis, m), _)
+    | SynPat.As (SynPat.Named (SynIdent(id,_), isMemberThis, vis, m), p, _) ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
         (fun values -> TPat_as (pat' values, bindf values, m)),
@@ -5036,7 +5036,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
         
-    | SynPat.Named (id, isMemberThis, vis, m) ->
+    | SynPat.Named (SynIdent(id,_), isMemberThis, vis, m) ->
         let bindf, names, takenNames = TcPatBindingName cenv env id ty isMemberThis vis topValInfo vFlags (names, takenNames)
         let pat', acc = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty (SynPat.Wild m)
         (fun values -> TPat_as (pat' values, bindf values, m)),
@@ -5167,7 +5167,7 @@ and ConvSynPatToSynExpr x =
     match x with
     | SynPat.FromParseError(p, _) -> ConvSynPatToSynExpr p
     | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-    | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
+    | SynPat.Named (SynIdent(id,_), _, None, _) -> SynExpr.Ident id
     | SynPat.Typed (p, cty, m) -> SynExpr.Typed (ConvSynPatToSynExpr p, cty, m)
     | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, dotms) as lidwd; argPats=args; accessibility=None; range=m) ->
         let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
@@ -6992,7 +6992,7 @@ and GetNameAndArityOfObjExprBinding _cenv _env b =
             match pat with
             | SynPat.Typed(pat, _, _) -> lookPat pat
             | SynPat.FromParseError(pat, _) -> lookPat pat
-            | SynPat.Named (id, _, None, _) ->
+            | SynPat.Named (SynIdent(id,_), _, None, _) ->
                 let (NormalizedBindingRhs(pushedPats, _, _)) = rhsExpr
                 let infosForExplicitArgs = pushedPats |> List.map SynInfo.InferSynArgInfoFromSimplePats
                 let infosForExplicitArgs = SynInfo.AdjustMemberArgs SynMemberKind.Member infosForExplicitArgs
@@ -7075,7 +7075,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implTy tpenv (absSlotInfo, bind) =
         let rec lookPat p =
             match p, memberFlagsOpt with
             | SynPat.FromParseError(pat, _), _ -> lookPat pat
-            | SynPat.Named (id, _, _, _), None ->
+            | SynPat.Named (SynIdent(id,_), _, _, _), None ->
                 let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
                 let logicalMethId = id
                 let memberFlags = OverrideMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member
@@ -7240,7 +7240,7 @@ and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mO
         let fldsList =
             binds |> List.map (fun b ->
                 match BindingNormalization.NormalizeBinding ObjExprBinding cenv env b with
-                | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(id, _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
+                | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(SynIdent(id,_), _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
         TcRecordConstruction cenv objTy env tpenv None objTy fldsList mWholeExpr
@@ -10097,8 +10097,8 @@ and CheckRecursiveBindingIds binds =
     for SynBinding.SynBinding(headPat=b; range=m) in binds do
         let nm =
             match b with
-            | SynPat.Named(id, _, _, _)
-            | SynPat.As(_, SynPat.Named(id, _, _, _), _)
+            | SynPat.Named(SynIdent(id,_), _, _, _)
+            | SynPat.As(_, SynPat.Named(SynIdent(id,_), _, _, _), _)
             | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
@@ -10324,7 +10324,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let callerName =
             match declKind, bkind, pat with
             | ExpressionBinding, _, _ -> envinner.eCallerMemberName
-            | _, _, (SynPat.Named(name, _, _, _) | SynPat.As(_, SynPat.Named(name, _, _, _), _)) ->
+            | _, _, (SynPat.Named(SynIdent(name,_), _, _, _) | SynPat.As(_, SynPat.Named(SynIdent(name,_), _, _, _), _)) ->
                 match memberFlagsOpt with
                 | Some memberFlags ->
                     match memberFlags.MemberKind with
@@ -10397,7 +10397,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // always be used for empty branches of if/then/else and others
         let isZeroMethod =
             match declKind, pat with
-            | ModuleOrMemberBinding, SynPat.Named(id, _, _, _) when id.idText = "Zero" -> 
+            | ModuleOrMemberBinding, SynPat.Named(SynIdent(id,_), _, _, _) when id.idText = "Zero" -> 
                 match memberFlagsOpt with
                 | Some memberFlags ->
                     match memberFlags.MemberKind with
@@ -11410,9 +11410,9 @@ and AnalyzeRecursiveDecl
         //        let x = 1
         | SynPat.Const (SynConst.Unit, m) | SynPat.Wild m ->
              let id = ident (cenv.niceNameGen.FreshCompilerGeneratedName("doval", m), m)
-             analyzeRecursiveDeclPat tpenv (SynPat.Named (id, false, None, m))
+             analyzeRecursiveDeclPat tpenv (SynPat.Named (SynIdent(id, None), false, None, m))
 
-        | SynPat.Named (id, _, vis2, _) ->
+        | SynPat.Named (SynIdent(id,_), _, vis2, _) ->
             AnalyzeRecursiveStaticMemberOrValDecl
                 (cenv, envinner, tpenv, declKind,
                  newslotsOK, overridesOK, tcrefContainerInfo,

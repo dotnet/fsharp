@@ -1262,7 +1262,7 @@ module ParsedInput =
             | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
-            | SynPat.Named (ident, _, _, _) -> addIdent ident
+            | SynPat.Named (SynIdent(ident,_), _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t

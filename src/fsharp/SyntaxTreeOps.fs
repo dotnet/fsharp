@@ -161,9 +161,9 @@ let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, 
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
-let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
+let mkSynPatVar vis (id: Ident) = SynPat.Named (SynIdent(id, None), false, vis, id.idRange)
 
-let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
+let mkSynThisPatVar (id: Ident) = SynPat.Named (SynIdent(id, None), true, None, id.idRange)
 
 let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
 
@@ -208,7 +208,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Attrib(p2, attribs, m),
         laterF
 
-    | SynPat.Named (v, thisV, _, m) ->
+    | SynPat.Named (SynIdent(v,_), thisV, _, m) ->
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
@@ -232,8 +232,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
-            | SynPat.Named(ident, _, _, _)
-            | SynPat.As(_, SynPat.Named(ident, _, _, _), _) ->
+            | SynPat.Named(SynIdent(ident,_), _, _, _)
+            | SynPat.As(_, SynPat.Named(SynIdent(ident,_), _, _, _), _) ->
                 // named pats should be referred to as their name in docs, tooltips, etc.
                 let item = mkSynIdGet m ident.idText
                 false, None, ident, item

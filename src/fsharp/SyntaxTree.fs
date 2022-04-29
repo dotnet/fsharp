@@ -1098,7 +1098,7 @@ type SynPat =
         range: range
 
     | Named of
-        ident: Ident *
+        ident: SynIdent *
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range

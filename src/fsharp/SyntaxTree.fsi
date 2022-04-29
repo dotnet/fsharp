@@ -1218,7 +1218,7 @@ type SynPat =
 
     /// A name pattern 'ident' 
     | Named of
-        ident: Ident *
+        ident: SynIdent *
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range

@@ -4068,6 +4068,27 @@ let (|Int32Const|_|) (a: SynConst) = match a with SynConst.Int32 _ -> Some a | _
             Assert.Fail $"Could not get valid AST, got {ast}"
 
     [<Test>]
+    let ``partial active pattern definition without parameters`` () =
+        let ast = """
+let (|Boolean|_|) = Boolean.parse
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [SynBinding(headPat=
+                    SynPat.Named(ident = SynIdent(ident, Some (IdentTrivia.HasParenthesis(lpr, rpr)))))
+                ])
+            ])])) ->
+             assertRange (2, 4) (2, 5) lpr
+             Assert.AreEqual("|Boolean|_|", ident.idText)
+             assertRange (2, 16) (2, 17) rpr
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    
+    [<Test>]
     let ``operator name in SynValSig`` () =
         let ast = """
 module IntrinsicOperators
