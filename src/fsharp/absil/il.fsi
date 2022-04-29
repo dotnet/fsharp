@@ -792,10 +792,14 @@ type internal ILMethodBody =
 /// Member Access
 [<RequireQualifiedAccess>]
 type ILMemberAccess =
+    /// Assembly - Indicates that the method is accessible to any class of this assembly. (internal)
     | Assembly
     | CompilerControlled
+    /// FamilyAndAssembly - Indicates that the method is accessible to members of this type and its derived types that are in _this assembly only_. (private protected)
     | FamilyAndAssembly
+    /// FamilyOrAssembly - Indicates that the method is accessible to derived classes anywhere, as well as to any class _in the assembly_. (protected internal)
     | FamilyOrAssembly
+    /// Family - Indicates that the method is accessible only to members of this class and its derived classes. (protected)
     | Family
     | Private
     | Public
@@ -865,6 +869,7 @@ type ILParameter =
       IsOptional: bool
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 }
+
     member CustomAttrs: ILAttributes
 
 type ILParameters = ILParameter list
@@ -1314,12 +1319,12 @@ type ILTypeDef =
     internal new:
         name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs *
         extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs *
-        events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
+        events: ILEventDefs * properties: ILPropertyDefs * isKnownToBeAttribute: bool * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs *
           extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs *
-          events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
+          events: ILEventDefs * properties: ILPropertyDefs * isKnownToBeAttribute: bool * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
     member Name: string
     member Attributes: TypeAttributes
@@ -1352,6 +1357,7 @@ type ILTypeDef =
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding
+    member IsKnownToBeAttribute: bool
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef
@@ -1370,7 +1376,7 @@ type ILTypeDef =
     member With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes *
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs *
                  ?nestedTypes:ILTypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs *
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
+                 ?properties:ILPropertyDefs * ?isKnownToBeAttribute:bool * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.
 ///

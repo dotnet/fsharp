@@ -1041,7 +1041,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
 /// Handle the .NET/C# business where nested generic types implicitly accumulate the type parameters
 /// from their enclosing types.
 let MakeNestedType (ncenv: NameResolver) (tinst: TType list) m (tcrefNested: TyconRef) =
-    let tps = List.skip tinst.Length (tcrefNested.Typars m)
+    let tps = match tcrefNested.Typars m with [] -> [] | l -> List.skip tinst.Length l
     let tinstNested = ncenv.InstantiationGenerator m tps
     mkAppTy tcrefNested (tinst @ tinstNested)
 
@@ -1246,7 +1246,7 @@ and private CanAutoOpenTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
     not tcref.IsILTycon &&
     TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true &&
-    tcref.Typars(m).Length = 0
+    tcref.Typars(m) |> List.isEmpty
 
 /// Add any implied contents of a type definition to the environment.
 and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
@@ -4374,7 +4374,15 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            |> Seq.collect (InfosForTyconConstructors ncenv m ad)
            |> Seq.toList
 
-       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors
+       let typeVars =
+           if nenv.eTypars.IsEmpty then
+               []
+           else
+               nenv.eTypars
+               |> Seq.map (fun kvp -> Item.TypeVar (kvp.Key, kvp.Value))
+               |> Seq.toList
+
+       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors @ typeVars
 
     | id :: rest ->
 

@@ -80,7 +80,7 @@ module XmlDocWriter =
         doModuleSig None generatedCcu.Contents
 
     let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlfile) =
-        if not (FileSystemUtils.hasSuffixCaseInsensitive "xml" xmlfile ) then
+        if not (FileSystemUtils.checkSuffix xmlfile "xml" ) then
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup))
 
         let mutable members = []

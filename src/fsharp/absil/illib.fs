@@ -77,6 +77,9 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinal value =
             x.EndsWith(value, StringComparison.Ordinal)
 
+        member inline x.EndsWithOrdinalIgnoreCase value =
+            x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
+
     /// Get an initialization hole 
     let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
@@ -472,6 +475,11 @@ module List =
         match xs with 
         | [] -> true
         | h::t -> t |> List.forall (fun h2 -> h = h2)
+
+    let isSingleton xs =
+        match xs with
+        | [_] -> true
+        | _ -> false
 
 module ResizeArray =
 

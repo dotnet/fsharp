@@ -1015,6 +1015,10 @@ module ParsedInput =
                                         None)
                                 |> Option.orElseWith (fun () -> defaultTraverse expr)
 
+                            // Unchecked.defaultof<str$>
+                            | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
+                                Some CompletionContext.PatternType
+
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) = 
@@ -1134,6 +1138,12 @@ module ParsedInput =
                                     None
                             | _ -> None)
 
+                    member _.VisitPat (_, defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.IsInst (_, range) when rangeContainsPos range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse pat
+
                     member _.VisitModuleDecl(_path, defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
@@ -1160,12 +1170,15 @@ module ParsedInput =
                             Some CompletionContext.PatternType
                         | _ -> defaultTraverse ty
 
-                    member _.VisitRecordDefn(_path, fields, _range) =
-                        fields |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
+                    member _.VisitRecordDefn(_path, fields, range) =
+                        fields
+                        |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
                             match idOpt with
                             | Some id when rangeContainsPos id.idRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration true))
                             | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
                             | _ -> None)
+                        // No completions in a record outside of all fields
+                        |> Option.orElseWith (fun () -> if rangeContainsPos range pos then Some CompletionContext.Invalid else None)
 
                     member _.VisitUnionDefn(_path, cases, _range) =
                         cases |> List.tryPick (fun (SynUnionCase (ident = id; caseType = caseType)) ->

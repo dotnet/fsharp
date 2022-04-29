@@ -143,6 +143,16 @@ type PackageManagerLine =
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
+[<RequireQualifiedAccess>]
+type MetadataAssemblyGeneration =
+    | None
+    /// Includes F# signature and optimization metadata as resources in the emitting assembly.
+    /// Implementation assembly will still be emitted normally, but will emit the reference assembly with the specified output path. 
+    | ReferenceOut of outputPath: string
+    /// Includes F# signature and optimization metadata as resources in the emitting assembly.
+    /// Only emits the assembly as a reference assembly.
+    | ReferenceOnly
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -256,6 +266,7 @@ type TcConfigBuilder =
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
+      mutable emitMetadataAssembly: MetadataAssemblyGeneration
       mutable preferredUiLang: string option
       mutable lcid        : int option
       mutable productNameForBannerText: string
@@ -452,6 +463,7 @@ type TcConfig =
     member emitTailcalls: bool
     member deterministic: bool
     member concurrentBuild: bool
+    member emitMetadataAssembly: MetadataAssemblyGeneration
     member pathMap: PathMap
     member preferredUiLang: string option
     member optsOn       : bool
@@ -561,9 +573,9 @@ type TcConfigProvider =
     /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder: TcConfigBuilder -> TcConfigProvider
 
-val TryResolveFileUsingPaths: paths: string list * m: range * name: string -> string option
+val TryResolveFileUsingPaths: paths: string seq * m: range * name: string -> string option
 
-val ResolveFileUsingPaths: paths: string list * m: range * name: string -> string
+val ResolveFileUsingPaths: paths: string seq * m: range * name: string -> string
 
 val GetWarningNumber: m: range * warningNumber: string -> int option
 

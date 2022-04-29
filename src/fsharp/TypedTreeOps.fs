@@ -1555,7 +1555,7 @@ let tryRescopeEntity viewedCcu (entity: Entity) : ValueOption<EntityRef> =
     | None -> ValueNone
 
 /// Try to create a ValRef suitable for accessing the given Val from another assembly 
-let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> = 
+let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> =
     match vspec.PublicPath with 
     | Some (ValPubPath(p, fullLinkageKey)) -> 
         // The type information in the val linkage doesn't need to keep any information to trait solutions.
@@ -2047,7 +2047,7 @@ let emptyFreeTyvars =
     { FreeTycons = emptyFreeTycons
       // The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
-      FreeTypars = emptyFreeTypars}
+      FreeTypars = emptyFreeTypars }
 
 let isEmptyFreeTyvars ftyvs = 
     Zset.isEmpty ftyvs.FreeTypars &&
@@ -2851,7 +2851,7 @@ module SimplifyTypes =
             simplify &&
             isTTyparCoercesToType tpc && 
             Zset.contains tp singletons && 
-            tp.Constraints.Length = 1)
+            List.isSingleton tp.Constraints)
         let inplace = inplace |> List.map (function tp, TyparConstraint.CoercesTo(ty, _) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
         { singletons = singletons
@@ -9269,23 +9269,29 @@ type Entity with
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
-                          match vref.MemberInfo with 
-                          | None -> false 
-                          | Some membInfo -> 
-                                         let argInfos = ArgInfosOfMember g vref 
-                                         argInfos.Length = 1 && 
-                                         List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys &&  
-                                         membInfo.MemberFlags.IsOverrideOrExplicitImpl) 
+            match vref.MemberInfo with 
+            | None -> false 
+            | Some membInfo ->
+ 
+            let argInfos = ArgInfosOfMember g vref 
+            match argInfos with
+            | [argInfos] ->
+                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys &&  
+                membInfo.MemberFlags.IsOverrideOrExplicitImpl
+            | _ -> false) 
     
     member tycon.HasMember g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
-                          match vref.MemberInfo with 
-                          | None -> false 
-                          | _ -> let argInfos = ArgInfosOfMember g vref 
-                                 argInfos.Length = 1 && 
-                                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys) 
+            match vref.MemberInfo with 
+            | None -> false 
+            | _ ->
+
+            let argInfos = ArgInfosOfMember g vref
+            match argInfos with
+            | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys
+            | _ -> false) 
 
 
 type EntityRef with 

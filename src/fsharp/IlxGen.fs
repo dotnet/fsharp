@@ -4107,18 +4107,45 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
     let eenv = SetIsInLoop true eenv
-    let finish = CG.GenerateDelayMark cgbuf "while_finish"
 
-    match spWhile with
-    | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
-    | DebugPointAtWhile.No -> ()
+    // jmp test; body; test; if testPassed then jmp body else finish
+    // 
+    // This is a pattern recognized by the JIT and it results in the most efficient assembly.
+    if cgbuf.GetCurrentStack().IsEmpty then
+        let startTest = CG.GenerateDelayMark cgbuf "startTest"
+        CG.EmitInstr cgbuf (pop 0) Push0 (I_br startTest.CodeLabel)
 
-    let startTest = CG.GenerateMark cgbuf "startTest"
+        let startBody = CG.GenerateMark cgbuf "startBody"
+        GenExpr cenv cgbuf eenv bodyExpr discard
 
-    GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
+        | DebugPointAtWhile.No -> ()
 
-    GenExpr cenv cgbuf eenv bodyExpr (DiscardThen (Br startTest))
-    CG.SetMarkToHere cgbuf finish
+        CG.SetMarkToHere cgbuf startTest
+        GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp (BI_brtrue, startBody.CodeLabel) ]))
+
+    // In the rare cases when there is something already on the stack, e.g.
+    //
+    // let f() =
+    //     callSomething firstArgument ((while .... do ...); secondArgument)
+    //
+    // we emit
+    //
+    // test; if not testPassed jmp finish; body; jmp test; finish
+    else
+        let finish = CG.GenerateDelayMark cgbuf "while_finish"
+
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
+        | DebugPointAtWhile.No -> ()
+
+        let startTest = CG.GenerateMark cgbuf "startTest"
+
+        GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp (BI_brfalse, finish.CodeLabel) ]))
+
+        GenExpr cenv cgbuf eenv bodyExpr (DiscardThen (Br startTest))
+        CG.SetMarkToHere cgbuf finish
 
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
@@ -4848,8 +4875,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   ILFieldDef(name = templateFld.LogicalName, fieldType = fty, attributes = enum 0, data = None, literalValue = None, offset = None, marshal = None, customAttrs = mkILCustomAttrs [])
                       .WithAccess(access)
                       .WithStatic(false)
-              yield fdef 
-                
+              yield fdef
+
           // Fields for captured variables
           for ilCloFreeVar in ilCloFreeVars do
               let access = ComputeMemberAccess false
@@ -4874,6 +4901,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   nestedTypes = emptyILTypeDefs,
                   implements = ilInterfaceTys,
                   extends = Some super,
+                  isKnownToBeAttribute = false,
                   securityDecls = emptyILSecurityDecls)
             .WithSealed(true)
             .WithSpecialName(true)
@@ -5110,6 +5138,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
               nestedTypes=emptyILTypeDefs,
               implements = ilIntfTys,
               extends= Some ext,
+              isKnownToBeAttribute=false,
               securityDecls= emptyILSecurityDecls)
         .WithSealed(true)
         .WithSerializable(true)
@@ -8271,6 +8300,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                    else
                        ILTypeInit.BeforeField
 
+               let isKnownToBeAttribute = ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
+
                let tdef = mkILGenericClass (ilTypeName, access, ilGenParams, ilBaseTy, ilIntfTys,
                                             mkILMethods ilMethods, ilFields, emptyILTypeDefs, ilProperties, ilEvents, mkILCustomAttrs ilAttrs,
                                             typeDefTrigger)
@@ -8283,7 +8314,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                        .WithSerializable(isSerializable)
                        .WithAbstract(isAbstract)
                        .WithImport(isComInteropTy g thisTy)
-                       .With(methodImpls=mkILMethodImpls methodImpls)
+                       .With(methodImpls=mkILMethodImpls methodImpls, isKnownToBeAttribute=isKnownToBeAttribute)
 
                let tdLayout, tdEncoding =
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -8396,6 +8427,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              nestedTypes=emptyILTypeDefs,
                              implements = ilIntfTys,
                              extends= Some (if tycon.IsStructOrEnumTycon then g.iltyp_ValueType else g.ilg.typ_Object),
+                             isKnownToBeAttribute=false,
                              securityDecls= emptyILSecurityDecls)
                          .WithLayout(layout)
                          .WithSerializable(isSerializable)

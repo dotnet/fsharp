@@ -93,8 +93,8 @@ let ApplyDefaults () =
            bool V_6)
   IL_0000:  ldc.i4.0
   IL_0001:  stloc.0
-  IL_0002:  br.s       IL_003d
-  
+  IL_0002:  br.s       IL_003c
+
   IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> DontEliminateForLoops::get_unsolved()
   IL_0009:  stloc.1
   IL_000a:  ldloc.1
@@ -104,34 +104,33 @@ let ApplyDefaults () =
   IL_000e:  ldloc.3
   IL_000f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
   IL_0014:  stloc.s    V_4
-  IL_0016:  ldloc.s    V_4
-  IL_0018:  brfalse.s  IL_0039
-  
-  IL_001a:  ldloc.3
-  IL_001b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
-  IL_0020:  stloc.s    V_5
-  IL_0022:  ldloc.s    V_5
-  IL_0024:  stloc.s    V_6
-  IL_0026:  call       void [runtime]System.Console::WriteLine()
-  IL_002b:  ldloc.s    V_4
-  IL_002d:  stloc.3
-  IL_002e:  ldloc.3
-  IL_002f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
-  IL_0034:  stloc.s    V_4
-  IL_0036:  nop
-  IL_0037:  br.s       IL_0016
-  
-  IL_0039:  ldloc.0
-  IL_003a:  ldc.i4.1
-  IL_003b:  add
-  IL_003c:  stloc.0
-  IL_003d:  ldloc.0
-  IL_003e:  ldc.i4.1
-  IL_003f:  ldc.i4.s   10
-  IL_0041:  add
-  IL_0042:  blt.s      IL_0004
-  
-  IL_0044:  ret
+  IL_0016:  br.s       IL_0034
+
+  IL_0018:  ldloc.3
+  IL_0019:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
+  IL_001e:  stloc.s    V_5
+  IL_0020:  ldloc.s    V_5
+  IL_0022:  stloc.s    V_6
+  IL_0024:  call       void [runtime]System.Console::WriteLine()
+  IL_0029:  ldloc.s    V_4
+  IL_002b:  stloc.3
+  IL_002c:  ldloc.3
+  IL_002d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
+  IL_0032:  stloc.s    V_4
+  IL_0034:  ldloc.s    V_4
+  IL_0036:  brtrue.s   IL_0018
+
+  IL_0038:  ldloc.0
+  IL_0039:  ldc.i4.1
+  IL_003a:  add
+  IL_003b:  stloc.0
+  IL_003c:  ldloc.0
+  IL_003d:  ldc.i4.1
+  IL_003e:  ldc.i4.s   10
+  IL_0040:  add
+  IL_0041:  blt.s      IL_0004
+
+IL_0043:  ret
 } 
             """
             ]))
