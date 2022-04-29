@@ -2654,6 +2654,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Property
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Struct
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Type
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Typedef
+FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 TypeParameter
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Union
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Variable
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(FSharp.Compiler.EditorServices.FSharpGlyph)
@@ -2678,6 +2679,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsProperty
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsStruct
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsType
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsTypedef
+FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsTypeParameter
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsUnion
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsVariable
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsClass()
@@ -2699,6 +2701,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsProperty()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsStruct()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsType()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsTypedef()
+FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsTypeParameter()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsUnion()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsVariable()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Class
@@ -2720,6 +2723,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FShar
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Struct
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Type
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Typedef
+FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph TypeParameter
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Union
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Variable
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Class()
@@ -2741,6 +2745,7 @@ FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FShar
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Struct()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Type()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Typedef()
+FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_TypeParameter()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Union()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Variable()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph+Tags

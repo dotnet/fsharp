@@ -227,6 +227,11 @@
         <target state="translated">двоичное форматирование для целых чисел</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">информационные сообщения, связанные с ссылочными ячейками</target>
