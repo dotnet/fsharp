@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Verify13043 created
 }
 .module Verify13043.exe
-// MVID: {626B11CB-9119-C695-A745-0383CB116B62}
+// MVID: {626B3AAF-9119-C695-A745-0383AF3A6B62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02F20000
+// Image base: 0x03AC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -372,13 +372,11 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       184 (0xb8)
+    // Code size       127 (0x7f)
     .maxstack  6
     .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
              class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
-             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_2,
-             int32 V_3,
-             int32 V_4)
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_2)
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2
     IL_0002:  ldc.i4.3
@@ -418,31 +416,7 @@
     IL_0073:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Verify13043::get_functionResult()
     IL_0078:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_007d:  pop
-    IL_007e:  ldc.i4.7
-    IL_007f:  stloc.3
-    IL_0080:  ldloc.3
-    IL_0081:  stloc.s    V_4
-    IL_0083:  nop
-    IL_0084:  ldloc.s    V_4
-    IL_0086:  ldc.i4.6
-    IL_0087:  sub
-    IL_0088:  switch     ( 
-                          IL_0093)
-    IL_0091:  br.s       IL_00a6
-
-    IL_0093:  ldstr      "6"
-    IL_0098:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_009d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_00a2:  pop
-    IL_00a3:  nop
-    IL_00a4:  br.s       IL_00b7
-
-    IL_00a6:  ldstr      "Not 6"
-    IL_00ab:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_00b0:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_00b5:  pop
-    IL_00b6:  nop
-    IL_00b7:  ret
+    IL_007e:  ret
   } // end of method $Verify13043::main@
 
 } // end of class '<StartupCode$Verify13043>'.$Verify13043
