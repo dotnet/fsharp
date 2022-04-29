@@ -232,6 +232,11 @@
         <target state="translated">formattazione binaria per interi</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">messaggi informativi relativi alle celle di riferimento</target>

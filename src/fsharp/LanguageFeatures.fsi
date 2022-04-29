@@ -37,6 +37,7 @@ type LanguageFeature =
     | MLCompatRevisions
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
+    | ReallyLongLists
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -2244,9 +2244,12 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
             | CollectionType.ImmutableArray -> // NOTE: if the compiler moves internally from array to immarray then the optimization above should be moved here
                 SynExpr.ArrayOrList (cType, elems, m)
             | CollectionType.List ->
-                if elems.Length > 500 then 
-                    error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                SynExpr.ArrayOrList (cType, elems, m)
+                if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
+                     SynExpr.ArrayOrList (isArray, elems, m)
+                 else
+                    if elems.Length > 500 then 
+                        error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
+                    SynExpr.ArrayOrList (isArray, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
