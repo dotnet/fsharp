@@ -297,7 +297,7 @@ module InterfaceStubGenerator =
         let displayName = v.DisplayName
         if (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_")) || 
             (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_")) then
-            displayName.[4..]
+            displayName[4..]
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
@@ -328,7 +328,7 @@ module InterfaceStubGenerator =
                 | _, _, ".ctor", _ -> "new" + parArgs
                 // Properties (skipping arguments)
                 | _, true, _, name when v.IsPropertyGetterMethod || v.IsPropertySetterMethod -> 
-                    if name.StartsWithOrdinal("get_") || name.StartsWithOrdinal("set_") then name.[4..] else name
+                    if name.StartsWithOrdinal("get_") || name.StartsWithOrdinal("set_") then name[4..] else name
                 // Ordinary instance members
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
@@ -451,7 +451,7 @@ module InterfaceStubGenerator =
     // so we need to get the 2nd generic argument
     let internal (|MemberFunctionType|_|) (ty: FSharpType) =
         if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-            Some ty.GenericArguments.[1]
+            Some ty.GenericArguments[1]
         else None
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
@@ -465,10 +465,10 @@ module InterfaceStubGenerator =
         match ty with
         | MemberFunctionType ty ->
             if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-                let retType = ty.GenericArguments.[0]
-                let argType = ty.GenericArguments.[1]
+                let retType = ty.GenericArguments[0]
+                let argType = ty.GenericArguments[1]
                 if argType.GenericArguments.Count = 2 then
-                    Some (argType.GenericArguments.[0], retType)
+                    Some (argType.GenericArguments[0], retType)
                 else None
             else None
         | _ ->
@@ -540,8 +540,8 @@ module InterfaceStubGenerator =
 
     let internal normalizeEventName (m: FSharpMemberOrFunctionOrValue) =
         let name = m.DisplayName
-        if name.StartsWithOrdinal("add_") then name.[4..]
-        elif name.StartsWithOrdinal("remove_")  then name.[7..]
+        if name.StartsWithOrdinal("add_") then name[4..]
+        elif name.StartsWithOrdinal("remove_")  then name[7..]
         else name
 
     /// Ideally this info should be returned in error symbols from FCS. 
@@ -695,7 +695,7 @@ module InterfaceStubGenerator =
                     List.tryPick walkSynModuleDecl modules
                 | SynModuleDecl.Types(typeDefs, _range) ->
                     List.tryPick walkSynTypeDefn typeDefs
-                | SynModuleDecl.DoExpr (_, expr, _) ->
+                | SynModuleDecl.Expr (expr, _) ->
                     walkExpr expr
                 | SynModuleDecl.Attributes _
                 | SynModuleDecl.HashDirective _

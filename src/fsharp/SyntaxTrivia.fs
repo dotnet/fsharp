@@ -67,6 +67,16 @@ type SynExprLetOrUseBangTrivia =
         { EqualsRange = None }
 
 [<NoEquality; NoComparison>]
+type SynExprMatchTrivia =
+    { MatchKeyword: range
+      WithKeyword: range }
+    
+[<NoEquality; NoComparison>]
+type SynExprMatchBangTrivia =
+    { MatchBangKeyword: range
+      WithKeyword: range }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     { ArrowRange: range option
       BarRange: range option }

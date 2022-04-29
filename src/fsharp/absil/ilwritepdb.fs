@@ -410,7 +410,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         if docs.Length = 0 || d < 0 || d > docs.Length then
             Unchecked.defaultof<DocumentHandle>
         else
-            match documentIndex.TryGetValue(docs.[d].File) with
+            match documentIndex.TryGetValue(docs[d].File) with
             | false, _ -> Unchecked.defaultof<DocumentHandle>
             | true, h -> h
 
@@ -490,10 +490,10 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         //        writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyReferenceAlias);
         //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
 
-    let serializeImportsBlob (scope: PdbImports) =
+    let serializeImportsBlob (imports: PdbImport[]) =
         let writer = new BlobBuilder()
 
-        for import in scope.Imports do
+        for import in imports do
             serializeImport writer import
 
         metadata.GetOrAddBlob(writer)
@@ -515,7 +515,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
             | None -> moduleImportScopeHandle
             | Some parent -> getImportScopeIndex parent
 
-        let blob = serializeImportsBlob imports
+        let blob = serializeImportsBlob imports.Imports
         let result = metadata.AddImportScope(parentScopeHandle, blob)
 
         importScopesTable.Add(imports, result)
@@ -542,19 +542,15 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     let writeMethodScopes methToken rootScope =
 
         let flattenedScopes = flattenScopes rootScope
-            
-        // Get or create the import scope for this method
-        let importScopeHandle =
-#if EMIT_IMPORT_SCOPES
-            match s.Imports with 
-            | None -> Unchecked.defaultof<_>
-            | Some imports -> getImportScopeIndex imports
-#else
-            getImportScopeIndex |> ignore // make sure this code counts as used
-            Unchecked.defaultof<_>
-#endif
 
         for scope in flattenedScopes do
+            // Get or create the import scope for this method
+            let importScopeHandle =
+
+                match scope.Imports with 
+                | None -> Unchecked.defaultof<_>
+                | Some imports -> getImportScopeIndex imports
+
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
 
@@ -589,25 +585,25 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                 // Return a document that the entire method body is declared within.
                 // If part of the method body is in another document returns nil handle.
                 let tryGetSingleDocumentIndex =
-                    let mutable singleDocumentIndex = sps.[0].Document
+                    let mutable singleDocumentIndex = sps[0].Document
                     for i in 1 .. sps.Length - 1 do
-                        if sps.[i].Document <> singleDocumentIndex then
+                        if sps[i].Document <> singleDocumentIndex then
                             singleDocumentIndex <- -1
                     singleDocumentIndex
 
                 // Initial document:  When sp's spread over more than one document we put the initial document here.
                 let singleDocumentIndex = tryGetSingleDocumentIndex
                 if singleDocumentIndex = -1 then
-                    builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps.[0].Document)) )
+                    builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps[0].Document)) )
 
                 let mutable previousNonHiddenStartLine = -1
                 let mutable previousNonHiddenStartColumn = 0
 
                 for i in 0 .. (sps.Length - 1) do
 
-                    if singleDocumentIndex <> -1 && sps.[i].Document <> singleDocumentIndex then
+                    if singleDocumentIndex <> -1 && sps[i].Document <> singleDocumentIndex then
                         builder.WriteCompressedInteger( 0 )
-                        builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps.[i].Document)) )
+                        builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle sps[i].Document)) )
                     else
                         //=============================================================================================================================================
                         // Sequence-point-record
@@ -629,14 +625,14 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                         let capLine v =  capValue v 0x1ffffffe
                         let capColumn v = capValue v 0xfffe
 
-                        let offset = capOffset sps.[i].Offset
-                        let startLine = capLine sps.[i].Line
-                        let endLine = capLine sps.[i].EndLine
-                        let startColumn = capColumn sps.[i].Column
-                        let endColumn = capColumn sps.[i].EndColumn
+                        let offset = capOffset sps[i].Offset
+                        let startLine = capLine sps[i].Line
+                        let endLine = capLine sps[i].EndLine
+                        let startColumn = capColumn sps[i].Column
+                        let endColumn = capColumn sps[i].EndColumn
 
                         let offsetDelta =                                                               // delta from previous offset
-                            if i > 0 then offset - capOffset sps.[i - 1].Offset
+                            if i > 0 then offset - capOffset sps[i - 1].Offset
                             else offset
 
                         if i < 1 || offsetDelta > 0 then
@@ -684,14 +680,9 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         sortMethods showTimes info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
 
-// Currently disabled, see 
-#if EMIT_IMPORT_SCOPES
         defineModuleImportScope()
-#else
-        defineModuleImportScope |> ignore // make sure this function counts as used
-#endif
 
-        for minfo in info.Methods do 
+        for minfo in info.Methods do
             emitMethod minfo
 
         let entryPoint =
@@ -917,7 +908,7 @@ let writeMdbInfo fmdb f info =
              yield doc, unit |]
 
     let getDocument i =
-        if i < 0 || i >= Array.length docs then failwith "getDocument: bad doc number" else docs.[i]
+        if i < 0 || i >= Array.length docs then failwith "getDocument: bad doc number" else docs[i]
 
     // Sort methods and write them to the MDB file
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
@@ -994,6 +985,7 @@ let logDebugInfo (outfile: string) (info: PdbData) =
         fprintfn sw "      %s- [%d-%d]" offs scope.StartOffset scope.EndOffset
         if scope.Locals.Length > 0 then
           fprintfn sw "      %s  Locals: %A" offs [ for p in scope.Locals -> sprintf "%d: %s" p.Index p.Name ]
+
         for child in scope.Children do writeScope (offs + "  ") child
 
       match meth.RootScope with

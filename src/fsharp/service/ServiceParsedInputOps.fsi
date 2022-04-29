@@ -155,5 +155,5 @@ module internal SourceFileImpl =
 
     val IsInterfaceFile: string -> bool 
 
-    val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
+    val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list
 

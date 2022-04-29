@@ -33,18 +33,18 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         match x with 
         | CompPath(ILScopeRef.Local, []) -> true 
         | _ -> false
-
+    
     let (|Public|Internal|Private|) (TAccess p) = 
         match p with 
         | [] -> Public 
-        | _ when List.forall isInternalCompPath p  -> Internal 
+        | _ when List.forall isInternalCompPath p -> Internal 
         | _ -> Private
 
-    member _.IsPublic = not isProtected && match a with TAccess [] -> true | _ -> false
+    member _.IsPublic = not isProtected && (match a with TAccess [] -> true | _ -> false)
 
-    member _.IsPrivate = not isProtected && match a with Private -> true | _ -> false
+    member _.IsPrivate = not isProtected && (match a with Private -> true | _ -> false)
 
-    member _.IsInternal = not isProtected && match a with Internal -> true | _ -> false
+    member _.IsInternal = not isProtected && (match a with Internal -> true | _ -> false)
 
     member _.IsProtected = isProtected
 
@@ -155,7 +155,7 @@ module Impl =
     /// Convert an IL type definition accessibility into an F# accessibility
     let getApproxFSharpAccessibilityOfEntity (entity: EntityRef) = 
         match metadataOfTycon entity.Deref with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata _info -> 
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
@@ -429,7 +429,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.QualifiedName = 
         checkIsResolved()
         let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
         #else
         if entity.IsTypeAbbrev || entity.IsNamespace then fail()
@@ -446,7 +446,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     
     member _.TryFullName = 
         if isUnresolved() then None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
         #else
         elif entity.IsTypeAbbrev then None
@@ -494,7 +494,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         else
             0
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member _.IsProvided  = 
         isResolved() &&
         entity.IsProvided
@@ -514,7 +514,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member _.IsClass = 
         isResolved() &&
         match metadataOfTycon entity.Deref with
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
         | ProvidedTypeMetadata info -> info.IsClass
 #endif
         | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
@@ -535,7 +535,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member _.IsDelegate = 
         isResolved() &&
         match metadataOfTycon entity.Deref with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
         | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
@@ -683,7 +683,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | TProvidedTypeRepr info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
@@ -762,7 +762,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     match kind with
                     | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
                         [ yield! loop (mapEachCurrentPath currentPaths name) rest
-                          yield! loop (mapEachCurrentPath currentPaths name.[..name.Length - 7]) rest ]
+                          yield! loop (mapEachCurrentPath currentPaths name[..name.Length - 7]) rest ]
                     | _ -> 
                        loop (mapEachCurrentPath currentPaths name) rest
             loop [] parts |> List.map (List.rev >> String.concat ".")
@@ -1175,7 +1175,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d.TryRecdField with 
             | Choice1Of3 r -> r.FormalType
             | Choice2Of3 f -> f.FieldType(cenv.amap, range0)
-            | Choice3Of3 (_,tinst,n,_) -> tinst.[n]
+            | Choice3Of3 (_,tinst,n,_) -> tinst[n]
         FSharpType(cenv, fty)
 
     member _.IsStatic = 
@@ -1190,7 +1190,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match d.TryRecdField with 
         | Choice1Of3 r -> r.LogicalName
         | Choice2Of3 f -> f.FieldName
-        | Choice3Of3 (anonInfo, _tinst, n, _) -> anonInfo.SortedNames.[n]
+        | Choice3Of3 (anonInfo, _tinst, n, _) -> anonInfo.SortedNames[n]
 
     member _.IsCompilerGenerated = 
         if isUnresolved() then false else 
@@ -1265,11 +1265,11 @@ type FSharpActivePatternCase(cenv, apinfo: ActivePatternInfo, ty, n, valOpt: Val
                           (fun () -> item), 
                           (fun _ _ _ -> true))
 
-    member _.Name = apinfo.ActiveTags.[n]
+    member _.Name = apinfo.ActiveTags[n]
 
     member _.Index = n
 
-    member _.DeclarationLocation = snd apinfo.ActiveTagsWithRanges.[n]
+    member _.DeclarationLocation = snd apinfo.ActiveTagsWithRanges[n]
 
     member _.Group = FSharpActivePatternGroup(cenv, apinfo, ty, valOpt)
 
@@ -1787,7 +1787,12 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> m.IsDispatchSlot
         | V v -> v.IsDispatchSlot
 
-    member _.IsProperty = 
+    member _.IsMethod =
+        match d with
+        | M _ -> true
+        | _ -> false
+
+    member x.IsProperty = 
         match d with 
         | P _ -> true
         | _ -> false
@@ -1817,7 +1822,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let logicalName = m.LogicalName
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("add_") &&
 
-            let eventName = logicalName.[4..]
+            let eventName = logicalName[4..]
             let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
@@ -1834,7 +1839,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let logicalName = m.LogicalName
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("remove_") &&
 
-            let eventName = logicalName.[7..]
+            let eventName = logicalName[7..]
             let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
@@ -2224,10 +2229,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName
         with _  -> "??"
 
-    member x.FormatLayout (context:FSharpDisplayContext) =
+    member x.FormatLayout (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (displayContext.Contents cenv.g) with showMemberContainers=true } v.Deref
             |> LayoutRender.toArray
         | _,_ ->
             checkIsResolved()
@@ -2240,9 +2245,29 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                     mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
-            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            NicePrint.prettyLayoutOfTypeNoCx (displayContext.Contents cenv.g) ty
             |> LayoutRender.toArray
 
+    member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
+        match x.IsMember, d with
+        | true, _ ->
+            None
+        | false, _ ->
+            checkIsResolved()
+            match d with 
+            | E _
+            | P _
+            | C _ -> None
+            | M m ->
+                let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                NicePrint.layoutType (displayContext.Contents cenv.g) rty
+                |> LayoutRender.toArray
+                |> Some
+            | V v ->
+                NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
+                |> LayoutRender.toArray
+                |> Some
+    
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 
@@ -2562,7 +2587,7 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         // CompiledName throws exception on DataContractAttribute generated by SQLProvider
         try attr.AttributeType.CompiledName = typeof<'T>.Name with _ -> false
 
-#if !NO_EXTENSIONTYPING    
+#if !NO_TYPEPROVIDERS    
 type FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
@@ -2744,7 +2769,7 @@ type FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member _.SimpleName = ccu.AssemblyName 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member _.IsProviderGenerated = ccu.IsProviderGenerated
 #endif
 

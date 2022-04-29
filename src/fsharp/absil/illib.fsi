@@ -61,6 +61,8 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinal: value:string -> bool
 
+        member inline EndsWithOrdinalIgnoreCase: value:string -> bool
+
     type Async with
         /// Runs the computation synchronously, always starting on the current thread.
         static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
@@ -205,6 +207,8 @@ module internal List =
     val duplicates: xs:'T list -> 'T list when 'T: equality
 
     val internal allEqual: xs:'T list -> bool when 'T: equality
+
+    val isSingleton: xs: 'T list -> bool
 
 module internal ResizeArray =
 

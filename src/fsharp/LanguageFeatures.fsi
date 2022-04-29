@@ -36,6 +36,8 @@ type LanguageFeature =
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
     | BetterExceptionPrinting
+    | DelegateTypeNameResolutionFix
+    | ReallyLongLists
 
 /// LanguageVersion management
 type LanguageVersion =

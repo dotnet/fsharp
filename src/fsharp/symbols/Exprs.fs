@@ -426,7 +426,7 @@ module FSharpExprConvert =
 
                 // If the match is really an "if-then-else" then return it as such.
                 match dtreeR with 
-                | E(E.IfThenElse(a, E(E.DecisionTreeSuccess(0, [])), E(E.DecisionTreeSuccess(1, [])))) -> E.IfThenElse(a, snd targetsR.[0], snd targetsR.[1])
+                | E(E.IfThenElse(a, E(E.DecisionTreeSuccess(0, [])), E(E.DecisionTreeSuccess(1, [])))) -> E.IfThenElse(a, snd targetsR[0], snd targetsR[1])
                 | _ -> E.DecisionTree(dtreeR, targetsR))
 
         | _ -> 
@@ -517,7 +517,7 @@ module FSharpExprConvert =
                 // type.  There is no witness for this case.  This is due to the code
                 //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
                 // in FSharp.Core. 
-                | ErrorResult _  when vref.LogicalName =  "op_LeftShift" && tyargs.Length = 1 -> []
+                | ErrorResult _  when vref.LogicalName = "op_LeftShift" && List.isSingleton tyargs -> []
                 | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
@@ -825,7 +825,7 @@ module FSharpExprConvert =
 
             | TOp.ExnFieldGet (tcref, i), [], [obj] -> 
                 let exnc = stripExnEqns tcref
-                let fspec = exnc.TrueInstanceFieldsAsList.[i]
+                let fspec = exnc.TrueInstanceFieldsAsList[i]
                 let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
@@ -833,7 +833,7 @@ module FSharpExprConvert =
 
             | TOp.ExnFieldSet (tcref, i), [], [obj;e2] -> 
                 let exnc = stripExnEqns tcref
-                let fspec = exnc.TrueInstanceFieldsAsList.[i]
+                let fspec = exnc.TrueInstanceFieldsAsList[i]
                 let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
@@ -929,7 +929,7 @@ module FSharpExprConvert =
         let env = { env with suppressWitnesses = true }
         // First check if this is a witness in ReflectedDefinition code
         if env.witnessesInScope.ContainsKey witnessInfo then 
-            let witnessArgIdx = env.witnessesInScope.[witnessInfo]
+            let witnessArgIdx = env.witnessesInScope[witnessInfo]
             E.WitnessArg(witnessArgIdx)
         // Otherwise it is a witness in a quotation literal 
         else
@@ -1153,7 +1153,7 @@ module FSharpExprConvert =
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
                 let argtys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
                 let rty = 
-                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType emptyILCustomAttrs scoref tinst1 tinst2 with 
+                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
                     | None -> if isCtor then  enclosingType else g.unit_ty
                     | Some ty -> ty
 
@@ -1218,10 +1218,10 @@ module FSharpExprConvert =
         let g = cenv.g
         let v = vref.Deref
         if env.isinstVals.ContainsVal v then 
-            let ty, e = env.isinstVals.[v]
+            let ty, e = env.isinstVals[v]
             ConvExprPrim cenv env (mkCallUnbox g m ty e)
         elif env.substVals.ContainsVal v then 
-            let e = env.substVals.[v]
+            let e = env.substVals[v]
             ConvExprPrim cenv env e
         elif v.IsCtorThisVal then 
             E.ThisValue(ConvType cenv v.Type) 
@@ -1312,7 +1312,7 @@ module FSharpExprConvert =
             // Decompile cached isinst tests
             match inpExpr with 
             | Expr.Val (vref, _, _) when env.isinstVals.ContainsVal vref.Deref  ->
-                let ty, e =  env.isinstVals.[vref.Deref]
+                let ty, e =  env.isinstVals[vref.Deref]
                 let tyR = ConvType cenv ty
                 let eR = ConvExpr cenv env e
                 // note: reverse the branches - a null test is a failure of an isinst test

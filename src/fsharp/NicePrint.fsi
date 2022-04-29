@@ -87,6 +87,8 @@ val prettyLayoutOfType: denv:DisplayEnv -> x:TType -> Layout
 
 val prettyLayoutOfTypeNoCx: denv:DisplayEnv -> x:TType -> Layout
 
+val prettyLayoutOfTypar: denv:DisplayEnv -> x:Typar -> Layout
+
 val prettyStringOfTy: denv:DisplayEnv -> x:TType -> string
 
 val prettyStringOfTyNoCx: denv:DisplayEnv -> x:TType -> string
@@ -108,6 +110,8 @@ val prettyLayoutOfValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> typar
 val prettyLayoutOfValOrMemberNoInst: denv:DisplayEnv -> infoReader:InfoReader -> v:ValRef -> Layout
 
 val prettyLayoutOfMemberNoInstShort: denv:DisplayEnv -> v:Val -> Layout
+
+val layoutOfValReturnType: denv:DisplayEnv -> v:ValRef -> Layout
 
 val prettyLayoutOfInstAndSig: denv:DisplayEnv -> TyparInst * TTypes * TType -> TyparInst * (TTypes * TType) * (Layout list * Layout) * Layout
 

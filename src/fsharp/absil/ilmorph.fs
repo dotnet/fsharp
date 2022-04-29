@@ -23,16 +23,16 @@ let code_instr2instrs f (code: ILCode) =
     let mutable old = 0
     let mutable nw = 0
     for instr in instrs do 
-        adjust.[old] <- nw
+        adjust[old] <- nw
         let instrs : list<_> = f instr
         for instr2 in instrs do
             codebuf.Add instr2
             nw <- nw + 1
         old <- old + 1
-    adjust.[old] <- nw
+    adjust[old] <- nw
     let labels =
         let dict = Dictionary.newWithSize code.Labels.Count
-        for kvp in code.Labels do dict.Add(kvp.Key, adjust.[kvp.Value])
+        for kvp in code.Labels do dict.Add(kvp.Key, adjust[kvp.Value])
         dict
     { code with 
          Instrs = codebuf.ToArray()

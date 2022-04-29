@@ -25,7 +25,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
     let loadNativeLibrary path =
         let arguments = [| path:>obj; IntPtr.Zero:>obj |]
         if nativeLibraryTryLoad.Invoke(null, arguments) :?> bool then
-            arguments.[1] :?> IntPtr
+            arguments[1] :?> IntPtr
         else
             IntPtr.Zero
 

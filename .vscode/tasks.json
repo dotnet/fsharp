@@ -1,0 +1,73 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "windows": {
+        "options": {
+            "shell": {
+                "executable": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c"
+                ]
+            }
+        }
+    },
+    "tasks": [
+        {
+            "label": "Build (Debug)",
+            "command": "./build.sh",
+            "type": "shell",
+            "args": [
+                "-c Debug"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/Build.cmd",
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+        },
+        {
+            "label": "Build (Release)",
+            "command": "./build.sh",
+            "type": "shell",
+            "args": [
+                "-c Release"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/Build.cmd",
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+        },
+        {
+            "label": "Update xlf files",
+            "command": "./build.sh",
+            "type": "shell",
+            "windows": {
+                "command": "${workspaceFolder}/Build.cmd"
+            },
+            "options": {
+                "env": {
+                    "UpdateXlfOnBuild": "true"
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build"
+        },
+        {
+            "label": "Run tests (all)",
+            "command": "./build.sh",
+            "type": "shell",
+            "args": [
+                "-testAll"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/Build.cmd",
+            },
+            "problemMatcher": "$msCompile",
+            "group": "test"
+        }
+        // TODO: Add more test tasks if necessary.
+    ]
+}

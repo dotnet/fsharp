@@ -92,14 +92,14 @@ module internal ProjectFile =
             let fields = line.Split(',')
             if fields.Length < 8 then raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
-                { NugetPackageId = fields.[0]
-                  NugetPackageVersion = fields.[1]
-                  PackageRoot = fields.[2]
-                  FullPath = fields.[3]
-                  AssetType = fields.[4]
-                  IsNotImplementationReference = fields.[5]
-                  InitializeSourcePath = fields.[6]
-                  NativePath = fields.[7]
+                { NugetPackageId = fields[0]
+                  NugetPackageVersion = fields[1]
+                  PackageRoot = fields[2]
+                  FullPath = fields[3]
+                  AssetType = fields[4]
+                  IsNotImplementationReference = fields[5]
+                  InitializeSourcePath = fields[6]
+                  NativePath = fields[7]
                 }
         |]
 

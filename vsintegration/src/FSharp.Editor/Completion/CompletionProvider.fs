@@ -114,7 +114,9 @@ type internal FSharpCompletionProvider
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols)
+            let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
+            let completionContext = ParsedInput.TryGetCompletionContext(completionContextPos, parseResults.ParseTree, line)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols, (completionContextPos, completionContext))
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -186,8 +188,6 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let completionContext = ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseResults.ParseTree, line)
-
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
