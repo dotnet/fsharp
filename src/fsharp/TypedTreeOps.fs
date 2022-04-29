@@ -9763,13 +9763,8 @@ let (|IfThenElseExpr|_|) expr =
 /// Match a functionmatch expression
 let (|MatchLambdaExpr|_|) expr =
     match expr with
-    | Expr.Lambda(_, _, _, _, bodyExpr, _ ,_) ->
-        match bodyExpr with
-        | Expr.Let (_, bodyExpr, _, _) ->
-            match bodyExpr with
-            | Expr.Match (_, _, _, _, _, _) -> Some(expr)
-            | _ -> None
-        | _ -> None
+    | Expr.Lambda(_, _, _, _, _, _ ,_) -> Some (expr)
+    | Expr.TyLambda(_, _, _, _, _) -> Some (expr)
     | _ -> None
 
 /// if __useResumableCode then ... else ...
