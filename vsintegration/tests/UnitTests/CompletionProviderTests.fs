@@ -758,6 +758,20 @@ type A<'lType> = { Field: l }
     VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
+let ``No completion on record stub with no fields at declaration site``() =
+    let fileContents = """
+type A = {  }
+"""
+    VerifyNoCompletionList(fileContents, "{ ")
+
+[<Test>]
+let ``No completion on record outside of all fields at declaration site``() =
+    let fileContents = """
+type A = { Field: string; }
+"""
+    VerifyNoCompletionList(fileContents, "; ")
+
+[<Test>]
 let ``No completion on union case identifier at declaration site``() =
     let fileContents = """
 type A =
