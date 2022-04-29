@@ -273,9 +273,9 @@ module TestFunctions =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
     let ``Verify13043_execution_opt`` compilation =
         compilation
+        |> asExe
         |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
         |> withOptimize
         |> withNoDebug
-        |> asExe
-        |> verifyCompileAndRun
+        |> compileAndRun
         |> shouldSucceed
