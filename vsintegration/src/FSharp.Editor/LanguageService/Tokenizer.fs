@@ -147,6 +147,7 @@ module internal Tokenizer =
             | Private -> Glyph.StructurePrivate
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
+        | FSharpGlyph.TypeParameter -> Glyph.TypeParameter
 
     let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =
         let imageId =
@@ -243,6 +244,7 @@ module internal Tokenizer =
                         | Internal -> KnownImageIds.ClassInternal
                         | Protected -> KnownImageIds.ClassProtected
                         | Private -> KnownImageIds.ClassPrivate
+                | :? FSharpGenericParameter -> KnownImageIds.Type
                 | _ -> KnownImageIds.None
         if imageId = KnownImageIds.None then
             None
@@ -345,6 +347,7 @@ module internal Tokenizer =
                     | Internal -> Glyph.ClassInternal
                     | Protected -> Glyph.ClassProtected
                     | Private -> Glyph.ClassPrivate
+            | :? FSharpGenericParameter -> Glyph.TypeParameter
             | _ -> Glyph.None
 
 

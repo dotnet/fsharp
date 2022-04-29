@@ -221,6 +221,7 @@ type NavigationItem with
             | Some SynAccess.Internal -> FSharpRoslynGlyph.ExtensionMethodInternal
             | _ -> FSharpRoslynGlyph.ExtensionMethodPublic
         | FSharpGlyph.Error -> FSharpRoslynGlyph.Error
+        | FSharpGlyph.TypeParameter -> FSharpRoslynGlyph.TypeParameter
 
 [<RequireQualifiedAccess>]
 module String =   

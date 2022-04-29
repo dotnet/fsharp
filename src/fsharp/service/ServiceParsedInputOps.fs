@@ -957,6 +957,9 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
 
+                            // Unchecked.defaultof<str$>
+                            | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
+                                Some CompletionContext.PatternType
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) = 

@@ -751,9 +751,9 @@ type A = { le: string }
     VerifyNoCompletionList(fileContents, "le")
 
 [<Test>]
-let ``Completion list on record field type at declaration site contains modules and types but not keywords or functions``() =
+let ``Completion list on record field type at declaration site contains modules, types and type parameters but not keywords or functions``() =
     let fileContents = """
-type A = { Field: l }
+type A<'lType> = { Field: l }
 """
     VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
@@ -774,20 +774,28 @@ type A =
     VerifyNoCompletionList(fileContents, "str")
 
 [<Test>]
-let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions``() =
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions``() =
     let fileContents = """
-type A =
+type A<'lType> =
     | Case of blah: int * str: l
 """
-    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
 
 [<Test>]
-let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions2``() =
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions2``() =
     let fileContents = """
-type A =
+type A<'lType> =
     | Case of l
 """
-    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains type parameter``() =
+    let fileContents = """
+type A<'keyType> =
+    | Case of key
+"""
+    VerifyCompletionList(fileContents, "of key", ["keyType"], [])
 
 [<Test>]
 let ``Completion list on type alias contains modules and types but not keywords or functions``() =
@@ -803,6 +811,38 @@ type A =
     | C = 0
 """
     VerifyNoCompletionList(fileContents, "| C")
+
+[<Test>]
+let ``Completion list in generic function body contains type parameter``() =
+    let fileContents = """
+let Null<'wrappedType> () =
+    Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic method body contains type parameter``() =
+    let fileContents = """
+type A () =
+    member _.Null<'wrappedType> () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic class method body contains type parameter``() =
+    let fileContents = """
+type A<'wrappedType> () =
+    member _.Null () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in type application contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+let emptyMap<'keyType, 'lValueType> () =
+    Map.empty<'keyType, l>
+"""
+    VerifyCompletionList(fileContents, ", l", ["LanguagePrimitives"; "List"; "lValueType"], ["let"; "log"])
 
 #if EXE
 ShouldDisplaySystemNamespace()

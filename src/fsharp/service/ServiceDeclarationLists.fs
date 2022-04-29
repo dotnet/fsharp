@@ -380,6 +380,11 @@ module DeclarationListHelpers =
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
 
+        // Type variables
+        | Item.TypeVar (_, typar) ->
+            let layout = NicePrint.prettyLayoutOfTypar denv typar
+            ToolTipElement.Single (toArray layout, xml)
+
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             //let os = StringBuilder()
@@ -848,7 +853,7 @@ module internal DescriptionListsImpl =
             | Item.CustomOperation _ -> FSharpGlyph.Method
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
-            | Item.TypeVar _ 
+            | Item.TypeVar _ -> FSharpGlyph.TypeParameter
             | Item.Types _  -> FSharpGlyph.Class
             | Item.UnqualifiedType (tcref :: _) -> 
                 if tcref.IsEnumTycon || tcref.IsILEnumTycon then FSharpGlyph.Enum
@@ -1031,9 +1036,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayNameCore
                 let textInCode = 
-                    match item.Unresolved with
-                    | Some u -> u.DisplayName
-                    | None -> item.Item.DisplayName
+                    match item.Item with
+                    | Item.TypeVar (name, typar) -> (if typar.StaticReq = Syntax.TyparStaticReq.None then "'" else " ^") + name
+                    | _ ->
+                        match item.Unresolved with
+                        | Some u -> u.DisplayName
+                        | None -> item.Item.DisplayName
                 textInDeclList, textInCode, items)
 
             // Filter out operators, active patterns (as values)
