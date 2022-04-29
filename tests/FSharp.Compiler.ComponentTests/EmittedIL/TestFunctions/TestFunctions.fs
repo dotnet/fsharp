@@ -255,17 +255,27 @@ module TestFunctions =
         |> verifyCompilation
 
     // Verify IL 13043
-//    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
     let ``Verify13043_il`` compilation =
         compilation
         |> withDebug
         |> verifyCompilation
 
-    // Verify Execution 13043
+    // Verify Execution 13043 run it built not optimized with debug
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
-    let ``Verify13043_execution`` compilation =
+    let ``Verify13043_execution_noopt`` compilation =
         compilation
         |> withDebug
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    // Verify Execution 13043 --- run it built optimized no debug
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
+    let ``Verify13043_execution_opt`` compilation =
+        compilation
+        |> asExe
+        |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
+        |> withOptimize
+        |> withNoDebug
+        |> compileAndRun
+        |> shouldSucceed
