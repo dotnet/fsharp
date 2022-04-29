@@ -67,7 +67,7 @@ module SynLongIdentHelpers =
         | SynLongIdent(lid, dots, _) -> lid, dots
 
     [<Obsolete("Please use SynLongIdent")>]
-    let LongIdentWithDots (lid, dots) = SynLongIdent(lid, dots, []) 
+    let LongIdentWithDots (lid, dots) = SynLongIdent(lid, dots, List.replicate lid.Length None) 
 
 [<RequireQualifiedAccess>]
 type ParserDetail =

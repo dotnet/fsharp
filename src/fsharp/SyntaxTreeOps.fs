@@ -46,12 +46,13 @@ let mkSynIdGet m n = SynExpr.Ident (mkSynId m n)
 let mkSynLidGet m path n =
     let lid = pathToSynLid m path @ [mkSynId m n]
     let dots = List.replicate (lid.Length - 1) m
-    SynExpr.LongIdent (false, LongIdentWithDots(lid, dots), None, m)
+    let trivia: IdentTrivia option list = List.replicate lid.Length None
+    SynExpr.LongIdent (false, SynLongIdent(lid, dots, trivia), None, m)
 
 let mkSynIdGetWithAlt m id altInfo =
     match altInfo with
     | None -> SynExpr.Ident id
-    | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], []), altInfo, m)
+    | _ -> SynExpr.LongIdent (false, SynLongIdent([id], [], [None]), altInfo, m)
 
 let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.idRange)
 
@@ -61,7 +62,7 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Ident id -> Some (false, SynLongIdent([id], [], [None]), None, id.idRange)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
@@ -428,13 +429,13 @@ let mkSynDot dotm m l (SynIdent(r, rTrivia)) =
 
 let mkSynDotMissing dotm m l =
     match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
+    | SynExpr.LongIdent (isOpt, SynLongIdent(lid, dots, trivia), None, _) ->
          // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm]), None, m)
+         SynExpr.LongIdent (isOpt, SynLongIdent(lid, dots@[dotm], trivia), None, m)
     | SynExpr.Ident id ->
         SynExpr.LongIdent (false, SynLongIdent([id], [dotm], []), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+    | SynExpr.DotGet (e, dm, SynLongIdent(lid, dots, trivia), _) ->
+        SynExpr.DotGet (e, dm, SynLongIdent(lid, dots@[dotm], trivia), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr ->
         SynExpr.DiscardAfterMissingQualificationAfterDot (expr, m)
 

@@ -1139,6 +1139,31 @@ global
             Assert.Pass()
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExprRecordFields contain correct amount of trivia`` () =
+        let ast =
+            getParseResults """
+        { JobType = EsriBoundaryImport
+          FileToImport = filePath
+          State = state
+          DryRun = args.DryRun }
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Expr(expr =
+                            SynExpr.Record(recordFields = [
+                                SynExprRecordField(fieldName = (synLongIdent, _))
+                                _; _; _
+                            ]))
+                    ])
+                ])) ->
+            match synLongIdent.IdentsWithTrivia with
+            | [ _ ] -> Assert.Pass()
+            | idents -> Assert.Fail $"Expected a single SynIdent, got {idents}"
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with
