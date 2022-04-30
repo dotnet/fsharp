@@ -883,6 +883,9 @@ let ``Completion list in match clause contains only union cases and compatible a
 let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
     Some CPat
 
+let (|CPatIncompatible|_|) (str: string) (x: Choice<string, unit>) =
+    Some CPatIncompatible
+
 let (|CPat1|CPat2|) (x: Choice<int, unit>) =
     if true then CPat1 else CPat2
 
@@ -916,6 +919,47 @@ let call x =
     | s
 """
     VerifyCompletionListExactly(fileContents, "| s", [ "None"; "Some" ])
+
+[<Test>]
+let ``Completion list in match clause contains only union cases when the match expression type is known but in an unopened module``() =
+    let fileContents = """
+module M =
+    type ChoiceZ =
+        | Choice1
+        | Choice2
+
+let call (choice: M.ChoiceZ) =
+    match choice with
+    | C
+"""
+    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1"; "Choice2" ])
+
+[<Test>]
+let ``Completion list in match clause contains only union cases when the match expression type is a union with RequireQualifiedAccess``() =
+    let fileContents = """
+[<RequireQualifiedAccess>]
+type ChoiceZ =
+    | Choice1
+    | Choice2
+
+let call (choice: ChoiceZ) =
+    match choice with
+    | C
+"""
+    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1"; "Choice2" ])
+
+[<Test>]
+let ``Completion list in match clause does not contain compatible active pattern out of scope when the match expression type is known``() =
+    let fileContents = """
+module M =
+    let (|CPat|_|) (str: string) (x: Choice<int, unit>) =
+        Some CPat
+
+let call (choice: unit -> Async<Choice<int, unit>>) = task {
+    match! choice () with
+    | C
+"""
+    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1Of2"; "Choice2Of2" ])
 
 [<Test>]
 let ``Completion list in match clause is empty on the outer identifier when the match expression type is list``() =
@@ -973,6 +1017,24 @@ let call x =
     | e
 """
     VerifyCompletionList(fileContents, "| e", [ "ELiteral"; "EEnum"; "EUnion"; "ECase"; "EPat"; "MatchFailureException"; "EMod"; "System" ], [ "eVal"; "eFunc"; "EClass" ])
+
+[<Test>]
+let ``Completion list in match clause only contains type members including constants when dotting into a class``() =
+    let fileContents = """
+let call x =
+    match x with
+    | System.Int32.m
+"""
+    VerifyCompletionListExactly(fileContents, ".m", [ "MaxValue"; "MinValue"; "Parse"; "TryParse" ])
+
+[<Test>]
+let ``Completion list in match clause contains enum cases when dotting into an enum``() =
+    let fileContents = """
+let call x =
+    match x with
+    | System.ConsoleColor.b
+"""
+    VerifyCompletionList(fileContents, ".b", [ "Black"; "Blue"; "DarkBlue" ], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

@@ -1053,8 +1053,8 @@ type internal TypeCheckInfo
                     Some (List.map ItemWithNoInst items, denv, m)
                     |> Option.map toCompletionItems
 
-            // Completion at ' match x with S... -> () '
-            | Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier range)) when origLongIdentOpt.IsNone || origLongIdentOpt.Value.IsEmpty ->
+            // Completion at ' match x with S... -> () ' unless we're dotting into a type/module/...
+            | Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range)) when origLongIdentOpt.IsNone || origLongIdentOpt.Value.IsEmpty ->
                 match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition range.End with
                 | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
                     let items =

@@ -3086,21 +3086,21 @@ FSharp.Compiler.EditorServices.LookupType: Int32 Tag
 FSharp.Compiler.EditorServices.LookupType: Int32 get_Tag()
 FSharp.Compiler.EditorServices.LookupType: System.String ToString()
 FSharp.Compiler.EditorServices.MatchContext
-FSharp.Compiler.EditorServices.MatchContext+ClausePatternOutermostIdentifier: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.EditorServices.MatchContext+ClausePatternOutermostIdentifier: FSharp.Compiler.Text.Range range
+FSharp.Compiler.EditorServices.MatchContext+ClausePatternIdentifier: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.EditorServices.MatchContext+ClausePatternIdentifier: FSharp.Compiler.Text.Range range
 FSharp.Compiler.EditorServices.MatchContext+Tags: Int32 ClauseGuard
-FSharp.Compiler.EditorServices.MatchContext+Tags: Int32 ClausePatternOutermostIdentifier
+FSharp.Compiler.EditorServices.MatchContext+Tags: Int32 ClausePatternIdentifier
 FSharp.Compiler.EditorServices.MatchContext: Boolean Equals(FSharp.Compiler.EditorServices.MatchContext)
 FSharp.Compiler.EditorServices.MatchContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.MatchContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.MatchContext: Boolean IsClauseGuard
-FSharp.Compiler.EditorServices.MatchContext: Boolean IsClausePatternOutermostIdentifier
+FSharp.Compiler.EditorServices.MatchContext: Boolean IsClausePatternIdentifier
 FSharp.Compiler.EditorServices.MatchContext: Boolean get_IsClauseGuard()
-FSharp.Compiler.EditorServices.MatchContext: Boolean get_IsClausePatternOutermostIdentifier()
+FSharp.Compiler.EditorServices.MatchContext: Boolean get_IsClausePatternIdentifier()
 FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext ClauseGuard
-FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext NewClausePatternOutermostIdentifier(FSharp.Compiler.Text.Range)
+FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext NewClausePatternIdentifier(FSharp.Compiler.Text.Range)
 FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext get_ClauseGuard()
-FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext+ClausePatternOutermostIdentifier
+FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext+ClausePatternIdentifier
 FSharp.Compiler.EditorServices.MatchContext: FSharp.Compiler.EditorServices.MatchContext+Tags
 FSharp.Compiler.EditorServices.MatchContext: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.MatchContext: Int32 GetHashCode(System.Collections.IEqualityComparer)

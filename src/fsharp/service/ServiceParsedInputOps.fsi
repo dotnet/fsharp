@@ -24,10 +24,9 @@ type public RecordContext =
 
 [<RequireQualifiedAccess>]
 type public MatchContext =
-    /// Completing the outermost identifier in a match clause pattern
-    /// (e.g. 'match x with Som| y -> ...'
-    /// but not 'match x: int option option with Some (Som| y) -> ...')
-    | ClausePatternOutermostIdentifier of range: range
+    /// Completing an identifier in a match clause pattern
+    /// (e.g. 'match x with Som| y -> ...')
+    | ClausePatternIdentifier of range: range
 
     /// Completing a match clause guard (e.g. match x with Some y when y| -> ...)
     | ClauseGuard

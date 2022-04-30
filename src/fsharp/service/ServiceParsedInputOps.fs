@@ -49,10 +49,9 @@ type RecordContext =
 
 [<RequireQualifiedAccess>]
 type MatchContext =
-    /// Completing the outermost identifier in a match clause pattern
-    /// (e.g. 'match x with Som| y -> ...'
-    /// but not 'match x: int option option with Some (Som| y) -> ...')
-    | ClausePatternOutermostIdentifier of range: range
+    /// Completing an identifier in a match clause pattern
+    /// (e.g. 'match x with Som| y -> ...')
+    | ClausePatternIdentifier of range: range
 
     /// Completing a match clause guard (e.g. match x with Some y when y| -> ...)
     | ClauseGuard
@@ -973,22 +972,23 @@ module ParsedInput =
 
                             | SynExpr.Match (clauses = clauses)
                             | SynExpr.MatchBang (clauses = clauses) ->
-                                let rec traverse pos defaultTraverse (expr: SynExpr) clausePat =
+                                let rec traverse pos clausePat =
                                     match clausePat with
                                     // match x with
                                     // | z| ->
-                                    | SynPat.Named (range = range) -> Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier range))
+                                    | SynPat.Named (range = range) -> Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range))
 
                                     // match opt with
                                     // | Som| value ->
-                                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos -> Some (CompletionContext.Match (MatchContext.ClausePatternOutermostIdentifier lidwd.Range))
+                                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                                        Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier lidwd.Range))
 
                                     // match x with
                                     // | Choice1| value
                                     // | Choice2Of3 value ->
                                     | SynPat.Or (lhs, rhs, _, _) ->
-                                        match traverse pos defaultTraverse expr lhs with
-                                        | None -> traverse pos defaultTraverse expr rhs
+                                        match traverse pos lhs with
+                                        | None -> traverse pos rhs
                                         | x -> x
 
                                     // match x with
@@ -996,20 +996,20 @@ module ParsedInput =
                                     | SynPat.Ands (pats, _) ->
                                         pats |> List.tryPick (fun pat ->
                                             if rangeContainsPos pat.Range pos then
-                                                traverse pos defaultTraverse expr pat
+                                                traverse pos pat
                                             else
                                                 None)
 
                                     // match opt with
                                     // | (Som| value) ->
-                                    | SynPat.Paren (pat, _) -> traverse pos defaultTraverse expr pat
+                                    | SynPat.Paren (pat, _) -> traverse pos pat
 
-                                    | _ -> defaultTraverse expr
+                                    | _ -> None
 
                                 clauses
                                 |> List.tryPick (fun (SynMatchClause (pat = pat; whenExpr = whenExpr)) ->
                                     if rangeContainsPos pat.Range pos then
-                                        traverse pos defaultTraverse expr pat
+                                        traverse pos pat
                                     elif whenExpr.IsSome && rangeContainsPos whenExpr.Value.Range pos then
                                         Some (CompletionContext.Match MatchContext.ClauseGuard)
                                     else
