@@ -931,9 +931,9 @@ module M =
 
 let call (choice: M.ChoiceZ) =
     match choice with
-    | C
+    | c
 """
-    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1"; "Choice2" ])
+    VerifyCompletionListExactly(fileContents, "| c", [ "Choice1"; "Choice2" ])
 
 [<Test>]
 let ``Completion list in match clause contains only union cases when the match expression type is a union with RequireQualifiedAccess``() =
@@ -945,9 +945,9 @@ type ChoiceZ =
 
 let call (choice: ChoiceZ) =
     match choice with
-    | C
+    | c
 """
-    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1"; "Choice2" ])
+    VerifyCompletionListExactly(fileContents, "| c", [ "Choice1"; "Choice2" ])
 
 [<Test>]
 let ``Completion list in match clause does not contain compatible active pattern out of scope when the match expression type is known``() =
