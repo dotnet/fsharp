@@ -6321,7 +6321,7 @@ let rec mkExprAppAux g f fty argsl m =
         | Expr.App (f0, fty0, tyargs, pargs, m2) 
              when
                  (isNil pargs ||
-                  (match stripExpr f0 with 
+                  (match stripDebugPoints f0 with 
                    | Expr.Val (v, _, _) -> 
                        match v.ValReprInfo with 
                        | Some info -> info.NumCurriedArgs > pargs.Length
