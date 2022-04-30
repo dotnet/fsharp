@@ -332,8 +332,15 @@ let opNameParenGet  = CompileOpName parenGet
 
 let opNameQMark = CompileOpName qmark
 
-let mkSynOperator opm oper =
-    SynExpr.LongIdent(false, SynLongIdent([ident(CompileOpName oper, opm)], [], [Some (IdentTrivia.OriginalNotation oper)]), None, opm)
+let mkSynOperator (opm:range) (oper:string) =
+    let trivia =
+        if oper.StartsWith("~") && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1)) then
+            // PREFIX_OP token where the ~ was actually absent
+            IdentTrivia.OriginalNotation (string(oper.[1..]))
+        else
+            IdentTrivia.OriginalNotation oper
+        
+    SynExpr.LongIdent(false, SynLongIdent([ident(CompileOpName oper, opm)], [], [Some trivia]), None, opm)
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm

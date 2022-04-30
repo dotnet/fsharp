@@ -4206,6 +4206,47 @@ f(x=4)
             Assert.Fail $"Could not get valid AST, got {ast}"
 
     [<Test>]
+    let ``prefix operation`` () =
+        let ast = getParseResults """
++ -86
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr(expr =
+                    SynExpr.App(isInfix = false
+                                funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotation "+")]))
+                                argExpr = SynExpr.Const(SynConst.Int32(-86), _)))
+                ])
+            ])) ->
+            Assert.AreEqual("op_UnaryPlus", ident.idText)
+            assertRange (2,0) (2,1) ident.idRange
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``prefix operation with two characters`` () =
+        let ast = getParseResults """
+%%arg
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Expr(expr =
+                    SynExpr.App(isInfix = false
+                                funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotation "%%")]))
+                                argExpr = SynExpr.Ident argIdent))
+                ])
+            ])) ->
+            Assert.AreEqual("op_SpliceUntyped", ident.idText)
+            assertRange (2,0) (2,2) ident.idRange
+            Assert.AreEqual("arg", argIdent.idText)
+        | _ ->
+            Assert.Fail $"Could not get valid AST, got {ast}"    
+
+    [<Test>]
     let ``detect difference between compiled operators`` () =
         let ast = getParseResults """
 (+) a b
