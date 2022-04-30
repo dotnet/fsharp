@@ -4364,7 +4364,15 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            |> Seq.collect (InfosForTyconConstructors ncenv m ad)
            |> Seq.toList
 
-       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors
+       let typeVars =
+           if nenv.eTypars.IsEmpty then
+               []
+           else
+               nenv.eTypars
+               |> Seq.map (fun kvp -> Item.TypeVar (kvp.Key, kvp.Value))
+               |> Seq.toList
+
+       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors @ typeVars
 
     | id :: rest ->
 
@@ -4476,22 +4484,31 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
             | _ -> []
         )
 
+let getRecordFieldsInScope nenv =
+    nenv.eFieldLabels
+   |> Seq.collect (fun (KeyValue(_, v)) -> v)
+   |> Seq.map (fun fref ->
+        let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
+        Item.RecdField(RecdFieldInfo(typeInsts, fref)))
+   |> List.ofSeq
+
 /// allowObsolete - specifies whether we should return obsolete types & modules
 ///   as (no other obsolete items are returned)
-let rec ResolvePartialLongIdentToClassOrRecdFields (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (allowObsolete: bool) =
-    ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv OpenQualified m ad plid allowObsolete
+let rec ResolvePartialLongIdentToClassOrRecdFields (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (allowObsolete: bool) (fieldsOnly: bool) =
+    ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv OpenQualified m ad plid allowObsolete fieldsOnly
 
-and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: NameResolutionEnv) fullyQualified m ad plid allowObsolete =
+and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: NameResolutionEnv) fullyQualified m ad plid allowObsolete fieldsOnly =
     let g = ncenv.g
 
     match  plid with
     |  id :: plid when id = "global" -> // this is deliberately not the mangled name
        // dive deeper
-       ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv FullyQualified m ad plid allowObsolete
+       ResolvePartialLongIdentToClassOrRecdFieldsImpl ncenv nenv FullyQualified m ad plid allowObsolete fieldsOnly
     |  [] ->
 
         // empty plid - return namespaces\modules\record types\accessible fields
 
+       if fieldsOnly then getRecordFieldsInScope nenv else
 
        let mods =
            let moduleOrNamespaceRefs =
@@ -4520,12 +4537,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.toList
 
        let recdFields =
-           nenv.eFieldLabels
-           |> Seq.collect (fun (KeyValue(_, v)) -> v)
-           |> Seq.map (fun fref ->
-                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
-                Item.RecdField(RecdFieldInfo(typeInsts, fref)))
-           |> List.ofSeq
+           getRecordFieldsInScope nenv
 
        mods @ recdTyCons @ recdFields
 
@@ -4541,7 +4553,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
 
         let qualifiedFields =
             match rest with
-            | [] ->
+            | [] when not fieldsOnly ->
                 // get record types accessible in given nenv
                 let tycons = LookupTypeNameInEnvNoArity OpenQualified id nenv
                 tycons
