@@ -342,6 +342,12 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
+
+    let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
+
     let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
 
