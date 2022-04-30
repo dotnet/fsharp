@@ -157,4 +157,49 @@ type CompletionTests() =
         Assert.Equal(1, matchingCompletions.Length)
         Assert.Equal("A", matchingCompletions.[0].NameInCode)
 
+    [<Fact>]
+    member _.``Completions in a match clause prepend union name to case when qualified access is required``() =
+        use script = new FSharpScript()
+        let text = """
+module M =
+    [<RequireQualifiedAccess>]
+    type ChoiceZ =
+        | Choice1
+        | Choice2
+
+open M
+
+let call (choice: M.ChoiceZ) =
+    match choice with
+    | C
+        """
+        let completions = script.GetCompletionItems(text, 12, 7) |> Async.RunSynchronously
+        
+        Assert.Equal (2, completions.Length)
+
+        for c in completions do
+            Assert.Equal (None, c.NamespaceToOpen)
+            Assert.Equal ("ChoiceZ." + c.Name, c.NameInCode)
+
+    [<Fact>]
+    member _.``Completions in a match clause prepend union name to case and open modules when qualified access is required and union is out of scope``() =
+        use script = new FSharpScript()
+        let text = """
+module M =
+    [<RequireQualifiedAccess>]
+    type ChoiceZ =
+        | Choice1
+        | Choice2
+
+let call (choice: M.ChoiceZ) =
+    match choice with
+    | C
+        """
+        let completions = script.GetCompletionItems(text, 10, 7) |> Async.RunSynchronously
+        
+        Assert.Equal (2, completions.Length)
+
+        for c in completions do
+            Assert.Equal (Some "M", c.NamespaceToOpen)
+            Assert.StartsWith ("ChoiceZ.", c.NameInCode)
 

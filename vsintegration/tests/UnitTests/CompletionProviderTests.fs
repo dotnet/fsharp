@@ -906,16 +906,17 @@ let (|CPat1|CPat2|) (x: Choice<int, unit>) =
 
 let call (choice: unit -> Async<Choice<int, unit>>) = async {
     match! choice () with
-    | C
+    | (CPat "param" & c)
 """
-    VerifyCompletionListExactly(fileContents, "| C", [ "Choice1Of2"; "Choice2Of2"; "CPat"; "CPat1"; "CPat2" ])
+    VerifyCompletionListExactly(fileContents, "& c", [ "Choice1Of2"; "Choice2Of2"; "CPat"; "CPat1"; "CPat2" ])
 
 [<Test>]
 let ``Completion list in match clause contains only union cases and compatible active pattern when the match expression type is known3``() =
     let fileContents = """
 let call x =
     match x "" with
-    | None -> ()
+    | None when true -> ()
+    | None
     | s
 """
     VerifyCompletionListExactly(fileContents, "| s", [ "None"; "Some" ])
@@ -960,6 +961,15 @@ let call (choice: unit -> Async<Choice<int, unit>>) = task {
     | C
 """
     VerifyCompletionListExactly(fileContents, "| C", [ "Choice1Of2"; "Choice2Of2" ])
+
+[<Test>]
+let ``Completion list in match clause on union case parameters not filtered when the match expression type is known``() =
+    let fileContents = """
+let call (choice: unit -> Async<Choice<string option, unit>>) = task {
+    match! choice () with
+    | Choice1Of2 (s)
+"""
+    VerifyCompletionList(fileContents, "(s", [ "Some"; "Choice1Of2"; "Choice2Of2" ], [])
 
 [<Test>]
 let ``Completion list in match clause is empty on the outer identifier when the match expression type is list``() =
