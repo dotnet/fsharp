@@ -6827,7 +6827,7 @@ let mkArray (argty, args, m) = Expr.Op (TOp.Array, [argty], args, m)
 //---------------------------------------------------------------------------
 
 let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exprToFix = 
-    let exprToFix = stripExpr exprToFix
+    let exprToFix = stripDebugPoints exprToFix
     match exprToFix with 
     | Expr.Const _ -> ()
     | Expr.Op (TOp.Tuple tupInfo, argtys, args, m) when not (evalTupInfoIsStruct tupInfo) ->
