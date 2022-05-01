@@ -1065,7 +1065,7 @@ type internal TypeCheckInfo
                                 | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
                                     Some {
                                         FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
-                                        Namespace = uci.Tycon.PublicPath |> Option.map (fun x -> x.EnclosingPath) |> Option.defaultValue [||]
+                                        Namespace = trimPathByDisplayEnvList denv uci.Tycon.CompilationPath.DemangledPath |> List.toArray
                                         DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
                                     }
                                 | _ -> None

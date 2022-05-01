@@ -1054,6 +1054,8 @@ val qualifiedInterfaceImplementationName: TcGlobals -> TType -> string -> string
 
 val trimPathByDisplayEnv: DisplayEnv -> string list -> string
 
+val trimPathByDisplayEnvList: DisplayEnv -> string list -> string list
+
 val prefixOfStaticReq: TyparStaticReq -> string
 
 val prefixOfRigidTypar: Typar -> string

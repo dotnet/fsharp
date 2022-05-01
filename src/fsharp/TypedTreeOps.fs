@@ -3169,6 +3169,16 @@ let trimPathByDisplayEnv denv path =
     | Some s -> s
     | None -> if isNil path then "" else textOfPath path + "."
 
+let trimPathByDisplayEnvList denv path =
+    let findOpenedNamespace openedPath = 
+        if firstEq openedPath path then 
+            Some (firstRem openedPath path)
+        else
+            None
+
+    match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
+    | Some s -> s
+    | None -> path
 
 let superOfTycon (g: TcGlobals) (tycon: Tycon) = 
     match tycon.TypeContents.tcaug_super with 

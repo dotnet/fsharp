@@ -203,3 +203,49 @@ let call (choice: M.ChoiceZ) =
             Assert.Equal (Some "M", c.NamespaceToOpen)
             Assert.StartsWith ("ChoiceZ.", c.NameInCode)
 
+    [<Fact>]
+    member _.``Completions in a match clause do not unnecessarily open an AutoOpen module``() =
+        use script = new FSharpScript()
+        let text = """
+[<AutoOpen>]
+module M =
+    type ChoiceZ =
+        | Choice1
+        | Choice2
+
+let call (choice: M.ChoiceZ) =
+    match choice with
+    | C
+        """
+        let completions = script.GetCompletionItems(text, 10, 7) |> Async.RunSynchronously
+        
+        Assert.Equal (2, completions.Length)
+
+        for c in completions do
+            Assert.Equal (None, c.NamespaceToOpen)
+            Assert.Equal (c.Name, c.NameInCode)
+
+    [<Fact>]
+    member _.``Completions in a match clause open the correct modules``() =
+        use script = new FSharpScript()
+        let text = """
+module F =
+    module N =
+        [<AutoOpen>]
+        module M =
+            type ChoiceZ =
+                | Choice1
+                | Choice2
+
+    let call (choice: N.M.ChoiceZ) =
+        match choice with
+        | C
+        """
+        let completions = script.GetCompletionItems(text, 12, 11) |> Async.RunSynchronously
+        
+        Assert.Equal (2, completions.Length)
+
+        for c in completions do
+            Assert.Equal (Some "N.M", c.NamespaceToOpen)
+            Assert.Equal (c.Name, c.NameInCode)
+
