@@ -96,7 +96,7 @@ type SyntaxVisitorBase<'T>() =
         None
 
     /// VisitRecordField allows overriding behavior when visiting l.h.s. of constructed record instances
-    abstract VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: LongIdentWithDots option -> 'T option
+    abstract VisitRecordField: path: SyntaxVisitorPath * copyOpt: SynExpr option * recordField: SynLongIdent option -> 'T option
     default _.VisitRecordField (path, copyOpt, recordField) =
         ignore (path, copyOpt, recordField)
         None
@@ -439,7 +439,7 @@ module SyntaxTraversal =
                         | _ -> false
                     let ok = 
                         match isPartOfArrayOrList, synExpr with
-                        | false, SynExpr.Ident ident -> visitor.VisitRecordField(path, None, Some (LongIdentWithDots([ident], [])))
+                        | false, SynExpr.Ident ident -> visitor.VisitRecordField(path, None, Some (SynLongIdent([ident], [], [None])))
                         | false, SynExpr.LongIdent (false, lidwd, _, _) -> visitor.VisitRecordField(path, None, Some lidwd)
                         | _ -> None
                     if ok.IsSome then ok
@@ -687,7 +687,7 @@ module SyntaxTraversal =
                         |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1)))) as mem1
                             SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
                             // ensure same long id
-                            assert( (lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText) )
+                            assert( (lid1.LongIdent,lid2.LongIdent) ||> List.forall2 (fun x y -> x.idText = y.idText) )
                             // ensure one is getter, other is setter
                             assert( (info1.idText="set" && info2.idText="get") ||
                                     (info2.idText="set" && info1.idText="get") )

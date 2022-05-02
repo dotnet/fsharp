@@ -244,7 +244,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             | args -> SynExpr.Paren (SynExpr.Tuple (false, args, [], m), range0, None, m)
                 
         let builderVal = mkSynIdGet m builderValName
-        mkSynApp1 (SynExpr.DotGet (builderVal, range0, LongIdentWithDots([mkSynId m nm], []), m)) args m
+        mkSynApp1 (SynExpr.DotGet (builderVal, range0, SynLongIdent([mkSynId m nm], [], [None]), m)) args m
 
     let hasMethInfo nm = TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy |> isNil |> not
 
@@ -690,7 +690,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         match patvs with 
         | [] -> SynExpr.Const (SynConst.Unit, m)
         | [v] -> SynExpr.Ident v.Id
-        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
+        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident(v.Id))), [], m)  
 
     let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
@@ -1236,8 +1236,8 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             Some (transBind q varSpace mBind (addBindDebugPoint spBind) "Bind" [rhsExpr] pat innerComp translatedCtxt)
 
         // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
-        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.Named (ident=id; isThisVal=false) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp)
-        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.LongIdent (longDotId=LongIdentWithDots(id=[id])) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp) ->
+        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.Named (ident=SynIdent(id,_); isThisVal=false) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp)
+        | SynExpr.LetOrUseBang (bindDebugPoint=spBind; isUse=true; isFromSource=isFromSource; pat=SynPat.LongIdent (longDotId=LongIdentWithDots([id], _)) as pat; rhs=rhsExpr; andBangs=[]; body=innerComp) ->
 
             let mBind = match spBind with DebugPointAtBinding.Yes m -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), mBind))
@@ -1249,7 +1249,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             let bindExpr =
                 let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, transNoQueryOps innerComp, innerComp.Range, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
-                let consumeExpr = mkSynCall "Using" mBind [SynExpr.Ident(id); consumeExpr ]
+                let consumeExpr = mkSynCall "Using" mBind [SynExpr.Ident id; consumeExpr ]
                 let consumeExpr = SynExpr.MatchLambda(false, mBind, [SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)], DebugPointAtBinding.NoneAtInvisible, mBind)
                 let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
                 mkSynCall "Bind" mBind [rhsExpr; consumeExpr]

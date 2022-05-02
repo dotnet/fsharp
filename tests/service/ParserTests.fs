@@ -35,7 +35,7 @@ let x = ()
     let (|UnionWithCases|_|) typeDefn =
         match typeDefn with
         | SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
-            cases |> List.map (fun (SynUnionCase (ident = ident)) -> ident.idText) |> Some
+            cases |> List.map (fun (SynUnionCase (ident = SynIdent(ident,_))) -> ident.idText) |> Some
         | _ -> None
 
     match getSingleModuleMemberDecls parseResults with
