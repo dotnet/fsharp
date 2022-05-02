@@ -5014,8 +5014,8 @@ and accFreeInExprNonLinearImpl opts x acc =
          accFreeInExpr opts innerExpr acc
 
 and accFreeInOp opts op acc =
-
     match op with
+
     // Things containing no references
     | TOp.Bytes _ 
     | TOp.UInt16s _ 
@@ -5142,40 +5142,34 @@ let freeInModuleOrNamespace opts mdef =
 //---------------------------------------------------------------------------
 
 let rec stripLambda (expr, ty) = 
-    match stripDebugPoints expr with 
+    match expr with 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, v, bodyExpr, _, rty) -> 
         if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", expr.Range))
         if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", expr.Range))
         let vs', bodyExpr', rty' = stripLambda (bodyExpr, rty)
         (v :: vs', bodyExpr', rty') 
-    | _ ->
-        ([], expr, ty)
+    | _ -> ([], expr, ty)
 
 let rec stripLambdaN n expr = 
     assert (n >= 0)
-    match stripDebugPoints expr with 
+    match expr with 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, v, bodyExpr, _, _) when n > 0 -> 
         if Option.isSome ctorThisValOpt then errorR(InternalError("skipping ctorThisValOpt", expr.Range))
         if Option.isSome baseValOpt then errorR(InternalError("skipping baseValOpt", expr.Range))
         let vs, bodyExpr', remaining = stripLambdaN (n-1) bodyExpr
         (v :: vs, bodyExpr', remaining) 
-    | _ ->
-        ([], expr, n)
+    | _ -> ([], expr, n)
 
 let tryStripLambdaN n expr = 
-    match stripDebugPoints expr with
+    match expr with
     | Expr.Lambda (_, None, None, _, _, _, _) -> 
         let argvsl, bodyExpr, remaining = stripLambdaN n expr
         if remaining = 0 then Some (argvsl, bodyExpr)
         else None
-    | _ ->
-        None
+    | _ -> None
 
 let stripTopLambda (expr, ty) =
-    let tps, taue, tauty =
-        match stripDebugPoints expr with
-        | Expr.TyLambda (_, tps, b, _, rty) -> tps, b, rty
-        | _ -> [], expr, ty
+    let tps, taue, tauty = match expr with Expr.TyLambda (_, tps, b, _, rty) -> tps, b, rty | _ -> [], expr, ty
     let vs, body, rty = stripLambda (taue, tauty)
     tps, vs, body, rty
 
@@ -6321,7 +6315,7 @@ let rec mkExprAppAux g f fty argsl m =
         | Expr.App (f0, fty0, tyargs, pargs, m2) 
              when
                  (isNil pargs ||
-                  (match stripDebugPoints f0 with 
+                  (match stripExpr f0 with 
                    | Expr.Val (v, _, _) -> 
                        match v.ValReprInfo with 
                        | Some info -> info.NumCurriedArgs > pargs.Length
@@ -6827,7 +6821,7 @@ let mkArray (argty, args, m) = Expr.Op (TOp.Array, [argty], args, m)
 //---------------------------------------------------------------------------
 
 let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exprToFix = 
-    let exprToFix = stripDebugPoints exprToFix
+    let exprToFix = stripExpr exprToFix
     match exprToFix with 
     | Expr.Const _ -> ()
     | Expr.Op (TOp.Tuple tupInfo, argtys, args, m) when not (evalTupInfoIsStruct tupInfo) ->

@@ -3644,11 +3644,11 @@ and FreeVarStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames ilCl
 //  in debug code , here `a` will be a TyLamba.  However the compiled representation of 
 // `a` is an integer.
 and IsLocalErasedTyLambda g eenv (v: Val) e =
-    match stripDebugPoints e with
+    match e with
     | Expr.TyLambda (_, tyargs, body, _, _) when
             tyargs |> List.forall (fun tp -> tp.IsErased) &&
             (match StorageForVal g v.Range v eenv with Local _ -> true | _ -> false) ->
-        match stripDebugPoints body with 
+        match stripExpr body with 
         | Expr.Lambda _ -> None
         | _ -> Some body
     | _ -> None
@@ -5204,7 +5204,7 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
 
 /// Generate the closure class for a function
 and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr =
-    match stripDebugPoints expr with
+    match expr with
     | Expr.Lambda (_, _, _, _, _, m, _)
     | Expr.TyLambda (_, _, _, m, _) ->
 
@@ -5269,7 +5269,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
 
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
     let uniq =
-        match stripDebugPoints expr with
+        match expr with
         | Expr.Obj (uniq, _, _, _, _, _, _)
         | Expr.Lambda (uniq, _, _, _, _, _, _)
         | Expr.TyLambda (uniq, _, _, _, _) -> uniq
@@ -5369,16 +5369,15 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
 and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
     let returnTy =
-      match stripDebugPoints expr with
-      | Expr.Lambda (_, _, _, _, _, _, returnTy)
-      | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
+      match expr with
+      | Expr.Lambda (_, _, _, _, _, _, returnTy) | Expr.TyLambda (_, _, _, _, returnTy) -> returnTy
       | _ -> tyOfExpr g expr
 
     // Determine the structure of the closure. We do this before analyzing free variables to
     // determine the taken argument names.
     let tvsl, vs, body, returnTy =
         let rec getCallStructure tvacc vacc (e, ety) =
-            match stripDebugPoints e with
+            match e with
             | Expr.TyLambda (_, tvs, body, _m, bty) ->
                 getCallStructure ((DropErasedTypars tvs) :: tvacc) vacc (body, bty)
             | Expr.Lambda (_, _, _, vs, body, _, bty) when not isLocalTypeFunc ->
@@ -6030,7 +6029,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
     // Fix up recursion for non-toplevel recursive bindings
     let bindsPossiblyRequiringFixup =
         allBinds |> List.filter (fun b ->
-            match StorageForVal cenv.g m b.Var eenv with
+            match (StorageForVal cenv.g m b.Var eenv) with
             | StaticProperty _
             | Method _
             // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x)
@@ -6039,29 +6038,12 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             | _ -> true)
 
     let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
-        
-        let e = stripDebugPoints e
         match e with
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
-            
-            let isLocalTypeFunc =
-                match thisVars with
-                | Some thisVar -> IsNamedLocalTypeFuncVal cenv.g thisVar e
-                | None -> false
-
-            let thisVars =
-                match e with
-                | Expr.Obj _ -> []
-                | _ when isLocalTypeFunc -> []
-                | _ -> Option.map mkLocalValRef thisVars |> Option.toList
-
-            let canUseStaticField =
-                match e with
-                | Expr.Obj _ -> false
-                | _ -> true
-
+            let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
+            let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
+            let canUseStaticField = (match e with Expr.Obj _ -> false | _ -> true)
             let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
-
             for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal cenv.g m fv eenvclo with
@@ -6076,14 +6058,13 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             if needsFixup then
                 let fixup = (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv (set e) discard))
                 fixups.Value <- fixup :: fixups.Value
+        | _ -> failwith "compute real fixup vars"
 
-        | _ ->
-            failwith "compute real fixup vars"
 
     let fixups = ref []
     let recursiveVars = Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
     let _ =
-        (recursiveVars, bindsPossiblyRequiringFixup) ||> List.fold (fun forwardReferenceSet bind ->
+        (recursiveVars, bindsPossiblyRequiringFixup) ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
             // Compute fixups
             bind.Expr |> IterateRecursiveFixups cenv.g (Some bind.Var)
                                (computeFixupsForOneRecursiveVar bind.Var forwardReferenceSet fixups)
@@ -6095,7 +6076,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
 
     // Generate the actual bindings
     let _ =
-        (recursiveVars, allBinds) ||> List.fold (fun forwardReferenceSet bind ->
+        (recursiveVars, allBinds) ||> List.fold (fun forwardReferenceSet (bind: Binding) ->
             GenBinding cenv cgbuf eenv bind false
 
             // Record the variable as defined
@@ -7025,9 +7006,8 @@ and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
 
 and GenBindingRhs cenv cgbuf eenv (vspec: Val) expr =
     let g = cenv.g
-    match stripDebugPoints expr with
-    | Expr.TyLambda _
-    | Expr.Lambda _ ->
+    match expr with
+    | Expr.TyLambda _ | Expr.Lambda _ ->
 
         match IsLocalErasedTyLambda g eenv vspec expr with
         | Some body ->

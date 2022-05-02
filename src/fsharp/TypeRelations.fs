@@ -265,9 +265,9 @@ let destTopLambda g amap topValInfo (e, ty) =
     | Some res -> res
     
 let IteratedAdjustArityOfLambdaBody g arities vsl body  =
-    (arities, vsl, ([], body)) |||> List.foldBack2 (fun arities vs (allvs, body) -> 
-        let vs, body = AdjustArityOfLambdaBody g arities vs body
-        vs :: allvs, body)
+      (arities, vsl, ([], body)) |||> List.foldBack2 (fun arities vs (allvs, body) -> 
+          let vs, body = AdjustArityOfLambdaBody g arities vs body
+          vs :: allvs, body)
 
 /// Do AdjustArityOfLambdaBody for a series of  
 /// iterated lambdas, producing one method.  
