@@ -641,7 +641,7 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(withKeyword=Some mWith))])) ]
+                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith }))])) ]
             )
         ]) ])) ->
             assertRange (3, 30) (3, 34) mWith
@@ -1800,7 +1800,7 @@ type Foo =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(
-                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(withKeyword=Some mWithKeyword))])) ]
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(trivia = { WithKeyword = Some mWithKeyword }))])) ]
             )
         ]) ])) ->
             assertRange (5, 30) (5, 34) mWithKeyword
@@ -1854,6 +1854,26 @@ open Foo
             assertRange (4, 0) (4, 43) mSynExceptionDefnRepr
             assertRange (4, 0) (5, 30) mSynExceptionSig
             assertRange (4, 0) (5, 30) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Val keyword is present in SynValSig`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module Meh
+
+[<Foo>]
+// meh
+val a : int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Val(valSig = SynValSig(trivia = { ValKeyword = Some mVal }))
+            ] ) ])) ->
+            assertRange (6, 0) (6, 3) mVal
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =
