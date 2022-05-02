@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Verify13043 created
 }
 .module Verify13043.exe
-// MVID: {626B3AAF-9119-C695-A745-0383AF3A6B62}
+// MVID: {626FF6A4-9119-C695-A745-0383A4F66F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03AC0000
+// Image base: 0x00BF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,48 +74,47 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> l) cil managed
     {
-      // Code size       63 (0x3f)
+      // Code size       62 (0x3e)
       .maxstack  6
       .locals init (class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
                class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_2,
                int32 V_3)
-      IL_0000:  nop
-      IL_0001:  ldarg.1
-      IL_0002:  stloc.0
-      IL_0003:  ldloc.0
-      IL_0004:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-      IL_0009:  brfalse.s  IL_000d
+      IL_0000:  ldarg.1
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+      IL_0008:  brfalse.s  IL_000c
 
-      IL_000b:  br.s       IL_0013
+      IL_000a:  br.s       IL_0012
 
-      IL_000d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_0012:  ret
+      IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+      IL_0011:  ret
 
-      IL_0013:  ldloc.0
-      IL_0014:  stloc.1
-      IL_0015:  ldloc.1
-      IL_0016:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-      IL_001b:  stloc.2
-      IL_001c:  ldloc.1
-      IL_001d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-      IL_0022:  stloc.3
-      IL_0023:  nop
-      IL_0024:  ldarg.0
-      IL_0025:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> Verify13043/f@8::condition
-      IL_002a:  ldloc.3
-      IL_002b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
-      IL_0030:  brfalse.s  IL_0037
+      IL_0012:  ldloc.0
+      IL_0013:  stloc.1
+      IL_0014:  ldloc.1
+      IL_0015:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+      IL_001a:  stloc.2
+      IL_001b:  ldloc.1
+      IL_001c:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+      IL_0021:  stloc.3
+      IL_0022:  nop
+      IL_0023:  ldarg.0
+      IL_0024:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool> Verify13043/f@8::condition
+      IL_0029:  ldloc.3
+      IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>::Invoke(!0)
+      IL_002f:  brfalse.s  IL_0036
 
-      IL_0032:  ldloc.2
-      IL_0033:  starg.s    l
-      IL_0035:  br.s       IL_0000
+      IL_0031:  ldloc.2
+      IL_0032:  starg.s    l
+      IL_0034:  br.s       IL_0000
 
-      IL_0037:  ldloc.3
-      IL_0038:  ldloc.2
-      IL_0039:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+      IL_0036:  ldloc.3
+      IL_0037:  ldloc.2
+      IL_0038:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_003e:  ret
+      IL_003d:  ret
     } // end of method f@8::Invoke
 
   } // end of class f@8
