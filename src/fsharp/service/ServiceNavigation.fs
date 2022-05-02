@@ -160,13 +160,13 @@ module NavigationImpl =
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, enclosingEntityKind, isAbstract, access) ]
             | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), _ -> 
                 [ createMemberLid(lid, NavigationItemKind.Field, FSharpGlyph.Field, unionRanges (List.head lid).idRange m, enclosingEntityKind, isAbstract, access) ]
-            | SynPat.Named (id, _, access, _), _ | SynPat.As(_, SynPat.Named (id, _, access, _), _), _ -> 
+            | SynPat.Named (SynIdent(id,_), _, access, _), _ | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, access, _), _), _ -> 
                 let glyph = if isMember then FSharpGlyph.Method else FSharpGlyph.Field
                 [ createMember(id, NavigationItemKind.Field, glyph, unionRanges id.idRange m, enclosingEntityKind, isAbstract, access) ]
             | _ -> []
         
         // Process a class declaration or F# type declaration
-        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=id; caseType=fldspec), _, _, access, m)) =
+        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_); caseType=fldspec), _, _, access, m)) =
             // Exception declaration
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
 
@@ -189,13 +189,13 @@ module NavigationImpl =
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
-                        [ for SynUnionCase(ident=id; caseType=fldspec) in cases -> 
+                        [ for SynUnionCase(ident=SynIdent(id,_); caseType=fldspec) in cases -> 
                             createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, NavigationEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
-                        [ for SynEnumCase(ident=id; range=m) in cases ->
+                        [ for SynEnumCase(ident=SynIdent(id,_); range=m) in cases ->
                             createMember(id, NavigationItemKind.Field, FSharpGlyph.EnumMember, m, NavigationEntityKind.Enum, false, access) ]
                     let nested = cases@topMembers
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodyRange mb nested, nested, NavigationEntityKind.Enum, false, access) ]
@@ -233,7 +233,7 @@ module NavigationImpl =
                              [ createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access) ]
                          | SynMemberDefn.AutoProperty(ident=id; accessibility=access) -> 
                              [ createMember(id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access) ]
-                         | SynMemberDefn.AbstractSlot(SynValSig(ident=id; synType=ty; accessibility=access), _, _) ->
+                         | SynMemberDefn.AbstractSlot(SynValSig(ident=SynIdent(id,_); synType=ty; accessibility=access), _, _) ->
                              [ createMember(id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access) ]
                          | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
                          | SynMemberDefn.Interface(members=Some(membs)) ->
@@ -243,7 +243,7 @@ module NavigationImpl =
                      | [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1))) as binding1)
                         SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2))) as binding2)] ->
                          // ensure same long id
-                         assert((lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText))
+                         assert((lid1.LongIdent,lid2.LongIdent) ||> List.forall2 (fun x y -> x.idText = y.idText))
                          // ensure one is getter, other is setter
                          assert((info1.idText = "set" && info2.idText = "get") ||
                                 (info2.idText = "set" && info1.idText = "get"))
@@ -339,7 +339,7 @@ module NavigationImpl =
         let createMember(id:Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
             NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
 
-        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=id; caseType=fldspec), _, _, access, m)) =
+        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_); caseType=fldspec), _, _, access, m)) =
             // Exception declaration
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
         
@@ -361,13 +361,13 @@ module NavigationImpl =
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
-                        [ for SynUnionCase(ident=id; caseType=fldspec) in cases -> 
+                        [ for SynUnionCase(ident=SynIdent(id,_); caseType=fldspec) in cases -> 
                             createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, NavigationEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
-                        [ for SynEnumCase(ident = id; range = m) in cases ->
+                        [ for SynEnumCase(ident = SynIdent(id,_); range = m) in cases ->
                             createMember(id, NavigationItemKind.Field, FSharpGlyph.EnumMember, m, NavigationEntityKind.Enum, false, access) ]
                     let nested = cases@topMembers
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodyRange mb nested, nested, NavigationEntityKind.Enum, false, access) ]
@@ -392,7 +392,7 @@ module NavigationImpl =
         and processSigMembers (members: SynMemberSig list): list<NavigationItem * int> = 
             [ for memb in members do
                  match memb with
-                 | SynMemberSig.Member(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _, _) ->
+                 | SynMemberSig.Member(SynValSig.SynValSig(ident=SynIdent(id,_); accessibility=access; range=m), _, _) ->
                      yield createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, access)
                  | SynMemberSig.ValField(SynField(_, _, Some(rcid), ty, _, _, access, _), _) ->
                      yield createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
@@ -400,7 +400,7 @@ module NavigationImpl =
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedSigDeclarations decls = decls |> List.collect (function
-            | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _) ->
+            | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=SynIdent(id,_); accessibility=access; range=m), _) ->
                 [ createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Module, false, access) ]
             | _ -> [] )        
 
@@ -530,7 +530,7 @@ module NavigateTo =
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
         
-        let addExceptionRepr (SynExceptionDefnRepr(_, SynUnionCase(ident=id), _, _, _, _)) isSig container = 
+        let addExceptionRepr (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_)), _, _, _, _)) isSig container = 
             addIdent NavigableItemKind.Exception id isSig container
             { Type = NavigableContainerType.Exception; Name = id.idText }
     
@@ -540,7 +540,7 @@ module NavigateTo =
             | _ -> ()
             { Type = containerType; Name = formatLongIdent lid }
     
-        let addValSig kind (SynValSig(ident=id)) isSig container = 
+        let addValSig kind (SynValSig(ident=SynIdent(id,_))) isSig container = 
             addIdent kind id isSig container
         
         let addField(SynField(_, _, id, _, _, _, _, _)) isSig container = 
@@ -548,10 +548,10 @@ module NavigateTo =
             | Some id -> addIdent NavigableItemKind.Field id isSig container
             | _ -> ()
         
-        let addEnumCase(SynEnumCase(ident=id)) isSig = 
+        let addEnumCase(SynEnumCase(ident=SynIdent(id,_))) isSig = 
             addIdent NavigableItemKind.EnumCase id isSig
         
-        let addUnionCase(SynUnionCase(ident=id)) isSig container = 
+        let addUnionCase(SynUnionCase(ident=SynIdent(id,_))) isSig container = 
             addIdent NavigableItemKind.UnionCase id isSig container
     
         let mapMemberKind mk = 
@@ -580,7 +580,7 @@ module NavigateTo =
             | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) ->
                 // functions
                 addIdent kind id false container
-            | SynPat.Named (id, _, _, _) | SynPat.As(_, SynPat.Named (id, _, _, _), _) ->
+            | SynPat.Named (SynIdent(id,_), _, _, _) | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, _, _), _) ->
                 // values
                 addIdent kind id false container
             | _ -> ()
