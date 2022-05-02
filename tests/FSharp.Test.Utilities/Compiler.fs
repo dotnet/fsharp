@@ -851,8 +851,8 @@ module rec Compiler =
                         // if the environment variable TEST_UPDATE_BSL has been set
                         if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
                             match baseline with
-                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                                | None -> ()
+                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                            | None -> ()
 
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
