@@ -584,6 +584,14 @@ type T() =
     VerifyNoCompletionList(fileContents, "member this.M(p:int, h")
 
 [<Test>]
+let ``Completion list on abstract member type signature contains modules and types but not keywords or functions`` =
+    let fileContents = """
+type Interface =
+    abstract member Eat: l
+"""
+    VerifyCompletionList(fileContents, "Eat: l", ["LanguagePrimitives"; "List" ], ["let"; "log"])
+
+[<Test>]
 let ``Provide completion on first function argument type hint``() =
     let fileContents = """
 let func (p:i
