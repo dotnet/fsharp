@@ -5850,7 +5850,7 @@ and TcNonControlFlowExpr (env: TcEnv) f =
         | NotedSourceConstruct.Combine
         | NotedSourceConstruct.With
         | NotedSourceConstruct.While
-        | NotedSourceConstruct.DelayOrQuoteOrRun -> 
+        | NotedSourceConstruct.DelayOrQuoteOrRun ->
             res, tpenv
         | NotedSourceConstruct.None ->
             // Skip outer debug point for "e1 && e2" and "e1 || e2"
@@ -5929,7 +5929,6 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     // e: ty
     | SynExpr.Typed (synBodyExpr, synType, m) ->
-        TcNonControlFlowExpr env <| fun env ->
         TcExprTypeAnnotated cenv overallTy env tpenv (synBodyExpr, synType, m)
 
     // e :? ty
