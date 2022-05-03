@@ -7,14 +7,23 @@ open FSharp.Test.Compiler
 
 module TestFunctions =
 
-    let verifyCompilation compilation =
+    let verifyCore compilation =
         compilation
-        |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
         |> asExe
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+
+    let verifyCompileAndRun compilation =
+        compilation
+        |> verifyCore
+        |> compileAndRun
+
+    let verifyCompilation compilation =
+        compilation
+        |> verifyCore
         |> verifyILBaseline
 
     //SOURCE=TestFunction01.fs   SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd TestFunction01.exe"	# TestFunction01.fs
@@ -245,3 +254,28 @@ module TestFunctions =
         compilation
         |> verifyCompilation
 
+    // Verify IL 13043
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
+    let ``Verify13043_il`` compilation =
+        compilation
+        |> withDebug
+        |> verifyCompilation
+
+    // Verify Execution 13043 run it built not optimized with debug
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
+    let ``Verify13043_execution_noopt`` compilation =
+        compilation
+        |> withDebug
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    // Verify Execution 13043 --- run it built optimized no debug
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Verify13043.fs"|])>]
+    let ``Verify13043_execution_opt`` compilation =
+        compilation
+        |> asExe
+        |> withOptions [ "--test:EmitFeeFeeAs100001"; "--nowarn:988"; "--nowarn:3370"]
+        |> withOptimize
+        |> withNoDebug
+        |> compileAndRun
+        |> shouldSucceed
