@@ -10,9 +10,22 @@ module InvalidDelegateDefinition =
     [<Fact>]
     let ``Illegal definition for runtime implemented delegate method.`` () =
         FSharp """
-namespace FSharpTest
-    type T(x: int) =
+module FSharpTest =
+    type InvalidDelegateDefinition(x: int) =
         delegate of int -> int
+    let invalidDelegate = InvalidDelegateDefinition(fun _ -> 1)
+        """
+        |> compile
+        |> shouldFail
+        |> withErrorCode 193
+        |> withErrorMessage "Illegal definition for runtime implemented delegate method."
+        
+    [<Fact>]
+    let ``Illegal definition for runtime implemented delegate method when using in a fsx.`` () =
+        Fsx """
+    type InvalidDelegateDefinition(x: int) =
+        delegate of int -> int
+    let invalidDelegate = InvalidDelegateDefinition(fun _ -> 1)
         """
         |> compile
         |> shouldFail
