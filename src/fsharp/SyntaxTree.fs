@@ -1925,7 +1925,8 @@ type SynModuleOrNamespace =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
     member this.Range =
         match this with
@@ -1941,7 +1942,8 @@ type SynModuleOrNamespaceSig =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
     member this.Range =
         match this with
@@ -1981,7 +1983,8 @@ type ParsedImplFileFragment =
         decls: SynModuleDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedSigFileFragment =
@@ -2000,7 +2003,8 @@ type ParsedSigFileFragment =
         decls: SynModuleSigDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedScriptInteraction =

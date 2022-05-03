@@ -2653,8 +2653,8 @@ FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 OverridenMethod
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Property
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Struct
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Type
-FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Typedef
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 TypeParameter
+FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Typedef
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Union
 FSharp.Compiler.EditorServices.FSharpGlyph+Tags: Int32 Variable
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean Equals(FSharp.Compiler.EditorServices.FSharpGlyph)
@@ -2678,8 +2678,8 @@ FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsOverridenMethod
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsProperty
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsStruct
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsType
-FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsTypedef
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsTypeParameter
+FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsTypedef
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsUnion
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean IsVariable
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsClass()
@@ -2700,8 +2700,8 @@ FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsOverridenMethod()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsProperty()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsStruct()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsType()
-FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsTypedef()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsTypeParameter()
+FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsTypedef()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsUnion()
 FSharp.Compiler.EditorServices.FSharpGlyph: Boolean get_IsVariable()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Class
@@ -2722,8 +2722,8 @@ FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FShar
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Property
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Struct
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Type
-FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Typedef
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph TypeParameter
+FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Typedef
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Union
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph Variable
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Class()
@@ -2744,8 +2744,8 @@ FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FShar
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Property()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Struct()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Type()
-FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Typedef()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_TypeParameter()
+FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Typedef()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Union()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph get_Variable()
 FSharp.Compiler.EditorServices.FSharpGlyph: FSharp.Compiler.EditorServices.FSharpGlyph+Tags
@@ -5488,6 +5488,8 @@ FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: Boolean get_isR
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: Boolean isRecursive
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind kind
+FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia trivia
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
@@ -5509,7 +5511,7 @@ FSharp.Compiler.Syntax.ParsedImplFileFragment: Boolean get_IsNamedModule()
 FSharp.Compiler.Syntax.ParsedImplFileFragment: Boolean get_IsNamespaceFragment()
 FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment NewAnonModule(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment NewNamedModule(FSharp.Compiler.Syntax.SynModuleOrNamespace)
-FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment NewNamespaceFragment(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment NewNamespaceFragment(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia)
 FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment+AnonModule
 FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment+NamedModule
 FSharp.Compiler.Syntax.ParsedImplFileFragment: FSharp.Compiler.Syntax.ParsedImplFileFragment+NamespaceFragment
@@ -5604,6 +5606,8 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: Boolean get_isRe
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: Boolean isRecursive
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind kind
+FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia get_trivia()
+FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia trivia
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
@@ -5625,7 +5629,7 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: Boolean get_IsNamedModule()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Boolean get_IsNamespaceFragment()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment NewAnonModule(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment NewNamedModule(FSharp.Compiler.Syntax.SynModuleOrNamespaceSig)
-FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment NewNamespaceFragment(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment NewNamespaceFragment(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia)
 FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment+AnonModule
 FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment+NamedModule
 FSharp.Compiler.Syntax.ParsedSigFileFragment: FSharp.Compiler.Syntax.ParsedSigFileFragment+NamespaceFragment
@@ -7692,9 +7696,11 @@ FSharp.Compiler.Syntax.SynModuleDecl: System.String ToString()
 FSharp.Compiler.Syntax.SynModuleOrNamespace
 FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleOrNamespace: Boolean isRecursive
-FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespace NewSynModuleOrNamespace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespace NewSynModuleOrNamespace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia)
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind kind
+FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia get_trivia()
+FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia trivia
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynModuleOrNamespace: FSharp.Compiler.Text.Range get_range()
@@ -7752,7 +7758,9 @@ FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: Boolean isRecursive
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind get_kind()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceKind kind
-FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceSig NewSynModuleOrNamespaceSig(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Syntax.SynModuleOrNamespaceSig NewSynModuleOrNamespaceSig(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Boolean, FSharp.Compiler.Syntax.SynModuleOrNamespaceKind, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia)
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia get_trivia()
+FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia trivia
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynModuleOrNamespaceSig: FSharp.Compiler.Text.Range get_range()
@@ -9394,6 +9402,20 @@ FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.C
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ModuleKeyword()
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ModuleKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] NamespaceKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ModuleKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_NamespaceKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceSigTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ModuleKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] NamespaceKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ModuleKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_NamespaceKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynModuleOrNamespaceTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia
 FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia get_Zero()
