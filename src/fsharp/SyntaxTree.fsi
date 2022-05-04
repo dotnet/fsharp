@@ -207,6 +207,9 @@ type SynMeasure =
     /// A variable unit of measure
     | Var of typar: SynTypar * range: range
 
+    /// A parenthesized measure
+    | Paren of measure: SynMeasure * range: range
+
 /// Represents an unchecked syntax tree of F# unit of measure exponents.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
