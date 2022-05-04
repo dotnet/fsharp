@@ -179,6 +179,8 @@ type SynMeasure =
     | Anon of range: range
 
     | Var of typar: SynTypar * range: range
+    
+    | Paren of measure: SynMeasure * range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =

@@ -1459,6 +1459,7 @@ module ParsedInput =
             | SynMeasure.Divide (m1, m2, _) -> walkMeasure m1; walkMeasure m2
             | SynMeasure.Named (longIdent, _) -> addLongIdent longIdent
             | SynMeasure.Seq (ms, _) -> List.iter walkMeasure ms
+            | SynMeasure.Paren(m, _)
             | SynMeasure.Power (m, _, _) -> walkMeasure m
             | SynMeasure.Var (ty, _) -> walkTypar ty
             | SynMeasure.One

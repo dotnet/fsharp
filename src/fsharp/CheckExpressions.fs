@@ -836,6 +836,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env c =
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
+        | SynMeasure.Paren(measure, _) -> tcMeasure measure
 
     let unif expected = UnifyTypes cenv env m overallTy expected
 
