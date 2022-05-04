@@ -11,7 +11,8 @@ type Lexbuf = LexBuffer<char>
 
 val internal StringAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * string -> Lexbuf
 
-val public FunctionAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * (char [] * int * int -> int) -> Lexbuf
+val public FunctionAsLexbuf:
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * (char [] * int * int -> int) -> Lexbuf
 
 val public SourceTextAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * ISourceText -> Lexbuf
 

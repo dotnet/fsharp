@@ -8,19 +8,19 @@ open System.Collections.Generic
 
 /// We report a candidate if its edit distance is <= the threshold.
 /// The threshold is set to about a quarter of the number of characters.
-val IsInEditDistanceProximity: idText:string -> suggestion:string -> bool
+val IsInEditDistanceProximity: idText: string -> suggestion: string -> bool
 
 /// Demangles a suggestion
-val DemangleOperator: nm:string -> string
+val DemangleOperator: nm: string -> string
 
 type SuggestionBuffer =
 
     interface IEnumerable
     interface IEnumerable<string>
 
-    new: idText:string -> SuggestionBuffer
+    new: idText: string -> SuggestionBuffer
 
-    member Add: suggestion:string -> unit
+    member Add: suggestion: string -> unit
 
     member Disabled: bool
 

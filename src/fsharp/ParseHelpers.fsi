@@ -19,22 +19,22 @@ exception SyntaxError of obj * range: range
 
 exception IndentationProblem of string * range
 
-val warningStringOfCoords: line:int -> column:int -> string
+val warningStringOfCoords: line: int -> column: int -> string
 
-val warningStringOfPos: p:pos -> string
+val warningStringOfPos: p: pos -> string
 
-val posOfLexPosition: p:Position -> pos
+val posOfLexPosition: p: Position -> pos
 
-val mkSynRange: p1:Position -> p2:Position -> range
+val mkSynRange: p1: Position -> p2: Position -> range
 
 type LexBuffer<'Char> with
     member LexemeRange: range
 
-val lhs: parseState:IParseState -> range
+val lhs: parseState: IParseState -> range
 
-val rhs2: parseState:IParseState -> i:int -> j:int -> range
+val rhs2: parseState: IParseState -> i: int -> j: int -> range
 
-val rhs: parseState:IParseState -> i:int -> range
+val rhs: parseState: IParseState -> i: int -> range
 
 type IParseState with
     member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
@@ -42,17 +42,17 @@ type IParseState with
 
 module LexbufLocalXmlDocStore =
 
-    val ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val ClearXmlDoc: lexbuf: UnicodeLexing.Lexbuf -> unit
 
-    val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
+    val SaveXmlDocLine: lexbuf: UnicodeLexing.Lexbuf * lineText: string * range: range -> unit
 
-    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> PreXmlDoc
+    val GrabXmlDocBeforeMarker: lexbuf: UnicodeLexing.Lexbuf * markerRange: range -> PreXmlDoc
 
-    val AddGrabPoint: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val AddGrabPoint: lexbuf: UnicodeLexing.Lexbuf -> unit
 
-    val AddGrabPointDelayed: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val AddGrabPointDelayed: lexbuf: UnicodeLexing.Lexbuf -> unit
 
-    val ReportInvalidXmlDocPositions: lexbuf:UnicodeLexing.Lexbuf -> range list
+    val ReportInvalidXmlDocPositions: lexbuf: UnicodeLexing.Lexbuf -> range list
 
 type LexerIfdefStackEntry =
     | IfDefIf
@@ -72,27 +72,27 @@ type LexerIfdefExpression =
     | IfdefNot of LexerIfdefExpression
     | IfdefId of string
 
-val LexerIfdefEval: lookup:(string -> bool) -> _arg1:LexerIfdefExpression -> bool
+val LexerIfdefEval: lookup: (string -> bool) -> _arg1: LexerIfdefExpression -> bool
 
 module LexbufIfdefStore =
 
-    val SaveIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * expr: LexerIfdefExpression * range: range -> unit
+    val SaveIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * expr: LexerIfdefExpression * range: range -> unit
 
-    val SaveElseHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
+    val SaveElseHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
 
-    val SaveEndIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
+    val SaveEndIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
 
-    val GetTrivia: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
+    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
 
 module LexbufCommentStore =
 
-    val SaveSingleLineComment: lexbuf:UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
-    
-    val SaveBlockComment: lexbuf:UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
+    val SaveSingleLineComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
 
-    val GetComments: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.CommentTrivia list
-    
-    val ClearComments: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val SaveBlockComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
+
+    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.CommentTrivia list
+
+    val ClearComments: lexbuf: UnicodeLexing.Lexbuf -> unit
 
 [<RequireQualifiedAccess>]
 type LexerStringStyle =
@@ -113,18 +113,27 @@ type LexerStringKind =
     static member InterpolatedStringPart: LexerStringKind
 
     static member String: LexerStringKind
-    
-type LexerInterpolatedStringNesting =
-    (int * LexerStringStyle * range) list
 
-[<RequireQualifiedAccess; NoComparison;NoEquality>]
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+
+[<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LexerContinuation =
     | Token of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting
     | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: range
+    | String of
+        ifdef: LexerIfdefStackEntries *
+        nesting: LexerInterpolatedStringNesting *
+        style: LexerStringStyle *
+        kind: LexerStringKind *
+        range: range
     | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
-    | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: range
+    | StringInComment of
+        ifdef: LexerIfdefStackEntries *
+        nesting: LexerInterpolatedStringNesting *
+        style: LexerStringStyle *
+        int *
+        range: range
     | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
@@ -133,13 +142,15 @@ type LexerContinuation =
     member LexerInterpStringNesting: LexerInterpolatedStringNesting
 
     static member Default: LexerContinuation
-    
+
 and LexCont = LexerContinuation
 
-val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m:range -> ILInstr[]
+val ParseAssemblyCodeInstructions:
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr []
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
 val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
 
-val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m:range -> ILType
+val ParseAssemblyCodeType:
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType

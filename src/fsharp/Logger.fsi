@@ -16,18 +16,18 @@ type internal LogCompilerFunctionId =
 [<RequireQualifiedAccess>]
 module internal Logger =
 
-    val Log : LogCompilerFunctionId -> unit
+    val Log: LogCompilerFunctionId -> unit
 
-    val LogMessage : message: string -> LogCompilerFunctionId -> unit
+    val LogMessage: message: string -> LogCompilerFunctionId -> unit
 
-    val LogBlockStart : LogCompilerFunctionId -> unit
+    val LogBlockStart: LogCompilerFunctionId -> unit
 
-    val LogBlockStop : LogCompilerFunctionId -> unit
+    val LogBlockStop: LogCompilerFunctionId -> unit
 
-    val LogBlockMessageStart : message: string -> LogCompilerFunctionId -> unit
+    val LogBlockMessageStart: message: string -> LogCompilerFunctionId -> unit
 
-    val LogBlockMessageStop : message: string -> LogCompilerFunctionId -> unit
+    val LogBlockMessageStop: message: string -> LogCompilerFunctionId -> unit
 
-    val LogBlock : LogCompilerFunctionId -> IDisposable
+    val LogBlock: LogCompilerFunctionId -> IDisposable
 
-    val LogBlockMessage : message: string -> LogCompilerFunctionId -> IDisposable
+    val LogBlockMessage: message: string -> LogCompilerFunctionId -> IDisposable

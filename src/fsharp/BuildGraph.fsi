@@ -13,7 +13,7 @@ open Internal.Utilities.Library
 /// This is essentially cancellable async code where the only asynchronous waits are on nodes.
 /// When a node is evaluated the evaluation is run synchronously on the thread of the
 /// first requestor.
-[<NoEquality;NoComparison;Sealed>]
+[<NoEquality; NoComparison; Sealed>]
 type NodeCode<'T>
 
 type Async<'T> with
@@ -25,33 +25,33 @@ type Async<'T> with
 [<Sealed>]
 type NodeCodeBuilder =
 
-    member Bind : NodeCode<'T> * ('T -> NodeCode<'U>) -> NodeCode<'U>
+    member Bind: NodeCode<'T> * ('T -> NodeCode<'U>) -> NodeCode<'U>
 
-    member Zero : unit -> NodeCode<unit>
+    member Zero: unit -> NodeCode<unit>
 
-    member Delay : (unit -> NodeCode<'T>) -> NodeCode<'T>
+    member Delay: (unit -> NodeCode<'T>) -> NodeCode<'T>
 
-    member Return : 'T -> NodeCode<'T> 
+    member Return: 'T -> NodeCode<'T>
 
-    member ReturnFrom : NodeCode<'T> -> NodeCode<'T>
+    member ReturnFrom: NodeCode<'T> -> NodeCode<'T>
 
-    member TryWith : NodeCode<'T> * (exn -> NodeCode<'T>) -> NodeCode<'T>
+    member TryWith: NodeCode<'T> * (exn -> NodeCode<'T>) -> NodeCode<'T>
 
-    member TryFinally : NodeCode<'T> * (unit -> unit) -> NodeCode<'T>
+    member TryFinally: NodeCode<'T> * (unit -> unit) -> NodeCode<'T>
 
-    member For : xs: 'T seq * binder: ('T -> NodeCode<unit>) -> NodeCode<unit>
+    member For: xs: 'T seq * binder: ('T -> NodeCode<unit>) -> NodeCode<unit>
 
-    member Combine : x1: NodeCode<unit> * x2: NodeCode<'T> -> NodeCode<'T>
+    member Combine: x1: NodeCode<unit> * x2: NodeCode<'T> -> NodeCode<'T>
 
     /// A limited form 'use' for establishing the compilation globals.  (Note
     /// that a proper generic 'use' could be implemented but has not currently been necessary)
-    member Using : CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
+    member Using: CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
 
 /// Specifies code that can be run as part of the build graph.
-val node : NodeCodeBuilder
+val node: NodeCodeBuilder
 
 /// Contains helpers to specify code that can be run as part of the build graph.
-[<AbstractClass;Sealed>]
+[<AbstractClass; Sealed>]
 type NodeCode =
 
     /// Only used for testing, do not use
@@ -85,7 +85,7 @@ module internal GraphNode =
 /// Evaluate the computation, allowing asynchronous waits on existing ongoing evaluations of the
 /// same node, and strongly cache the result.
 ///
-/// Once the result has been cached, the computation function will also be removed, or 'null'ed out, 
+/// Once the result has been cached, the computation function will also be removed, or 'null'ed out,
 /// as to prevent any references captured by the computation from being strongly held.
 [<Sealed>]
 type internal GraphNode<'T> =
@@ -95,7 +95,7 @@ type internal GraphNode<'T> =
     new: retryCompute: bool * computation: NodeCode<'T> -> GraphNode<'T>
 
     /// By default, 'retryCompute' is 'true'.
-    new : computation: NodeCode<'T> -> GraphNode<'T>
+    new: computation: NodeCode<'T> -> GraphNode<'T>
 
     /// Return NodeCode which, when executed, will get the value of the computation if already computed, or
     /// await an existing in-progress computation for the node if one exists, or else will synchronously
