@@ -7,9 +7,6 @@
     <AssemblyName>FSharp.ProjectSystem.Base</AssemblyName>
     <NoWarn>$(NoWarn),618,1570,1572,1573,1574,1591,3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
     <NoWarn>$(NoWarn);VSTHRD010</NoWarn>
-    <!-- NU1504 reports duplicate package download for various packages.
-         Disabling this warning until https://github.com/dotnet/sdk/issues/24747 is fixed.-->
-    <NoWarn>$(NoWarn);NU1504</NoWarn>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <RootNamespace>Microsoft.VisualStudio.FSharp.ProjectSystem</RootNamespace>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
