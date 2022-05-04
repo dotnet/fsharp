@@ -9,13 +9,13 @@ open FSharp.Compiler.AbstractIL.IL
 [<Class>]
 type public XmlDoc =
 
-    new: unprocessedLines:string [] * range:range -> XmlDoc
+    new: unprocessedLines: string [] * range: range -> XmlDoc
 
     /// Merge two XML documentation
-    static member Merge: doc1:XmlDoc -> doc2:XmlDoc -> XmlDoc
+    static member Merge: doc1: XmlDoc -> doc2: XmlDoc -> XmlDoc
 
     /// Check the XML documentation
-    member internal Check: paramNamesOpt:string list option -> unit
+    member internal Check: paramNamesOpt: string list option -> unit
 
     /// Get the lines after insertion of implicit summary tags and encoding
     member GetElaboratedXmlLines: unit -> string []
@@ -33,7 +33,7 @@ type public XmlDoc =
     member UnprocessedLines: string []
 
     static member Empty: XmlDoc
-  
+
 /// Used to collect XML documentation during lexing and parsing.
 type internal XmlDocCollector =
 
@@ -43,7 +43,7 @@ type internal XmlDocCollector =
 
     member AddGrabPointDelayed: pos: pos -> unit
 
-    member AddXmlDocLine: line:string * range:range -> unit
+    member AddXmlDocLine: line: string * range: range -> unit
 
     member LinesBefore: grabPointPos: pos -> (string * range) []
 
@@ -55,13 +55,13 @@ type internal XmlDocCollector =
 [<Sealed>]
 type public PreXmlDoc =
 
-    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos: pos -> PreXmlDoc
+    static member internal CreateFromGrabPoint: collector: XmlDocCollector * grabPointPos: pos -> PreXmlDoc
 
-    static member Merge: a:PreXmlDoc -> b:PreXmlDoc -> PreXmlDoc
-    
-    static member Create: unprocessedLines:string [] * range:range -> PreXmlDoc
+    static member Merge: a: PreXmlDoc -> b: PreXmlDoc -> PreXmlDoc
 
-    member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
+    static member Create: unprocessedLines: string [] * range: range -> PreXmlDoc
+
+    member ToXmlDoc: check: bool * paramNamesOpt: string list option -> XmlDoc
 
     member internal Range: Range
 
@@ -74,10 +74,10 @@ type public PreXmlDoc =
 [<Sealed>]
 type internal XmlDocumentationInfo =
 
-    member TryGetXmlDocBySig : xmlDocSig: string -> XmlDoc option
+    member TryGetXmlDocBySig: xmlDocSig: string -> XmlDoc option
 
-    static member TryCreateFromFile : xmlFileName: string -> XmlDocumentationInfo option
+    static member TryCreateFromFile: xmlFileName: string -> XmlDocumentationInfo option
 
 type internal IXmlDocumentationInfoLoader =
 
-    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option
+    abstract TryLoad: assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option
