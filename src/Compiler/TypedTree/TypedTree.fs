@@ -4,7 +4,8 @@
 module internal rec FSharp.Compiler.TypedTree 
 
 open System
-open System.Collections.Generic 
+open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Reflection
 
@@ -5292,7 +5293,7 @@ type CcuData =
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
 /// Represents a table of .NET CLI type forwarders for an assembly
-type CcuTypeForwarderTable = IDictionary<string[] * string, Lazy<EntityRef>>
+type CcuTypeForwarderTable = IImmutableDictionary<string[] * string, Lazy<EntityRef>>
 
 type CcuReference = string // ILAssemblyRef
 
@@ -5381,7 +5382,7 @@ type CcuThunk =
     member ccu.Contents = ccu.Deref.Contents
 
     /// The table of type forwarders for this assembly
-    member ccu.TypeForwarders: IDictionary<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
+    member ccu.TypeForwarders: IImmutableDictionary<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
 
     /// The table of modules and namespaces at the "root" of the assembly
     member ccu.RootModulesAndNamespaces = ccu.Contents.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions

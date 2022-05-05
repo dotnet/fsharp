@@ -5,6 +5,7 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Collections.Immutable
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
@@ -587,25 +588,34 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders) =
-    let forwarders = Dictionary<_, _>(HashIdentity.Structural)
+    let forwarders: IImmutableDictionary<string array * string, Lazy<EntityRef>> =
+        ImmutableDictionary.Create<string array * string, Lazy<EntityRef>>(HashIdentity.Structural)
 
-    let rec visit (exportedType: ILExportedTypeOrForwarder) (nets: ILNestedExportedTypes) (enc: string list) : unit =
-        nets.AsList()
-        |> List.iter (fun net ->
+    let rec visit
+        (forwarders: IImmutableDictionary<_,_>)
+        (exportedType: ILExportedTypeOrForwarder)
+        (nets: ILNestedExportedTypes)
+        (enc: string list) =
+        (forwarders, nets.AsList())
+        ||> List.fold (fun forwarders net ->
             let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, enc, net.Name))
-            forwarders.Add((Array.ofList enc, exportedType.Name), tcref)
-            visit exportedType net.Nested (enc @ [ net.Name ]))
+            visit
+                (forwarders.Add((Array.ofList enc, exportedType.Name), tcref))
+                exportedType
+                net.Nested
+                (enc @ [ net.Name ]))
 
     // Note 'td' may be in another module or another assembly!
     // Note: it is very important that we call auxModLoader lazily
-    exportedTypes.AsList()
-    |> List.iter (fun exportedType ->
+    (forwarders, exportedTypes.AsList())
+    ||> List.fold (fun forwarders exportedType ->
         let ns, n = splitILTypeName exportedType.Name
         let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
-        forwarders.Add((Array.ofList ns, n), tcref)
-        visit exportedType exportedType.Nested (ns @ [ n ]))
-
-    forwarders :> IDictionary<_, _>
+        visit
+            (forwarders.Add((Array.ofList ns, n), tcref))
+            exportedType
+            exportedType.Nested
+            (ns @ [ n ]))
 
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
@@ -618,7 +628,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let mty = ImportILAssemblyTypeDefs(amap, m, auxModuleLoader, aref, ilModule)
     let forwarders = 
         match ilModule.Manifest with 
-        | None -> Dictionary<_,_>(0, HashIdentity.Structural) :> IDictionary<_,_>
+        | None -> ImmutableDictionary.Empty :> IImmutableDictionary<_,_>
         | Some manifest -> ImportILAssemblyTypeForwarders(amap, m, manifest.ExportedTypes)
 
     let ccuData: CcuData = 
