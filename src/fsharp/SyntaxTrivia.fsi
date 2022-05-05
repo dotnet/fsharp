@@ -228,3 +228,12 @@ type SynModuleOrNamespaceSigTrivia =
       ModuleKeyword: range option
       /// The syntax range of the `namespace` keyword
       NamespaceKeyword: range option }
+
+/// Represents additional information for SynValSig
+[<NoEquality; NoComparison>]
+type SynValSigTrivia =
+    { /// The syntax range of the `val` keyword
+      ValKeyword: range option
+      /// The syntax range of the `with` keyword
+      WithKeyword: range option }
+    static member Zero: SynValSigTrivia
