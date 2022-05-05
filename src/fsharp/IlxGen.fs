@@ -2732,10 +2732,10 @@ and GenUnitThenSequel cenv eenv m cloc cgbuf sequel =
 // Generate simple data-related constructs
 //--------------------------------------------------------------------------
 
-and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argtys, m) sequel =
+and GenAllocTuple cenv cgbuf eenv (tupInfo, args, argTys, m) sequel =
 
     let tupInfo = evalTupInfoIsStruct tupInfo
-    let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argtys, args, m)
+    let tcref, tys, args, newm = mkCompiledTuple cenv.g tupInfo (argTys, args, m)
     let ty = GenNamedTyApp cenv.amap newm eenv.tyenv tcref tys
     let ntyvars = if (tys.Length - 1) < goodTupleFields then (tys.Length - 1) else goodTupleFields
     let formalTyvars = [ for n in 0 .. ntyvars do yield mkILTyvarTy (uint16 n) ]
@@ -2774,8 +2774,8 @@ and GenAllocExn cenv cgbuf eenv (c, args, m) sequel =
     GenExprs cenv cgbuf eenv args
     let ty = GenExnType cenv.amap m eenv.tyenv c
     let flds = recdFieldsOfExnDefRef c
-    let argtys = flds |> List.map (fun rfld -> GenType cenv.amap m eenv.tyenv rfld.FormalType)
-    let mspec = mkILCtorMethSpecForTy (ty, argtys)
+    let argTys = flds |> List.map (fun rfld -> GenType cenv.amap m eenv.tyenv rfld.FormalType)
+    let mspec = mkILCtorMethSpecForTy (ty, argTys)
     CG.EmitInstr cgbuf
       (pop args.Length) (Push [ty])
       (mkNormalNewobj mspec)
@@ -2901,8 +2901,8 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
         GenExpr cenv cgbuf eenv expr sequel
         contf Fake
 
-and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
-    let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argtys
+and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argTys,args,m) sequel =
+    let ty = GenNamedTyApp cenv.amap m eenv.tyenv tcref argTys
 
     // Filter out fields with default initialization
     let relevantFields =
@@ -2915,7 +2915,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
         (args, relevantFields) ||> List.iter2 (fun e f ->
                 CG.EmitInstr cgbuf (pop 0) (Push (if tcref.IsStructOrEnumTycon then [ILType.Byref ty] else [ty])) mkLdarg0
                 GenExpr cenv cgbuf eenv e Continue
-                GenFieldStore false cenv cgbuf eenv (tcref.MakeNestedRecdFieldRef f, argtys, m) discard)
+                GenFieldStore false cenv cgbuf eenv (tcref.MakeNestedRecdFieldRef f, argTys, m) discard)
         // Object construction doesn't generate a true value.
         // Object constructions will always just get thrown away so this is safe
         GenSequel cenv eenv.cloc cgbuf sequel
@@ -3442,9 +3442,9 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                      (let storage = StorageForValRef g m vref eenv
                       match storage with
                       | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
-                          (let tps, argtys, _, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
+                          (let tps, argTys, _, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
                            tps.Length = tyargs.Length &&
-                           argtys.Length <= curriedArgs.Length)
+                           argTys.Length <= curriedArgs.Length)
                       | _ -> false) ->
 
       let storage = StorageForValRef g m vref eenv

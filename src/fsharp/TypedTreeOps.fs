@@ -9612,11 +9612,11 @@ let mkILMethodSpecForTupleItem (_g: TcGlobals) (ty: ILType) n =
 let mkILFieldSpecForTupleItem (ty: ILType) n = 
     mkILFieldSpecInTy (ty, (if n < goodTupleFields then "Item"+(n+1).ToString() else "Rest"), mkILTyvarTy (uint16 n))
 
-let mkGetTupleItemN g m n (ty: ILType) isStruct te retty =
+let mkGetTupleItemN g m n (ty: ILType) isStruct expr retTy =
     if isStruct then
-        mkAsmExpr ([mkNormalLdfld (mkILFieldSpecForTupleItem ty n) ], [], [te], [retty], m)
+        mkAsmExpr ([mkNormalLdfld (mkILFieldSpecForTupleItem ty n) ], [], [expr], [retTy], m)
     else
-        mkAsmExpr ([mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [te], [retty], m)
+        mkAsmExpr ([mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [expr], [retTy], m)
 
 /// Match an Int32 constant expression
 let (|Int32Expr|_|) expr = 
@@ -9627,7 +9627,7 @@ let (|Int32Expr|_|) expr =
 /// Match a try-finally expression
 let (|TryFinally|_|) expr = 
     match expr with 
-    | Expr.Op (TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], _) -> Some(e1, e2)
+    | Expr.Op (TOp.TryFinally _, [_resTy], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], _) -> Some(e1, e2)
     | _ -> None
     
 // detect ONLY the while loops that result from compiling 'for ... in ... do ...'
@@ -9895,10 +9895,10 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 /// Create an empty immutable mapping from witnesses to some data
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
-         { new IEqualityComparer<_> with 
-                member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
-                member _.GetHashCode(a) = hash a.MemberName
-         })
+        { new IEqualityComparer<_> with 
+            member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+            member _.GetHashCode(a) = hash a.MemberName
+        })
 
 let (|WhileExpr|_|) expr = 
     match expr with 

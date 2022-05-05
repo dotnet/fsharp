@@ -412,7 +412,7 @@ type MetadataTable<'T> =
 //---------------------------------------------------------------------
 
 /// We use this key type to help find ILMethodDefs for MethodRefs
-type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
+type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILType, argTys: ILTypes, isStatic: bool) =
     // Precompute the hash. The hash doesn't include the return type or
     // argument types (only argument type count). This is very important, since
     // hashing these is way too expensive
@@ -420,7 +420,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
        hash tidx
        |> combineHash (hash garity)
        |> combineHash (hash nm)
-       |> combineHash (hash argtys.Length)
+       |> combineHash (hash argTys.Length)
        |> combineHash (hash isStatic)
 
     member _.TypeIdx = tidx
@@ -429,9 +429,9 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
 
     member _.Name = nm
 
-    member _.ReturnType = rty
+    member _.ReturnType = retTy
 
-    member _.ArgTypes = argtys
+    member _.ArgTypes = argTys
 
     member _.IsStatic = isStatic
 
@@ -449,7 +449,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
             garity = y.GenericArity &&
             nm = y.Name &&
             // note: these next two use structural equality on AbstractIL ILType values
-            rty = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
+            retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 

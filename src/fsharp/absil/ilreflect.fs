@@ -57,9 +57,9 @@ type AssemblyBuilder with
 
 
 type ModuleBuilder with
-    member modB.GetArrayMethodAndLog (aty, nm, flags, rty, tys) =
-        if logRefEmitCalls then printfn "moduleBuilder%d.GetArrayMethod(%A, %A, %A, %A, %A)" (abs <| hash modB) aty nm flags rty tys
-        modB.GetArrayMethod(aty, nm, flags, rty, tys)
+    member modB.GetArrayMethodAndLog (aty, nm, flags, retTy, argTys) =
+        if logRefEmitCalls then printfn "moduleBuilder%d.GetArrayMethod(%A, %A, %A, %A, %A)" (abs <| hash modB) aty nm flags retTy argTys
+        modB.GetArrayMethod(aty, nm, flags, retTy, argTys)
 
 #if !FX_RESHAPED_REFEMIT
     member modB.DefineDocumentAndLog (file, lang, vendor, doctype) =
@@ -1195,17 +1195,19 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
 
     | I_ldelema (ro, _isNativePtr, shape, ty) ->
         if (ro = ReadonlyAddress) then ilG.EmitAndLog OpCodes.Readonly
-        if (shape = ILArrayShape.SingleDimensional)
-        then ilG.EmitAndLog (OpCodes.Ldelema, convType cenv emEnv ty)
+        if shape = ILArrayShape.SingleDimensional then
+            ilG.EmitAndLog (OpCodes.Ldelema, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
             let ety = aty.GetElementType()
-            let rty = ety.MakeByRefType()
-            let meth = modB.GetArrayMethodAndLog (aty, "Address", CallingConventions.HasThis, rty, Array.create shape.Rank typeof<int> )
+            let argTys = Array.create shape.Rank typeof<int>
+            let retTy = ety.MakeByRefType()
+            let meth = modB.GetArrayMethodAndLog (aty, "Address", CallingConventions.HasThis, retTy, argTys)
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_ldelem_any (shape, ty) ->
-        if (shape = ILArrayShape.SingleDimensional) then ilG.EmitAndLog (OpCodes.Ldelem, convType cenv emEnv ty)
+        if shape = ILArrayShape.SingleDimensional then
+            ilG.EmitAndLog (OpCodes.Ldelem, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
             let ety = aty.GetElementType()
@@ -1220,7 +1222,8 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_stelem_any (shape, ty) ->
-        if (shape = ILArrayShape.SingleDimensional) then ilG.EmitAndLog (OpCodes.Stelem, convType cenv emEnv ty)
+        if shape = ILArrayShape.SingleDimensional then
+            ilG.EmitAndLog (OpCodes.Stelem, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
             let ety = aty.GetElementType()
@@ -1235,8 +1238,8 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
-        if (shape = ILArrayShape.SingleDimensional)
-        then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
+        if shape = ILArrayShape.SingleDimensional then
+            ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
             let meth = modB.GetArrayMethodAndLog(aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
@@ -1484,8 +1487,8 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
     match mdef.Body with
     | MethodBody.PInvoke pLazy when enablePInvoke ->
         let p = pLazy.Value
-        let argtys = convTypesToArray cenv emEnv mdef.ParameterTypes
-        let rty = convType cenv emEnv mdef.Return.Type
+        let argTys = convTypesToArray cenv emEnv mdef.ParameterTypes
+        let retTy = convType cenv emEnv mdef.Return.Type
 
         let pcc =
             match p.CallingConv with
@@ -1495,25 +1498,26 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
             | PInvokeCallingConvention.Fastcall -> CallingConvention.FastCall
             | PInvokeCallingConvention.None
             | PInvokeCallingConvention.WinApi -> CallingConvention.Winapi
+
         let pcs =
             match p.CharEncoding with
             | PInvokeCharEncoding.None -> CharSet.None
             | PInvokeCharEncoding.Ansi -> CharSet.Ansi
             | PInvokeCharEncoding.Unicode -> CharSet.Unicode
             | PInvokeCharEncoding.Auto -> CharSet.Auto
-(* p.ThrowOnUnmappableChar *)
-(* p.CharBestFit *)
-(* p.NoMangle *)
+        // p.ThrowOnUnmappableChar
+        // p.CharBestFit
+        // p.NoMangle
 
 #if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
         // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCOREAPP3.
         // It has always been available in the desktop framework
-        let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
+        let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, retTy, null, null, argTys, null, null, pcc, pcs)
 #else
         // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
-            definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder
+            definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; retTy; null; null; argTys; null; null; pcc; pcs |]) :?> MethodBuilder
 #endif
         methB.SetImplementationFlagsAndLog implflags
         envBindMethodRef emEnv mref methB

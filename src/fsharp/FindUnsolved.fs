@@ -83,15 +83,15 @@ let rec accExpr (cenv: cenv) (env: env) expr =
         accExpr cenv env f
         accExprs cenv env argsl
 
-    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy cenv.g m argvs rty 
+        let ty = mkMultiLambdaTy cenv.g m argvs bodyTy 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyLambda (_, tps, _body, _m, rty)  -> 
+    | Expr.TyLambda (_, tps, _body, _m, bodyTy)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-        accTy cenv env rty
-        let ty = mkForallTyIfNeeded tps rty 
+        accTy cenv env bodyTy
+        let ty = mkForallTyIfNeeded tps bodyTy 
         accLambdas cenv env topValInfo expr ty
 
     | Expr.TyChoose (_tps, e1, _m)  -> 
@@ -156,9 +156,9 @@ and accOp cenv env (op, tyargs, args, _m) =
         accTypeInst cenv env retTys
     | _ ->    ()
 
-and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
-    argtys |> accTypeInst cenv env 
-    rty |> Option.iter (accTy cenv env)
+and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+    argTys |> accTypeInst cenv env 
+    retTy |> Option.iter (accTy cenv env)
     tys |> List.iter (accTy cenv env)
 
 and accLambdas cenv env topValInfo expr exprTy =

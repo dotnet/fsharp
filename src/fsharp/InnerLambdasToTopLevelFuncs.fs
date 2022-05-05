@@ -855,12 +855,12 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let name = f.LogicalName (* + "_TLR_" + string wf *)
         let m = f.Range
         let tps, tau = f.TypeScheme
-        let argtys, res = stripFunTy g tau
+        let argTys, retTy = stripFunTy g tau
         let newTps = envp.ep_etps @ tps
 
         let fHatTy =
-            let newArgtys = List.map typeOfVal envp.ep_aenvs @ argtys
-            mkLambdaTy g newTps newArgtys res
+            let newArgTys = List.map typeOfVal envp.ep_aenvs @ argTys
+            mkLambdaTy g newTps newArgTys retTy
 
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
 

@@ -104,13 +104,13 @@ module internal PrintUtilities =
     //       longLongLongArgName9: TType *
     //       longLongLongArgName10: TType
     //      -> TType list
-    let curriedLayoutsL retTyDelim (argtysL: Layout list) (rtyL: Layout) =
-        let arrowAndRetyL = wordL (tagPunctuation retTyDelim) ^^ rtyL
-        let argtysL =
-            argtysL
-            |> List.mapi (fun i argtyL -> if i = 0 then argtyL else wordL (tagPunctuation "->") ^^ argtyL)
+    let curriedLayoutsL retTyDelim (argTysL: Layout list) (retTyL: Layout) =
+        let arrowAndRetyL = wordL (tagPunctuation retTyDelim) ^^ retTyL
+        let argTysL =
+            argTysL
+            |> List.mapi (fun i argTyL -> if i = 0 then argTyL else wordL (tagPunctuation "->") ^^ argTyL)
             |> List.reduce (++)
-        argtysL --- arrowAndRetyL
+        argTysL --- arrowAndRetyL
 
     let tagNavArbValRef (valRefOpt: ValRef option) tag =
         match valRefOpt with
@@ -779,12 +779,12 @@ module PrintTypes =
                     WordL.arrow ^^
                     (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
-    and layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _)) =
+    and layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argTys, retTy, _)) =
         let nameL = ConvertValNameToDisplayLayout false (tagMember >> wordL) nm
         if denv.shortConstraints then 
             WordL.keywordMember ^^ nameL
         else
-            let rty = GetFSharpViewOfReturnType denv.g rty
+            let retTy = GetFSharpViewOfReturnType denv.g retTy
             let stat = layoutMemberFlags memFlags
             let tys = ListSet.setify (typeEquiv denv.g) tys
             let tysL = 
@@ -792,9 +792,9 @@ module PrintTypes =
                 | [ty] -> layoutTypeWithInfo denv env ty 
                 | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
 
-            let argtysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys
-            let rtyL = layoutReturnType denv env rty
-            let sigL = curriedLayoutsL "->" [argtysL] rtyL
+            let argTysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argTys
+            let retTyL = layoutReturnType denv env retTy
+            let sigL = curriedLayoutsL "->" [argTysL] retTyL
             (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL)
 
     /// Layout a unit of measure expression 
@@ -880,10 +880,10 @@ module PrintTypes =
             | h :: t -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
 
         | TType_fun _ ->
-            let argtys, rty = stripFunTy g ty
-            let rtyL = layoutTypeWithInfoAndPrec denv env 5 rty
-            let argtysL = argtys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
-            let funcTyL = curriedLayoutsL "->" argtysL rtyL
+            let argTys, retTy = stripFunTy g ty
+            let retTyL = layoutTypeWithInfoAndPrec denv env 5 retTy
+            let argTysL = argTys |> List.map (layoutTypeWithInfoAndPrec denv env 4)
+            let funcTyL = curriedLayoutsL "->" argTysL retTyL
             bracketIfL (prec <= 4) funcTyL
 
         // Layout a type variable . 
@@ -896,7 +896,7 @@ module PrintTypes =
     and layoutTypesWithInfoAndPrec denv env prec sep typl = 
         sepListL sep (List.map (layoutTypeWithInfoAndPrec denv env prec) typl)
 
-    and layoutReturnType denv env rty = layoutTypeWithInfoAndPrec denv env 4 rty
+    and layoutReturnType denv env retTy = layoutTypeWithInfoAndPrec denv env 4 retTy
 
     /// Layout a single type, taking TypeSimplificationInfo into account 
     and layoutTypeWithInfo denv env ty = 
@@ -955,16 +955,16 @@ module PrintTypes =
         wordL (tagPunctuation ">")
 
     /// Layout a single type used as the type of a member or value 
-    let layoutTopType denv env argInfos rty cxs =
+    let layoutTopType denv env argInfos retTy cxs =
         // Parenthesize the return type to match the topValInfo 
-        let rtyL = layoutReturnType denv env rty
+        let retTyL = layoutReturnType denv env retTy
         let cxsL = layoutConstraintsWithInfo denv env cxs
         match argInfos with
-        | [] -> rtyL --- cxsL
+        | [] -> retTyL --- cxsL
         | _ -> 
             let retTyDelim = if denv.useColonForReturnType then ":" else "->"
             let allArgsL = layoutCurriedArgInfos denv env argInfos
-            curriedLayoutsL retTyDelim allArgsL rtyL --- cxsL
+            curriedLayoutsL retTyDelim allArgsL retTyL --- cxsL
 
     /// Layout type parameters
     let layoutTyparDecls denv nmL prefix (typars: Typars) =
@@ -1112,12 +1112,12 @@ module PrintTypes =
         match v.ValReprInfo with 
         | None ->
             let _, tau = v.TypeScheme
-            let _argtysl, rty = stripFunTy denv.g tau
-            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+            let _argTysl, retTy = stripFunTy denv.g tau
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 retTy
         | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
             let tau = v.TauType
-            let _c, rty = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
-            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+            let _c, retTy = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 retTy
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -1147,7 +1147,7 @@ module PrintTastMemberOrVals =
         let v = mkLocalValRef v
         let membInfo = Option.get v.MemberInfo
         let stat = layoutMemberFlags membInfo.MemberFlags
-        let _tps, argInfos, rty, _ = GetTypeOfMemberInFSharpForm denv.g v
+        let _tps, argInfos, retTy, _ = GetTypeOfMemberInFSharpForm denv.g v
         
         if short then
             for argInfo in argInfos do
@@ -1158,7 +1158,7 @@ module PrintTastMemberOrVals =
         let prettyTyparInst, memberL =
             match membInfo.MemberFlags.MemberKind with
             | SynMemberKind.Member ->
-                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos retTy
                 let resL =
                     if short then tauL
                     else
@@ -1169,7 +1169,7 @@ module PrintTastMemberOrVals =
 
             | SynMemberKind.ClassConstructor
             | SynMemberKind.Constructor ->
-                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+                let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos retTy
                 let resL = 
                     if short then tauL
                     else
@@ -1194,7 +1194,7 @@ module PrintTastMemberOrVals =
                         match argInfos with
                         | [[(ty, _)]] when isUnitTy denv.g ty -> []
                         | _ -> argInfos
-                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+                    let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos retTy
                     let resL =
                         if short then
                             if isNil argInfos then tauL
@@ -1255,7 +1255,7 @@ module PrintTastMemberOrVals =
     let layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
-        let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
+        let argInfos, retTy = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
         let nameL =
 
             let tagF =
@@ -1289,7 +1289,7 @@ module PrintTastMemberOrVals =
             if isTyFunction || isOverGeneric || denv.showTyparBinding then 
                 layoutTyparDecls denv nameL true tps 
             else nameL
-        let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos rty cxs
+        let valAndTypeL = (WordL.keywordVal ^^ (typarBindingsL |> addColonL)) --- layoutTopType denv env argInfos retTy cxs
         let valAndTypeL =
             match denv.generatedValueLayout v with
             | None -> valAndTypeL
@@ -1515,9 +1515,9 @@ module InfoMemberPrinting =
     #endif
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
-        let rty = pinfo.GetPropertyType(amap, m) 
-        let rty = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty else  rty 
-        let rty, _ = PrettyTypes.PrettifyType g rty
+        let retTy = pinfo.GetPropertyType(amap, m) 
+        let retTy = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) retTy else  retTy 
+        let retTy, _ = PrettyTypes.PrettifyType g retTy
         let nameL = ConvertValNameToDisplayLayout false (tagProperty >> tagNavArbValRef pinfo.ArbitraryValRef >> wordL) pinfo.PropertyName
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
@@ -1534,7 +1534,7 @@ module InfoMemberPrinting =
         layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         (nameL  |> addColonL) ^^
-        layoutType denv rty ^^
+        layoutType denv retTy ^^
         getterSetter
 
     let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
@@ -1964,9 +1964,9 @@ module TastDefinitionPrinting =
                 |> addLhs
                   
             | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
-                let (TSlotSig(_, _, _, _, paraml, rty)) = slotSig
-                let rty = GetFSharpViewOfReturnType denv.g rty
-                let delegateL = WordL.keywordDelegate ^^ WordL.keywordOf -* layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty []
+                let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig
+                let retTy = GetFSharpViewOfReturnType denv.g retTy
+                let delegateL = WordL.keywordDelegate ^^ WordL.keywordOf -* layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) retTy []
                 delegateL
                 |> addLhs
 
