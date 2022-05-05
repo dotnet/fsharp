@@ -1578,8 +1578,8 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
-        withKeyword: range option *
-        range: range
+        range: range *
+        trivia: SynValSigTrivia
 
     member x.RangeOfId  = let (SynValSig(ident=SynIdent(id, _))) = x in id.idRange
 
