@@ -284,7 +284,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, kind, decls, _, _, access, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespace(id, _isRec, kind, decls, _, _, access, m, _)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
@@ -429,7 +429,7 @@ module NavigationImpl =
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m)) ->
+            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m, _)) ->
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
@@ -593,7 +593,7 @@ module NavigateTo =
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespaceSig item { Type = NavigableContainerType.File; Name = fileName }
     
-        and walkSynModuleOrNamespaceSig (SynModuleOrNamespaceSig(lid, _, kind, decls, _, _, _, _)) container =
+        and walkSynModuleOrNamespaceSig (SynModuleOrNamespaceSig(longId = lid; kind = kind; decls = decls)) container =
             let isModule = kind.IsModule
             if isModule then
                 addModule lid true container
@@ -651,7 +651,7 @@ module NavigateTo =
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
     
-        and walkSynModuleOrNamespace(SynModuleOrNamespace(lid, _, kind, decls, _, _, _, _)) container =
+        and walkSynModuleOrNamespace(SynModuleOrNamespace(longId = lid; kind = kind; decls = decls)) container =
             let isModule = kind.IsModule
             if isModule then
                 addModule lid false container

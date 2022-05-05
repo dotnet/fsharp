@@ -47,7 +47,7 @@ let internal identsAndRanges (input: ParsedInput) =
         | SynModuleDecl.Attributes _ -> failwith "Not implemented yet"
         | SynModuleDecl.HashDirective _ -> failwith "Not implemented yet"
         | SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace
-    and extractFromModuleOrNamespace (SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, _)) =
+    and extractFromModuleOrNamespace (SynModuleOrNamespace(longId = longIdent; decls = moduleDecls)) =
         let xs = moduleDecls |> List.collect extractFromModuleDecl
         if longIdent.IsEmpty then xs
         else

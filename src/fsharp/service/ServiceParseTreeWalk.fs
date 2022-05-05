@@ -238,7 +238,7 @@ module SyntaxTraversal =
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
             visitor.VisitModuleDecl(origPath, defaultTraverse, decl)
 
-        and traverseSynModuleOrNamespace origPath (SynModuleOrNamespace(_longIdent, _isRec, _isModule, synModuleDecls, _preXmlDoc, _synAttributes, _synAccessOpt, range) as mors) =
+        and traverseSynModuleOrNamespace origPath (SynModuleOrNamespace(decls = synModuleDecls; range = range) as mors) =
             match visitor.VisitModuleOrNamespace(origPath, mors) with
             | Some x -> Some x
             | None ->

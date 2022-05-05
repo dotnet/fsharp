@@ -466,7 +466,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, r)) =
+        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(decls = decls; attribs = Attributes attrs; range = r)) =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
@@ -1262,7 +1262,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
-        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, _)) =
+        and walkSynModuleOrNamespace (SynModuleOrNamespace(decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
             List.iter walkSynModuleDecl decls
     
@@ -1656,7 +1656,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, kind, decls, _, _, _, range)) =
+        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range)) =
             if range.EndLine >= currentLine then
                 let isModule = kind.IsModule
                 match isModule, parent, ident with
