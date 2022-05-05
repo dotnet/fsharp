@@ -33,8 +33,11 @@ module ``Static Methods In Interfaces`` =
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
     
-
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
     [<Fact>]
+#endif
     let ``F# can call static methods declared in interfaces from C#`` () =
 
         let csharpLib = csharpBaseClass 
