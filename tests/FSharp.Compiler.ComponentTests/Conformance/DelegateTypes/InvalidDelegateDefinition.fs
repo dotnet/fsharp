@@ -4,30 +4,13 @@ namespace FSharp.Compiler.ComponentTests.Conformance.DelegateTypes
 
 open Xunit
 open FSharp.Test.Compiler
+open FSharp.Test
 
 module InvalidDelegateDefinition =
-
-    [<Fact>]
-    let ``Illegal definition for runtime implemented delegate method.`` () =
-        FSharp """
-module FSharpTest =
-    type InvalidDelegateDefinition(x: int) =
-        delegate of int -> int
-    let invalidDelegate = InvalidDelegateDefinition(fun _ -> 1)
-        """
-        |> compile
+    
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"invalid_delegate_definition.fs"|])>]
+    let ``invalid_delegate_definition.fs`` compilation =
+        compilation
+        |> asFsx
+        |> runFsi
         |> shouldFail
-        |> withErrorCode 193
-        |> withErrorMessage "Illegal definition for runtime implemented delegate method."
-        
-    [<Fact>]
-    let ``Illegal definition for runtime implemented delegate method when using in a fsx.`` () =
-        Fsx """
-    type InvalidDelegateDefinition(x: int) =
-        delegate of int -> int
-    let invalidDelegate = InvalidDelegateDefinition(fun _ -> 1)
-        """
-        |> compile
-        |> shouldFail
-        |> withErrorCode 193
-        |> withErrorMessage "Illegal definition for runtime implemented delegate method."
