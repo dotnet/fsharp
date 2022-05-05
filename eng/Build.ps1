@@ -509,7 +509,7 @@ try {
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
+        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\4.3.0-1.22220.8\tools\csc.exe"
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
