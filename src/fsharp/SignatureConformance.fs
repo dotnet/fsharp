@@ -21,7 +21,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range

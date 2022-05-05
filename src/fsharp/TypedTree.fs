@@ -27,7 +27,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
@@ -1442,7 +1442,7 @@ type TILObjectReprData =
 type TProvidedTypeInfo = 
     { 
       /// The parameters given to the provider that provided to this type.
-      ResolutionEnvironment: ExtensionTyping.ResolutionEnvironment
+      ResolutionEnvironment: TypeProviders.ResolutionEnvironment
 
       /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
       /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting

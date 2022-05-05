@@ -40,7 +40,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
