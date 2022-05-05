@@ -41,7 +41,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------

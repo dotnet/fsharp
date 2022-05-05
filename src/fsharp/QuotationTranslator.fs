@@ -1212,7 +1212,7 @@ and ConvTyconRef cenv (tcref: TyconRef) m =
     match tcref.TypeReprInfo with
     | TProvidedTypeRepr info when not cenv.g.isInteractive && not info.IsErased ->
         // Note, generated types are (currently) non-generic
-        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
+        let tref = TypeProviders.GetILTypeRefOfProvidedType (info.ProvidedType, m)
         ConvILTypeRefUnadjusted cenv m tref
     | _ ->
 #endif

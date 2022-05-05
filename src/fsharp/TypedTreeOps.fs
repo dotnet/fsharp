@@ -29,7 +29,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100

@@ -79,8 +79,8 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2
 #if !NO_TYPEPROVIDERS
-      | ExtensionTyping.ProvidedTypeResolutionNoRange e -> RangeFromException e
-      | ExtensionTyping.ProvidedTypeResolution(m, _)
+      | TypeProviders.ProvidedTypeResolutionNoRange e -> RangeFromException e
+      | TypeProviders.ProvidedTypeResolution(m, _)
 #endif
       | ReservedKeyword(_, m)
       | IndentationProblem(_, m)
@@ -326,8 +326,8 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       // avoid 94-100 for safety
       | ObsoleteError _ -> 101
 #if !NO_TYPEPROVIDERS
-      | ExtensionTyping.ProvidedTypeResolutionNoRange _
-      | ExtensionTyping.ProvidedTypeResolution _ -> 103
+      | TypeProviders.ProvidedTypeResolutionNoRange _
+      | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
       | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
        (* DO NOT CHANGE THE NUMBERS *)
@@ -733,9 +733,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           OutputExceptionR os e
 
 #if !NO_TYPEPROVIDERS
-      | ExtensionTyping.ProvidedTypeResolutionNoRange e
+      | TypeProviders.ProvidedTypeResolutionNoRange e
 
-      | ExtensionTyping.ProvidedTypeResolution(_, e) ->
+      | TypeProviders.ProvidedTypeResolution(_, e) ->
           OutputExceptionR os e
 
       | :? TypeProviderError as e ->
