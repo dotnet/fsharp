@@ -2013,9 +2013,9 @@ val mkCallAdditionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
@@ -2039,7 +2039,7 @@ val mkCallAdditionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallUnaryNegChecked: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2392,7 +2392,7 @@ type PrettyNaming.ActivePatternInfo with
 
     member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType: g: TcGlobals -> m: range -> dty: TType -> rtys: TType list -> isStruct: bool -> TType
+    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 

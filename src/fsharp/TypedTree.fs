@@ -5178,11 +5178,14 @@ type ModuleOrNamespaceBinding =
 type NamedDebugPointKey =
     { Range: range
       Name: string }
+
     override x.GetHashCode() = hash x.Name + hash x.Range
+
     override x.Equals(yobj: obj) = 
         match yobj with 
         | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
         | _ -> false
+
     interface IComparable with
         member x.CompareTo(yobj: obj) =
            match yobj with 

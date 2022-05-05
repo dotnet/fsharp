@@ -28,9 +28,9 @@ exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string 
 
 exception ValueNotContained of DisplayEnv * InfoReader * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
-exception ConstrNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
+exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
-exception ExnconstrNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
+exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
 exception FieldNotContained of DisplayEnv * InfoReader * Tycon * RecdField * RecdField * (string * string -> string)
 
@@ -172,7 +172,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 false 
             else
             
-            checkExnInfo  (fun f -> ExnconstrNotContained(denv, infoReader, implTycon, sigTycon, f)) aenv infoReader implTycon implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
+            checkExnInfo  (fun f -> FSharpExceptionNotContained(denv, infoReader, implTycon, sigTycon, f)) aenv infoReader implTycon implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
             
             let implTypars = implTycon.Typars m
             let sigTypars = sigTycon.Typars m
@@ -357,7 +357,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (errorR (err FSComp.SR.ExceptionDefsNotCompatibleExceptionDeclarationsDiffer); false)
 
         and checkUnionCase aenv infoReader (enclosingTycon: Tycon) implUnionCase sigUnionCase =
-            let err f = errorR(ConstrNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
+            let err f = errorR(UnionCaseNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
             if implUnionCase.Id.idText <> sigUnionCase.Id.idText then  err FSComp.SR.ModuleContainsConstructorButNamesDiffer

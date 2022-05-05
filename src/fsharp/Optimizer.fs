@@ -4011,7 +4011,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
                 mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
-            let rec elimModDef x =                  
+            let rec elimModuleDefn x =                  
                 match x with 
                 | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
@@ -4020,20 +4020,20 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                     if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], [], m) else x
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
-                | TMDefs defs -> TMDefs(List.map elimModDef defs) 
+                | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
                 | TMAbstract _ -> x 
 
-            and elimModuleBinding x = 
-                match x with 
+            and elimModuleBinding modBind = 
+                match modBind with 
                 | ModuleOrNamespaceBinding.Binding bind -> 
                      if bind.Var |> Zset.memberOf deadSet then None
-                     else Some x
+                     else Some modBind
                 | ModuleOrNamespaceBinding.Module(mspec, d) ->
                     // Clean up the ModuleOrNamespaceType by mutation
                     elimModSpec mspec
-                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModDef d))
+                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModuleDefn d))
             
-            elimModDef def 
+            elimModuleDefn def 
 
         let info = AbstractAndRemapModulInfo "defs" g m rpi info
 
@@ -4073,8 +4073,8 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
         (env, ([bindInfo] :: bindInfosColl))
 
     | TMDefDo(e, m) ->
-        let e, _einfo = OptimizeExpr cenv env e
-        (TMDefDo(e, m), EmptyModuleInfo), 
+        let eR, _einfo = OptimizeExpr cenv env e
+        (TMDefDo(eR, m), EmptyModuleInfo), 
         (env, bindInfosColl)
 
     | TMDefs defs -> 

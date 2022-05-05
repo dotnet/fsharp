@@ -232,6 +232,11 @@ val bufs: f: (StringBuilder -> unit) -> string
 /// Writing to output stream via a string buffer.
 val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> 'a -> unit) -> x: 'a -> unit
 
+type StringBuilder with
+
+    /// Like Append, but returns unit
+    member AppendString: value: string -> unit
+
 type Graph<'Data, 'Id when 'Id: comparison> =
 
     new: nodeIdentity: ('Data -> 'Id) * nodes: 'Data list * edges: ('Data * 'Data) list -> Graph<'Data, 'Id>
