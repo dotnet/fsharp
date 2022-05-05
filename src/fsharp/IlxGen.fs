@@ -7105,7 +7105,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
 
         // First build a lambda expression for the saturated use of the toplevel value...
         // REVIEW: we should NOT be doing this in the backend...
-        let expr, exprty = AdjustValForExpectedArity g m vref NormalValUse topValInfo
+        let expr, exprTy = AdjustValForExpectedArity g m vref NormalValUse topValInfo
 
         // Then reduce out any arguments (i.e. apply the sequel immediately if we can...)
         match storeSequel with
@@ -7114,7 +7114,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         | Some (tyargs', args, m, sequel) ->
             let specializedExpr =
                 if isNil args && isNil tyargs' then failwith ("non-lambda at use of method " + vref.LogicalName)
-                MakeApplicationAndBetaReduce cenv.g (expr, exprty, [tyargs'], args, m)
+                MakeApplicationAndBetaReduce cenv.g (expr, exprTy, [tyargs'], args, m)
             GenExpr cenv cgbuf eenv specializedExpr sequel
 
     | Null ->

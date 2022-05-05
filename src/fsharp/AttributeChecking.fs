@@ -26,46 +26,46 @@ exception ObsoleteError of string * range
 
 let fail() = failwith "This custom attribute has an argument that can not yet be converted using this API"
 
-let rec private evalILAttribElem e = 
-    match e with 
-    | ILAttribElem.String (Some x)  -> box x
-    | ILAttribElem.String None      -> null
-    | ILAttribElem.Bool x           -> box x
-    | ILAttribElem.Char x           -> box x
-    | ILAttribElem.SByte x          -> box x
-    | ILAttribElem.Int16 x          -> box x
-    | ILAttribElem.Int32 x          -> box x
-    | ILAttribElem.Int64 x          -> box x
-    | ILAttribElem.Byte x           -> box x
-    | ILAttribElem.UInt16 x         -> box x
-    | ILAttribElem.UInt32 x         -> box x
-    | ILAttribElem.UInt64 x         -> box x
-    | ILAttribElem.Single x         -> box x
-    | ILAttribElem.Double x         -> box x
-    | ILAttribElem.Null             -> null
-    | ILAttribElem.Array (_, a)     -> box [| for i in a -> evalILAttribElem i |]
+let rec private evalILAttribElem elem = 
+    match elem with 
+    | ILAttribElem.String (Some x) -> box x
+    | ILAttribElem.String None -> null
+    | ILAttribElem.Bool x -> box x
+    | ILAttribElem.Char x -> box x
+    | ILAttribElem.SByte x -> box x
+    | ILAttribElem.Int16 x -> box x
+    | ILAttribElem.Int32 x -> box x
+    | ILAttribElem.Int64 x -> box x
+    | ILAttribElem.Byte x -> box x
+    | ILAttribElem.UInt16 x -> box x
+    | ILAttribElem.UInt32 x -> box x
+    | ILAttribElem.UInt64 x -> box x
+    | ILAttribElem.Single x -> box x
+    | ILAttribElem.Double x -> box x
+    | ILAttribElem.Null -> null
+    | ILAttribElem.Array (_, a) -> box [| for i in a -> evalILAttribElem i |]
     // TODO: typeof<..> in attribute values
-    | ILAttribElem.Type (Some _t)    -> fail() 
-    | ILAttribElem.Type None        -> null
+    | ILAttribElem.Type (Some _t) -> fail() 
+    | ILAttribElem.Type None -> null
     | ILAttribElem.TypeRef (Some _t) -> fail()
-    | ILAttribElem.TypeRef None     -> null
+    | ILAttribElem.TypeRef None -> null
 
-let rec private evalFSharpAttribArg g e = 
-    match stripDebugPoints e with
+let rec private evalFSharpAttribArg g attribExpr = 
+    match stripDebugPoints attribExpr with
     | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
-        | Const.SByte i  -> box i
-        | Const.Int16 i  -> box  i
-        | Const.Int32 i   -> box i
-        | Const.Int64 i   -> box i  
-        | Const.Byte i    -> box i
-        | Const.UInt16 i  -> box i
-        | Const.UInt32 i  -> box i
-        | Const.UInt64 i  -> box i
-        | Const.Single i   -> box i
+        | Const.SByte i -> box i
+        | Const.Int16 i -> box  i
+        | Const.Int32 i -> box i
+        | Const.Int64 i -> box i  
+        | Const.Byte i -> box i
+        | Const.UInt16 i -> box i
+        | Const.UInt32 i -> box i
+        | Const.UInt64 i -> box i
+        | Const.Single i -> box i
         | Const.Double i -> box i
-        | Const.Char i    -> box i
+        | Const.Char i -> box i
         | Const.Zero -> null
         | Const.String s ->  box s
         | _ -> fail()
@@ -233,7 +233,7 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     match TryDecodeILAttribute tref cattrs with 
     | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
@@ -313,7 +313,7 @@ let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProv
     let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
     match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)), m) with
     | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteWarning(msg, m))
-    | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _)  ->
+    | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _) ->
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 

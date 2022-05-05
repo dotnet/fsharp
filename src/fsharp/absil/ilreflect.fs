@@ -410,7 +410,7 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
         if runningOnMono && ty.IsClass && not ty.IsAbstract && not ty.IsGenericType && not ty.IsGenericTypeDefinition then
             try
               System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty |> ignore
-            with e -> ()
+            with _ -> ()
 #endif
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap}
     else
@@ -1300,12 +1300,12 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
             | true, actions -> actions @ [action]
             | _ -> [action]
 
-    for e in code.Exceptions do
-        let startTry, _endTry = e.Range
+    for exnSpec in code.Exceptions do
+        let startTry, _endTry = exnSpec.Range
 
         add startTry (fun () -> ilG.BeginExceptionBlockAndLog () |> ignore)
 
-        match e.Clause with
+        match exnSpec.Clause with
         | ILExceptionClause.Finally(startHandler, endHandler) ->
             add startHandler ilG.BeginFinallyBlockAndLog
             add endHandler ilG.EndExceptionBlockAndLog
@@ -2098,14 +2098,14 @@ let EmitDynamicAssemblyFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilde
     | Some mani ->
        // REVIEW: remainder of manifest
        emitCustomAttrs cenv emEnv asmB.SetCustomAttributeAndLog mani.CustomAttrs
+
     // invoke entry point methods
     let execEntryPtFun (typB: TypeBuilder, methodName) () =
       try
-        ignore (typB.InvokeMemberAndLog (methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [| |]))
-        None
-      with
-         | :? TargetInvocationException as e ->
-             Some e.InnerException
+          ignore (typB.InvokeMemberAndLog (methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [| |]))
+          None
+      with :? TargetInvocationException as exn ->
+          Some exn.InnerException
 
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts

@@ -15,4 +15,4 @@ module XmlDocWriter =
 
     /// Writes the XmlDocSig property of each element (field, union case, etc)
     /// of the specified compilation unit to an XML document in a new text file.
-    val WriteXmlDocFile: g: TcGlobals * assemblyName: string * generatedCcu: CcuThunk * xmlfile: string -> unit
+    val WriteXmlDocFile: g: TcGlobals * assemblyName: string * generatedCcu: CcuThunk * xmlFile: string -> unit

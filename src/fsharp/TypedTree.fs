@@ -5303,7 +5303,7 @@ type CcuReference = string // ILAssemblyRef
 // the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
 // .NET assemblies.
 //
-// References to items such as type constructors are via
+// References to items such as types are via
 // cross-compilation-unit thunks, which directly reference the data structures that define
 // these modules. Thus, when saving out values to disk we only wish
 // to save out the "current" part of the term graph. When reading values

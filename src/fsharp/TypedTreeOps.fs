@@ -3380,12 +3380,12 @@ let isSpanTy g m ty =
 
 let rec tryDestSpanTy g m ty =
     match tryAppTy g ty with
-    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
-    | _ -> ValueNone
+    | ValueSome(tcref, [ty]) when isSpanTyconRef g m tcref -> Some(tcref, ty)
+    | _ -> None
 
 let destSpanTy g m ty =
     match tryDestSpanTy g m ty with
-    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | Some(tcref, ty) -> (tcref, ty)
     | _ -> failwith "destSpanTy"
 
 let isReadOnlySpanTyconRef g m tcref =
@@ -3397,12 +3397,12 @@ let isReadOnlySpanTy g m ty =
 
 let tryDestReadOnlySpanTy g m ty =
     match tryAppTy g ty with
-    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> ValueSome(struct(tcref, ty))
-    | _ -> ValueNone
+    | ValueSome(tcref, [ty]) when isReadOnlySpanTyconRef g m tcref -> Some(tcref, ty)
+    | _ -> None
 
 let destReadOnlySpanTy g m ty =
     match tryDestReadOnlySpanTy g m ty with
-    | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
+    | Some(tcref, ty) -> (tcref, ty)
     | _ -> failwith "destReadOnlySpanTy"    
 
 //-------------------------------------------------------------------------
@@ -7879,11 +7879,11 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, arg
   | tyargs :: rest -> 
       // Bind type parameters by immediate substitution 
       match f with 
-      | Expr.TyLambda (_, tyvs, body, _, bodyty) when tyvs.Length = List.length tyargs -> 
+      | Expr.TyLambda (_, tyvs, body, _, bodyTy) when tyvs.Length = List.length tyargs -> 
           let tpenv = bindTypars tyvs tyargs emptyTyparInst
           let body = instExpr g tpenv body
-          let bodyty' = instType tpenv bodyty
-          MakeApplicationAndBetaReduceAux g (body, bodyty', rest, argsl, m) 
+          let bodyTy' = instType tpenv bodyTy
+          MakeApplicationAndBetaReduceAux g (body, bodyTy', rest, argsl, m) 
 
       | _ -> 
           let f = mkAppsAux g f fty [tyargs] [] m

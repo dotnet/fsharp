@@ -2288,15 +2288,15 @@ val isSpanLikeTy: TcGlobals -> range -> TType -> bool
 
 val isSpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 val isReadOnlySpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors

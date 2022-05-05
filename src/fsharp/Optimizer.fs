@@ -3555,21 +3555,21 @@ and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, d
                    Info=ValueOfExpr newExpr }
 
 /// Optimize/analyze a lambda expression
-and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety = 
+and OptimizeLambdas (vspec: Val option) cenv env topValInfo expr exprTy = 
     let g = cenv.g
 
-    match e with
+    match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo e
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap topValInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
-        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
+        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -3604,14 +3604,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         // can't inline any values with semi-recursive object references to self or base 
         let valu =   
           match baseValOpt with 
-          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, ety) 
+          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyty)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
+                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
+                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, exprTy) 
                   
         let estimatedSize = 
             match vspec with
@@ -3624,7 +3624,8 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                  MightMakeCriticalTailcall = false
                  Info= valu }
 
-    | _ -> OptimizeExpr cenv env e 
+    | _ ->
+        OptimizeExpr cenv env expr 
       
 and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) = 
     let g = cenv.g

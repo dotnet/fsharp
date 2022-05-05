@@ -1709,7 +1709,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
 
     | Expr.Lambda (_, _, _, _, _, m, _)  
     | Expr.TyLambda (_, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda g cenv.amap topValInfo (expr, ety)
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g cenv.amap topValInfo (expr, ety)
         let env = BindTypars g env tps 
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
@@ -1749,8 +1749,8 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         )
 
         // Check return type
-        CheckTypeAux permitByRefType cenv env mOrig bodyty (fun () ->
-            errorR(Error(FSComp.SR.chkInvalidFunctionReturnType(NicePrint.minimalStringOfType cenv.denv bodyty), mOrig))
+        CheckTypeAux permitByRefType cenv env mOrig bodyTy (fun () ->
+            errorR(Error(FSComp.SR.chkInvalidFunctionReturnType(NicePrint.minimalStringOfType cenv.denv bodyTy), mOrig))
         )
 
         syntacticArgs |> List.iter (BindVal cenv env)
@@ -1762,7 +1762,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if isTop && not g.compilingFslib && isByrefLikeTy g m bodyty then
+        if isTop && not g.compilingFslib && isByrefLikeTy g m bodyTy then
             // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv env body |> ignore
         else
@@ -1771,12 +1771,12 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         // Check byref return types
         if cenv.reportErrors then 
             if not isTop then
-                CheckForByrefLikeType cenv env m bodyty (fun () -> 
+                CheckForByrefLikeType cenv env m bodyTy (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 
-            elif not g.compilingFslib && isByrefTy g bodyty then 
+            elif not g.compilingFslib && isByrefTy g bodyTy then 
                 // check no byrefs-in-the-byref
-                CheckForByrefType cenv env (destByrefTy g bodyty) (fun () -> 
+                CheckForByrefType cenv env (destByrefTy g bodyTy) (fun () -> 
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
 
             for tp in tps do 

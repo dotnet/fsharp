@@ -1001,8 +1001,8 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
     let vtinst = argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
-    let exprty = instType (mkTyparInst tpsorig vtinst) tau
-    BuildFSharpMethodApp g m vref expr exprty args
+    let exprTy = instType (mkTyparInst tpsorig vtinst) tau
+    BuildFSharpMethodApp g m vref expr exprTy args
     
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
@@ -2026,9 +2026,9 @@ module ProvidedMethodCalls =
         try                   
             let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
 
-            let exprty = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
-            let expr = mkCoerceIfNeeded g exprty retTy expr
-            methInfoOpt, expr, exprty
+            let exprTy = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
+            let expr = mkCoerceIfNeeded g exprTy retTy expr
+            methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
                 let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)

@@ -51,8 +51,8 @@ let (|ExprAsPat|_|) (f: SynExpr) =
 
 // For join clauses that join on nullable, we syntactically insert the creation of nullable values on the appropriate side of the condition, 
 // then pull the syntax apart again
-let (|JoinRelation|_|) cenv env (e: SynExpr) = 
-    let m = e.Range
+let (|JoinRelation|_|) cenv env (expr: SynExpr) = 
+    let m = expr.Range
     let ad = env.eAccessRights
 
     let isOpName opName vref s =
@@ -61,7 +61,7 @@ let (|JoinRelation|_|) cenv env (e: SynExpr) =
         | Result (_, Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
-    match e with 
+    match expr with 
     | BinOpExpr(opId, a, b) when isOpName opNameEquals cenv.g.equals_operator_vref opId.idText -> Some (a, b)
 
     | BinOpExpr(opId, a, b) when isOpName opNameEqualsNullable cenv.g.equals_nullable_operator_vref opId.idText -> 
@@ -93,17 +93,17 @@ let YieldFree (cenv: cenv) expr =
         // Implement yield free logic for F# Language including the LanguageFeature.ImplicitYield
         let rec YieldFree expr =
             match expr with
-            | SynExpr.Sequential (expr1=e1; expr2=e2) ->
-                YieldFree e1 && YieldFree e2
+            | SynExpr.Sequential (expr1=expr1; expr2=expr2) ->
+                YieldFree expr1 && YieldFree expr2
 
-            | SynExpr.IfThenElse (thenExpr=e2; elseExpr=e3opt) ->
-                YieldFree e2 && Option.forall YieldFree e3opt
+            | SynExpr.IfThenElse (thenExpr=thenExpr; elseExpr=elseExprOpt) ->
+                YieldFree thenExpr && Option.forall YieldFree elseExprOpt
 
-            | SynExpr.TryWith (tryExpr=e1; withCases=clauses) ->
-                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
+            | SynExpr.TryWith (tryExpr=body; withCases=clauses) ->
+                YieldFree body && clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.Match (clauses=clauses) | SynExpr.MatchBang (clauses=clauses) ->
-                clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
+                clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.For (doBody=body)
             | SynExpr.TryFinally (tryExpr=body)
@@ -124,17 +124,17 @@ let YieldFree (cenv: cenv) expr =
         // Implement yield free logic for F# Language without the LanguageFeature.ImplicitYield
         let rec YieldFree expr =
             match expr with
-            | SynExpr.Sequential (expr1=e1; expr2=e2) ->
-                YieldFree e1 && YieldFree e2
+            | SynExpr.Sequential (expr1=expr1; expr2=expr2) ->
+                YieldFree expr1 && YieldFree expr2
 
-            | SynExpr.IfThenElse (thenExpr=e2; elseExpr=e3opt) ->
-                YieldFree e2 && Option.forall YieldFree e3opt
+            | SynExpr.IfThenElse (thenExpr=thenExpr; elseExpr=elseExprOpt) ->
+                YieldFree thenExpr && Option.forall YieldFree elseExprOpt
 
             | SynExpr.TryWith (tryExpr=e1; withCases=clauses) ->
-                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
+                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.Match (clauses=clauses) | SynExpr.MatchBang (clauses=clauses) ->
-                clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
+                clauses |> List.forall (fun (SynMatchClause(resultExpr = res)) -> YieldFree res)
 
             | SynExpr.For (doBody=body)
             | SynExpr.TryFinally (tryExpr=body)
@@ -185,33 +185,29 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
                 TryGetSimpleSemicolonSequenceOfComprehension e2 (e1 :: acc)
             else
                 None 
-        | e -> 
-            if IsSimpleSemicolonSequenceElement e then 
-                Some(List.rev (e :: acc))
+        | _ -> 
+            if IsSimpleSemicolonSequenceElement expr then 
+                Some(List.rev (expr :: acc))
             else 
                 None 
 
     TryGetSimpleSemicolonSequenceOfComprehension cexpr []
 
-let RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
+let RecordNameAndTypeResolutions cenv env tpenv expr =
     // This function is motivated by cases like
     //    query { for ... join(for x in f(). }
     // where there is incomplete code in a query, and we are current just dropping a piece of the AST on the floor (above, the bit inside the 'join').
     // 
     // The problem with dropping the AST on the floor is that we get no captured resolutions, which means no Intellisense/QuickInfo/ParamHelp.
     //
-    // The idea behind the fix is to semi-typecheck this AST-fragment, just to get resolutions captured.
+    // We check this AST-fragment, to get resolutions captured.
     //
-    // The tricky bit is to not also have any other effects from typechecking, namely producing error diagnostics (which may be spurious) or having 
-    // side-effects on the typecheck environment.
-    //
-    // REVIEW: We are yet to deal with the tricky bit. As it stands, we turn off error logging, but still have typechecking environment effects. As a result, 
-    // at the very least, you cannot call this function unless you're already reported a typechecking error (the 'worst' possible outcome would be 
-    // to incorrectly solve typecheck constraints as a result of effects in this function, and then have the code compile successfully and behave 
-    // in some weird way; so ensure the code can't possibly compile before calling this function as an expedient way to get better IntelliSense).
+    // This may have effects from typechecking, producing side-effects on the typecheck environment.
     suppressErrorReporting (fun () -> 
-        try ignore(TcExprOfUnknownType cenv env tpenv expr)
-        with e -> ())
+        try
+            ignore(TcExprOfUnknownType cenv env tpenv expr)
+        with _ ->
+            ())
 
 /// Used for all computation expressions except sequence expressions
 let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
@@ -1510,7 +1506,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 match optionalCont with 
                 | None -> 
                     // we are about to drop the 'opExpr' AST on the floor. we've already reported an error. attempt to get name resolutions before dropping it
-                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv opExpr
+                    RecordNameAndTypeResolutions cenv env tpenv opExpr
                     dataCompPrior
                 | Some contExpr -> consumeCustomOpClauses q varSpace dataCompPrior contExpr lastUsesBind mClause
             else

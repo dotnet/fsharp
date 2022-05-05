@@ -75,11 +75,12 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
-  let rec RangeFromException = function
-      | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2
+let GetRangeOfDiagnostic(diag: PhasedDiagnostic) =
+  let rec RangeFromException exn =
+      match exn with
+      | ErrorFromAddingConstraint(_, exn2, _) -> RangeFromException exn2
 #if !NO_TYPEPROVIDERS
-      | TypeProviders.ProvidedTypeResolutionNoRange e -> RangeFromException e
+      | TypeProviders.ProvidedTypeResolutionNoRange exn -> RangeFromException exn
       | TypeProviders.ProvidedTypeResolution(m, _)
 #endif
       | ReservedKeyword(_, m)
@@ -213,11 +214,11 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
 
       | _ -> None
 
-  RangeFromException err.Exception
+  RangeFromException diag.Exception
 
-let GetDiagnosticNumber(err: PhasedDiagnostic) =
-    let rec GetFromException(e: exn) =
-      match e with
+let GetDiagnosticNumber(diag: PhasedDiagnostic) =
+    let rec GetFromException(exn: exn) =
+      match exn with
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
       | FunctionExpected _ -> 2
@@ -347,10 +348,10 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
       | _ -> 193
-    GetFromException err.Exception
+    GetFromException diag.Exception
 
-let GetWarningLevel err =
-    match err.Exception with
+let GetWarningLevel diag =
+    match diag.Exception with
     // Level 5 warnings
     | RecursiveUseCheckedAtRuntime _
     | LetRecEvaluatedOutOfOrder _
@@ -366,7 +367,7 @@ let GetWarningLevel err =
     // Level 2
     | _ -> 2
 
-let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
+let IsWarningOrInfoEnabled (diag, severity) n level specificWarnOn =
     List.contains n specificWarnOn ||
     // Some specific warnings/informational are never on by default, i.e. unused variable warnings
     match n with
@@ -381,32 +382,33 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> 
         (severity = FSharpDiagnosticSeverity.Info) ||
-        (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
+        (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel diag)
 
-let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
-    let ToPhased e = {Exception=e; Phase = err.Phase}
-    let rec SplitRelatedException = function
-      | ErrorFromAddingTypeEquation(g, denv, t1, t2, e, m) ->
-          let e, related = SplitRelatedException e
-          ErrorFromAddingTypeEquation(g, denv, t1, t2, e.Exception, m)|>ToPhased, related
-      | ErrorFromApplyingDefault(g, denv, tp, defaultType, e, m) ->
-          let e, related = SplitRelatedException e
-          ErrorFromApplyingDefault(g, denv, tp, defaultType, e.Exception, m)|>ToPhased, related
+let SplitRelatedDiagnostics(diag: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
+    let ToPhased exn = {Exception=exn; Phase = diag.Phase}
+    let rec SplitRelatedException exn =
+      match exn with
+      | ErrorFromAddingTypeEquation(g, denv, t1, t2, exn2, m) ->
+          let diag2, related = SplitRelatedException exn2
+          ErrorFromAddingTypeEquation(g, denv, t1, t2, diag2.Exception, m)|>ToPhased, related
+      | ErrorFromApplyingDefault(g, denv, tp, defaultType, exn2, m) ->
+          let diag2, related = SplitRelatedException exn2
+          ErrorFromApplyingDefault(g, denv, tp, defaultType, diag2.Exception, m)|>ToPhased, related
       | ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e, contextInfo, m) ->
           let e, related = SplitRelatedException e
           ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e.Exception, contextInfo, m)|>ToPhased, related
       | ErrorFromAddingConstraint(x, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromAddingConstraint(x, e.Exception, m)|>ToPhased, related
-      | WrappedError (e, m) ->
-          let e, related = SplitRelatedException e
+      | WrappedError (exn, m) ->
+          let e, related = SplitRelatedException exn
           WrappedError(e.Exception, m)|>ToPhased, related
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e ->
           SplitRelatedException e.InnerException
       | e ->
            ToPhased e, []
-    SplitRelatedException err.Exception
+    SplitRelatedException diag.Exception
 
 
 let DeclareMessage = DeclareResourceString
@@ -579,7 +581,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn: exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNames: bool) =
+let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestNames: bool) =
 
     let suggestNames suggestionsF idText =
         if canSuggestNames then
@@ -1660,14 +1662,14 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 
-    OutputExceptionR os err.Exception
+    OutputExceptionR os diag.Exception
 
 
 // remove any newlines and tabs
-let OutputPhasedDiagnostic (os: StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
+let OutputPhasedDiagnostic (os: StringBuilder) (diag: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
     let buf = StringBuilder()
 
-    OutputPhasedErrorR buf err suggestNames
+    OutputPhasedErrorR buf diag suggestNames
     let s = if flattenErrors then NormalizeErrorString (buf.ToString()) else buf.ToString()
 
     os.Append s |> ignore
@@ -1717,7 +1719,7 @@ type Diagnostic =
     | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity: FSharpDiagnosticSeverity, err: PhasedDiagnostic, suggestNames: bool) =
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity: FSharpDiagnosticSeverity, diag: PhasedDiagnostic, suggestNames: bool) =
     let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
         if equals m rangeStartup || equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1762,7 +1764,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                             "", m, file
             { Range = m; TextRepresentation = text; IsEmpty = false; File = file }
 
-    match err.Exception with
+    match diag.Exception with
     | ReportedError _ ->
         assert ("" = "Unexpected ReportedError") //  this should never happen
         Seq.empty
@@ -1771,9 +1773,9 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
         Seq.empty
     | _ ->
         let errors = ResizeArray()
-        let report err =
-            let OutputWhere err =
-                match GetRangeOfDiagnostic err with
+        let report diag =
+            let OutputWhere diag =
+                match GetRangeOfDiagnostic diag with
                 | Some m -> Some(outputWhere (showFullPaths, errorStyle) m)
                 | None -> None
 
@@ -1791,9 +1793,9 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     | _ -> sprintf "%s FS%04d: " message errorNumber
                 { ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
 
-            let mainError, relatedErrors = SplitRelatedDiagnostics err
+            let mainError, relatedErrors = SplitRelatedDiagnostics diag
             let where = OutputWhere mainError
-            let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
+            let canonical = OutputCanonicalInformation(diag.Subcategory(), GetDiagnosticNumber mainError)
             let message =
                 let os = StringBuilder()
                 OutputPhasedDiagnostic os mainError flattenErrors suggestNames
@@ -1803,15 +1805,15 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
             errors.Add ( Diagnostic.Long(severity, entry ) )
 
-            let OutputRelatedError(err: PhasedDiagnostic) =
+            let OutputRelatedError(diag: PhasedDiagnostic) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
                 | ErrorStyle.VSErrors ->
                     let relWhere = OutputWhere mainError // mainError?
-                    let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
+                    let relCanonical = OutputCanonicalInformation(diag.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage =
                         let os = StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors suggestNames
+                        OutputPhasedDiagnostic os diag flattenErrors suggestNames
                         os.ToString()
 
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1819,16 +1821,16 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ ->
                     let os = StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors suggestNames
+                    OutputPhasedDiagnostic os diag flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(severity, os.ToString()) )
 
             relatedErrors |> List.iter OutputRelatedError
 
-        match err with
+        match diag with
 #if !NO_TYPEPROVIDERS
         | {Exception = :? TypeProviderError as tpe} ->
             tpe.Iter (fun e ->
-                let newErr = {err with Exception = e}
+                let newErr = {diag with Exception = e}
                 report newErr
             )
 #endif
@@ -1838,10 +1840,10 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (err: PhasedDiagnostic) =
+let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (diag: PhasedDiagnostic) =
 
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity, err, true)
+    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity, diag, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
@@ -1854,8 +1856,8 @@ let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, erro
             os.Append( details.Canonical.TextRepresentation ) |> ignore
             os.Append( details.Message ) |> ignore
 
-let OutputDiagnosticContext prefix fileLineFunction os err =
-    match GetRangeOfDiagnostic err with
+let OutputDiagnosticContext prefix fileLineFunction os diag =
+    match GetRangeOfDiagnostic diag with
     | None -> ()
     | Some m ->
         let filename = m.FileName
@@ -1869,43 +1871,43 @@ let OutputDiagnosticContext prefix fileLineFunction os err =
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-let ReportDiagnosticAsInfo options (err, severity) =
+let ReportDiagnosticAsInfo options (diag, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> false
     | FSharpDiagnosticSeverity.Warning -> false
     | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber err
-        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        let n = GetDiagnosticNumber diag
+        IsWarningOrInfoEnabled (diag, severity) n options.WarnLevel options.WarnOn && 
         not (List.contains n options.WarnOff)
     | FSharpDiagnosticSeverity.Hidden -> false
 
-let ReportDiagnosticAsWarning options (err, severity) =
+let ReportDiagnosticAsWarning options (diag, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> false
     | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber err
-        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        let n = GetDiagnosticNumber diag
+        IsWarningOrInfoEnabled (diag, severity) n options.WarnLevel options.WarnOn && 
         not (List.contains n options.WarnOff)
     // Informational become warning if explicitly on and not explicitly off
     | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber err
+        let n = GetDiagnosticNumber diag
         List.contains n options.WarnOn && 
         not (List.contains n options.WarnOff)
     | FSharpDiagnosticSeverity.Hidden -> false
 
-let ReportDiagnosticAsError options (err, severity) =
+let ReportDiagnosticAsError options (diag, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> true
     // Warnings become errors in some situations
     | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber err
-        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
+        let n = GetDiagnosticNumber diag
+        IsWarningOrInfoEnabled (diag, severity) n options.WarnLevel options.WarnOn &&
         not (List.contains n options.WarnAsWarn) &&
         ((options.GlobalWarnAsError && not (List.contains n options.WarnOff)) ||
          List.contains n options.WarnAsError)
     // Informational become errors if explicitly WarnAsError
     | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber err
+        let n = GetDiagnosticNumber diag
         List.contains n options.WarnAsError
     | FSharpDiagnosticSeverity.Hidden -> false
 
