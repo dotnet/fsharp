@@ -1351,11 +1351,11 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 name.Version
 
             let typeProviderEnvironment =
-                 { resolutionFolder = tcConfig.implicitIncludeDir
-                   outputFile = tcConfig.outputFile
-                   showResolutionMessages = tcConfig.showExtensionTypeMessages
-                   referencedAssemblies = Array.distinct [| for r in tcImportsStrong.AllAssemblyResolutions() -> r.resolvedPath |]
-                   temporaryFolder = FileSystem.GetTempPathShim() }
+                 { ResolutionFolder = tcConfig.implicitIncludeDir
+                   OutputFile = tcConfig.outputFile
+                   ShowResolutionMessages = tcConfig.showExtensionTypeMessages
+                   ReferencedAssemblies = Array.distinct [| for r in tcImportsStrong.AllAssemblyResolutions() -> r.resolvedPath |]
+                   TemporaryFolder = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
             // TcImport objects. So the callbacks provided in the type provider config
@@ -1420,7 +1420,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | _ ->
 
 #if DEBUG
-                if typeProviderEnvironment.showResolutionMessages then
+                if typeProviderEnvironment.ShowResolutionMessages then
                     dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
                     providers |> List.iter(fun provider ->dprintfn " %s" (DisplayNameOfTypeProvider(provider.TypeProvider, m)))
 #endif

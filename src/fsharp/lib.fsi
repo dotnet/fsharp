@@ -270,6 +270,7 @@ module AsyncUtil =
         | AsyncOk of 'T
         | AsyncException of exn
         | AsyncCanceled of System.OperationCanceledException
+
         static member Commit: res: AsyncResult<'T> -> Async<'T>
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
@@ -287,6 +288,7 @@ module UnmanagedProcessExecutionOptions =
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of System.Lazy<'T>
+
     member Force: unit -> 'T
     member Value: 'T
 

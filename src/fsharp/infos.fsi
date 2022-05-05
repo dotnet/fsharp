@@ -182,6 +182,7 @@ val FixupNewTypars:
         TyparInst * TTypes
 
 type ValRef with
+
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
     member IsFSharpEventProperty: g: TcGlobals -> bool
 
@@ -304,6 +305,7 @@ type ParamData =
 [<NoComparison; NoEquality>]
 type ILTypeInfo =
     | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
+
     static member FromType: g: TcGlobals -> ty: TType -> ILTypeInfo
 
     member Instantiate: inst: TyparInst -> ILTypeInfo

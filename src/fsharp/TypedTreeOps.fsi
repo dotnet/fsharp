@@ -2379,6 +2379,7 @@ val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * V
 //-------------------------------------------------------------------------
 
 type ActivePatternElemRef with
+
     member Name: string
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option

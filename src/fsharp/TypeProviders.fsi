@@ -27,19 +27,19 @@ val toolingCompatiblePaths: unit -> string list
 /// Carries information about the type provider resolution environment.
 type ResolutionEnvironment =
     { /// The folder from which an extension provider is resolving from. This is typically the project folder.
-      resolutionFolder: string
+      ResolutionFolder: string
 
       /// Output file name
-      outputFile: string option
+      OutputFile: string option
 
       /// Whether or not the --showextensionresolution flag was supplied to the compiler.
-      showResolutionMessages: bool
+      ShowResolutionMessages: bool
 
       /// All referenced assemblies, including the type provider itself, and possibly other type providers.
-      referencedAssemblies: string []
+      ReferencedAssemblies: string []
 
       /// The folder for temporary files
-      temporaryFolder: string }
+      TemporaryFolder: string }
 
 /// Find and instantiate the set of ITypeProvider components for the given assembly reference
 val GetTypeProvidersOfAssembly:
@@ -52,7 +52,7 @@ val GetTypeProvidersOfAssembly:
     systemRuntimeContainsType: (string -> bool) *
     systemRuntimeAssemblyVersion: Version *
     compilerToolPaths: string list *
-    range ->
+    m: range ->
         Tainted<ITypeProvider> list
 
 /// Given an extension type resolver, supply a human-readable name suitable for error messages.
@@ -83,8 +83,7 @@ type ProvidedTypeContext =
             ProvidedTypeContext
 
     member GetDictionaries:
-        unit ->
-            ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) >
+        unit -> ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) >
 
     /// Map the TyconRef objects, if any
     member RemapTyconRefs: (obj -> obj) -> ProvidedTypeContext
@@ -292,16 +291,13 @@ val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar [] ->
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
-    range * Tainted<ProvidedType> * expectedPath: string [] * expectedName: string -> unit
+    m: range * st: Tainted<ProvidedType> * expectedPath: string [] * expectedName: string -> unit
 
 /// Try to apply a provided type to the given static arguments. If successful also return a function
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
 /// after other checks are made).
 val TryApplyProvidedType:
-    typeBeforeArguments: Tainted<ProvidedType> *
-    optGeneratedTypePath: string list option *
-    staticArgs: obj [] *
-    range ->
+    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: obj [] * range ->
         (Tainted<ProvidedType> * (unit -> unit)) option
 
 /// Try to apply a provided method to the given static arguments.

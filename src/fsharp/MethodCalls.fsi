@@ -76,6 +76,7 @@ type AssignedCalledArg<'T> =
 
       /// The argument on the caller side
       CallerArg: CallerArg<'T> }
+
     member Position: struct (int * int)
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
@@ -118,6 +119,7 @@ type CallerArgs<'T> =
 type TypeDirectedConversionUsed =
     | Yes of (DisplayEnv -> exn)
     | No
+
     static member Combine: TypeDirectedConversionUsed -> TypeDirectedConversionUsed -> TypeDirectedConversionUsed
 
 /// Performs a set of constraint solver operations returning TypeDirectedConversionUsed and

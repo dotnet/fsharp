@@ -48,7 +48,8 @@ module MainModuleBuilder =
             ILModuleDef
 
     /// For unit testing
-    val ComputeILFileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val ComputeILFileVersion:
+        findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
 
     /// For unit testing
     val ComputeProductVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
