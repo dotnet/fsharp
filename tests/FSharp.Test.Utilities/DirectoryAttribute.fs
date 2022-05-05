@@ -66,8 +66,8 @@ type DirectoryAttribute(dir: string) =
 
     let readFileOrDefault (path: string) : string option =
         match FileSystem.FileExistsShim(path) with
-            | true -> Some <| File.ReadAllText path
-            | _ -> None
+        | true -> Some (File.ReadAllText path)
+        | _ -> None
 
     let createCompilationUnit path fs name =
         let outputDirectory =  outputDirectory name
