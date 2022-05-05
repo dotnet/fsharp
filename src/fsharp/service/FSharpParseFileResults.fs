@@ -793,7 +793,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | _ -> () ] 
                       
             // Collect all the items in a module  
-            let walkModule (SynModuleOrNamespace(_, _, _, decls, _, _, _, m)) =
+            let walkModule (SynModuleOrNamespace(decls = decls; range = m)) =
                 if isMatchRange m then
                     List.collect walkDecl decls
                 else
