@@ -147,6 +147,22 @@ Linux/macOS:
 export TEST_UPDATE_BSL=1
 ```
 
+## Automated Source Code Formatting
+
+Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
+
+```cmd
+dotnet fantomas src/fsharp -r
+```
+
+The formatting is checked automatically by CI:
+
+```cmd
+dotnet fantomas src/fsharp -r --check
+```
+
+At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
+
 ## Developing the F# tools for Visual Studio
 
 As you would expect, doing this requires both Windows and Visual Studio are installed.

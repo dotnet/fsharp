@@ -265,7 +265,7 @@ stages:
             displayName: Build with OfficialBuildId
 
         # Check code formatting
-        - job: CheckCodeFormatting
+        - job: CheckCodeFormatting (run 'dotnet fantomas src/fsharp -r' to fix)
           pool:
             vmImage: $(UbuntuMachineQueueName)
           steps:
@@ -285,10 +285,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Install tools
-          - script: dotnet fantomas src/fsharp --check
+          - script: dotnet fantomas src/fsharp -r --check
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
-            displayName: Check code formatting (run dotnet fantomas src/fsharp to fix)
+            displayName: Check code formatting (run 'dotnet fantomas src/fsharp -r' to fix)
 
         # Linux
         - job: Linux

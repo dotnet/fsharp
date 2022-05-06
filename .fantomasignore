@@ -26,3 +26,7 @@
 **/Query.fsi
 **/resumable.fsi
 **/async.fsi
+
+**/array.fsi
+**/task.fsi
+**/seq.fsi
