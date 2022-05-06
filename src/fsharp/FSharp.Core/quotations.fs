@@ -987,7 +987,7 @@ module Patterns =
     let mkNewDelegate (ty, e) =
         let mi = getDelegateInvoke ty
         let ps = mi.GetParameters()
-        let dlfun = Array.foldBack (fun (p:ParameterInfo) rty -> mkFunTy p.ParameterType rty) ps mi.ReturnType
+        let dlfun = Array.foldBack (fun (p:ParameterInfo) retTy -> mkFunTy p.ParameterType retTy) ps mi.ReturnType
         checkTypesSR dlfun (typeOf e) "ty" (SR.GetString(SR.QtmmFunTypeNotMatchDelegate))
         mkFE1 (NewDelegateOp ty) e
 
@@ -1039,7 +1039,7 @@ module Patterns =
     let getNumGenericArguments(tc: Type) =
         if tc.IsGenericType then tc.GetGenericArguments().Length else 0
 
-    let bindMethodBySearch (knownArgCount: int voption, parentT: Type, nm, marity, argtys, rty) =
+    let bindMethodBySearch (knownArgCount: int voption, parentT: Type, nm, marity, argTys, retTy) =
         let methInfos = parentT.GetMethods staticOrInstanceBindingFlags |> Array.toList
         // First, filter on name, if unique, then binding "done"
         let tyargTs = getGenericArguments parentT
@@ -1054,8 +1054,8 @@ module Patterns =
                 let mtyargTIs = if methInfo.IsGenericMethod then methInfo.GetGenericArguments() else [| |]
                 if mtyargTIs.Length  <> marity then false (* method generic arity mismatch *) else
                 let typarEnv = (Array.append tyargTs mtyargTIs)
-                let argTs = argtys |> List.map (instFormal typarEnv)
-                let resT  = instFormal typarEnv rty
+                let argTs = argTys |> List.map (instFormal typarEnv)
+                let resT  = instFormal typarEnv retTy
 
                 // methInfo implied Types
                 let haveArgTs =
@@ -1080,12 +1080,12 @@ module Patterns =
             | None          -> invalidOp (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
-    let bindMethodHelper (knownArgCount, (parentT: Type, nm, marity, argtys, rty)) =
+    let bindMethodHelper (knownArgCount, (parentT: Type, nm, marity, argTys, retTy)) =
       if isNull parentT then invalidArg "parentT" (SR.GetString(SR.QparentCannotBeNull))
       if marity = 0 then
           let tyargTs = if parentT.IsGenericType then parentT.GetGenericArguments() else [| |]
-          let argTs = Array.ofList (List.map (instFormal tyargTs) argtys)
-          let resT  = instFormal tyargTs rty
+          let argTs = Array.ofList (List.map (instFormal tyargTs) argTys)
+          let resT  = instFormal tyargTs retTy
           let methInfo =
               try
                  match parentT.GetMethod(nm, staticOrInstanceBindingFlags, null, argTs, null) with
@@ -1094,9 +1094,9 @@ module Patterns =
                with :? AmbiguousMatchException -> None
           match methInfo with
           | Some methInfo when (typeEquals resT methInfo.ReturnType) -> methInfo
-          | _ -> bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
+          | _ -> bindMethodBySearch(knownArgCount, parentT, nm, marity, argTys, retTy)
       else
-          bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
+          bindMethodBySearch(knownArgCount, parentT, nm, marity, argTys, retTy)
 
     let bindModuleProperty (ty: Type, nm) =
         match ty.GetProperty(nm, staticBindingFlags) with

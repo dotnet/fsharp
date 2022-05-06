@@ -21,15 +21,15 @@ val AddExternalCcuToOptimizationEnv:
     TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 
 val ApplyAllOptimizations:
-    TcConfig *
-    TcGlobals *
-    ConstraintSolver.TcValF *
-    string *
-    ImportMap *
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    tcVal: ConstraintSolver.TcValF *
+    outfile: string *
+    importMap: ImportMap *
     isIncrementalFragment: bool *
-    IncrementalOptimizationEnv *
-    CcuThunk *
-    TypedImplFile list ->
+    optEnv: IncrementalOptimizationEnv *
+    ccu: CcuThunk *
+    implFiles: TypedImplFile list ->
         TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
 
 val CreateIlxAssemblyGenerator:

@@ -475,8 +475,8 @@ module FSharpExprConvert =
                 | None -> failwith ("no arity information found for F# value "+vref.LogicalName)
                 | Some a -> a 
 
-            let expr, exprty = AdjustValForExpectedArity g m vref vFlags topValInfo 
-            let splitCallExpr = MakeApplicationAndBetaReduce g (expr, exprty, [tyargs], curriedArgs, m)
+            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags topValInfo 
+            let splitCallExpr = MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m)
             // tailcall
             ConvExprPrimLinear cenv env splitCallExpr contF
 

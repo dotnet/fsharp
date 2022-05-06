@@ -1393,13 +1393,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     for e in tys do
         do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
     
-    let argtys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
+    let argTys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
 
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
         
     let! res = 
      trackErrors {
-      match minfos, tys, memFlags.IsInstance, nm, argtys with 
+      match minfos, tys, memFlags.IsInstance, nm, argTys with 
       | _, _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
           when 
                // This simulates the existence of 
@@ -1506,25 +1506,29 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.char_ty
           return TTraitBuiltIn
 
-      | [], [ty], true, "get_Item", argtys
+      | [], [ty], true, "get_Item", argTys
           when isArrayTy g ty -> 
 
-          if rankOfArrayTy g ty <> argtys.Length then
-              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
-          for argty in argtys do
+          if rankOfArrayTy g ty <> argTys.Length then
+              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argTys.Length), m, m2))
+
+          for argty in argTys do
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty g.int_ty
+
           let ety = destArrayTy g ty
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ety
           return TTraitBuiltIn
 
-      | [], [ty], true, "set_Item", argtys
+      | [], [ty], true, "set_Item", argTys
           when isArrayTy g ty -> 
           
-          if rankOfArrayTy g ty <> argtys.Length - 1 then
-              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
-          let argtys, ety = List.frontAndBack argtys
-          for argty in argtys do
+          if rankOfArrayTy g ty <> argTys.Length - 1 then
+              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argTys.Length - 1)), m, m2))
+          let argTys, ety = List.frontAndBack argTys
+
+          for argty in argTys do
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty g.int_ty
+
           let etys = destArrayTy g ty
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ety etys
           return TTraitBuiltIn
@@ -1641,7 +1645,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           let recdPropSearch = 
               let isGetProp = nm.StartsWithOrdinal("get_") 
               let isSetProp = nm.StartsWithOrdinal("set_") 
-              if argtys.IsEmpty && isGetProp || isSetProp then 
+              if argTys.IsEmpty && isGetProp || isSetProp then 
                   let propName = nm[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
@@ -1683,7 +1687,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               elif tys |> List.exists (isAnyTupleTy g) then 
                   return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm), m, m2)) 
               else
-                  match nm, argtys with 
+                  match nm, argTys with 
                   | "op_Explicit", [argty] ->
                       let argTyString = NicePrint.prettyStringOfTy denv argty
                       let rtyString = NicePrint.prettyStringOfTy denv rty
@@ -1714,7 +1718,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     |> List.choose (fun minfo ->
                           if minfo.IsCurried then None else
                           let callerArgs = 
-                            { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
+                            { Unnamed = [ (argTys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
                               Named = [ [ ] ] }
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
@@ -1858,7 +1862,7 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
-and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln) as traitInfo): MethInfo list =
+and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argTys, rty, soln) as traitInfo): MethInfo list =
     let results = 
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -1885,7 +1889,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln))
+        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argTys, rty, soln))
     else
         results
 
@@ -1904,8 +1908,8 @@ and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) (TTrait(
 //     tys |> List.exists (isAnyParTy csenv.g >> not)
     
 /// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
-and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
-    freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
+and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, argTys, rty, _)) =
+    freeInTypesLeftToRightSkippingConstraints csenv.g (tys @ argTys @ Option.toList rty)
 
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
    SupportOfMemberConstraintIsFullySolved csenv traitInfo

@@ -155,9 +155,9 @@ namespace FSharp.Compiler.Symbols
 #if !NO_TYPEPROVIDERS
         val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
-        val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
-        val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
         val SimplerDisplayEnv : DisplayEnv -> DisplayEnv

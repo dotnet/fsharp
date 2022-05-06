@@ -480,7 +480,8 @@ module ParsedInput =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
             
-        and walkTypeConstraint = function
+        and walkTypeConstraint cx =
+            match cx with
             | SynTypeConstraint.WhereTyparDefaultsToType (t1, t2, _) -> walkTypar t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynTypeConstraint.WhereTyparIsValueType(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsReferenceType(t, _) -> walkTypar t
@@ -494,7 +495,8 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsEnum(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
 
-        and walkPatWithKind (kind: EntityKind option) = function
+        and walkPatWithKind (kind: EntityKind option) pat =
+            match pat with 
             | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
@@ -517,7 +519,8 @@ module ParsedInput =
 
         and walkPat = walkPatWithKind None
 
-        and walkBinding (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) =
+        and walkBinding bind =
+            let (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) = bind
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkPat pat)
             |> Option.orElseWith (fun () -> walkExpr e)
@@ -529,7 +532,8 @@ module ParsedInput =
         and walkInterfaceImpl (SynInterfaceImpl(bindings=bindings)) =
             List.tryPick walkBinding bindings
 
-        and walkType = function
+        and walkType ty =
+            match ty with
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
                 // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
@@ -552,7 +556,8 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e2)
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
-        and walkExprWithKind (parentKind: EntityKind option) = function
+        and walkExprWithKind (parentKind: EntityKind option) expr =
+            match expr with
             | SynExpr.LongIdent(_, SynLongIdent([ident], _, [ Some _]), _, _) ->
                 ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
@@ -639,7 +644,8 @@ module ParsedInput =
 
         and walkExpr = walkExprWithKind None
 
-        and walkSimplePat = function
+        and walkSimplePat pat =
+            match pat with
             | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
             | SynSimplePat.Typed(pat, t, _) -> walkSimplePat pat |> Option.orElseWith (fun () -> walkType t)
@@ -651,7 +657,8 @@ module ParsedInput =
         and walkValSig (SynValSig(attributes=Attributes attrs; synType=t)) =
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
-        and walkMemberSig = function
+        and walkMemberSig membSig =
+            match membSig with
             | SynMemberSig.Inherit (t, _) -> walkType t
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.Interface(t, _) -> walkType t
@@ -661,7 +668,8 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> walkTypeDefnSigRepr repr)
                 |> Option.orElseWith (fun () -> List.tryPick walkMemberSig memberSigs)
 
-        and walkMember = function
+        and walkMember memb =
+            match memb with
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member(binding, _) -> walkBinding binding
             | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _, _) -> 

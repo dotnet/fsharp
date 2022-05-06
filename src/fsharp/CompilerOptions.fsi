@@ -79,12 +79,12 @@ val ignoreFailureOnMono1_1_16: (unit -> unit) -> unit
 
 val mutable enableConsoleColoring: bool
 
-val DoWithColor: ConsoleColor -> (unit -> 'a) -> 'a
+val DoWithColor: ConsoleColor -> (unit -> 'T) -> 'T
 
-val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'a) -> 'a
+val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'T) -> 'T
 
 val ReportTime: TcConfig -> string -> unit
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 
-val PostProcessCompilerArgs: string Set -> string [] -> string list
+val PostProcessCompilerArgs: Set<string> -> string [] -> string list

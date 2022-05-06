@@ -6554,7 +6554,7 @@ namespace ProviderImplementation.ProvidedTypes
     // implementation must support the operations used by the F# compiler to interrogate the reflection objects.
     //
     //     For a System.Assembly, the information must be sufficient to allow the Assembly --> ILScopeRef conversion
-    //     in ExtensionTyping.fs of the F# compiler. This requires:
+    //     in TypeProviders.fs of the F# compiler. This requires:
     //         Assembly.GetName()
     //
     //     For a System.Type representing a reference to a named type definition, the information must be sufficient

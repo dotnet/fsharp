@@ -44,8 +44,8 @@ type public FSharpImplementationFileDeclaration =
 
     /// Represents the declaration of a member, function or value, including the parameters and body of the member
     | MemberOrFunctionOrValue of value: FSharpMemberOrFunctionOrValue * curriedArgs: FSharpMemberOrFunctionOrValue list list * body: FSharpExpr
-    /// Represents the declaration of a static initialization action
 
+    /// Represents the declaration of a static initialization action
     | InitAction of action: FSharpExpr
 
 /// Represents a checked and reduced expression, as seen by the F# language.  The active patterns 

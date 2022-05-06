@@ -104,6 +104,7 @@ val mkNonLocalTyconRef: nleref: NonLocalEntityRef -> id: string -> EntityRef
 val mkNonLocalTyconRefPreResolved: x: NonNullSlot<Entity> -> nleref: NonLocalEntityRef -> id: string -> EntityRef
 
 type EntityRef with
+
     member NestedTyconRef: x: Entity -> EntityRef
     member RecdFieldRefInNestedTycon: tycon: Entity -> id: Ident -> RecdFieldRef
 

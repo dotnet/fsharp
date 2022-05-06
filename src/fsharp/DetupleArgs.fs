@@ -474,8 +474,8 @@ let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list
     (* type(transformedVal) tyfringes types replace initial arg types of f *)
     let tys1r = List.collect fst tyfringes  (* types for collapsed initial r args *)
     let tysrN = List.skip tyfringes.Length x1Ntys    (* types for remaining args *)
-    let argtys = tys1r @ tysrN
-    let fCty = mkLambdaTy g tps argtys rty
+    let argTys = tys1r @ tysrN
+    let fCty = mkLambdaTy g tps argTys rty
     let transformedVal =
         // Ensure that we have an g.CompilerGlobalState
         assert(g.CompilerGlobalState |> Option.isSome)

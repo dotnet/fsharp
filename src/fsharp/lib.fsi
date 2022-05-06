@@ -232,6 +232,11 @@ val bufs: f: (StringBuilder -> unit) -> string
 /// Writing to output stream via a string buffer.
 val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> 'a -> unit) -> x: 'a -> unit
 
+type StringBuilder with
+
+    /// Like Append, but returns unit
+    member AppendString: value: string -> unit
+
 type Graph<'Data, 'Id when 'Id: comparison> =
 
     new: nodeIdentity: ('Data -> 'Id) * nodes: 'Data list * edges: ('Data * 'Data) list -> Graph<'Data, 'Id>
@@ -270,6 +275,7 @@ module AsyncUtil =
         | AsyncOk of 'T
         | AsyncException of exn
         | AsyncCanceled of System.OperationCanceledException
+
         static member Commit: res: AsyncResult<'T> -> Async<'T>
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
@@ -287,6 +293,7 @@ module UnmanagedProcessExecutionOptions =
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of System.Lazy<'T>
+
     member Force: unit -> 'T
     member Value: 'T
 

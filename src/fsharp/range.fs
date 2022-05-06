@@ -369,7 +369,7 @@ module Position =
 
     let mkPos line column = Position (line, column)
 
-    let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
+    let outputPos (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
     let posGt (p1: pos) (p2: pos) =
         let p1Line = p1.Line
@@ -412,13 +412,15 @@ module Range =
         // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
         if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then m1 else 
 
-        let b =
-          if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
-          else m1
-        let e =
-          if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
-          else m2
-        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let start =
+            if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
+            else m1
+
+        let finish =
+            if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
+            else m2
+
+        let m = range (m1.FileIndex, start.StartLine, start.StartColumn, finish.EndLine, finish.EndColumn)
         if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
@@ -445,12 +447,14 @@ module Range =
         let startL, startC = r.StartLine, r.StartColumn
         let endL, _endC   = r.EndLine, r.EndColumn
         if endL <= startL then
-          r
+            r
         else
-          let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
-          range (r.FileIndex, startL, startC, endL, endC)
+            // Trim to the start of the next line (we do not know the end of the current line)
+            let endL, endC = startL+1, 0
+            range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
+    let stringOfRange (r:range) =
+        sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
     let toZ (m:range) = toZ m.Start, toZ m.End
 
@@ -465,10 +469,13 @@ module Range =
         try
             let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
             let nonWhiteLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrWhiteSpace s))
+
             match nonWhiteLine with
             | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
             | None ->
+
             let nonEmptyLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrEmpty s))
+
             match nonEmptyLine with
             | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
             | None -> mkRange file (mkPos 1 0) (mkPos 1 80)

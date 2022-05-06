@@ -896,8 +896,10 @@ let writeMdbInfo fmdb f info =
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically
     // Report an error if the assembly is not available.
     let wr =
-        try createWriter f
-        with e -> error(Error(FSComp.SR.ilwriteErrorCreatingMdb(), rangeCmdArgs))
+        try
+            createWriter f
+        with _ ->
+            error(Error(FSComp.SR.ilwriteErrorCreatingMdb(), rangeCmdArgs))
 
     // NOTE: MonoSymbolWriter doesn't need information about entrypoints, so 'info.EntryPoint' is unused here.
     // Write information about Documents. Returns '(SourceFileEntry*CompileUnitEntry)[]'

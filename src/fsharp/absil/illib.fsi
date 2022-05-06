@@ -407,13 +407,13 @@ module internal Cancellable =
     val canceled: unit -> Cancellable<'a>
 
     /// Implement try/finally for a cancellable computation
-    val inline catch : e:Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
+    val inline catch: comp: Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
 
     /// Implement try/finally for a cancellable computation
-    val inline tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
+    val inline tryFinally: comp: Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
 
     /// Implement try/with for a cancellable computation
-    val inline tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+    val inline tryWith: comp: Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
 
     val toAsync: Cancellable<'a> -> Async<'a>
 
@@ -421,9 +421,9 @@ type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member inline BindReturn: e:Cancellable<'T> * k:('T -> 'U) -> Cancellable<'U>
+    member inline BindReturn: comp:Cancellable<'T> * k:('T -> 'U) -> Cancellable<'U>
 
-    member inline Bind: e:Cancellable<'T> * k:('T -> Cancellable<'U>) -> Cancellable<'U>
+    member inline Bind: comp:Cancellable<'T> * k:('T -> Cancellable<'U>) -> Cancellable<'U>
 
     member inline Combine: e1:Cancellable<unit> * e2:Cancellable<'T> -> Cancellable<'T>
 
@@ -435,11 +435,11 @@ type internal CancellableBuilder =
 
     member inline ReturnFrom: v:Cancellable<'T> -> Cancellable<'T>
 
-    member inline TryFinally: e:Cancellable<'T> * compensation:(unit -> unit) -> Cancellable<'T>
+    member inline TryFinally: comp:Cancellable<'T> * compensation:(unit -> unit) -> Cancellable<'T>
 
-    member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
+    member inline TryWith: comp:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
+    member inline Using: resource:'c * comp:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
   

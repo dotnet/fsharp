@@ -196,12 +196,12 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
        //printfn "parseLoop: i = %d, fragLine = %d, fragCol = %d" i fragLine fragCol
 
        if i >= len then
-           let argtys =
+           let argTys =
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
-           argtys
+           argTys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           appendToDotnetFormatString fmt[i..i+1]
           parseLoop acc (i+2, fragLine, fragCol+2) fragments

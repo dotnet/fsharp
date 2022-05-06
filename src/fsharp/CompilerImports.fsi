@@ -21,7 +21,7 @@ open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// This exception is an old-style way of reporting a diagnostic

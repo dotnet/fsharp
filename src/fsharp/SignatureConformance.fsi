@@ -22,9 +22,9 @@ exception ValueNotContained of
     Val *
     (string * string * string -> string)
 
-exception ConstrNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
+exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
-exception ExnconstrNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
+exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
 exception FieldNotContained of DisplayEnv * InfoReader * Tycon * RecdField * RecdField * (string * string -> string)
 

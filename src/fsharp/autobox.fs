@@ -77,14 +77,14 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 let DecideExpr cenv exprF noInterceptF z expr  = 
     let g = cenv.g
     match stripDebugPoints expr with 
-    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy g m argvs rty 
+        let ty = mkMultiLambdaTy g m argvs bodyTy 
         DecideLambda (Some exprF) cenv topValInfo expr ty z
 
-    | Expr.TyLambda (_, tps, _, _m, rty)  -> 
+    | Expr.TyLambda (_, tps, _, _m, bodyTy)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-        let ty = mkForallTyIfNeeded tps rty 
+        let ty = mkForallTyIfNeeded tps bodyTy 
         DecideLambda (Some exprF)  cenv topValInfo expr ty z
 
     | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 

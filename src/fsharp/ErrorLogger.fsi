@@ -203,6 +203,7 @@ module ErrorLoggerExtensions =
     val ReraiseIfWatsonable: exn: exn -> unit
 
     type ErrorLogger with
+
         member ErrorR: exn: exn -> unit
         member Warning: exn: exn -> unit
         member Error: exn: exn -> 'b

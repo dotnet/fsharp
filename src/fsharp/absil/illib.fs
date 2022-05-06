@@ -810,32 +810,32 @@ module Cancellable =
     let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
-    let inline catch e = 
-        let (Cancellable f) = e
+    let inline catch comp = 
+        let (Cancellable f) = comp
         Cancellable (fun ct -> 
             try 
                 match f ct with 
-                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
-                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+                | ValueOrCancelled.Value res -> ValueOrCancelled.Value (Choice1Of2 res) 
+                | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn 
             with err -> 
                 ValueOrCancelled.Value (Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
-    let inline tryFinally e compensation =
-        catch e |> bind (fun res ->
+    let inline tryFinally comp compensation =
+        catch comp |> bind (fun res ->
             compensation()
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
 
     /// Implement try/with for a cancellable computation
-    let inline tryWith e handler = 
-        catch e |> bind (fun res ->
+    let inline tryWith comp handler = 
+        catch comp |> bind (fun res ->
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
 type CancellableBuilder() = 
 
-    member inline _.BindReturn(e, k) = Cancellable.map k e
+    member inline _.BindReturn(comp, k) = Cancellable.map k comp
 
-    member inline _.Bind(e, k) = Cancellable.bind k e
+    member inline _.Bind(comp, k) = Cancellable.bind k comp
 
     member inline _.Return v = Cancellable.ret v
 
@@ -845,11 +845,11 @@ type CancellableBuilder() =
 
     member inline _.For(es, f) = es |> Cancellable.each f 
 
-    member inline _.TryWith(e, handler) = Cancellable.tryWith e handler
+    member inline _.TryWith(comp, handler) = Cancellable.tryWith comp handler
 
-    member inline _.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+    member inline _.Using(resource, comp) = Cancellable.tryFinally (comp resource) (fun () -> (resource :> IDisposable).Dispose())
 
-    member inline _.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
+    member inline _.TryFinally(comp, compensation) =  Cancellable.tryFinally comp compensation
 
     member inline _.Delay f = Cancellable.delay f
 
@@ -874,9 +874,9 @@ type UniqueStampGenerator<'T when 'T : equality>() =
                 nItems <- nItems + 1
                 idx)
 
-    member this.Encode str = encode str
+    member _.Encode str = encode str
 
-    member this.Table = encodeTab.Keys
+    member _.Table = encodeTab.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
@@ -912,7 +912,7 @@ type LazyWithContextFailure(exn: exn) =
 /// on forcing back to at least one sensible user location
 [<DefaultAugmentation(false)>]
 [<NoEquality; NoComparison>]
-type LazyWithContext<'T, 'ctxt> = 
+type LazyWithContext<'T, 'Ctxt> = 
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
 
@@ -923,12 +923,12 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'Ctxt->'T, findOriginalException) : LazyWithContext<'T, 'Ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
 
-    static member NotLazy(x:'T) : LazyWithContext<'T, 'ctxt> = 
+    static member NotLazy(x:'T) : LazyWithContext<'T, 'Ctxt> = 
         { value = x
           funcOrException = null
           findOriginalException = id }
@@ -937,7 +937,7 @@ type LazyWithContext<'T, 'ctxt> =
 
     member x.IsForced = (match x.funcOrException with null -> true | _ -> false)
 
-    member x.Force(ctxt:'ctxt) = 
+    member x.Force(ctxt:'Ctxt) = 
         match x.funcOrException with 
         | null -> x.value 
         | _ -> 
@@ -954,15 +954,15 @@ type LazyWithContext<'T, 'ctxt> =
         | :? LazyWithContextFailure as res -> 
               // Re-raise the original exception 
               raise (x.findOriginalException res.Exception)
-        | :? ('ctxt -> 'T) as f -> 
+        | :? ('Ctxt -> 'T) as f -> 
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
                   let res = f ctxt 
                   x.value <- res
                   x.funcOrException <- null
                   res
-              with e -> 
-                  x.funcOrException <- box(LazyWithContextFailure(e))
+              with exn -> 
+                  x.funcOrException <- box(LazyWithContextFailure(exn))
                   reraise()
         | _ -> 
             failwith "unreachable"

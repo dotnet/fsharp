@@ -555,9 +555,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let pkSignatureSize pk =
                 try
                     signerSignatureSize pk
-                with e ->
-                  failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-                  0x80
+                with exn ->
+                    failwith ("A call to StrongNameSignatureSize failed ("+exn.Message+")")
+                    0x80
+
             match s with
             | PublicKeySigner pk -> pkSignatureSize pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko

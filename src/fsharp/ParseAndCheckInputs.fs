@@ -423,8 +423,8 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, filenam
             )
         input
 
-    with e ->
-        errorRecovery e rangeStartup
+    with exn ->
+        errorRecovery exn rangeStartup
         EmptyParsedInput(filename, isLastCompiland)
 
 let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
@@ -467,16 +467,16 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, filename, isLastC
 let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, retryLocked, stream: Stream) =
     try
        parseInputStreamAux(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, retryLocked, stream)
-    with e ->
-        errorRecovery e rangeStartup
+    with exn ->
+        errorRecovery exn rangeStartup
         EmptyParsedInput(filename, isLastCompiland)
 
 /// Parse an input from source text
 let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, sourceText: ISourceText) =
     try
        parseInputSourceTextAux(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, sourceText)
-    with e ->
-        errorRecovery e rangeStartup
+    with exn ->
+        errorRecovery exn rangeStartup
         EmptyParsedInput(filename, isLastCompiland)
 
 /// Parse an input from disk
@@ -484,8 +484,8 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, filename, isLastC
     try
        checkInputFile tcConfig filename
        parseInputFileAux(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, retryLocked)
-    with e ->
-        errorRecovery e rangeStartup
+    with exn ->
+        errorRecovery exn rangeStartup
         EmptyParsedInput(filename, isLastCompiland)
 
 /// Parse multiple input files from disk
