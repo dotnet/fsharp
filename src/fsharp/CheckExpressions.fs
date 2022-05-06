@@ -1866,7 +1866,8 @@ let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars
     let origTypars = declaredTyconTypars
     let freshTypars = copyTypars origTypars
     if rigid <> TyparRigidity.Rigid then
-        freshTypars |> List.iter (fun tp -> tp.SetRigidity rigid)
+        for tp in freshTypars do
+            tp.SetRigidity rigid
 
     let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
     let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)

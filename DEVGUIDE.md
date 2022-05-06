@@ -207,6 +207,20 @@ To fix this, delete these folders:
 
 Where `<version>` corresponds to the latest Visual Studio version on your machine.
 
+## Coding conventions
+
+* Coding conventions vary from file to file
+
+* Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
+
+* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generaly use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
+
+* Avoid abbreviations like `bodyty` that run together lowercase are bad, really hard to head for newcomers. Use `bodyTy` instead.
+
+* See the comiler docs for common abbreviations
+
+* Don't use `List.iter` and `Array.iter` in the compiler, a `for ... do ...` loop is simpler to read and debug
+
 ## Performance and debugging
 
 Use the `Debug` configuration to test your changes locally. It is the default. Do not use the `Release` configuration! Local development and testing of Visual Studio tooling is not designed for the `Release` configuration.
