@@ -28,6 +28,7 @@ val posOfLexPosition: p: Position -> pos
 val mkSynRange: p1: Position -> p2: Position -> range
 
 type LexBuffer<'Char> with
+
     member LexemeRange: range
 
 val lhs: parseState: IParseState -> range
@@ -37,6 +38,7 @@ val rhs2: parseState: IParseState -> i: int -> j: int -> range
 val rhs: parseState: IParseState -> i: int -> range
 
 type IParseState with
+
     member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
     member ResetSynArgNameGenerator: unit -> unit
 

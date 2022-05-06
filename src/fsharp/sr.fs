@@ -83,7 +83,7 @@ namespace FSharp.Compiler
             (unbox (capture [] typeof<'T> 0) : 'T)
 
         type ResourceString<'T>(fmtString : string, fmt : Printf.StringFormat<'T>) =
-            member a.Format =
+            member _.Format =
                 createMessageString fmtString fmt
 
         let DeclareResourceString (messageID : string,fmt : Printf.StringFormat<'T>) =

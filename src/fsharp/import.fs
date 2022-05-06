@@ -20,7 +20,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies 
@@ -259,19 +259,19 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
     // via CompilationThreadToken passing. We leave the two calls below as a reminder of this.
     //
     // This function is one major source of type provider activations, but not the only one: almost 
-    // any call in the 'ExtensionTyping' module is a potential type provider activation.
+    // any call in the 'TypeProviders' module is a potential type provider activation.
     let ctok = AssumeCompilationThreadWithoutEvidence ()
     RequireCompilationThread ctok
 
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray), m) then 
-        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m)))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
         mkArrayTy g (st.PUntaint((fun st -> st.GetArrayRank()), m))  elemTy m
     elif st.PUntaint((fun st -> st.IsByRef), m) then 
-        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m)))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer), m) then 
-        let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m)))
+        let elemTy = ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()), m))
         if isUnitTy g elemTy || isVoidTy g elemTy && g.voidptr_tcr.CanDeref then 
             mkVoidPtrTy g 
         else

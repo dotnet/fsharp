@@ -781,15 +781,18 @@ type TcConfigBuilder =
 
     member tcConfigB.AddIncludePath (m, path, pathIncludedFrom) =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
+
         let ok =
             let existsOpt =
                 try Some(FileSystem.DirectoryExistsShim absolutePath)
-                with e -> warning(Error(FSComp.SR.buildInvalidSearchDirectory path, m)); None
+                with _ -> warning(Error(FSComp.SR.buildInvalidSearchDirectory path, m)); None
+
             match existsOpt with
             | Some exists ->
                 if not exists then warning(Error(FSComp.SR.buildSearchDirectoryNotFound absolutePath, m))
                 exists
             | None -> false
+
         if ok && not (List.contains absolutePath tcConfigB.includes) then
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
 
