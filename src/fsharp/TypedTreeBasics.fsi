@@ -57,7 +57,8 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val mapTImplFile: f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
+val mapTImplFile:
+    f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
 
 val mapAccImplFile:
     f: ('a -> ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig * 'b) ->
