@@ -141,7 +141,9 @@ let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFie
       addFieldNeverAttrs = addFieldNeverAttrs }
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
+
 let mkILFuncTy cenv dty rty = mkILBoxedTy cenv.tref_Func[0] [dty;rty]
+
 let mkILCurriedFuncTy cenv dtys rty = List.foldBack (mkILFuncTy cenv) dtys rty
 
 let typ_Func cenv (dtys: ILType list) rty = 

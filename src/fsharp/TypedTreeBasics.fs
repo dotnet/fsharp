@@ -263,7 +263,7 @@ let stripUnitEqns unt = stripUnitEqnsAux false unt
 //---------------------------------------------------------------------------
 
 let mkLocalValRef (v: Val) = VRefLocal v
-let mkLocalModRef (v: ModuleOrNamespace) = ERefLocal v
+let mkLocalModuleRef (v: ModuleOrNamespace) = ERefLocal v
 let mkLocalEntityRef (v: Entity) = ERefLocal v
 
 let mkNonLocalCcuRootEntityRef ccu (x: Entity) = mkNonLocalTyconRefPreResolved x (mkNonLocalEntityRef ccu [| |]) x.LogicalName

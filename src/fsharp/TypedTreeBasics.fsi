@@ -57,15 +57,15 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val mapTImplFile: f: (ModuleOrNamespaceExprWithSig -> ModuleOrNamespaceExprWithSig) -> TypedImplFile -> TypedImplFile
+val mapTImplFile: f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
 
 val mapAccImplFile:
-    f: ('a -> ModuleOrNamespaceExprWithSig -> ModuleOrNamespaceExprWithSig * 'b) ->
+    f: ('a -> ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig * 'b) ->
     z: 'a ->
     TypedImplFile ->
         TypedImplFile * 'b
 
-val foldTImplFile: f: ('a -> ModuleOrNamespaceExprWithSig -> 'b) -> z: 'a -> TypedImplFile -> 'b
+val foldTImplFile: f: ('a -> ModuleOrNamespaceContentsWithSig -> 'b) -> z: 'a -> TypedImplFile -> 'b
 
 val typarEq: lv1: Typar -> lv2: Typar -> bool
 
@@ -144,7 +144,7 @@ val stripUnitEqns: unt: Measure -> Measure
 
 val mkLocalValRef: v: Val -> ValRef
 
-val mkLocalModRef: v: ModuleOrNamespace -> EntityRef
+val mkLocalModuleRef: v: ModuleOrNamespace -> EntityRef
 
 val mkLocalEntityRef: v: Entity -> EntityRef
 

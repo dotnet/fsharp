@@ -1469,7 +1469,7 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
         eenv
     | TMDefOpens _->
         eenv
-    | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) ->
+    | TMWithSig(ModuleOrNamespaceContentsWithSig(mtyp, _, _)) ->
         AddBindingsForLocalModuleType allocVal cloc eenv mtyp
     | TMDefs mdefs ->
         AddBindingsForModuleDefs allocVal cloc eenv mdefs
@@ -1502,7 +1502,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
             match mexpr with
-            | ModuleOrNamespaceExprWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
+            | ModuleOrNamespaceContentsWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
         else
             AddBindingsForLocalModuleType allocVal cloc eenv mexpr.Type)
 
@@ -7419,7 +7419,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
 
 
 and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
-    let (ModuleOrNamespaceExprWithSig(mty, def, _)) = x
+    let (ModuleOrNamespaceContentsWithSig(mty, def, _)) = x
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings
     // We use one scope for all the bindings in the module, which makes them all appear with their "default" values
     // rather than incrementally as we step through the initializations in the module. This is a little unfortunate
@@ -7480,7 +7480,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
         GenExpr cenv cgbuf eenv e discard
         eenv
 
-    | TMAbstract mexpr ->
+    | TMWithSig mexpr ->
         GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
         eenv
 

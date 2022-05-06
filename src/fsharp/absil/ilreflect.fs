@@ -57,9 +57,9 @@ type AssemblyBuilder with
 
 
 type ModuleBuilder with
-    member modB.GetArrayMethodAndLog (aty, nm, flags, retTy, argTys) =
-        if logRefEmitCalls then printfn "moduleBuilder%d.GetArrayMethod(%A, %A, %A, %A, %A)" (abs <| hash modB) aty nm flags retTy argTys
-        modB.GetArrayMethod(aty, nm, flags, retTy, argTys)
+    member modB.GetArrayMethodAndLog (arrayTy, nm, flags, retTy, argTys) =
+        if logRefEmitCalls then printfn "moduleBuilder%d.GetArrayMethod(%A, %A, %A, %A, %A)" (abs <| hash modB) arrayTy nm flags retTy argTys
+        modB.GetArrayMethod(arrayTy, nm, flags, retTy, argTys)
 
 #if !FX_RESHAPED_REFEMIT
     member modB.DefineDocumentAndLog (file, lang, vendor, doctype) =
@@ -590,8 +590,8 @@ let convTypesToArray cenv emEnv (tys: ILTypes) = convTypes cenv emEnv tys |> Lis
 let convCreatedType cenv emEnv ty = convTypeAux cenv emEnv true ty
 let convCreatedTypeRef cenv emEnv ty = convTypeRef cenv emEnv true ty
 
-let rec convParamModifiersOfType cenv emEnv (pty: ILType) =
-    [| match pty with
+let rec convParamModifiersOfType cenv emEnv (paramTy: ILType) =
+    [| match paramTy with
         | ILType.Modified (modreq, ty, modifiedTy) ->
             yield (modreq, convTypeRef cenv emEnv false ty)
             yield! convParamModifiersOfType cenv emEnv modifiedTy
@@ -1198,51 +1198,51 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         if shape = ILArrayShape.SingleDimensional then
             ilG.EmitAndLog (OpCodes.Ldelema, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let ety = aty.GetElementType()
+            let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
+            let elemTy = arrayTy.GetElementType()
             let argTys = Array.create shape.Rank typeof<int>
-            let retTy = ety.MakeByRefType()
-            let meth = modB.GetArrayMethodAndLog (aty, "Address", CallingConventions.HasThis, retTy, argTys)
+            let retTy = elemTy.MakeByRefType()
+            let meth = modB.GetArrayMethodAndLog (arrayTy, "Address", CallingConventions.HasThis, retTy, argTys)
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_ldelem_any (shape, ty) ->
         if shape = ILArrayShape.SingleDimensional then
             ilG.EmitAndLog (OpCodes.Ldelem, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let ety = aty.GetElementType()
+            let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
+            let elemTy = arrayTy.GetElementType()
             let meth =
 #if ENABLE_MONO_SUPPORT
                 // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
                 if runningOnMono then
-                    getArrayMethInfo shape.Rank ety
+                    getArrayMethInfo shape.Rank elemTy
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Get", CallingConventions.HasThis, ety, Array.create shape.Rank typeof<int> )
+                    modB.GetArrayMethodAndLog (arrayTy, "Get", CallingConventions.HasThis, elemTy, Array.create shape.Rank typeof<int> )
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_stelem_any (shape, ty) ->
         if shape = ILArrayShape.SingleDimensional then
             ilG.EmitAndLog (OpCodes.Stelem, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let ety = aty.GetElementType()
+            let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
+            let elemTy = arrayTy.GetElementType()
             let meth =
 #if ENABLE_MONO_SUPPORT
                 // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
                 if runningOnMono then
-                    setArrayMethInfo shape.Rank ety
+                    setArrayMethInfo shape.Rank elemTy
                 else
 #endif
-                    modB.GetArrayMethodAndLog(aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog(arrayTy, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ elemTy ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
         if shape = ILArrayShape.SingleDimensional then
             ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
+            let arrayTy = convType cenv emEnv (ILType.Array(shape, ty))
+            let meth = modB.GetArrayMethodAndLog(arrayTy, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen

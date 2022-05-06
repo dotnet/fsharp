@@ -100,9 +100,9 @@ type AttribInfo =
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
-              [ for argty, argval in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     ty, obj ]
 
     member x.NamedArguments = 
@@ -115,9 +115,9 @@ type AttribInfo =
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
-              [ for nm, argty, isProp, argval in namedArgs ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for nm, argTy, isProp, arg in namedArgs ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]
 

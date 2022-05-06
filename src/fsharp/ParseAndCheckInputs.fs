@@ -831,7 +831,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
 
 /// Dummy typed impl file that contains no definitions and is not used for emitting any kind of assembly.
 let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
-    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+    let dummyExpr = ModuleOrNamespaceContentsWithSig.ModuleOrNamespaceContentsWithSig(sigTy, ModuleOrNamespaceContents.TMDefs [], range.Zero)
     TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [], Map.empty)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)

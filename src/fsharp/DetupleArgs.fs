@@ -444,7 +444,7 @@ type Transform =
 // transform - mkTransform - decided, create necessary stuff
 //-------------------------------------------------------------------------
 
-let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list * Val list) list) =
+let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType list * Val list) list) =
     // Create formal choices for x1...xp under callPattern  
     let transformedFormals = 
         (callPattern, tyfringes) ||>  List.map2 (fun cpi (tyfringe, vs) -> 
@@ -475,7 +475,7 @@ let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list
     let tys1r = List.collect fst tyfringes  (* types for collapsed initial r args *)
     let tysrN = List.skip tyfringes.Length x1Ntys    (* types for remaining args *)
     let argTys = tys1r @ tysrN
-    let fCty = mkLambdaTy g tps argTys rty
+    let fCty = mkLambdaTy g tps argTys retTy
     let transformedVal =
         // Ensure that we have an g.CompilerGlobalState
         assert(g.CompilerGlobalState |> Option.isSome)
@@ -553,7 +553,7 @@ let decideFormalSuggestedCP g z tys vss =
 // transform - decideTransform
 //-------------------------------------------------------------------------
 
-let decideTransform g z v callPatterns (m, tps, vss: Val list list, rty) =
+let decideTransform g z v callPatterns (m, tps, vss: Val list list, retTy) =
     let tys = List.map (typeOfLambdaArg m) vss
 
     // NOTE: 'a in arg types may have been instanced at different tuples... 
@@ -578,7 +578,7 @@ let decideTransform g z v callPatterns (m, tps, vss: Val list list, rty) =
     if isTrivialCP callPattern then
         None // no transform 
     else
-        Some (v, mkTransform g v m tps tys rty (callPattern, tyfringes))
+        Some (v, mkTransform g v m tps tys retTy (callPattern, tyfringes))
 
 
 //-------------------------------------------------------------------------
@@ -605,13 +605,13 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
      match Zmap.tryFind f z.Defns with
      | None   -> None // no binding site, so no transform 
      | Some e -> 
-        let tps, vss, _b, rty = stripTopLambda (e, f.Type)
+        let tps, vss, _b, retTy = stripTopLambda (e, f.Type)
         match List.concat vss with
         | []      -> None // defn has no term args 
         | arg1 :: _ -> // consider f 
           let m = arg1.Range                       // mark of first arg, mostly for error reporting 
           let callPatterns = sitesCPs sites                   // callPatterns from sites 
-          decideTransform g z f callPatterns (m, tps, vss, rty) // make transform (if required) 
+          decideTransform g z f callPatterns (m, tps, vss, retTy) // make transform (if required) 
   
    let vtransforms = Zmap.chooseL selectTransform z.Uses
    let vtransforms = Zmap.ofList valOrder vtransforms
@@ -793,7 +793,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          bind
      | Some trans ->
          // fOrig has transform 
-         let tps, vss, body, rty = stripTopLambda (repr, fOrig.Type) 
+         let tps, vss, body, retTy = stripTopLambda (repr, fOrig.Type) 
          // transformedVal is curried version of fOrig 
          let transformedVal = trans.transformedVal
          // fCBody - parts - formals 
@@ -808,7 +808,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          let rebinds = List.concat (List.map2 transRebind transformedFormals x1ps)
          // fCBody - rebuild 
          // fCBody = TLambda tps. Lam formals. let rebinds in body 
-         let rbody, rt = mkLetsBind m rebinds body, rty
+         let rbody, rt = mkLetsBind m rebinds body, retTy
          let bind = mkMultiLambdaBind g transformedVal letSeqPtOpt m tps formals (rbody, rt)
          // result 
          bind

@@ -4048,6 +4048,15 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     List.map (ItemOfTy g) nestedTypes @
     List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
 
+// e.g. <val-id>.<property-id>.<more>
+// e.g. <val-id>.<property-id>.<more> 
+let FullTypeOfPropInfo g amap m (pinfo: PropInfo) = 
+    let ty = pinfo.GetPropertyType(amap, m) 
+    let ty = 
+        if pinfo.IsIndexer then 
+            mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) ty
+        else ty 
+    ty
 
 let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMeth m ad statics plid ty =
     let g = ncenv.g
@@ -4067,20 +4076,10 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       // e.g. <val-id>.<recdfield-id>.<more>
       (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
-      // e.g. <val-id>.<property-id>.<more>
-      // e.g. <val-id>.<property-id>.<more> 
-      let FullTypeOfPinfo (pinfo: PropInfo) = 
-          let rty = pinfo.GetPropertyType(amap, m) 
-          let rty = 
-              if pinfo.IsIndexer then 
-                  mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
-              else rty 
-          rty
-
       (ty
          |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
          |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
-         |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+         |> List.collect (fun pinfo -> (FullTypeOfPropInfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
       (if statics then []
        else
@@ -4772,23 +4771,13 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           for rfinfo in rfinfos do
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
 
-          // e.g. <val-id>.<property-id>.<more> 
-          let fullTypeOfPinfo (pinfo: PropInfo) = 
-              let rty = pinfo.GetPropertyType(amap, m) 
-              let rty = 
-                  if pinfo.IsIndexer then 
-                      mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
-                  else
-                      rty 
-              rty      
-
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
               |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
 
           for pinfo in pinfos do
-              yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+              yield! FullTypeOfPropInfo g amap m pinfo |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
 
           match TryFindAnonRecdFieldOfType g ty id with
           | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
@@ -4827,6 +4816,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
                       |> List.filter (fun vref -> not vref.IsMember && not (IsValUnseen ad g m vref))
                       |> List.map Item.Value
+
              | Item.UnionCase _ ->
              // Collect up the accessible discriminated union cases in the module
                   yield!
@@ -4834,6 +4824,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
                       |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
                       |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,  false))
+
              | Item.ActivePatternCase _ ->
              // Collect up the accessible active patterns in the module
                  yield!
@@ -4841,6 +4832,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> NameMap.range
                       |> List.filter (fun apref -> apref.ActivePatternVal |> IsValUnseen ad g m |> not)
                       |> List.map Item.ActivePatternCase
+
              | Item.ExnCase _ ->
              // Collect up the accessible F# exception declarations in the module
                  yield!

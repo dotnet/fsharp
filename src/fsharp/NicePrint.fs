@@ -652,8 +652,8 @@ module PrintTypes =
     and layoutTyparRef denv (typar: Typar) =
         tagTypeParameter 
             (sprintf "%s%s%s"
-                (if denv.showConstraintTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
-                (if denv.showImperativeTyparAnnotations then prefixOfRigidTypar typar else "")
+                (if denv.showStaticallyResolvedTyparAnnotations then prefixOfStaticReq typar.StaticReq else "'")
+                (if denv.showInferenceTyparAnnotations then prefixOfInferenceTypar typar else "")
                 typar.DisplayName)
         |> mkNav typar.Range
         |> wordL
@@ -2196,11 +2196,11 @@ module InferredSigPrinting =
             | TMDefDo _ -> true
             | TMDefOpens _ -> false
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
-            | TMAbstract(ModuleOrNamespaceExprWithSig(_, def, _)) -> isConcreteNamespace def
+            | TMWithSig(ModuleOrNamespaceContentsWithSig(_, def, _)) -> isConcreteNamespace def
 
-        let rec imexprLP denv (ModuleOrNamespaceExprWithSig(_, def, _)) = imdefL denv def
+        let rec imexprLP denv (ModuleOrNamespaceContentsWithSig(_, def, _)) = imdefL denv def
 
-        and imexprL denv (ModuleOrNamespaceExprWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceExprWithSig(mty, def, m))
+        and imexprL denv (ModuleOrNamespaceContentsWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceContentsWithSig(mty, def, m))
 
         and imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
@@ -2244,7 +2244,7 @@ module InferredSigPrinting =
 
             | TMDefDo _ -> emptyL
 
-            | TMAbstract mexpr -> imexprLP denv mexpr
+            | TMWithSig mexpr -> imexprLP denv mexpr
 
         and imbindL denv (mspec, def) = 
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
@@ -2464,7 +2464,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
 
     // try denv + no type annotations 
     let attempt1 = 
-        let denv = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2475,7 +2475,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
 
     // try denv + no type annotations + show full paths
     let attempt2 = 
-        let denv = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }.SetOpenPaths []
+        let denv = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }.SetOpenPaths []
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, "") else None
@@ -2516,19 +2516,19 @@ let minimalStringsOfTwoTypes denv t1 t2=
     
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader v1 v2= 
-    let denvMin = { denv with showImperativeTyparAnnotations=true; showConstraintTyparAnnotations=false }
+    let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
     let min1 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v1)
     let min2 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v2) 
     if min1 <> min2 then 
         (min1, min2) 
     else
-        let denvMax = { denv with showImperativeTyparAnnotations=true; showConstraintTyparAnnotations=true }
+        let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
         let max1 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v1)
         let max2 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v2) 
         max1, max2
     
 let minimalStringOfType denv ty = 
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-    let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
+    let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
