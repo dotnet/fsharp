@@ -46,11 +46,11 @@ type IRawFSharpAssemblyData =
 
     /// Get the raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData:
-        range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        m: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     /// Get the raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+        m: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     /// Get the table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -171,17 +171,17 @@ type PackageManagerLine =
         directive: Directive ->
         line: string ->
         m: range ->
-        packageMangerLines: Map<string, PackageManagerLine list> ->
+        packageManagerLines: Map<string, PackageManagerLine list> ->
             Map<string, PackageManagerLine list>
 
     static member RemoveUnprocessedLines:
         packageKey: string ->
-        packageMangerLines: Map<string, PackageManagerLine list> ->
+        packageManagerLines: Map<string, PackageManagerLine list> ->
             Map<string, PackageManagerLine list>
 
     static member SetLinesAsProcessed:
         packageKey: string ->
-        packageMangerLines: Map<string, PackageManagerLine list> ->
+        packageManagerLines: Map<string, PackageManagerLine list> ->
             Map<string, PackageManagerLine list>
 
     static member StripDependencyManagerKey: packageKey: string -> line: string -> string
