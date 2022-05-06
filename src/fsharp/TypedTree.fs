@@ -5238,7 +5238,7 @@ type TypedAssemblyAfterOptimization =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuData = 
     {
-      /// Holds the filename for the DLL, if any 
+      /// Holds the file name for the DLL, if any 
       FileName: string option 
       
       /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
@@ -5354,7 +5354,7 @@ type CcuThunk =
     /// A unique stamp for this assembly
     member ccu.Stamp = ccu.Deref.Stamp
 
-    /// Holds the filename for the assembly, if any 
+    /// Holds the file name for the assembly, if any 
     member ccu.FileName = ccu.Deref.FileName
 
     /// Try to get the .NET Assembly, if known. May not be present for `IsFSharp` for

@@ -158,11 +158,11 @@ val rescopePubPathToParent: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityR
 /// From Ref_private to Ref_nonlocal when exporting data.
 val rescopePubPath: viewedCcu: CcuThunk -> PublicPath -> NonLocalEntityRef
 
-val valRefInThisAssembly: compilingFslib: bool -> x: ValRef -> bool
+val valRefInThisAssembly: compilingFSharpCore: bool -> x: ValRef -> bool
 
-val tyconRefUsesLocalXmlDoc: compilingFslib: bool -> x: TyconRef -> bool
+val tyconRefUsesLocalXmlDoc: compilingFSharpCore: bool -> x: TyconRef -> bool
 
-val entityRefInThisAssembly: compilingFslib: bool -> x: EntityRef -> bool
+val entityRefInThisAssembly: compilingFSharpCore: bool -> x: EntityRef -> bool
 
 val arrayPathEq: y1: string [] -> y2: string [] -> bool
 
@@ -187,10 +187,10 @@ val fslibValRefEq: fslibCcu: CcuThunk -> vref1: ValRef -> vref2: ValRef -> bool
 
 /// Primitive routine to compare two EntityRef's for equality
 /// This takes into account the possibility that they may have type forwarders
-val primEntityRefEq: compilingFslib: bool -> fslibCcu: CcuThunk -> x: EntityRef -> y: EntityRef -> bool
+val primEntityRefEq: compilingFSharpCore: bool -> fslibCcu: CcuThunk -> x: EntityRef -> y: EntityRef -> bool
 
 /// Primitive routine to compare two UnionCaseRef's for equality
-val primUnionCaseRefEq: compilingFslib: bool -> fslibCcu: CcuThunk -> UnionCaseRef -> UnionCaseRef -> bool
+val primUnionCaseRefEq: compilingFSharpCore: bool -> fslibCcu: CcuThunk -> UnionCaseRef -> UnionCaseRef -> bool
 
 /// Primitive routine to compare two ValRef's for equality. On the whole value identity is not particularly
 /// significant in F#. However it is significant for
@@ -199,7 +199,7 @@ val primUnionCaseRefEq: compilingFslib: bool -> fslibCcu: CcuThunk -> UnionCaseR
 ///        and quotation splicing
 ///
 /// Note this routine doesn't take type forwarding into account
-val primValRefEq: compilingFslib: bool -> fslibCcu: CcuThunk -> x: ValRef -> y: ValRef -> bool
+val primValRefEq: compilingFSharpCore: bool -> fslibCcu: CcuThunk -> x: ValRef -> y: ValRef -> bool
 
 val fullCompPathOfModuleOrNamespace: m: ModuleOrNamespace -> CompilationPath
 

@@ -1632,8 +1632,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
       | HashDirectiveNotAllowedInNonScript _ ->
           os.AppendString(HashDirectiveNotAllowedInNonScriptE().Format)
 
-      | FileNameNotResolved(filename, locations, _) ->
-          os.AppendString(FileNameNotResolvedE().Format filename locations)
+      | FileNameNotResolved(fileName, locations, _) ->
+          os.AppendString(FileNameNotResolvedE().Format fileName locations)
 
       | AssemblyNotResolved(originalName, _) ->
           os.AppendString(AssemblyNotResolvedE().Format originalName)
@@ -1662,8 +1662,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
           | Some file -> os.AppendString(InvalidInternalsVisibleToAssemblyName1E().Format badName file)
           | None -> os.AppendString(InvalidInternalsVisibleToAssemblyName2E().Format badName)
 
-      | LoadedSourceNotFoundIgnoring(filename, _) ->
-          os.AppendString(LoadedSourceNotFoundIgnoringE().Format filename)
+      | LoadedSourceNotFoundIgnoring(fileName, _) ->
+          os.AppendString(LoadedSourceNotFoundIgnoringE().Format fileName)
 
       | MSBuildReferenceResolutionWarning(code, message, _)
 
@@ -1708,11 +1708,10 @@ let OutputPhasedDiagnostic (os: StringBuilder) (diag: PhasedDiagnostic) (flatten
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
-    //  - fsi.exe sometimes passes "stdin" as a dummy filename
+    //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
     //        # 1000 "Line01.fs"
     //    then it also asserts. But these are edge cases that can be fixed later, e.g. in bug 4651.
-    //System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim fileName, sprintf "filename should be absolute: '%s'" fileName)
     try
         let fullPath = FileSystem.GetFullPathShim fileName
         let currentDir = implicitIncludeDir
@@ -1892,10 +1891,10 @@ let OutputDiagnosticContext prefix fileLineFunction os diag =
     match GetRangeOfDiagnostic diag with
     | None -> ()
     | Some m ->
-        let filename = m.FileName
+        let fileName = m.FileName
         let lineA = m.StartLine
         let lineB = m.EndLine
-        let line = fileLineFunction filename lineA
+        let line = fileLineFunction fileName lineA
         if line<>"" then
             let iA = m.StartColumn
             let iB = m.EndColumn

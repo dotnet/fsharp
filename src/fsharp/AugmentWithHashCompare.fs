@@ -826,7 +826,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
 
 let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon: Tycon) = 
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
-    let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
+    let isUnit = g.compilingFSharpCore && tycon.DisplayName = "Unit"
     not isUnit && 
     not (isByrefLikeTyconRef g tycon.Range (mkLocalTyconRef tycon)) &&
     match getAugmentationAttribs g tycon with 
@@ -841,7 +841,7 @@ let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon: Tycon) =
 
 let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon: Tycon) = 
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
-    let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
+    let isUnit = g.compilingFSharpCore && tycon.DisplayName = "Unit"
     not isUnit && 
     not (isByrefLikeTyconRef g tycon.Range (mkLocalTyconRef tycon)) &&
 

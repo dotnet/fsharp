@@ -3178,7 +3178,7 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (filename: string) =
+    let setExecutablePermission (fileName: string) =
 
 #if ENABLE_MONO_SUPPORT
       if runningOnMono then
@@ -3186,7 +3186,7 @@ module FileSystemUtilities =
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |], CultureInfo.InvariantCulture)
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
             let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
             let prevPermissionsValue = prevPermissions |> unbox<int>
             let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
@@ -3198,7 +3198,7 @@ module FileSystemUtilities =
             // Fail silently
       else
 #else
-        ignore filename
+        ignore fileName
 #endif
         ()
 

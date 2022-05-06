@@ -324,7 +324,7 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
 
     /// Create a tokenizer for a source file.
-    new : conditionalDefines:string list * filename:string option -> FSharpSourceTokenizer
+    new : conditionalDefines:string list * fileName:string option -> FSharpSourceTokenizer
 
     /// Create a tokenizer for a line of this source file
     member CreateLineTokenizer: lineText:string -> FSharpLineTokenizer

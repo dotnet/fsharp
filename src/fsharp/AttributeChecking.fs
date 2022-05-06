@@ -251,7 +251,7 @@ let langVersionPrefix = "--langversion:preview"
 /// returning errors and warnings as data
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
     let isExperimentalAttributeDisabled (s:string) =
-        if g.compilingFslib then
+        if g.compilingFSharpCore then
             true
         else
             g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -282,7 +282,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             // If we are using a compiler that supports nameof then error 3501 is always suppressed.
             // See attribute on FSharp.Core 'nameof'
             if n = 3501 then CompleteD
-            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            elif isError && (not g.compilingFSharpCore || n <> 1204) then ErrorD msg 
             else WarnD msg
         | _ -> 
             CompleteD

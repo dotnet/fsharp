@@ -623,13 +623,13 @@ module PrintTypes =
               // Always show the 'Struct', 'Class, 'Interface' attributes if needed
               match startOpt with 
               | Some "struct" ->
-                wordL (tagClass "Struct")
+                  wordL (tagClass "Struct")
               | Some "class" ->
-                wordL (tagClass "Class")
+                  wordL (tagClass "Class")
               | Some "interface" ->
-                wordL (tagClass "Interface")
+                  wordL (tagClass "Interface")
               | _ ->
-                ()
+                  ()
 
               // Always show the 'Literal' attribute if needed
               if isLiteral then
@@ -2461,32 +2461,38 @@ let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 /// annotations and/or fully qualifying paths then don't show them! 
 let minimalStringsOfTwoTypes denv t1 t2= 
     let (t1, t2), tpcs = PrettyTypes.PrettifyTypePair denv.g (t1, t2)
+
     // try denv + no type annotations 
     let attempt1 = 
         let denv = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, "") else None
+
     match attempt1 with 
     | Some res -> res
     | None -> 
+
     // try denv + no type annotations + show full paths
     let attempt2 = 
         let denv = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }.SetOpenPaths []
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, "") else None
-        // try denv 
+
     match attempt2 with 
     | Some res -> res
     | None -> 
+
     let attempt3 = 
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, stringOfTyparConstraints denv tpcs) else None
+
     match attempt3 with 
     | Some res -> res 
     | None -> 
+
     let attempt4 = 
         // try denv + show full paths + static parameters
         let denv = denv.SetOpenPaths []
@@ -2494,6 +2500,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
         if min1 <> min2 then Some (min1, min2, stringOfTyparConstraints denv tpcs) else None
+
     match attempt4 with
     | Some res -> res
     | None ->

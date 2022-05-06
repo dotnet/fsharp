@@ -544,8 +544,8 @@ module rec Compiler =
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : CompilationResult =
         let outputPath = tryCreateTemporaryDirectory()
         Directory.CreateDirectory(outputPath) |> ignore
-        let filename = compilation.AssemblyName
-        let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
+        let fileName = compilation.AssemblyName
+        let output = Path.Combine(outputPath, Path.ChangeExtension(fileName, ".dll"))
         let cmplResult = compilation.Emit (output)
         let result =
             { OutputPath   = None

@@ -2072,7 +2072,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
     asmB
 
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
-    let filename = assemblyName + ".dll"
+    let fileName = assemblyName + ".dll"
     let asmDir = "."
     let asmName = AssemblyName()
     asmName.Name <- assemblyName
@@ -2090,7 +2090,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collect
         let daBuilder = CustomAttributeBuilder(daCtor, [| System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations ||| System.Diagnostics.DebuggableAttribute.DebuggingModes.Default |])
         asmB.SetCustomAttributeAndLog daBuilder
 
-    let modB = asmB.DefineDynamicModuleAndLog (assemblyName, filename, debugInfo)
+    let modB = asmB.DefineDynamicModuleAndLog (assemblyName, fileName, debugInfo)
     asmB, modB
 
 let EmitDynamicAssemblyFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, modul: ILModuleDef, debugInfo: bool, resolveAssemblyRef, tryFindSysILTypeRef) =

@@ -328,4 +328,4 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
 
 type IXmlDocumentationInfoLoader =
 
-    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option
+    abstract TryLoad: assemblyFileName: string * ilModuleDef: ILModuleDef -> XmlDocumentationInfo option

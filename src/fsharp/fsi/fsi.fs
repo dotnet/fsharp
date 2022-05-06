@@ -702,13 +702,13 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
         syphonText.Append str |> ignore
 
     /// Gets the indicated line in the syphon text
-    member _.GetLine filename i =
-        if filename <> stdinMockFilename then
+    member _.GetLine fileName i =
+        if fileName <> stdinMockFileName then
             ""
         else
             let text = syphonText.ToString()
-            // In Visual Studio, when sending a block of text, it  prefixes  with '# <line> "filename"\n'
-            // and postfixes with '# 1 "stdin"\n'. To first, get errors filename context,
+            // In Visual Studio, when sending a block of text, it  prefixes  with '# <line> "file name"\n'
+            // and postfixes with '# 1 "stdin"\n'. To first, get errors file name context,
             // and second to get them back into stdin context (no position stack...).
             // To find an error line, trim upto the last stdinReset string the syphoned text.
             //printf "PrePrune:-->%s<--\n\n" text;
@@ -1369,7 +1369,7 @@ type internal FsiDynamicCompiler(
             dynamicAssemblies.Add(assemBuilder)
             Some (assemBuilder, moduleBuilder)
 
-    let rangeStdin0 = rangeN stdinMockFilename 0
+    let rangeStdin0 = rangeN stdinMockFileName 0
 
     //let _writer = moduleBuilder.GetSymWriter()
 
@@ -1802,7 +1802,7 @@ type internal FsiDynamicCompiler(
 
     /// Evaluate the given definitions and produce a new interactive state.
     member _.EvalParsedDefinitions (ctok, errorLogger: ErrorLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
-        let filename = stdinMockFilename
+        let fileName = stdinMockFileName
         let i = nextFragmentId()
         let m = match defs with [] -> rangeStdin0 | _ -> List.reduce unionRanges [for d in defs -> d.Range] 
         let prefix = mkFragmentPath m i
@@ -1810,7 +1810,7 @@ type internal FsiDynamicCompiler(
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m, { ModuleKeyword = None; NamespaceKeyword = None })
         let isLastCompiland = true
         let isExe = false
-        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (fileName,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
         let isIncrementalFragment = true
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState
@@ -2410,7 +2410,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
-        let rangeStdin0 = rangeN stdinMockFilename 0
+        let rangeStdin0 = rangeN stdinMockFileName 0
 
         let resolveAssembly = ResolveEventHandler(fun _ args ->
             // Explanation: our understanding is that magic assembly resolution happens
@@ -2440,8 +2440,8 @@ type FsiStdinLexerProvider
 
     // #light is the default for FSI
     let lightStatus =
-        let initialLightSyntaxStatus = tcConfigB.light <> Some false
-        LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
+        let initialIndentationAwareSyntaxStatus = (tcConfigB.indentationAwareSyntax <> Some false)
+        IndentationAwareSyntaxStatus (initialIndentationAwareSyntaxStatus, false (* no warnings *))
 
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
         UnicodeLexing.FunctionAsLexbuf
@@ -2479,7 +2479,7 @@ type FsiStdinLexerProvider
         let skip = true  // don't report whitespace from lexer
         let defines = tcConfigB.conditionalDefines
         let lexargs = mkLexargs (defines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty)
-        let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
+        let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
     // Create a new lexer to read stdin
@@ -2495,7 +2495,7 @@ type FsiStdinLexerProvider
                 LexbufFromLineReader fsiStdinSyphon (fun () -> fsiConsoleInput.In.ReadLine() |> removeZeroCharsFromString)
 
         fsiStdinSyphon.Reset()
-        CreateLexerForLexBuffer (stdinMockFilename, lexbuf, errorLogger)
+        CreateLexerForLexBuffer (stdinMockFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
@@ -2564,7 +2564,7 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0
             istate, CompletedWithReportedError e
 
-    let rangeStdin0 = rangeN stdinMockFilename 0
+    let rangeStdin0 = rangeN stdinMockFileName 0
 
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2907,7 +2907,7 @@ type FsiInteractionProcessor
     /// Perform an "include" on a script file (i.e. a script file specified on the command line)
     member processor.EvalIncludedScript (ctok, istate, sourceFile, m, errorLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate=false)
-        // Resolve the filename to an absolute filename
+        // Resolve the file name to an absolute file name
         let sourceFile = tcConfig.ResolveSourceFile(m, sourceFile, tcConfig.implicitIncludeDir)
         // During the processing of the file, further filenames are
         // resolved relative to the home directory of the loaded file.

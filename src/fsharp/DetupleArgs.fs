@@ -257,7 +257,7 @@ module GlobalUsageAnalysis =
     //   - tmethods
     let UsageFolders (g: TcGlobals) =
       let foldLocalVal f z (vref: ValRef) = 
-          if valRefInThisAssembly g.compilingFslib vref then f z vref.Deref
+          if valRefInThisAssembly g.compilingFSharpCore vref then f z vref.Deref
           else z
 
       let exprUsageIntercept exprF noInterceptF z origExpr =

@@ -46,39 +46,40 @@ let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
 
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
 
-let FSharpLightSyntaxFileSuffixes: string list = [ ".fs";".fsscript";".fsx";".fsi" ]
+let FSharpIndentationAwareSyntaxFileSuffixes = [ ".fs";".fsscript";".fsx";".fsi" ]
 
 //--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
 
-exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
-exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
+exception FileNameNotResolved of searchedLocations: string * fileName: string * range: range
 
-/// Will return None if the filename is not found.
-let TryResolveFileUsingPaths(paths, m, name) =
+exception LoadedSourceNotFoundIgnoring of fileName: string * range: range
+
+/// Will return None if the fileName is not found.
+let TryResolveFileUsingPaths(paths, m, fileName) =
     let () =
-        try FileSystem.IsPathRootedShim name |> ignore
-        with :? ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(name, e.Message), m))
-    if FileSystem.IsPathRootedShim name then
-        if FileSystem.FileExistsShim name then
-            Some name
+        try FileSystem.IsPathRootedShim fileName |> ignore
+        with :? ArgumentException as e -> error(Error(FSComp.SR.buildProblemWithFilename(fileName, e.Message), m))
+    if FileSystem.IsPathRootedShim fileName then
+        if FileSystem.FileExistsShim fileName then
+            Some fileName
         else
             None
     else
         let res = paths |> Seq.tryPick (fun path ->
-            let n = Path.Combine(path, name)
+            let n = Path.Combine(path, fileName)
             if FileSystem.FileExistsShim n then Some n
             else None)
         res
 
-/// Will raise FileNameNotResolved if the filename was not found
-let ResolveFileUsingPaths(paths, m, name) =
-    match TryResolveFileUsingPaths(paths, m, name) with
+/// Will raise FileNameNotResolved if the fileName was not found
+let ResolveFileUsingPaths(paths, m, fileName) =
+    match TryResolveFileUsingPaths(paths, m, fileName) with
     | Some res -> res
     | None ->
         let searchMessage = String.concat "\n " paths
-        raise (FileNameNotResolved(name, searchMessage, m))
+        raise (FileNameNotResolved(fileName, searchMessage, m))
 
 let GetWarningNumber(m, warningNumber: string) =
     try
@@ -175,15 +176,18 @@ type IRawFSharpAssemblyData =
 
     abstract ShortAssemblyName: string
 
+    /// Indicates if the assembly has any F# signature data attribute
     abstract HasAnyFSharpSignatureDataAttribute: bool
 
+    /// Indicates if the assembly has an F# signature data attribute auitable for use with this version of F# tooling
     abstract HasMatchingFSharpSignatureDataAttribute: bool
 
 /// Cache of time stamps as we traverse a project description
 type TimeStampCache(defaultTimeStamp: DateTime) =
     let files = ConcurrentDictionary<string, DateTime>()
     let projects = ConcurrentDictionary<IProjectReference, DateTime>(HashIdentity.Reference)
-    member cache.GetFileTimeStamp fileName =
+
+    member _.GetFileTimeStamp fileName =
         let ok, v = files.TryGetValue fileName
         if ok then v else
         let v =
@@ -195,11 +199,11 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
         files[fileName] <- v
         v
 
-    member cache.GetProjectReferenceTimeStamp (pr: IProjectReference) =
-        let ok, v = projects.TryGetValue pr
+    member cache.GetProjectReferenceTimeStamp (projectReference: IProjectReference) =
+        let ok, v = projects.TryGetValue projectReference
         if ok then v else
-        let v = defaultArg (pr.TryGetLogicalTimeStamp cache) defaultTimeStamp
-        projects[pr] <- v
+        let v = defaultArg (projectReference.TryGetLogicalTimeStamp cache) defaultTimeStamp
+        projects[projectReference] <- v
         v
 
 and [<RequireQualifiedAccess>]
@@ -222,7 +226,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache -> DateTime option
+    abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
 type AssemblyReference =
     | AssemblyReference of range * string * IProjectReference option
@@ -343,15 +347,15 @@ type TcConfigBuilder =
       mutable implicitIncludeDir: string (* normally "." *)
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
       defaultFSharpBinariesDir: string
-      mutable compilingFslib: bool
+      mutable compilingFSharpCore: bool
       mutable useIncrementalBuilder: bool
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
-      mutable framework: bool
+      mutable implicitlyReferenceDotNetAssemblies: bool
       mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
-      mutable light: bool option
+      mutable indentationAwareSyntax: bool option
       mutable conditionalDefines: string list
       mutable loadedSources: (range * string * string) list
       mutable compilerToolPaths: string list
@@ -478,7 +482,7 @@ type TcConfigBuilder =
 
       isInvalidationSupported: bool
 
-      /// If true - every expression in quotations will be augmented with full debug info (filename, location in file)
+      /// If true - every expression in quotations will be augmented with full debug info (fileName, location in file)
       mutable emitDebugInfoInQuotations: bool
 
       mutable exename: string option
@@ -557,12 +561,12 @@ type TcConfigBuilder =
         // These are all default values, many can be overridden using the command line switch
         {
           primaryAssembly = PrimaryAssembly.Mscorlib
-          light = None
+          indentationAwareSyntax = None
           noFeedback = false
           stackReserveSize = None
           conditionalDefines = []
           openDebugInformationForLaterStaticLinking = false
-          compilingFslib = false
+          compilingFSharpCore = false
           useIncrementalBuilder = false
           implicitOpens = []
           includes = []
@@ -810,11 +814,11 @@ type TcConfigBuilder =
             if not (List.contains path (List.map (fun (_, _, path) -> path) tcConfigB.loadedSources)) then
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m, originalPath, path)
 
-    member tcConfigB.AddEmbeddedSourceFile file =
-        tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
+    member tcConfigB.AddEmbeddedSourceFile fileName =
+        tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ fileName
 
-    member tcConfigB.AddEmbeddedResource filename =
-        tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
+    member tcConfigB.AddEmbeddedResource fileName =
+        tcConfigB.embedResources <- tcConfigB.embedResources ++ fileName
 
     member tcConfigB.AddCompilerToolsByPath path =
         if not (tcConfigB.compilerToolPaths  |> List.exists (fun text -> path = text)) then // NOTE: We keep same paths if range is different.
@@ -902,13 +906,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let computeKnownDllReference libraryName =
         let defaultCoreLibraryReference = AssemblyReference(range0, libraryName+".dll", None)
-        let nameOfDll(r: AssemblyReference) =
-            let filename = ComputeMakePathAbsolute data.implicitIncludeDir r.Text
-            if FileSystem.FileExistsShim filename then
-                r, Some filename
+        let nameOfDll (assemRef: AssemblyReference) =
+            let fileName = ComputeMakePathAbsolute data.implicitIncludeDir assemRef.Text
+            if FileSystem.FileExistsShim fileName then
+                assemRef, Some fileName
             else
                 // If the file doesn't exist, let reference resolution logic report the error later...
-                defaultCoreLibraryReference, if equals r.Range rangeStartup then Some(filename) else None
+                defaultCoreLibraryReference, if equals assemRef.Range rangeStartup then Some fileName else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [] -> defaultCoreLibraryReference, None
         | [r]
@@ -934,13 +938,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     let clrRootValue, targetFrameworkVersionValue =
         match primaryAssemblyExplicitFilenameOpt with
         | Some primaryAssemblyFilename ->
-            let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
+            let fileName = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try
-                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim filename))
+                let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim fileName))
                 clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
-                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
+                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(fileName, e.Message), rangeStartup))
         | None ->
 #if !ENABLE_MONO_SUPPORT
             // TODO: we have to get msbuild out of this
@@ -1031,135 +1035,135 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
 
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
-    member x.FxResolver = data.FxResolver
-    member x.primaryAssembly = data.primaryAssembly
-    member x.noFeedback = data.noFeedback
-    member x.stackReserveSize = data.stackReserveSize
-    member x.implicitIncludeDir = data.implicitIncludeDir
-    member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
-    member x.fsharpBinariesDir = data.defaultFSharpBinariesDir
-    member x.compilingFslib = data.compilingFslib
-    member x.useIncrementalBuilder = data.useIncrementalBuilder
-    member x.includes = data.includes
-    member x.implicitOpens = data.implicitOpens
-    member x.useFsiAuxLib = data.useFsiAuxLib
-    member x.framework = data.framework
-    member x.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
-    member x.resolutionEnvironment = data.resolutionEnvironment
-    member x.light = data.light
-    member x.conditionalDefines = data.conditionalDefines
-    member x.loadedSources = data.loadedSources
-    member x.compilerToolPaths = data.compilerToolPaths
-    member x.referencedDLLs = data.referencedDLLs
-    member x.knownUnresolvedReferences = data.knownUnresolvedReferences
-    member x.clrRoot = clrRootValue
-    member x.reduceMemoryUsage = data.reduceMemoryUsage
-    member x.subsystemVersion = data.subsystemVersion
-    member x.useHighEntropyVA = data.useHighEntropyVA
-    member x.inputCodePage = data.inputCodePage
-    member x.embedResources = data.embedResources
-    member x.errorSeverityOptions = data.errorSeverityOptions
-    member x.mlCompatibility = data.mlCompatibility
-    member x.checkOverflow = data.checkOverflow
-    member x.showReferenceResolutions = data.showReferenceResolutions
-    member x.outputDir = data.outputDir
-    member x.outputFile = data.outputFile
-    member x.platform = data.platform
-    member x.prefer32Bit = data.prefer32Bit
-    member x.useSimpleResolution = data.useSimpleResolution
-    member x.target = data.target
-    member x.debuginfo = data.debuginfo
-    member x.testFlagEmitFeeFeeAs100001 = data.testFlagEmitFeeFeeAs100001
-    member x.dumpDebugInfo = data.dumpDebugInfo
-    member x.debugSymbolFile = data.debugSymbolFile
-    member x.typeCheckOnly = data.typeCheckOnly
-    member x.parseOnly = data.parseOnly
-    member x.importAllReferencesOnly = data.importAllReferencesOnly
-    member x.simulateException = data.simulateException
-    member x.printAst = data.printAst
-    member x.targetFrameworkVersion = targetFrameworkVersionValue
-    member x.tokenize = data.tokenize
-    member x.testInteractionParser = data.testInteractionParser
-    member x.reportNumDecls = data.reportNumDecls
-    member x.printSignature = data.printSignature
-    member x.printSignatureFile = data.printSignatureFile
-    member x.printAllSignatureFiles = data.printAllSignatureFiles
-    member x.xmlDocOutputFile = data.xmlDocOutputFile
-    member x.stats = data.stats
-    member x.generateFilterBlocks = data.generateFilterBlocks
-    member x.signer = data.signer
-    member x.container = data.container
-    member x.delaysign = data.delaysign
-    member x.publicsign = data.publicsign
-    member x.version = data.version
-    member x.metadataVersion = data.metadataVersion
-    member x.standalone = data.standalone
-    member x.extraStaticLinkRoots = data.extraStaticLinkRoots
-    member x.noSignatureData = data.noSignatureData
-    member x.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
-    member x.useOptimizationDataFile = data.useOptimizationDataFile
-    member x.jitTracking = data.jitTracking
-    member x.portablePDB = data.portablePDB
-    member x.embeddedPDB = data.embeddedPDB
-    member x.embedAllSource = data.embedAllSource
-    member x.embedSourceList = data.embedSourceList
-    member x.sourceLink = data.sourceLink
-    member x.packageManagerLines  = data.packageManagerLines
-    member x.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
-    member x.internConstantStrings = data.internConstantStrings
-    member x.extraOptimizationIterations = data.extraOptimizationIterations
-    member x.win32icon = data.win32icon
-    member x.win32res = data.win32res
-    member x.win32manifest = data.win32manifest
-    member x.includewin32manifest = data.includewin32manifest
-    member x.linkResources = data.linkResources
-    member x.showFullPaths = data.showFullPaths
-    member x.errorStyle = data.errorStyle
-    member x.utf8output = data.utf8output
-    member x.flatErrors = data.flatErrors
-    member x.maxErrors = data.maxErrors
-    member x.baseAddress = data.baseAddress
-    member x.checksumAlgorithm = data.checksumAlgorithm
+    member _.FxResolver = data.FxResolver
+    member _.primaryAssembly = data.primaryAssembly
+    member _.noFeedback = data.noFeedback
+    member _.stackReserveSize = data.stackReserveSize
+    member _.implicitIncludeDir = data.implicitIncludeDir
+    member _.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
+    member _.fsharpBinariesDir = data.defaultFSharpBinariesDir
+    member _.compilingFSharpCore = data.compilingFSharpCore
+    member _.useIncrementalBuilder = data.useIncrementalBuilder
+    member _.includes = data.includes
+    member _.implicitOpens = data.implicitOpens
+    member _.useFsiAuxLib = data.useFsiAuxLib
+    member _.implicitlyReferenceDotNetAssemblies = data.implicitlyReferenceDotNetAssemblies
+    member _.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
+    member _.resolutionEnvironment = data.resolutionEnvironment
+    member _.indentationAwareSyntax = data.indentationAwareSyntax
+    member _.conditionalDefines = data.conditionalDefines
+    member _.loadedSources = data.loadedSources
+    member _.compilerToolPaths = data.compilerToolPaths
+    member _.referencedDLLs = data.referencedDLLs
+    member _.knownUnresolvedReferences = data.knownUnresolvedReferences
+    member _.clrRoot = clrRootValue
+    member _.reduceMemoryUsage = data.reduceMemoryUsage
+    member _.subsystemVersion = data.subsystemVersion
+    member _.useHighEntropyVA = data.useHighEntropyVA
+    member _.inputCodePage = data.inputCodePage
+    member _.embedResources = data.embedResources
+    member _.errorSeverityOptions = data.errorSeverityOptions
+    member _.mlCompatibility = data.mlCompatibility
+    member _.checkOverflow = data.checkOverflow
+    member _.showReferenceResolutions = data.showReferenceResolutions
+    member _.outputDir = data.outputDir
+    member _.outputFile = data.outputFile
+    member _.platform = data.platform
+    member _.prefer32Bit = data.prefer32Bit
+    member _.useSimpleResolution = data.useSimpleResolution
+    member _.target = data.target
+    member _.debuginfo = data.debuginfo
+    member _.testFlagEmitFeeFeeAs100001 = data.testFlagEmitFeeFeeAs100001
+    member _.dumpDebugInfo = data.dumpDebugInfo
+    member _.debugSymbolFile = data.debugSymbolFile
+    member _.typeCheckOnly = data.typeCheckOnly
+    member _.parseOnly = data.parseOnly
+    member _.importAllReferencesOnly = data.importAllReferencesOnly
+    member _.simulateException = data.simulateException
+    member _.printAst = data.printAst
+    member _.targetFrameworkVersion = targetFrameworkVersionValue
+    member _.tokenize = data.tokenize
+    member _.testInteractionParser = data.testInteractionParser
+    member _.reportNumDecls = data.reportNumDecls
+    member _.printSignature = data.printSignature
+    member _.printSignatureFile = data.printSignatureFile
+    member _.printAllSignatureFiles = data.printAllSignatureFiles
+    member _.xmlDocOutputFile = data.xmlDocOutputFile
+    member _.stats = data.stats
+    member _.generateFilterBlocks = data.generateFilterBlocks
+    member _.signer = data.signer
+    member _.container = data.container
+    member _.delaysign = data.delaysign
+    member _.publicsign = data.publicsign
+    member _.version = data.version
+    member _.metadataVersion = data.metadataVersion
+    member _.standalone = data.standalone
+    member _.extraStaticLinkRoots = data.extraStaticLinkRoots
+    member _.noSignatureData = data.noSignatureData
+    member _.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
+    member _.useOptimizationDataFile = data.useOptimizationDataFile
+    member _.jitTracking = data.jitTracking
+    member _.portablePDB = data.portablePDB
+    member _.embeddedPDB = data.embeddedPDB
+    member _.embedAllSource = data.embedAllSource
+    member _.embedSourceList = data.embedSourceList
+    member _.sourceLink = data.sourceLink
+    member _.packageManagerLines  = data.packageManagerLines
+    member _.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
+    member _.internConstantStrings = data.internConstantStrings
+    member _.extraOptimizationIterations = data.extraOptimizationIterations
+    member _.win32icon = data.win32icon
+    member _.win32res = data.win32res
+    member _.win32manifest = data.win32manifest
+    member _.includewin32manifest = data.includewin32manifest
+    member _.linkResources = data.linkResources
+    member _.showFullPaths = data.showFullPaths
+    member _.errorStyle = data.errorStyle
+    member _.utf8output = data.utf8output
+    member _.flatErrors = data.flatErrors
+    member _.maxErrors = data.maxErrors
+    member _.baseAddress = data.baseAddress
+    member _.checksumAlgorithm = data.checksumAlgorithm
  #if DEBUG
-    member x.showOptimizationData = data.showOptimizationData
+    member _.showOptimizationData = data.showOptimizationData
 #endif
-    member x.showTerms = data.showTerms
-    member x.writeTermsToFiles = data.writeTermsToFiles
-    member x.doDetuple = data.doDetuple
-    member x.doTLR = data.doTLR
-    member x.doFinalSimplify = data.doFinalSimplify
-    member x.optSettings = data.optSettings
-    member x.emitTailcalls = data.emitTailcalls
-    member x.deterministic = data.deterministic
-    member x.concurrentBuild = data.concurrentBuild
-    member x.emitMetadataAssembly = data.emitMetadataAssembly
-    member x.pathMap = data.pathMap
-    member x.langVersion = data.langVersion
-    member x.preferredUiLang = data.preferredUiLang
-    member x.lcid = data.lcid
-    member x.optsOn = data.optsOn
-    member x.productNameForBannerText = data.productNameForBannerText
-    member x.showBanner = data.showBanner
-    member x.showTimes = data.showTimes
-    member x.showLoadedAssemblies = data.showLoadedAssemblies
-    member x.continueAfterParseFailure = data.continueAfterParseFailure
+    member _.showTerms = data.showTerms
+    member _.writeTermsToFiles = data.writeTermsToFiles
+    member _.doDetuple = data.doDetuple
+    member _.doTLR = data.doTLR
+    member _.doFinalSimplify = data.doFinalSimplify
+    member _.optSettings = data.optSettings
+    member _.emitTailcalls = data.emitTailcalls
+    member _.deterministic = data.deterministic
+    member _.concurrentBuild = data.concurrentBuild
+    member _.emitMetadataAssembly = data.emitMetadataAssembly
+    member _.pathMap = data.pathMap
+    member _.langVersion = data.langVersion
+    member _.preferredUiLang = data.preferredUiLang
+    member _.lcid = data.lcid
+    member _.optsOn = data.optsOn
+    member _.productNameForBannerText = data.productNameForBannerText
+    member _.showBanner = data.showBanner
+    member _.showTimes = data.showTimes
+    member _.showLoadedAssemblies = data.showLoadedAssemblies
+    member _.continueAfterParseFailure = data.continueAfterParseFailure
 #if !NO_TYPEPROVIDERS
-    member x.showExtensionTypeMessages = data.showExtensionTypeMessages
+    member _.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
-    member x.pause = data.pause
-    member x.alwaysCallVirt = data.alwaysCallVirt
-    member x.noDebugAttributes = data.noDebugAttributes
-    member x.isInteractive = data.isInteractive
-    member x.isInvalidationSupported = data.isInvalidationSupported
-    member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
-    member x.copyFSharpCore = data.copyFSharpCore
-    member x.shadowCopyReferences = data.shadowCopyReferences
-    member x.useSdkRefs = data.useSdkRefs
-    member x.sdkDirOverride = data.sdkDirOverride
-    member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
-    member x.internalTestSpanStackReferring = data.internalTestSpanStackReferring
-    member x.noConditionalErasure = data.noConditionalErasure
-    member x.xmlDocInfoLoader = data.xmlDocInfoLoader
+    member _.pause = data.pause
+    member _.alwaysCallVirt = data.alwaysCallVirt
+    member _.noDebugAttributes = data.noDebugAttributes
+    member _.isInteractive = data.isInteractive
+    member _.isInvalidationSupported = data.isInvalidationSupported
+    member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
+    member _.copyFSharpCore = data.copyFSharpCore
+    member _.shadowCopyReferences = data.shadowCopyReferences
+    member _.useSdkRefs = data.useSdkRefs
+    member _.sdkDirOverride = data.sdkDirOverride
+    member _.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
+    member _.internalTestSpanStackReferring = data.internalTestSpanStackReferring
+    member _.noConditionalErasure = data.noConditionalErasure
+    member _.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -1175,16 +1179,16 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         (sourceFiles |> List.mapi (fun i _ -> (i = n-1)), tcConfig.target.IsExe)
 
     // This call can fail if no CLR is found (this is the path to mscorlib)
-    member tcConfig.GetTargetFrameworkDirectories() =
+    member _.GetTargetFrameworkDirectories() =
         targetFrameworkDirectories
 
-    member tcConfig.ComputeLightSyntaxInitialStatus filename =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix filename) FSharpLightSyntaxFileSuffixes
-        if lightOnByDefault then (tcConfig.light <> Some false) else (tcConfig.light = Some true )
+    member tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName =
+        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        let indentationAwareSyntaxOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
+        if indentationAwareSyntaxOnByDefault then (tcConfig.indentationAwareSyntax <> Some false) else (tcConfig.indentationAwareSyntax = Some true )
 
     member tcConfig.GetAvailableLoadedSources() =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let resolveLoadedSource (m, originalPath, path) =
             try
                 if not(FileSystem.FileExistsShim(path)) then
@@ -1214,11 +1218,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
           yield tcConfig.implicitIncludeDir
           yield tcConfig.fsharpBinariesDir ]
 
-    member tcConfig.MakePathAbsolute path =
+    member _.MakePathAbsolute path =
         makePathAbsolute path
 
-    member _.ResolveSourceFile(m, filename, pathLoadedFrom) =
-        data.ResolveSourceFile(m, filename, pathLoadedFrom)
+    member _.ResolveSourceFile(m, fileName, pathLoadedFrom) =
+        data.ResolveSourceFile(m, fileName, pathLoadedFrom)
 
     member _.PrimaryAssemblyDllReference() = primaryAssemblyReference
 
@@ -1235,12 +1239,12 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     ///
     /// Returning true may mean that the file is locked and/or placed into the
     /// 'framework' reference set that is potentially shared across multiple compilations.
-    member tcConfig.IsSystemAssembly (filename: string) =
+    member tcConfig.IsSystemAssembly (fileName: string) =
         try
-            FileSystem.FileExistsShim filename &&
-            ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
-             (tcConfig.FxResolver.GetSystemAssemblies().Contains (FileSystemUtils.fileNameWithoutExtension filename)) ||
-             tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory filename)
+            FileSystem.FileExistsShim fileName &&
+            ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName)) ||
+             (tcConfig.FxResolver.GetSystemAssemblies().Contains (FileSystemUtils.fileNameWithoutExtension fileName)) ||
+             tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
         with _ ->
             false
 
