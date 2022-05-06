@@ -265,7 +265,7 @@ stages:
             displayName: Build with OfficialBuildId
 
         # Check code formatting
-        - job: CheckCodeFormatting (run 'dotnet fantomas src/fsharp -r' to fix)
+        - job: CheckCodeFormatting
           pool:
             vmImage: $(UbuntuMachineQueueName)
           steps:
