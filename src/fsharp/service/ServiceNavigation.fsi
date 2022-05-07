@@ -36,7 +36,7 @@ type public NavigationEntityKind =
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
-type public NavigationItem = 
+type public NavigationItem =
     member Name: string
 
     member UniqueName: string
@@ -60,16 +60,16 @@ type public NavigationItem =
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
 [<NoEquality; NoComparison>]
-type public NavigationTopLevelDeclaration = 
+type public NavigationTopLevelDeclaration =
     { Declaration: NavigationItem
-      Nested: NavigationItem[] }
-      
+      Nested: NavigationItem [] }
+
 /// Represents result of 'GetNavigationItems' operation - this contains
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
 type public NavigationItems =
-    member Declarations: NavigationTopLevelDeclaration[]
+    member Declarations: NavigationTopLevelDeclaration []
 
 // Functionality to access navigable F# items.
 module public Navigation =
@@ -101,8 +101,8 @@ type NavigableContainerType =
 type NavigableContainer =
     { Type: NavigableContainerType
       Name: string }
-    
-type NavigableItem = 
+
+type NavigableItem =
     { Name: string
       Range: range
       IsSignature: bool

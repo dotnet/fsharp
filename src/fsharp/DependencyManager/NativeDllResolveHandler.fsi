@@ -13,7 +13,7 @@ type NativeDllResolveHandler =
 
     /// Construct a new NativeDllResolveHandler
     new: nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
-    
+
     /// Construct a new NativeDllResolveHandler
     internal new: nativeProbingRoots: NativeResolutionProbe option -> NativeDllResolveHandler
 
