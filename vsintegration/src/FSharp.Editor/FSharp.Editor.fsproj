@@ -122,6 +122,7 @@
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
     <Compile Include="CodeFix\FixIndexerAccess.fs" />
     <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
+    <Compile Include="CodeFix\UseTripleQuotedInterpolation.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />

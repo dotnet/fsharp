@@ -177,6 +177,11 @@
         <target state="translated">기본 인터페이스 멤버 사용</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">사용 중인 패턴 바인딩 무시</target>
