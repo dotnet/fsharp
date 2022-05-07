@@ -27,7 +27,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
@@ -1442,7 +1442,7 @@ type TILObjectReprData =
 type TProvidedTypeInfo = 
     { 
       /// The parameters given to the provider that provided to this type.
-      ResolutionEnvironment: ExtensionTyping.ResolutionEnvironment
+      ResolutionEnvironment: TypeProviders.ResolutionEnvironment
 
       /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
       /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
@@ -5194,11 +5194,14 @@ type ModuleOrNamespaceBinding =
 type NamedDebugPointKey =
     { Range: range
       Name: string }
+
     override x.GetHashCode() = hash x.Name + hash x.Range
+
     override x.Equals(yobj: obj) = 
         match yobj with 
         | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
         | _ -> false
+
     interface IComparable with
         member x.CompareTo(yobj: obj) =
            match yobj with 
@@ -5319,7 +5322,7 @@ type CcuReference = string // ILAssemblyRef
 // the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
 // .NET assemblies.
 //
-// References to items such as type constructors are via
+// References to items such as types are via
 // cross-compilation-unit thunks, which directly reference the data structures that define
 // these modules. Thus, when saving out values to disk we only wish
 // to save out the "current" part of the term graph. When reading values

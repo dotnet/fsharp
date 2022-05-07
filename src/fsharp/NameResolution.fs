@@ -34,7 +34,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// An object that captures the logical context for name resolution.
@@ -916,7 +916,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
         let resolutionEnvironment = info.ResolutionEnvironment
 
 #if DEBUG
-        if resolutionEnvironment.showResolutionMessages then
+        if resolutionEnvironment.ShowResolutionMessages then
             dprintfn "resolving name '%s' in TProvidedTypeRepr '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
 #endif
 

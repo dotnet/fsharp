@@ -99,10 +99,10 @@ let mkShr g m acce n = mkAsmExpr ([ AI_shr ], [], [acce; mkInt g m n], [g.int_ty
 let mkAdd (g: TcGlobals) m e1 e2 = mkAsmExpr ([ AI_add ], [], [e1;e2], [g.int_ty], m)
                    
 let mkAddToHashAcc g m e accv acce =
-    mkValSet m accv (mkAdd g m (mkInt g m 0x9e3779b9) 
-                          (mkAdd g m e 
-                             (mkAdd g m (mkShl g m acce 6) (mkShr g m acce 2))))
-
+    mkValSet m accv
+        (mkAdd g m (mkInt g m 0x9e3779b9) 
+            (mkAdd g m e 
+                (mkAdd g m (mkShl g m acce 6) (mkShr g m acce 2))))
      
 let mkCombineHashGenerators g m exprs accv acce =
     (acce, exprs) ||> List.fold (fun tm e -> mkCompGenSequential m (mkAddToHashAcc g m e accv acce) tm)

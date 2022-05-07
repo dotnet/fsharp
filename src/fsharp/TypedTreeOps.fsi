@@ -2015,9 +2015,9 @@ val mkCallAdditionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
@@ -2041,7 +2041,7 @@ val mkCallAdditionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallUnaryNegChecked: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2290,15 +2290,15 @@ val isSpanLikeTy: TcGlobals -> range -> TType -> bool
 
 val isSpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 val isReadOnlySpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
@@ -2387,6 +2387,7 @@ val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * V
 //-------------------------------------------------------------------------
 
 type ActivePatternElemRef with
+
     member Name: string
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
@@ -2399,7 +2400,7 @@ type PrettyNaming.ActivePatternInfo with
 
     member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType: g: TcGlobals -> m: range -> dty: TType -> rtys: TType list -> isStruct: bool -> TType
+    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
