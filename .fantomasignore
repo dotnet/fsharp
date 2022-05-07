@@ -12,6 +12,11 @@
 **/TypeProviders.fsi
 **/tainted.fsi
 
+# uses nullness features
+**/illib.fsi
+**/DependencyProvider.fsi
+**/option.fsi
+
 # utils  (to investigate)
 **/prim-parsing.fsi
 **/TaggedCollections.fsi
@@ -31,3 +36,8 @@
 **/Query.fsi
 **/resumable.fsi
 **/async.fsi
+
+## https://github.com/fsprojects/fantomas/issues/2230
+**/array.fsi
+**/tasks.fsi
+**/seq.fsi

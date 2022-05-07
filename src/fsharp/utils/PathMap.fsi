@@ -8,15 +8,15 @@ type internal PathMap
 [<RequireQualifiedAccess>]
 module internal PathMap =
 
-    val empty : PathMap
+    val empty: PathMap
 
     /// Add a path mapping to the map.
-    val addMapping : string -> string -> PathMap -> PathMap
+    val addMapping: string -> string -> PathMap -> PathMap
 
     /// Map a file path with its replacement.
     /// Prefixes are compared case sensitively.
-    val apply : PathMap -> string -> string
+    val apply: PathMap -> string -> string
 
     /// Map a directory name with its replacement.
     /// Prefixes are compared case sensitively.
-    val applyDir : PathMap -> string -> string
+    val applyDir: PathMap -> string -> string

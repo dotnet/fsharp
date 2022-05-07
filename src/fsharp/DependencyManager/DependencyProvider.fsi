@@ -13,10 +13,10 @@ type IResolveDependenciesResult =
     abstract Success: bool
 
     /// The resolution output log
-    abstract StdOut: string[]
+    abstract StdOut: string []
 
     /// The resolution error log (process stderr)
-    abstract StdError: string[]
+    abstract StdError: string []
 
     /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
@@ -53,10 +53,19 @@ type IDependencyManagerProvider =
     abstract Key: string
 
     /// The help messages for this dependency manager inster
-    abstract HelpMessages: string[]
+    abstract HelpMessages: string []
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string * timeout: int -> IResolveDependenciesResult
+    abstract ResolveDependencies:
+        scriptDir: string *
+        mainScriptName: string *
+        scriptName: string *
+        scriptExt: string *
+        packageManagerTextLines: (string * string) seq *
+        tfm: string *
+        rid: string *
+        timeout: int ->
+            IResolveDependenciesResult
 
 /// Todo describe this API
 [<RequireQualifiedAccess>]
@@ -68,7 +77,7 @@ type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 
 /// Provides DependencyManagement functions.
 ///
-/// The class incrementally collects IDependencyManagerProvider, indexed by key, and 
+/// The class incrementally collects IDependencyManagerProvider, indexed by key, and
 /// queries them.  These are found and instantiated with respect to the compilerTools and outputDir
 /// provided each time the TryFindDependencyManagerByKey and TryFindDependencyManagerInPath are
 /// executed, which are assumed to be invariant over the lifetime of the DependencyProvider.
@@ -85,16 +94,31 @@ type DependencyProvider =
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
+    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string []
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string MaybeNull)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
+    member Resolve:
+        packageManager: IDependencyManagerProvider *
+        scriptExt: string *
+        packageManagerTextLines: (string * string) seq *
+        reportError: ResolvingErrorReport *
+        executionTfm: string *
+        [<Optional; DefaultParameterValue(null: string MaybeNull)>] executionRid: string *
+        [<Optional; DefaultParameterValue("")>] implicitIncludeDir: string *
+        [<Optional; DefaultParameterValue("")>] mainScriptName: string *
+        [<Optional; DefaultParameterValue("")>] fileName: string *
+        [<Optional; DefaultParameterValue(-1)>] timeout: int ->
+            IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
-    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider MaybeNull
+    member TryFindDependencyManagerByKey:
+        compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string ->
+            IDependencyManagerProvider MaybeNull
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
-    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string -> string MaybeNull * IDependencyManagerProvider MaybeNull
+    member TryFindDependencyManagerInPath:
+        compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string ->
+            string MaybeNull * IDependencyManagerProvider MaybeNull

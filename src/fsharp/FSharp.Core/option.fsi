@@ -24,7 +24,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("IsSome")>]
-    val inline isSome: option:'T option -> bool
+    val inline isSome: option: 'T option -> bool
 
     /// <summary>Returns true if the option is None.</summary>
     ///
@@ -39,7 +39,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("IsNone")>]
-    val inline isNone: option:'T option -> bool
+    val inline isNone: option: 'T option -> bool
 
     /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise returns the specified default value.</summary>
     ///
@@ -57,7 +57,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("DefaultValue")>]
-    val defaultValue: value:'T -> option:'T option -> 'T
+    val defaultValue: value: 'T -> option: 'T option -> 'T
 
     /// <summary>Gets the value of the option if the option is <c>Some</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
     ///
@@ -74,7 +74,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
-    val defaultWith: defThunk:(unit -> 'T) -> option:'T option -> 'T
+    val defaultWith: defThunk: (unit -> 'T) -> option: 'T option -> 'T
 
     /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
     ///
@@ -92,7 +92,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OrElse")>]
-    val orElse: ifNone:'T option -> option:'T option -> 'T option
+    val orElse: ifNone: 'T option -> option: 'T option -> 'T option
 
     /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise evaluates <paramref name="ifNoneThunk"/> and returns the result.</summary>
     ///
@@ -111,7 +111,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OrElseWith")>]
-    val orElseWith: ifNoneThunk:(unit -> 'T option) -> option:'T option -> 'T option
+    val orElseWith: ifNoneThunk: (unit -> 'T option) -> option: 'T option -> 'T option
 
     /// <summary>Gets the value associated with the option.</summary>
     ///
@@ -128,7 +128,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("GetValue")>]
-    val get: option:'T option -> 'T
+    val get: option: 'T option -> 'T
 
     /// <summary><c>count inp</c> evaluates to <c>match inp with None -> 0 | Some _ -> 1</c>.</summary>
     ///
@@ -143,7 +143,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Count")>]
-    val count: option:'T option -> int
+    val count: option: 'T option -> int
 
     /// <summary><c>fold f s inp</c> evaluates to <c>match inp with None -> s | Some x -> f s x</c>.</summary>
     ///
@@ -162,7 +162,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> option:'T option -> 'State
+    val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> option: 'T option -> 'State
 
     /// <summary><c>fold f inp s</c> evaluates to <c>match inp with None -> s | Some x -> f x s</c>.</summary>
     ///
@@ -181,7 +181,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> option:'T option -> state:'State -> 'State
+    val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> option: 'T option -> state: 'State -> 'State
 
     /// <summary><c>exists p inp</c> evaluates to <c>match inp with None -> false | Some x -> p x</c>.</summary>
     ///
@@ -199,7 +199,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate:('T -> bool) -> option:'T option -> bool
+    val exists: predicate: ('T -> bool) -> option: 'T option -> bool
 
     /// <summary><c>forall p inp</c> evaluates to <c>match inp with None -> true | Some x -> p x</c>.</summary>
     ///
@@ -217,7 +217,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate:('T -> bool) -> option:'T option -> bool
+    val forall: predicate: ('T -> bool) -> option: 'T option -> bool
 
     /// <summary>Evaluates to true if <paramref name="option"/> is <c>Some</c> and its value is equal to <paramref name="value"/>.</summary>
     ///
@@ -234,7 +234,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Contains")>]
-    val inline contains: value:'T -> option:'T option -> bool when 'T : equality
+    val inline contains: value: 'T -> option: 'T option -> bool when 'T: equality
 
     /// <summary><c>iter f inp</c> executes <c>match inp with None -> () | Some x -> f x</c>.</summary>
     ///
@@ -248,7 +248,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action:('T -> unit) -> option:'T option -> unit
+    val iter: action: ('T -> unit) -> option: 'T option -> unit
 
     /// <summary><c>map f inp</c> evaluates to <c>match inp with None -> None | Some x -> Some (f x)</c>.</summary>
     ///
@@ -264,7 +264,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping:('T -> 'U) -> option:'T option -> 'U option
+    val map: mapping: ('T -> 'U) -> option: 'T option -> 'U option
 
     /// <summary><c>map f option1 option2</c> evaluates to <c>match option1, option2 with Some x, Some y -> Some (f x y) | _ -> None</c>.</summary>
     ///
@@ -283,7 +283,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map2")>]
-    val map2: mapping:('T1 -> 'T2 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> 'U option
+    val map2: mapping: ('T1 -> 'T2 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> 'U option
 
     /// <summary><c>map f option1 option2 option3</c> evaluates to <c>match option1, option2, option3 with Some x, Some y, Some z -> Some (f x y z) | _ -> None</c>.</summary>
     ///
@@ -304,7 +304,12 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Map3")>]
-    val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> option1: 'T1 option -> option2: 'T2 option -> option3: 'T3 option -> 'U option
+    val map3:
+        mapping: ('T1 -> 'T2 -> 'T3 -> 'U) ->
+        option1: 'T1 option ->
+        option2: 'T2 option ->
+        option3: 'T3 option ->
+            'U option
 
     /// <summary><c>bind f inp</c> evaluates to <c>match inp with None -> None | Some x -> f x</c></summary>
     ///
@@ -326,14 +331,14 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Bind")>]
-    val bind: binder:('T -> 'U option) -> option:'T option -> 'U option
+    val bind: binder: ('T -> 'U option) -> option: 'T option -> 'U option
 
     /// <summary><c>flatten inp</c> evaluates to <c>match inp with None -> None | Some x -> x</c></summary>
     ///
     /// <param name="option">The input option.</param>
     ///
     /// <returns>The input value if the value is Some; otherwise, None.</returns>
-    /// 
+    ///
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
     ///
     /// <example id="flatten-1">
@@ -344,7 +349,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Flatten")>]
-    val flatten: option:'T option option -> 'T option
+    val flatten: option: 'T option option -> 'T option
 
     /// <summary><c>filter f inp</c> evaluates to <c>match inp with None -> None | Some x -> if f x then Some x else None</c>.</summary>
     ///
@@ -361,7 +366,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("Filter")>]
-    val filter: predicate:('T -> bool) -> option:'T option -> 'T option
+    val filter: predicate: ('T -> bool) -> option: 'T option -> 'T option
 
     /// <summary>Convert the option to an array of length 0 or 1.</summary>
     ///
@@ -376,7 +381,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: option:'T option -> 'T[]
+    val toArray: option: 'T option -> 'T []
 
     /// <summary>Convert the option to a list of length 0 or 1.</summary>
     ///
@@ -391,7 +396,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
-    val toList: option:'T option -> 'T list
+    val toList: option: 'T option -> 'T list
 
     /// <summary>Convert the option to a Nullable value.</summary>
     ///
@@ -406,7 +411,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToNullable")>]
-    val toNullable: option:'T option -> Nullable<'T>
+    val toNullable: option: 'T option -> Nullable<'T>
 
     /// <summary>Convert a Nullable value to an option.</summary>
     ///
@@ -421,7 +426,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OfNullable")>]
-    val ofNullable: value:Nullable<'T> -> 'T option
+    val ofNullable: value: Nullable<'T> -> 'T option
 
     /// <summary>Convert a potentially null value to an option.</summary>
     ///
@@ -472,7 +477,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>True if the value option is not ValueNone.</returns>
-    /// 
+    ///
     /// <example id="isSome-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.isSome // evaluates to false
@@ -487,7 +492,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>True if the voption is ValueNone.</returns>
-    /// 
+    ///
     /// <example id="isNone-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.isNone // evaluates to true
@@ -504,7 +509,7 @@ module ValueOption =
     ///
     /// <returns>The voption if the voption is ValueSome, else the default value.</returns>
     /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
-    /// 
+    ///
     /// <example id="defaultValue-1">
     /// <code lang="fsharp">
     /// (99, ValueNone) ||> ValueOption.defaultValue // evaluates to 99
@@ -512,7 +517,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("DefaultValue")>]
-    val defaultValue: value:'T -> voption: 'T voption -> 'T
+    val defaultValue: value: 'T -> voption: 'T voption -> 'T
 
     /// <summary>Gets the value of the voption if the voption is <c>ValueSome</c>, otherwise evaluates <paramref name="defThunk"/> and returns the result.</summary>
     ///
@@ -521,7 +526,7 @@ module ValueOption =
     ///
     /// <returns>The voption if the voption is ValueSome, else the result of evaluating <paramref name="defThunk"/>.</returns>
     /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="voption"/> is <c>ValueNone</c>.</remarks>
-    /// 
+    ///
     /// <example id="defaultWith-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.defaultWith (fun () -> 99) // evaluates to 99
@@ -529,7 +534,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
-    val defaultWith: defThunk:(unit -> 'T) -> voption: 'T voption -> 'T
+    val defaultWith: defThunk: (unit -> 'T) -> voption: 'T voption -> 'T
 
     /// <summary>Returns <paramref name="voption"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
     ///
@@ -537,7 +542,7 @@ module ValueOption =
     /// <param name="voption">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the alternate option.</returns>
-    /// 
+    ///
     /// <example id="orElse-1">
     /// <code lang="fsharp">
     /// ((ValueNone: int ValueOption), ValueNone) ||> ValueOption.orElse // evaluates to ValueNone
@@ -547,7 +552,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("OrElse")>]
-    val orElse: ifNone:'T voption -> voption: 'T voption -> 'T voption
+    val orElse: ifNone: 'T voption -> voption: 'T voption -> 'T voption
 
     /// <summary>Returns <paramref name="voption"/> if it is <c>Some</c>, otherwise evaluates <paramref name="ifNoneThunk"/> and returns the result.</summary>
     ///
@@ -556,7 +561,7 @@ module ValueOption =
     ///
     /// <returns>The voption if the voption is ValueSome, else the result of evaluating <paramref name="ifNoneThunk"/>.</returns>
     /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="voption"/> is <c>ValueNone</c>.</remarks>
-    /// 
+    ///
     /// <example id="orElseWith-1">
     /// <code lang="fsharp">
     /// (ValueNone: int ValueOption) |> ValueOption.orElseWith (fun () -> ValueNone) // evaluates to ValueNone
@@ -566,7 +571,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("OrElseWith")>]
-    val orElseWith: ifNoneThunk:(unit -> 'T voption) -> voption: 'T voption -> 'T voption
+    val orElseWith: ifNoneThunk: (unit -> 'T voption) -> voption: 'T voption -> 'T voption
 
     /// <summary>Gets the value associated with the option.</summary>
     ///
@@ -574,7 +579,7 @@ module ValueOption =
     ///
     /// <returns>The value within the option.</returns>
     /// <exception href="System.ArgumentException">Thrown when the option is ValueNone.</exception>
-    /// 
+    ///
     /// <example id="get-1">
     /// <code lang="fsharp">
     /// ValueSome 42 |> ValueOption.get // evaluates to 42
@@ -589,7 +594,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>A zero if the option is ValueNone, a one otherwise.</returns>
-    /// 
+    ///
     /// <example id="count-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.count // evaluates to 0
@@ -607,7 +612,7 @@ module ValueOption =
     ///
     /// <returns>The original state if the option is ValueNone, otherwise it returns the updated state with the folder
     /// and the voption value.</returns>
-    /// 
+    ///
     /// <example id="fold-1">
     /// <code lang="fsharp">
     /// (0, ValueNone) ||> ValueOption.fold (fun accum x -> accum + x * 2) // evaluates to 0
@@ -616,7 +621,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> voption: 'T voption -> 'State
+    val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> voption: 'T voption -> 'State
 
     /// <summary><c>fold f inp s</c> evaluates to <c>match inp with ValueNone -> s | ValueSome x -> f x s</c>.</summary>
     ///
@@ -626,7 +631,7 @@ module ValueOption =
     ///
     /// <returns>The original state if the option is ValueNone, otherwise it returns the updated state with the folder
     /// and the voption value.</returns>
-    /// 
+    ///
     /// <example id="foldBack-1">
     /// <code lang="fsharp">
     /// (ValueNone, 0) ||> ValueOption.foldBack (fun x accum -> accum + x * 2) // evaluates to 0
@@ -635,7 +640,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> voption: 'T voption -> state:'State -> 'State
+    val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> voption: 'T voption -> state: 'State -> 'State
 
     /// <summary><c>exists p inp</c> evaluates to <c>match inp with ValueNone -> false | ValueSome x -> p x</c>.</summary>
     ///
@@ -644,7 +649,7 @@ module ValueOption =
     ///
     /// <returns>False if the option is ValueNone, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
-    /// 
+    ///
     /// <example id="exists-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.exists (fun x -> x >= 5) // evaluates to false
@@ -653,7 +658,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
-    val exists: predicate:('T -> bool) -> voption: 'T voption -> bool
+    val exists: predicate: ('T -> bool) -> voption: 'T voption -> bool
 
     /// <summary><c>forall p inp</c> evaluates to <c>match inp with ValueNone -> true | ValueSome x -> p x</c>.</summary>
     ///
@@ -662,7 +667,7 @@ module ValueOption =
     ///
     /// <returns>True if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
-    /// 
+    ///
     /// <example id="forall-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.forall (fun x -> x >= 5) // evaluates to true
@@ -671,7 +676,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate:('T -> bool) -> voption: 'T voption -> bool
+    val forall: predicate: ('T -> bool) -> voption: 'T voption -> bool
 
     /// <summary>Evaluates to true if <paramref name="voption"/> is <c>ValueSome</c> and its value is equal to <paramref name="value"/>.</summary>
     ///
@@ -679,7 +684,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>True if the option is <c>ValueSome</c> and contains a value equal to <paramref name="value"/>, otherwise false.</returns>
-    /// 
+    ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
     /// (99, ValueNone) ||> ValueOption.contains // evaluates to false
@@ -688,7 +693,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Contains")>]
-    val inline contains: value:'T -> voption: 'T voption -> bool when 'T : equality
+    val inline contains: value: 'T -> voption: 'T voption -> bool when 'T: equality
 
     /// <summary><c>iter f inp</c> executes <c>match inp with ValueNone -> () | ValueSome x -> f x</c>.</summary>
     ///
@@ -702,7 +707,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action:('T -> unit) -> voption: 'T voption -> unit
+    val iter: action: ('T -> unit) -> voption: 'T voption -> unit
 
     /// <summary><c>map f inp</c> evaluates to <c>match inp with ValueNone -> ValueNone | ValueSome x -> ValueSome (f x)</c>.</summary>
     ///
@@ -710,7 +715,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>A value option of the input value after applying the mapping function, or ValueNone if the input is ValueNone.</returns>
-    /// 
+    ///
     /// <example id="map-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.map (fun x -> x * 2) // evaluates to ValueNone
@@ -718,7 +723,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping:('T -> 'U) -> voption: 'T voption -> 'U voption
+    val map: mapping: ('T -> 'U) -> voption: 'T voption -> 'U voption
 
     /// <summary><c>map f voption1 voption2</c> evaluates to <c>match voption1, voption2 with ValueSome x, ValueSome y -> ValueSome (f x y) | _ -> ValueNone</c>.</summary>
     ///
@@ -727,7 +732,7 @@ module ValueOption =
     /// <param name="voption2">The second value option.</param>
     ///
     /// <returns>A value option of the input values after applying the mapping function, or ValueNone if either input is ValueNone.</returns>
-    /// 
+    ///
     /// <example id="map2-1">
     /// <code lang="fsharp">
     /// (ValueNone, ValueNone) ||> ValueOption.map2 (fun x y -> x + y) // evaluates to ValueNone
@@ -737,7 +742,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Map2")>]
-    val map2: mapping:('T1 -> 'T2 -> 'U) -> voption1: 'T1 voption -> voption2: 'T2 voption -> 'U voption
+    val map2: mapping: ('T1 -> 'T2 -> 'U) -> voption1: 'T1 voption -> voption2: 'T2 voption -> 'U voption
 
     /// <summary><c>map f voption1 voption2 voption3</c> evaluates to <c>match voption1, voption2, voption3 with ValueSome x, ValueSome y, ValueSome z -> ValueSome (f x y z) | _ -> ValueNone</c>.</summary>
     ///
@@ -747,7 +752,7 @@ module ValueOption =
     /// <param name="voption3">The third value option.</param>
     ///
     /// <returns>A value option of the input values after applying the mapping function, or ValueNone if any input is ValueNone.</returns>
-    /// 
+    ///
     /// <example id="map3-1">
     /// <code lang="fsharp">
     /// (ValueNone, ValueNone, ValueNone) |||> ValueOption.map3 (fun x y z -> x + y + z) // evaluates to ValueNone
@@ -758,7 +763,12 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Map3")>]
-    val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> voption1: 'T1 voption -> voption2: 'T2 voption -> voption3: 'T3 voption -> 'U voption
+    val map3:
+        mapping: ('T1 -> 'T2 -> 'T3 -> 'U) ->
+        voption1: 'T1 voption ->
+        voption2: 'T2 voption ->
+        voption3: 'T3 voption ->
+            'U voption
 
     /// <summary><c>bind f inp</c> evaluates to <c>match inp with ValueNone -> ValueNone | ValueSome x -> f x</c></summary>
     ///
@@ -767,7 +777,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>An option of the output type of the binder.</returns>
-    /// 
+    ///
     /// <example id="bind-1">
     /// <code lang="fsharp">
     /// let tryParse input =
@@ -780,7 +790,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Bind")>]
-    val bind: binder:('T -> 'U voption) -> voption: 'T voption -> 'U voption
+    val bind: binder: ('T -> 'U voption) -> voption: 'T voption -> 'U voption
 
     /// <summary><c>flatten inp</c> evaluates to <c>match inp with ValueNone -> ValueNone | ValueSome x -> x</c></summary>
     ///
@@ -788,7 +798,7 @@ module ValueOption =
     ///
     /// <returns>The input value if the value is Some; otherwise, ValueNone.</returns>
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
-    /// 
+    ///
     /// <example id="flatten-1">
     /// <code lang="fsharp">
     /// (ValueNone: int ValueOption ValueOption) |> ValueOption.flatten // evaluates to ValueNone
@@ -805,7 +815,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>The input if the predicate evaluates to true; otherwise, ValueNone.</returns>
-    /// 
+    ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
     /// ValueNone |> ValueOption.filter (fun x -> x >= 5) // evaluates to ValueNone
@@ -814,14 +824,14 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("Filter")>]
-    val filter: predicate:('T -> bool) -> voption: 'T voption -> 'T voption
+    val filter: predicate: ('T -> bool) -> voption: 'T voption -> 'T voption
 
     /// <summary>Convert the value option to an array of length 0 or 1.</summary>
     ///
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>The result array.</returns>
-    /// 
+    ///
     /// <example id="toArray-1">
     /// <code lang="fsharp">
     /// (ValueNone: int ValueOption) |> ValueOption.toArray // evaluates to [||]
@@ -829,14 +839,14 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: voption: 'T voption -> 'T[]
+    val toArray: voption: 'T voption -> 'T []
 
     /// <summary>Convert the value option to a list of length 0 or 1.</summary>
     ///
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
+    ///
     /// <example id="toList-1">
     /// <code lang="fsharp">
     /// (ValueNone: int ValueOption) |> ValueOption.toList // evaluates to []
@@ -851,7 +861,7 @@ module ValueOption =
     /// <param name="voption">The input value option.</param>
     ///
     /// <returns>The result value.</returns>
-    /// 
+    ///
     /// <example id="toNullable-1">
     /// <code lang="fsharp">
     /// (ValueNone: int ValueOption) |> ValueOption.toNullable // evaluates to new System.Nullable&lt;int&gt;()
@@ -866,7 +876,7 @@ module ValueOption =
     /// <param name="value">The input nullable value.</param>
     ///
     /// <returns>The result value option.</returns>
-    /// 
+    ///
     /// <example id="ofNullable-1">
     /// <code lang="fsharp">
     /// System.Nullable&lt;int&gt;() |> ValueOption.ofNullable // evaluates to ValueNone
@@ -874,14 +884,14 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("OfNullable")>]
-    val ofNullable: value:Nullable<'T> -> 'T voption
+    val ofNullable: value: Nullable<'T> -> 'T voption
 
     /// <summary>Convert a potentially null value to a value option.</summary>
     ///
     /// <param name="value">The input value.</param>
     ///
     /// <returns>The result value option.</returns>
-    /// 
+    ///
     /// <example id="ofObj-1">
     /// <code lang="fsharp">
     /// (null: string) |> ValueOption.ofObj // evaluates to ValueNone
@@ -901,7 +911,7 @@ module ValueOption =
     /// <param name="value">The input value.</param>
     ///
     /// <returns>The result value, which is null if the input was ValueNone.</returns>
-    /// 
+    ///
     /// <example id="toObj-1">
     /// <code lang="fsharp">
     /// (ValueNone: string ValueOption) |> ValueOption.toObj // evaluates to null

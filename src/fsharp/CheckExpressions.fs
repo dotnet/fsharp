@@ -1865,7 +1865,8 @@ let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars
     let origTypars = declaredTyconTypars
     let freshTypars = copyTypars origTypars
     if rigid <> TyparRigidity.Rigid then
-        freshTypars |> List.iter (fun tp -> tp.SetRigidity rigid)
+        for tp in freshTypars do
+            tp.SetRigidity rigid
 
     let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
     let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)
@@ -2474,7 +2475,7 @@ module BindingNormalization =
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
             match pat with
             | SynPat.FromParseError(p, _) -> normPattern p
-            | SynPat.LongIdent (LongIdentWithDots(longId, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -3152,12 +3153,12 @@ let (|SimpleEqualsExpr|_|) expr =
 /// Detect a named argument at a callsite
 let TryGetNamedArg expr =
     match expr with
-    | SimpleEqualsExpr(LongOrSingleIdent(isOpt, LongIdentWithDots([a], _), None, _), b) -> Some(isOpt, a, b)
+    | SimpleEqualsExpr(LongOrSingleIdent(isOpt, SynLongIdent([a], _, _), None, _), b) -> Some(isOpt, a, b)
     | _ -> None
 
 let inline IsNamedArg expr =
     match expr with
-    | SimpleEqualsExpr(LongOrSingleIdent(_, LongIdentWithDots([_], _), None, _), _) -> true
+    | SimpleEqualsExpr(LongOrSingleIdent(_, SynLongIdent([_], _, _), None, _), _) -> true
     | _ -> false
 
 /// Get the method arguments at a callsite, taking into account named and optional arguments
@@ -4319,11 +4320,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
     let g = cenv.g
 
     match ty with
-    | SynType.LongIdent(LongIdentWithDots([], _)) ->
+    | SynType.LongIdent(SynLongIdent([], _, _)) ->
         // special case when type name is absent - i.e. empty inherit part in type declaration
         g.obj_ty, tpenv
 
-    | SynType.LongIdent(LongIdentWithDots(tc, _) as lidwd) ->
+    | SynType.LongIdent(SynLongIdent(tc, _, _) as lidwd) ->
         let m = lidwd.Range
         let ad = env.eAccessRights
         let tinstEnclosing, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
@@ -4339,7 +4340,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         | _, TyparKind.Type ->
             TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinstEnclosing []
 
-    | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) ->
+    | SynType.App (StripParenTypes (SynType.LongIdent(SynLongIdent(tc, _, _))), _, args, _commas, _, postfix, m) ->
         let ad = env.eAccessRights
 
         let tinstEnclosing, tcref =
@@ -4370,7 +4371,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                 errorR(Error(FSComp.SR.tcUnitsOfMeasureInvalidInTypeConstructor(), m))
                 NewErrorType (), tpenv
 
-    | SynType.LongIdentApp (ltyp, LongIdentWithDots(longId, _), _, args, _commas, _, m) ->
+    | SynType.LongIdentApp (ltyp, SynLongIdent(longId, _, _), _, args, _commas, _, m) ->
         let ad = env.eAccessRights
         let ltyp, tpenv = TcType cenv newOk checkCxs occ env tpenv ltyp
         match ltyp with
@@ -4669,7 +4670,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
 and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
     let args =
         args |> List.map (function
-            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(LongIdentWithDots([id], _))), v, _)) -> Some id, v
+            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(SynLongIdent([id], _, _))), v, _)) -> Some id, v
             | v -> None, v)
 
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
@@ -5235,7 +5236,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
 
 /// Check a long identifier in a pattern
 and TcPatLongIdent warnOnUpper cenv env ad topValInfo vFlags (tpenv, names, takenNames) ty (longDotId, tyargs, args, vis, m) =
-    let (LongIdentWithDots(longId, _)) = longDotId
+    let (SynLongIdent(longId, _, _)) = longDotId
     
     if tyargs.IsSome then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
 
@@ -5726,7 +5727,7 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     // e1.id1
     // e1.id1.id2
     // etc.
-    | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
+    | SynExpr.DotGet (e1, _, SynLongIdent(longId, _, _), _) ->
         TcNonControlFlowExpr env <| fun env ->
         TcExprThen cenv overallTy env tpenv false e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
@@ -6445,7 +6446,7 @@ and TcExprStaticOptimization cenv overallTy env tpenv (constraints, e2, e3, m) =
 
 /// e1.longId <- e2
 and TcExprDotSet cenv overallTy env tpenv (e1, lidwd, e2, mStmt) =
-    let (LongIdentWithDots(longId, _)) = lidwd
+    let (SynLongIdent(longId, _, _)) = lidwd
   
     if lidwd.ThereIsAnExtraDotAtTheEnd then
         // just drop rhs on the floor
@@ -6457,7 +6458,7 @@ and TcExprDotSet cenv overallTy env tpenv (e1, lidwd, e2, mStmt) =
 
 /// e1.longId(e2) <- e3, very rarely used named property setters
 and TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (e1, lidwd, e2, e3, mStmt) =
-    let (LongIdentWithDots(longId, _)) = lidwd
+    let (SynLongIdent(longId, _, _)) = lidwd
     if lidwd.ThereIsAnExtraDotAtTheEnd then
         // just drop rhs on the floor
         let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
@@ -8291,7 +8292,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
     let m = cleanSynArg.Range
     let rec check overallTyOpt resultOpt expr (delayed: DelayedItem list) =
         match expr with
-        | LongOrSingleIdent (false, LongIdentWithDots(longId, _), _, _) ->
+        | LongOrSingleIdent (false, SynLongIdent(longId, _, _), _, _) ->
 
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
@@ -8371,7 +8372,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             check overallTyOpt resultOpt hd (DelayedTypeApp(types, m, m) :: delayed)
 
         // expr.ID allowed
-        | SynExpr.DotGet (hd, _, LongIdentWithDots(longId, _), _) ->
+        | SynExpr.DotGet (hd, _, SynLongIdent(longId, _, _), _) ->
             let result = defaultArg resultOpt (List.last longId)
             check overallTyOpt (Some result) hd ((DelayedDotLookup (longId, expr.RangeWithoutAnyExtraDot)) :: delayed)
 
@@ -8527,7 +8528,7 @@ and GetLongIdentTypeNameInfo delayed =
     | _ ->
         TypeNameResolutionInfo.Default
 
-and TcLongIdentThen cenv (overallTy: OverallTy) env tpenv (LongIdentWithDots(longId, _)) delayed =
+and TcLongIdentThen cenv (overallTy: OverallTy) env tpenv (SynLongIdent(longId, _, _)) delayed =
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
@@ -10152,7 +10153,7 @@ and CheckRecursiveBindingIds binds =
             match b with
             | SynPat.Named(SynIdent(id,_), _, _, _)
             | SynPat.As(_, SynPat.Named(SynIdent(id,_), _, _, _), _)
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) -> id.idText
+            | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _)) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))
@@ -10679,7 +10680,7 @@ and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribut
 
     let g = cenv.g
 
-    let (LongIdentWithDots(tycon, _)) = synAttr.TypeName
+    let (SynLongIdent(tycon, _, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
     let targetIndicator = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter

@@ -916,13 +916,19 @@ let splitTypeLayout = function
   | ILTypeDefLayout.Explicit info -> "explicit", (fun os () -> output_type_layout_info os info)
 
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) =
-  List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) (fdefs.AsList())
+  for f in fdefs.AsList() do
+      goutput_fdef tref env os f
+      output_string os "\n"
 
 let goutput_mdefs env os (mdefs: ILMethodDefs) =
-  Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) (mdefs.AsArray())
+  for f in mdefs.AsArray() do
+      goutput_mdef env os f
+      output_string os "\n"
 
 let goutput_pdefs env os (pdefs: ILPropertyDefs) =
-  List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) (pdefs.AsList())
+  for f in pdefs.AsList() do
+      goutput_pdef env os f
+      output_string os "\n"
 
 let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
   let env = ppenv_enter_tdef cd.GenericParams env
