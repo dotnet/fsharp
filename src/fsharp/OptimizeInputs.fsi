@@ -13,11 +13,12 @@ open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
-val GetGeneratedILModuleName : CompilerTarget -> string -> string
+val GetGeneratedILModuleName: CompilerTarget -> string -> string
 
-val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
+val GetInitialOptimizationEnv: TcImports * TcGlobals -> IncrementalOptimizationEnv
 
-val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
+val AddExternalCcuToOptimizationEnv:
+    TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 
 val ApplyAllOptimizations:
     TcConfig *
@@ -28,14 +29,24 @@ val ApplyAllOptimizations:
     isIncrementalFragment: bool *
     IncrementalOptimizationEnv *
     CcuThunk *
-    TypedImplFile list
-        -> TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv 
+    TypedImplFile list ->
+        TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
 
-val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
+val CreateIlxAssemblyGenerator:
+    TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 
-val GenerateIlxCode : IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxAssemblyGenerator -> IlxGenResults
+val GenerateIlxCode:
+    IlxGenBackend *
+    isInteractiveItExpr: bool *
+    isInteractiveOnMono: bool *
+    TcConfig *
+    TopAttribs *
+    TypedAssemblyAfterOptimization *
+    fragName: string *
+    IlxAssemblyGenerator ->
+        IlxGenResults
 
 // Used during static linking
-val NormalizeAssemblyRefs : CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)
+val NormalizeAssemblyRefs: CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)
 
-val GetGeneratedILModuleName : CompilerTarget -> string -> string
+val GetGeneratedILModuleName: CompilerTarget -> string -> string

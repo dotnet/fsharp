@@ -22,8 +22,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.BuildGraph
 
-exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
-exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
+exception FileNameNotResolved of string (*description of searched locations*)  * string * range (*filename*)
+exception LoadedSourceNotFoundIgnoring of string * range (*filename*)
 
 /// Represents a reference to an F# assembly. May be backed by a real assembly on disk (read by Abstract IL), or a cross-project
 /// reference in FSharp.Compiler.Service.
@@ -33,7 +33,7 @@ type IRawFSharpAssemblyData =
     abstract GetAutoOpenAttributes: unit -> string list
 
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
-    abstract GetInternalsVisibleToAttributes: unit  -> string list
+    abstract GetInternalsVisibleToAttributes: unit -> string list
 
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
@@ -44,10 +44,14 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: bool
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+    abstract GetRawFSharpSignatureData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+    abstract GetRawFSharpOptimizationData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -64,8 +68,7 @@ type TimeStampCache =
     member GetFileTimeStamp: string -> DateTime
     member GetProjectReferenceTimeStamp: IProjectReference -> DateTime
 
-and [<RequireQualifiedAccess>]
-    ProjectAssemblyDataResult =
+and [<RequireQualifiedAccess>] ProjectAssemblyDataResult =
     | Available of IRawFSharpAssemblyData
     | Unavailable of useOnDiskInstead: bool
 
@@ -90,7 +93,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: TimeStampCache -> DateTime option
 
 type AssemblyReference =
-    | AssemblyReference of range * string  * IProjectReference option
+    | AssemblyReference of range * string * IProjectReference option
 
     member Range: range
 
@@ -111,15 +114,17 @@ type CompilerTarget =
     member IsExe: bool
 
 [<RequireQualifiedAccess>]
-type CopyFSharpCoreFlag = Yes | No
+type CopyFSharpCoreFlag =
+    | Yes
+    | No
 
 /// Represents the file or string used for the --version flag
 type VersionFlag =
     | VersionString of string
     | VersionFile of string
     | VersionNone
-    member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
-    member GetVersionString: implicitIncludeDir:string -> string
+    member GetVersionInfo: implicitIncludeDir: string -> ILVersionInfo
+    member GetVersionString: implicitIncludeDir: string -> string
 
 type Directive =
     | Resolution
@@ -140,16 +145,24 @@ type PackageManagerLine =
       Line: string
       Range: range }
 
-    static member AddLineWithKey: string -> Directive -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
-    static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
-    static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member AddLineWithKey:
+        string ->
+        Directive ->
+        string ->
+        range ->
+        Map<string, PackageManagerLine list> ->
+            Map<string, PackageManagerLine list>
+    static member RemoveUnprocessedLines:
+        string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member SetLinesAsProcessed:
+        string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
 [<RequireQualifiedAccess>]
 type MetadataAssemblyGeneration =
     | None
     /// Includes F# signature and optimization metadata as resources in the emitting assembly.
-    /// Implementation assembly will still be emitted normally, but will emit the reference assembly with the specified output path. 
+    /// Implementation assembly will still be emitted normally, but will emit the reference assembly with the specified output path.
     | ReferenceOut of outputPath: string
     /// Includes F# signature and optimization metadata as resources in the emitting assembly.
     /// Only emits the assembly as a reference assembly.
@@ -181,9 +194,9 @@ type TcConfigBuilder =
       /// Sources added into the build with #load
       mutable loadedSources: (range * string * string) list
 
-      mutable compilerToolPaths: string  list
+      mutable compilerToolPaths: string list
 
-      mutable referencedDLLs: AssemblyReference  list
+      mutable referencedDLLs: AssemblyReference list
 
       mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
@@ -194,10 +207,10 @@ type TcConfigBuilder =
       mutable inputCodePage: int option
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpDiagnosticOptions
-      mutable mlCompatibility:bool
+      mutable mlCompatibility: bool
       mutable checkNullness: bool
-      mutable checkOverflow:bool
-      mutable showReferenceResolutions:bool
+      mutable checkOverflow: bool
+      mutable showReferenceResolutions: bool
       mutable outputDir: string option
       mutable outputFile: string option
       mutable platform: ILPlatform option
@@ -256,24 +269,24 @@ type TcConfigBuilder =
       mutable abortOnError: bool
       mutable baseAddress: int32 option
       mutable checksumAlgorithm: HashAlgorithm
- #if DEBUG
+#if DEBUG
       mutable showOptimizationData: bool
 #endif
-      mutable showTerms    : bool
+      mutable showTerms: bool
       mutable writeTermsToFiles: bool
-      mutable doDetuple    : bool
-      mutable doTLR        : bool
+      mutable doDetuple: bool
+      mutable doTLR: bool
       mutable doFinalSimplify: bool
-      mutable optsOn       : bool
-      mutable optSettings  : Optimizer.OptimizationSettings
+      mutable optsOn: bool
+      mutable optSettings: Optimizer.OptimizationSettings
       mutable emitTailcalls: bool
       mutable deterministic: bool
       mutable concurrentBuild: bool
       mutable emitMetadataAssembly: MetadataAssemblyGeneration
       mutable preferredUiLang: string option
-      mutable lcid        : int option
+      mutable lcid: int option
       mutable productNameForBannerText: string
-      mutable showBanner : bool
+      mutable showBanner: bool
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
@@ -299,20 +312,19 @@ type TcConfigBuilder =
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
-      mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
+      mutable tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
       /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
-      mutable internalTestSpanStackReferring : bool
+      mutable internalTestSpanStackReferring: bool
 
       /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
       mutable noConditionalErasure: bool
 
-      mutable pathMap : PathMap
+      mutable pathMap: PathMap
 
-      mutable langVersion : LanguageVersion
+      mutable langVersion: LanguageVersion
 
-      mutable xmlDocInfoLoader : IXmlDocumentationInfoLoader option
-    }
+      mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option }
 
     static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *
@@ -324,10 +336,10 @@ type TcConfigBuilder =
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         sdkDirOverride: string option *
-        rangeForErrors: range
-          -> TcConfigBuilder
+        rangeForErrors: range ->
+            TcConfigBuilder
 
-    member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string
+    member DecideNames: string list -> string * string option * string
 
     member TurnWarningOff: range * string -> unit
 
@@ -352,7 +364,8 @@ type TcConfigBuilder =
     // Directories to start probing in for native DLLs for FSI dynamic loading
     member GetNativeProbingRoots: unit -> seq<string>
 
-    member AddReferenceDirective: dependencyProvider: DependencyProvider * m: range * path: string * directive: Directive -> unit
+    member AddReferenceDirective:
+        dependencyProvider: DependencyProvider * m: range * path: string * directive: Directive -> unit
 
     member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
 
@@ -394,10 +407,10 @@ type TcConfig =
     member inputCodePage: int option
     member embedResources: string list
     member errorSeverityOptions: FSharpDiagnosticOptions
-    member mlCompatibility:bool
+    member mlCompatibility: bool
     member checkNullness: bool
-    member checkOverflow:bool
-    member showReferenceResolutions:bool
+    member checkOverflow: bool
+    member showReferenceResolutions: bool
     member outputDir: string option
     member outputFile: string option
     member platform: ILPlatform option
@@ -458,21 +471,21 @@ type TcConfig =
 #if DEBUG
     member showOptimizationData: bool
 #endif
-    member showTerms    : bool
+    member showTerms: bool
     member writeTermsToFiles: bool
-    member doDetuple    : bool
-    member doTLR        : bool
+    member doDetuple: bool
+    member doTLR: bool
     member doFinalSimplify: bool
-    member optSettings  : Optimizer.OptimizationSettings
+    member optSettings: Optimizer.OptimizationSettings
     member emitTailcalls: bool
     member deterministic: bool
     member concurrentBuild: bool
     member emitMetadataAssembly: MetadataAssemblyGeneration
     member pathMap: PathMap
     member preferredUiLang: string option
-    member optsOn       : bool
+    member optsOn: bool
     member productNameForBannerText: string
-    member showBanner : bool
+    member showBanner: bool
     member showTimes: bool
     member showLoadedAssemblies: bool
     member continueAfterParseFailure: bool
@@ -499,9 +512,9 @@ type TcConfig =
     member GetTargetFrameworkDirectories: unit -> string list
 
     /// Get the loaded sources that exist and issue a warning for the ones that don't
-    member GetAvailableLoadedSources: unit -> (range*string) list
+    member GetAvailableLoadedSources: unit -> (range * string) list
 
-    member ComputeCanContainEntryPoint: sourceFiles:string list -> bool list *bool
+    member ComputeCanContainEntryPoint: sourceFiles: string list -> bool list * bool
 
     /// File system query based on TcConfig settings
     member ResolveSourceFile: range * filename: string * pathLoadedFrom: string -> string
@@ -529,7 +542,7 @@ type TcConfig =
 
     member tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
-    member targetFrameworkVersion : string
+    member targetFrameworkVersion: string
 
     member knownUnresolvedReferences: UnresolvedAssemblyReference list
 
@@ -541,7 +554,7 @@ type TcConfig =
     member noConditionalErasure: bool
 
     /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
-    member internalTestSpanStackReferring : bool
+    member internalTestSpanStackReferring: bool
 
     member GetSearchPathsForLibraryFiles: unit -> string list
 
