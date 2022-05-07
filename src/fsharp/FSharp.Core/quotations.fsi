@@ -2239,10 +2239,7 @@ module ExprShape =
     /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
     val (|ShapeVar|ShapeLambda|ShapeCombination|): 
-        input: Expr
-        -> Choice<Var,                // Var
-                  (Var * Expr),       // Lambda
-                  (obj * list<Expr>)> // ConstApp
+        input: Expr -> Choice<Var, (Var * Expr), (obj * list<Expr>)>
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
     /// returned by the <c>ShapeCombination</c> case of the active pattern in this module.</summary>
