@@ -81,23 +81,23 @@ exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option 
 module DispatchSlotChecking =
 
     /// Print the signature of an override to a buffer as part of an error message
-    let PrintOverrideToBuffer denv os (Override(_, _, id, (mtps, memberToParentInst), argTys, retTy, _, _)) = 
+    let PrintOverrideToBuffer denv os (Override(_, _, id, (methTypars, memberToParentInst), argTys, retTy, _, _)) = 
        let denv = { denv with showTyparBinding = true }
        let retTy = (retTy  |> GetFSharpViewOfReturnType denv.g)
        let argInfos = 
            match argTys with 
            | [] -> [[(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)]]
            | _ -> argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1)) 
-       LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, mtps, argInfos, retTy))
+       LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst, id.idText, methTypars, argInfos, retTy))
 
     /// Print the signature of a MethInfo to a buffer as part of an error message
     let PrintMethInfoSigToBuffer g amap m denv os minfo =
         let denv = { denv with showTyparBinding = true }
-        let (CompiledSig(argTys, retTy, fmtps, ttpinst)) = CompiledSigOfMeth g amap m minfo
+        let (CompiledSig(argTys, retTy, fmethTypars, ttpinst)) = CompiledSigOfMeth g amap m minfo
         let retTy = (retTy  |> GetFSharpViewOfReturnType g)
         let argInfos = argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1))
         let nm = minfo.LogicalName
-        LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmtps, argInfos, retTy))
+        LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmethTypars, argInfos, retTy))
 
     /// Format the signature of an override as a string as part of an error message
     let FormatOverride denv d = bufs (fun buf -> PrintOverrideToBuffer denv buf d)
@@ -108,10 +108,10 @@ module DispatchSlotChecking =
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
     let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
         let nm = minfo.LogicalName
-        let (CompiledSig (argTys, retTy, fmtps, ttpinst)) = CompiledSigOfMeth g amap m minfo
+        let (CompiledSig (argTys, retTy, fmethTypars, ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
-        Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, (fmtps, ttpinst), argTys, retTy, isFakeEventProperty, false)
+        Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, (fmethTypars, ttpinst), argTys, retTy, isFakeEventProperty, false)
 
     /// Get the override info for a value being used to implement a dispatch slot.
     let GetTypeMemberOverrideInfo g reqdTy (overrideBy: ValRef) = 
@@ -164,7 +164,7 @@ module DispatchSlotChecking =
         match vsl with 
         | [thisv] :: vs -> 
             // Check for empty variable list from a () arg
-            let vs = if vs.Length = 1 && argInfos.IsEmpty then [] else vs
+            let vs = if List.isSingleton vs && argInfos.IsEmpty then [] else vs
             let implKind = 
                 if isInterfaceTy g implty then 
                     CanImplementAnyInterfaceSlot 
@@ -192,15 +192,18 @@ module DispatchSlotChecking =
         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
-    let IsTyparKindMatch (CompiledSig(_, _, fvmtps, _)) (Override(_, _, _, (mtps, _), _, _, _, _)) = 
-        List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
+    let IsTyparKindMatch compiledSig overrideBy = 
+        let (Override(_, _, _, (methTypars, _), _, _, _, _)) = overrideBy
+        let (CompiledSig (_, _, fvmethTypars, _)) = compiledSig
+        List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) methTypars fvmethTypars
         
     /// Check if an override is a partial match for the requirements for a dispatch slot except for the name.
-    let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) =
-        let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
-        mtps.Length = fvmtps.Length &&
+    let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig overrideBy =
+        let (Override(_, _, _, (methTypars, _), argTys, _retTy, _, _)) = overrideBy
+        let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
+        methTypars.Length = fvmethTypars.Length &&
         IsTyparKindMatch compiledSig overrideBy && 
-        argTys.Length = vargtys.Length &&
+        argTys.Length = vargTys.Length &&
         IsImplMatch g dispatchSlot overrideBy
         
     /// Check if an override is a partial match for the requirements for a dispatch slot.
@@ -217,17 +220,18 @@ module DispatchSlotChecking =
         inst1 |> List.map (map2Of2 (instType inst2)) 
      
     /// Check if an override exactly matches the requirements for a dispatch slot except for the name.
-    let IsSigExactMatch g amap m dispatchSlot (Override(_, _, _, (mtps, mtpinst), argTys, retTy, _, _) as overrideBy) =
+    let IsSigExactMatch g amap m dispatchSlot overrideBy =
+        let (Override(_, _, _, (methTypars, mtpinst), argTys, retTy, _, _)) = overrideBy
         let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
         IsSigPartialMatch g dispatchSlot compiledSig overrideBy &&
-        let (CompiledSig (vargtys, vrty, fvmtps, ttpinst)) = compiledSig
+        let (CompiledSig (vargTys, vrty, fvmethTypars, ttpinst)) = compiledSig
 
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
-        // applied all relevant substitutions except the renamings from fvtmps <-> mtps 
+        // applied all relevant substitutions except the renamings from fvtmps <-> methTypars 
 
-        let aenv = TypeEquivEnv.FromEquivTypars fvmtps mtps 
+        let aenv = TypeEquivEnv.FromEquivTypars fvmethTypars methTypars 
 
-        List.forall2 (List.lengthsEqAndForall2 (typeAEquiv g aenv)) vargtys argTys &&
+        List.forall2 (List.lengthsEqAndForall2 (typeAEquiv g aenv)) vargTys argTys &&
         returnTypesAEquiv g aenv vrty retTy &&
         
         // Comparing the method typars and their constraints is much trickier since the substitutions have not been applied 
@@ -236,8 +240,8 @@ module DispatchSlotChecking =
         //
         // Given   C<ctps>
         //         D<dtps>
-        //         dispatchSlot :   C<ctys[dtps]>.M<fvmtps[ctps]>(...)
-        //         overrideBy:  parent: D<dtys[dtps]>  value: !<ttps> <mtps[ttps]>(...) 
+        //         dispatchSlot :   C<ctys[dtps]>.M<fvmethTypars[ctps]>(...)
+        //         overrideBy:  parent: D<dtys[dtps]>  value: !<ttps> <methTypars[ttps]>(...) 
         //         
         //     where X[dtps] indicates that X may involve free type variables dtps
         //     
@@ -245,7 +249,7 @@ module DispatchSlotChecking =
         //         ttpinst maps  ctps --> ctys[dtps] 
         //         mtpinst maps  ttps --> dtps
         //       
-        //     compare fvtmps[ctps] and mtps[ttps] by 
+        //     compare fvtmps[ctps] and methTypars[ttps] by 
         //        fvtmps[ctps]  @ ttpinst     -- gives fvtmps[dtps]
         //        fvtmps[dtps] @ rev(mtpinst) -- gives fvtmps[ttps]
         //        
@@ -261,7 +265,7 @@ module DispatchSlotChecking =
         // Compare under the composed substitutions 
         let aenv = TypeEquivEnv.FromTyparInst ttpinst 
         
-        typarsAEquiv g aenv fvmtps mtps
+        typarsAEquiv g aenv fvmethTypars methTypars
 
     /// Check if an override exactly matches the requirements for a dispatch slot.
     let IsExactMatch g amap m dispatchSlot overrideBy =
@@ -350,21 +354,24 @@ module DispatchSlotChecking =
                         match possibleOverrides with 
                         | [] -> 
                             noimpl()
-                        | [ Override(_, _, _, (mtps, _), argTys, _, _, _) as overrideBy ] ->
+                        | [ overrideBy ] ->
+
+                            let (Override(_, _, _, (methTypars, _), argTys, _, _, _)) = overrideBy
+
                             let moreThanOnePossibleDispatchSlot =
                                 dispatchSlots
                                 |> List.filter (fun reqdSlot-> IsNameMatch reqdSlot.MethodInfo overrideBy && IsImplMatch g reqdSlot.MethodInfo overrideBy)
                                 |> isNilOrSingleton
                                 |> not
                             
-                            let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
+                            let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
 
                             if moreThanOnePossibleDispatchSlot then
                                 noimpl()
 
-                            elif argTys.Length <> vargtys.Length then
+                            elif argTys.Length <> vargTys.Length then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                            elif mtps.Length <> fvmtps.Length then
+                            elif methTypars.Length <> fvmethTypars.Length then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             elif not (IsTyparKindMatch compiledSig overrideBy) then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))

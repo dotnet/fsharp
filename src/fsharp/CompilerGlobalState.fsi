@@ -16,9 +16,9 @@ open FSharp.Compiler.Text
 type NiceNameGenerator =
 
     new: unit -> NiceNameGenerator
-    member FreshCompilerGeneratedName: name:string * m:range -> string
+    member FreshCompilerGeneratedName: name: string * m: range -> string
     member Reset: unit -> unit
-  
+
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
@@ -28,9 +28,9 @@ type NiceNameGenerator =
 type StableNiceNameGenerator =
 
     new: unit -> StableNiceNameGenerator
-    member GetUniqueCompilerGeneratedName: name:string * m:range * uniq:int64 -> string
+    member GetUniqueCompilerGeneratedName: name: string * m: range * uniq: int64 -> string
     member Reset: unit -> unit
-  
+
 type internal CompilerGlobalState =
 
     new: unit -> CompilerGlobalState
@@ -43,7 +43,7 @@ type internal CompilerGlobalState =
 
     /// A global generator of stable compiler generated names
     member StableNameGenerator: StableNiceNameGenerator
-  
+
 type Unique = int64
 
 /// Concurrency-safe

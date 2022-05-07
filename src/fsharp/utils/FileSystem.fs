@@ -386,40 +386,37 @@ module internal FileSystemUtils =
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
 
-    let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
+    let checkSuffix (path: string) (suffix: string) = path.EndsWithOrdinalIgnoreCase(suffix)
 
-    let hasExtensionWithValidate (validate:bool) (s:string) =
+    let hasExtensionWithValidate (validate: bool) (s: string) =
         if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
         (sLen >= 1 && s[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
 
-    let hasExtension (s:string) = hasExtensionWithValidate true s
+    let hasExtension (path: string) = hasExtensionWithValidate true path
 
-    let chopExtension (s:string) =
-        checkPathForIllegalChars s
-        if s = "." then "" else // for OCaml compatibility
-        if not (hasExtensionWithValidate false s) then
+    let chopExtension (path:string) =
+        checkPathForIllegalChars path
+        if path = "." then "" else // for OCaml compatibility
+        if not (hasExtensionWithValidate false path) then
             raise (ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
-        Path.Combine (Path.GetDirectoryName s, Path.GetFileNameWithoutExtension(s))
+        Path.Combine (Path.GetDirectoryName path, Path.GetFileNameWithoutExtension(path))
 
-    let fileNameOfPath s =
-        checkPathForIllegalChars s
-        Path.GetFileName(s)
+    let fileNameOfPath path =
+        checkPathForIllegalChars path
+        Path.GetFileName(path)
 
-    let fileNameWithoutExtensionWithValidate (validate:bool) s =
-        if validate then checkPathForIllegalChars s
-        Path.GetFileNameWithoutExtension(s)
+    let fileNameWithoutExtensionWithValidate (validate:bool) path =
+        if validate then checkPathForIllegalChars path
+        Path.GetFileNameWithoutExtension(path)
 
-    let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
+    let fileNameWithoutExtension path = fileNameWithoutExtensionWithValidate true path
 
-    let trimQuotes (s:string) =
-        s.Trim( [|' '; '\"'|] )
+    let trimQuotes (path: string) =
+        path.Trim( [|' '; '\"'|] )
 
-    let hasSuffixCaseInsensitive suffix filename = (* case-insensitive *)
-        checkSuffix (String.lowercase filename) (String.lowercase suffix)
-
-    let isDll file = hasSuffixCaseInsensitive ".dll" file
+    let isDll fileName = checkSuffix fileName ".dll"
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IAssemblyLoader =
@@ -590,8 +587,8 @@ type DefaultFileSystem() as this =
 
         isInvalidPath path ||
         let directory = Path.GetDirectoryName path
-        let filename = Path.GetFileName path
-        isInvalidDirectory directory || isInvalidFilename filename
+        let fileName = Path.GetFileName path
+        isInvalidDirectory directory || isInvalidFilename fileName
 
     abstract GetTempPathShim: unit -> string
     default _.GetTempPathShim() = Path.GetTempPath()

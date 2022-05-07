@@ -17,38 +17,34 @@ val GetGeneratedILModuleName: CompilerTarget -> string -> string
 
 val GetInitialOptimizationEnv: TcImports * TcGlobals -> IncrementalOptimizationEnv
 
-val AddExternalCcuToOptimizationEnv: TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
+val AddExternalCcuToOptimizationEnv:
+    TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
 
 val ApplyAllOptimizations:
-    TcConfig *
-    TcGlobals *
-    ConstraintSolver.TcValF *
-    string *
-    ImportMap *
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    tcVal: ConstraintSolver.TcValF *
+    outfile: string *
+    importMap: ImportMap *
     isIncrementalFragment: bool *
-    IncrementalOptimizationEnv *
-    CcuThunk *
-    TypedImplFile list
-        -> TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv 
+    optEnv: IncrementalOptimizationEnv *
+    ccu: CcuThunk *
+    implFiles: TypedImplFile list ->
+        TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
 
 val CreateIlxAssemblyGenerator:
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    ConstraintSolver.TcValF *
-    CcuThunk
-        -> IlxAssemblyGenerator
+    TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 
 val GenerateIlxCode:
     ilxBackend: IlxGenBackend *
-    isInteractiveItExpr:bool *
-    isInteractiveOnMono:bool *
+    isInteractiveItExpr: bool *
+    isInteractiveOnMono: bool *
     tcConfig: TcConfig *
     topAttrs: TopAttribs *
     optimizedImpls: TypedAssemblyAfterOptimization *
-    fragName:string *
-    ilxGenerator: IlxAssemblyGenerator
-        -> IlxGenResults
+    fragName: string *
+    ilxGenerator: IlxAssemblyGenerator ->
+        IlxGenResults
 
 // Used during static linking
 val NormalizeAssemblyRefs: CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)

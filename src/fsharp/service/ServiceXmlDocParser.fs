@@ -20,8 +20,8 @@ module XmlDocParsing =
 
     let rec digNamesFrom pat =
         match pat with
-        | SynPat.As (_, SynPat.Named(id,_isTheThisVar,_access,_range), _)
-        | SynPat.Named (id,_isTheThisVar,_access,_range) -> [id.idText]
+        | SynPat.As (_, SynPat.Named(SynIdent(id,_),_isTheThisVar,_access,_range), _)
+        | SynPat.Named (SynIdent(id,_),_isTheThisVar,_access,_range) -> [id.idText]
         | SynPat.Typed(pat,_type,_range) -> digNamesFrom pat
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
         | SynPat.LongIdent(argPats=ConstructorPats pats) -> 
@@ -95,7 +95,7 @@ module XmlDocParsing =
             | SynModuleDecl.Attributes _
             | SynModuleDecl.HashDirective _ -> []
 
-        and getXmlDocablesSynModuleOrNamespace (SynModuleOrNamespace(_, _,  _, synModuleDecls, _, _, _, _)) =
+        and getXmlDocablesSynModuleOrNamespace (SynModuleOrNamespace(decls = synModuleDecls)) =
             (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
 
         and getXmlDocablesSynTypeDefn (SynTypeDefn(typeInfo=SynComponentInfo(attributes=synAttributes; xmlDoc=preXmlDoc; range=compRange); typeRepr=synTypeDefnRepr; members=synMemberDefns; range=tRange)) =

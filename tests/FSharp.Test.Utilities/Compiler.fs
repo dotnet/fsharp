@@ -17,6 +17,10 @@ open System.Collections.Immutable
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
+open System.Reflection
+open System.Reflection.Metadata
+open System.Reflection.PortableExecutable
+
 open FSharp.Test.CompilerAssertHelpers
 open TestFramework
 open System.Reflection.Metadata
@@ -94,15 +98,15 @@ module rec Compiler =
 
     type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
 
-    type SymbolType = 
-        | MemberOrFunctionOrValue of string 
-        | Entity of string 
-        | GenericParameter of string 
-        | Parameter of string 
-        | StaticParameter of string 
+    type SymbolType =
+        | MemberOrFunctionOrValue of string
+        | Entity of string
+        | GenericParameter of string
+        | Parameter of string
+        | StaticParameter of string
         | ActivePatternCase of string
-        | UnionCase of string 
-        | Field of string 
+        | UnionCase of string
+        | Field of string
 
         member this.FullName () =
             match this with
@@ -164,6 +168,15 @@ module rec Compiler =
     type CompilationResult =
         | Success of CompilationOutput
         | Failure of CompilationOutput
+
+    type ExecutionPlatform =
+        | Anycpu = 0
+        | AnyCpu32bitPreferred = 1
+        | X86 = 2
+        | Itanium = 3
+        | X64 = 4
+        | Arm = 5
+        | Arm64 = 6
 
     let private defaultOptions : string list = []
 
@@ -265,7 +278,24 @@ module rec Compiler =
         fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
 
     let FsFromPath (path: string) : CompilationUnit =
-        fsFromString (SourceFromPath path) |> FS
+        fsFromString (SourceFromPath path)
+        |> FS
+        |> withName (Path.GetFileNameWithoutExtension(path))
+
+    let FSharpWithInputAndOutputPath (src: string) (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
+        let compileDirectory = Path.GetDirectoryName(outputFilePath)
+        let name = Path.GetFileName(outputFilePath)
+        {
+            Source            = SourceCodeFileKind.Create(inputFilePath, src)
+            AdditionalSources = []
+            Baseline          = None
+            Options           = defaultOptions
+            OutputType        = Library
+            OutputDirectory   = Some(DirectoryInfo(compileDirectory))
+            Name              = Some name
+            IgnoreWarnings    = false
+            References        = []
+        } |> FS
 
     let CSharp (source: string) : CompilationUnit =
         csFromString (SourceCodeFileKind.Fs({FileName="test.cs"; SourceText=Some source })) |> CS
@@ -312,6 +342,15 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
+
+    let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
+
+    let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
+
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
 
@@ -319,6 +358,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with OutputDirectory = Some (DirectoryInfo(path)) }
         | _ -> failwith "withOutputDirectory is only supported on F#"
+
+    let withDefines (defines: string list) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper (defines |> List.map(fun define -> $"--define:{define}")) "withDefines is only supported on F#" cUnit
 
     let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
@@ -393,12 +435,29 @@ module rec Compiler =
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }
-        | _ -> failwith "TODO: Implement where applicable."
+        | _ -> failwith "TODO: Implement asLibrary where applicable."
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS _ -> 
+            let p =
+                match platform with
+                | ExecutionPlatform.Anycpu -> "anycpu"
+                | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
+                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.X64 -> "x64"
+                | ExecutionPlatform.X86 -> "x86"
+                | ExecutionPlatform.Arm -> "arm"
+                | ExecutionPlatform.Arm64 -> "arm64"
+                | _ -> failwith $"Unknown value for ExecutionPlatform: {platform}"
+
+            withOptionsHelper [ $"--platform:{p}" ] "withPlatform is only supported for F#" cUnit
+        | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
     let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -485,8 +544,8 @@ module rec Compiler =
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : CompilationResult =
         let outputPath = tryCreateTemporaryDirectory()
         Directory.CreateDirectory(outputPath) |> ignore
-        let filename = compilation.AssemblyName
-        let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
+        let fileName = compilation.AssemblyName
+        let output = Path.Combine(outputPath, Path.ChangeExtension(fileName, ".dll"))
         let cmplResult = compilation.Emit (output)
         let result =
             { OutputPath   = None
@@ -537,6 +596,26 @@ module rec Compiler =
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
+
+    let private getAssemblyInBytes (result: CompilationResult) =
+        match result with
+        | CompilationResult.Success output ->
+            match output.OutputPath with
+            | Some filePath -> File.ReadAllBytes(filePath)
+            | _ -> failwith "Output path not found."
+        | _ ->
+            failwith "Compilation has errors."
+
+    let compileGuid (cUnit: CompilationUnit) : Guid =
+        let bytes =
+            compile cUnit
+            |> shouldSucceed
+            |> getAssemblyInBytes
+
+        use reader1 = new PEReader(bytes.ToImmutableArray())
+        let reader1 = reader1.GetMetadataReader()
+
+        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
@@ -751,6 +830,8 @@ module rec Compiler =
             | Some p -> ILChecker.checkIL p il
         | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
 
+    let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
+
     let private verifyFSILBaseline (baseline: Baseline option) (result: CompilationOutput) : unit =
         match baseline with
         | None -> failwith "Baseline was not provided."
@@ -770,8 +851,8 @@ module rec Compiler =
                         // if the environment variable TEST_UPDATE_BSL has been set
                         if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
                             match baseline with
-                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                                | None -> ()
+                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                            | None -> ()
 
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
@@ -911,7 +992,7 @@ module rec Compiler =
         let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
                 if not (List.exists (fun (el: ErrorInfo) ->
-                    let msg = el.Message 
+                    let msg = el.Message
                     msg = exp) source) then
                     failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
@@ -922,25 +1003,35 @@ module rec Compiler =
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
-            let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-            
+
+            // (Error 67, Line 14, Col 3, Line 14, Col 24, "This type test or downcast will always hold")
+            let errorMessage error =
+                let { Error = err; Range = range; Message = message } = error
+                let errorType =
+                    match err with
+                    | ErrorType.Error n -> $"Error {n}"
+                    | ErrorType.Warning n-> $"Warning {n}"
+                    | ErrorType.Hidden n-> $"Hidden {n}"
+                    | ErrorType.Information n-> $"Information {n}"
+                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""".Replace("\r\n", "\n")
+
+            let expectedErrors = expected |> List.map (fun error -> errorMessage error)
+            let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })
+
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b sourceErrors expectedErrors)
+
             // For lists longer than 100 errors:
-            errors |> List.iter System.Diagnostics.Debug.WriteLine
+            expectedErrors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count" expected.Length errors.Length
+            checkEqual "Errors count" expectedErrors.Length sourceErrors.Length
 
-            (errors, expected)
-            ||> List.iter2 (fun actualError expectedError ->
-                           let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
-                           let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
-                           checkEqual "Error" expectedError actualError
-                           checkEqual "ErrorRange" expectedRange actualRange
-                           checkEqual "Message" expectedMessage actualMessage)
-            ()
+            (sourceErrors, expectedErrors)
+            ||> List.iter2 (fun actual expected ->
+
+                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with

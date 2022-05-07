@@ -984,7 +984,7 @@ module Patterns =
     let mkNewDelegate (ty, e) =
         let mi = getDelegateInvoke ty
         let ps = mi.GetParameters()
-        let dlfun = Array.foldBack (fun (p:ParameterInfo) rty -> mkFunTy p.ParameterType rty) ps mi.ReturnType
+        let dlfun = Array.foldBack (fun (p:ParameterInfo) retTy -> mkFunTy p.ParameterType retTy) ps mi.ReturnType
         checkTypesSR dlfun (typeOf e) "ty" (SR.GetString(SR.QtmmFunTypeNotMatchDelegate))
         mkFE1 (NewDelegateOp ty) e
 
@@ -1030,13 +1030,13 @@ module Patterns =
 
     let instFormal (typarEnv: Type[]) (ty:Instantiable<'T>) = ty (fun i -> typarEnv.[i])
 
-    let getGenericArguments(tc: Type) =
-        if tc.IsGenericType then tc.GetGenericArguments() else [| |]
+    let getGenericArguments(genericType: Type) =
+        if genericType.IsGenericType then genericType.GetGenericArguments() else [| |]
 
-    let getNumGenericArguments(tc: Type) =
-        if tc.IsGenericType then tc.GetGenericArguments().Length else 0
+    let getNumGenericArguments(genericType: Type) =
+        if genericType.IsGenericType then genericType.GetGenericArguments().Length else 0
 
-    let bindMethodBySearch (knownArgCount: int voption, parentT: Type, nm, marity, argtys, rty) =
+    let bindMethodBySearch (knownArgCount: int voption, parentT: Type, nm, marity, argTys, retTy) =
         let methInfos = parentT.GetMethods staticOrInstanceBindingFlags |> Array.toList
         // First, filter on name, if unique, then binding "done"
         let tyargTs = getGenericArguments parentT
@@ -1051,8 +1051,8 @@ module Patterns =
                 let mtyargTIs = if methInfo.IsGenericMethod then methInfo.GetGenericArguments() else [| |]
                 if mtyargTIs.Length  <> marity then false (* method generic arity mismatch *) else
                 let typarEnv = (Array.append tyargTs mtyargTIs)
-                let argTs = argtys |> List.map (instFormal typarEnv)
-                let resT  = instFormal typarEnv rty
+                let argTs = argTys |> List.map (instFormal typarEnv)
+                let resT  = instFormal typarEnv retTy
 
                 // methInfo implied Types
                 let haveArgTs =
@@ -1077,12 +1077,12 @@ module Patterns =
             | None          -> invalidOp (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
-    let bindMethodHelper (knownArgCount, (parentT: Type, nm, marity, argtys, rty)) =
+    let bindMethodHelper (knownArgCount, (parentT: Type, nm, marity, argTys, retTy)) =
       if isNull parentT then invalidArg "parentT" (SR.GetString(SR.QparentCannotBeNull))
       if marity = 0 then
           let tyargTs = if parentT.IsGenericType then parentT.GetGenericArguments() else [| |]
-          let argTs = Array.ofList (List.map (instFormal tyargTs) argtys)
-          let resT  = instFormal tyargTs rty
+          let argTs = Array.ofList (List.map (instFormal tyargTs) argTys)
+          let resT  = instFormal tyargTs retTy
           let methInfo =
               try
                  match parentT.GetMethod(nm, staticOrInstanceBindingFlags, null, argTs, null) with
@@ -1091,9 +1091,9 @@ module Patterns =
                with :? AmbiguousMatchException -> None
           match methInfo with
           | Some methInfo when (typeEquals resT methInfo.ReturnType) -> methInfo
-          | _ -> bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
+          | _ -> bindMethodBySearch(knownArgCount, parentT, nm, marity, argTys, retTy)
       else
-          bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
+          bindMethodBySearch(knownArgCount, parentT, nm, marity, argTys, retTy)
 
     let bindModuleProperty (ty: Type, nm) =
         match ty.GetProperty(nm, staticBindingFlags) with
@@ -1174,10 +1174,10 @@ module Patterns =
                 | Some mi -> mi
                 | None -> fail()
 
-    let mkNamedType (tc: Type, tyargs) =
+    let mkNamedType (genericType: Type, tyargs) =
         match  tyargs with
-        | [] -> tc
-        | _ -> tc.MakeGenericType(Array.ofList tyargs)
+        | [] -> genericType
+        | _ -> genericType.MakeGenericType(Array.ofList tyargs)
 
     let inline checkNonNullResult (arg:string, err:string) y =
         match box y with
@@ -1218,34 +1218,34 @@ module Patterns =
             | _ -> null
         | ctor -> ctor
 
-    let bindProp (tc, propName, retType, argTypes, tyargs) =
+    let bindProp (genericType, propName, retType, argTypes, tyargs) =
         // We search in the instantiated type, rather than searching the generic type.
-        let typ = mkNamedType (tc, tyargs)
-        let argtyps : Type list = argTypes |> inst tyargs
+        let typ = mkNamedType (genericType, tyargs)
+        let argTypes : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
         // fxcop may not see "propName" as an arg
-        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null)
+        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argTypes, null)
         |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName))
 
-    let bindField (tc, fldName, tyargs) =
-        let typ = mkNamedType (tc, tyargs)
+    let bindField (genericType, fldName, tyargs) =
+        let typ = mkNamedType (genericType, tyargs)
         typ.GetField(fldName, staticOrInstanceBindingFlags)
         |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName)) // fxcop may not see "fldName" as an arg
 
-    let bindGenericCctor (tc: Type) =
-        tc.GetConstructor(staticBindingFlags, null, [| |], null)
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
+    let bindGenericCctor (genericType: Type) =
+        genericType.GetConstructor(staticBindingFlags, null, [| |], null)
+        |> checkNonNullResult ("genericType", SR.GetString(SR.QfailedToBindConstructor))
 
-    let bindGenericCtor (tc: Type, argTypes: Instantiable<Type list>) =
-        let argtyps = instFormal (getGenericArguments tc) argTypes
-        tc.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null)
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
+    let bindGenericCtor (genericType: Type, argTypes: Instantiable<Type list>) =
+        let argTypes = instFormal (getGenericArguments genericType) argTypes
+        genericType.GetConstructor(instanceBindingFlags, null, Array.ofList argTypes, null)
+        |> checkNonNullResult ("genericType", SR.GetString(SR.QfailedToBindConstructor))
 
-    let bindCtor (tc, argTypes: Instantiable<Type list>, tyargs) =
-        let typ = mkNamedType (tc, tyargs)
-        let argtyps = argTypes |> inst tyargs
-        typ.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null)
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
+    let bindCtor (genericType, argTypes: Instantiable<Type list>, tyargs) =
+        let typ = mkNamedType (genericType, tyargs)
+        let argTypes = argTypes |> inst tyargs
+        typ.GetConstructor(instanceBindingFlags, null, Array.ofList argTypes, null)
+        |> checkNonNullResult ("genericType", SR.GetString(SR.QfailedToBindConstructor))
 
     let chop n xs =
         if n < 0 then invalidArg "n" (SR.GetString(SR.inputMustBeNonNegative))
@@ -1262,13 +1262,13 @@ module Patterns =
         if ngmeth.GetGenericArguments().Length = 0 then ngmeth(* non generic *)
         else ngmeth.MakeGenericMethod(Array.ofList methTypeArgs)
 
-    let bindGenericMeth (knownArgCount, (tc: Type, argTypes, retType, methName, numMethTyargs)) =
-        bindMethodHelper(knownArgCount, (tc, methName, numMethTyargs, argTypes, retType))
+    let bindGenericMeth (knownArgCount, (genericType: Type, argTypes, retType, methName, numMethTyargs)) =
+        bindMethodHelper(knownArgCount, (genericType, methName, numMethTyargs, argTypes, retType))
 
-    let bindMeth (knownArgCount, (tc: Type, argTypes, retType, methName, numMethTyargs), tyargs) =
-        let ntyargs = tc.GetGenericArguments().Length
-        let enclTypeArgs, methTypeArgs = chop ntyargs tyargs
-        let ty = mkNamedType (tc, enclTypeArgs)
+    let bindMeth (knownArgCount, (genericType: Type, argTypes, retType, methName, numMethTyargs), tyargs) =
+        let numEnclTypeArgs = genericType.GetGenericArguments().Length
+        let enclTypeArgs, methTypeArgs = chop numEnclTypeArgs tyargs
+        let ty = mkNamedType (genericType, enclTypeArgs)
         let ngmeth = bindMethodHelper(knownArgCount, (ty, methName, numMethTyargs, argTypes, retType))
         instMeth(ngmeth, methTypeArgs)
 
@@ -1411,7 +1411,7 @@ module Patterns =
             | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName))
         | ty -> ty
 
-    let decodeNamedTy tc tsR = mkNamedType (tc, tsR)
+    let decodeNamedTy genericType tsR = mkNamedType (genericType, tsR)
 
     let mscorlib = typeof<System.Int32>.Assembly
 
@@ -1604,9 +1604,9 @@ module Patterns =
             | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
-            let ((tc, _, _, methName, _) as data) = u_MethodInfoData st
+            let ((genericType, _, _, methName, _) as data) = u_MethodInfoData st
             if methName = ".cctor" then
-                let cinfo = bindGenericCctor tc
+                let cinfo = bindGenericCctor genericType
                 (cinfo :> MethodBase)
             else
                 let minfo = bindGenericMeth (ValueNone, data)

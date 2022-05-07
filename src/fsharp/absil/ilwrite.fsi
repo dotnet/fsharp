@@ -23,6 +23,8 @@ type options =
    deterministic: bool
    showTimes: bool
    dumpDebugInfo: bool
+   referenceAssemblyOnly: bool
+   referenceAssemblyAttribOpt: ILAttribute option
    pathMap: PathMap }
 
 /// Write a binary to the file system.

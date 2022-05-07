@@ -165,7 +165,7 @@ let ``Test multi project 1 all symbols`` () =
              if  s.Symbol.DisplayName = "b" then
                  yield s.Symbol ]   |> List.head
 
-    x1FromProject1A.Assembly.FileName.IsNone |> shouldEqual true // For now, the assembly being analyzed doesn't return a filename
+    x1FromProject1A.Assembly.FileName.IsNone |> shouldEqual true // For now, the assembly being analyzed doesn't return a file name
     x1FromProject1A.Assembly.QualifiedName |> shouldEqual "" // For now, the assembly being analyzed doesn't return a qualified name
     x1FromProject1A.Assembly.SimpleName |> shouldEqual (Path.GetFileNameWithoutExtension Project1A.dllName)
     x1FromProjectMultiProject.Assembly.FileName |> shouldEqual (Some Project1A.dllName)
@@ -370,7 +370,7 @@ let ``Test ManyProjectsStressTest all symbols`` () =
             [ for s in pResults.GetAllUsesOfAllSymbols() do
                 if  s.Symbol.DisplayName = "v" then
                    yield s.Symbol ]   |> List.head
-        vFromProject.Assembly.FileName.IsNone |> shouldEqual true // For now, the assembly being analyzed doesn't return a filename
+        vFromProject.Assembly.FileName.IsNone |> shouldEqual true // For now, the assembly being analyzed doesn't return a file name
         vFromProject.Assembly.QualifiedName |> shouldEqual "" // For now, the assembly being analyzed doesn't return a qualified name
         vFromProject.Assembly.SimpleName |> shouldEqual (Path.GetFileNameWithoutExtension p.DllName)
 

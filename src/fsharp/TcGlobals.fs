@@ -170,6 +170,8 @@ let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 [<Literal>]
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 [<Literal>]
+let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
+[<Literal>]
 let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 [<Literal>]
 let tname_AsyncCallback = "System.AsyncCallback"
@@ -183,8 +185,8 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 //-------------------------------------------------------------------------
 
 type TcGlobals(
-    compilingFslib: bool,
-    ilg:ILGlobals,
+    compilingFSharpCore: bool,
+    ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
     mlCompatibility: bool,
@@ -384,10 +386,10 @@ type TcGlobals(
       // A table of all intrinsics that the compiler cares about
   let v_knownIntrinsics = ConcurrentDictionary<string * string option * string * int, ValRef>(HashIdentity.Structural)
 
-  let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
-      let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
+  let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argTys, retTy))  =
+      let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argTys) retTy)
       let isMember = Option.isSome memberParentName
-      let argCount = if isMember then List.sum (List.map List.length argtys) else 0
+      let argCount = if isMember then List.sum (List.map List.length argTys) else 0
       let linkageType = if isMember then Some ty else None
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, linkageType)
       let vref = IntrinsicValRef(enclosingEntity, logicalName, isMember, ty, key)
@@ -520,7 +522,7 @@ type TcGlobals(
   let v_choice5_tcr     = mk_MFCore_tcref fslibCcu "Choice`5"
   let v_choice6_tcr     = mk_MFCore_tcref fslibCcu "Choice`6"
   let v_choice7_tcr     = mk_MFCore_tcref fslibCcu "Choice`7"
-  let tyconRefEq x y = primEntityRefEq compilingFslib fslibCcu  x y
+  let tyconRefEq x y = primEntityRefEq compilingFSharpCore fslibCcu  x y
 
   let v_suppressed_types =
     [ mk_MFCore_tcref fslibCcu "Option`1";
@@ -590,9 +592,10 @@ type TcGlobals(
   let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
       AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
 
-  let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
+  let mkSourceDoc fileName = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=fileName)
+
   // Build the memoization table for files
-  let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
+  let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mkSourceDoc), keyComparer=HashIdentity.Structural)
 
   let v_and_info =                   makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "&"                      , None                 , None          , [],         mk_rel_sig v_bool_ty)
   let v_addrof_info =                makeIntrinsicValRef(fslib_MFIntrinsicOperators_nleref,                    CompileOpName "~&"                     , None                 , None          , [vara],     ([[varaTy]], mkByrefTy varaTy))
@@ -949,7 +952,7 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let decompileTy (tcref: EntityRef) tinst =
-      if compilingFslib then
+      if compilingFSharpCore then
           // No need to decompile when compiling FSharp.Core.dll
           TType_app (tcref, tinst, v_knownWithoutNull)
       else
@@ -962,7 +965,7 @@ type TcGlobals(
   /// Doing this normalization is a fairly performance critical piece of code as it is frequently invoked
   /// in the process of converting .NET metadata to F# internal compiler data structures (see import.fs).
   let improveTy (tcref: EntityRef) tinst =
-        if compilingFslib then
+        if compilingFSharpCore then
             let dict = getBetterTypeDict1()
             match dict.TryGetValue tcref.LogicalName with
             | true, builder -> builder tcref tinst
@@ -993,15 +996,15 @@ type TcGlobals(
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
-  member _.compilingFslib = compilingFslib
+  member _.compilingFSharpCore = compilingFSharpCore
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
   member _.mlCompatibility = mlCompatibility
   member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
   member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
   member _.pathMap = pathMap
   member _.langVersion = langVersion
-  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
-  member _.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
+  member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
+  member _.valRefEq x y = primValRefEq compilingFSharpCore fslibCcu x y
   member _.fslibCcu = fslibCcu
   member val refcell_tcr_canon = v_refcell_tcr_canon
   member val option_tcr_canon = mk_MFCore_tcref     fslibCcu "Option`1"
@@ -1206,7 +1209,8 @@ type TcGlobals(
   member val system_Nullable_tcref = v_nullable_tcr
   member val system_GenericIComparable_tcref = findSysTyconRef sys "IComparable`1"
   member val system_GenericIEquatable_tcref = findSysTyconRef sys "IEquatable`1"
-  member val mk_IComparable_ty = mkSysNonGenericTy sys "IComparable"
+  member val mk_IComparable_ty    = mkSysNonGenericTy sys "IComparable"
+  member val mk_Attribute_ty = mkSysNonGenericTy sys "Attribute"
   member val system_LinqExpression_tcref = v_linqExpression_tcr
 
   member val mk_IStructuralComparable_ty = mkSysNonGenericTy sysCollections "IStructuralComparable"
@@ -1254,7 +1258,8 @@ type TcGlobals(
   member val iltyp_ValueType = findSysILTypeRef tname_ValueType |> mkILNonGenericBoxedTy
   member val iltyp_RuntimeFieldHandle = findSysILTypeRef tname_RuntimeFieldHandle |> mkILNonGenericValueTy
   member val iltyp_RuntimeMethodHandle = findSysILTypeRef tname_RuntimeMethodHandle |> mkILNonGenericValueTy
-  member val iltyp_RuntimeTypeHandle = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
+  member val iltyp_RuntimeTypeHandle   = findSysILTypeRef tname_RuntimeTypeHandle |> mkILNonGenericValueTy
+  member val iltyp_ReferenceAssemblyAttributeOpt = tryFindSysILTypeRef tname_ReferenceAssemblyAttribute |> Option.map mkILNonGenericBoxedTy
 
 
   member val attrib_AttributeUsageAttribute = findSysAttrib "System.AttributeUsageAttribute"
@@ -1293,7 +1298,8 @@ type TcGlobals(
   member val attrib_CallerLineNumberAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerLineNumberAttribute"
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
-  member val attrib_SkipLocalsInitAttribute = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
+  member val attrib_ReferenceAssemblyAttribute = findSysAttrib "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
+  member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
   member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
@@ -1623,7 +1629,7 @@ type TcGlobals(
   /// Indicates if we are generating witness arguments for SRTP constraints. Only done if the FSharp.Core
   /// supports witness arguments.
   member g.generateWitnesses =
-      compilingFslib ||
+      compilingFSharpCore ||
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals

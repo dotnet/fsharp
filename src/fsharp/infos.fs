@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
@@ -347,24 +347,24 @@ let ImportILTypeFromMetadata amap m scoref tinst minst ilty =
     ImportILType scoref amap m (tinst@minst) ilty
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty cattrs =
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty getCattrs =
     let ty = ImportILType scoref amap m (tinst@minst) ilty
     // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
-    if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute cattrs then
+    if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ()) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
     else
         ty
 
 /// Get the parameter type of an IL method.
-let ImportParameterTypeFromMetadata amap m ilty cattrs scoref tinst mist =
-    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty cattrs
+let ImportParameterTypeFromMetadata amap m ilty getCattrs scoref tinst mist =
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty getCattrs
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
+let ImportReturnTypeFromMetadata amap m ilty getCattrs scoref tinst minst =
     match ilty with
     | ILType.Void -> None
-    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy cattrs)
+    | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
 
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
@@ -597,8 +597,9 @@ type OptionalArgInfo =
                         match ilParam.Marshal with
                         | Some(ILNativeType.IUnknown | ILNativeType.IDispatch | ILNativeType.Interface) -> Constant ILFieldInit.Null
                         | _ ->
-                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute ilParam.CustomAttrs then WrapperForIUnknown
-                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute ilParam.CustomAttrs then WrapperForIDispatch
+                            let attrs = ilParam.CustomAttrs
+                            if   TryFindILAttributeOpt g.attrib_IUnknownConstantAttribute attrs then WrapperForIUnknown
+                            elif TryFindILAttributeOpt g.attrib_IDispatchConstantAttribute attrs then WrapperForIDispatch
                             else MissingValue
                     else
                         DefaultValue
@@ -877,19 +878,21 @@ type ILMethInfo =
     /// Get the argument types of the the IL method. If this is an C#-style extension method
     /// then drop the object argument.
     member x.GetParamTypes(amap, m, minst) =
-        x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst)
+        x.ParamMetadata |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)
 
     /// Get all the argument types of the IL method. Include the object argument even if this is
     /// an C#-style extension method.
     member x.GetRawArgTypes(amap, m, minst) =
-        x.RawMetadata.Parameters |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst)
+        x.RawMetadata.Parameters |> List.map (fun p -> ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst)
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then
     /// drop the object argument.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap, m, minst) =
-        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst) )
+        let scope = x.MetadataScope
+        let tinst = x.DeclaringTypeInst
+        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) scope tinst minst) )
 
     /// Get a reference to the method (dropping all generic instantiations), as an Abstract IL ILMethodRef.
     member x.ILMethodRef =
@@ -918,7 +921,7 @@ type ILMethInfo =
         // method instantiation.
         if x.IsILExtensionMethod then
             let p = x.RawMetadata.Parameters.Head
-            [ ImportParameterTypeFromMetadata amap m p.Type p.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst ]
+            [ ImportParameterTypeFromMetadata amap m p.Type (fun _ -> p.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst ]
         else if x.IsInstance then
             [ x.ApparentEnclosingType ]
         else
@@ -926,7 +929,7 @@ type ILMethInfo =
 
     /// Get the compiled return type of the method, where 'void' is None.
     member x.GetCompiledReturnTy (amap, m, minst) =
-        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type x.RawMetadata.Return.CustomAttrs x.MetadataScope x.DeclaringTypeInst minst
+        ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
     member x.GetFSharpReturnTy (amap, m, minst) =
@@ -1047,7 +1050,7 @@ type MethInfo =
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
         match x with
-        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFslib vref
+        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> true
 #endif
@@ -1448,9 +1451,10 @@ type MethInfo =
         match x with
         | ILMeth(g, ilMethInfo, _) ->
             [ [ for p in ilMethInfo.ParamMetadata do
-                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
+                 let attrs = p.CustomAttrs
+                 let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute attrs
                  let reflArgInfo =
-                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef attrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
@@ -1459,9 +1463,9 @@ type MethInfo =
                  // Note: we get default argument values from VB and other .NET language metadata
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
-                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute p.CustomAttrs
-                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
-                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
+                 let isCallerLineNumberArg = TryFindILAttribute g.attrib_CallerLineNumberAttribute attrs
+                 let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute attrs
+                 let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute attrs
 
                  let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
@@ -1603,10 +1607,10 @@ type MethInfo =
                 match x with
                 | ILMeth(_, ilminfo, _) ->
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys, g.knownWithoutNull))
-                    let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type ilminfo.RawMetadata.Return.CustomAttrs ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
+                    let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs) ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramType = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type p.CustomAttrs
+                                let paramType = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
                                 yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS
@@ -2042,7 +2046,7 @@ type PropInfo =
     member x.HasDirectXmlComment =
         match x with
         | FSProp(g, _, Some vref, _)
-        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFslib vref
+        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> true
 #endif
@@ -2158,8 +2162,9 @@ type PropInfo =
         | FSProp(g, _, Some vref, _)  ->
             // A getter has signature  { OptionalObjectType } -> Unit -> PropertyType
             // A getter indexer has signature  { OptionalObjectType } -> TupledIndexerArguments -> PropertyType
-            let arginfos = ArgInfosOfMember g vref
-            arginfos.Length = 1 && arginfos.Head.Length >= 1
+            match ArgInfosOfMember g vref with
+            | [argInfos] -> not (List.isEmpty argInfos)
+            | _ -> false
         | FSProp(g, _, _, Some vref) ->
             // A setter has signature  { OptionalObjectType } -> PropertyType -> Void
             // A setter indexer has signature  { OptionalObjectType } -> TupledIndexerArguments -> PropertyType -> Void
@@ -2591,7 +2596,7 @@ type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType opti
 let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     let formalMethTypars = minfo.FormalMethodTypars
     let fminst = generalizeTypars formalMethTypars
-    let vargtys = minfo.GetParamTypes(amap, m, fminst)
+    let vargTys = minfo.GetParamTypes(amap, m, fminst)
     let vrty = minfo.GetCompiledReturnTy(amap, m, fminst)
 
     // The formal method typars returned are completely formal - they don't take into account the instantiation
@@ -2602,7 +2607,7 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
         let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m
         mkTyparInst memberParentTypars parentTyArgs
 
-    CompiledSig(vargtys, vrty, formalMethTypars, fmtpinst)
+    CompiledSig(vargTys, vrty, formalMethTypars, fmtpinst)
 
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
 let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
@@ -2612,9 +2617,9 @@ let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo
     let fminst = generalizeTypars formalMethTypars
     let formalMethTypars2 = minfo2.FormalMethodTypars
     let fminst2 = generalizeTypars formalMethTypars2
-    let argtys = minfo.GetParamTypes(amap, m, fminst)
-    let argtys2 = minfo2.GetParamTypes(amap, m, fminst2)
-    (argtys, argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
+    let argTys = minfo.GetParamTypes(amap, m, fminst)
+    let argTys2 = minfo2.GetParamTypes(amap, m, fminst2)
+    (argTys, argTys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
         typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature
@@ -2626,9 +2631,9 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: M
 /// Used to hide/filter members from base classes based on signature
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
     pinfo.PropertyName = pinfo2.PropertyName &&
-    let argtys = pinfo.GetParamTypes(amap, m)
-    let argtys2 = pinfo2.GetParamTypes(amap, m)
-    List.lengthsEqAndForall2 (typeEquivAux erasureFlag g) argtys argtys2
+    let argTys = pinfo.GetParamTypes(amap, m)
+    let argTys2 = pinfo2.GetParamTypes(amap, m)
+    List.lengthsEqAndForall2 (typeEquivAux erasureFlag g) argTys argTys2
 
 /// Used to hide/filter members from base classes based on signature
 let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =

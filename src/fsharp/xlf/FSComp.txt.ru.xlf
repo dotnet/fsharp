@@ -227,6 +227,11 @@
         <target state="translated">двоичное форматирование для целых чисел</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">информационные сообщения, связанные с ссылочными ячейками</target>
@@ -427,6 +432,16 @@
         <target state="translated">Печать определяемых интерфейсов всех файлов компиляции в связанные файлы подписей</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInvalidRefAssembly">
+        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidRefOut">
+        <source>Invalid reference assembly path'</source>
+        <target state="new">Invalid reference assembly path'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Отображение допустимых значений для версии языка. Укажите версию языка, например, "latest" или "preview".</target>
@@ -435,6 +450,16 @@
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
         <target state="new">Disable implicit generation of constructs using reflection</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOut">
+        <source>Produce a reference assembly with the specified file path.</source>
+        <target state="new">Produce a reference assembly with the specified file path.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

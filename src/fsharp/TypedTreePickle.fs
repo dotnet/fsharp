@@ -1890,7 +1890,7 @@ and p_tycon_repr x st =
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
+            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
     | TProvidedNamespaceRepr _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))

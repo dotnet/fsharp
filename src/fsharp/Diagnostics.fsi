@@ -7,10 +7,10 @@
 namespace FSharp.Compiler.Diagnostics
 
 [<RequireQualifiedAccess>]
-type FSharpDiagnosticSeverity = 
+type FSharpDiagnosticSeverity =
     | Hidden
     | Info
-    | Warning 
+    | Warning
     | Error
 
 type FSharpDiagnosticOptions =
@@ -22,4 +22,3 @@ type FSharpDiagnosticOptions =
       WarnAsWarn: int list }
 
     static member Default: FSharpDiagnosticOptions
-  

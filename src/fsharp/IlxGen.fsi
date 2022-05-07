@@ -9,13 +9,13 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
-/// Indicates how the generated IL code is ultimately emitted 
+/// Indicates how the generated IL code is ultimately emitted
 type IlxGenBackend =
     | IlWriteBackend
     | IlReflectBackend
 
 [<NoEquality; NoComparison>]
-type internal IlxGenOptions = 
+type internal IlxGenOptions =
     { fragName: string
 
       /// Indicates if we are generating filter blocks
@@ -27,7 +27,7 @@ type internal IlxGenOptions =
       /// Indicates if static array data should be emitted using static blobs
       emitConstantArraysUsingStaticDataBlobs: bool
 
-      /// If this is set, then the last module becomes the "main" module 
+      /// If this is set, then the last module becomes the "main" module
       mainMethodInfo: Attribs option
 
       /// Indicates if local optimizations are active
@@ -47,7 +47,7 @@ type internal IlxGenOptions =
 
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
-      isInteractive: bool 
+      isInteractive: bool
 
       /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
       /// storage, even though 'it' is not logically mutable
@@ -57,13 +57,11 @@ type internal IlxGenOptions =
       useReflectionFreeCodeGen: bool
 
       /// Indicates that, whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool
-    }
+      alwaysCallVirt: bool }
 
 /// The results of the ILX compilation of one fragment of an assembly
-type public IlxGenResults = 
-    {
-      /// The generated IL/ILX type definitions
+type public IlxGenResults =
+    { /// The generated IL/ILX type definitions
       ilTypeDefs: ILTypeDef list
 
       /// The generated IL/ILX assembly attributes
@@ -79,27 +77,25 @@ type public IlxGenResults =
       permissionSets: ILSecurityDecl list
 
       /// The generated IL/ILX resources associated with F# quotations
-      quotationResourceInfo: (ILTypeRef list * byte[])  list
-    }
-  
+      quotationResourceInfo: (ILTypeRef list * byte []) list }
+
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
-    {
-      LookupTypeRef: ILTypeRef -> Type
-      LookupType: ILType -> Type
-    } 
+    { LookupTypeRef: ILTypeRef -> Type
+      LookupType: ILType -> Type }
 
 /// An incremental ILX code generator for a single assembly
 type public IlxAssemblyGenerator =
     /// Create an incremental ILX code generator for a single assembly
-    new: Import.ImportMap * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator 
-    
+    new: Import.ImportMap * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
+
     /// Register a set of referenced assemblies with the ILX code generator
     member AddExternalCcus: CcuThunk list -> unit
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member AddIncrementalLocalAssemblyFragment: isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile list -> unit
+    member AddIncrementalLocalAssemblyFragment:
+        isIncrementalFragment: bool * fragName: string * typedImplFiles: TypedImplFile list -> unit
 
     /// Generate ILX code for an assembly fragment
     member GenerateCode: IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults

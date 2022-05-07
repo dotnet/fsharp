@@ -111,7 +111,7 @@ namespace Microsoft.FSharp.Collections
             arr
 
         [<CompiledName("Collect")>]
-        let collect (mapping: 'T -> 'U[])  (array: 'T[]) : 'U[]=
+        let collect (mapping: 'T -> 'U[]) (array: 'T[]) : 'U[]=
             checkNonNull "array" array
             let len = array.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<'U[]> len
@@ -362,11 +362,14 @@ namespace Microsoft.FSharp.Collections
             Microsoft.FSharp.Primitives.Basics.Array.mapFoldBack mapping array state
 
         [<CompiledName("Exists")>]
-        let exists (predicate: 'T -> bool) (array: 'T[]) =
+        let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (array: 'T[]) =
             checkNonNull "array" array
-            let len = array.Length
-            let rec loop i = i < len && (predicate array.[i] || loop (i+1))
-            len > 0 && loop 0
+            let mutable state = false
+            let mutable i = 0
+            while not state && i < array.Length do
+                state <- predicate array.[i]
+                i <- i + 1
+            state
 
         [<CompiledName("Contains")>]
         let inline contains value (array: 'T[]) =

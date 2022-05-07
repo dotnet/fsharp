@@ -195,7 +195,7 @@ module MainModuleBuilder =
                 Seq.toList
         | None -> []
 
-    let fileVersion findStringAttr (assemblyVersion: ILVersionInfo) =
+    let ComputeILFileVersion findStringAttr (assemblyVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyFileVersionAttribute"
         match findStringAttr attrName with
         | None -> assemblyVersion
@@ -204,7 +204,7 @@ module MainModuleBuilder =
             // Warning will be reported by CheckExpressions.fs
             assemblyVersion
 
-    let productVersion findStringAttr (fileVersion: ILVersionInfo) =
+    let ComputeProductVersion findStringAttr (fileVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
         let toDotted (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" version.Major version.Minor version.Build version.Revision
         match findStringAttr attrName with
@@ -214,7 +214,7 @@ module MainModuleBuilder =
             // Warning will be reported by CheckExpressions.fs
             v
 
-    let productVersionToILVersionInfo (version: string) : ILVersionInfo =
+    let ConvertProductVersionToILVersionInfo (version: string) : ILVersionInfo =
         let parseOrZero i (v:string) =
             let v =
                 // When i = 3 then this is the 4th part of the version.  The last part of the version can be trailed by any characters so we trim them off
@@ -261,7 +261,7 @@ module MainModuleBuilder =
 
             // Add the type forwarders to any .NET DLL post-.NET-2.0, to give binary compatibility
             let exportedTypesList =
-                if tcConfig.compilingFslib then
+                if tcConfig.compilingFSharpCore then
                    List.append (createMscorlibExportList tcGlobals) (createSystemNumericsExportList tcConfig tcImports)
                 else
                     []
@@ -365,9 +365,9 @@ module MainModuleBuilder =
                     | Some text  -> [(key, text)]
                     | _ -> []
 
-                let fileVersionInfo = fileVersion findAttribute assemblyVersion
+                let fileVersionInfo = ComputeILFileVersion findAttribute assemblyVersion
 
-                let productVersionString = productVersion findAttribute fileVersionInfo
+                let productVersionString = ComputeProductVersion findAttribute fileVersionInfo
 
                 let stringFileInfo =
                      // 000004b0:
@@ -430,7 +430,7 @@ module MainModuleBuilder =
                     let dwFileType = 0x01 // REVIEW: HARDWIRED
                     let dwFileSubtype = 0x00 // REVIEW: HARDWIRED
                     let lwFileDate = 0x00L // REVIEW: HARDWIRED
-                    (fileVersionInfo, productVersionString |> productVersionToILVersionInfo, dwFileFlagsMask, dwFileFlags, dwFileOS, dwFileType, dwFileSubtype, lwFileDate)
+                    (fileVersionInfo, productVersionString |> ConvertProductVersionToILVersionInfo, dwFileFlagsMask, dwFileFlags, dwFileOS, dwFileType, dwFileSubtype, lwFileDate)
 
                 let vsVersionInfoResource =
                     VersionResourceFormat.VS_VERSION_INFO_RESOURCE(fixedFileInfo, stringFileInfo, varFileInfo)
