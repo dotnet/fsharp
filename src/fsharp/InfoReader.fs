@@ -973,7 +973,7 @@ let ArgsTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
     let amap = infoReader.amap
     let dty = einfo.GetDelegateType(amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
-    | Some(argtys, _) -> argtys
+    | Some(argTys, _) -> argTys
     | None -> error(nonStandardEventError einfo.EventName m)
 
 /// Get the type of the event when looked at as if it is a property 

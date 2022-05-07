@@ -60,7 +60,7 @@ type public HashIfExpression() =
                     member x.ErrorCount         = errors.Count
             }
 
-        let lightSyntax = LightSyntaxStatus(true, false)
+        let lightSyntax = IndentationAwareSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines= []
         let startPos = Position.Empty

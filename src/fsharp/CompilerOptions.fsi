@@ -15,7 +15,7 @@ type OptionSwitch =
 
 /// The spec value describes the action of the argument,
 /// and whether it expects a following parameter.
-type OptionSpec = 
+type OptionSpec =
     | OptionClear of bool ref
     | OptionFloat of (float -> unit)
     | OptionInt of (int -> unit)
@@ -28,19 +28,24 @@ type OptionSpec =
     | OptionStringList of (string -> unit)
     | OptionStringListSwitch of (string -> OptionSwitch -> unit)
     | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
+    | OptionHelp of (CompilerOptionBlock list -> unit) // like OptionUnit, but given the "options"
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
-and  CompilerOption      =
-    | CompilerOption of name: string * argumentDescriptionString: string * actionSpec: OptionSpec * deprecationError: Option<exn> * helpText: string option
+and CompilerOption =
+    | CompilerOption of
+        name: string *
+        argumentDescriptionString: string *
+        actionSpec: OptionSpec *
+        deprecationError: Option<exn> *
+        helpText: string option
 
-and  CompilerOptionBlock =
-    | PublicOptions  of heading: string * options: CompilerOption list
+and CompilerOptionBlock =
+    | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 
-val PrintCompilerOptionBlocks: CompilerOptionBlock list -> unit  // for printing usage
+val PrintCompilerOptionBlocks: CompilerOptionBlock list -> unit // for printing usage
 
-val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit  // for QA
+val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
 val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
@@ -74,12 +79,12 @@ val ignoreFailureOnMono1_1_16: (unit -> unit) -> unit
 
 val mutable enableConsoleColoring: bool
 
-val DoWithColor: ConsoleColor -> (unit -> 'a) -> 'a
+val DoWithColor: ConsoleColor -> (unit -> 'T) -> 'T
 
-val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'a) -> 'a
+val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'T) -> 'T
 
 val ReportTime: TcConfig -> string -> unit
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 
-val PostProcessCompilerArgs: string Set -> string [] -> string list
+val PostProcessCompilerArgs: Set<string> -> string [] -> string list

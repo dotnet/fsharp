@@ -13,8 +13,8 @@ type public NavigableTaggedText =
     member Range: range
     inherit TaggedText
 
-/// Render a Layout yielding an 'a using a 'b (hidden state) type 
-type internal LayoutRenderer<'a,'b> =
+/// Render a Layout yielding an 'a using a 'b (hidden state) type
+type internal LayoutRenderer<'a, 'b> =
     abstract Start: unit -> 'b
     abstract AddText: 'b -> TaggedText -> 'b
     abstract AddBreak: 'b -> int -> 'b
@@ -24,9 +24,9 @@ type internal LayoutRenderer<'a,'b> =
 type internal NoState = NoState
 type internal NoResult = NoResult
 
-module internal LayoutRender = 
+module internal LayoutRender =
 
-    val internal toArray: Layout -> TaggedText[]
+    val internal toArray: Layout -> TaggedText []
 
     val internal emitL: (TaggedText -> unit) -> Layout -> unit
 
@@ -38,17 +38,17 @@ module internal LayoutRender =
 
     val internal bufferL: StringBuilder -> Layout -> unit
 
-    /// Run a render on a Layout       
-    val internal renderL: LayoutRenderer<'b,'a> -> Layout -> 'b
+    /// Run a render on a Layout
+    val internal renderL: LayoutRenderer<'b, 'a> -> Layout -> 'b
 
-    /// Render layout to string 
-    val internal stringR: LayoutRenderer<string,string list>
+    /// Render layout to string
+    val internal stringR: LayoutRenderer<string, string list>
 
     /// Render layout to channel
-    val internal channelR: TextWriter -> LayoutRenderer<NoResult,NoState>
+    val internal channelR: TextWriter -> LayoutRenderer<NoResult, NoState>
 
     /// Render layout to StringBuilder
-    val internal bufferR: StringBuilder -> LayoutRenderer<NoResult,NoState>
+    val internal bufferR: StringBuilder -> LayoutRenderer<NoResult, NoState>
 
     /// Render layout to collector of TaggedText
     val internal taggedTextListR: collector: (TaggedText -> unit) -> LayoutRenderer<NoResult, NoState>
@@ -114,4 +114,3 @@ module internal RightL =
     val rightAngle: Layout
     val rightBracketAngle: Layout
     val rightBracketBar: Layout
-

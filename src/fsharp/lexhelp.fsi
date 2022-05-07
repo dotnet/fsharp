@@ -12,13 +12,13 @@ open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Text
 
-val stdinMockFilename: string
+val stdinMockFileName: string
 
 /// Lexer args: status of #light processing.  Mutated when a #light
 /// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
-type LightSyntaxStatus =
-    new: initial:bool * warn: bool -> LightSyntaxStatus
+type IndentationAwareSyntaxStatus =
+    new: initial: bool * warn: bool -> IndentationAwareSyntaxStatus
     member ExplicitlySet: bool
     member Status: bool
     member Status: bool with set
@@ -30,16 +30,14 @@ type LexResourceManager =
 
 /// The context applicable to all lexing functions (tokens, strings etc.)
 type LexArgs =
-    {
-      conditionalDefines: string list
+    { conditionalDefines: string list
       resourceManager: LexResourceManager
       errorLogger: ErrorLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus: LightSyntaxStatus
-      mutable stringNest: LexerInterpolatedStringNesting
-    }
+      mutable lightStatus: IndentationAwareSyntaxStatus
+      mutable stringNest: LexerInterpolatedStringNesting }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -50,12 +48,12 @@ val resetLexbufPos: string -> Lexbuf -> unit
 
 val mkLexargs:
     conditionalDefines: string list *
-    lightStatus: LightSyntaxStatus *
+    lightStatus: IndentationAwareSyntaxStatus *
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
     errorLogger: ErrorLogger *
-    pathMap: PathMap
-        -> LexArgs
+    pathMap: PathMap ->
+        LexArgs
 
 val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a
 
@@ -69,7 +67,12 @@ type LexerStringFinisherContext =
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
 
-    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> context: LexerStringFinisherContext -> cont: LexerContinuation -> token
+    member Finish:
+        buf: ByteBuffer ->
+        kind: LexerStringKind ->
+        context: LexerStringFinisherContext ->
+        cont: LexerContinuation ->
+            token
 
     static member Default: LexerStringFinisher
 
@@ -81,7 +84,7 @@ val addByteChar: ByteBuffer -> char -> unit
 
 val stringBufferAsString: ByteBuffer -> string
 
-val stringBufferAsBytes: ByteBuffer -> byte[]
+val stringBufferAsBytes: ByteBuffer -> byte []
 
 val stringBufferIsBytes: ByteBuffer -> bool
 
@@ -112,4 +115,3 @@ module Keywords =
     val IdentifierToken: LexArgs -> Lexbuf -> string -> token
 
     val keywordNames: string list
-

@@ -71,7 +71,7 @@ type internal FSharpLanguageServiceTestable() as this =
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())
         let checker = FSharpChecker.Create(legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver())
-        checker.BeforeBackgroundFileCheck.Add (fun (filename,_) -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(filename)))
+        checker.BeforeBackgroundFileCheck.Add (fun (fileName,_) -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(fileName)))
         checkerContainerOpt <- Some (checker)
         serviceProvider <- Some sp
         isInitialized <- true
@@ -81,8 +81,8 @@ type internal FSharpLanguageServiceTestable() as this =
         sourceFactory <- Some sourceFact
 
     
-    member this.NotifyFileTypeCheckStateIsDirty(filename) = 
-        dirtyForTypeCheckFiles <- dirtyForTypeCheckFiles.Add filename
+    member this.NotifyFileTypeCheckStateIsDirty(fileName) = 
+        dirtyForTypeCheckFiles <- dirtyForTypeCheckFiles.Add fileName
 
     /// Clear all language service caches and finalize all transient references to compiler objects
     member this.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() = 
@@ -117,9 +117,9 @@ type internal FSharpLanguageServiceTestable() as this =
         // The project may have changed its references.  These would be represented as 'dependency files' of each source file.  Each source file will eventually start listening
         // for changes to those dependencies, at which point we'll get OnDependencyFileCreateOrDelete notifications.  Until then, though, we just 'make a note' that this project is out of date.
         bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName) 
-        for filename in site.CompilationSourceFiles do
+        for fileName in site.CompilationSourceFiles do
             let rdt = this.ServiceProvider.RunningDocumentTable
-            match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt,filename) with
+            match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt,fileName) with
             | Some source -> 
                 source.RecolorizeWholeFile()
                 source.RecordChangeToView()
@@ -141,9 +141,9 @@ type internal FSharpLanguageServiceTestable() as this =
     
         // Each time a source is created, also verify that the IProjectSite has been initialized to listen to changes to the project.
         // We can't listen to OnProjectLoaded because the language service is not guaranteed to be loaded when this is called.
-        let filename = VsTextLines.GetFilename buffer
+        let fileName = VsTextLines.GetFilename buffer
         let rdt = this.ServiceProvider.RunningDocumentTable
-        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename)
+        let result = VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName)
         match result with 
         | Some(hier,_) -> 
             match hier with 
@@ -174,8 +174,8 @@ type internal FSharpLanguageServiceTestable() as this =
             let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
-        member this.DependencyFileChanged (filename) = 
-            this.NotifyFileTypeCheckStateIsDirty filename
+        member this.DependencyFileChanged (fileName) = 
+            this.NotifyFileTypeCheckStateIsDirty fileName
 
 
     /// Do OnIdle processing for the whole language service. dirtyForTypeCheckFiles can be set by events 
@@ -209,10 +209,10 @@ type internal FSharpLanguageServiceTestable() as this =
                     // and only update it when e.g. the project system notifies us there is an important change (e.g. a file rename, etc).
                     // In practice we have been there, and always screwed up some non-unit-tested/testable corner-cases.
                     // So this is not ideal from a perf perspective, but it is easy to reason about the correctness.
-                    let filename = VsTextLines.GetFilename buffer
+                    let fileName = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
-                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename, this.FSharpChecker)
-                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(filename))
+                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, fileName, this.FSharpChecker)
+                    let sourceTokenizer = FSharpSourceTokenizer(defines,Some(fileName))
                     sourceTokenizer.CreateLineTokenizer(source))
 
             let colorizer = new FSharpColorizer_DEPRECATED(this.CloseColorizer, buffer, scanner) 

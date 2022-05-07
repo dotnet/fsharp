@@ -85,7 +85,7 @@ module ScriptPreprocessClosure =
     /// Represents an input to the closure finding process
     type ClosureSource =
         ClosureSource of
-            filename: string *
+            fileName: string *
             referenceRange: range *
             sourceText: ISourceText *
             parseRequired: bool
@@ -93,7 +93,7 @@ module ScriptPreprocessClosure =
     /// Represents an output of the closure finding process
     type ClosureFile =
         ClosureFile of
-            filename: string *
+            fileName: string *
             range: range *
             parsedInput: ParsedInput option *
             parseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list *
@@ -112,7 +112,7 @@ module ScriptPreprocessClosure =
     /// Parse a script file (or any input file referenced by '#load')
     let ParseScriptClosureInput
         (
-            filename: string,
+            fileName: string,
             sourceText: ISourceText,
             tcConfig: TcConfig,
             codeContext,
@@ -129,7 +129,7 @@ module ScriptPreprocessClosure =
             match codeContext with
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
-            | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
+            | CodeContext.Editing -> "EDITING" :: (if IsScript fileName then ["INTERACTIVE"] else ["COMPILED"])
 
         let tcConfigB = tcConfig.CloneToBuilder() 
         tcConfigB.conditionalDefines <- defines @ tcConfig.conditionalDefines
@@ -138,15 +138,15 @@ module ScriptPreprocessClosure =
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, sourceText)
 
         // The root compiland is last in the list of compilands.
-        let isLastCompiland = (IsScript filename, tcConfig.target.IsExe)
-        ParseOneInputLexbuf (tcConfig, lexResourceManager, lexbuf, filename, isLastCompiland, errorLogger)
+        let isLastCompiland = (IsScript fileName, tcConfig.target.IsExe)
+        ParseOneInputLexbuf (tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger)
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig
         (
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
-            filename: string,
+            fileName: string,
             codeContext,
             useSimpleResolution,
             useFsiAuxLib,
@@ -159,11 +159,11 @@ module ScriptPreprocessClosure =
             reduceMemoryUsage
         ) =
 
-        let projectDir = Path.GetDirectoryName filename
+        let projectDir = Path.GetDirectoryName fileName
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
-        let rangeForErrors = mkFirstLineOfFile filename
+        let rangeForErrors = mkFirstLineOfFile fileName
         let tcConfigB =
             TcConfigBuilder.CreateNew(legacyReferenceResolver,
                 defaultFSharpBinariesDir,
@@ -211,7 +211,7 @@ module ScriptPreprocessClosure =
             | CodeContext.Compilation -> LegacyResolutionEnvironment.EditingOrCompilation false
             | CodeContext.CompilationAndEvaluation -> LegacyResolutionEnvironment.CompilationAndEvaluation
 
-        tcConfigB.framework <- false
+        tcConfigB.implicitlyReferenceDotNetAssemblies <- false
 
         tcConfigB.useSimpleResolution <- useSimpleResolution
 
@@ -223,18 +223,18 @@ module ScriptPreprocessClosure =
 
         TcConfig.Create(tcConfigB, validate=true), scriptDefaultReferencesDiagnostics
 
-    let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) =
+    let ClosureSourceOfFilename(fileName, m, inputCodePage, parseRequired) =
         try
-            let filename = FileSystem.GetFullPathShim filename
-            use stream = FileSystem.OpenFileForReadShim(filename)
+            let fileName = FileSystem.GetFullPathShim fileName
+            use stream = FileSystem.OpenFileForReadShim(fileName)
             use reader =
                 match inputCodePage with
                 | None -> new StreamReader(stream, true)
                 | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n)
             let source = reader.ReadToEnd()
-            [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
-        with e ->
-            errorRecovery e m
+            [ClosureSource(fileName, m, SourceText.ofString source, parseRequired)]
+        with exn ->
+            errorRecovery exn m
             []
 
     let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn
@@ -351,43 +351,43 @@ module ScriptPreprocessClosure =
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 
-        and loop (ClosureSource(filename, m, sourceText, parseRequired)) =
-            [   if not (observedSources.HaveSeen(filename)) then
-                    observedSources.SetSeen(filename)
-                    //printfn "visiting %s" filename
-                    if IsScript filename || parseRequired then
+        and loop (ClosureSource(fileName, m, sourceText, parseRequired)) =
+            [   if not (observedSources.HaveSeen(fileName)) then
+                    observedSources.SetSeen(fileName)
+                    //printfn "visiting %s" fileName
+                    if IsScript fileName || parseRequired then
                         let parseResult, parseDiagnostics =
                             let errorLogger = CapturingErrorLogger("FindClosureParse")
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptClosureInput (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger)
+                            let result = ParseScriptClosureInput (fileName, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger)
                             result, errorLogger.Diagnostics
 
                         let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
                         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                        let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                        let pathOfMetaCommandSource = Path.GetDirectoryName fileName
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
                         let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
                         tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 
-                        yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources fileName
 
                         let postSources = tcConfig.GetAvailableLoadedSources()
                         let sources = if preSources.Length < postSources.Length then postSources[preSources.Length..] else []
 
-                        yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources fileName
                         for m, subFile in sources do
                             if IsScript subFile then
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                     yield! loop subSource
                             else
                                 yield ClosureFile(subFile, m, None, [], [], [])
-                        yield ClosureFile(filename, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+                        yield ClosureFile(fileName, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
                     else
                         // Don't traverse into .fs leafs.
-                        printfn "yielding non-script source %s" filename
-                        yield ClosureFile(filename, m, None, [], [], []) ]
+                        printfn "yielding non-script source %s" fileName
+                        yield ClosureFile(fileName, m, None, [], [], []) ]
 
         let sources = closureSources |> List.collect loop
         let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
@@ -403,24 +403,24 @@ module ScriptPreprocessClosure =
             else
                 match List.frontAndBack closureFiles with
                 | rest, ClosureFile
-                           (filename, m,
+                           (fileName, m,
                             Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia))),
                             parseDiagnostics, metaDiagnostics, nowarns) ->
 
                     let isLastCompiland = (true, tcConfig.target.IsExe)
                     rest @ [ClosureFile
-                                (filename, m,
+                                (fileName, m,
                                  Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia))),
                                  parseDiagnostics, metaDiagnostics, nowarns)]
 
                 | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = [ for ClosureFile(filename, m, _, _, _, _) in closureFiles -> (filename, m) ]
+        let sourceFiles = [ for ClosureFile(fileName, m, _, _, _, _) in closureFiles -> (fileName, m) ]
 
         let sourceInputs =
-            [  for ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns) in closureFiles ->
-                   ({ FileName=filename
+            [  for ClosureFile(fileName, _, input, parseDiagnostics, metaDiagnostics, _nowarns) in closureFiles ->
+                   ({ FileName=fileName
                       SyntaxTree=input
                       ParseDiagnostics=parseDiagnostics
                       MetaCommandDiagnostics=metaDiagnostics } : LoadClosureInput) ]
@@ -477,7 +477,7 @@ module ScriptPreprocessClosure =
         (
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
-            filename,
+            fileName,
             sourceText,
             codeContext,
             useSimpleResolution,
@@ -499,7 +499,7 @@ module ScriptPreprocessClosure =
         let references0, assumeDotNetFramework, scriptDefaultReferencesDiagnostics =
             let tcConfig, scriptDefaultReferencesDiagnostics =
                 CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir,
-                    filename, codeContext, useSimpleResolution,
+                    fileName, codeContext, useSimpleResolution,
                     useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework,
                     useSdkRefs, sdkDirOverride, tryGetMetadataSnapshot, reduceMemoryUsage)
 
@@ -508,16 +508,16 @@ module ScriptPreprocessClosure =
             references0, tcConfig.assumeDotNetFramework, scriptDefaultReferencesDiagnostics
 
         let tcConfig, scriptDefaultReferencesDiagnostics =
-            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename,
+            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, fileName,
                  codeContext, useSimpleResolution, useFsiAuxLib, Some (references0, scriptDefaultReferencesDiagnostics),
                  applyCommandLineArgs, assumeDotNetFramework, useSdkRefs, sdkDirOverride,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
-        let closureSources = [ClosureSource(filename, range0, sourceText, true)]
-        let closureFiles, tcConfig, packageReferences = FindClosureFiles(filename, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(filename, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
+        let closureSources = [ClosureSource(fileName, range0, sourceText, true)]
+        let closureFiles, tcConfig, packageReferences = FindClosureFiles(fileName, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
+        GetLoadClosure(fileName, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
 
-    /// Given source filename, find the full load closure
+    /// Given source file fileName, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles
         (
@@ -529,7 +529,7 @@ module ScriptPreprocessClosure =
         ) =
 
         let mainFile, _mainFileRange = List.last files
-        let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
+        let closureSources = files |> List.collect (fun (fileName, m) -> ClosureSourceOfFilename(fileName, m,tcConfig.inputCodePage,true))
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
         GetLoadClosure(mainFile, closureFiles, tcConfig, codeContext, packageReferences, [])
 
@@ -543,7 +543,7 @@ type LoadClosure with
         (
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
-            filename: string,
+            fileName: string,
             sourceText: ISourceText,
             implicitDefines,
             useSimpleResolution: bool,
@@ -560,7 +560,7 @@ type LoadClosure with
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText,
+            (legacyReferenceResolver, defaultFSharpBinariesDir, fileName, sourceText,
              implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager,
              applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 

@@ -65,15 +65,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry TaggedText.lineBreak)
 
     interface ITaggedTextCollector with
-        member this.Add taggedText = 
+        member _.Add taggedText = 
             // TODO: bail out early if line limit is already hit
             match taggedText.Tag with
             | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText
 
-        member this.IsEmpty = isEmpty
-        member this.EndsWithLineBreak = isEmpty || endsWithLineBreak
-        member this.StartXMLDoc() = startXmlDoc <- true
+        member _.IsEmpty = isEmpty
+        member _.EndsWithLineBreak = isEmpty || endsWithLineBreak
+        member _.StartXMLDoc() = startXmlDoc <- true
 
 /// XmlDocumentation builder, using the VS interfaces to build documentation.  An interface is used
 /// to allow unit testing to give an alternative implementation which captures the documentation.
@@ -82,8 +82,8 @@ type internal IDocumentationBuilder =
     /// Append the given raw XML formatted into the string builder
     abstract AppendDocumentationFromProcessedXML : xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * processedXml:string * showExceptions:bool * showParameters:bool * paramName:string option-> unit
 
-    /// Appends text for the given filename and signature into the StringBuilder
-    abstract AppendDocumentation : xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * filename: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
+    /// Appends text for the given file name and signature into the StringBuilder
+    abstract AppendDocumentation: xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * fileName: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
 
 /// Documentation helpers.
 module internal XmlDocumentation =
@@ -263,7 +263,7 @@ module internal XmlDocumentation =
                               /// ITaggedTextCollector to add to
                               exnCollector: ITaggedTextCollector,
                               /// Name of the library file
-                              filename:string,
+                              fileName:string,
                               /// Signature of the comment
                               signature:string,
                               /// Whether to show exceptions
@@ -274,7 +274,7 @@ module internal XmlDocumentation =
                               paramName:string option                            
                              ) = 
                 try     
-                    match GetMemberIndexOfAssembly(filename) with
+                    match GetMemberIndexOfAssembly(fileName) with
                     | Some(index) ->
                         let _,idx = index.ParseMemberSignature(signature)
                         if idx <> 0u then
@@ -290,8 +290,8 @@ module internal XmlDocumentation =
     let AppendXmlComment(documentationProvider:IDocumentationBuilder, xmlCollector: ITaggedTextCollector, exnCollector: ITaggedTextCollector, xml, showExceptions, showParameters, paramName) =
         match xml with
         | FSharpXmlDoc.None -> ()
-        | FSharpXmlDoc.FromXmlFile(filename,signature) -> 
-            documentationProvider.AppendDocumentation(xmlCollector, exnCollector, filename, signature, showExceptions, showParameters, paramName)
+        | FSharpXmlDoc.FromXmlFile(fileName,signature) -> 
+            documentationProvider.AppendDocumentation(xmlCollector, exnCollector, fileName, signature, showExceptions, showParameters, paramName)
         | FSharpXmlDoc.FromXmlText(xmlDoc) ->
             let elaboratedXml = xmlDoc.GetElaboratedXmlLines()
             let processedXml = ProcessXml("\n\n" + String.concat "\n" elaboratedXml)

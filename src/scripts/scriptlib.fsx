@@ -15,14 +15,14 @@ module Scripting =
 
     let isNullOrEmpty s = String.IsNullOrEmpty s
 
-    let executeProcess filename arguments =
+    let executeProcess fileName arguments =
         let processWriteMessage (chan:TextWriter) (message:string) =
             if message <> null then 
                 chan.WriteLine(message) 
-        printfn "%s %s" filename arguments
+        printfn "%s %s" fileName arguments
         let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
                                     RedirectStandardOutput=true, RedirectStandardError=true,
-                                    CreateNoWindow=true, FileName=filename)
+                                    CreateNoWindow=true, FileName=fileName)
         let p = new Process(StartInfo=info)
         p.OutputDataReceived.Add(fun x -> processWriteMessage stdout x.Data)
         p.ErrorDataReceived.Add(fun x ->  processWriteMessage stderr x.Data)
@@ -184,10 +184,10 @@ module Scripting =
         | _, false -> "win7-x86"
 #endif
 
-    let executeProcessNoRedirect filename arguments =
+    let executeProcessNoRedirect fileName arguments =
         let info = ProcessStartInfo(Arguments=arguments, UseShellExecute=false, 
                                     RedirectStandardOutput=true, RedirectStandardError=true,RedirectStandardInput=true,
-                                    CreateNoWindow=true, FileName=filename)
+                                    CreateNoWindow=true, FileName=fileName)
         let p = new Process(StartInfo=info)
         if p.Start() then
 

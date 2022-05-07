@@ -141,7 +141,9 @@ let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFie
       addFieldNeverAttrs = addFieldNeverAttrs }
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
+
 let mkILFuncTy cenv dty rty = mkILBoxedTy cenv.tref_Func[0] [dty;rty]
+
 let mkILCurriedFuncTy cenv dtys rty = List.foldBack (mkILFuncTy cenv) dtys rty
 
 let typ_Func cenv (dtys: ILType list) rty = 
@@ -165,11 +167,11 @@ let rec mkTyOfLambdas cenv lam =
 // Method to call for a particular multi-application
 // -------------------------------------------------------------------- 
     
-let mkMethSpecForMultiApp cenv (argtys': ILType list, rty) =  
-    let n = argtys'.Length
-    let formalArgTys = List.mapi (fun i _ ->  ILType.TypeVar (uint16 i)) argtys'
+let mkMethSpecForMultiApp cenv (argTys: ILType list, retTy) =  
+    let n = argTys.Length
+    let formalArgTys = List.mapi (fun i _ ->  ILType.TypeVar (uint16 i)) argTys
     let formalRetTy = ILType.TypeVar (uint16 n)
-    let inst = argtys'@[rty]
+    let inst = argTys@[retTy]
     if n = 1  then 
       true, 
        (mkILNonGenericInstanceMethSpecInTy (mkILBoxedTy cenv.tref_Func[0] inst, "Invoke", formalArgTys, formalRetTy))
@@ -182,29 +184,26 @@ let mkMethSpecForMultiApp cenv (argtys': ILType list, rty) =
            formalRetTy, 
            inst.Tail.Tail))
 
-let mkCallBlockForMultiValueApp cenv doTailCall (args', rty') =
-    let callvirt, mr = mkMethSpecForMultiApp cenv (args', rty')
+let mkCallBlockForMultiValueApp cenv doTailCall (argTys, retTy) =
+    let callvirt, mr = mkMethSpecForMultiApp cenv (argTys, retTy)
     [ ( if callvirt then I_callvirt (doTailCall, mr, None) else I_call (doTailCall, mr, None) ) ]
 
 let mkMethSpecForClosureCall cenv (clospec: IlxClosureSpec) = 
-    let tyargsl, argtys, rstruct = stripSupportedAbstraction clospec.FormalLambdas
+    let tyargsl, argTys, rstruct = stripSupportedAbstraction clospec.FormalLambdas
     if not (isNil tyargsl) then failwith "mkMethSpecForClosureCall: internal error"
-    let rty' = mkTyOfLambdas cenv rstruct
-    let argtys' = typesOfILParams argtys
-    let minst' = clospec.GenericArgs
-    (mkILInstanceMethSpecInTy(clospec.ILType, "Invoke", argtys', rty', minst'))
-
+    let retTyR = mkTyOfLambdas cenv rstruct
+    let argTysR = typesOfILParams argTys
+    let minstR = clospec.GenericArgs
+    mkILInstanceMethSpecInTy(clospec.ILType, "Invoke", argTysR, retTyR, minstR)
 
 // -------------------------------------------------------------------- 
 // Translate instructions....
 // -------------------------------------------------------------------- 
 
-
 let mkLdFreeVar (clospec: IlxClosureSpec) (fv: IlxClosureFreeVar) = 
     [ mkLdarg0; mkNormalLdfld (mkILFieldSpecInTy (clospec.ILType, fv.fvName, fv.fvType) ) ]
 
-
-let mkCallFunc cenv allocLocal numThisGenParams tl apps = 
+let mkCallFunc cenv allocLocal numThisGenParams tailness apps = 
 
     // "callfunc" and "callclo" instructions become a series of indirect 
     // calls or a single direct call.   
@@ -255,7 +254,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                         ((actual :: revArgsSoFar), rest''))
             let instTyargs = List.rev revInstTyArgs
             let precall, loaders' = computePreCall fst 0 rest' loaders
-            let doTailCall = andTailness tl false
+            let doTailCall = andTailness tailness false
             let instrs1 = 
                 precall @
                 [ I_callvirt (doTailCall,  (mkILInstanceMethSpecInTy (cenv.mkILTyFuncTy, "Specialize", [], cenv.ilg.typ_Object, instTyargs)), None) ]
@@ -273,7 +272,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let precall, loaders' = computePreCall fst args.Length rest loaders
             let isLast = (match rest with Apps_done _ -> true | _ -> false)
             let rty  = mkTyOfApps cenv rest
-            let doTailCall = andTailness tl isLast
+            let doTailCall = andTailness tailness isLast
 
             let preCallBlock = precall 
 
