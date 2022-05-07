@@ -324,7 +324,7 @@ type FSharpLineTokenizer =
 type FSharpSourceTokenizer =
 
     /// Create a tokenizer for a source file.
-    new : conditionalDefines:string list * filename:string option -> FSharpSourceTokenizer
+    new : conditionalDefines:string list * fileName:string option -> FSharpSourceTokenizer
 
     /// Create a tokenizer for a line of this source file
     member CreateLineTokenizer: lineText:string -> FSharpLineTokenizer
@@ -578,4 +578,4 @@ type public FSharpToken =
 type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
-    static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
+    static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit

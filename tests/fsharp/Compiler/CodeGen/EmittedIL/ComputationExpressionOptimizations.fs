@@ -22,7 +22,7 @@ module ComputationExpressionOptimizations =
     // one uses this in practice but it's a good baseline test for the elimination and redution of constructs.
     //
     let ``check reduction of sample builder for synchronous code``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module Test
 
@@ -134,7 +134,7 @@ module Examples =
             finally
                printfn "step"
          }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             // Check testFunctionWithBind is flattened
             """
@@ -176,34 +176,34 @@ module Examples =
   IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
   IL_0016:  pop
-  IL_0017:  ldarg.0
-  IL_0018:  ldc.i4.0
-  IL_0019:  bge.s      IL_004d
-    
-  IL_001b:  ldc.i4.s   9
-  IL_001d:  ldarg.0
-  IL_001e:  add
-  IL_001f:  stloc.1
-  IL_0020:  ldstr      "step %P()"
-  IL_0025:  ldc.i4.1
-  IL_0026:  newarr     [runtime]System.Object
-  IL_002b:  dup
-  IL_002c:  ldc.i4.0
-  IL_002d:  ldloc.1
-  IL_002e:  box        [runtime]System.Int32
-  IL_0033:  stelem     [runtime]System.Object
-  IL_0038:  ldnull
-  IL_0039:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string,
+  IL_0017:  br.s       IL_0049
+
+  IL_0019:  ldc.i4.s   9
+  IL_001b:  ldarg.0
+  IL_001c:  add
+  IL_001d:  stloc.1
+  IL_001e:  ldstr      "step %P()"
+  IL_0023:  ldc.i4.1
+  IL_0024:  newarr     [runtime]System.Object
+  IL_0029:  dup
+  IL_002a:  ldc.i4.0
+  IL_002b:  ldloc.1
+  IL_002c:  box        [runtime]System.Int32
+  IL_0031:  stelem     [runtime]System.Object
+  IL_0036:  ldnull
+  IL_0037:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string,
                                                                                                                                                                                                                                                                                           object[],
                                                                                                                                                                                                                                                                                           class [runtime]System.Type[])
-  IL_003e:  stloc.0
-  IL_003f:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
-  IL_0044:  ldloc.0
-  IL_0045:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
+  IL_003c:  stloc.0
+  IL_003d:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
+  IL_0042:  ldloc.0
+  IL_0043:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [runtime]System.IO.TextWriter,
                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-  IL_004a:  pop
-  IL_004b:  br.s       IL_0017
-    
+  IL_0048:  pop
+  IL_0049:  ldarg.0
+  IL_004a:  ldc.i4.0
+  IL_004b:  blt.s      IL_0019
+
   IL_004d:  ldarg.0
   IL_004e:  ldarg.0
   IL_004f:  add
@@ -314,6 +314,6 @@ module Examples =
   IL_0062:  ret
 } 
             """
-            ])
+            ]))
 
 #endif

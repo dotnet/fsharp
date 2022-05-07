@@ -215,7 +215,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     interface IReadOnlyDictionary<'Key,'Value>
     override Equals : obj -> bool
 
-/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
+/// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.FSharpMap`2"/>.</summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Map = 
@@ -745,3 +745,35 @@ module Map =
     /// </example>
     [<CompiledName("Values")>]
     val values: table: Map<'Key, 'T> -> ICollection<'T>
+
+    /// <summary>Returns binding for the smallest key in the map.
+    /// Raise <c>KeyNotFoundException</c> when map is empty.</summary>
+    ///
+    /// <param name="table">The input map.</param>
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
+    /// 
+    /// <example id="minkeyvalue-1">
+    /// <code lang="fsharp">
+    /// let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    /// sample |> Map.minKeyValue // evaluates to (1, "a")
+    /// </code>
+    /// </example>
+    [<CompiledName("MinKeyValue")>]
+    val minKeyValue: table: Map<'Key, 'T> -> 'Key * 'T
+
+    /// <summary>Returns binding for the largest key in the map.
+    /// Raise <c>KeyNotFoundException</c> when map is empty.</summary>
+    ///
+    /// <param name="table">The input map.</param>
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the map is empty.</exception>
+    /// 
+    /// <example id="maxkeyvalue-1">
+    /// <code lang="fsharp">
+    /// let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    /// sample |> Map.maxKeyValue // evaluates to (2, "b")
+    /// </code>
+    /// </example>
+    [<CompiledName("MaxKeyValue")>]
+    val maxKeyValue: table: Map<'Key, 'T> -> 'Key * 'T

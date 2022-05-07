@@ -394,8 +394,8 @@ type ProvidedAssembly =
 
 #endif
 
-[<Class>]
 /// Represents the context for which code is to be generated. Normally you should not need to use this directly.
+[<Class>]
 type ProvidedTypesContext = 
         
     /// Try to find the given target assembly in the context

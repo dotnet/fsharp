@@ -17,7 +17,7 @@ The following tables are split into two categories: syntactic and semantic. They
 |  Action                                | Data inspected | Data returned | Expected CPU/Allocations (S/M/L/XL) |
 |----------------------------------------|----------------|---------------|-----------------|
 | Syntactic Classification               | Current doc's source text | Text span and classification type for each token in the document | S |
-| Breakpoint Resolution                  | Current doc's syntax tree | Text span representing where breakpoing where resolve | S |
+| Breakpoint Resolution                  | Current doc's syntax tree | Text span representing where breakpoints were resolved | S |
 | Debugging data tip info                | Current doc's source text | Text span representing the token being inspected | S |
 | Brace pair matching                    | Current doc's source text | Text spans representing brace pairs that match in the input document | S |
 | "Smart" indentation                    | Current doc's source text | Indentation location in a document | S |
@@ -74,5 +74,5 @@ Most actions are `S` if they operate on cached data and the compiler determines 
 
 For example, commands like Find All References and Rename can be cheap if a codebase is small, hence the lower bound being `S`. But if the symbol in question is used across many documents in a large project graph, they are very expensive because the entire graph must be crawled and all symbols contained in its documents must be inspected.
 
-In contrast, actions like highlighting all symbols in a document aren't terribly expensive even for very large file files. That's because the symbols to be inspected are ultimately only in a single document.
+In contrast, actions like highlighting all symbols in a document aren't terribly expensive even for very large files. That's because the symbols to be inspected are ultimately only in a single document.
 

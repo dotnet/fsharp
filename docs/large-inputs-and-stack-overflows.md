@@ -19,7 +19,7 @@ The compiler accepts large inputs such as:
 
 The compiler performs constant folding for large constants so there are no costs to using them at runtime. However, this is subject to a machine's stack size when compiling, leading to `StackOverflow` exceptions if those constants are very large. The same can be observed for certain kinds of array, list, or sequence expressions. This appears to be more prominent when compiling on macOS because macOS has a smaller stack size.
 
-Many sources of `StackOverflow` exceptions prior to F# 4.7 when processing these kinds of constructs were resolved by processing them on the heap via continuation passing techniques. This avoids filling data on the stack and appears to have negligible effects on overall throughout or memory usage of the compiler.
+Many sources of `StackOverflow` exceptions prior to F# 4.7 when processing these kinds of constructs were resolved by processing them on the heap via continuation passing techniques. This avoids filling data on the stack and appears to have negligible effects on overall throughput or memory usage of the compiler.
 
 There are two techniques to deal with this
 

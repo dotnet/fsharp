@@ -5,8 +5,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net5.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -40,6 +40,7 @@
     <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
     <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />

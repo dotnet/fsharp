@@ -18,7 +18,8 @@ type public InheritanceContext =
 type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: CompletionPath
+    | Empty
+    | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
@@ -154,5 +155,5 @@ module internal SourceFileImpl =
 
     val IsInterfaceFile: string -> bool 
 
-    val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
+    val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list
 

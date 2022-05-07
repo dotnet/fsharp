@@ -31,20 +31,21 @@
     <Compile Include="MapSourceRoots.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
-    <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
-      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSharpCoreShippedPackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
-      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Release\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)</Replacement1>
     </NoneSubstituteText>
-    <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
-      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
+    <NoneSubstituteText Include="Microsoft.FSharp.Core.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.Core.NetSdk.props</TargetFileName>
       <SubDir>Shipping\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
       <Replacement1>$(FSCorePackageVersionValue)-$(VersionSuffix)</Replacement1>
@@ -69,6 +70,8 @@
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCoreVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
 </Project>

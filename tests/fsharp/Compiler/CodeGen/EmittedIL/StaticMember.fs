@@ -10,7 +10,7 @@ module ``Static Member`` =
 
     [<Test>]
     let ``Action on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember01
 
@@ -19,7 +19,7 @@ type C =
     static member M() = ()
     static member CreateAction() =
         new Action(C.M)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static class [runtime]System.Action 
@@ -38,11 +38,11 @@ type C =
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Action on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember02
 
@@ -51,7 +51,7 @@ type C =
     static member M(x : int32) = ()
     static member CreateAction() =
         new Action<int32>(fun x -> C.M x)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static class [runtime]System.Action`1<int32> 
@@ -70,11 +70,11 @@ type C =
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Action on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember03
 
@@ -92,7 +92,7 @@ let main _ =
     let func = new Action<int32>(fun x -> C.M input.X)
     box func |> ignore // make sure 'func' is not optimized away
     0
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  main(string[] _arg1) cil managed
@@ -122,11 +122,11 @@ let main _ =
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname main@15
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Func on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember04
 
@@ -136,7 +136,7 @@ type C =
         x + 1
     static member CreateFunc() =
         new Func<int32, int32>(C.M)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static class [runtime]System.Func`2<int32,int32> 
@@ -155,11 +155,11 @@ type C =
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Func on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember05
 
@@ -169,7 +169,7 @@ type C =
         x + 43
     static member CreateFunc() =
         new Func<int32, int32>(fun x -> C.M x)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static class [runtime]System.Func`2<int32,int32> 
@@ -188,11 +188,11 @@ type C =
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Func on Static Member with closure``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember06
 
@@ -211,7 +211,7 @@ let main _ =
     let func = new Func<int32, int32>(fun x -> C.M input.X)
     box func |> ignore // dummy code to prevent func being optimized away
     0
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  main(string[] _arg1) cil managed
@@ -242,12 +242,12 @@ let main _ =
 .class auto autochar serializable sealed nested assembly beforefieldinit specialname main@16
        extends [runtime]System.Object
             """
-            ])
+            ]))
 
 #if !FX_NO_WINFORMS
     [<Test>]
     let ``EventHandler from Regression/83``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module StaticMember07
 
@@ -296,7 +296,7 @@ let _ =
 do (System.Console.Out.WriteLine "Test Passed"; 
     System.IO.File.WriteAllText("test.ok", "ok"); 
     exit 0)
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
 IL_00bc:  ldnull
@@ -310,5 +310,5 @@ IL_00c8:  callvirt   instance void [System.Windows.Forms]System.Windows.Forms.Fo
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname cctor@36
        extends [runtime]System.Object
             """
-            ])
+            ]))
 #endif

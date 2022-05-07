@@ -76,7 +76,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     // Note this also means that when compiling (command-line or background IncrementalBuilder in the IDE
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
-    ///
+    //
     let fmt, fragments = 
 
         //printfn "--------------------" 
@@ -98,8 +98,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                 let m = fragRange
                 //printfn "m.EndLine = %d" m.EndLine
                 if m.StartLine - 1 < lineStartPositions.Length && m.EndLine - 1 < lineStartPositions.Length then
-                    let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
-                    let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn
+                    let startIndex = lineStartPositions[m.StartLine-1] + m.StartColumn
+                    let endIndex = lineStartPositions[m.EndLine-1] + m.EndColumn
                     // Note, some extra """ text may be included at end of these snippets, meaning CheckFormatString in the IDE
                     // may be using a slightly false format string to colorize the %d markers.  This doesn't matter as there
                     // won't be relevant %d in these sections
@@ -107,7 +107,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                     // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
                     // we work out how much extra text there is at the end of the last line of the fragment,
                     // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
-                    let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions.[m.EndLine] else endIndex
+                    let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions[m.EndLine] else endIndex
                     let endIndexFlex = endNextLineIndex - endIndex
                     let mLength = endIndex - startIndex
 
@@ -196,17 +196,17 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
        //printfn "parseLoop: i = %d, fragLine = %d, fragCol = %d" i fragLine fragCol
 
        if i >= len then
-           let argtys =
+           let argTys =
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
-           argtys
+           argTys
        elif System.Char.IsSurrogatePair(fmt,i) then 
-          appendToDotnetFormatString fmt.[i..i+1]
+          appendToDotnetFormatString fmt[i..i+1]
           parseLoop acc (i+2, fragLine, fragCol+2) fragments
        else 
-          let c = fmt.[i]
+          let c = fmt[i]
           match c with
           | '%' ->
               let startFragCol = fragCol
@@ -217,7 +217,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
 
               let rec flags i =
                 if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
-                match fmt.[i] with
+                match fmt[i] with
                 | '-' -> 
                     if info.leftJustify then failwithf "%s" <| FSComp.SR.forFlagSetTwice("-")
                     info.leftJustify <- true
@@ -239,45 +239,45 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
 
               let rec digitsPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
-                match fmt.[i] with
+                match fmt[i] with
                 | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
-                match fmt.[i] with
+                match fmt[i] with
                 | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
                 | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
 
               let optionalDotAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
-                match fmt.[i] with
+                match fmt[i] with
                 | '.' -> precision (i+1)
                 | _ -> false,i
 
               let rec digitsWidthAndPrecision n i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
-                match fmt.[i] with
+                match fmt[i] with
                 | c when System.Char.IsDigit c -> digitsWidthAndPrecision (n*10 + int c - int '0') (i+1)
                 | _ -> Some n, optionalDotAndPrecision i
 
               let widthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
-                match fmt.[i] with
+                match fmt[i] with
                 | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision 0 i
                 | '*' -> true, (None, optionalDotAndPrecision (i+1))
                 | _ -> false, (None, optionalDotAndPrecision i)
 
               let rec digitsPosition n i =
                   if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
-                  match fmt.[i] with
+                  match fmt[i] with
                   | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
                   | _ -> None, i
 
               let position i =
-                  match fmt.[i] with
+                  match fmt[i] with
                   | c when c >= '1' && c <= '9' ->
                       let p, i' = digitsPosition (int c - int '0') (i+1)
                       if p = None then None, i else p, i'
@@ -320,9 +320,9 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
               // Explicitly typed holes in interpolated strings "....%d{x}..." get additional '%P()' as a hole place marker
               let skipPossibleInterpolationHole i =
                   if isInterpolated then 
-                      if i+1 < len && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
+                      if i+1 < len && fmt[i] = '%' && fmt[i+1] = 'P'  then
                           let i = i + 2
-                          if i+1 < len && fmt.[i] = '('  && fmt.[i+1] = ')' then 
+                          if i+1 < len && fmt[i] = '('  && fmt[i+1] = ')' then 
                               if isFormattableString then 
                                   failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated4()
                               i + 2
@@ -335,13 +335,13 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
               // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
               // type checker.  They should always have '(...)' after for format string.  
               let requireAndSkipInterpolationHoleFormat i =
-                  if i < len && fmt.[i] = '(' then 
+                  if i < len && fmt[i] = '(' then 
                       let i2 = fmt.IndexOf(")", i+1)
                       if i2 = -1 then 
                           failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated3()
                       else 
                           let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
-                          let dotnetNumberFormat = match fmt.[i+1..i2-1] with "" -> "" | s -> ":" + s
+                          let dotnetNumberFormat = match fmt[i+1..i2-1] with "" -> "" | s -> ":" + s
                           appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}") 
                           dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
                           i2+1
@@ -359,7 +359,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                               (Position.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
                   | None -> ()
 
-              let ch = fmt.[i]
+              let ch = fmt[i]
               match ch with
               | '%' ->
                   collectSpecifierLocation fragLine fragCol 0
@@ -383,7 +383,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                       raise (Failure (FSComp.SR.forBadFormatSpecifier()))
                   // Always error for %l and %Lx
                   failwithf "%s" <| FSComp.SR.forLIsUnnecessary()
-                  match fmt.[i] with
+                  match fmt[i] with
                   | 'd' | 'i' | 'o' | 'u' | 'x' | 'X' -> 
                       collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
@@ -425,14 +425,14 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   checkOtherFlags ch
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, fragCol+1) fragments
+                  parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, fragCol+1) fragments
 
               // residue of hole "...{n}..." in interpolated strings become %P(...) 
               | 'P' when isInterpolated ->
                   checkOtherFlags ch
                   let i = requireAndSkipInterpolationHoleFormat (i+1)
                   // Note, the fragCol doesn't advance at all as these are magically inserted.  
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, startFragCol) fragments
+                  parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, startFragCol) fragments
 
               | 'A' ->
                   match info.numPrefixIfPos with
@@ -440,15 +440,15 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   | Some '+' -> 
                       collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
-                      let xty = NewInferenceType ()
+                      let xty = NewInferenceType g
                       percentATys.Add(xty)
                       parseLoop ((posi, xty) :: acc)  (i, fragLine, fragCol+1) fragments
                   | Some n -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())
 
               | 'a' ->
                   checkOtherFlags ch
-                  let xty = NewInferenceType () 
-                  let fty = printerArgTy --> (xty --> printerResidueTy)
+                  let xty = NewInferenceType g 
+                  let fty = mkFunTy g printerArgTy (mkFunTy g xty printerResidueTy)
                   collectSpecifierLocation fragLine fragCol 2
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, fragLine, fragCol+1) fragments
@@ -457,15 +457,15 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   checkOtherFlags ch
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
+                  parseLoop ((posi, mkFunTy g printerArgTy printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
 
               | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)
           
           | '\n' ->
-              appendToDotnetFormatString fmt.[i..i]
+              appendToDotnetFormatString fmt[i..i]
               parseLoop acc (i+1, fragLine+1, 0) fragments
           | _ ->
-              appendToDotnetFormatString fmt.[i..i]
+              appendToDotnetFormatString fmt[i..i]
               parseLoop acc (i+1, fragLine, fragCol+1) fragments
            
     let results = parseLoop [] (0, 0, m.StartColumn) fragments
@@ -473,7 +473,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
 
 let ParseFormatString m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
     let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
-    let printerTy = List.foldBack (-->) argTys printerResultTy
+    let printerTy = List.foldBack (mkFunTy g) argTys printerResultTy
     let printerTupleTy = mkRefTupledTy g argTys
     argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString
 

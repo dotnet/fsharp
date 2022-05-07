@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">F# 대화형의 이전 평가에서 내부 형식, 메서드 또는 필드 '{0}'에 액세스하는 것은 더 이상 사용되지 않으며 후속 액세스 오류가 발생할 수 있습니다. 내부에 액세스할 수 있는 단일 동적 어셈블리의 레거시 생성을 사용하도록 설정하려면 '--multiemit-' 옵션을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -12,9 +12,14 @@
         <target state="translated">패키지를 검색할 때 패키지 원본 URI 포함</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">여러 어셈블리 내보내기(기본적으로 .NET Framework 해제)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">여러 어셈블리 내보내기(기본적으로 켜져 있음)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

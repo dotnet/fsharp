@@ -56,8 +56,8 @@ type UsingMSBuild() as this  =
     let DoWithAutoComplete coffeeBreak fileKind reason otherFlags (code : list<string>) marker f  =
         DoWithAutoCompleteUsingExtraRefs [] otherFlags coffeeBreak fileKind reason code marker f
 
-    let AssertAutoCompleteContainsAux coffeeBreak filename reason otherFlags code marker  should shouldnot  =        
-        DoWithAutoComplete coffeeBreak filename reason otherFlags code marker (fun completions ->
+    let AssertAutoCompleteContainsAux coffeeBreak fileName reason otherFlags code marker  should shouldnot  =        
+        DoWithAutoComplete coffeeBreak fileName reason otherFlags code marker (fun completions ->
             AssertCompListContainsAll(completions, should)
             AssertCompListDoesNotContainAny(completions, shouldnot))
 
@@ -786,15 +786,15 @@ for i in 0..a."]
             ]
         let useCases = 
             [
-                "let _ = (* MARKER*){X", "(* MARKER*){X", [], ["XX"]
+                "let _ = (* MARKER*){X  }", "(* MARKER*){X", [], ["XX"]
                 "let _ = {(* MARKER*)Mod. = 1; O", "(* MARKER*)Mod.", ["XX"; "YY"], ["System"]
                 "let _ = {(* MARKER*)Mod.Rec. ", "(* MARKER*)Mod.Rec.", ["XX"; "YY"], ["System"]
+                "let _ = (* MARKER*){Mod.XX = 1;  }", "(* MARKER*){Mod.XX = 1; ", ["Mod"], ["XX"; "abs"]
             ]
 
         for (code, marker, should, shouldnot) in useCases do
             let code = prologue @ [code]
-            let shouldnot = shouldnot @ ["abs"]
-            AssertCtrlSpaceCompleteContains code marker should ["abs"]
+            AssertCtrlSpaceCompleteContains code marker should shouldnot
     
     [<Test>]
     [<Category("Records")>]
@@ -977,48 +977,6 @@ for i in 0..a."]
             printfn "running:"
             printfn "%s" (String.concat "\r\n" code)
             AssertCtrlSpaceCompleteContains code marker should ["abs"]
-
-    [<Test>]
-    [<Category("Records")>]
-    member public this.``Records.WRONG.MissingBindings``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A = 1; _;  }"], "; _;", ["AAA"; "BBB"]
-                ["let _ = {A = 1; _=; }"], " _=;", ["AAA"; "BBB"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-
-
-    [<Test>]
-    [<Category("Records")>]
-    member public this.``Records.WRONG.IncorrectNameResEnv``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool; CCC : int}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A}"], "_ = {A", ["AAA"; "BBB"; "CCC"]
-                ["let _ = {AAA = 1; }"], "_ = {AAA = 1;", ["AAA"; "BBB"; "CCC"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
 
     [<Test>]
     [<Category("Records")>]
@@ -4591,7 +4549,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
 
 (*
-/// FEATURE: The filename on disk and the filename in the project can differ in case.
+/// FEATURE: The fileName on disk and the fileName in the project can differ in case.
     [<Test>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 

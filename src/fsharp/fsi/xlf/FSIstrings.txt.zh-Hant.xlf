@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">從之前 F# 互動中的評估存取內部類型、方法或欄位 '{0}' 已過時，可能造成後續存取錯誤。若要啟用可存取內部之單一動態組件的舊版世代，請使用 '--multiemit-' 選項。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -12,9 +12,14 @@
         <target state="translated">搜尋套件時包含套件來源 URI</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">發出多組件 (.NET Framework 預設為關閉)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">發出多組件 (預設為開啟)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

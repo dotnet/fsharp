@@ -16,7 +16,7 @@ open FSharp.Compiler.IO
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
 /// Type that encapsulates Native library probing for managed packages
-type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe option) =
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
@@ -25,7 +25,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
     let loadNativeLibrary path =
         let arguments = [| path:>obj; IntPtr.Zero:>obj |]
         if nativeLibraryTryLoad.Invoke(null, arguments) :?> bool then
-            arguments.[1] :?> IntPtr
+            arguments[1] :?> IntPtr
         else
             IntPtr.Zero
 
@@ -75,8 +75,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
         let probe =
             match nativeProbingRoots with
-            | null -> None
-            | _ ->
+            | None -> None
+            | Some nativeProbingRoots ->  
                 nativeProbingRoots.Invoke()
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
@@ -104,7 +104,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
         member _x.Dispose() = eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
 
 
-type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) =
+
     let handler: IDisposable option =
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
@@ -133,6 +134,8 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
             let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
             if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
+    new (nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
+
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
         for probePath in roots do
             addProbeToProcessPath probePath
@@ -143,6 +146,6 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
             | None -> ()
             | Some handler -> handler.Dispose()
 
-            let mutable probe:string = null
+            let mutable probe:string = Unchecked.defaultof<string>
             while (addedPaths.TryTake(&probe)) do
                 removeProbeFromProcessPath probe

@@ -76,7 +76,7 @@ type Table<'T> =
     member tbl.Add x =
         let n = tbl.count
         tbl.count <- tbl.count + 1
-        tbl.tbl.[x] <- n
+        tbl.tbl[x] <- n
         tbl.rows.Add x
         n
     member tbl.FindOrAdd x =
@@ -144,7 +144,7 @@ type NodeInTable<'Data, 'Node> =
       IsLinked : 'Node -> bool
       Name : string
       Nodes : 'Node[] }
-    member x.Get n = x.Nodes.[n]
+    member x.Get n = x.Nodes[n]
     member x.Count = x.Nodes.Length
 
     static member Create (mkEmpty, lnk, isLinked, nm, n) =
@@ -475,7 +475,7 @@ let encode_uniq (tbl: Table<_>) key = tbl.FindOrAdd key
 let lookup_uniq st tbl n =
     let arr = tbl.itbl_rows
     if n < 0 || n >= arr.Length then ufailwith st ("lookup_uniq in table "+tbl.itbl_name+" out of range, n = "+string n+ ", sizeof(tab) = " + string (Array.length arr))
-    arr.[n]
+    arr[n]
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle arrays and lists. For lists use the same binary format as arrays so we can switch
@@ -484,7 +484,7 @@ let lookup_uniq st tbl n =
 
 let p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
-        f x.[i] st
+        f x[i] st
 
 let p_array f (x: 'T[]) st =
     p_int x.Length st
@@ -581,7 +581,7 @@ let p_hole2 () =
 let u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
-        res.[i] <- f st
+        res[i] <- f st
     res
 
 let u_array f st =
@@ -633,7 +633,7 @@ let u_array_revi f st =
     let n = u_int st
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
-        res.[i] <- f st (n-1-i)
+        res[i] <- f st (n-1-i)
     res
 
 // Mark up default constraints with a priority in reverse order: last gets 0 etc. See comment on TyparConstraint.DefaultsTo
@@ -680,7 +680,7 @@ let u_lazy u st =
     let res =
         lazy (let st = { st with is = st.is.CloneAndSeek idx1 }
               u st)
-    /// Force the reading of the data as a "tripwire" for each of the OSGN thunks
+    // Force the reading of the data as a "tripwire" for each of the OSGN thunks
     for i = otyconsIdx1 to otyconsIdx2-1 do wire (st.ientities.Get i) res done
     for i = ovalsIdx1   to ovalsIdx2-1   do wire (st.ivals.Get i)   res done
     for i = otyparsIdx1 to otyparsIdx2-1 do wire (st.itypars.Get i) res done
@@ -751,7 +751,7 @@ let u_encoded_nleref = u_tup2 u_int (u_array u_int)
 let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
     // References to these nodes _do_ appear in F# assembly metadata, because they may be public.
     let nleref =
@@ -771,7 +771,7 @@ let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.osc
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(..., "int"), []).
 // A huge number of these occur in pickled F# data, so make them unique.
-let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [])
+let decode_simpletyp st _ccuTab _stringTab nlerefTab a = TType_app(ERefNonLocal (lookup_nleref st nlerefTab a), [], 0uy)
 let lookup_simpletyp st simpleTyTab x = lookup_uniq st simpleTyTab x
 let u_encoded_simpletyp st = u_int  st
 let u_encoded_anoninfo st = u_int  st
@@ -783,7 +783,7 @@ let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs 
 
 /// Arbitrary value
 [<Literal>]
-let PickleBufferCapacity = 100000
+let PickleBufferCapacity = 50000
 
 let pickleObjWithDanglingCcus inMem file g scope p x =
   let st1 =
@@ -812,21 +812,22 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
     st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
   let st2 =
-   { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
-     oscope=scope
-     occus= Table<_>.Create "occus (fake)"
-     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
-     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
-     ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-     oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
-     ostrings=Table<_>.Create "ostrings (fake)"
-     opubpaths=Table<_>.Create "opubpaths (fake)"
-     onlerefs=Table<_>.Create "onlerefs (fake)"
-     osimpletys=Table<_>.Create "osimpletys (fake)"
-     oglobals=g
-     ofile=file
-     oInMem=inMem
-     isStructThisArgPos = false }
+     { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+       oscope=scope
+       occus= Table<_>.Create "occus (fake)"
+       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+       ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+       ostrings=Table<_>.Create "ostrings (fake)"
+       opubpaths=Table<_>.Create "opubpaths (fake)"
+       onlerefs=Table<_>.Create "onlerefs (fake)"
+       osimpletys=Table<_>.Create "osimpletys (fake)"
+       oglobals=g
+       ofile=file
+       oInMem=inMem
+       isStructThisArgPos = false }
+
   let phase2bytes =
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
     // Add a 4th integer indicated by a negative 1st integer
@@ -862,17 +863,17 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
 let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
-         iilscope= viewedScope
-         iccus= new_itbl "iccus (fake)" [| |]
-         ientities= NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
-         itypars= NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
-         ivals  = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
-         ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
+         iilscope = viewedScope
+         iccus = new_itbl "iccus (fake)" [| |]
+         ientities = NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
+         itypars = NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
+         ivals = NodeInTable<_, _>.Create (Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", 0)
+         ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", 0)
          istrings = new_itbl "istrings (fake)" [| |]
          inlerefs = new_itbl "inlerefs (fake)" [| |]
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]
          isimpletys = new_itbl "isimpletys (fake)" [| |]
-         ifile=file
+         ifile = file
          iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
@@ -895,24 +896,22 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
     let data =
         let st1 =
            { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length)
-             iccus=  ccuTab
-             iilscope= viewedScope
-             ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
-             itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
-             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
-             ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
+             iccus = ccuTab
+             iilscope = viewedScope
+             ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
+             ivals = NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
+             ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
              istrings = stringTab
              ipubpaths = pubpathTab
              inlerefs = nlerefTab
              isimpletys = simpletypTab
-             ifile=file
+             ifile = file
              iILModule = ilModule }
         let res = u st1
-#if !LAZY_UNPICKLE
         check viewedScope st1.ientities
         check viewedScope st1.ivals
         check viewedScope st1.itypars
-#endif
         res
 
     {RawData=data; FixupThunks=ccuTab.itbl_rows }
@@ -1241,8 +1240,8 @@ let simple_instrs =
     ]
 
 let encode_table = Dictionary<_, _>(300, HashIdentity.Structural)
-let _ = List.iter (fun (icode, i) -> encode_table.[i] <- icode) simple_instrs
-let encode_instr si = encode_table.[si]
+let _ = List.iter (fun (icode, i) -> encode_table[i] <- icode) simple_instrs
+let encode_instr si = encode_table[si]
 let isNoArgInstr s = encode_table.ContainsKey s
 
 let decoders =
@@ -1282,7 +1281,7 @@ let decoders =
 
 let decode_tab =
     let tab = Array.init 256 (fun n -> (fun st -> ufailwith st ("no decoder for instruction "+string n)))
-    let add_instr (icode, f) =  tab.[icode] <- f
+    let add_instr (icode, f) =  tab[icode] <- f
     List.iter add_instr decoders
     List.iter (fun (icode, mk) -> add_instr (icode, (fun _ -> mk))) simple_instrs
     tab
@@ -1325,7 +1324,7 @@ let p_ILInstr x st =
 
 let u_ILInstr st =
     let n = u_byte st
-    decode_tab.[n] st
+    decode_tab[n] st
 
 
 
@@ -1723,21 +1722,33 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
               p_byte 8 st; p_tys l st
           else
               p_byte 0 st; p_tys l st
-    | TType_app(ERefNonLocal nleref, []) -> p_byte 1 st; p_simpletyp nleref st
-    | TType_app (tc, tinst)              -> p_byte 2 st; p_tup2 (p_tcref "typ") p_tys (tc, tinst) st
-    | TType_fun (d, r)                   ->
+
+    | TType_app(ERefNonLocal nleref, [], _) ->
+        p_byte 1 st; p_simpletyp nleref st
+
+    | TType_app (tc, tinst, _) ->
+        p_byte 2 st; p_tup2 (p_tcref "typ") p_tys (tc, tinst) st
+
+    | TType_fun (d, r, _) ->
         p_byte 3 st
         // Note, the "this" argument may be found in the domain position of a function type, so propagate the isStructThisArgPos value
         p_ty2 isStructThisArgPos d st
         p_ty r st
-    | TType_var r                       -> p_byte 4 st; p_tpref r st
-    | TType_forall (tps, r)              ->
+
+    | TType_var (r, _) -> p_byte 4 st; p_tpref r st
+
+    | TType_forall (tps, r) ->
         p_byte 5 st
         p_tyar_specs tps st
         // Note, the "this" argument may be found in the body of a generic forall type, so propagate the isStructThisArgPos value
         p_ty2 isStructThisArgPos r st
-    | TType_measure unt                 -> p_byte 6 st; p_measure_expr unt st
-    | TType_ucase (uc, tinst)            -> p_byte 7 st; p_tup2 p_ucref p_tys (uc, tinst) st
+
+    | TType_measure unt ->
+        p_byte 6 st; p_measure_expr unt st
+
+    | TType_ucase (uc, tinst) ->
+        p_byte 7 st; p_tup2 p_ucref p_tys (uc, tinst) st
+
     // p_byte 8 taken by TType_tuple above
     | TType_anon (anonInfo, l) ->
          p_byte 9 st
@@ -1747,18 +1758,52 @@ let _ = fill_p_ty2 (fun isStructThisArgPos ty st ->
 let _ = fill_u_ty (fun st ->
     let tag = u_byte st
     match tag with
-    | 0 -> let l = u_tys st                               in TType_tuple (tupInfoRef, l)
-    | 1 -> u_simpletyp st
-    | 2 -> let tc = u_tcref st in let tinst = u_tys st    in TType_app (tc, tinst)
-    | 3 -> let d = u_ty st    in let r = u_ty st         in TType_fun (d, r)
-    | 4 -> let r = u_tpref st                              in r.AsType
-    | 5 -> let tps = u_tyar_specs st in let r = u_ty st  in TType_forall (tps, r)
-    | 6 -> let unt = u_measure_expr st                     in TType_measure unt
-    | 7 -> let uc = u_ucref st in let tinst = u_tys st    in TType_ucase (uc, tinst)
-    | 8 -> let l = u_tys st                               in TType_tuple (tupInfoStruct, l)
-    | 9 -> let anonInfo = u_anonInfo st in let l = u_tys st  in TType_anon (anonInfo, l)
-    | _ -> ufailwith st "u_typ")
+    | 0 ->
+        let l = u_tys st
+        TType_tuple (tupInfoRef, l)
 
+    | 1 ->
+        u_simpletyp st
+
+    | 2 ->
+        let tc = u_tcref st
+        let tinst = u_tys st
+        TType_app (tc, tinst, 0uy)
+
+    | 3 ->
+        let d = u_ty st
+        let r = u_ty st
+        TType_fun (d, r, 0uy)
+
+    | 4 ->
+        let r = u_tpref st
+        r.AsType
+
+    | 5 ->
+        let tps = u_tyar_specs st
+        let r = u_ty st
+        TType_forall (tps, r)
+
+    | 6 ->
+        let unt = u_measure_expr st
+        TType_measure unt
+
+    | 7 ->
+        let uc = u_ucref st
+        let tinst = u_tys st
+        TType_ucase (uc, tinst)
+
+    | 8 ->
+        let l = u_tys st
+        TType_tuple (tupInfoStruct, l)
+
+    | 9 ->
+        let anonInfo = u_anonInfo st
+        let l = u_tys st
+        TType_anon (anonInfo, l)
+
+    | _ ->
+        ufailwith st "u_typ")
 
 let fill_p_binds, p_binds = p_hole()
 let fill_p_targets, p_targets = p_hole()
@@ -1838,14 +1883,14 @@ and p_tycon_repr x st =
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
-            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
+            p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(TypeProviders.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
     | TProvidedNamespaceRepr _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))

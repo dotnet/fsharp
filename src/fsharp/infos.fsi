@@ -12,21 +12,21 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
-open FSharp.Compiler.ExtensionTyping
+#if !NO_TYPEPROVIDERS
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
-val ImportILType: scoref:ILScopeRef -> amap:ImportMap -> m:range -> importInst:TType list -> ilty:ILType -> TType
+val ImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilty: ILType -> TType
 
-val CanImportILType: scoref:ILScopeRef -> amap:ImportMap -> m:range -> ilty:ILType -> bool
+val CanImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilty: ILType -> bool
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
-val isExnDeclTy: g:TcGlobals -> ty:TType -> bool
+val isExnDeclTy: g: TcGlobals -> ty: TType -> bool
 
 /// Get the base type of a type, taking into account type instantiations. Return None if the
 /// type has no base type.
-val GetSuperTypeOfType: g:TcGlobals -> amap:ImportMap -> m:range -> ty:TType -> TType option
+val GetSuperTypeOfType: g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType option
 
 /// Indicates whether we can skip interface types that lie outside the reference set
 [<RequireQualifiedAccess>]
@@ -36,7 +36,8 @@ type SkipUnrefInterfaces =
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
-val GetImmediateInterfacesOfType: skipUnref:SkipUnrefInterfaces -> g:TcGlobals -> amap:ImportMap -> m:range -> ty:TType -> TType list
+val GetImmediateInterfacesOfType:
+    skipUnref: SkipUnrefInterfaces -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType list
 
 /// Indicates whether we should visit multiple instantiations of the same generic interface or not
 [<RequireQualifiedAccess>]
@@ -45,50 +46,120 @@ type AllowMultiIntfInstantiations =
     | No
 
 /// Fold, do not follow interfaces (unless the type is itself an interface)
-val FoldPrimaryHierarchyOfType: f:(TType -> 'a -> 'a) -> g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> acc:'a -> 'a
+val FoldPrimaryHierarchyOfType:
+    f: (TType -> 'a -> 'a) ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+    acc: 'a ->
+        'a
 
 /// Fold, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val FoldEntireHierarchyOfType: f:(TType -> 'a -> 'a) -> g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> acc:'a -> 'a
+val FoldEntireHierarchyOfType:
+    f: (TType -> 'a -> 'a) ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+    acc: 'a ->
+        'a
 
 /// Iterate, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
-val IterateEntireHierarchyOfType: f:(TType -> unit) -> g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> unit
+val IterateEntireHierarchyOfType:
+    f: (TType -> unit) ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+        unit
 
 /// Search for one element satisfying a predicate, following interfaces
-val ExistsInEntireHierarchyOfType: f:(TType -> bool) -> g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> bool
+val ExistsInEntireHierarchyOfType:
+    f: (TType -> bool) ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+        bool
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
-val SearchEntireHierarchyOfType: f:(TType -> bool) -> g:TcGlobals -> amap:ImportMap -> m:range -> ty:TType -> TType option
+val SearchEntireHierarchyOfType:
+    f: (TType -> bool) -> g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> TType option
 
 /// Get all super types of the type, including the type itself
-val AllSuperTypesOfType: g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> TType list
+val AllSuperTypesOfType:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+        TType list
 
 /// Get all interfaces of a type, including the type itself if it is an interface
-val AllInterfacesOfType: g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> TType list
+val AllInterfacesOfType:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    allowMultiIntfInst: AllowMultiIntfInstantiations ->
+    ty: TType ->
+        TType list
 
 /// Check if two types have the same nominal head type
-val HaveSameHeadType: g:TcGlobals -> ty1:TType -> ty2:TType -> bool
+val HaveSameHeadType: g: TcGlobals -> ty1: TType -> ty2: TType -> bool
 
 /// Check if a type has a particular head type
-val HasHeadType: g:TcGlobals -> tcref:TyconRef -> ty2:TType -> bool
+val HasHeadType: g: TcGlobals -> tcref: TyconRef -> ty2: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
-val ExistsSameHeadTypeInHierarchy: g:TcGlobals -> amap:ImportMap -> m:range -> typeToSearchFrom:TType -> typeToLookFor:TType -> bool
+val ExistsSameHeadTypeInHierarchy:
+    g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
-val ExistsHeadTypeInEntireHierarchy: g:TcGlobals -> amap:ImportMap -> m:range -> typeToSearchFrom:TType -> tcrefToLookFor:TyconRef -> bool
+val ExistsHeadTypeInEntireHierarchy:
+    g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> tcrefToLookFor: TyconRef -> bool
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-val ImportILTypeFromMetadata: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> TType
+val ImportILTypeFromMetadata:
+    amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilty: ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-val ImportILTypeFromMetadataWithAttributes: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> cattrs:ILAttributes -> TType
+val ImportILTypeFromMetadataWithAttributes:
+    amap: ImportMap ->
+    m: range ->
+    scoref: ILScopeRef ->
+    tinst: TType list ->
+    minst: TType list ->
+    ilty: ILType ->
+    getCattrs: (unit -> ILAttributes) ->
+        TType
 
 /// Get the parameter type of an IL method.
-val ImportParameterTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> cattrs:ILAttributes -> scoref:ILScopeRef -> tinst:TType list -> mist:TType list -> TType
+val ImportParameterTypeFromMetadata:
+    amap: ImportMap ->
+    m: range ->
+    ilty: ILType ->
+    getCattrs: (unit -> ILAttributes) ->
+    scoref: ILScopeRef ->
+    tinst: TType list ->
+    mist: TType list ->
+        TType
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> cattrs:ILAttributes -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> TType option
+val ImportReturnTypeFromMetadata:
+    amap: ImportMap ->
+    m: range ->
+    ilty: ILType ->
+    getCattrs: (unit -> ILAttributes) ->
+    scoref: ILScopeRef ->
+    tinst: TType list ->
+    minst: TType list ->
+        TType option
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
@@ -98,15 +169,22 @@ val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> ca
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-val CopyTyparConstraints: m:range -> tprefInst:TyparInst -> tporig:Typar -> TyparConstraint list
+val CopyTyparConstraints: m: range -> tprefInst: TyparInst -> tporig: Typar -> TyparConstraint list
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-val FixupNewTypars: m:range -> formalEnclosingTypars:Typars -> tinst:TType list -> tpsorig:Typars -> tps:Typars -> TyparInst * TTypes
+val FixupNewTypars:
+    m: range ->
+    formalEnclosingTypars: Typars ->
+    tinst: TType list ->
+    tpsorig: Typars ->
+    tps: Typars ->
+        TyparInst * TTypes
 
 type ValRef with
+
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
-    member IsFSharpEventProperty: g:TcGlobals -> bool
+    member IsFSharpEventProperty: g: TcGlobals -> bool
 
     /// Check if an F#-declared member value is a virtual method
     member IsVirtualMember: bool
@@ -118,24 +196,26 @@ type ValRef with
     member IsDefiniteFSharpOverrideMember: bool
 
     /// Check if an F#-declared member value is an  explicit interface member implementation
-    member IsFSharpExplicitInterfaceImplementation: g:TcGlobals -> bool
+    member IsFSharpExplicitInterfaceImplementation: g: TcGlobals -> bool
 
     member ImplementedSlotSignatures: SlotSig list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Get the return type of a provided method, where 'void' is returned as 'None'
-val GetCompiledReturnTyOfProvidedMethodInfo: amap:ImportMap ->m:range -> mi:Tainted<ProvidedMethodBase> -> TType option
+val GetCompiledReturnTyOfProvidedMethodInfo:
+    amap: ImportMap -> m: range -> mi: Tainted<ProvidedMethodBase> -> TType option
 #endif
 
 /// The slotsig returned by methInfo.GetSlotSig is in terms of the type parameters on the parent type of the overriding method.
 /// Reverse-map the slotsig so it is in terms of the type parameters for the overriding method
-val ReparentSlotSigToUseMethodTypars: g:TcGlobals -> m:range -> ovByMethValRef:ValRef -> slotsig:SlotSig -> SlotSig
+val ReparentSlotSigToUseMethodTypars: g: TcGlobals -> m: range -> ovByMethValRef: ValRef -> slotsig: SlotSig -> SlotSig
 
 /// Construct the data representing a parameter in the signature of an abstract method slot
-val MakeSlotParam: ty:TType * argInfo:ArgReprInfo -> SlotParam
+val MakeSlotParam: ty: TType * argInfo: ArgReprInfo -> SlotParam
 
 /// Construct the data representing the signature of an abstract method slot
-val MakeSlotSig: nm:string * ty:TType * ctps:Typars * mtps:Typars * paraml:SlotParam list list * retTy:TType option -> SlotSig
+val MakeSlotSig:
+    nm: string * ty: TType * ctps: Typars * mtps: Typars * paraml: SlotParam list list * retTy: TType option -> SlotSig
 
 /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
 /// later through 'open' get priority in overload resolution.
@@ -163,63 +243,72 @@ type OptionalArgInfo =
     /// in fact the default value is read from the metadata and passed explicitly to the callee on the caller side.
     | CallerSide of OptionalArgCallerSideValue
 
-    static member FieldInitForDefaultParameterValueAttrib: attrib:Attrib -> ILFieldInit option
+    static member FieldInitForDefaultParameterValueAttrib: attrib: Attrib -> ILFieldInit option
 
     /// Compute the OptionalArgInfo for an IL parameter
     ///
     /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optional arguments.
-    static member FromILParameter: g:TcGlobals -> amap:ImportMap -> m:range -> ilScope:ILScopeRef -> ilTypeInst:TType list -> ilParam:ILParameter -> OptionalArgInfo
+    static member FromILParameter:
+        g: TcGlobals ->
+        amap: ImportMap ->
+        m: range ->
+        ilScope: ILScopeRef ->
+        ilTypeInst: TType list ->
+        ilParam: ILParameter ->
+            OptionalArgInfo
 
     static member ValueOfDefaultParameterValueAttrib: Attrib -> Expr option
 
     member IsOptional: bool
-  
+
 type CallerInfo =
     | NoCallerInfo
     | CallerLineNumber
     | CallerMemberName
     | CallerFilePath
-  
+
 [<RequireQualifiedAccess>]
 type ReflectedArgInfo =
     | None
     | Quote of bool
 
     member AutoQuote: bool
-  
+
 /// Partial information about a parameter returned for use by the Language Service
 [<NoComparison; NoEquality>]
 type ParamNameAndType =
     | ParamNameAndType of Ident option * TType
 
-    static member FromArgInfo: ty:TType * argInfo:ArgReprInfo -> ParamNameAndType
+    static member FromArgInfo: ty: TType * argInfo: ArgReprInfo -> ParamNameAndType
 
-    static member FromMember: isCSharpExtMem:bool -> g:TcGlobals -> vref:ValRef -> ParamNameAndType list list
+    static member FromMember: isCSharpExtMem: bool -> g: TcGlobals -> vref: ValRef -> ParamNameAndType list list
 
-    static member Instantiate: inst:TyparInst -> p:ParamNameAndType -> ParamNameAndType
+    static member Instantiate: inst: TyparInst -> p: ParamNameAndType -> ParamNameAndType
 
-    static member InstantiateCurried: inst:TyparInst -> paramTypes:ParamNameAndType list list -> ParamNameAndType list list
-  
+    static member InstantiateCurried:
+        inst: TyparInst -> paramTypes: ParamNameAndType list list -> ParamNameAndType list list
+
 /// Full information about a parameter returned for use by the type checker and language service.
 [<NoComparison; NoEquality>]
 type ParamData =
     | ParamData of
-      isParamArray: bool * 
-      isInArg: bool * 
-      isOut: bool *
-      optArgInfo: OptionalArgInfo * 
-      callerInfo: CallerInfo *
-      nameOpt: Ident option * 
-      reflArgInfo: ReflectedArgInfo *
-      ttype: TType
+        isParamArray: bool *
+        isInArg: bool *
+        isOut: bool *
+        optArgInfo: OptionalArgInfo *
+        callerInfo: CallerInfo *
+        nameOpt: Ident option *
+        reflArgInfo: ReflectedArgInfo *
+        ttype: TType
 
 /// Describes an F# use of an IL type, including the type instantiation associated with the type at a particular usage point.
 [<NoComparison; NoEquality>]
 type ILTypeInfo =
     | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
-    static member FromType: g:TcGlobals -> ty:TType -> ILTypeInfo
 
-    member Instantiate: inst:TyparInst -> ILTypeInfo
+    static member FromType: g: TcGlobals -> ty: TType -> ILTypeInfo
+
+    member Instantiate: inst: TyparInst -> ILTypeInfo
 
     member ILScopeRef: ILScopeRef
 
@@ -241,11 +330,16 @@ type ILTypeInfo =
     member TyconRefOfRawMetadata: TyconRef
 
     member TypeInstOfRawMetadata: TypeInst
-  
+
 /// Describes an F# use of an IL method.
 [<NoComparison; NoEquality>]
 type ILMethInfo =
-    | ILMethInfo of g: TcGlobals * ilApparentType: TType * ilDeclaringTyconRefOpt: TyconRef option  * ilMethodDef: ILMethodDef * ilGenericMethodTyArgs: Typars
+    | ILMethInfo of
+        g: TcGlobals *
+        ilApparentType: TType *
+        ilDeclaringTyconRefOpt: TyconRef option *
+        ilMethodDef: ILMethodDef *
+        ilGenericMethodTyArgs: Typars
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
     member ApparentEnclosingAppType: TType
@@ -320,45 +414,49 @@ type ILMethInfo =
     member RawMetadata: ILMethodDef
 
     member TcGlobals: TcGlobals
-  
+
     /// Get the compiled return type of the method, where 'void' is None.
-    member GetCompiledReturnTy: amap:ImportMap * m:range * minst:TType list -> TType option
+    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member GetFSharpReturnTy: amap:ImportMap * m:range * minst:TType list -> TType
+    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
-    member GetObjArgTypes: amap:ImportMap * m:range * minst:TType list -> TType list
+    member GetObjArgTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then
     /// drop the object argument.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
-    member GetParamNamesAndTypes: amap:ImportMap * m:range * minst:TType list -> ParamNameAndType list
+    member GetParamNamesAndTypes: amap: ImportMap * m: range * minst: TType list -> ParamNameAndType list
 
     /// Get the argument types of the the IL method. If this is an C#-style extension method
     /// then drop the object argument.
-    member GetParamTypes: amap:ImportMap * m:range * minst:TType list -> TType list
+    member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 
     /// Get all the argument types of the IL method. Include the object argument even if this is
     /// an C#-style extension method.
-    member GetRawArgTypes: amap:ImportMap * m:range * minst:TType list -> TType list
+    member GetRawArgTypes: amap: ImportMap * m: range * minst: TType list -> TType list
 
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on
     /// the method.
-    member IsDllImport: g:TcGlobals -> bool
+    member IsDllImport: g: TcGlobals -> bool
 
     /// Indicates if the method is marked with the [<IsReadOnly>] attribute. This is done by looking at the IL custom attributes on
     /// the method.
-    member IsReadOnly: g:TcGlobals -> bool
+    member IsReadOnly: g: TcGlobals -> bool
 
 /// Describes an F# use of a method
 [<NoComparison; NoEquality>]
 type MethInfo =
 
     /// Describes a use of a method declared in F# code and backed by F# metadata.
-    | FSMeth of tcGlobals: TcGlobals * enclosingType: TType * valRef: ValRef  * extensionMethodPriority: ExtensionMethodPriority option
+    | FSMeth of
+        tcGlobals: TcGlobals *
+        enclosingType: TType *
+        valRef: ValRef *
+        extensionMethodPriority: ExtensionMethodPriority option
 
     /// Describes a use of a method backed by Abstract IL # metadata
     | ILMeth of tcGlobals: TcGlobals * ilMethInfo: ILMethInfo * extensionMethodPriority: ExtensionMethodPriority option
@@ -366,9 +464,13 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
-    | ProvidedMeth of amap: ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
+    | ProvidedMeth of
+        amap: ImportMap *
+        methodBase: Tainted<ProvidedMethodBase> *
+        extensionMethodPriority: ExtensionMethodPriority option *
+        m: range
 #endif
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
@@ -385,7 +487,7 @@ type MethInfo =
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
     member ArbitraryValRef: ValRef option
 
-     /// Get the method name in DebuggerDisplayForm
+    /// Get the method name in DebuggerDisplayForm
     member DebuggerDisplayName: string
 
     /// Get the declaring type or module holding the method. If this is an C#-style extension method then this is the type
@@ -432,7 +534,7 @@ type MethInfo =
     member ImplementedSlotSignatures: SlotSig list
 
     // Is this particular MethInfo one that doesn't provide an implementation?
-    ///
+    //
     // For F# methods, this is 'true' for the MethInfos corresponding to 'abstract' declarations,
     // and false for the (potentially) matching 'default' implementation MethInfos that eventually
     // provide an implementation for the dispatch slot.
@@ -501,8 +603,8 @@ type MethInfo =
     /// For an extension member, drop the 'this' argument.
     member NumArgs: int list
 
-/// Get the information about provided static parameters, if any
-#if NO_EXTENSIONTYPING
+    /// Get the information about provided static parameters, if any
+#if NO_TYPEPROVIDERS
     member ProvidedStaticParameterInfo: obj option
 #else
     member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo> []) option
@@ -513,78 +615,86 @@ type MethInfo =
 
     /// Get the XML documentation associated with the method
     member XmlDoc: XmlDoc
-  
+
     /// Build IL method infos.
-    static member CreateILMeth: amap:ImportMap * m:range * ty:TType * md:ILMethodDef -> MethInfo
+    static member CreateILMeth: amap: ImportMap * m: range * ty: TType * md: ILMethodDef -> MethInfo
 
     /// Build IL method infos for a C#-style extension method
-    static member CreateILExtensionMeth: amap:ImportMap * m:range * apparentTy:TType * declaringTyconRef:TyconRef * extMethPri:ExtensionMethodPriority option * md:ILMethodDef -> MethInfo
+    static member CreateILExtensionMeth:
+        amap: ImportMap *
+        m: range *
+        apparentTy: TType *
+        declaringTyconRef: TyconRef *
+        extMethPri: ExtensionMethodPriority option *
+        md: ILMethodDef ->
+            MethInfo
 
     /// Tests whether two method infos have the same underlying definition.
     /// Used to merge operator overloads collected from left and right of an operator constraint.
     ///
     /// Compatible with ItemsAreEffectivelyEqual relation.
-    static member MethInfosUseIdenticalDefinitions: x1:MethInfo -> x2:MethInfo -> bool
+    static member MethInfosUseIdenticalDefinitions: x1: MethInfo -> x2: MethInfo -> bool
 
     /// Add the actual type instantiation of the apparent type of an F# extension method.
-    member AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers: tyargs:TType list -> TType list
+    member AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers: tyargs: TType list -> TType list
 
     /// Calculates a hash code of method info. Compatible with ItemsAreEffectivelyEqual relation.
     member ComputeHashCode: unit -> int
 
     /// Get the return type of a method info, where 'void' is returned as 'None'
-    member GetCompiledReturnTy: amap:ImportMap * m:range * minst:TType list -> TType option
+    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the return type of a method info, where 'void' is returned as 'unit'
-    member GetFSharpReturnTy: amap:ImportMap * m:range * minst:TType list -> TType
+    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Select all the type parameters of the declaring type of a method.
     ///
     /// For extension methods, no type parameters are returned, because all the
     /// type parameters are part of the apparent type, rather the
     /// declaring type, even for extension methods extending generic types.
-    member GetFormalTyparsOfDeclaringType: m:range -> Typar list
+    member GetFormalTyparsOfDeclaringType: m: range -> Typar list
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with a method.
     /// An instance method returns one object argument.
-    member GetObjArgTypes: amap:ImportMap * m:range * minst:TypeInst -> TType list
+    member GetObjArgTypes: amap: ImportMap * m: range * minst: TypeInst -> TType list
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member GetParamAttribs: amap:ImportMap * m:range -> (bool * bool * bool * OptionalArgInfo * CallerInfo * ReflectedArgInfo) list list
+    member GetParamAttribs:
+        amap: ImportMap * m: range -> (bool * bool * bool * OptionalArgInfo * CallerInfo * ReflectedArgInfo) list list
 
     /// Get the ParamData objects for the parameters of a MethInfo
-    member GetParamDatas: amap:ImportMap * m:range * minst:TType list -> ParamData list list
+    member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
 
     /// Get the parameter types of a method info
-    member GetParamTypes: amap:ImportMap * m:range * minst:TType list -> TType list list
+    member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
 
     /// Get the signature of an abstract method slot.
-    member GetSlotSig: amap:ImportMap * m:range -> SlotSig
+    member GetSlotSig: amap: ImportMap * m: range -> SlotSig
 
     /// Get the ParamData objects for the parameters of a MethInfo
-    member HasParamArrayArg: amap:ImportMap * m:range * minst:TType list -> bool
+    member HasParamArrayArg: amap: ImportMap * m: range * minst: TType list -> bool
 
     /// Apply a type instantiation to a method info, i.e. apply the instantiation to the enclosing type.
-    member Instantiate: amap:ImportMap * m:range * inst:TyparInst -> MethInfo
+    member Instantiate: amap: ImportMap * m: range * inst: TyparInst -> MethInfo
 
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
-    member IsReadOnlyExtensionMember: amap:ImportMap * m:range -> bool
+    member IsReadOnlyExtensionMember: amap: ImportMap * m: range -> bool
 
     /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
-    member ObjArgNeedsAddress: amap:ImportMap * m:range -> bool
+    member ObjArgNeedsAddress: amap: ImportMap * m: range -> bool
 
     /// Tries to get the object arg type if it's a byref type.
-    member TryObjArgByrefType: amap:ImportMap * m:range * minst:TypeInst -> TType option
+    member TryObjArgByrefType: amap: ImportMap * m: range * minst: TypeInst -> TType option
 
 /// Represents a single use of a IL or provided field from one point in an F# program
 [<NoComparison; NoEquality>]
 type ILFieldInfo =
-     /// Represents a single use of a field backed by Abstract IL metadata
+    /// Represents a single use of a field backed by Abstract IL metadata
     | ILFieldInfo of ilTypeInfo: ILTypeInfo * ilFieldDef: ILFieldDef
 
-#if !NO_EXTENSIONTYPING
-     /// Represents a single use of a field backed by provided metadata
+#if !NO_TYPEPROVIDERS
+    /// Represents a single use of a field backed by provided metadata
     | ProvidedField of amap: ImportMap * providedField: Tainted<ProvidedFieldInfo> * range: range
 #endif
 
@@ -598,34 +708,34 @@ type ILFieldInfo =
 
     member DeclaringTyconRef: TyconRef
 
-     /// Get the name of the field
+    /// Get the name of the field
     member FieldName: string
 
-     /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
+    /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member ILFieldRef: ILFieldRef
 
-     /// Get the type of the field as an IL type
+    /// Get the type of the field as an IL type
     member ILFieldType: ILType
 
-     /// Get a reference to the declaring type of the field as an ILTypeRef
+    /// Get a reference to the declaring type of the field as an ILTypeRef
     member ILTypeRef: ILTypeRef
 
-     /// Indicates if the field is readonly (in the .NET/C# sense of readonly)
+    /// Indicates if the field is readonly (in the .NET/C# sense of readonly)
     member IsInitOnly: bool
 
-     /// Indicates if the field has the 'specialname' property in the .NET IL
+    /// Indicates if the field has the 'specialname' property in the .NET IL
     member IsSpecialName: bool
 
-     /// Indicates if the field is static
+    /// Indicates if the field is static
     member IsStatic: bool
 
     /// Indicates if the field is a member of a struct or enum type
     member IsValueType: bool
 
-     /// Indicates if the field is a literal field with an associated literal value
+    /// Indicates if the field is a literal field with an associated literal value
     member LiteralValue: ILFieldInit option
 
-     /// Get the scope used to interpret IL metadata
+    /// Get the scope used to interpret IL metadata
     member ScopeRef: ILScopeRef
 
     member TcGlobals: TcGlobals
@@ -635,13 +745,13 @@ type ILFieldInfo =
 
     /// Tests whether two infos have the same underlying definition.
     /// Compatible with ItemsAreEffectivelyEqual relation.
-    static member ILFieldInfosUseIdenticalDefinitions: x1:ILFieldInfo -> x2:ILFieldInfo -> bool
+    static member ILFieldInfosUseIdenticalDefinitions: x1: ILFieldInfo -> x2: ILFieldInfo -> bool
 
     /// Calculates a hash code of field info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member ComputeHashCode: unit -> int
 
-     /// Get the type of the field as an F# type
-    member FieldType: amap:ImportMap * m:range -> TType
+    /// Get the type of the field as an F# type
+    member FieldType: amap: ImportMap * m: range -> TType
 
 /// Describes an F# use of a field in an F#-declared record, class or struct type
 [<NoComparison; NoEquality>]
@@ -723,7 +833,7 @@ type UnionCaseInfo =
     member UnionCaseRef: UnionCaseRef
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member GetTyparInst: m:range -> TyparInst
+    member GetTyparInst: m: range -> TyparInst
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -770,21 +880,21 @@ type ILPropInfo =
 
     /// Get the TcGlobals governing this value
     member TcGlobals: TcGlobals
-  
+
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
-    member GetParamNamesAndTypes: amap:ImportMap * m:range -> ParamNameAndType list
+    member GetParamNamesAndTypes: amap: ImportMap * m: range -> ParamNameAndType list
 
     /// Get the types of the indexer arguments associated with the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
-    member GetParamTypes: amap:ImportMap * m:range -> TType list
+    member GetParamTypes: amap: ImportMap * m: range -> TType list
 
     /// Get the return type of the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
-    member GetPropertyType: amap:ImportMap * m:range -> TType
+    member GetPropertyType: amap: ImportMap * m: range -> TType
 
 /// Describes an F# use of a property
 [<NoComparison; NoEquality>]
@@ -795,7 +905,7 @@ type PropInfo =
     /// An F# use of a property backed by Abstract IL metadata
     | ILProp of ilPropInfo: ILPropInfo
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// An F# use of a property backed by provided metadata
     | ProvidedProp of amap: ImportMap * providedProp: Tainted<ProvidedPropertyInfo> * range: range
 #endif
@@ -890,24 +1000,24 @@ type PropInfo =
     /// Test whether two property infos have the same underlying definition.
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
     /// Compatible with ItemsAreEffectivelyEqual relation.
-    static member PropInfosUseIdenticalDefinitions: x1:PropInfo -> x2:PropInfo -> bool
+    static member PropInfosUseIdenticalDefinitions: x1: PropInfo -> x2: PropInfo -> bool
 
     /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member ComputeHashCode: unit -> int
 
     /// Get the details of the indexer parameters associated with the property
-    member GetParamDatas: amap:ImportMap * m:range -> ParamData list
+    member GetParamDatas: amap: ImportMap * m: range -> ParamData list
 
     /// Get the names and types of the indexer parameters associated with the property
     ///
     /// If the property is in a generic type, then the type parameters are instantiated in the types returned.
-    member GetParamNamesAndTypes: amap:ImportMap * m:range -> ParamNameAndType list
+    member GetParamNamesAndTypes: amap: ImportMap * m: range -> ParamNameAndType list
 
     /// Get the types of the indexer parameters associated with the property
-    member GetParamTypes: amap:ImportMap * m:range -> TType list
+    member GetParamTypes: amap: ImportMap * m: range -> TType list
 
     /// Get the result type of the property
-    member GetPropertyType: amap:ImportMap * m:range -> TType
+    member GetPropertyType: amap: ImportMap * m: range -> TType
 
 /// Describes an F# use of an event backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -945,7 +1055,7 @@ type ILEventInfo =
 
     /// Get the declaring type of the event as an ILTypeRef
     member TypeRef: ILTypeRef
-  
+
 /// Describes an F# use of an event
 [<NoComparison; NoEquality>]
 type EventInfo =
@@ -955,7 +1065,7 @@ type EventInfo =
     /// An F# use of an event backed by .NET metadata
     | ILEvent of ilEventInfo: ILEventInfo
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// An F# use of an event backed by provided metadata
     | ProvidedEvent of amap: ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: range
 #endif
@@ -1007,17 +1117,17 @@ type EventInfo =
 
     /// Get the intra-assembly XML documentation for the property.
     member XmlDoc: XmlDoc
-  
+
     /// Test whether two event infos have the same underlying definition.
     /// Compatible with ItemsAreEffectivelyEqual relation.
-    static member EventInfosUseIdenticalDefinitions: x1:EventInfo -> x2:EventInfo -> bool
+    static member EventInfosUseIdenticalDefinitions: x1: EventInfo -> x2: EventInfo -> bool
 
     /// Calculates a hash code of event info (similar as previous)
     /// Compatible with ItemsAreEffectivelyEqual relation.
     member ComputeHashCode: unit -> int
 
     /// Get the delegate type associated with the event.
-    member GetDelegateType: amap:ImportMap * m:range -> TType
+    member GetDelegateType: amap: ImportMap * m: range -> TType
 
 /// An exception type used to raise an error using the old error system.
 ///
@@ -1025,40 +1135,71 @@ type EventInfo =
 exception BadEventTransformation of range
 
 /// Create an error object to raise should an event not have the shape expected by the .NET idiom described further below
-val nonStandardEventError: nm:System.String -> m:range -> exn
+val nonStandardEventError: nm: System.String -> m: range -> exn
 
 /// Find the delegate type that an F# event property implements by looking through the type hierarchy of the type of the property
 /// for the first instantiation of IDelegateEvent.
-val FindDelegateTypeOfPropertyEvent: g:TcGlobals -> amap:ImportMap -> nm:System.String -> m:range -> ty:TType -> TType
+val FindDelegateTypeOfPropertyEvent:
+    g: TcGlobals -> amap: ImportMap -> nm: System.String -> m: range -> ty: TType -> TType
 
 /// Strips inref and outref to be a byref.
-val stripByrefTy: g:TcGlobals -> ty:TType -> TType
+val stripByrefTy: g: TcGlobals -> ty: TType -> TType
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
-type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInst
+type CompiledSig =
+    | CompiledSig of
+        argTys: TType list list *
+        returnTy: TType option *
+        formalMethTypars: Typars *
+        formalMethTyparInst: TyparInst
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
-val CompiledSigOfMeth: g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> CompiledSig
+val CompiledSigOfMeth: g: TcGlobals -> amap: ImportMap -> m: range -> minfo: MethInfo -> CompiledSig
 
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-val MethInfosEquivByPartialSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByPartialSig:
+    erasureFlag: Erasure ->
+    ignoreFinal: bool ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minfo2: MethInfo ->
+        bool
 
 /// Used to hide/filter members from super classes based on signature
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-val MethInfosEquivByNameAndPartialSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByNameAndPartialSig:
+    erasureFlag: Erasure ->
+    ignoreFinal: bool ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minfo2: MethInfo ->
+        bool
 
 /// Used to hide/filter members from super classes based on signature
-val PropInfosEquivByNameAndPartialSig: erasureFlag:Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
+val PropInfosEquivByNameAndPartialSig:
+    erasureFlag: Erasure -> g: TcGlobals -> amap: ImportMap -> m: range -> pinfo: PropInfo -> pinfo2: PropInfo -> bool
 
 /// Used to hide/filter members from base classes based on signature
-val MethInfosEquivByNameAndSig: erasureFlag:Erasure -> ignoreFinal:bool -> g:TcGlobals -> amap:ImportMap -> m:range -> minfo:MethInfo -> minfo2:MethInfo -> bool
+val MethInfosEquivByNameAndSig:
+    erasureFlag: Erasure ->
+    ignoreFinal: bool ->
+    g: TcGlobals ->
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minfo2: MethInfo ->
+        bool
 
 /// Used to hide/filter members from super classes based on signature
-val PropInfosEquivByNameAndSig: erasureFlag:Erasure -> g:TcGlobals -> amap:ImportMap -> m:range -> pinfo:PropInfo -> pinfo2:PropInfo -> bool
+val PropInfosEquivByNameAndSig:
+    erasureFlag: Erasure -> g: TcGlobals -> amap: ImportMap -> m: range -> pinfo: PropInfo -> pinfo2: PropInfo -> bool
 
-val SettersOfPropInfos: pinfos:PropInfo list -> (MethInfo * PropInfo option) list
+val SettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list
 
-val GettersOfPropInfos: pinfos:PropInfo list -> (MethInfo * PropInfo option) list
-
+val GettersOfPropInfos: pinfos: PropInfo list -> (MethInfo * PropInfo option) list

@@ -21,7 +21,7 @@ module SourceFileImpl =
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
     /// Additional #defines that should be in place when editing a file in a file editor such as VS.
-    let AdditionalDefinesForUseInEditor(isInteractive: bool) =
+    let GetImplicitConditionalDefinesForEditing(isInteractive: bool) =
         if isInteractive then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
@@ -89,8 +89,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 match headPat with
                 | SynPat.LongIdent (longDotId=longIdentWithDots) ->
                     Some longIdentWithDots.Range
-                | SynPat.As (rhsPat=SynPat.Named (ident=ident; isThisVal=false))
-                | SynPat.Named (ident, false, _, _) ->
+                | SynPat.As (rhsPat=SynPat.Named (ident=SynIdent(ident,_); isThisVal=false))
+                | SynPat.Named (SynIdent(ident,_), false, _, _) ->
                     Some ident.idRange
                 | _ ->
                     None
@@ -137,7 +137,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
                     match argExpr with
                     | SynExpr.App(_, _, _, SynExpr.Paren(expr, _, _, _), _) when rangeContainsPos expr.Range pos ->
                         None
@@ -187,11 +187,28 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
 
                 // Special case: `async { ... }` is actually a ComputationExpr inside of the argExpr of a SynExpr.App
-                | SynExpr.ComputationExpr (_, expr, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp traverseSynExpr expr pos
-
+                | SynExpr.ComputationExpr (_, expr, range)
                 | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+                // Yielding values in an array or list that is used as an argument: List.sum [ getVal a b; getVal b c ]
+                | SynExpr.ArrayOrListComputed (_, expr, range) when rangeContainsPos range pos ->
+                    if rangeContainsPos expr.Range pos then
+                        getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+                    else
+                        (*
+                            In cases like
+
+                            let test () = div [] [
+                                str ""
+                                ; |
+                            ]
+
+                            `ProvideParametersAsyncAux` currently works with the wrong symbol or
+                            doesn't detect the previously applied arguments.
+                            Until that is fixed, don't show any tooltips rather than the wrong signature.
+                        *)
+                        None
 
                 | _ ->
                     match funcExpr with
@@ -204,6 +221,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         // Generally, we want to dive into the func expr to get the range
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
+
+            | SynExpr.Sequential (_, _, expr1, expr2, range) when rangeContainsPos range pos ->
+                if rangeContainsPos expr1.Range pos then
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr1 pos
+                else
+                    getIdentRangeForFuncExprInApp traverseSynExpr expr2 pos
 
             | SynExpr.LetOrUse (bindings=bindings; body=body; range=range) when rangeContainsPos range pos  ->
                 let binding =
@@ -269,7 +292,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             | expr ->
                 traverseSynExpr expr
-                |> Option.map id
 
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
             member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
@@ -286,7 +308,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
     member _.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
         let (|Ident|_|) ofName =
-            function | SynExpr.Ident ident when ident.idText = ofName -> Some ()
+            function | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])) when ident.idText = ofName -> Some ()
                      | _ -> None
         let (|InfixAppOfOpEqualsGreater|_|) =
           function | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, Ident "op_EqualsGreater", actualParamListExpr, _), actualLambdaBodyExpr, _) ->
@@ -305,6 +327,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 | SynBinding(kind=SynBindingKind.Normal; expr=InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app) ->
                     Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
                 | _ -> defaultTraverse binding })
+
+    member _.TryRangeOfStringInterpolationContainingPos pos =
+        SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with
+            member _.VisitExpr(_, _, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.InterpolatedString(range = range) when rangeContainsPos range pos ->
+                    Some range
+                | _ -> defaultTraverse expr })
 
     member _.TryRangeOfExprInYieldOrReturn pos =
         SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
@@ -327,7 +357,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                | SynExpr.App(_, false, SynExpr.LongIdent(longDotId = SynLongIdent(id = [funcIdent])), expr, _) ->
                     if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
                         Some funcIdent.idRange
                     else
@@ -338,7 +368,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         SyntaxTraversal.Traverse(expressionPos, input, { new SyntaxVisitorBase<_>() with 
             member _.VisitExpr(_, _, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                | SynExpr.App(_, false, SynExpr.LongIdent(longDotId = SynLongIdent(id = [funcIdent])), expr, _) ->
                     if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
                         Some expr.Range
                     else
@@ -372,8 +402,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         result.IsSome
 
     member _.IsTypeAnnotationGivenAtPosition pos =
-        let result =
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
+        let walker =
+            { new SyntaxVisitorBase<_>() with
                 member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.Typed (_expr, _typeExpr, range) when Position.posEq range.Start pos ->
@@ -386,6 +416,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | _ ->
                         let exprFunc pat =
                             match pat with
+                            // (s: string)
                             | SynSimplePat.Typed (_pat, _targetExpr, range) when Position.posEq range.Start pos ->
                                 Some range
                             | _ ->
@@ -394,10 +425,18 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         pats |> List.tryPick exprFunc
 
                 override _.VisitPat(_path, defaultTraverse, pat) =
+                    // (s: string)
                     match pat with
                     | SynPat.Typed (_pat, _targetType, range) when Position.posEq range.Start pos ->
                         Some range
-                    | _ -> defaultTraverse pat })
+                    | _ -> defaultTraverse pat
+                override _.VisitBinding(_path, defaultTraverse, binding) =
+                    // let x : int = 12
+                    match binding with
+                    | SynBinding(headPat = SynPat.Named (range = patRange); returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> Some patRange
+                    | _ -> defaultTraverse binding
+            }
+        let result = SyntaxTraversal.Traverse(pos, input, walker)
         result.IsSome
 
         member _.IsBindingALambdaAtPosition pos =
@@ -442,16 +481,32 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let walkWithSeqPt sp = [ match sp with DebugPointAtWith.Yes m -> yield! checkRange m | _ -> () ]
             let walkFinallySeqPt sp = [ match sp with DebugPointAtFinally.Yes m -> yield! checkRange m | _ -> () ]
 
-            let rec walkBind (SynBinding(expr=synExpr; debugPoint=spInfo)) =
+            let rec walkBind (SynBinding(kind=kind; expr=synExpr; debugPoint=spInfo; range=m)) =
                 [ yield! walkBindSeqPt spInfo
-                  yield! walkExpr (match spInfo with DebugPointAtBinding.Yes _ -> false | _-> true) synExpr ]
+                  let extendDebugPointForDo =
+                      match kind with
+                      | SynBindingKind.Do -> not (IsControlFlowExpression synExpr)
+                      | _ -> false
 
-            and walkExprs es = List.collect (walkExpr false) es
+                  // This extends the range of the implicit debug point for 'do expr' range to include the 'do'
+                  if extendDebugPointForDo then
+                      yield! checkRange m
 
-            and walkBinds es = List.collect walkBind es
+                  let useImplicitDebugPoint =
+                      match spInfo with
+                      | DebugPointAtBinding.Yes _ -> false
+                      | _-> not extendDebugPointForDo
 
-            and walkMatchClauses cl = 
-                [ for SynMatchClause(whenExpr=whenExprOpt; resultExpr=tgtExpr) in cl do 
+                  yield! walkExpr useImplicitDebugPoint synExpr ]
+
+            and walkExprs exprs =
+                exprs |> List.collect (walkExpr false)
+
+            and walkBinds exprs =
+                exprs |> List.collect walkBind
+
+            and walkMatchClauses clauses = 
+                [ for SynMatchClause(whenExpr=whenExprOpt; resultExpr=tgtExpr) in clauses do 
                     match whenExprOpt with 
                     | Some whenExpr -> yield! walkExpr false whenExpr 
                     | _ -> ()
@@ -462,7 +517,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             
             // Determine the breakpoint locations for an expression. spImplicit indicates we always
             // emit a breakpoint location for the expression unless it is a syntactic control flow construct
-            and walkExpr (spImplicit: bool)  expr =
+            and walkExpr spImplicit expr =
                 let m = expr.Range
                 if not (isMatchRange m) then [] else
                 [ if spImplicit && not (IsControlFlowExpression expr) then 
@@ -566,9 +621,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e1 
                       yield! walkExpr false e2
 
-                  | SynExpr.ArrayOrList (_, es, _)
-                  | SynExpr.Tuple (_, es, _, _) -> 
-                      yield! walkExprs es
+                  | SynExpr.ArrayOrList (_, exprs, _)
+                  | SynExpr.Tuple (_, exprs, _, _) -> 
+                      yield! walkExprs exprs
 
                   | SynExpr.Record (_, copyExprOpt, fs, _) ->
                       match copyExprOpt with
@@ -615,17 +670,17 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
-                      for SynMatchClause(whenExpr=whenExpr; resultExpr=e) in cl do 
+                      for SynMatchClause(whenExpr = whenExpr; resultExpr = resultExpr) in cl do 
                           yield! walkExprOpt true whenExpr
-                          yield! walkExpr true e 
+                          yield! walkExpr true resultExpr 
 
                   | SynExpr.Lambda (body = bodyExpr) -> 
                       yield! walkExpr true bodyExpr 
 
-                  | SynExpr.Match (matchDebugPoint=spBind; expr=inpExpr; clauses=cl) ->
+                  | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false inpExpr 
-                      for SynMatchClause(whenExpr=whenExpr; resultExpr=tgtExpr) in cl do 
+                      for SynMatchClause(whenExpr = whenExpr; resultExpr = tgtExpr) in cl do 
                           yield! walkExprOpt true whenExpr
                           yield! walkExpr true tgtExpr 
 
@@ -677,20 +732,20 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e2 
                       yield! walkExpr false e3 
 
-                  | SynExpr.LetOrUseBang (spBind, _, _, _, _, e1, es, e2, _) -> 
+                  | SynExpr.LetOrUseBang (spBind, _, _, _, rhsExpr, andBangs, bodyExpr, _, _) -> 
                       yield! walkBindSeqPt spBind
-                      yield! walkExpr true e1
-                      for SynExprAndBang(debugPoint = andBangSpBind; body = eAndBang) in es do
+                      yield! walkExpr true rhsExpr
+                      for SynExprAndBang(debugPoint = andBangSpBind; body = eAndBang) in andBangs do
                           yield! walkBindSeqPt andBangSpBind
                           yield! walkExpr true eAndBang
-                      yield! walkExpr true e2
+                      yield! walkExpr true bodyExpr
 
-                  | SynExpr.MatchBang (matchDebugPoint=spBind; expr=e; clauses=cl) ->
+                  | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = clauses) ->
                       yield! walkBindSeqPt spBind
-                      yield! walkExpr false e 
-                      for SynMatchClause(whenExpr=whenExpr; resultExpr=e) in cl do 
+                      yield! walkExpr false inpExpr 
+                      for SynMatchClause(whenExpr = whenExpr; resultExpr = resExpr) in clauses do 
                           yield! walkExprOpt true whenExpr
-                          yield! walkExpr true e ]
+                          yield! walkExpr true resExpr ]
             
             // Process a class declaration or F# type declaration
             let rec walkTycon (SynTypeDefn(typeRepr=repr; members=membDefns; implicitConstructor=implicitCtor; range=m)) =
@@ -705,7 +760,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       
             // Returns class-members for the right dropdown                  
             and walkMember memb =
-                if not (rangeContainsPos memb.Range pos) then [] else
+                if not (isMatchRange memb.Range) then [] else
                 [ match memb with
                   | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
                   | SynMemberDefn.AutoProperty(synExpr=synExpr) -> yield! walkExpr true synExpr
@@ -727,9 +782,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 [ match decl with 
                   | SynModuleDecl.Let(_, binds, m) when isMatchRange m -> 
                       yield! walkBinds binds
-                  | SynModuleDecl.DoExpr(spExpr, expr, m) when isMatchRange m ->  
-                      yield! walkBindSeqPt spExpr
-                      yield! walkExpr false expr
+                  | SynModuleDecl.Expr(expr, m) when isMatchRange m ->  
+                      yield! walkExpr true expr
                   | SynModuleDecl.ModuleAbbrev _ -> ()
                   | SynModuleDecl.NestedModule(decls=decls; range=m) when isMatchRange m ->
                       for d in decls do yield! walkDecl d
@@ -741,7 +795,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | _ -> () ] 
                       
             // Collect all the items in a module  
-            let walkModule (SynModuleOrNamespace(_, _, _, decls, _, _, _, m)) =
+            let walkModule (SynModuleOrNamespace(decls = decls; range = m)) =
                 if isMatchRange m then
                     List.collect walkDecl decls
                 else

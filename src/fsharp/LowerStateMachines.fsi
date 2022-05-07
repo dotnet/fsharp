@@ -6,14 +6,14 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
 type LoweredStateMachine =
-    LoweredStateMachine of 
-         templateStructTy: TType *
-         dataTy: TType *
-         stateVars: ValRef list *
-         thisVars: ValRef list *
-         moveNext: (Val * Expr) * 
-         setStateMachine: (Val * Val * Expr) *
-         afterCode: (Val * Expr)
+    | LoweredStateMachine of
+        templateStructTy: TType *
+        dataTy: TType *
+        stateVars: ValRef list *
+        thisVars: ValRef list *
+        moveNext: (Val * Expr) *
+        setStateMachine: (Val * Val * Expr) *
+        afterCode: (Val * Expr)
 
 type LoweredStateMachineResult =
     /// A state machine was recognised and was compilable
@@ -30,8 +30,4 @@ type LoweredStateMachineResult =
 
 /// Analyze a TAST expression to detect the elaborated form of a state machine expression, a special kind
 /// of object expression that uses special code generation constructs.
-val LowerStateMachineExpr:
-    g: TcGlobals -> 
-    overallExpr: Expr -> 
-        LoweredStateMachineResult
-
+val LowerStateMachineExpr: g: TcGlobals -> overallExpr: Expr -> LoweredStateMachineResult

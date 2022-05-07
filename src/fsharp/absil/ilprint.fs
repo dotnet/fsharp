@@ -80,7 +80,7 @@ let output_qstring os s =
 let output_sqstring os s =
   output_char os '\''
   for i = 0 to String.length s - 1 do
-    let c = s.[i]
+    let c = s[i]
     if (c >= '\000' && c <= '\031') || (c >= '\127' && c <= '\255') then
       let c' = int32 c
       output_char os '\\'
@@ -107,9 +107,9 @@ let output_seq sep f os (a:seq<_>) =
 let output_array sep f os (a:_ []) =
   if not (Array.isEmpty a) then
       for i in 0..a.Length-2 do
-        f os a.[i]
+        f os a[i]
         output_string os sep
-      f os a.[a.Length - 1]
+      f os a[a.Length - 1]
 
 let output_parens f os a = output_string os "("; f os a; output_string os ")"
 
@@ -405,9 +405,9 @@ and goutput_vararg_sig env os (csig:ILCallingSignature, varargs:ILVarArgs) =
    | Some varargs' ->
        goutput_typ env os csig.ReturnType
        output_string os " ("
-       let argtys = csig.ArgTypes
-       if argtys.Length <> 0 then
-           output_seq ", " (goutput_typ env)  os argtys
+       let argTys = csig.ArgTypes
+       if argTys.Length <> 0 then
+           output_seq ", " (goutput_typ env)  os argTys
        output_string os ", ..., "
        output_seq ", " (goutput_typ env) os varargs'
        output_string os ")"
@@ -741,7 +741,7 @@ let rec goutput_instr env os inst =
         output_string os "Set"
         let rank = shape.Rank
         let arr = Array.create (rank + 1) PrimaryAssemblyILGlobals.typ_Int32
-        arr.[rank] <- dt
+        arr[rank] <- dt
         output_parens (output_array ", " (goutput_typ env)) os arr
   | I_ldelem_any (shape, tok) ->
       if shape = ILArrayShape.SingleDimensional then

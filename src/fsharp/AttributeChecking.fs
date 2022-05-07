@@ -16,8 +16,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
-open FSharp.Compiler.ExtensionTyping
+#if !NO_TYPEPROVIDERS
+open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
@@ -26,46 +26,46 @@ exception ObsoleteError of string * range
 
 let fail() = failwith "This custom attribute has an argument that can not yet be converted using this API"
 
-let rec private evalILAttribElem e = 
-    match e with 
-    | ILAttribElem.String (Some x)  -> box x
-    | ILAttribElem.String None      -> null
-    | ILAttribElem.Bool x           -> box x
-    | ILAttribElem.Char x           -> box x
-    | ILAttribElem.SByte x          -> box x
-    | ILAttribElem.Int16 x          -> box x
-    | ILAttribElem.Int32 x          -> box x
-    | ILAttribElem.Int64 x          -> box x
-    | ILAttribElem.Byte x           -> box x
-    | ILAttribElem.UInt16 x         -> box x
-    | ILAttribElem.UInt32 x         -> box x
-    | ILAttribElem.UInt64 x         -> box x
-    | ILAttribElem.Single x         -> box x
-    | ILAttribElem.Double x         -> box x
-    | ILAttribElem.Null             -> null
-    | ILAttribElem.Array (_, a)     -> box [| for i in a -> evalILAttribElem i |]
+let rec private evalILAttribElem elem = 
+    match elem with 
+    | ILAttribElem.String (Some x) -> box x
+    | ILAttribElem.String None -> null
+    | ILAttribElem.Bool x -> box x
+    | ILAttribElem.Char x -> box x
+    | ILAttribElem.SByte x -> box x
+    | ILAttribElem.Int16 x -> box x
+    | ILAttribElem.Int32 x -> box x
+    | ILAttribElem.Int64 x -> box x
+    | ILAttribElem.Byte x -> box x
+    | ILAttribElem.UInt16 x -> box x
+    | ILAttribElem.UInt32 x -> box x
+    | ILAttribElem.UInt64 x -> box x
+    | ILAttribElem.Single x -> box x
+    | ILAttribElem.Double x -> box x
+    | ILAttribElem.Null -> null
+    | ILAttribElem.Array (_, a) -> box [| for i in a -> evalILAttribElem i |]
     // TODO: typeof<..> in attribute values
-    | ILAttribElem.Type (Some _t)    -> fail() 
-    | ILAttribElem.Type None        -> null
+    | ILAttribElem.Type (Some _t) -> fail() 
+    | ILAttribElem.Type None -> null
     | ILAttribElem.TypeRef (Some _t) -> fail()
-    | ILAttribElem.TypeRef None     -> null
+    | ILAttribElem.TypeRef None -> null
 
-let rec private evalFSharpAttribArg g e = 
-    match stripDebugPoints e with
+let rec private evalFSharpAttribArg g attribExpr = 
+    match stripDebugPoints attribExpr with
     | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
-        | Const.SByte i  -> box i
-        | Const.Int16 i  -> box  i
-        | Const.Int32 i   -> box i
-        | Const.Int64 i   -> box i  
-        | Const.Byte i    -> box i
-        | Const.UInt16 i  -> box i
-        | Const.UInt32 i  -> box i
-        | Const.UInt64 i  -> box i
-        | Const.Single i   -> box i
+        | Const.SByte i -> box i
+        | Const.Int16 i -> box  i
+        | Const.Int32 i -> box i
+        | Const.Int64 i -> box i  
+        | Const.Byte i -> box i
+        | Const.UInt16 i -> box i
+        | Const.UInt32 i -> box i
+        | Const.UInt64 i -> box i
+        | Const.Single i -> box i
         | Const.Double i -> box i
-        | Const.Char i    -> box i
+        | Const.Char i -> box i
         | Const.Zero -> null
         | Const.String s ->  box s
         | _ -> fail()
@@ -100,9 +100,9 @@ type AttribInfo =
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
-              [ for argty, argval in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     ty, obj ]
 
     member x.NamedArguments = 
@@ -115,9 +115,9 @@ type AttribInfo =
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
-              [ for nm, argty, isProp, argval in namedArgs ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for nm, argTy, isProp, arg in namedArgs ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]
 
@@ -132,7 +132,7 @@ let AttribInfosOfFS g attribs =
 
 let GetAttribInfosOfEntity g amap m (tcref:TyconRef) = 
     match metadataOfTycon tcref.Deref with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedTypeMetadata _info -> []
         //let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
@@ -151,7 +151,7 @@ let GetAttribInfosOfMethod amap m minfo =
     | ILMeth (g, ilminfo, _) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
     | FSMeth (g, _, vref, _) -> vref.Attribs |> AttribInfosOfFS g 
     | DefaultStructCtor _ -> []
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedMeth (_, _mi, _, _m) -> 
             []
@@ -164,7 +164,7 @@ let GetAttribInfosOfProp amap m pinfo =
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> vref.Attribs |> AttribInfosOfFS g 
     | FSProp _ -> failwith "GetAttribInfosOfProp: unreachable"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedProp _ ->  []
 #endif
@@ -173,7 +173,7 @@ let GetAttribInfosOfEvent amap m einfo =
     match einfo with 
     | ILEvent ileinfo -> ileinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL einfo.TcGlobals amap ileinfo.ILTypeInfo.ILScopeRef m
     | FSEvent(_, pi, _vref1, _vref2) -> GetAttribInfosOfProp amap m pi
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // TODO: provided attributes
     | ProvidedEvent _ -> []
 #endif
@@ -186,21 +186,21 @@ let BindMethInfoAttributes m minfo f1 f2 f3 =
     | ILMeth (_, x, _) -> f1 x.RawMetadata.CustomAttrs 
     | FSMeth (_, _, vref, _) -> f2 vref.Attribs
     | DefaultStructCtor _ -> f2 []
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth (_, mi, _, _) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
 #endif
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) minfo f1 f2 f3 = 
-#if NO_EXTENSIONTYPING
+#if NO_TYPEPROVIDERS
     // to prevent unused parameter warning
     ignore f3
 #endif
     BindMethInfoAttributes m minfo 
         (fun ilAttribs -> TryDecodeILAttribute atref ilAttribs |> Option.bind f1)
         (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         (fun provAttribs -> 
             match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)), m) with
             | Some args -> f3 args
@@ -233,7 +233,7 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     match TryDecodeILAttribute tref cattrs with 
     | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
@@ -251,7 +251,7 @@ let langVersionPrefix = "--langversion:preview"
 /// returning errors and warnings as data
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
     let isExperimentalAttributeDisabled (s:string) =
-        if g.compilingFslib then
+        if g.compilingFSharpCore then
             true
         else
             g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -282,7 +282,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             // If we are using a compiler that supports nameof then error 3501 is always suppressed.
             // See attribute on FSharp.Core 'nameof'
             if n = 3501 then CompleteD
-            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            elif isError && (not g.compilingFSharpCore || n <> 1204) then ErrorD msg 
             else WarnD msg
         | _ -> 
             CompleteD
@@ -307,13 +307,13 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             CompleteD
         )
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
     let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
     match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)), m) with
     | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteWarning(msg, m))
-    | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _)  ->
+    | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _) ->
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
@@ -359,7 +359,7 @@ let CheckFSharpAttributesForUnseen g attribs _m =
     (CheckFSharpAttributesForObsolete g attribs ||
         CheckFSharpAttributesForHidden g attribs)
       
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
     provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<ObsoleteAttribute>.FullName).IsSome), m)
@@ -372,7 +372,7 @@ let CheckPropInfoAttributes pinfo m =
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedProp (amap, pi, m) ->  
         CheckProvidedAttributes amap.g m (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m))
          
@@ -384,7 +384,7 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
     match finfo with 
     | ILFieldInfo(_, pd) -> 
         CheckILAttributes g false pd.CustomAttrs m |> CommitOperationResult
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedField (amap, fi, m) -> 
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
 #endif
@@ -402,7 +402,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
                         else
                             CompleteD)
                 Some res) 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
 #else
             (fun _provAttribs -> None)
@@ -418,7 +418,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
                 (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m))
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 (fun provAttribs -> Some(CheckProvidedAttributesForUnseen provAttribs m))
 #else
                 (fun _provAttribs -> None)
@@ -428,7 +428,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         | None -> false
 
     let isUnseenByHidingAttribute () = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         not (isObjTy g ty) &&
         isAppTy g ty &&
         isObjTy g minfo.ApparentEnclosingType &&
@@ -465,7 +465,7 @@ let PropInfoIsUnseen m pinfo =
     | FSProp (g, _, Some vref, _) 
     | FSProp (g, _, _, Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedProp (_amap, pi, m) -> 
         CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
 #endif
@@ -508,7 +508,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
             | true, c -> c
             | _ ->
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
-                casmap.[tcs] <- exists
+                casmap[tcs] <- exists
                 exists
         | ValueNone -> false  
 

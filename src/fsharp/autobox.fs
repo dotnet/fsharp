@@ -36,11 +36,11 @@ let DecideEscapes syntacticArgs body =
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
-let DecideLambda exprF cenv topValInfo expr ety z   = 
+let DecideLambda exprF cenv topValInfo expr exprTy z = 
     match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, exprTy) 
         let snoc = fun x y -> y :: x
         let args = List.concat vsl
         let args = Option.fold snoc args baseValOpt
@@ -75,15 +75,16 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF noInterceptF z expr  = 
+    let g = cenv.g
     match stripDebugPoints expr with 
-    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
-        DecideLambda (Some exprF)  cenv topValInfo expr ty z
+        let ty = mkMultiLambdaTy g m argvs bodyTy 
+        DecideLambda (Some exprF) cenv topValInfo expr ty z
 
-    | Expr.TyLambda (_, tps, _, _m, rty)  -> 
+    | Expr.TyLambda (_, tps, _, _m, bodyTy)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-        let ty = mkForallTyIfNeeded tps rty 
+        let ty = mkForallTyIfNeeded tps bodyTy 
         DecideLambda (Some exprF)  cenv topValInfo expr ty z
 
     | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 
@@ -136,33 +137,33 @@ let DecideImplFile g amap implFile =
 // Apply the transform
 
 /// Rewrite fetches, stores and address-of expressions for mutable locals which we are transforming
-let TransformExpr g (nvs: ValMap<_>) exprF expr = 
+let TransformExpr g (heapValMap: ValMap<_>) exprF expr = 
 
     match expr with
     // Rewrite uses of mutable values 
-    | Expr.Val (ValDeref(v), _, m) when nvs.ContainsVal v -> 
+    | Expr.Val (ValDeref(v), _, m) when heapValMap.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = heapValMap[v]
        Some (mkRefCellGet g m v.Type nve)
 
     // Rewrite assignments to mutable values 
-    | Expr.Op (TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when nvs.ContainsVal v -> 
+    | Expr.Op (TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when heapValMap.ContainsVal v -> 
 
-       let _nv, nve = nvs.[v]
+       let _nv, nve = heapValMap[v]
        let arg = exprF arg 
        Some (mkRefCellSet g m v.Type nve arg)
 
     // Rewrite taking the address of mutable values 
-    | Expr.Op (TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when nvs.ContainsVal v -> 
-       let _nv,nve = nvs.[v]
+    | Expr.Op (TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when heapValMap.ContainsVal v -> 
+       let _nv,nve = heapValMap[v]
        Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
 
 /// Rewrite bindings for mutable locals which we are transforming
-let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 
-    if nvs.ContainsVal v then 
-       let nv, _nve = nvs.[v]
+let TransformBinding g (heapValMap: ValMap<_>) exprF (TBind(v, expr, m)) = 
+    if heapValMap.ContainsVal v then 
+       let nv, _nve = heapValMap[v]
        let exprRange = expr.Range
        let expr = exprF expr
        Some(TBind(nv, mkRefCell g exprRange v.Type expr, m))
@@ -171,28 +172,30 @@ let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) =
 
 /// Rewrite mutable locals to reference cells across an entire implementation file
 let TransformImplFile g amap implFile = 
-    let fvs = DecideImplFile g amap implFile
-    if Zset.isEmpty fvs then 
+    let localsToTransform = DecideImplFile g amap implFile
+    if Zset.isEmpty localsToTransform then 
         implFile
     else
-        for fv in fvs do
+        for fv in localsToTransform do
             warning (Error(FSComp.SR.abImplicitHeapAllocation(fv.DisplayName), fv.Range))
 
-        let nvs = 
-            [ for fv in fvs do
-                let nty = mkRefCellTy g fv.Type
-                let nv, nve = 
-                    if fv.IsCompilerGenerated then mkCompGenLocal fv.Range fv.LogicalName nty
-                    else mkLocal fv.Range fv.LogicalName nty
-                yield (fv, (nv, nve)) ]
+        let heapValMap = 
+            [ for localVal in localsToTransform do
+                let heapTy = mkRefCellTy g localVal.Type
+                let heapVal, heapValExpr = 
+                    if localVal.IsCompilerGenerated then
+                        mkCompGenLocal localVal.Range localVal.LogicalName heapTy
+                    else
+                        mkLocal localVal.Range localVal.LogicalName heapTy
+                yield (localVal, (heapVal, heapValExpr)) ]
             |> ValMap.OfList
 
         implFile |> 
           RewriteImplFile 
-              { PreIntercept = Some(TransformExpr g nvs)
-                PreInterceptBinding = Some(TransformBinding g nvs)
+              { PreIntercept = Some(TransformExpr g heapValMap)
+                PreInterceptBinding = Some(TransformBinding g heapValMap)
                 PostTransform = (fun _ -> None)
-                RewriteQuotations = false
+                RewriteQuotations = true
                 StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

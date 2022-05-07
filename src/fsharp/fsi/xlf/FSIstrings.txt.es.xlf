@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">El acceso al tipo, método o campo interno “{0}” de una evaluación anterior en F# interactivo está en desuso y puede provocar errores de acceso posteriores. Para habilitar la generación heredada de un único ensamblado dinámico que pueda acceder a elementos internos, use la opción “--multiemit-”.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -12,9 +12,14 @@
         <target state="translated">Incluir el URI de origen del paquete al buscar paquetes</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">Emitir varios ensamblados (desactivado de forma predeterminada para .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">Emitir varios ensamblados (activado de forma predeterminada)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

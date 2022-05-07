@@ -4,4 +4,3 @@
 module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 
 val getResolver: unit -> LegacyReferenceResolver
-

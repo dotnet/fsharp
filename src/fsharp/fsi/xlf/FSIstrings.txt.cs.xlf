@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">Přístup k internímu typu, metodě nebo poli {0} z předchozího vyhodnocení ve F# Interactive je zastaralý a může způsobit následné chyby přístupu. Pokud chcete povolit starší generaci jednoho dynamického sestavení, které má přístup k interním sestavením, použijte možnost --multiemit-.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
@@ -12,9 +12,14 @@
         <target state="translated">Při vyhledávání balíčků zahrnout identifikátor zdroje balíčku</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">Vygenerovat více sestavení (pro .NET Framework je to ve výchozím nastavení vypnuto)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -29,7 +34,7 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">Vygenerovat více sestavení (ve výchozím nastavení zapnuto)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

@@ -1,23 +1,6 @@
-diamondAssembly/provided.dll
-diamondAssembly/provider.dll
-
-globalNamespace/globalNamespaceTP.dll
-globalNamespace/globalNamespaceTP.pdb
-
-helloWorld/provided.dll
-helloWorld/provided.pdb
-helloWorld/provided?.dll
-helloWorld/provided?.pdb
-helloWorld/providedNullAssemblyName.dll
-helloWorld/providedNullAssemblyName.pdb
-helloWorld/provider.dll
 helloWorld/bincompat1
 helloWorld/bincompat2
 
-helloWorldCSharp/magic.dll
-helloWorldCSharp/provider.dll
-
-negTests/*.dll
 negTests/*.bsl
 negTests/*.err
 negTests/*.vserr
@@ -25,12 +8,5 @@ negTests/*.vsbsl
 negTests/*.diff
 negTests/*.vsdiff
 
-splitAssembly/provider.dll
-splitAssembly/providerDesigner.dll
-
-wedgeAssembly/provided.dll
-wedgeAssembly/providedJ.dll
-wedgeAssembly/providedK.dll
-wedgeAssembly/provider.dll
-
-
+*.dll
+*.pdb

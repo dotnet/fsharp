@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>Pervasives: Additional bindings available at the top level</summary>
+// Pervasives: Additional bindings available at the top level
 namespace Microsoft.FSharp.Core
 
 /// <summary>A set of extra operators and functions. This module is automatically opened in all F# code.</summary>
@@ -522,7 +522,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <param name="typeWithoutArguments">A type returned by GetTypes or ResolveTypeName</param>
         ///
         /// <returns></returns>
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[] 
+        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
 
         /// <summary>
         /// Apply static arguments to a provided type that accepts static arguments. 
