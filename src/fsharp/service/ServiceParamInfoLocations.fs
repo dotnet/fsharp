@@ -8,8 +8,19 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 
+type TupledArgumentLocation = { IsNamedArgument: bool; ArgumentRange: range }
+
 [<Sealed>]
-type ParameterLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
+type ParameterLocations
+    (
+        longId: string list,
+        longIdRange: range,
+        openParenLocation: pos,
+        argRanges: TupledArgumentLocation list, 
+        tupleEndLocations: pos list,
+        isThereACloseParen: bool,
+        namedParamNames: string option list
+    ) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -30,6 +41,7 @@ type ParameterLocations(longId: string list, longIdRange: range, openParenLocati
     member this.TupleEndLocations = tupleEndLocations
     member this.IsThereACloseParen = isThereACloseParen
     member this.NamedParamNames = namedParamNames
+    member this.ArgumentLocations = argRanges |> Array.ofList
 
 [<AutoOpen>]
 module internal ParameterLocationsImpl =
@@ -55,7 +67,7 @@ module internal ParameterLocationsImpl =
         | _ -> None
 
     type FindResult = 
-        | Found of openParen: pos * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
+        | Found of openParen: pos * argRanges: TupledArgumentLocation list * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
         | NotFound
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =
@@ -91,7 +103,8 @@ module internal ParameterLocationsImpl =
         match inner with
         | None ->
             if SyntaxTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
-                Found (parenRange.Start, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
+                let argRanges = [{ IsNamedArgument = (getNamedParamName synExpr).IsSome; ArgumentRange = synExpr.Range }]
+                Found (parenRange.Start, argRanges, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
             else
                 NotFound, None
         | _ -> NotFound, None
@@ -108,8 +121,12 @@ module internal ParameterLocationsImpl =
             match inner with
             | None ->
                 if SyntaxTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
+                    // argRange, isNamed
+                    let argRanges =
+                        synExprList
+                        |> List.map (fun e -> { IsNamedArgument = (getNamedParamName e).IsSome; ArgumentRange = e.Range })
                     let commasAndCloseParen = ((synExprList, commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
-                    let r = Found (parenRange.Start, commasAndCloseParen, rpRangeOpt.IsSome)
+                    let r = Found (parenRange.Start, argRanges, commasAndCloseParen, rpRangeOpt.IsSome)
                     r, None
                 else
                     NotFound, None
@@ -128,14 +145,14 @@ module internal ParameterLocationsImpl =
 
         | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if SyntaxTraversal.rangeContainsPosEdgesExclusive range pos then
-                let r = Found (range.Start, [(range.End, None)], false)
+                let r = Found (range.Start, [], [(range.End, None)], false)
                 r, None
             else
                 NotFound, None
 
         | SynExpr.Const (SynConst.Unit, unitRange) ->
             if SyntaxTraversal.rangeContainsPosEdgesExclusive unitRange pos then
-                let r = Found (unitRange.Start, [(unitRange.End, None)], true)
+                let r = Found (unitRange.Start, [], [(unitRange.End, None)], true)
                 r, None
             else
                 NotFound, None
@@ -146,7 +163,7 @@ module internal ParameterLocationsImpl =
             | None ->
                 if SyntaxTraversal.rangeContainsPosEdgesExclusive e.Range pos then
                     // any other expression doesn't start with parens, so if it was the target of an App, then it must be a single argument e.g. "f x"
-                    Found (e.Range.Start, [ (e.Range.End, None) ], false), Some inner
+                    Found (e.Range.Start, [], [ (e.Range.End, None) ], false), Some inner
                 else
                     NotFound, Some inner
             | _ -> NotFound, Some inner
@@ -158,7 +175,7 @@ module internal ParameterLocationsImpl =
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
             if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                Some (ParameterLocations(pathOfLid lid, lidm, openm.Start, commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
+                Some (ParameterLocations(pathOfLid lid, lidm, openm.Start, [], commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
             else
                 None
         | _ ->
@@ -174,9 +191,9 @@ module internal ParameterLocationsImpl =
             | SynExpr.New (_, synType, synExpr, _) -> 
                 let constrArgsResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
                 match constrArgsResult, cacheOpt with
-                | Found(parenLoc, args, isThereACloseParen), _ ->
+                | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
                     let typeName = getTypeName synType
-                    Some (ParameterLocations(typeName, synType.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                    Some (ParameterLocations(typeName, synType.Range, parenLoc, argRanges, commasAndCloseParen |> List.map fst, isThereACloseParen, commasAndCloseParen |> List.map snd))
                 | NotFound, Some cache ->
                     cache
                 | _ ->
@@ -195,7 +212,7 @@ module internal ParameterLocationsImpl =
                     if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
-                        | Some(lid, lidRange) -> Some (ParameterLocations(lid, lidRange, op.idRange.Start, [ wholem.End ], false, []))
+                        | Some(lid, lidRange) -> Some (ParameterLocations(lid, lidRange, op.idRange.Start, [], [ wholem.End ], false, []))
                         | None -> None
                     else
                         None
@@ -210,7 +227,7 @@ module internal ParameterLocationsImpl =
                     // Search the argument
                     let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr2
                     match xResult, cacheOpt with
-                    | Found(parenLoc, args, isThereACloseParen), _ ->
+                    | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
                         | Some(lid, lidRange) -> 
@@ -220,7 +237,7 @@ module internal ParameterLocationsImpl =
                                 // For now, we don't support infix operators.
                                 None
                             else
-                                Some (ParameterLocations(lid, lidRange, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd))
+                                Some (ParameterLocations(lid, lidRange, parenLoc, argRanges, commasAndCloseParen |> List.map fst, isThereACloseParen, commasAndCloseParen |> List.map snd))
                         | None -> None
                     | NotFound, Some cache -> cache
                     | _ -> traverseSynExpr synExpr2
@@ -233,7 +250,8 @@ module internal ParameterLocationsImpl =
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
                     if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
                         let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                        let r = ParameterLocations(["dummy"], synExpr.Range, openm.Start, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
+                        let argRanges = tyArgs |> List.map (fun tyarg -> { IsNamedArgument = false; ArgumentRange = tyarg.Range })
+                        let r = ParameterLocations(["dummy"], synExpr.Range, openm.Start, argRanges, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
                         Some r
                     else
                         None
@@ -254,10 +272,10 @@ module internal ParameterLocationsImpl =
                     // inherit ty(expr)    ---   treat it like an application (constructor call)
                     let xResult, _cacheOpt = searchSynArgExpr defaultTraverse pos expr
                     match xResult with
-                    | Found(parenLoc, args, isThereACloseParen) ->
+                    | Found(parenLoc, argRanges, commasAndCloseParen, isThereACloseParen) ->
                         // we found it, dig out ident
                         let typeName = getTypeName ty
-                        let r = ParameterLocations(typeName, ty.Range, parenLoc, args |> List.map fst, isThereACloseParen, args |> List.map snd)
+                        let r = ParameterLocations(typeName, ty.Range, parenLoc, argRanges, commasAndCloseParen |> List.map fst, isThereACloseParen, commasAndCloseParen |> List.map snd)
                         Some r
                     | NotFound -> None
                 else None
@@ -276,7 +294,6 @@ type ParameterLocations with
 #endif                        
             r
         | _ -> None
-
 
 module internal SynExprAppLocationsImpl =
     let rec private searchSynArgExpr traverseSynExpr expr ranges =

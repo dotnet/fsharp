@@ -787,6 +787,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicates if this is a property member
     member IsProperty: bool
 
+    /// Indicates if this is a method member
+    member IsMethod : bool
+
     /// Indicates if this is a property and there exists an associated getter method
     member HasGetterMethod: bool
 
@@ -865,7 +868,13 @@ type FSharpMemberOrFunctionOrValue =
     /// Get the name as presented in F# error messages and documentation
     member DisplayName: string
 
-    member CurriedParameterGroups: IList<IList<FSharpParameter>>
+    /// <summary>List of list of parameters, where each nested item represents a defined parameter</summary>
+    /// <remarks>
+    /// Typically, there is only one nested list.
+    /// However, code such as 'f (a, b) (c, d)' contains two groups, each with two parameters.
+    /// In that example, there is a list made up of two lists, each with a parameter.
+    /// </remarks>
+    member CurriedParameterGroups : IList<IList<FSharpParameter>>
 
     /// <summary>Gets the overloads for the current method.</summary>
     ///
@@ -909,13 +918,19 @@ type FSharpMemberOrFunctionOrValue =
     
     /// Indicated if this is a value
     member IsValue: bool
+    
+    /// Indicated if this is a function
+    member IsFunction : bool
 
     /// Indicates if this is a constructor.
     member IsConstructor: bool
     
     /// Format the type using the rules of the given display context
-    member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
-
+    member FormatLayout: displayContext: FSharpDisplayContext -> TaggedText[]
+    
+    /// Format the type using the rules of the given display context
+    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
+    
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
