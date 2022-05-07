@@ -17,14 +17,14 @@ open FSharp.Compiler.Parser
 
 let debug = false
 
-let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
+let stringOfPos (pos: Position) = sprintf "(%d:%d)" pos.OriginalLine pos.Column
 
-let outputPos os (p: Position) = Printf.fprintf os "(%d:%d)" p.OriginalLine p.Column
+let outputPos os (pos: Position) = Printf.fprintf os "(%d:%d)" pos.OriginalLine pos.Column
 
 /// Used for warning strings, which should display columns as 1-based and display 
 /// the lines after taking '# line' directives into account (i.e. do not use
 /// p.OriginalLine)
-let warningStringOfPosition (p: Position) = warningStringOfCoords p.Line p.Column
+let warningStringOfPosition (pos: Position) = warningStringOfCoords pos.Line pos.Column
 
 type Context = 
     // Position is position of keyword.
@@ -185,15 +185,15 @@ let infixTokenLength token =
 //
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
 // causes more offside warnings, while removing them doesn't add offside warnings in attributes.
-let (|TokenLExprParen|_|) tok =
-    match tok with
+let (|TokenLExprParen|_|) token =
+    match token with
     | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
         -> Some ()
     | _ -> None
 
 /// Matches against a right-parenthesis-like token that is valid in expressions.
-let (|TokenRExprParen|_|) tok =
-    match tok with
+let (|TokenRExprParen|_|) token =
+    match token with
     | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
         -> Some ()
     | _ -> None
@@ -392,8 +392,15 @@ let rec isWithAugmentBlockContinuator token =
     | ODUMMY token -> isWithAugmentBlockContinuator token
     | _ -> false
 
-let isLongIdentifier token = (match token with IDENT _ | DOT -> true | _ -> false)
-let isLongIdentifierOrGlobal token = (match token with GLOBAL | IDENT _ | DOT -> true | _ -> false)
+let isLongIdentifier token =
+    match token with
+    | IDENT _ | DOT -> true
+    | _ -> false
+
+let isLongIdentifierOrGlobal token =
+    match token with
+    | GLOBAL | IDENT _ | DOT -> true
+    | _ -> false
 
 let isAtomicExprEndToken token = 
     match token with
@@ -409,8 +416,8 @@ let isAtomicExprEndToken token =
 //----------------------------------------------------------------------------
 // give a 'begin' token, does an 'end' token match?
 //--------------------------------------------------------------------------
-let parenTokensBalance t1 t2 = 
-    match t1, t2 with 
+let parenTokensBalance token1 token2 = 
+    match token1, token2 with 
     | LPAREN, RPAREN 
     | LBRACE _, RBRACE _ 
     | LBRACE_BAR, BAR_RBRACE 
@@ -434,9 +441,9 @@ let parenTokensBalance t1 t2 =
 type LexbufState(startPos: Position,
                  endPos : Position,
                  pastEOF : bool) = 
-    member x.StartPos = startPos
-    member x.EndPos = endPos
-    member x.PastEOF = pastEOF
+    member _.StartPos = startPos
+    member _.EndPos = endPos
+    member _.PastEOF = pastEOF
 
 /// Used to save the state related to a token
 /// Treat as though this is read-only.
@@ -464,12 +471,12 @@ type TokenTupPool() =
     let mutable currentPoolSize = 0
     let stack = Stack(10)
 
-    member this.Rent() = 
+    member pool.Rent() = 
         if stack.Count = 0 then
             if currentPoolSize < maxSize then
                 stack.Push(TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>))
                 currentPoolSize <- currentPoolSize + 1
-                this.Rent()
+                pool.Rent()
             else
                 assert false
                 TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
@@ -568,7 +575,7 @@ type PositionWithColumn =
 //----------------------------------------------------------------------------
 // build a LexFilter
 //--------------------------------------------------------------------------*)
-type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
 
     //----------------------------------------------------------------------------
     // Part I. Building a new lex stream from an old
@@ -2532,7 +2539,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+type LexFilter (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
     let inner = LexFilterImpl(lightStatus, compilingFsLib, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so

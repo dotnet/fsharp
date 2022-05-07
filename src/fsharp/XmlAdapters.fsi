@@ -2,8 +2,8 @@
 
 module internal Internal.Utilities.XmlAdapters
 
-  val s_escapeChars : char []
+val s_escapeChars: char []
 
-  val getEscapeSequence : c:char -> string
+val getEscapeSequence: c: char -> string
 
-  val escape : str:string -> string
+val escape: str: string -> string

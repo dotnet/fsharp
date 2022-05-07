@@ -18,7 +18,7 @@ open FSharp.Compiler.Text.Range
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
-let internal longIdentWithDotsToString (LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
+let internal longIdentWithDotsToString (SynLongIdent (longIdent, _, _)) = longIdentToString longIdent
 
 let internal posToTuple (pos: pos) = (pos.Line, pos.Column)
 let internal rangeToTuple (range: range) = (posToTuple range.Start, posToTuple range.End)
@@ -47,7 +47,7 @@ let internal identsAndRanges (input: ParsedInput) =
         | SynModuleDecl.Attributes _ -> failwith "Not implemented yet"
         | SynModuleDecl.HashDirective _ -> failwith "Not implemented yet"
         | SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace
-    and extractFromModuleOrNamespace (SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, _)) =
+    and extractFromModuleOrNamespace (SynModuleOrNamespace(longId = longIdent; decls = moduleDecls)) =
         let xs = moduleDecls |> List.collect extractFromModuleDecl
         if longIdent.IsEmpty then xs
         else

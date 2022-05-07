@@ -638,9 +638,9 @@ type internal TypeCheckInfo
         GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
 
     /// Find record fields in the best naming environment.
-    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid) =
+    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, fieldsOnly) =
         let (nenv, ad),m = GetBestEnvForPos cursorPos
-        let items = ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false fieldsOnly
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         let items = items |> RemoveExplicitlySuppressed g
@@ -913,6 +913,21 @@ type internal TypeCheckInfo
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
 
+    /// Find record fields in the best naming environment.
+    let GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems =
+        // An empty record expression may be completed into something like these:
+        // { XXX = ... }
+        // { xxx with XXX ... }
+        // Provide both expression items in scope and available record fields.
+        let (nenv, _), m = GetBestEnvForPos cursorPos
+
+        let fieldItems, _, _ = GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, true)
+        let fieldCompletionItems, _, _ as fieldsResult = (fieldItems, nenv.DisplayEnv, m) |> toCompletionItems
+
+        match envItems with
+        | Some(items, denv, m) -> Some(fieldCompletionItems @ items, denv, m)
+        | _ -> Some(fieldsResult)
+
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option,
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads,
@@ -963,19 +978,30 @@ type internal TypeCheckInfo
                 |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
-                // { x. } can be either record construction or computation expression. Try to get all visible record fields first
-                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
-                | [],_,_ ->
-                    // no record fields found, return completion list as if we were outside any computation expression
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
-                | result -> Some(result)
+            | Some(CompletionContext.RecordField(RecordContext.New((plid, _), isFirstField))) ->
+                if isFirstField then
+                    let cursorPos = mkPos line loc
+                    let envItems = GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun () -> [])
+                    GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos plid envItems
+                else
+                    // { x. } can be either record construction or computation expression. Try to get all visible record fields first
+                    match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false) |> toCompletionItems with
+                    | [],_,_ ->
+                        // no record fields found, return completion list as if we were outside any computation expression
+                        GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
+                    | result -> Some(result)
+
+            // Completion at '{ ... }'
+            | Some(CompletionContext.RecordField RecordContext.Empty) ->
+                let cursorPos = mkPos line loc
+                let envItems = GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun () -> [])
+                GetEnvironmentLookupResolutionsIncludingRecordFieldsAtPosition cursorPos [] envItems 
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) ->
                 match GetRecdFieldsForExpr(r) with
                 | None ->
-                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
+                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false))
                     |> Option.map toCompletionItems
                 | Some (items, denv, m) ->
                     Some (List.map ItemWithNoInst items, denv, m)
@@ -983,7 +1009,7 @@ type internal TypeCheckInfo
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
+                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], false))
                 |> Option.map toCompletionItems
 
             // No completion at '...: string'
@@ -1046,14 +1072,15 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration false)) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
-                     items
-                     |> List.filter (fun cItem ->
-                         match cItem.Item with
-                         | Item.ModuleOrNamespaces _
-                         | Item.Types _
-                         | Item.UnqualifiedType _
-                         | Item.ExnCase _ -> true
-                         | _ -> false), denv, m)
+                    items
+                    |> List.filter (fun cItem ->
+                        match cItem.Item with
+                        | Item.ModuleOrNamespaces _
+                        | Item.Types _
+                        | Item.TypeVar _
+                        | Item.UnqualifiedType _
+                        | Item.ExnCase _ -> true
+                        | _ -> false), denv, m)
 
             // Other completions
             | cc ->
@@ -1557,7 +1584,7 @@ type FSharpParsingOptions =
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
-      LightSyntax: bool option
+      IndentationAwareSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool }
 
@@ -1571,7 +1598,7 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
-          LightSyntax = None
+          IndentationAwareSyntax = None
           CompilingFsLib = false
           IsExe = false }
 
@@ -1581,8 +1608,8 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
-          LightSyntax = tcConfig.light
-          CompilingFsLib = tcConfig.compilingFslib
+          IndentationAwareSyntax = tcConfig.indentationAwareSyntax
+          CompilingFsLib = tcConfig.compilingFSharpCore
           IsExe = tcConfig.target.IsExe }
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
@@ -1592,8 +1619,8 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
-          LightSyntax = tcConfigB.light
-          CompilingFsLib = tcConfigB.compilingFslib
+          IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
+          CompilingFsLib = tcConfigB.compilingFSharpCore
           IsExe = tcConfigB.target.IsExe
         }
 
@@ -1648,9 +1675,9 @@ module internal ParseAndCheckFile =
         member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpLightSyntaxFileSuffixes
-        let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
-        LightSyntaxStatus(lightStatus, true)
+        let indentationAwareSyntaxOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
+        let lightStatus = if indentationAwareSyntaxOnByDefault then (options.IndentationAwareSyntax <> Some false) else (options.IndentationAwareSyntax = Some true)
+        IndentationAwareSyntaxStatus(lightStatus, true)
 
     let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
         let lightStatus = getLightSyntaxStatus fileName options
@@ -1960,7 +1987,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 // Note: objects returned by the methods of this type do not require the corresponding background builder to be alive.
 [<Sealed>]
 type FSharpCheckFileResults
-        (filename: string,
+        (fileName: string,
          errors: FSharpDiagnostic[],
          scopeOptX: TypeCheckInfo option,
          dependencyFiles: string[],
@@ -2147,10 +2174,10 @@ type FSharpCheckFileResults
                 FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
-    override _.ToString() = "FSharpCheckFileResults(" + filename + ")"
+    override _.ToString() = "FSharpCheckFileResults(" + fileName + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) =
-        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
+    static member MakeEmpty(fileName: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) =
+        FSharpCheckFileResults (fileName, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment,
                              creationErrors: FSharpDiagnostic[],
@@ -2382,11 +2409,11 @@ type FsiInteractiveChecker(legacyReferenceResolver,
     member _.ParseAndCheckInteraction (sourceText: ISourceText, ?userOpName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
-            let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
+            let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
-            let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
+            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
+            let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parsedInput, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
 
@@ -2400,7 +2427,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
-                    filename, sourceText, CodeContext.Editing,
+                    fileName, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, tcConfig.sdkDirOverride, LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
@@ -2425,15 +2452,15 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let! tcErrors, tcFileInfo =
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, filename, projectOptions, projectOptions.ProjectFileName,
+                    (parseResults, sourceText, fileName, projectOptions, projectOptions.ProjectFileName,
                      tcConfig, tcGlobals, tcImports,  tcState,
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      suggestNamesForErrors)
 
             let errors = Array.append parseErrors tcErrors
-            let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, false)
+            let typeCheckResults = FSharpCheckFileResults (fileName, errors, Some tcFileInfo, dependencyFiles, None, false)
             let projectResults =
-                FSharpCheckProjectResults (filename, Some tcConfig,
+                FSharpCheckProjectResults (fileName, Some tcConfig,
                     keepAssemblyContents, errors,
                     Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
                             (Choice2Of2 tcFileInfo.ScopeSymbolUses), None, (fun () -> None), mkSimpleAssemblyRef "stdin",

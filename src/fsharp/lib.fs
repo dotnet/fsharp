@@ -3,8 +3,9 @@
 module internal Internal.Utilities.Library.Extras
 
 open System
-open System.IO
 open System.Collections.Generic
+open System.IO
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.InteropServices
@@ -315,15 +316,19 @@ let equalOn f x y = (f x) = (f y)
 
 /// Buffer printing utility
 let bufs f =
-    let buf = System.Text.StringBuilder 100
+    let buf = StringBuilder 100
     f buf
     buf.ToString()
 
 /// Writing to output stream via a string buffer.
 let writeViaBuffer (os: TextWriter) f x =
-    let buf = System.Text.StringBuilder 100
+    let buf = StringBuilder 100
     f buf x
     os.Write(buf.ToString())
+
+type StringBuilder with
+
+    member this.AppendString(value: string) = this.Append(value) |> ignore
 
 //---------------------------------------------------------------------------
 // Imperative Graphs

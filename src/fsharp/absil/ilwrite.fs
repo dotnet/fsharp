@@ -348,7 +348,7 @@ type UnsharedRow(elems: RowElement[]) =
 // This environment keeps track of how many generic parameters are in scope.
 // This lets us translate AbsIL type variable number to IL type variable numbering
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
-let envForTypeDef (td: ILTypeDef) = { EnclosingTyparCount=td.GenericParams.Length }
+let envForTypeDef (tdef: ILTypeDef) = { EnclosingTyparCount=tdef.GenericParams.Length }
 let envForMethodRef env (ty: ILType) = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
 let envForNonGenericMethodRef _mref = { EnclosingTyparCount=Int32.MaxValue }
 let envForFieldSpec (fspec: ILFieldSpec) = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
@@ -412,7 +412,7 @@ type MetadataTable<'T> =
 //---------------------------------------------------------------------
 
 /// We use this key type to help find ILMethodDefs for MethodRefs
-type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
+type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILType, argTys: ILTypes, isStatic: bool) =
     // Precompute the hash. The hash doesn't include the return type or
     // argument types (only argument type count). This is very important, since
     // hashing these is way too expensive
@@ -420,7 +420,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
        hash tidx
        |> combineHash (hash garity)
        |> combineHash (hash nm)
-       |> combineHash (hash argtys.Length)
+       |> combineHash (hash argTys.Length)
        |> combineHash (hash isStatic)
 
     member _.TypeIdx = tidx
@@ -429,9 +429,9 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
 
     member _.Name = nm
 
-    member _.ReturnType = rty
+    member _.ReturnType = retTy
 
-    member _.ArgTypes = argtys
+    member _.ArgTypes = argTys
 
     member _.IsStatic = isStatic
 
@@ -449,7 +449,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
             garity = y.GenericArity &&
             nm = y.Name &&
             // note: these next two use structural equality on AbstractIL ILType values
-            rty = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
+            retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -669,11 +669,11 @@ let GetTypeNameAsElemPair cenv n =
 // Pass 1 - allocate indexes for types
 //=====================================================================
 
-let rec GenTypeDefPass1 enc cenv (td: ILTypeDef) =
-  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv (td.NestedTypes.AsList())
+let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
+  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
+  GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
-and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
+and GenTypeDefsPass1 enc cenv tdefs = List.iter (GenTypeDefPass1 enc cenv) tdefs
 
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types
@@ -1129,10 +1129,10 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
             let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
             let idx = FindMethodDefIdx cenv mdkey
             Ok idx
-    with e ->
-        Result.Error $"Error in GetMethodRefAsMethodDefIdx for mref = %A{(mref.Name, tref.Name)}, error: %s{e.Message}"
+    with exn ->
+        Result.Error $"Error in GetMethodRefAsMethodDefIdx for mref = %A{(mref.Name, tref.Name)}, error: %s{exn.Message}"
 
-let canGenMethodDef (td: ILTypeDef) cenv (md: ILMethodDef) =
+let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
     // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
@@ -1142,24 +1142,24 @@ let canGenMethodDef (td: ILTypeDef) cenv (md: ILMethodDef) =
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if td.IsKnownToBeAttribute && md.IsSpecialName && (not md.IsConstructor) && (not md.IsClassInitializer) then
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
         true
     else
-        match md.Access with
+        match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
+            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
-let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
+let canGenFieldDef (tdef: ILTypeDef) cenv (fd: ILFieldDef) =
     if not cenv.referenceAssemblyOnly then
         true
     // We want to explicitly generate fields for struct types and attributes, since they can be part of `unmanaged constraint`.
-    else if td.IsStruct || td.IsKnownToBeAttribute then
+    else if tdef.IsStruct || tdef.IsKnownToBeAttribute then
         true
     else
         match fd.Access with
@@ -1192,14 +1192,14 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
         |> Array.exists (function | Ok _ -> true | _ -> false)
 
-let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
-    let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
+let rec GetTypeDefAsRow cenv env _enc (tdef: ILTypeDef) =
+    let nselem, nelem = GetTypeNameAsElemPair cenv tdef.Name
     let flags =
-      if (isTypeNameForGlobalFunctions td.Name) then 0x00000000
+      if (isTypeNameForGlobalFunctions tdef.Name) then 0x00000000
       else
-        int td.Attributes
+        int tdef.Attributes
 
-    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env td.Extends
+    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env tdef.Extends
     UnsharedRow
        [| ULong flags
           nelem
@@ -1226,15 +1226,15 @@ and GetTypeDefAsEventMapRow cenv tidx =
 and GetKeyForFieldDef tidx (fd: ILFieldDef) =
     FieldDefKey (tidx, fd.Name, fd.FieldType)
 
-and GenFieldDefPass2 td cenv tidx fd =
-    if canGenFieldDef td cenv fd then
+and GenFieldDefPass2 tdef cenv tidx fd =
+    if canGenFieldDef tdef cenv fd then
         ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey: FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
-and GetKeyForMethodDef cenv tidx (md: ILMethodDef) =
-    MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
+and GetKeyForMethodDef cenv tidx (mdef: ILMethodDef) =
+    MethodDefKey (cenv.ilg, tidx, mdef.GenericParams.Length, mdef.Name, mdef.Return.Type, mdef.ParameterTypes, mdef.CallingConv.IsStatic)
 
-and GenMethodDefPass2 td cenv tidx md =
-    if canGenMethodDef td cenv md then
+and GenMethodDefPass2 tdef cenv tidx mdef =
+    if canGenMethodDef tdef cenv mdef then
         let idx =
           cenv.methodDefIdxsByKey.AddUniqueEntry
              "method"
@@ -1245,9 +1245,9 @@ and GenMethodDefPass2 td cenv tidx md =
                dprintn (" Method arity (num generic params): "+string key.GenericArity)
                key.Name
              )
-             (GetKeyForMethodDef cenv tidx md)
+             (GetKeyForMethodDef cenv tidx mdef)
 
-        cenv.methodDefIdxs[md] <- idx
+        cenv.methodDefIdxs[mdef] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef) =
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
@@ -1272,11 +1272,11 @@ and GenEventDefPass2 cenv tidx x =
     if canGenEventDef cenv x then
         ignore (cenv.eventDefs.AddUniqueEntry "event" (fun (EventKey(_, b)) -> b) (GetKeyForEvent tidx x))
 
-and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
+and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
    try
-        let env = envForTypeDef td
-        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-        let tidx2 = AddUnsharedRow cenv TableNames.TypeDef (GetTypeDefAsRow cenv env enc td)
+        let env = envForTypeDef tdef
+        let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
+        let tidx2 = AddUnsharedRow cenv TableNames.TypeDef (GetTypeDefAsRow cenv env enc tdef)
         if tidx <> tidx2 then failwith "index of typedef on second pass does not match index on first pass"
 
         // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc.
@@ -1287,35 +1287,35 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
                     [| SimpleIndex (TableNames.TypeDef, tidx)
                        SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
 
-        let props = td.Properties.AsList()
+        let props = tdef.Properties.AsList()
 
         if not (isNil props) then
             AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
 
-        let events = td.Events.AsList()
+        let events = tdef.Events.AsList()
         if not (isNil events) then
             AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
 
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
+        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
         props |> List.iter (GenPropertyDefPass2 cenv tidx)
         events |> List.iter (GenEventDefPass2 cenv tidx)
-        td.Fields.AsList() |> List.iter (GenFieldDefPass2 td cenv tidx)
-        td.Methods |> Seq.iter (GenMethodDefPass2 td cenv tidx)
-        td.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
-   with e ->
-     failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
+        tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
+        tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
+        tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
+   with exn ->
+     failwith ("Error in pass2 for type "+tdef.Name+", error: " + exn.Message)
 
-and GenTypeDefsPass2 pidx enc cenv tds =
-    List.iter (GenTypeDefPass2 pidx enc cenv) tds
+and GenTypeDefsPass2 pidx enc cenv tdefs =
+    List.iter (GenTypeDefPass2 pidx enc cenv) tdefs
 
 //=====================================================================
 // Pass 3 - write details of methods, fields, IL code, custom attrs etc.
 //=====================================================================
-let rec GetMethodDefIdx cenv md =
-    cenv.methodDefIdxs[md]
+let rec GetMethodDefIdx cenv mdef =
+    cenv.methodDefIdxs[mdef]
 
 and FindFieldDefIdx cenv fdkey =
     try cenv.fieldDefs.GetTableEntry fdkey
@@ -2436,8 +2436,8 @@ let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) =
 
 and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.FieldType
 
-and GenFieldDefPass3 td cenv env fd =
-    if canGenFieldDef td cenv fd then
+and GenFieldDefPass3 tdef cenv env fd =
+    if canGenFieldDef tdef cenv fd then
         let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
         GenCustomAttrsPass3Or4 cenv (hca_FieldDef, fidx) fd.CustomAttrs
         // Write FieldRVA table - fixups into data section done later
@@ -2599,16 +2599,16 @@ let ilMethodBodyThrowNull =
     let ilCode = IL.buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
     mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None, None)
 
-let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
-    let flags = md.Attributes
+let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
+    let flags = mdef.Attributes
 
-    let implflags = md.ImplAttributes
+    let implflags = mdef.ImplAttributes
 
-    if md.IsEntryPoint then
+    if mdef.IsEntryPoint then
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
         else cenv.entrypoint <- Some (true, midx)
     let codeAddr =
-      (match md.Body with
+      (match mdef.Body with
       | MethodBody.IL ilmbodyLazy ->
           let ilmbody =
             if cenv.referenceAssemblyOnly then
@@ -2616,13 +2616,13 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
             else
                 ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
-          let localToken, code, seqpoints, rootScope = GenILMethodBody md.Name cenv env ilmbody
+          let localToken, code, seqpoints, rootScope = GenILMethodBody mdef.Name cenv env ilmbody
 
           // Now record the PDB record for this method - we write this out later.
           if cenv.generatePdb then
             cenv.pdbinfo.Add
               { MethToken=getUncodedToken TableNames.Method midx
-                MethName=md.Name
+                MethName=mdef.Name
                 LocalSignatureToken=localToken
                 Params= [| |] (* REVIEW *)
                 RootScope = Some rootScope
@@ -2648,7 +2648,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           if cenv.generatePdb then
             cenv.pdbinfo.Add
               { MethToken = getUncodedToken TableNames.Method midx
-                MethName = md.Name
+                MethName = mdef.Name
                 LocalSignatureToken = 0x0                   // No locals it's abstract
                 Params = [| |]
                 RootScope = None
@@ -2663,8 +2663,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
        [| ULong codeAddr
           UShort (uint16 implflags)
           UShort (uint16 flags)
-          StringE (GetStringHeapIdx cenv md.Name)
-          Blob (GenMethodDefSigAsBlobIdx cenv env md)
+          StringE (GetStringHeapIdx cenv mdef.Name)
+          Blob (GenMethodDefSigAsBlobIdx cenv env mdef)
           SimpleIndex(TableNames.Param, cenv.GetTable(TableNames.Param).Count + 1) |]
 
 let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
@@ -2676,17 +2676,17 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 
-let GenMethodDefPass3 td cenv env (md: ILMethodDef) =
-    if canGenMethodDef td cenv md then
-        let midx = GetMethodDefIdx cenv md
-        let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
+let GenMethodDefPass3 tdef cenv env (mdef: ILMethodDef) =
+    if canGenMethodDef tdef cenv mdef then
+        let midx = GetMethodDefIdx cenv mdef
+        let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx mdef)
         if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
-        GenReturnPass3 cenv md.Return
-        md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
-        md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
-        md.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
-        md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
-        match md.Body with
+        GenReturnPass3 cenv mdef.Return
+        mdef.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
+        mdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
+        mdef.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
+        mdef.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
+        match mdef.Body with
         | MethodBody.PInvoke attrLazy ->
             let attr = attrLazy.Value
             let flags =
@@ -2724,10 +2724,10 @@ let GenMethodDefPass3 td cenv env (md: ILMethodDef) =
                       SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
         | _ -> ()
 
-let GenMethodDefPass4 td cenv env md =
-    if canGenMethodDef td cenv md then
-        let midx = GetMethodDefIdx cenv md
-        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
+let GenMethodDefPass4 tdef cenv env mdef =
+    if canGenMethodDef tdef cenv mdef then
+        let midx = GetMethodDefIdx cenv mdef
+        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) mdef.GenericParams
 
 let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
     match TryGetMethodRefAsMethodDefIdx cenv mref with
@@ -2784,29 +2784,29 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
                HasSemantics (hs_Event, eidx) |]) |> ignore
 
 /// ILEventDef --> Event Row + MethodSemantics entries
-and GenEventAsEventRow cenv env (md: ILEventDef) =
-    let flags = md.Attributes
-    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.EventType
+and GenEventAsEventRow cenv env (edef: ILEventDef) =
+    let flags = edef.Attributes
+    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env edef.EventType
     UnsharedRow
        [| UShort (uint16 flags)
-          StringE (GetStringHeapIdx cenv md.Name)
+          StringE (GetStringHeapIdx cenv edef.Name)
           TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
-and GenEventPass3 cenv env (md: ILEventDef) =
-    if canGenEventDef cenv md then
-        let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env md)
-        md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008
-        md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010
-        Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) md.FireMethod
-        List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
-        GenCustomAttrsPass3Or4 cenv (hca_Event, eidx) md.CustomAttrs
+and GenEventPass3 cenv env (edef: ILEventDef) =
+    if canGenEventDef cenv edef then
+        let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env edef)
+        edef.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008
+        edef.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010
+        Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) edef.FireMethod
+        List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) edef.OtherMethods
+        GenCustomAttrsPass3Or4 cenv (hca_Event, eidx) edef.CustomAttrs
 
 
 // --------------------------------------------------------------------
 // resource --> generate ...
 // --------------------------------------------------------------------
 
-let rec GetResourceAsManifestResourceRow cenv r =
+let rec GetResourceAsManifestResourceRow cenv rdef =
     let data, impl =
         let embedManagedResources (bytes: ReadOnlyByteMemory) =
             // Embedded managed resources must be word-aligned. However resource format is
@@ -2820,36 +2820,36 @@ let rec GetResourceAsManifestResourceRow cenv r =
             cenv.resources.EmitByteMemory bytes
             Data (alignedOffset, true), (i_File, 0)
 
-        match r.Location with
+        match rdef.Location with
         | ILResourceLocation.Local bytes -> embedManagedResources (bytes.GetByteMemory())
         | ILResourceLocation.File (mref, offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref)
         | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
 
     UnsharedRow
        [| data
-          ULong (match r.Access with ILResourceAccess.Public -> 0x01 | ILResourceAccess.Private -> 0x02)
-          StringE (GetStringHeapIdx cenv r.Name)
+          ULong (match rdef.Access with ILResourceAccess.Public -> 0x01 | ILResourceAccess.Private -> 0x02)
+          StringE (GetStringHeapIdx cenv rdef.Name)
           Implementation (fst impl, snd impl) |]
 
-and GenResourcePass3 cenv r =
-  let idx = AddUnsharedRow cenv TableNames.ManifestResource (GetResourceAsManifestResourceRow cenv r)
-  GenCustomAttrsPass3Or4 cenv (hca_ManifestResource, idx) r.CustomAttrs
+and GenResourcePass3 cenv rdef =
+  let idx = AddUnsharedRow cenv TableNames.ManifestResource (GetResourceAsManifestResourceRow cenv rdef)
+  GenCustomAttrsPass3Or4 cenv (hca_ManifestResource, idx) rdef.CustomAttrs
 
 // --------------------------------------------------------------------
 // ILTypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
 // --------------------------------------------------------------------
 
-let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
+let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
    try
-        let env = envForTypeDef td
-        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-        td.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
-        td.Events.AsList() |> List.iter (GenEventPass3 cenv env)
-        td.Fields.AsList() |> List.iter (GenFieldDefPass3 td cenv env)
-        td.Methods |> Seq.iter (GenMethodDefPass3 td cenv env)
-        td.MethodImpls.AsList() |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
+        let env = envForTypeDef tdef
+        let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
+        tdef.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
+        tdef.Events.AsList() |> List.iter (GenEventPass3 cenv env)
+        tdef.Fields.AsList() |> List.iter (GenFieldDefPass3 tdef cenv env)
+        tdef.Methods |> Seq.iter (GenMethodDefPass3 tdef cenv env)
+        tdef.MethodImpls.AsList() |> List.iter (GenMethodImplPass3 cenv env tdef.GenericParams.Length tidx)
         // ClassLayout entry if needed
-        match td.Layout with
+        match tdef.Layout with
         | ILTypeDefLayout.Auto -> ()
         | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->
             if Option.isSome layout.Pack || Option.isSome layout.Size then
@@ -2859,35 +2859,35 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
                            ULong (defaultArg layout.Size 0x0)
                            SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
 
-        td.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
-        td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
-        td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
-        td.NestedTypes.AsList() |> GenTypeDefsPass3 (enc@[td.Name]) cenv
-   with e ->
-      failwith ("Error in pass3 for type "+td.Name+", error: "+e.Message)
+        tdef.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
+        tdef.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
+        tdef.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
+        tdef.NestedTypes.AsList() |> GenTypeDefsPass3 (enc@[tdef.Name]) cenv
+   with exn ->
+      failwith ("Error in pass3 for type "+tdef.Name+", error: " + exn.Message)
       reraise()
-      raise e
+      raise exn
 
-and GenTypeDefsPass3 enc cenv tds =
-  List.iter (GenTypeDefPass3 enc cenv) tds
+and GenTypeDefsPass3 enc cenv tdefs =
+  List.iter (GenTypeDefPass3 enc cenv) tdefs
 
 /// ILTypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
 
-let rec GenTypeDefPass4 enc cenv (td: ILTypeDef) =
+let rec GenTypeDefPass4 enc cenv (tdef: ILTypeDef) =
    try
-        let env = envForTypeDef td
-        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-        td.Methods |> Seq.iter (GenMethodDefPass4 td cenv env)
-        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) td.GenericParams
-        GenTypeDefsPass4 (enc@[td.Name]) cenv (td.NestedTypes.AsList())
-   with e ->
-       failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
+        let env = envForTypeDef tdef
+        let tidx = GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
+        tdef.Methods |> Seq.iter (GenMethodDefPass4 tdef cenv env)
+        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) tdef.GenericParams
+        GenTypeDefsPass4 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
+   with exn ->
+       failwith ("Error in pass4 for type "+tdef.Name+", error: " + exn.Message)
        reraise()
-       raise e
+       raise exn
 
-and GenTypeDefsPass4 enc cenv tds =
-    List.iter (GenTypeDefPass4 enc cenv) tds
+and GenTypeDefsPass4 enc cenv tdefs =
+    List.iter (GenTypeDefPass4 enc cenv) tdefs
 
 let timestamp = absilWriteGetTimeStamp ()
 
@@ -3013,14 +3013,14 @@ let SortTableRows tab (rows: GenericRow[]) =
 let GenModule (cenv : cenv) (modul: ILModuleDef) =
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
     List.iter (GenResourcePass3 cenv) (modul.Resources.AsList())
-    let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
+    let tdefs = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
     reportTime cenv.showTimes "Module Generation Preparation"
-    GenTypeDefsPass1 [] cenv tds
+    GenTypeDefsPass1 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 1"
-    GenTypeDefsPass2 0 [] cenv tds
+    GenTypeDefsPass2 0 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 2"
     (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
-    GenTypeDefsPass3 [] cenv tds
+    GenTypeDefsPass3 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 3"
     GenCustomAttrsPass3Or4 cenv (hca_Module, midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes).
@@ -3028,7 +3028,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     // Note this mutates the rows in a table. 'SetRowsOfTable' clears
     // the key --> index map since it is no longer valid
     cenv.GetTable(TableNames.GenericParam).SetRowsOfSharedTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).GenericRowsOfTable))
-    GenTypeDefsPass4 [] cenv tds
+    GenTypeDefsPass4 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 4"
 
 /// Arbitrary value
@@ -3131,9 +3131,9 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           Methods = cenv.pdbinfo.ToArray()
           TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
-    let idxForNextedTypeDef (tds: ILTypeDef list, td: ILTypeDef) =
-        let enc = tds |> List.map (fun td -> td.Name)
-        GetIdxForTypeDef cenv (TdKey(enc, td.Name))
+    let idxForNextedTypeDef (tdefs: ILTypeDef list, tdef: ILTypeDef) =
+        let enc = tdefs |> List.map (fun tdef -> tdef.Name)
+        GetIdxForTypeDef cenv (TdKey(enc, tdef.Name))
 
     let strings = Array.map Bytes.stringAsUtf8NullTerminated cenv.strings.EntriesAsArray
     let userStrings = cenv.userStrings.EntriesAsArray |> Array.map System.Text.Encoding.Unicode.GetBytes
@@ -3148,15 +3148,15 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
        FieldDefTokenMap = (fun t fd ->
         let tidx = idxForNextedTypeDef t
         getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
-       MethodDefTokenMap = (fun t md ->
+       MethodDefTokenMap = (fun t mdef ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx md)))
-       PropertyTokenMap = (fun t pd ->
+        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx mdef)))
+       PropertyTokenMap = (fun t pdef ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)))
-       EventTokenMap = (fun t ed ->
+        getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pdef)))
+       EventTokenMap = (fun t edef ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, ed.Name)))) }
+        getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, edef.Name)))) }
     reportTime cenv.showTimes "Finalize Module Generation Results"
     // New return the results
     let data = cenv.data.AsMemory().ToArray()
@@ -3178,7 +3178,7 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (filename: string) =
+    let setExecutablePermission (fileName: string) =
 
 #if ENABLE_MONO_SUPPORT
       if runningOnMono then
@@ -3186,19 +3186,19 @@ module FileSystemUtilities =
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |], CultureInfo.InvariantCulture)
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
             let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
             let prevPermissionsValue = prevPermissions |> unbox<int>
             let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
             let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
             monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |], CultureInfo.InvariantCulture) |> ignore
-        with e ->
-            if progress then eprintf "failure: %s...\n" (e.ToString())
+        with exn ->
+            if progress then eprintf "failure: %s...\n" (exn.ToString())
             // Fail silently
       else
 #else
-        ignore filename
+        ignore fileName
 #endif
         ()
 
@@ -3741,8 +3741,8 @@ let writePdb (
                     if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
                     writeBytes os2 i.iddData
             os2.Dispose()
-        with e ->
-            failwith ("Error while writing debug directory entry: "+e.Message)
+        with exn ->
+            failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
 
@@ -3755,8 +3755,8 @@ let writePdb (
         try
             s.SignFile outfile
             s.Close()
-        with e ->
-            failwith ("Warning: A call to SignFile failed ("+e.Message+")")
+        with exn ->
+            failwith ("Warning: A call to SignFile failed ("+exn.Message+")")
             (try s.Close() with _ -> ())
             (try FileSystem.FileDeleteShim outfile with _ -> ())
             ()
@@ -3810,8 +3810,8 @@ let writeBinaryAux (
           | None -> None
           | Some s ->
              try Some s.PublicKey
-             with e ->
-               failwith ("A call to StrongNameGetPublicKey failed ("+e.Message+")")
+             with exn ->
+               failwith ("A call to StrongNameGetPublicKey failed (" + exn.Message + ")")
                None
         match modul.Manifest with
         | None -> ()
@@ -4005,7 +4005,7 @@ let writeBinaryAux (
                              unlinkResource linkedResourceBase linkedResource)
 
                 try linkNativeResources unlinkedResources next
-                with e -> failwith ("Linking a native resource failed: "+e.Message+"")
+                with exn -> failwith ("Linking a native resource failed: " + exn.Message)
 
           let nativeResourcesSize = nativeResources.Length
 

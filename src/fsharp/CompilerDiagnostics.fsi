@@ -13,7 +13,7 @@ open FSharp.Compiler.Text
 module internal CompilerService =
     val showAssertForUnexpectedException: bool ref
 
-/// For extra diagnostics 
+/// For extra diagnostics
 val mutable showParserStackOnParseError: bool
 #endif // DEBUG
 
@@ -60,10 +60,19 @@ val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagno
 val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
-val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity -> StringBuilder -> PhasedDiagnostic -> unit
+val OutputDiagnostic:
+    implicitIncludeDir: string *
+    showFullPaths: bool *
+    flattenErrors: bool *
+    errorStyle: ErrorStyle *
+    severity: FSharpDiagnosticSeverity ->
+        StringBuilder ->
+        PhasedDiagnostic ->
+            unit
 
 /// Output extra context information for an error or warning to a buffer
-val OutputDiagnosticContext: prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
+val OutputDiagnosticContext:
+    prefix: string -> fileLineFunction: (string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
@@ -75,29 +84,38 @@ type DiagnosticLocation =
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DiagnosticCanonicalInformation = 
+type DiagnosticCanonicalInformation =
     { ErrorNumber: int
       Subcategory: string
       TextRepresentation: string }
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DiagnosticDetailedInfo = 
+type DiagnosticDetailedInfo =
     { Location: DiagnosticLocation option
       Canonical: DiagnosticCanonicalInformation
       Message: string }
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type Diagnostic = 
+type Diagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
+val CollectDiagnostic:
+    implicitIncludeDir: string *
+    showFullPaths: bool *
+    flattenErrors: bool *
+    errorStyle: ErrorStyle *
+    severity: FSharpDiagnosticSeverity *
+    PhasedDiagnostic *
+    suggestNames: bool ->
+        seq<Diagnostic>
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
-val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * FSharpDiagnosticOptions *ErrorLogger  -> ErrorLogger
+val GetErrorLoggerFilteringByScopedPragmas:
+    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * ErrorLogger -> ErrorLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
@@ -109,5 +127,3 @@ val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FS
 
 /// Indicates if we should report a warning as an error
 val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-

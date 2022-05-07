@@ -169,6 +169,15 @@ module rec Compiler =
         | Success of CompilationOutput
         | Failure of CompilationOutput
 
+    type ExecutionPlatform =
+        | Anycpu = 0
+        | AnyCpu32bitPreferred = 1
+        | X86 = 2
+        | Itanium = 3
+        | X64 = 4
+        | Arm = 5
+        | Arm64 = 6
+
     let private defaultOptions : string list = []
 
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
@@ -333,6 +342,12 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
+
+    let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
+
     let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
 
@@ -427,6 +442,23 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
         | _ -> failwith "TODO: Implement where applicable."
 
+    let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS _ -> 
+            let p =
+                match platform with
+                | ExecutionPlatform.Anycpu -> "anycpu"
+                | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
+                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.X64 -> "x64"
+                | ExecutionPlatform.X86 -> "x86"
+                | ExecutionPlatform.Arm -> "arm"
+                | ExecutionPlatform.Arm64 -> "arm64"
+                | _ -> failwith $"Unknown value for ExecutionPlatform: {platform}"
+
+            withOptionsHelper [ $"--platform:{p}" ] "withPlatform is only supported for F#" cUnit
+        | _ -> failwith "TODO: Implement ignorewarnings for the rest."
+
     let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with IgnoreWarnings = true }
@@ -512,8 +544,8 @@ module rec Compiler =
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : CompilationResult =
         let outputPath = tryCreateTemporaryDirectory()
         Directory.CreateDirectory(outputPath) |> ignore
-        let filename = compilation.AssemblyName
-        let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
+        let fileName = compilation.AssemblyName
+        let output = Path.Combine(outputPath, Path.ChangeExtension(fileName, ".dll"))
         let cmplResult = compilation.Emit (output)
         let result =
             { OutputPath   = None
@@ -819,8 +851,8 @@ module rec Compiler =
                         // if the environment variable TEST_UPDATE_BSL has been set
                         if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
                             match baseline with
-                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                                | None -> ()
+                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                            | None -> ()
 
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)

@@ -246,8 +246,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let signature = createSignature hash keyBlob KeyType.KeyPair
         patchSignature stream peReader signature
 
-    let signFile filename keyBlob =
-        use fs = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite)
+    let signFile fileName keyBlob =
+        use fs = FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
     let signatureSize (pk:byte[]) =
@@ -555,9 +555,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let pkSignatureSize pk =
                 try
                     signerSignatureSize pk
-                with e ->
-                  failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-                  0x80
+                with exn ->
+                    failwith ("A call to StrongNameSignatureSize failed ("+exn.Message+")")
+                    0x80
+
             match s with
             | PublicKeySigner pk -> pkSignatureSize pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko

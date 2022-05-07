@@ -219,6 +219,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
             | FSharpGlyph.Field
             | FSharpGlyph.Delegate
             | FSharpGlyph.Variable
+            | FSharpGlyph.TypeParameter
             | FSharpGlyph.Error -> None
             |> Option.defaultValue ObsoleteGlyph.Class
             |> int
