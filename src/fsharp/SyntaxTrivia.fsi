@@ -212,3 +212,28 @@ type SynModuleSigDeclNestedModuleTrivia =
       /// The syntax range of the `=` token.
       EqualsRange: range option }
     static member Zero: SynModuleSigDeclNestedModuleTrivia
+
+/// Represents additional information for SynModuleOrNamespace
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceTrivia =
+    { /// The syntax range of the `module` keyword
+      ModuleKeyword: range option
+      /// The syntax range of the `namespace` keyword
+      NamespaceKeyword: range option }
+
+/// Represents additional information for SynModuleOrNamespaceSig
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceSigTrivia =
+    { /// The syntax range of the `module` keyword
+      ModuleKeyword: range option
+      /// The syntax range of the `namespace` keyword
+      NamespaceKeyword: range option }
+
+/// Represents additional information for SynValSig
+[<NoEquality; NoComparison>]
+type SynValSigTrivia =
+    { /// The syntax range of the `val` keyword
+      ValKeyword: range option
+      /// The syntax range of the `with` keyword
+      WithKeyword: range option }
+    static member Zero: SynValSigTrivia

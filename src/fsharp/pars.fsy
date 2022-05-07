@@ -696,21 +696,22 @@ moduleIntro:
 /* The start of a namespace declaration */
 namespaceIntro: 
   | NAMESPACE opt_rec path 
-      { $2, $3.LongIdent, grabXmlDoc(parseState, [], 1)  }
+      { let mNamespace = rhs parseState 1
+        mNamespace, $2, $3.LongIdent, grabXmlDoc(parseState, [], 1)  }
 
 
 /* The contents of a signature file */
 fileNamespaceSpecs: 
   | fileModuleSpec  
-      { ParsedSigFile ([], [ ($1 (false, [], PreXmlDoc.Empty)) ]) }
+      { ParsedSigFile ([], [ ($1 (None, false, [], PreXmlDoc.Empty)) ]) }
 
   | fileModuleSpec  fileNamespaceSpecList 
       { // If there are namespaces, the first fileModuleImpl may only contain # directives 
         let decls = 
-            match ($1 (false, [], PreXmlDoc.Empty)) with 
+            match ($1 (None, false, [], PreXmlDoc.Empty)) with 
             | ParsedSigFileFragment.AnonModule(decls, m) -> decls  
-            | ParsedSigFileFragment.NamespaceFragment(_, _, _, decls, _, _, _) -> decls 
-            | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(_, _, _, _, _, _, _, m)) ->
+            | ParsedSigFileFragment.NamespaceFragment(decls = decls) -> decls 
+            | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(range = m)) ->
                 raiseParseErrorAt m (FSComp.SR.parsOnlyHashDirectivesAllowed())
         let decls = 
             decls |> List.collect (function 
@@ -730,7 +731,7 @@ fileNamespaceSpecList:
 
 fileNamespaceSpec: 
   | namespaceIntro deprecated_opt_equals fileModuleSpec 
-     { let isRec, path, xml = $1 in ($3 (isRec, path, xml)) }
+     { let mNamespace, isRec, path, xml = $1 in ($3 (Some mNamespace, isRec, path, xml)) }
 
 
 /* The single module declaration that can make up a signature file */
@@ -739,24 +740,26 @@ fileModuleSpec:
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
-      let _mModule, isRec, path2, vis, attribs2 = $3
+      let mModule, isRec, path2, vis, attribs2 = $3
       let xmlDoc = grabXmlDoc(parseState, $1, 1)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id |> unionRangeWithXmlDoc xmlDoc
-      (fun (isRec2, path, _) ->
+      (fun (mNamespaceOpt, isRec2, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
-        let lid = path@path2 
-        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1 @ attribs2, vis, m)))  }
+        let lid = path@path2
+        let trivia: SynModuleOrNamespaceSigTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1 @ attribs2, vis, m, trivia)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
-      (fun (isRec, path, xml) -> 
+      (fun (mNamespaceOpt, isRec, path, xml) -> 
         match path with
         | [] -> ParsedSigFileFragment.AnonModule($1, m)  
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m))  } 
+            let trivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia))  } 
 
 
 moduleSpfnsPossiblyEmptyBlock: 
@@ -861,7 +864,8 @@ valSpfn:
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
-        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
+        let mVal = rhs parseState 3
+        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, m, { ValKeyword = Some mVal; WithKeyword = None }) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -984,7 +988,7 @@ tyconSpfnRhs:
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
-       let invoke = SynMemberSig.Member(SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+       let invoke = SynMemberSig.Member(SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
@@ -1066,7 +1070,7 @@ classMemberSpfn:
            | Some m2 -> unionRanges m m2
            |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
            |> unionRangeWithXmlDoc doc
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWith, wholeRange)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, wholeRange, { ValKeyword = None; WithKeyword = mWith })
        let _, flags = $3 
        SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), wholeRange) }
 
@@ -1100,7 +1104,7 @@ classMemberSpfn:
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false 
-       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, SynValSigTrivia.Zero)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
 
 
@@ -1189,15 +1193,15 @@ implementationFile:
 /* The sequence of namespace definitions or a single module definition that makes up an implementation file */
 fileNamespaceImpls: 
   | fileModuleImpl   
-      { ParsedImplFile ([], [ ($1 (false, [], PreXmlDoc.Empty)) ]) }
+      { ParsedImplFile ([], [ ($1 (None, false, [], PreXmlDoc.Empty)) ]) }
 
   | fileModuleImpl fileNamespaceImplList 
       { // If there are namespaces, the first fileModuleImpl may only contain # directives 
         let decls = 
-            match ($1 (false, [], PreXmlDoc.Empty)) with 
+            match ($1 (None, false, [], PreXmlDoc.Empty)) with 
             | ParsedImplFileFragment.AnonModule(decls, m) -> decls  
-            | ParsedImplFileFragment.NamespaceFragment(_, _, _, decls, _, _, _) -> decls 
-            | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(_, _, _, _, _, _, _, m)) ->
+            | ParsedImplFileFragment.NamespaceFragment(decls = decls) -> decls 
+            | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(range = m)) ->
                 raiseParseErrorAt m (FSComp.SR.parsOnlyHashDirectivesAllowed())
         let decls = 
             decls |> List.collect (function 
@@ -1220,7 +1224,7 @@ fileNamespaceImplList:
 /* A single namespace definition in an implementation file */
 fileNamespaceImpl: 
   | namespaceIntro deprecated_opt_equals fileModuleImpl 
-     { let isRec, path, xml = $1 in ($3 (isRec, path, xml)) }
+     { let mNamespace, isRec, path, xml = $1 in ($3 (Some mNamespace, isRec, path, xml)) }
 
 
 /* A single module definition in an implementation file */
@@ -1231,22 +1235,24 @@ fileModuleImpl:
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
       let xmlDoc = grabXmlDoc(parseState, $1, 1)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id |> unionRangeWithXmlDoc xmlDoc
-      let _mModule, isRec2, path2, vis, attribs2 = $3
-      (fun (isRec, path, _) ->
+      let mModule, isRec2, path2, vis, attribs2 = $3
+      (fun (mNamespaceOpt, isRec, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
-        let lid = path@path2 
-        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1@attribs2, vis, m))) }
+        let lid = path@path2
+        let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1@attribs2, vis, m, trivia))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
     { let m = (rhs parseState 1) 
-      (fun (isRec, path, xml) -> 
+      (fun (mNamespaceOpt, isRec, path, xml) -> 
         match path with 
         | [] -> ParsedImplFileFragment.AnonModule($1, m)  
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m)) } 
+            let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia)) } 
 
 
 /* A collection/block of definitions or expressions making up a module or namespace, possibly empty */
@@ -1724,7 +1730,7 @@ tyconDefnRhs:
      { let m = lhs parseState 
        let ty, arity = $3
        (fun nameRange augmentation -> 
-           let valSpfn = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, None, m) 
+           let valSpfn = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
            let invoke = SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
@@ -2097,7 +2103,7 @@ classDefnMember:
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), wholeRange))
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWith, wholeRange)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, wholeRange, { ValKeyword = None; WithKeyword = mWith })
        [ SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags $3 (getSetAdjuster arity), wholeRange) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
@@ -5542,7 +5548,8 @@ measureTypeAtom:
      { SynMeasure.Var($1, lhs parseState) }
 
   | LPAREN measureTypeExpr rparen
-     { $2 }
+     { let mParen = rhs2 parseState 1 3
+       SynMeasure.Paren($2, mParen) }
 
 measureTypePower:
   | measureTypeAtom 

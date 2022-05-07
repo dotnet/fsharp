@@ -173,6 +173,8 @@ type SynMeasure =
     | Anon of range: range
 
     | Var of typar: SynTypar * range: range
+    
+    | Paren of measure: SynMeasure * range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
@@ -1591,8 +1593,8 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
-        withKeyword: range option *
-        range: range
+        range: range *
+        trivia: SynValSigTrivia
 
     member x.RangeOfId  = let (SynValSig(ident=SynIdent(id, _))) = x in id.idRange
 
@@ -1938,7 +1940,8 @@ type SynModuleOrNamespace =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
     member this.Range =
         match this with
@@ -1954,7 +1957,8 @@ type SynModuleOrNamespaceSig =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
     member this.Range =
         match this with
@@ -1994,7 +1998,8 @@ type ParsedImplFileFragment =
         decls: SynModuleDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedSigFileFragment =
@@ -2013,7 +2018,8 @@ type ParsedSigFileFragment =
         decls: SynModuleSigDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedScriptInteraction =
