@@ -12,5 +12,5 @@ val UnsolvedTyparsOfModuleDef:
     g: TcGlobals ->
     amap: ImportMap ->
     denv: DisplayEnv ->
-    mdef: ModuleOrNamespaceExpr * extraAttribs: Attrib list ->
+    mdef: ModuleOrNamespaceContents * extraAttribs: Attrib list ->
         Typar list

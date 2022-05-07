@@ -9,12 +9,15 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf = LexBuffer<char>
 
-val internal StringAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * string -> Lexbuf
+val StringAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * string -> Lexbuf
 
-val public FunctionAsLexbuf:
-    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * (char [] * int * int -> int) -> Lexbuf
+val FunctionAsLexbuf:
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * bufferFiller: (char [] * int * int -> int) ->
+        Lexbuf
 
-val public SourceTextAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * ISourceText -> Lexbuf
+val SourceTextAsLexbuf:
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * sourceText: ISourceText -> Lexbuf
 
 /// Will not dispose of the stream reader.
-val public StreamReaderAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * StreamReader -> Lexbuf
+val StreamReaderAsLexbuf:
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * reader: StreamReader -> Lexbuf

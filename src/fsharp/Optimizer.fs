@@ -581,7 +581,7 @@ let BindExternalLocalVal cenv (v: Val) vval env =
     //
     // A similar code path exists in ilxgen.fs for the tables of "representations" for values
     let env = 
-        if g.compilingFslib then 
+        if g.compilingFSharpCore then 
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal g.fslibCcu Remap.Empty v with 
@@ -670,7 +670,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
             | None -> 
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
-                  if g.compilingFslib then 
+                  if g.compilingFSharpCore then 
                       match structInfo.ValInfos.TryFindForFslib (g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
@@ -2190,14 +2190,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         | Some newExpr -> OptimizeExpr cenv env newExpr
         | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
 
-    | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, rty) -> 
+    | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
-        let ty = mkMultiLambdaTy g m argvs rty
+        let ty = mkMultiLambdaTy g m argvs bodyTy
         OptimizeLambdas None cenv env topValInfo expr ty
 
-    | Expr.TyLambda (_lambdaId, tps, _body, _m, rty) -> 
+    | Expr.TyLambda (_lambdaId, tps, _body, _m, bodyTy) -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
-        let ty = mkForallTyIfNeeded tps rty
+        let ty = mkForallTyIfNeeded tps bodyTy
         OptimizeLambdas None cenv env topValInfo expr ty
 
     | Expr.TyChoose _ -> 
@@ -3192,7 +3192,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // confuse the optimizer if the assembly is referenced on 4.0, since there will be no value to tie back
         // to FSharp.Core                              
         let isValFromLazyExtensions =
-            if g.compilingFslib then
+            if g.compilingFSharpCore then
                 false
             else
                 match finfo.Info with
@@ -3925,7 +3925,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                // ilxgen.fs, hence treat them as if no-inline (when preparing the inline information for 
                // FSharp.Core).
                (let nvref = mkLocalValRef vref 
-                g.compilingFslib &&
+                g.compilingFSharpCore &&
                    (valRefEq g nvref g.seq_vref ||
                     valRefEq g nvref g.seq_generated_vref ||
                     valRefEq g nvref g.seq_finally_vref ||
@@ -3960,7 +3960,7 @@ and OptimizeBindings cenv isRec env xs =
 and OptimizeModuleExprWithSig cenv env mexpr = 
     let g = cenv.g
     match mexpr with   
-    | ModuleOrNamespaceExprWithSig(mty, def, m) -> 
+    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> 
         // Optimize the module implementation
         let (def, info), (_env, bindInfosColl) = OptimizeModuleDef cenv (env, []) def  
         let bindInfosColl = List.concat bindInfosColl 
@@ -4021,7 +4021,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
                 | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
-                | TMAbstract _ -> x 
+                | TMWithSig _ -> x 
 
             and elimModuleBinding modBind = 
                 match modBind with 
@@ -4037,7 +4037,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
 
         let info = AbstractAndRemapModulInfo "defs" g m rpi info
 
-        ModuleOrNamespaceExprWithSig(mty, def, m), info 
+        ModuleOrNamespaceContentsWithSig(mty, def, m), info 
 
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
@@ -4057,10 +4057,10 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
 
-    | TMAbstract mexpr -> 
+    | TMWithSig mexpr -> 
         let mexpr, info = OptimizeModuleExprWithSig cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
-        (TMAbstract mexpr, info), (env, bindInfosColl)
+        (TMWithSig mexpr, info), (env, bindInfosColl)
 
     | TMDefOpens _openDecls ->  
         (input, EmptyModuleInfo), (env, bindInfosColl)
@@ -4111,7 +4111,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
+        | ModuleOrNamespaceContentsWithSig(mty, def, m) when isIncrementalFragment -> 
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
@@ -4123,7 +4123,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                 else
                     AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo, hidden
+            env, ModuleOrNamespaceContentsWithSig(mty, defR, m), minfo, hidden
         | _ ->
             // This optimizes and builds minfo w.r.t. the signature
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env mexpr

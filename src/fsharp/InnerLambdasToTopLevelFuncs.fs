@@ -1003,9 +1003,9 @@ module Pass4_RewriteAssembly =
         let fc = BindingGroupSharingSameReqdItems binds
         let envp = Zmap.force fc penv.envPackM ("TransTLRBindings", string)
 
-        let fRebinding (TBind(fOrig, b, letSeqPtOpt)) =
+        let fRebinding (TBind(fOrig, body, letSeqPtOpt)) =
             let m = fOrig.Range
-            let tps, vss, _b, rty = stripTopLambda (b, fOrig.Type)
+            let tps, vss, _b, bodyTy = stripTopLambda (body, fOrig.Type)
             let aenvExprs = envp.ep_aenvs |> List.map (exprForVal m)
             let vsExprs = vss |> List.map (mkRefTupledVars penv.g m)
             let fHat = Zmap.force fOrig penv.fHatM ("fRebinding", nameOfVal)
@@ -1019,7 +1019,7 @@ module Pass4_RewriteAssembly =
                      (mkApps penv.g
                          ((exprForVal m fHat, fHat.Type),
                           [List.map mkTyparTy (envp.ep_etps @ tps)],
-                          aenvExprs @ vsExprs, m), rty)
+                          aenvExprs @ vsExprs, m), bodyTy)
             fBind
 
         let fHatNewBinding (shortRecBinds: Bindings) (TBind(f, b, letSeqPtOpt)) =
@@ -1027,13 +1027,13 @@ module Pass4_RewriteAssembly =
             let fHat = Zmap.force f penv.fHatM  ("fHatNewBinding - fHatM", nameOfVal)
 
             // Take off the variables
-            let tps, vss, b, rty = stripTopLambda (b, f.Type)
+            let tps, vss, body, bodyTy = stripTopLambda (b, f.Type)
 
             // Don't take all the variables - only up to length wf
             let vssTake, vssDrop = List.splitAt wf vss
 
-            // Put the variables back on
-            let b, rty = mkMultiLambdasCore g b.Range vssDrop (b, rty)
+            // Put the untaken variables back on
+            let body, bodyTy = mkMultiLambdasCore g body.Range vssDrop (body, bodyTy)
 
             // fHat, args
             let m = fHat.Range
@@ -1043,11 +1043,11 @@ module Pass4_RewriteAssembly =
 
             // Add the 'aenv' and original taken variables to the front
             let fHat_args = List.map List.singleton envp.ep_aenvs @ vssTake
-            let fHat_body = mkLetsFromBindings m envp.ep_unpack b
+            let fHat_body = mkLetsFromBindings m envp.ep_unpack body
             let fHat_body = mkLetsFromBindings m shortRecBinds  fHat_body  // bind "f" if have short recursive calls (somewhere)
 
             // fHat binding, f rebinding
-            let fHatBind = mkMultiLambdaBind g fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body, rty)
+            let fHatBind = mkMultiLambdaBind g fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body, bodyTy)
             fHatBind
 
         let rebinds = binds |> List.map fRebinding
@@ -1167,19 +1167,19 @@ module Pass4_RewriteAssembly =
             MakePreDecs m pds expr, z (* if TopLevel, lift preDecs over the ilobj expr *)
 
         // lambda, tlambda - explicit lambda terms
-        | Expr.Lambda (_, ctorThisValOpt, baseValOpt, argvs, body, m, rty) ->
+        | Expr.Lambda (_, ctorThisValOpt, baseValOpt, argvs, body, m, bodyTy) ->
             let z = EnterInner z
             let body, z = TransExpr penv z body
             let z = ExitInner z
             let pds, z = ExtractPreDecs z
-            MakePreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body, rty)), z
+            MakePreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body, bodyTy)), z
 
-        | Expr.TyLambda (_, argtyvs, body, m, rty) ->
+        | Expr.TyLambda (_, tps, body, m, bodyTy) ->
             let z = EnterInner z
             let body, z = TransExpr penv z body
             let z = ExitInner z
             let pds, z = ExtractPreDecs z
-            MakePreDecs m pds (mkTypeLambda m argtyvs (body, rty)), z
+            MakePreDecs m pds (mkTypeLambda m tps (body, bodyTy)), z
 
         // Lifting TLR out over constructs (disabled)
         // Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
@@ -1334,13 +1334,13 @@ module Pass4_RewriteAssembly =
 
     and TransModuleExpr penv z x =
         match x with
-        | ModuleOrNamespaceExprWithSig(mty, def, m) ->
+        | ModuleOrNamespaceContentsWithSig(mty, def, m) ->
             let def, z = TransModuleDef penv z def
-            ModuleOrNamespaceExprWithSig(mty, def, m), z
+            ModuleOrNamespaceContentsWithSig(mty, def, m), z
 
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
 
-    and TransModuleDef penv (z: RewriteState) x: ModuleOrNamespaceExpr * RewriteState =
+    and TransModuleDef penv (z: RewriteState) x: ModuleOrNamespaceContents * RewriteState =
         match x with
         | TMDefRec(isRec, opens, tycons, mbinds, m) ->
             let mbinds, z = TransModuleBindings penv z mbinds
@@ -1356,9 +1356,9 @@ module Pass4_RewriteAssembly =
             TMDefs defs, z
         | TMDefOpens _ ->
             x, z
-        | TMAbstract mexpr ->
+        | TMWithSig mexpr ->
             let mexpr, z = TransModuleExpr penv z mexpr
-            TMAbstract mexpr, z
+            TMWithSig mexpr, z
 
     and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
 

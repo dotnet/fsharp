@@ -603,14 +603,14 @@ type SingleLineTokenState =
 [<Sealed>]
 type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                          maxLength: int option,
-                         filename: string option,
+                         fileName: string option,
                          lexargs: LexArgs) =
 
     let skip = false   // don't skip whitespace in the lexer
 
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
     let fsx =
-        match filename with
+        match fileName with
         | None -> false
         | Some value -> ParseAndCheckInputs.IsScript value
 
@@ -676,7 +676,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             processWhiteAndComment str offset delay cont )
 
     // Set up the initial file position
-    do match filename with
+    do match fileName with
         | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
         | Some value -> resetLexbufPos value lexbuf
 
@@ -825,7 +825,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         let lightStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
-        let lightStatus = LightSyntaxStatus(lightStatus, false)
+        let lightStatus = IndentationAwareSyntaxStatus(lightStatus, false)
 
         // Grab a token
         let isCached, (token, leftc, rightc) = getTokenWithPosition lexcont lightStatus
@@ -919,22 +919,22 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option) =
 
     let langVersion = LanguageVersion.Default
     let reportLibraryOnlyFeatures = true
 
     let lexResourceManager = LexResourceManager()
 
-    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs = mkLexargs(conditionalDefines, IndentationAwareSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
-        FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexargs)
+        FSharpLineTokenizer(lexbuf, Some lineText.Length, fileName, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
         let lexbuf = UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
-        FSharpLineTokenizer(lexbuf, None, filename, lexargs)
+        FSharpLineTokenizer(lexbuf, None, fileName, lexargs)
 
 module FSharpKeywords =
 
@@ -1519,7 +1519,7 @@ module FSharpLexerImpl =
         let canUseLexFilter = (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
-        let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
+        let lightStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
         let lexargs = mkLexargs (conditionalDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
 
