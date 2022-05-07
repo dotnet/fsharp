@@ -4,9 +4,9 @@ module internal Internal.Utilities.EditDistance
 
 /// Calculates the Jaro-Winkler edit distance between two strings.
 /// The edit distance is a metric that allows to measure the amount of similarity between two strings.
-val JaroWinklerDistance : s1:string -> s2:string -> float
+val JaroWinklerDistance: s1: string -> s2: string -> float
 
 /// Calculates the edit distance between two strings.
-/// The edit distance is a metric that allows to measure the amount of difference between two strings 
+/// The edit distance is a metric that allows to measure the amount of difference between two strings
 /// and shows how many edit operations (insert, delete, substitution) are needed to transform one string into the other.
-val CalcEditDistance : a:string * b:string -> int
+val CalcEditDistance: a: string * b: string -> int

@@ -9,7 +9,7 @@ open FSharp.Compiler.Text
 type public CompletionPath = string list * string option // plid * residue
 
 [<RequireQualifiedAccess>]
-type public InheritanceContext = 
+type public InheritanceContext =
     | Class
     | Interface
     | Unknown
@@ -23,7 +23,7 @@ type public RecordContext =
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
-type public CompletionContext = 
+type public CompletionContext =
     /// Completion context cannot be determined due to errors
     | Invalid
 
@@ -61,7 +61,7 @@ type public ModuleKind =
 type public EntityKind =
     | Attribute
     | Type
-    | FunctionOrValue of isActivePattern:bool
+    | FunctionOrValue of isActivePattern: bool
     | Module of ModuleKind
 
 /// Kind of lexical scope.
@@ -76,13 +76,11 @@ type public ScopeKind =
 /// Insert open namespace context.
 [<RequireQualifiedAccess>]
 type public InsertionContext =
-    {
-      /// Current scope kind.
+    { /// Current scope kind.
       ScopeKind: ScopeKind
 
       /// Current position (F# compiler line number).
-      Pos: pos
-    }
+      Pos: pos }
 
 /// Where open statements should be added.
 [<RequireQualifiedAccess>]
@@ -94,16 +92,14 @@ type public OpenStatementInsertionPoint =
 type public ShortIdent = string
 
 /// An array of `ShortIdent`.
-type public ShortIdents = ShortIdent[]
+type public ShortIdents = ShortIdent []
 
 /// `ShortIdent` with a flag indicating if it's resolved in some scope.
-type public MaybeUnresolvedIdent = 
-    { Ident: ShortIdent; Resolved: bool }
+type public MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
 
 /// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
 type public InsertionContextEntity =
-    {
-      /// Full name, relative to the current scope.
+    { /// Full name, relative to the current scope.
       FullRelativeName: string
 
       /// Ident parts needed to append to the current ident to make it resolvable in current scope.
@@ -116,8 +112,7 @@ type public InsertionContextEntity =
       FullDisplayName: string
 
       /// Last part of the entity's full name.
-      LastIdent: ShortIdent
-    }
+      LastIdent: ShortIdent }
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
@@ -131,18 +126,23 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string []
 
     /// Returns `InsertContext` based on current position and symbol idents.
-    val TryFindInsertionContext: 
-        currentLine: int -> 
-        parsedInput: ParsedInput -> 
-        partiallyQualifiedName: MaybeUnresolvedIdent[] -> 
+    val TryFindInsertionContext:
+        currentLine: int ->
+        parsedInput: ParsedInput ->
+        partiallyQualifiedName: MaybeUnresolvedIdent [] ->
         insertionPoint: OpenStatementInsertionPoint ->
-        (( (* requiresQualifiedAccessParent: *) ShortIdents option * (* autoOpenParent: *) ShortIdents option * (*  entityNamespace *) ShortIdents option * (* entity: *) ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
-    
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *)  * ShortIdents option (*  entityNamespace *)  * ShortIdents option (* entity: *)  * ShortIdents) -> (InsertionContextEntity * InsertionContext) [])
+
     /// Returns `InsertContext` based on current position and symbol idents.
-    val FindNearestPointToInsertOpenDeclaration: currentLine: int -> parsedInput: ParsedInput -> entity: ShortIdents -> insertionPoint: OpenStatementInsertionPoint -> InsertionContext
+    val FindNearestPointToInsertOpenDeclaration:
+        currentLine: int ->
+        parsedInput: ParsedInput ->
+        entity: ShortIdents ->
+        insertionPoint: OpenStatementInsertionPoint ->
+            InsertionContext
 
     /// Returns long identifier at position.
     val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
@@ -150,10 +150,9 @@ module public ParsedInput =
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
-// implementation details used by other code in the compiler    
+// implementation details used by other code in the compiler
 module internal SourceFileImpl =
 
-    val IsInterfaceFile: string -> bool 
+    val IsInterfaceFile: string -> bool
 
     val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list
-

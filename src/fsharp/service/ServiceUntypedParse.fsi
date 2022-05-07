@@ -13,14 +13,13 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 
 [<Sealed>]
-/// Represents the results of parsing an F# file
-type public FSharpParseFileResults = 
+type public FSharpParseFileResults =
 
     /// The syntax tree resulting from the parse
-    member ParseTree : ParsedInput option
+    member ParseTree: ParsedInput option
 
     /// Notable parse info for ParameterInfo at a given location
-    member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
+    member FindNoteworthyParamInfoLocations: pos: pos -> FSharpNoteworthyParamInfoLocations option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
     member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
@@ -38,32 +37,34 @@ type public FSharpParseFileResults =
     member GetNavigationItems: unit -> FSharpNavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
-    member ValidateBreakpointLocation : pos:pos -> range option
+    member ValidateBreakpointLocation: pos: pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles : string[]
+    member DependencyFiles: string []
 
     /// Get the errors and warnings for the parse
-    member Errors : FSharpErrorInfo[]
+    member Errors: FSharpErrorInfo []
 
     /// Indicates if any errors occurred during the parse
-    member ParseHadErrors : bool
+    member ParseHadErrors: bool
 
-    internal new: errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new:
+        errors: FSharpErrorInfo [] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string [] ->
+            FSharpParseFileResults
 
 /// Information about F# source file names
 module public SourceFile =
 
-   /// Whether or not this file is compilable
-   val IsCompilable : string -> bool
+    /// Whether or not this file is compilable
+    val IsCompilable: string -> bool
 
-   /// Whether or not this file should be a single-file project
-   val MustBeSingleFileProject : string -> bool
+    /// Whether or not this file should be a single-file project
+    val MustBeSingleFileProject: string -> bool
 
 type public CompletionPath = string list * string option // plid * residue
 
 [<RequireQualifiedAccess>]
-type public InheritanceContext = 
+type public InheritanceContext =
     | Class
     | Interface
     | Unknown
@@ -75,7 +76,7 @@ type public RecordContext =
     | New of CompletionPath
 
 [<RequireQualifiedAccess>]
-type public CompletionContext = 
+type public CompletionContext =
 
     /// completion context cannot be determined due to errors
     | Invalid
@@ -99,33 +100,34 @@ type public CompletionContext =
     /// completing pattern type (e.g. foo (x: |))
     | PatternType
 
-type public ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+type public ModuleKind =
+    { IsAutoOpen: bool
+      HasModuleSuffix: bool }
 
 [<RequireQualifiedAccess>]
 type public EntityKind =
     | Attribute
     | Type
-    | FunctionOrValue of isActivePattern:bool
+    | FunctionOrValue of isActivePattern: bool
     | Module of ModuleKind
 
-// implementation details used by other code in the compiler    
+// implementation details used by other code in the compiler
 module public UntypedParseImpl =
-    val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
+    val TryFindExpressionASTLeftOfDotLeftOfCursor: pos * ParsedInput option -> (pos * bool) option
 
-    val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
+    val GetRangeOfExprLeftOfDot: pos * ParsedInput option -> range option
 
-    val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
+    val TryFindExpressionIslandInPosition: pos * ParsedInput option -> string option
 
-    val TryGetCompletionContext : pos * ParsedInput * lineStr: string -> CompletionContext option
+    val TryGetCompletionContext: pos * ParsedInput * lineStr: string -> CompletionContext option
 
     val GetEntityKind: pos * ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: ParsedInput * pos -> string []
 
-// implementation details used by other code in the compiler    
+// implementation details used by other code in the compiler
 module internal SourceFileImpl =
 
-    val IsInterfaceFile : string -> bool 
+    val IsInterfaceFile: string -> bool
 
     val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
-

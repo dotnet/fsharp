@@ -12,13 +12,13 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 //---------------------------------------------------------------------
 [<Sealed>]
 type ILStrongNameSigner =
-    member PublicKey: byte[]
+    member PublicKey: byte []
     static member OpenPublicKeyOptions: string -> bool -> ILStrongNameSigner
-    static member OpenPublicKey: byte[] -> ILStrongNameSigner
+    static member OpenPublicKey: byte [] -> ILStrongNameSigner
     static member OpenKeyPairFile: string -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
     member Close: unit -> unit
     member IsFullySigned: bool
-    member PublicKey: byte[]
+    member PublicKey: byte []
     member SignatureSize: int
     member SignFile: string -> unit

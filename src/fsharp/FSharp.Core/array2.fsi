@@ -10,27 +10,27 @@ open Microsoft.FSharp.Core
 ///
 /// <remarks>
 ///  <para>See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>
-/// 
-/// <para>F# and CLI multi-dimensional arrays are typically zero-based. 
+///
+/// <para>F# and CLI multi-dimensional arrays are typically zero-based.
 /// However, CLI multi-dimensional arrays used in conjunction with external
-/// libraries (e.g. libraries associated with Visual Basic) be 
+/// libraries (e.g. libraries associated with Visual Basic) be
 /// non-zero based, using a potentially different base for each dimension.
 /// The operations in this module will accept such arrays, and
 /// the basing on an input array will be propagated to a matching output
 /// array on the <c>Array2D.map</c> and <c>Array2D.mapi</c> operations.
-/// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>, 
+/// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>,
 /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</para>
 /// </remarks>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
-module Array2D = 
+module Array2D =
 
     /// <summary>Fetches the base-index for the first dimension of the array.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The base-index of the first dimension of the array.</returns>
-    /// 
+    ///
     /// <example id="base1-1">Create a 10x10 1-based array:
     /// <code>
     /// open System
@@ -42,14 +42,14 @@ module Array2D =
     /// Evaluates to <c>1</c>.
     /// </example>
     [<CompiledName("Base1")>]
-    val base1: array:'T[,] -> int
+    val base1: array: 'T [,] -> int
 
     /// <summary>Fetches the base-index for the second dimension of the array.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The base-index of the second dimension of the array.</returns>
-    /// 
+    ///
     /// <example id="base2-1">Create a 10x10 1-based array:
     /// <code>
     /// open System
@@ -61,7 +61,7 @@ module Array2D =
     /// Evaluates to <c>1</c>.
     /// </example>
     [<CompiledName("Base2")>]
-    val base2: array:'T[,] -> int
+    val base2: array: 'T [,] -> int
 
     /// <summary>Builds a new array whose elements are the same as the input array.</summary>
     ///
@@ -71,7 +71,7 @@ module Array2D =
     /// <param name="array">The input array.</param>
     ///
     /// <returns>A copy of the input array.</returns>
-    /// 
+    ///
     /// <example id="copy-1">
     /// <code>
     /// open System
@@ -83,7 +83,7 @@ module Array2D =
     /// Evaluates to a new copy of the 10x10 array.
     /// </example>
     [<CompiledName("Copy")>]
-    val copy: array:'T[,] -> 'T[,]
+    val copy: array: 'T [,] -> 'T [,]
 
     /// <summary>Reads a range of elements from the first array and write them into the second.</summary>
     ///
@@ -97,7 +97,7 @@ module Array2D =
     /// <param name="length2">The number of elements to copy across the second dimension of the arrays.</param>
     /// <exception cref="T:System.ArgumentException">Thrown when any of the indices are negative or if either of
     /// the counts are larger than the dimensions of the array allow.</exception>
-    /// 
+    ///
     /// <remarks>
     /// Slicing syntax is generally preferred, e.g.
     /// <code lang="fsharp">
@@ -117,7 +117,16 @@ module Array2D =
     /// After evaluation <c>target</c> contains <c>[ [ 2; 3; 4 ]; [ 12; 13; 14 ] ]</c>.
     /// </example>
     [<CompiledName("CopyTo")>]
-    val blit: source:'T[,] -> sourceIndex1:int -> sourceIndex2:int -> target:'T[,] -> targetIndex1:int -> targetIndex2:int -> length1:int -> length2:int -> unit
+    val blit:
+        source: 'T [,] ->
+        sourceIndex1: int ->
+        sourceIndex2: int ->
+        target: 'T [,] ->
+        targetIndex1: int ->
+        targetIndex2: int ->
+        length1: int ->
+        length2: int ->
+            unit
 
     /// <summary>Creates an array given the dimensions and a generator function to compute the elements.</summary>
     ///
@@ -136,7 +145,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("Initialize")>]
-    val init: length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
+    val init: length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T [,]
 
     /// <summary>Creates an array whose elements are all initially the given value.</summary>
     ///
@@ -155,7 +164,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("Create")>]
-    val create: length1:int -> length2:int -> value:'T -> 'T[,]
+    val create: length1: int -> length2: int -> value: 'T -> 'T [,]
 
     /// <summary>Creates an array where the entries are initially Unchecked.defaultof&lt;'T&gt;.</summary>
     ///
@@ -173,7 +182,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("ZeroCreate")>]
-    val zeroCreate : length1:int -> length2:int -> 'T[,]
+    val zeroCreate: length1: int -> length2: int -> 'T [,]
 
     /// <summary>Creates a based array given the dimensions and a generator function to compute the elements.</summary>
     ///
@@ -194,7 +203,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("InitializeBased")>]
-    val initBased: base1:int -> base2:int -> length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
+    val initBased: base1: int -> base2: int -> length1: int -> length2: int -> initializer: (int -> int -> 'T) -> 'T [,]
 
     /// <summary>Creates a based array whose elements are all initially the given value.</summary>
     ///
@@ -215,7 +224,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("CreateBased")>]
-    val createBased: base1:int -> base2:int -> length1:int -> length2:int -> initial: 'T -> 'T[,]
+    val createBased: base1: int -> base2: int -> length1: int -> length2: int -> initial: 'T -> 'T [,]
 
     /// <summary>Creates a based array where the entries are initially Unchecked.defaultof&lt;'T&gt;.</summary>
     ///
@@ -235,7 +244,7 @@ module Array2D =
     /// </example>
     ///
     [<CompiledName("ZeroCreateBased")>]
-    val zeroCreateBased : base1:int -> base2:int -> length1:int -> length2:int -> 'T[,]
+    val zeroCreateBased: base1: int -> base2: int -> length1: int -> length2: int -> 'T [,]
 
     /// <summary>Applies the given function to each element of the array.</summary>
     ///
@@ -258,7 +267,7 @@ module Array2D =
     /// in the console.
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action:('T -> unit) -> array:'T[,] -> unit
+    val iter: action: ('T -> unit) -> array: 'T [,] -> unit
 
     /// <summary>Applies the given function to each element of the array.  The integer indices passed to the
     /// function indicates the index of element.</summary>
@@ -282,14 +291,14 @@ module Array2D =
     /// in the console.
     /// </example>
     [<CompiledName("IterateIndexed")>]
-    val iteri: action:(int -> int -> 'T -> unit) -> array:'T[,] -> unit
+    val iteri: action: (int -> int -> 'T -> unit) -> array: 'T [,] -> unit
 
     /// <summary>Returns the length of an array in the first dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
-    /// <returns>The length of the array in the first dimension.</returns>  
-    /// 
+    /// <returns>The length of the array in the first dimension.</returns>
+    ///
     /// <example id="length1-1">
     /// <code>
     /// let array = array2D [ [ 3; 4; 5 ]; [ 13; 14; 15 ] ]
@@ -299,14 +308,14 @@ module Array2D =
     /// Evaluates to <c>2</c>.
     /// </example>
     [<CompiledName("Length1")>]
-    val length1: array:'T[,] -> int
+    val length1: array: 'T [,] -> int
 
     /// <summary>Returns the length of an array in the second dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
-    /// <returns>The length of the array in the second dimension.</returns>  
-    /// 
+    /// <returns>The length of the array in the second dimension.</returns>
+    ///
     /// <example id="length2-1">
     /// <code>
     /// let array = array2D [ [ 3; 4; 5 ]; [ 13; 14; 15 ] ]
@@ -316,7 +325,7 @@ module Array2D =
     /// Evaluates to <c>3</c>.
     /// </example>
     [<CompiledName("Length2")>]
-    val length2: array:'T[,] -> int
+    val length2: array: 'T [,] -> int
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array.</summary>
@@ -338,7 +347,7 @@ module Array2D =
     /// Evaluates to a 2x2 array with contents <c>[[6; 8;]; [26; 28]]</c>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping:('T -> 'U) -> array:'T[,] -> 'U[,]
+    val map: mapping: ('T -> 'U) -> array: 'T [,] -> 'U [,]
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array. The integer indices passed to the
@@ -362,10 +371,10 @@ module Array2D =
     /// Evaluates to a 2x2 array with contents <c>[[3; 5;]; [14; 16]]</c>
     /// </example>
     [<CompiledName("MapIndexed")>]
-    val mapi: mapping:(int -> int -> 'T -> 'U) -> array:'T[,] -> 'U[,]
+    val mapi: mapping: (int -> int -> 'T -> 'U) -> array: 'T [,] -> 'U [,]
 
     /// <summary>Builds a new array whose elements are the same as the input array but
-    /// where a non-zero-based input array generates a corresponding zero-based 
+    /// where a non-zero-based input array generates a corresponding zero-based
     /// output array.</summary>
     ///
     /// <param name="array">The input array.</param>
@@ -381,7 +390,7 @@ module Array2D =
     /// Evaluates to a 2x2 zero-based array with contents <c>[[1; 1]; [1; 1]]</c>
     /// </example>
     [<CompiledName("Rebase")>]
-    val rebase: array:'T[,] -> 'T[,]
+    val rebase: array: 'T [,] -> 'T [,]
 
     /// <summary>Sets the value of an element in an array. You can also use the syntax <c>array.[index1,index2] &lt;- value</c>.</summary>
     ///
@@ -390,13 +399,13 @@ module Array2D =
     /// <param name="index2">The index along the second dimension.</param>
     /// <param name="value">The value to set in the array.</param>
     ///
-    /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception> 
+    /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception>
     ///
     /// <remarks>
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array = Array2D.zeroCreate 2 2
-    /// 
+    ///
     /// array[0,1] &lt;- 4.0
     /// </code>
     /// </remarks>
@@ -410,7 +419,7 @@ module Array2D =
     /// After evaluation <c>array</c> is a 2x2 array with contents <c>[[0.0; 4.0]; [0.0; 0.0]]</c>
     /// </example>
     [<CompiledName("Set")>]
-    val set: array:'T[,] -> index1:int -> index2:int -> value:'T -> unit
+    val set: array: 'T [,] -> index1: int -> index2: int -> value: 'T -> unit
 
     /// <summary>Fetches an element from a 2D array. You can also use the syntax <c>array.[index1,index2]</c>.</summary>
     ///
@@ -425,7 +434,7 @@ module Array2D =
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array = array2D [ [ 1.0; 2.0 ]; [ 3.0; 4.0 ] ]
-    /// 
+    ///
     /// array[0,1]
     /// </code>
     /// Evaluates to <c>2.0</c>.
@@ -440,4 +449,4 @@ module Array2D =
     /// Evaluates to <c>2.0</c>.
     /// </example>
     [<CompiledName("Get")>]
-    val get: array:'T[,] -> index1:int -> index2:int -> 'T
+    val get: array: 'T [,] -> index1: int -> index2: int -> 'T

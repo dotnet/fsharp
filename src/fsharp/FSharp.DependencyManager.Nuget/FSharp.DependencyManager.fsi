@@ -4,8 +4,12 @@ namespace FSharp.DependencyManager.Nuget
 
 module internal FSharpDependencyManager =
     val formatPackageReference: PackageReference -> seq<string>
-    val parsePackageReference: scriptExt: string -> string list -> PackageReference list * string option option * int option
-    val parsePackageDirective: scriptExt: string -> (string * string) list -> PackageReference list * string option option * int option
+
+    val parsePackageReference:
+        scriptExt: string -> string list -> PackageReference list * string option option * int option
+
+    val parsePackageDirective:
+        scriptExt: string -> (string * string) list -> PackageReference list * string option option * int option
 
 /// The results of ResolveDependencies
 [<Class>]
@@ -15,10 +19,10 @@ type ResolveDependenciesResult =
     member Success: bool
 
     /// The resolution output log
-    member StdOut: string[]
+    member StdOut: string []
 
     /// The resolution error log (process stderr)
-    member StdError: string[]
+    member StdError: string []
 
     /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
@@ -41,12 +45,20 @@ type ResolveDependenciesResult =
 
 [<DependencyManager>]
 type FSharpDependencyManager =
-    new: outputDirectory:string option -> FSharpDependencyManager
+    new: outputDirectory: string option -> FSharpDependencyManager
 
     member Name: string
 
-    member Key:string
+    member Key: string
 
-    member HelpMessages:string[]
+    member HelpMessages: string []
 
-    member ResolveDependencies: scriptDirectory: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string * timeout: int-> obj
+    member ResolveDependencies:
+        scriptDirectory: string *
+        scriptName: string *
+        scriptExt: string *
+        packageManagerTextLines: (string * string) seq *
+        targetFrameworkMoniker: string *
+        runtimeIdentifier: string *
+        timeout: int ->
+            obj

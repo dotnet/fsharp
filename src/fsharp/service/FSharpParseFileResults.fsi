@@ -9,7 +9,7 @@ open FSharp.Compiler.Text
 
 /// Represents the results of parsing an F# file and a set of analysis operations based on the parse tree alone.
 [<Sealed>]
-type public FSharpParseFileResults = 
+type public FSharpParseFileResults =
 
     /// The syntax tree resulting from the parse
     member ParseTree: ParsedInput
@@ -53,7 +53,7 @@ type public FSharpParseFileResults =
     member TryRangeOfExpressionBeingDereferencedContainingPos: expressionPos: pos -> range option
 
     /// Notable parse info for ParameterInfo at a given location
-    member FindParameterLocations: pos:pos -> ParameterLocations option
+    member FindParameterLocations: pos: pos -> ParameterLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
     member IsPositionContainedInACurriedParameter: pos: pos -> bool
@@ -71,16 +71,17 @@ type public FSharpParseFileResults =
     member GetNavigationItems: unit -> NavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
-    member ValidateBreakpointLocation: pos:pos -> range option
+    member ValidateBreakpointLocation: pos: pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles: string[]
+    member DependencyFiles: string []
 
     /// Get the errors and warnings for the parse
-    member Diagnostics: FSharpDiagnostic[]
+    member Diagnostics: FSharpDiagnostic []
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
-    internal new: diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
-
+    internal new:
+        diagnostics: FSharpDiagnostic [] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string [] ->
+            FSharpParseFileResults

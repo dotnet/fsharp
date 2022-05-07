@@ -592,8 +592,10 @@ let fillInstrs () =
             | I_invalid_instr -> ()
             | _ -> dprintn ("warning: duplicate decode entries for "+string i)
             oneByteInstrTable[i] <- f
-    List.iter addInstr (instrs())
-    List.iter (fun (x, mk) -> addInstr (x, I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
+    for i in instrs() do
+        addInstr i
+    for x, mk in noArgInstrs.Force() do
+        addInstr (x, I_none_instr (noPrefixes mk))
     oneByteInstrs <- Some oneByteInstrTable
     twoByteInstrs <- Some twoByteInstrTable
 
@@ -3039,8 +3041,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              let sehClauses =
                 let sehMap = Dictionary<_, _>(clauses.Length, HashIdentity.Structural)
 
-                List.iter
-                  (fun (kind, st1, sz1, st2, sz2, extra) ->
+                for (kind, st1, sz1, st2, sz2, extra) in clauses do
                     let tryStart = rawToLabel st1
                     let tryFinish = rawToLabel (st1 + sz1)
                     let handlerStart = rawToLabel st2
@@ -3064,13 +3065,12 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                     let key = (tryStart, tryFinish)
                     match sehMap.TryGetValue key with
                     | true, prev -> sehMap[key] <- prev @ [clause]
-                    | _ -> sehMap[key] <- [clause])
-                  clauses
+                    | _ -> sehMap[key] <- [clause]
+                  
                 ([], sehMap) ||> Seq.fold (fun acc (KeyValue(key, bs)) -> [ for b in bs -> {Range=key; Clause=b}: ILExceptionSpec ] @ acc)
              seh <- sehClauses
              moreSections <- (sectionFlag &&& e_CorILMethod_Sect_MoreSects) <> 0x0uy
              nextSectionBase <- sectionBase + sectionSize
-           done (* while *)
 
            // Convert the linear code format to the nested code format 
            if logging then dprintn "doing localPdbInfos2"

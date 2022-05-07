@@ -27,6 +27,6 @@ type internal SemanticClassificationKeyStoreBuilder =
 
     new: unit -> SemanticClassificationKeyStoreBuilder
 
-    member WriteAll: SemanticClassificationItem[] -> unit
+    member WriteAll: SemanticClassificationItem [] -> unit
 
     member TryBuildAndReset: unit -> SemanticClassificationKeyStore option
