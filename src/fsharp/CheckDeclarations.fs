@@ -1874,7 +1874,7 @@ module MutRecBindingChecking =
                                 let ty = generalizedTyconRef tcref
                                 let ad = envNonRec.AccessRights
                                 match TryFindIntrinsicMethInfo cenv.infoReader bind.Var.Range ad nm ty, 
-                                      TryFindPropInfo cenv.infoReader bind.Var.Range ad nm ty with 
+                                      TryFindIntrinsicPropInfo cenv.infoReader bind.Var.Range ad nm ty with 
                                 | [], [] -> ()
                                 | _ -> errorR (Error(FSComp.SR.tcMemberAndLocalClassBindingHaveSameName nm, bind.Var.Range))
 
@@ -4120,7 +4120,8 @@ module EstablishTypeDefinitionCores =
 
             let rec accInAbbrevType ty acc = 
                 match stripTyparEqns ty with 
-                | TType_anon (_,l) 
+                | TType_anon (_,l)
+                | TType_erased_union (_, l)
                 | TType_tuple (_, l) -> accInAbbrevTypes l acc
                 | TType_ucase (UnionCaseRef(tc, _), tinst) 
                 | TType_app (tc, tinst) -> 

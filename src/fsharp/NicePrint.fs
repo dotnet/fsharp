@@ -799,6 +799,17 @@ module private PrintTypes =
             layoutTyparRefWithInfo denv env r
 
         | TType_measure unt -> layoutMeasure denv unt
+        
+        | TType_erased_union (unionInfo, types) ->
+            let sigma = unionInfo.UnsortedCaseSourceIndices
+            
+            let unsortedTyps =
+                types
+                |> List.indexed
+                |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+                |> List.map snd
+                
+            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) unsortedTyps)
 
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and private layoutTypesWithInfoAndPrec denv env prec sep typl = 
@@ -2213,7 +2224,15 @@ let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo = InfoMemb
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d = InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle g amap m denv d
 
 /// Convert a MethInfo to a string
-let stringOfMethInfo infoReader m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d)
+let stringOfMethInfo infoReader m denv minfo =
+    bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+
+/// Convert MethInfos to lines separated by newline including a newline as the first character
+let multiLineStringOfMethInfos infoReader m denv minfos =
+     minfos
+     |> List.map (stringOfMethInfo infoReader m denv)
+     |> List.map (sprintf "%s   %s" System.Environment.NewLine)
+     |> String.concat ""
 
 /// Convert a ParamData to a string
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)

@@ -375,6 +375,9 @@ let warningOn err level specificWarnOn =
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
+    | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
+    | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
+    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =

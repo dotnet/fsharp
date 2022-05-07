@@ -621,6 +621,8 @@ val isAnonRecdTy: TcGlobals -> TType -> bool
 
 val isUnionTy: TcGlobals -> TType -> bool
 
+val isErasedUnionTy: TcGlobals -> TType -> bool
+
 val isReprHiddenTy: TcGlobals -> TType -> bool
 
 val isFSharpObjModelTy: TcGlobals -> TType -> bool
@@ -1426,6 +1428,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
+
+/// Determine if a type is a value option type
+val isValueOptionTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is an option type
 val isOptionTy: TcGlobals -> TType -> bool
@@ -2253,6 +2258,12 @@ val LinearizeTopMatch: TcGlobals -> ParentRef -> Expr -> Expr
 val AdjustPossibleSubsumptionExpr: TcGlobals -> Expr -> Exprs -> (Expr * Exprs) option
 
 val NormalizeAndAdjustPossibleSubsumptionExprs: TcGlobals -> Expr -> Expr
+
+//-------------------------------------------------------------------------
+// Erased union helper
+//-------------------------------------------------------------------------
+
+val tryUnsortedErasedUnionTyCases : TcGlobals -> TType -> TTypes ValueOption
 
 //-------------------------------------------------------------------------
 // XmlDoc signatures, used by both VS mode and XML-help emit
