@@ -128,7 +128,7 @@ val layoutInferredSigOfModuleExpr:
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     m: range ->
-    expr: ModuleOrNamespaceExprWithSig ->
+    expr: ModuleOrNamespaceContentsWithSig ->
         Layout
 
 val prettyLayoutOfValOrMember:

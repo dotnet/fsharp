@@ -347,7 +347,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
     | _ -> ()
     
     let ty =
-        if g.compilingFslib then
+        if g.compilingFSharpCore then
             match stripTyparEqns ty with
             // When compiling FSharp.Core, do not strip type equations at this point if we can't dereference a tycon.
             | TType_app (tcref, _, _) when not tcref.CanDeref -> ty
@@ -426,10 +426,10 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.IsReferenceType _ 
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argtys, rty, soln))  = 
+and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTrait(tys, _, _, argTys, retTy, soln))  = 
     CheckTypesDeep cenv f g env tys 
-    CheckTypesDeep cenv f g env argtys 
-    Option.iter (CheckTypeDeep cenv f g env true ) rty
+    CheckTypesDeep cenv f g env argTys 
+    Option.iter (CheckTypeDeep cenv f g env true ) retTy
     match visitTraitSolutionOpt, soln.Value with 
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
@@ -653,7 +653,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
             match info with 
             | FSMethSln(_, vref, _) -> 
                //printfn "considering %s..." vref.DisplayName
-               if valRefInThisAssembly cenv.g.compilingFslib vref && not (cenv.boundVals.ContainsKey(vref.Stamp)) then 
+               if valRefInThisAssembly cenv.g.compilingFSharpCore vref && not (cenv.boundVals.ContainsKey(vref.Stamp)) then 
                    //printfn "recording %s..." vref.DisplayName
                    cenv.potentialUnboundUsesOfVals <- cenv.potentialUnboundUsesOfVals.Add(vref.Stamp, m)
             | _ -> ()
@@ -1191,11 +1191,11 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
     | Expr.App (f, _fty, tyargs, argsl, m) ->
         CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt
 
-    | Expr.Lambda (_, _, _, argvs, _, m, rty) -> 
-        CheckLambda cenv env expr (argvs, m, rty)
+    | Expr.Lambda (_, _, _, argvs, _, m, bodyTy) -> 
+        CheckLambda cenv env expr (argvs, m, bodyTy)
 
-    | Expr.TyLambda (_, tps, _, m, rty)  -> 
-        CheckTyLambda cenv env expr (tps, m, rty)
+    | Expr.TyLambda (_, tps, _, m, bodyTy)  -> 
+        CheckTyLambda cenv env expr (tps, m, bodyTy)
 
     | Expr.TyChoose (tps, e1, _)  -> 
         let env = BindTypars g env tps 
@@ -1351,14 +1351,14 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
     else
         CheckCall cenv env m returnTy argsl ctxts ctxt
 
-and CheckLambda cenv env expr (argvs, m, rty) = 
+and CheckLambda cenv env expr (argvs, m, bodyTy) = 
     let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-    let ty = mkMultiLambdaTy cenv.g m argvs rty in 
+    let ty = mkMultiLambdaTy cenv.g m argvs bodyTy in 
     CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
-and CheckTyLambda cenv env expr (tps, m, rty) = 
+and CheckTyLambda cenv env expr (tps, m, bodyTy) = 
     let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-    let ty = mkForallTyIfNeeded tps rty in 
+    let ty = mkForallTyIfNeeded tps bodyTy in 
     CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
 and CheckMatch cenv env ctxt (dtree, targets, m, ty) = 
@@ -1766,7 +1766,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if isTop && not g.compilingFslib && isByrefLikeTy g m bodyTy then
+        if isTop && not g.compilingFSharpCore && isByrefLikeTy g m bodyTy then
             // allow byref to occur as return position for byref-typed top level function or method
             CheckExprPermitReturnableByRef cenv env body |> ignore
         else
@@ -1778,7 +1778,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
                 CheckForByrefLikeType cenv env m bodyTy (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 
-            elif not g.compilingFslib && isByrefTy g bodyTy then 
+            elif not g.compilingFSharpCore && isByrefTy g bodyTy then 
                 // check no byrefs-in-the-byref
                 CheckForByrefType cenv env (destByrefTy g bodyTy) (fun () -> 
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
@@ -2116,7 +2116,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
        IsSimpleSyntacticConstantExpr g e && 
        // Check the thing is actually compiled as a property
        IsCompiledAsStaticProperty g v ||
-       (g.compilingFslib && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
+       (g.compilingFSharpCore && v.Attribs |> List.exists(fun (Attrib(tc, _, _, _, _, _, _)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
      then 
         v.SetIsCompiledAsStaticPropertyWithoutField()
 
@@ -2480,12 +2480,12 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     for vref in abstractSlotValsOfTycons [tycon] do 
         match vref.ValReprInfo with 
         | Some topValInfo -> 
-            let tps, argtysl, rty, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
+            let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
             let env = BindTypars g env tps
-            for argtys in argtysl do 
-                for argty, _ in argtys do 
-                     CheckTypeNoInnerByrefs cenv env vref.Range argty
-            CheckTypeNoInnerByrefs cenv env vref.Range rty
+            for argTys in argTysl do 
+                for argTy, _ in argTys do 
+                     CheckTypeNoInnerByrefs cenv env vref.Range argTy
+            CheckTypeNoInnerByrefs cenv env vref.Range retTy
         | None -> ()
 
     // Supported interface may not have byrefs
@@ -2575,7 +2575,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         | None     -> ()
         | Some ty -> 
              // Library-defined outref<'T> and inref<'T> contain byrefs on the r.h.s.
-             if not g.compilingFslib then 
+             if not g.compilingFSharpCore then 
                  CheckForByrefType cenv env ty (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
 
 let CheckEntityDefns cenv env tycons = 
@@ -2587,7 +2587,7 @@ let CheckEntityDefns cenv env tycons =
 
 let rec CheckModuleExpr cenv env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(mty, def, _) -> 
+    | ModuleOrNamespaceContentsWithSig(mty, def, _) -> 
        let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g def mty
        let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
        CheckDefnInModule cenv env def
@@ -2617,7 +2617,7 @@ and CheckDefnInModule cenv env mdef =
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e
         CheckExprNoByrefs cenv env e
-    | TMAbstract def  -> CheckModuleExpr cenv env def
+    | TMWithSig def  -> CheckModuleExpr cenv env def
     | TMDefs defs -> CheckDefnsInModule cenv env defs 
 
 and CheckModuleSpec cenv env mbind =

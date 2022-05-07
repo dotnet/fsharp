@@ -100,6 +100,6 @@ val internal GetStatistics : unit -> Statistics
 module public Shim =
 
     type public IAssemblyReader =
-        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+        abstract GetILModuleReader: fileName: string * readerOptions: ILReaderOptions -> ILModuleReader
 
     val mutable AssemblyReader: IAssemblyReader

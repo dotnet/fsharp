@@ -56,8 +56,8 @@ type UsingMSBuild() as this  =
     let DoWithAutoComplete coffeeBreak fileKind reason otherFlags (code : list<string>) marker f  =
         DoWithAutoCompleteUsingExtraRefs [] otherFlags coffeeBreak fileKind reason code marker f
 
-    let AssertAutoCompleteContainsAux coffeeBreak filename reason otherFlags code marker  should shouldnot  =        
-        DoWithAutoComplete coffeeBreak filename reason otherFlags code marker (fun completions ->
+    let AssertAutoCompleteContainsAux coffeeBreak fileName reason otherFlags code marker  should shouldnot  =        
+        DoWithAutoComplete coffeeBreak fileName reason otherFlags code marker (fun completions ->
             AssertCompListContainsAll(completions, should)
             AssertCompListDoesNotContainAny(completions, shouldnot))
 
@@ -4549,7 +4549,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
 
 (*
-/// FEATURE: The filename on disk and the filename in the project can differ in case.
+/// FEATURE: The fileName on disk and the fileName in the project can differ in case.
     [<Test>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 

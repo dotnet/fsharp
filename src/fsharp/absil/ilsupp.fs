@@ -796,7 +796,7 @@ type ISymUnmanagedWriter2 =
                                   endLine: int *
                                   endColumn: int -> unit
     abstract Initialize: emitter: nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] filename: string *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] fileName: string *
                     stream: IStream *
                     fullBuild: bool -> unit
     abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
@@ -900,9 +900,9 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
     for i = 0 to (rc - 1) do
       Marshal.ReleaseComObject(writer.symWriter) |> ignore
 
-    let isLocked filename =
+    let isLocked fileName =
         try
-            use x = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+            use _holder = FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
             false
         with
         | _ -> true

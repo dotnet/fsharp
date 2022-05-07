@@ -3143,10 +3143,10 @@ namespace Microsoft.FSharp.Core
         /// open System.IO
         /// exception FileNotFoundException of string
         /// 
-        /// let readFile (filename: string) = 
-        ///     if not (File.Exists(filename)) then
-        ///         raise(FileNotFoundException(filename))
-        ///     File.ReadAllText(filename)
+        /// let readFile (fileName: string) = 
+        ///     if not (File.Exists(fileName)) then
+        ///         raise(FileNotFoundException(fileName))
+        ///     File.ReadAllText(fileName)
         /// 
         /// readFile "/this-file-doest-exist"
         /// </code>
@@ -3167,11 +3167,11 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="reraise-example">
         /// <code lang="fsharp">
-        /// let readFile (filename: string) = 
+        /// let readFile (fileName: string) = 
         ///   try
-        ///     File.ReadAllText(filename)
+        ///     File.ReadAllText(fileName)
         ///   with ex ->
-        ///     eprintfn "Couldn't read %s" filename
+        ///     eprintfn "Couldn't read %s" fileName
         ///     reraise()
         ///   
         /// readFile "/this-file-doest-exist"  
@@ -3552,7 +3552,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="invalidop-example">
         /// <code lang="fsharp">
-        /// type FileReader(filename: string) = 
+        /// type FileReader(fileName: string) = 
         ///     let mutable isOpen = false
         ///     member this.Open() = 
         ///       if isOpen then invalidOp "File is already open"

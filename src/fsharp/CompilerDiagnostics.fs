@@ -1346,7 +1346,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
 
 #if DEBUG
               if not foundInContext then
-                  Printf.bprintf os ". (no 'in' context found: %+A)" (List.map (List.map Parser.prodIdxToNonTerminal) ctxt.ReducibleProductions)
+                  Printf.bprintf os ". (no 'in' context found: %+A)" (List.mapSquared Parser.prodIdxToNonTerminal ctxt.ReducibleProductions)
 #else
               foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
@@ -1594,58 +1594,72 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
       | MissingFields(sl, _) -> os.AppendString(MissingFieldsE().Format (String.concat "," sl + "."))
 
       | ValueRestriction(denv, infoReader, hasSig, v, _, _) ->
-          let denv = { denv with showImperativeTyparAnnotations=true }
+          let denv = { denv with showInferenceTyparAnnotations=true }
           let tau = v.TauType
           if hasSig then
               if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
-                os.AppendString(ValueRestriction1E().Format
-                  v.DisplayName
-                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                  v.DisplayName)
+                  let msg =
+                      ValueRestriction1E().Format
+                          v.DisplayName
+                          (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                          v.DisplayName
+                  os.AppendString msg
               else
-                os.AppendString(ValueRestriction2E().Format
-                  v.DisplayName
-                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                  v.DisplayName)
+                  let msg =
+                      ValueRestriction2E().Format
+                          v.DisplayName
+                          (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                          v.DisplayName
+                  os.AppendString msg
           else
               match v.MemberInfo with
               | Some membInfo when
-                  begin match membInfo.MemberFlags.MemberKind with
+                 (match membInfo.MemberFlags.MemberKind with
                   | SynMemberKind.PropertyGet
                   | SynMemberKind.PropertySet
                   | SynMemberKind.Constructor -> true // can't infer extra polymorphism
-                  | _ -> false // can infer extra polymorphism
-                  end ->
-                      os.AppendString(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v)))
+                  // can infer extra polymorphism
+                  | _ -> false) ->
+                  let msg = ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                  os.AppendString msg
               | _ ->
                 if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
-                    os.AppendString(ValueRestriction4E().Format
-                      v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                      v.DisplayName)
+                    let msg =
+                        ValueRestriction4E().Format
+                            v.DisplayName
+                            (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                            v.DisplayName
+                    os.AppendString msg
                 else
-                    os.AppendString(ValueRestriction5E().Format
-                      v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
-                      v.DisplayName)
+                    let msg =
+                        ValueRestriction5E().Format
+                            v.DisplayName
+                            (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
+                            v.DisplayName
+                    os.AppendString msg
 
+      | Parsing.RecoverableParseError ->
+          os.AppendString(RecoverableParseErrorE().Format)
 
-      | Parsing.RecoverableParseError -> os.AppendString(RecoverableParseErrorE().Format)
+      | ReservedKeyword (s, _) ->
+          os.AppendString(ReservedKeywordE().Format s)
 
-      | ReservedKeyword (s, _) -> os.AppendString(ReservedKeywordE().Format s)
+      | IndentationProblem (s, _) ->
+          os.AppendString(IndentationProblemE().Format s)
 
-      | IndentationProblem (s, _) -> os.AppendString(IndentationProblemE().Format s)
+      | OverrideInIntrinsicAugmentation _ ->
+         os.AppendString(OverrideInIntrinsicAugmentationE().Format)
 
-      | OverrideInIntrinsicAugmentation _ -> os.AppendString(OverrideInIntrinsicAugmentationE().Format)
+      | OverrideInExtrinsicAugmentation _ ->
+          os.AppendString(OverrideInExtrinsicAugmentationE().Format)
 
-      | OverrideInExtrinsicAugmentation _ -> os.AppendString(OverrideInExtrinsicAugmentationE().Format)
+      | IntfImplInIntrinsicAugmentation _ ->
+          os.AppendString(IntfImplInIntrinsicAugmentationE().Format)
 
-      | IntfImplInIntrinsicAugmentation _ -> os.AppendString(IntfImplInIntrinsicAugmentationE().Format)
-
-      | IntfImplInExtrinsicAugmentation _ -> os.AppendString(IntfImplInExtrinsicAugmentationE().Format)
+      | IntfImplInExtrinsicAugmentation _ ->
+          os.AppendString(IntfImplInExtrinsicAugmentationE().Format)
 
       | UnresolvedReferenceError(assemblyName, _)
-
       | UnresolvedReferenceNoRange assemblyName ->
           os.AppendString(UnresolvedReferenceNoRangeE().Format assemblyName)
 
@@ -1678,8 +1692,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
       | HashDirectiveNotAllowedInNonScript _ ->
           os.AppendString(HashDirectiveNotAllowedInNonScriptE().Format)
 
-      | FileNameNotResolved(filename, locations, _) ->
-          os.AppendString(FileNameNotResolvedE().Format filename locations)
+      | FileNameNotResolved(fileName, locations, _) ->
+          os.AppendString(FileNameNotResolvedE().Format fileName locations)
 
       | AssemblyNotResolved(originalName, _) ->
           os.AppendString(AssemblyNotResolvedE().Format originalName)
@@ -1688,17 +1702,17 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
           os.AppendString(FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar)|>snd)
 
       | HashLoadedSourceHasIssues(infos, warnings, errors, _) ->
-        let Emit(l: exn list) =
-            OutputExceptionR os (List.head l)
-        if isNil warnings && isNil errors then
-            os.AppendString(HashLoadedSourceHasIssues0E().Format)
-            Emit infos
-        elif isNil errors then
-            os.AppendString(HashLoadedSourceHasIssues1E().Format)
-            Emit warnings
-        else
-            os.AppendString(HashLoadedSourceHasIssues2E().Format)
-            Emit errors
+          let Emit(l: exn list) =
+              OutputExceptionR os (List.head l)
+          if isNil warnings && isNil errors then
+              os.AppendString(HashLoadedSourceHasIssues0E().Format)
+              Emit infos
+          elif isNil errors then
+              os.AppendString(HashLoadedSourceHasIssues1E().Format)
+              Emit warnings
+          else
+              os.AppendString(HashLoadedSourceHasIssues2E().Format)
+              Emit errors
 
       | HashLoadedScriptConsideredSource _ ->
           os.AppendString(HashLoadedScriptConsideredSourceE().Format)
@@ -1708,8 +1722,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
           | Some file -> os.AppendString(InvalidInternalsVisibleToAssemblyName1E().Format badName file)
           | None -> os.AppendString(InvalidInternalsVisibleToAssemblyName2E().Format badName)
 
-      | LoadedSourceNotFoundIgnoring(filename, _) ->
-          os.AppendString(LoadedSourceNotFoundIgnoringE().Format filename)
+      | LoadedSourceNotFoundIgnoring(fileName, _) ->
+          os.AppendString(LoadedSourceNotFoundIgnoringE().Format fileName)
 
       | MSBuildReferenceResolutionWarning(code, message, _)
 
@@ -1754,11 +1768,10 @@ let OutputPhasedDiagnostic (os: StringBuilder) (diag: PhasedDiagnostic) (flatten
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
-    //  - fsi.exe sometimes passes "stdin" as a dummy filename
+    //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
     //        # 1000 "Line01.fs"
     //    then it also asserts. But these are edge cases that can be fixed later, e.g. in bug 4651.
-    //System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim fileName, sprintf "filename should be absolute: '%s'" fileName)
     try
         let fullPath = FileSystem.GetFullPathShim fileName
         let currentDir = implicitIncludeDir
@@ -1938,10 +1951,10 @@ let OutputDiagnosticContext prefix fileLineFunction os diag =
     match GetRangeOfDiagnostic diag with
     | None -> ()
     | Some m ->
-        let filename = m.FileName
+        let fileName = m.FileName
         let lineA = m.StartLine
         let lineB = m.EndLine
-        let line = fileLineFunction filename lineA
+        let line = fileLineFunction fileName lineA
         if line<>"" then
             let iA = m.StartColumn
             let iB = m.EndColumn

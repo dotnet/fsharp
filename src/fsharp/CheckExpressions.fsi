@@ -533,7 +533,7 @@ val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
 val AddLocalVals: g: TcGlobals -> tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
-val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
+val AdjustRecType: v: Val -> vscheme: ValScheme -> unit
 
 /// Process a normalized recursive binding and prepare for progressive generalization
 val AnalyzeAndMakeAndPublishRecursiveValue:
@@ -863,7 +863,7 @@ val TcLetBindings:
     declKind: DeclKind ->
     tpenv: UnscopedTyparEnv ->
     binds: SynBinding list * bindsm: range * scopem: range ->
-        ModuleOrNamespaceExpr list * TcEnv * UnscopedTyparEnv
+        ModuleOrNamespaceContents list * TcEnv * UnscopedTyparEnv
 
 /// Check an individual `let rec` binding
 val TcLetrecBinding:

@@ -50,7 +50,7 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with tryCreateTemporaryFileName ()
+    /// Returns the file name part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
         let tempFileName = tryCreateTemporaryFileName ()
@@ -80,7 +80,7 @@ module internal Utils =
                         Directory.Delete tempPath
                 with _ -> () }
 
-    /// Given just a filename, returns it with changed extension located in %TEMP%\ExprTests
+    /// Given just a file name, returns it with changed extension located in %TEMP%\ExprTests
     let getTempFilePathChangeExt tmp ext =
         Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
 

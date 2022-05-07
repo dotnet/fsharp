@@ -20,7 +20,7 @@ val CheckTopImpl:
     viewCcu: CcuThunk *
     tcValF: ConstraintSolver.TcValF *
     denv: DisplayEnv *
-    mexpr: ModuleOrNamespaceExprWithSig *
+    mexpr: ModuleOrNamespaceContentsWithSig *
     extraAttribs: Attribs *
     (bool * bool) *
     isInternalTestSpanStackReferring: bool ->

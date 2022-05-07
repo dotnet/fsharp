@@ -4048,73 +4048,68 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     List.map (ItemOfTy g) nestedTypes @
     List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
 
+// e.g. <val-id>.<property-id>.<more>
+// e.g. <val-id>.<property-id>.<more> 
+let FullTypeOfPropInfo g amap m (pinfo: PropInfo) = 
+    let ty = pinfo.GetPropertyType(amap, m) 
+    let ty = 
+        if pinfo.IsIndexer then 
+            mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) ty
+        else ty 
+    ty
 
 let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMeth m ad statics plid ty =
+  [
     let g = ncenv.g
     let amap = ncenv.amap
     match plid with
-    | [] -> ResolveCompletionsInType ncenv nenv isApplicableMeth m ad statics ty
+    | [] -> yield! ResolveCompletionsInType ncenv nenv isApplicableMeth m ad statics ty
     | id :: rest ->
 
-      let rfinfos =
-          ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-          |> List.filter (fun fref -> fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
-
-      let nestedTypes =
-          ty
-          |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)
-
       // e.g. <val-id>.<recdfield-id>.<more>
-      (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      for fref in ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty) do
+          if fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics then
 
-      // e.g. <val-id>.<property-id>.<more>
-      let FullTypeOfPinfo (pinfo: PropInfo) = 
-          let rty = pinfo.GetPropertyType(amap, m) 
-          let rty = 
-              if pinfo.IsIndexer then 
-                  mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
-              else rty 
-          rty
+              yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest fref.FieldType
 
-      (ty
-         |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
-         |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
-         |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      for pinfo in AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m ty do
+         if pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo then
+             let pinfoTy = FullTypeOfPropInfo g amap m pinfo
+             yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest pinfoTy
 
-      (if statics then []
-       else
+      if not statics then
           match TryFindAnonRecdFieldOfType g ty id with
-          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys[i]
-          | _ -> []) @
+          | Some (Item.AnonRecdField(_, tys, i, _)) ->
+              yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys[i]
+          | _ -> ()
 
       // e.g. <val-id>.<event-id>.<more>
-      (ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty)
-         |> List.collect (PropTypOfEventInfo ncenv.InfoReader m ad >> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+      for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
+         let einfoTy = PropTypOfEventInfo ncenv.InfoReader m ad einfo
+         yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest einfoTy
 
-      // nested types!
-      (nestedTypes
-         |> List.collect (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad statics rest)) @
+      // nested types
+      for nestedTy in GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) ty do
+         yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad statics rest nestedTy
 
       // e.g. <val-id>.<il-field-id>.<more>
-      (ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty)
-         |> List.filter (fun x ->
-             not x.IsSpecialName &&
-             x.IsStatic = statics &&
-             IsILFieldInfoAccessible g amap m ad x)
-         |> List.collect (fun x -> x.FieldType(amap, m) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest))
+      for finfo in ncenv.InfoReader.GetILFieldInfosOfType(Some id, ad, m, ty) do
+         if not finfo.IsSpecialName && finfo.IsStatic = statics && IsILFieldInfoAccessible g amap m ad finfo then
+             let finfoTy = finfo.FieldType(amap, m)
+             yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest finfoTy
+  ]
 
 let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
+  [
     let g = ncenv.g
     let amap = ncenv.amap
     // Don't show constructors for type abbreviations. See FSharp 1.0 bug 2881
-    if tcref.IsTypeAbbrev then
-        []
-    else
+    if not tcref.IsTypeAbbrev then
         let ty = FreshenTycon ncenv m tcref
         match ResolveObjectConstructor ncenv (DisplayEnv.Empty g) m ad ty with
         | Result item ->
             match item with
-            | Item.FakeInterfaceCtor _ -> []
+            | Item.FakeInterfaceCtor _ -> ()
             | Item.CtorGroup(nm, ctorInfos) ->
                 let ctors =
                     ctorInfos
@@ -4122,11 +4117,12 @@ let InfosForTyconConstructors (ncenv: NameResolver) m ad (tcref: TyconRef) =
                         IsMethInfoAccessible amap m ad minfo &&
                         not (MethInfoIsUnseen g m ty minfo))
                 match ctors with
-                | [] -> []
-                | _ -> [Item.MakeCtorGroup(nm, ctors)]
+                | [] -> ()
+                | _ -> Item.MakeCtorGroup(nm, ctors)
             | item ->
-                [item]
-        | Exception _ -> []
+                item
+        | Exception _ -> ()
+  ]
 
 /// import.fs creates somewhat fake modules for nested members of types (so that
 /// types never contain other types)
@@ -4771,23 +4767,13 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           for rfinfo in rfinfos do
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
 
-          // e.g. <val-id>.<property-id>.<more> 
-          let fullTypeOfPinfo (pinfo: PropInfo) = 
-              let rty = pinfo.GetPropertyType(amap, m) 
-              let rty = 
-                  if pinfo.IsIndexer then 
-                      mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
-                  else
-                      rty 
-              rty      
-
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
               |> List.filter (fun pinfo -> pinfo.IsStatic = statics && IsPropInfoAccessible g amap m ad pinfo)
 
           for pinfo in pinfos do
-              yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+              yield! FullTypeOfPropInfo g amap m pinfo |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
 
           match TryFindAnonRecdFieldOfType g ty id with
           | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) ->
@@ -4826,6 +4812,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
                       |> List.filter (fun vref -> not vref.IsMember && not (IsValUnseen ad g m vref))
                       |> List.map Item.Value
+
              | Item.UnionCase _ ->
              // Collect up the accessible discriminated union cases in the module
                   yield!
@@ -4833,6 +4820,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
                       |> List.filter (fun ucref -> not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute ucref.TyconRef.Attribs))
                       |> List.map (fun x -> Item.UnionCase(GeneralizeUnionCaseRef x,  false))
+
              | Item.ActivePatternCase _ ->
              // Collect up the accessible active patterns in the module
                  yield!
@@ -4840,6 +4828,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       |> NameMap.range
                       |> List.filter (fun apref -> apref.ActivePatternVal |> IsValUnseen ad g m |> not)
                       |> List.map Item.ActivePatternCase
+
              | Item.ExnCase _ ->
              // Collect up the accessible F# exception declarations in the module
                  yield!

@@ -974,7 +974,7 @@ let noFrameworkFlag isFsc tcConfigB =
     CompilerOption
         ("noframework", tagNone,
          OptionUnit (fun () ->
-            tcConfigB.framework <- false
+            tcConfigB.implicitlyReferenceDotNetAssemblies <- false
             if isFsc then
                 tcConfigB.implicitlyResolveAssemblies <- false), None,
          Some (FSComp.SR.optsNoframework()))
@@ -1294,7 +1294,7 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
     CompilerOption
         ("compiling-fslib", tagNone,
          OptionUnit (fun () ->
-            tcConfigB.compilingFslib <- true
+            tcConfigB.compilingFSharpCore <- true
             tcConfigB.TurnWarningOff(rangeStartup, "42")),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
@@ -1323,17 +1323,17 @@ let deprecatedFlagsBoth tcConfigB =
     [
       CompilerOption
          ("light", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some true),
+          OptionUnit (fun () -> tcConfigB.indentationAwareSyntax <- Some true),
           Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)), None)
 
       CompilerOption
          ("indentation-syntax", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some true),
+          OptionUnit (fun () -> tcConfigB.indentationAwareSyntax <- Some true),
           Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)), None)
 
       CompilerOption
          ("no-indentation-syntax", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some false),
+          OptionUnit (fun () -> tcConfigB.indentationAwareSyntax <- Some false),
           Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None)
     ]
 
@@ -1660,8 +1660,8 @@ let mutable showTermFileCount = 0
 let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
-            let filename = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
+            let fileName = outfile + ".terms"
+            use f = FileSystem.OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else

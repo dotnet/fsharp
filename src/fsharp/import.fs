@@ -220,14 +220,22 @@ let rec ImportILType (env: ImportMap) m tinst ty =
 let rec CanImportILType (env: ImportMap) m ty =  
     match ty with
     | ILType.Void -> true
+
     | ILType.Array(_bounds, ety) -> CanImportILType env m ety
-    | ILType.Boxed  tspec | ILType.Value tspec ->
+
+    | ILType.Boxed  tspec
+    | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
         && tspec.GenericArgs |> List.forall (CanImportILType env m) 
+
     | ILType.Byref ety -> CanImportILType env m ety
+
     | ILType.Ptr ety  -> CanImportILType env m ety
+
     | ILType.FunctionPointer _ -> true
+
     | ILType.Modified(_, _, ety) -> CanImportILType env m ety
+
     | ILType.TypeVar _u16 -> true
 
 #if !NO_TYPEPROVIDERS
@@ -369,7 +377,6 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
         ImportTyconRefApp env tcref genericArgs nullness
 
-
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
      let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> nonNull<ProvidedType> mbase.DeclaringType), m), m)
@@ -379,50 +386,58 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
          match mbase.OfType<ProvidedMethodInfo>() with 
          | Some minfo when 
                     minfo.PUntaint((fun minfo -> minfo.IsGenericMethod|| (nonNull<ProvidedType> minfo.DeclaringType).IsGenericType), m) -> 
+
                 let declaringType = minfo.PApply((fun minfo -> nonNull<ProvidedType> minfo.DeclaringType), m)
+
                 let declaringGenericTypeDefn =  
                     if declaringType.PUntaint((fun t -> t.IsGenericType), m) then 
                         declaringType.PApply((fun t -> t.GetGenericTypeDefinition()), m)
                     else 
                         declaringType
+
                 let methods = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetMethods()), "GetMethods", m) 
                 let metadataToken = minfo.PUntaint((fun minfo -> minfo.MetadataToken), m)
                 let found = methods |> Array.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken), m) = metadataToken) 
                 match found with
-                |   Some found -> found.Coerce(m)
-                |   None -> 
-                        let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
-                        let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
-                        error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
+                | Some found -> found.Coerce(m)
+                | None -> 
+                    let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
+                    let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
+                    error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
          | Some cinfo when cinfo.PUntaint((fun x -> (nonNull<ProvidedType> x.DeclaringType).IsGenericType), m) -> 
                 let declaringType = cinfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m)
                 let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()), m)
+
                 // We have to find the uninstantiated formal signature corresponding to this instantiated constructor.
                 // Annoyingly System.Reflection doesn't give us a MetadataToken to compare on, so we have to look by doing
                 // the instantiation and comparing..
                 let found = 
                     let ctors = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetConstructors()), "GetConstructors", m) 
-                    let actualParameterTypes = 
+
+                    let actualParamTys = 
                         [ for p in cinfo.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
-                            yield ImportProvidedType env m (p.PApply((fun p -> p.ParameterType), m)) ]
+                            ImportProvidedType env m (p.PApply((fun p -> p.ParameterType), m)) ]
+
                     let actualGenericArgs = argsOfAppTy env.g (ImportProvidedType env m declaringType)
+
                     ctors |> Array.tryFind (fun ctor -> 
-                       let formalParameterTypesAfterInstantiation = 
+                       let formalParamTysAfterInst = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m))
                                 yield ImportILType env m actualGenericArgs ilFormalTy ]
-                       (formalParameterTypesAfterInstantiation, actualParameterTypes) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
+
+                       (formalParamTysAfterInst, actualParamTys) ||>  List.lengthsEqAndForall2 (typeEquiv env.g))
                      
                 match found with
-                |   Some found -> found.Coerce(m)
-                |   None -> 
+                | Some found -> found.Coerce(m)
+                | None -> 
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
                     error(Error(FSComp.SR.etIncorrectProvidedConstructor(DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 
-     let rty = 
+     let retTy = 
          match mbase.OfType<ProvidedMethodInfo>() with 
          |  Some minfo -> minfo.PApply((fun minfo -> minfo.ReturnType), m)
          |  None ->
@@ -437,11 +452,13 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
 
      let callingConv = (if mbase.PUntaint((fun x -> x.IsStatic), m) then ILCallingConv.Static else ILCallingConv.Instance)
 
-     let parameters = 
+     let ilParamTys = 
          [ for p in mbase.PApplyArray((fun x -> x.GetParameters()), "GetParameters", m) do
               yield ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType), m)) ]
 
-     mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name), m), genericArity, parameters, ImportProvidedTypeAsILType env m rty )
+     let ilRetTy = ImportProvidedTypeAsILType env m retTy
+
+     mkILMethRef (tref, callingConv, mbase.PUntaint((fun x -> x.Name), m), genericArity, ilParamTys, ilRetTy)
 #endif
 
 //-------------------------------------------------------------------------
@@ -615,7 +632,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 
@@ -641,14 +658,14 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
           ILScopeRef = ilScopeRef
           Stamp = newStamp()
           SourceCodeDirectory = sourceDir  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
-          FileName = filename
+          FileName = fileName
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
           TypeForwarders = forwarders
           XmlDocumentationInfo = 
-            match xmlDocInfoLoader, filename with
-            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename, ilModule)
-            | _ -> None
+              match xmlDocInfoLoader, fileName with
+              | Some xmlDocInfoLoader, Some fileName -> xmlDocInfoLoader.TryLoad(fileName)
+              | _ -> None
         }
                 
     CcuThunk.Create(nm, ccuData)
