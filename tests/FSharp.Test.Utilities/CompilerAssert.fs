@@ -395,8 +395,8 @@ module rec CompilerAssertHelpers =
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
 
         let checkEqual k a b =
-            if a <> b then
-                Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+           if a <> b then
+               Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -620,6 +620,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member Checker = checker
 
     static member DefaultProjectOptions = defaultProjectOptions
+
+    static member GenerateFsInputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+
+    static member GenerateDllOutputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -964,7 +970,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
