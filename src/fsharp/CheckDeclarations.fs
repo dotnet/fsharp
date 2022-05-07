@@ -38,7 +38,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 type cenv = TcFileState
@@ -317,7 +317,7 @@ let AddNonLocalCcu g amap scopem env assemblyName (ccu: CcuThunk, internalsVisib
         |> List.exists (fun visibleTo ->             
             try
                 System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
-            with e ->
+            with _ ->
                 warning(InvalidInternalsVisibleToAssemblyName(visibleTo, ccu.FileName))
                 false)
 
@@ -1061,14 +1061,14 @@ module IncrClassChecking =
                 
             | InMethod(isStatic, methodVal, topValInfo), _ -> 
                 //dprintfn "Rewriting application of %s to be call to method %s" v.LogicalName methodVal.LogicalName
-                let expr, exprty = AdjustValForExpectedArity g m (mkLocalValRef methodVal) NormalValUse topValInfo 
+                let expr, exprTy = AdjustValForExpectedArity g m (mkLocalValRef methodVal) NormalValUse topValInfo 
                 // Prepend the the type arguments for the class
                 let tyargs = tinst @ tyargs 
                 let thisArgs =
                     if isStatic then []
                     else Option.toList (Option.map (exprForVal m) thisValOpt)
                     
-                MakeApplicationAndBetaReduce g (expr, exprty, [tyargs], thisArgs, m) 
+                MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], thisArgs, m) 
 
         /// Make the elaborated expression that represents an assignment 
         /// to a "let mutable v = ..." class binding
@@ -1203,16 +1203,17 @@ module IncrClassChecking =
     /// <param name='memberBinds'></param>
     /// <param name='generalizedTyparsForRecursiveBlock'>Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings</param>
     /// <param name='safeStaticInitInfo'></param>
-    let MakeCtorForIncrClassConstructionPhase2C
-               (cenv: cenv, 
-                env: TcEnv,
-                ctorInfo: IncrClassCtorLhs,
-                inheritsExpr,
-                inheritsIsVisible,
-                decs: IncrClassConstructionBindingsPhase2C list, 
-                memberBinds: Binding list,
-                generalizedTyparsForRecursiveBlock, 
-                safeStaticInitInfo: SafeInitData) = 
+    let MakeCtorForIncrClassConstructionPhase2C(
+        cenv: cenv, 
+        env: TcEnv,
+        ctorInfo: IncrClassCtorLhs,
+        inheritsExpr,
+        inheritsIsVisible,
+        decs: IncrClassConstructionBindingsPhase2C list, 
+        memberBinds: Binding list,
+        generalizedTyparsForRecursiveBlock, 
+        safeStaticInitInfo: SafeInitData
+    ) = 
 
 
         let denv = env.DisplayEnv 
@@ -2581,7 +2582,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
       
       MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo envMutRec binds
 
-    with e -> errorRecovery e scopem; [], envMutRec
+    with exn -> errorRecovery exn scopem; [], envMutRec
 
 //-------------------------------------------------------------------------
 // Build augmentation declarations
@@ -3701,8 +3702,8 @@ module EstablishTypeDefinitionCores =
                 if not inSig then 
                     cenv.amap.assemblyLoader.RecordGeneratedTypeRoot (ProviderGeneratedType(ilOrigRootTypeRef, ilTgtRootTyRef, nested))
 
-        with e -> 
-            errorRecovery e rhsType.Range 
+        with exn -> 
+            errorRecovery exn rhsType.Range 
 #endif
 
     /// Establish any type abbreviations
@@ -3785,8 +3786,8 @@ module EstablishTypeDefinitionCores =
 
             | _ -> ()
         
-        with e -> 
-            errorRecovery e m
+        with exn -> 
+            errorRecovery exn m
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
     // and once after
@@ -3897,7 +3898,7 @@ module EstablishTypeDefinitionCores =
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
               
-           with e -> errorRecovery e m))
+           with exn -> errorRecovery exn m))
 
     /// Establish the fields, dispatch slots and union cases of a type
     let private TcTyconDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) envinner tpenv inSig (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
@@ -4257,8 +4258,8 @@ module EstablishTypeDefinitionCores =
             | _ -> ()         
                    
             (baseValOpt, safeInitInfo)
-        with e -> 
-            errorRecovery e m 
+        with exn -> 
+            errorRecovery exn m 
             None, NoSafeInitInfo
 
     /// Check that a set of type definitions is free of cycles in abbreviations
@@ -4467,18 +4468,20 @@ module EstablishTypeDefinitionCores =
 
     // Interlude between Phase1D and Phase1E - Check and publish the explicit constraints. 
     let TcMutRecDefns_CheckExplicitConstraints cenv tpenv m checkCxs envMutRecPrelim withEnvs = 
-            (envMutRecPrelim, withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
-               match origInfo, tyconOpt with 
-               | (typeDefCore, _, _), Some (tycon: Tycon) -> 
+        (envMutRecPrelim, withEnvs) ||> MutRecShapes.iterTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
+            match origInfo, tyconOpt with 
+            | (typeDefCore, _, _), Some (tycon: Tycon) -> 
                 let (MutRecDefnsPhase1DataForTycon(synTyconInfo, _, _, _, _, _)) = typeDefCore
                 let (SynComponentInfo(_, TyparsAndConstraints (_, cs1), cs2, _, _, _, _, _)) = synTyconInfo
                 let synTyconConstraints = cs1 @ cs2
                 let envForTycon = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envForDecls
                 let thisTyconRef = mkLocalTyconRef tycon
                 let envForTycon = MakeInnerEnvForTyconRef envForTycon thisTyconRef false 
-                try TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envForTycon tpenv synTyconConstraints |> ignore
-                with e -> errorRecovery e m
-               | _ -> ())
+                try
+                    TcTyparConstraints cenv NoNewTypars checkCxs ItemOccurence.UseInType envForTycon tpenv synTyconConstraints |> ignore
+                with exn ->
+                    errorRecovery exn m
+            | _ -> ())
 
 
     let TcMutRecDefns_Phase1 mkLetInfo (cenv: cenv) envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
@@ -5307,8 +5310,8 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
             return env
             
-    with e -> 
-        errorRecovery e endm 
+    with exn -> 
+        errorRecovery exn endm 
         return env
   }
 
@@ -5842,8 +5845,8 @@ let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
         try 
             AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible)
-        with e -> 
-            errorRecovery e scopem 
+        with exn -> 
+            errorRecovery exn scopem 
             [], env) 
 
 type ConditionalDefines = 
@@ -5893,7 +5896,8 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
             if not tp.IsSolved then 
                 if (tp.StaticReq <> TyparStaticReq.None) then
                     ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
-    with e -> errorRecovery e m
+    with exn ->
+        errorRecovery exn m
 
 let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
     if Option.isNone rootSigOpt then
@@ -5918,9 +5922,9 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
 let SolveInternalUnknowns g (cenv: cenv) denvAtEnd mexpr extraAttribs =
     let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-    unsolved |> List.iter (fun tp -> 
-            if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+    for tp in unsolved do
+        if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
+            ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp
 
 let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr =
     match rootSigOpt with 
@@ -5934,26 +5938,24 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
 
         // We want to show imperative type variables in any types in error messages at this late point 
         let denv = { denvAtEnd with showImperativeTyparAnnotations=true }
-        begin 
-            try 
+        try 
                 
-                // As typechecked the signature and implementation use different tycons etc. 
-                // Here we (a) check there are enough names, (b) match them up to build a renaming and   
-                // (c) check signature conformance up to this renaming. 
-                if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv cenv.infoReader (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
-                    raise (ReportedError None)
+            // As typechecked the signature and implementation use different tycons etc. 
+            // Here we (a) check there are enough names, (b) match them up to build a renaming and   
+            // (c) check signature conformance up to this renaming. 
+            if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv cenv.infoReader (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
+                raise (ReportedError None)
 
-                // Compute the remapping from implementation to signature
-                let remapInfo, _ = ComputeRemappingFromInferredSignatureToExplicitSignature g implFileTypePriorToSig sigFileType
+            // Compute the remapping from implementation to signature
+            let remapInfo, _ = ComputeRemappingFromInferredSignatureToExplicitSignature g implFileTypePriorToSig sigFileType
                      
-                let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
+            let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
                     
-                if not (SignatureConformance.Checker(g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModRef implFileSpecPriorToSig) sigFileType) then (
-                    // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
-                    raise (ReportedError None)
-                )
-            with e -> errorRecovery e m
-        end
+            if not (SignatureConformance.Checker(g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModRef implFileSpecPriorToSig) sigFileType) then
+                // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
+                raise (ReportedError None)
+        with exn ->
+            errorRecovery exn m
             
         ModuleOrNamespaceExprWithSig(sigFileType, mexpr, m)
 
@@ -5979,123 +5981,125 @@ let CheckOneImplFile
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile) =
 
- let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
- let infoReader = InfoReader(g, amap)
+    let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
+    let infoReader = InfoReader(g, amap)
 
- cancellable {
-    let cenv = 
-        cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
-            conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
-            tcSequenceExpressionEntry=TcSequenceExpressionEntry,
-            tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
-            tcComputationExpression=TcComputationExpression)    
+    cancellable {
+        let cenv = 
+            cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
+                conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+                tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+                tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
+                tcComputationExpression=TcComputationExpression)    
 
-    let envinner, mtypeAcc = MakeInitialEnv env 
+        let envinner, mtypeAcc = MakeInitialEnv env 
 
-    let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
-    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
+        let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
+        let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
 
-    let implFileTypePriorToSig = mtypeAcc.Value
+        let implFileTypePriorToSig = mtypeAcc.Value
 
-    let topAttrs = 
-        let mainMethodAttrs, others = topAttrs |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Method <> enum 0) 
-        let assemblyAttrs, others = others |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Assembly <> enum 0) 
-        // REVIEW: consider checking if '_others' is empty
-        let netModuleAttrs, _others = others |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Module <> enum 0)
-        { mainMethodAttrs = List.map snd mainMethodAttrs
-          netModuleAttrs = List.map snd netModuleAttrs
-          assemblyAttrs = List.map snd assemblyAttrs}
-    let denvAtEnd = envAtEnd.DisplayEnv
-    let m = qualNameOfFile.Range
+        let topAttrs = 
+            let mainMethodAttrs, others = topAttrs |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Method <> enum 0) 
+            let assemblyAttrs, others = others |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Assembly <> enum 0) 
+            // REVIEW: consider checking if '_others' is empty
+            let netModuleAttrs, _others = others |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Module <> enum 0)
+            { mainMethodAttrs = List.map snd mainMethodAttrs
+              netModuleAttrs = List.map snd netModuleAttrs
+              assemblyAttrs = List.map snd assemblyAttrs}
+
+        let denvAtEnd = envAtEnd.DisplayEnv
+
+        let m = qualNameOfFile.Range
     
-    // This is a fake module spec
-    let implFileSpecPriorToSig = wrapModuleOrNamespaceType qualNameOfFile.Id (compPathOfCcu topCcu) implFileTypePriorToSig
+        // This is a fake module spec
+        let implFileSpecPriorToSig = wrapModuleOrNamespaceType qualNameOfFile.Id (compPathOfCcu topCcu) implFileTypePriorToSig
 
-    let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
+        let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
     
-    // Run any additional checks registered to be run before applying defaults
-    do 
-      for check in cenv.css.GetPostInferenceChecksPreDefaults() do
-        try  
-            check()
-        with e -> 
-            errorRecovery e m
-
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-        ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)
-
-    // Check completion of all classes defined across this file. 
-    // NOTE: this is not a great technique if inner signatures are permitted to hide 
-    // virtual dispatch slots. 
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-        try implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd))
-        with e -> errorRecovery e m)
-
-    // Check the value restriction. Only checked if there is no signature.
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-      CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m)
-
-    // Solve unsolved internal type variables 
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-        SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs)
-
-    // Check the module matches the signature 
-    let implFileExprAfterSig = 
-      conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-        CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
-
-    do 
-      conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-         for check in cenv.css.GetPostInferenceChecksFinal() do
+        // Run any additional checks registered to be run before applying defaults
+        do 
+          for check in cenv.css.GetPostInferenceChecksPreDefaults() do
             try  
                 check()
-            with e -> 
-                errorRecovery e m)
-
-    // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
-    // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
-    // assigning nice names for inference variables.
-    let hasExplicitEntryPoint, anonRecdTypes = 
+            with exn -> 
+                errorRecovery exn m
 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+            ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)
 
-            try  
-                let reportErrors = not (checkForErrors())
-                let tcVal = LightweightTcValForUsingInBuildMethodCall g
-                PostTypeCheckSemanticChecks.CheckTopImpl 
-                   (g, cenv.amap, reportErrors, cenv.infoReader, 
-                    env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
-                    implFileExprAfterSig, extraAttribs, isLastCompiland, 
-                    isInternalTestSpanStackReferring)
+        // Check completion of all classes defined across this file. 
+        // NOTE: this is not a great technique if inner signatures are permitted to hide 
+        // virtual dispatch slots. 
+        conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+            try implFileTypePriorToSig |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope (cenv.infoReader, envAtEnd.NameEnv, cenv.tcSink, true, denvAtEnd))
+            with exn -> errorRecovery exn m)
 
-            with e -> 
-                errorRecovery e m
-                false, StampMap.Empty)
+        // Check the value restriction. Only checked if there is no signature.
+        conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+          CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m)
 
-    // Warn on version attributes.
-    topAttrs.assemblyAttrs |> List.iter (function
-       | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
-            let attrName = tref.CompiledRepresentationForNamedType.FullName
-            let isValid() =
-                try parseILVersion version |> ignore; true
-                with _ -> false
-            match attrName with
-            | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
-            | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
-                warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
-            | _ -> ()
-        | _ -> ())
+        // Solve unsolved internal type variables 
+        conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+            SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs)
 
-    let namedDebugPointsForInlinedCode =
-       cenv.namedDebugPointsForInlinedCode
-       |> Seq.toArray
-       |> Array.map (fun (KeyValue(k,v)) -> (k,v))
-       |> Map
+        // Check the module matches the signature 
+        let implFileExprAfterSig = 
+          conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+            CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
 
-    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+        do 
+          conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+             for check in cenv.css.GetPostInferenceChecksFinal() do
+                try  
+                    check()
+                with exn -> 
+                    errorRecovery exn m)
 
-    return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
- } 
+        // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
+        // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
+        // assigning nice names for inference variables.
+        let hasExplicitEntryPoint, anonRecdTypes = 
+
+            conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+
+                try  
+                    let reportErrors = not (checkForErrors())
+                    let tcVal = LightweightTcValForUsingInBuildMethodCall g
+                    PostTypeCheckSemanticChecks.CheckTopImpl 
+                       (g, cenv.amap, reportErrors, cenv.infoReader, 
+                        env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
+                        implFileExprAfterSig, extraAttribs, isLastCompiland, 
+                        isInternalTestSpanStackReferring)
+
+                with exn -> 
+                    errorRecovery exn m
+                    false, StampMap.Empty)
+
+        // Warn on version attributes.
+        topAttrs.assemblyAttrs |> List.iter (function
+           | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
+                let attrName = tref.CompiledRepresentationForNamedType.FullName
+                let isValid() =
+                    try parseILVersion version |> ignore; true
+                    with _ -> false
+                match attrName with
+                | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
+                | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
+                    warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
+                | _ -> ()
+            | _ -> ())
+
+        let namedDebugPointsForInlinedCode =
+           cenv.namedDebugPointsForInlinedCode
+           |> Seq.toArray
+           |> Array.map (fun (KeyValue(k,v)) -> (k,v))
+           |> Map
+
+        let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+
+        return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
+     } 
    
 
 
@@ -6119,7 +6123,7 @@ let CheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDe
     
     if not (checkForErrors()) then  
         try sigFileType |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv))
-        with e -> errorRecovery e qualNameOfFile.Range
+        with exn -> errorRecovery exn qualNameOfFile.Range
 
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
  }

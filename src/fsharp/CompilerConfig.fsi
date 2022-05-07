@@ -111,6 +111,7 @@ type CompilerTarget =
     | ConsoleExe
     | Dll
     | Module
+
     member IsExe: bool
 
 [<RequireQualifiedAccess>]
@@ -123,6 +124,7 @@ type VersionFlag =
     | VersionString of string
     | VersionFile of string
     | VersionNone
+
     member GetVersionInfo: implicitIncludeDir: string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir: string -> string
 

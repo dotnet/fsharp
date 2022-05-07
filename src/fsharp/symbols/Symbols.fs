@@ -2610,7 +2610,7 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         try attr.AttributeType.CompiledName = typeof<'T>.Name with _ -> false
 
 #if !NO_TYPEPROVIDERS    
-type FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
+type FSharpStaticParameter(cenv, sp: Tainted< TypeProviders.ProvidedParameterInfo >, m) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               protect <| fun () -> 

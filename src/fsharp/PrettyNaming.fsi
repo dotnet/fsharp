@@ -193,6 +193,7 @@ val internal IllegalCharactersInTypeAndNamespaceNames: char []
 
 type internal ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
+
     member ActiveTags: string list
     member ActiveTagsWithRanges: (string * range) list
     member IsTotal: bool

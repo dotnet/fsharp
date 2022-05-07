@@ -276,12 +276,12 @@ let IteratedAdjustArityOfLambdaBody g arities vsl body  =
 /// The required iterated function arity (List.length topValInfo) must be identical 
 /// to the iterated function arity of the input lambda (List.length vsl) 
 let IteratedAdjustArityOfLambda g amap topValInfo e =
-    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda g amap topValInfo (e, tyOfExpr g e)
+    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g amap topValInfo (e, tyOfExpr g e)
     let arities = topValInfo.AritiesOfArgs
     if arities.Length <> vsl.Length then 
         errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
     let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
-    tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty
+    tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy
 
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold

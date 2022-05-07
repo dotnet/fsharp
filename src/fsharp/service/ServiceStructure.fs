@@ -218,8 +218,8 @@ module Structure =
          //     Implementation File AST Traversal      //
         //============================================//
 
-        let rec parseExpr expression =
-            match expression with
+        let rec parseExpr expr =
+            match expr with
             | SynExpr.Upcast (e, _, _)
             | SynExpr.Downcast (e, _, _)
             | SynExpr.AddressOf (_, e, _, _)

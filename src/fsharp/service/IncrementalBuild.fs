@@ -789,9 +789,9 @@ module IncrementalBuilderHelpers =
                         | _ -> ()))
 #endif
                 return tcImports
-            with e ->
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
-                errorLogger.Warning e
+            with exn ->
+                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+                errorLogger.Warning exn
                 return frameworkTcImports
           }
 
@@ -899,8 +899,8 @@ module IncrementalBuilderHelpers =
                             match GetStrongNameSigner signingInfo with
                             | None -> None
                             | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
-                        with e ->
-                            errorRecoveryNoRange e
+                        with exn ->
+                            errorRecoveryNoRange exn
                             None
                     let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
                     let assemVerFromAttrib =
@@ -925,12 +925,12 @@ module IncrementalBuilderHelpers =
                             ProjectAssemblyDataResult.Unavailable true
                         else
                             ProjectAssemblyDataResult.Available (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
-                    with e ->
-                        errorRecoveryNoRange e
+                    with exn ->
+                        errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
                 ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
-            with e ->
-                errorRecoveryNoRange e
+            with exn ->
+                errorRecoveryNoRange exn
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
@@ -1644,8 +1644,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder
-          with e ->
-            errorRecoveryNoRange e
+          with exn ->
+            errorRecoveryNoRange exn
             return None
          }
 

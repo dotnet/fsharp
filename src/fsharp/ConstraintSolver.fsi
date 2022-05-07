@@ -163,32 +163,6 @@ exception ConstraintSolverNullnessWarningWithType of DisplayEnv * TType * Nullne
 exception ConstraintSolverNonNullnessWarningWithType of DisplayEnv * TType * NullnessInfo * range * range
 exception ConstraintSolverError of string * range * range
 
-exception ConstraintSolverInfiniteTypes of
-    displayEnv: DisplayEnv *
-    contextInfo: ContextInfo *
-    TType *
-    TType *
-    range *
-    range
-
-exception ConstraintSolverTypesNotInEqualityRelation of
-    displayEnv: DisplayEnv *
-    TType *
-    TType *
-    range *
-    range *
-    ContextInfo
-
-exception ConstraintSolverTypesNotInSubsumptionRelation of
-    displayEnv: DisplayEnv *
-    argTy: TType *
-    paramTy: TType *
-    callRange: range *
-    parameterRange: range
-
-exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
-exception ConstraintSolverError of string * range * range
-
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
 
 exception ErrorFromAddingTypeEquation of

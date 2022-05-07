@@ -233,8 +233,8 @@ module ScriptPreprocessClosure =
                 | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n)
             let source = reader.ReadToEnd()
             [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
-        with e ->
-            errorRecovery e m
+        with exn ->
+            errorRecovery exn m
             []
 
     let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn

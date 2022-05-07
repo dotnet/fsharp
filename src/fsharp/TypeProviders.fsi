@@ -2,14 +2,13 @@
 
 // Extension typing, validation of extension types, etc.
 
-module rec FSharp.Compiler.TypeProviders
+module internal rec FSharp.Compiler.TypeProviders
 
 #if !NO_TYPEPROVIDERS
 
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
-open Internal.Utilities.Library
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
@@ -28,19 +27,19 @@ val toolingCompatiblePaths: unit -> string list
 /// Carries information about the type provider resolution environment.
 type ResolutionEnvironment =
     { /// The folder from which an extension provider is resolving from. This is typically the project folder.
-        resolutionFolder: string
+      ResolutionFolder: string
 
-        /// Output file name
-        outputFile: string option
+      /// Output file name
+      OutputFile: string option
 
-        /// Whether or not the --showextensionresolution flag was supplied to the compiler.
-        showResolutionMessages: bool
+      /// Whether or not the --showextensionresolution flag was supplied to the compiler.
+      ShowResolutionMessages: bool
 
-        /// All referenced assemblies, including the type provider itself, and possibly other type providers.
-        referencedAssemblies: string []
+      /// All referenced assemblies, including the type provider itself, and possibly other type providers.
+      ReferencedAssemblies: string []
 
-        /// The folder for temporary files
-        temporaryFolder: string }
+      /// The folder for temporary files
+      TemporaryFolder: string }
 
 /// Find and instantiate the set of ITypeProvider components for the given assembly reference
 val GetTypeProvidersOfAssembly:
@@ -53,7 +52,7 @@ val GetTypeProvidersOfAssembly:
     systemRuntimeContainsType: (string -> bool) *
     systemRuntimeAssemblyVersion: Version *
     compilerToolPaths: string list *
-    range ->
+    m: range ->
         Tainted<ITypeProvider> list
 
 /// Given an extension type resolver, supply a human-readable name suitable for error messages.
@@ -84,8 +83,7 @@ type ProvidedTypeContext =
             ProvidedTypeContext
 
     member GetDictionaries:
-        unit ->
-            ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) >
+        unit -> ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) >
 
     /// Map the TyconRef objects, if any
     member RemapTyconRefs: (obj -> obj) -> ProvidedTypeContext
@@ -330,7 +328,7 @@ val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar [] ->
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
-    range * Tainted<ProvidedType> * expectedPath: string [] * expectedName: string -> unit
+    m: range * st: Tainted<ProvidedType> * expectedPath: string [] * expectedName: string -> unit
 
 /// Try to apply a provided type to the given static arguments. If successful also return a function
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
