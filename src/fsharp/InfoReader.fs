@@ -23,7 +23,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// Use the given function to select some of the member values from the members of an F# type

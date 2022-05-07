@@ -9,6 +9,7 @@ module internal rec FSharp.Compiler.TypeProviders
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
+open Internal.Utilities.Library
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text

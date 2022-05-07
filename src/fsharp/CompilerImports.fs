@@ -1617,7 +1617,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let ccuRawDataAndInfos =
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, fileName)
             |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) ->
-                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
+                let data = GetSignatureData (fileName, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
 
                 let optDatas = Map.ofList optDataReaders
 

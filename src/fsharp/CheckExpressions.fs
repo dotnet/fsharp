@@ -4490,7 +4490,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                 // wihout implying 'T is not null.  This is because it is legitimate to use this
                 // function to "collapse" null and obj-null-coming-from-option using such a function.
 
-                if g.compilingFslib && not (isTyparTy g innerTyC) then 
+                if g.compilingFSharpCore && not (isTyparTy g innerTyC) then 
                     AddCxTypeDefnNotSupportsNull env.DisplayEnv cenv.css m NoTrace innerTyC
 
                 innerTyCWithNull, tpenv

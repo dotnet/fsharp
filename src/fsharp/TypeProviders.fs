@@ -342,7 +342,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
             x.CustomAttributes 
             |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     interface IProvidedCustomAttributeProvider with 
         member _.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -540,7 +540,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
             attributes provider 
             |> Seq.tryFind (findAttrib  typeof<TypeProviderDefinitionLocationAttribute>)  
             |> Option.map (fun a -> 
-                let filePath = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "FilePath" (Arg (:? string as v)) -> Some v | _ -> None)) null
+                let filePath : string MaybeNull = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "FilePath" (Arg (:? string as v)) -> Some v | _ -> None)) null
                 let line = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Line" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 let column = defaultArg (a.NamedArguments |> Seq.tryPick (function Member "Column" (Arg (:? int as v)) -> Some v | _ -> None)) 0
                 (filePath, line, column))
@@ -561,7 +561,7 @@ type ProvidedCustomAttributeProvider (attributes :ITypeProvider -> seq<CustomAtt
 [<AllowNullLiteral>]
 #endif
 type ProvidedMemberInfo (x: MemberInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = x.Name
 
@@ -586,7 +586,7 @@ type ProvidedMemberInfo (x: MemberInfo, ctxt) =
 [<AllowNullLiteral>]
 #endif
 type ProvidedParameterInfo (x: ParameterInfo, ctxt) = 
-    let provide () = ProvidedCustomAttributeProvider (fun _provider -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
+    let provide () = ProvidedCustomAttributeProvider (fun _ -> x.CustomAttributes) :> IProvidedCustomAttributeProvider
 
     member _.Name = let nm = x.Name in match box nm with null -> "" | _ -> nm
 
@@ -1144,12 +1144,12 @@ let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, e
         let usedMembers: Tainted<ProvidedMemberInfo>[] = 
             // These are the members the compiler will actually use
             [| for x in TryTypeMemberArray(st, fullName, "GetMethods", m, fun st -> st.GetMethods()) -> x.Coerce m
-                for x in TryTypeMemberArray(st, fullName, "GetEvents", m, fun st -> st.GetEvents()) -> x.Coerce m
-                for x in TryTypeMemberArray(st, fullName, "GetFields", m, fun st -> st.GetFields()) -> x.Coerce m
-                for x in TryTypeMemberArray(st, fullName, "GetProperties", m, fun st -> st.GetProperties()) -> x.Coerce m
-                // These will be validated on-demand
-                //for x in TryTypeMemberArray(st, fullName, "GetNestedTypes", m, fun st -> st.GetNestedTypes bindingFlags) -> x.Coerce()
-                for x in TryTypeMemberArray(st, fullName, "GetConstructors", m, fun st -> st.GetConstructors()) -> x.Coerce m |]
+               for x in TryTypeMemberArray(st, fullName, "GetEvents", m, fun st -> st.GetEvents()) -> x.Coerce m
+               for x in TryTypeMemberArray(st, fullName, "GetFields", m, fun st -> st.GetFields()) -> x.Coerce m
+               for x in TryTypeMemberArray(st, fullName, "GetProperties", m, fun st -> st.GetProperties()) -> x.Coerce m
+               // These will be validated on-demand
+               //for x in TryTypeMemberArray(st, fullName, "GetNestedTypes", m, fun st -> st.GetNestedTypes bindingFlags) -> x.Coerce()
+               for x in TryTypeMemberArray(st, fullName, "GetConstructors", m, fun st -> st.GetConstructors()) -> x.Coerce m |]
         fullName, namespaceName, usedMembers       
 
     // We scrutinize namespaces for invalid characters on open, but this provides better diagnostics
