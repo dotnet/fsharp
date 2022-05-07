@@ -634,11 +634,18 @@ let _ = fun (p) -> ()
     VerifyNoCompletionList(fileContents, "let _ = fun (p")
 
 [<Test>]
-let ``Provide completion on lambda argument type hint``() =
+let ``No completion on lambda argument name2``() =
     let fileContents = """
-let _ = fun (p:i) -> ()
+let _ = fun (p: int) -> ()
 """
-    VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+    VerifyNoCompletionList(fileContents, "let _ = fun (p")
+
+[<Test>]
+let ``Completions on lambda argument type hint contain modules and types but not keywords or functions``() =
+    let fileContents = """
+let _ = fun (p:l) -> ()
+"""
+    VerifyCompletionList(fileContents, "let _ = fun (p:l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
 let ``Extensions.Bug5162``() =
