@@ -107,6 +107,26 @@ type SynExprLetOrUseBangTrivia =
     }
     static member Zero: SynExprLetOrUseBangTrivia
 
+/// Represents additional information for SynExpr.Match
+[<NoEquality; NoComparison>]
+type SynExprMatchTrivia =
+    {
+        /// The syntax range of the `match` keyword
+        MatchKeyword: range
+        /// The syntax range of the `with` keyword
+        WithKeyword: range
+    }
+
+/// Represents additional information for SynExpr.MatchBang
+[<NoEquality; NoComparison>]
+type SynExprMatchBangTrivia =
+    {
+        /// The syntax range of the `match!` keyword
+        MatchBangKeyword: range
+        /// The syntax range of the `with` keyword
+        WithKeyword: range
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =

@@ -5784,7 +5784,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
     
 
 //--------------------------------------------------------------------------
-// TypeCheckOneImplFile - Typecheck all the namespace fragments in a file.
+// CheckOneImplFile - Typecheck all the namespace fragments in a file.
 //-------------------------------------------------------------------------- 
 
 
@@ -5967,7 +5967,7 @@ let MakeInitialEnv env =
 
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
-let TypeCheckOneImplFile 
+let CheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
        (g, niceNameGen, amap,
         topCcu,
@@ -6101,7 +6101,7 @@ let TypeCheckOneImplFile
 
 
 /// Check an entire signature file
-let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+let CheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {     
     let cenv = 
         cenv.Create 

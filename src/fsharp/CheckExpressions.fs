@@ -5964,7 +5964,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
-    | SynExpr.Match (_mMatch, spMatch, synInputExpr, _mWith, synClauses, _m) ->
+    | SynExpr.Match (spMatch, synInputExpr, synClauses, _m, _trivia) ->
 
         let inputExpr, inputTy, tpenv =
             let env = { env with eIsControlFlow = false }

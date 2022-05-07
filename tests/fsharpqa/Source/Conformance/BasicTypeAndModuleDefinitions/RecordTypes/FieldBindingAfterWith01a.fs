@@ -20,3 +20,5 @@ let v2 = { r with a =
                     let x = 1
                     x + x;
                   }
+
+failwith "Oops!!"
