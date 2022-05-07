@@ -22,7 +22,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -58,7 +58,7 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
 
     let minfos =
         match metadataOfTy g metadataTy with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             let meths = 
@@ -145,7 +145,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
 
     let pinfos =
         match metadataOfTy g metadataTy with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             let matchingProps =
@@ -302,7 +302,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =
         let infos =
             match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
                 match optFilter with
@@ -327,7 +327,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty =
         let infos =
             match metadataOfTy g ty with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
                 match optFilter with
@@ -770,7 +770,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         let g = infoReader.g
         let amap = infoReader.amap 
         match metadataOfTy g metadataTy with 
-    #if !NO_EXTENSIONTYPING
+    #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do
@@ -1084,7 +1084,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
 
             Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
     | DefaultStructCtor _ -> None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> None
 #endif
 
@@ -1105,7 +1105,7 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
 let GetXmlDocSigOfProp infoReader m (pinfo: PropInfo) =
     let g = pinfo.TcGlobals
     match pinfo with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
 #endif
     | FSProp _ as fspinfo -> 

@@ -1245,7 +1245,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
         OptionUnit  (fun () -> tcConfigB.showTimes <- true),
         Some(InternalCommandLineOption("times", rangeCmdArgs)), None)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // "Display information about extension type resolution")
     CompilerOption
        ("showextensionresolution", tagNone,

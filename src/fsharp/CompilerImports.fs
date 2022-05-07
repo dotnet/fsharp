@@ -39,7 +39,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.BuildGraph
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 open FSharp.Core.CompilerServices
 #endif
@@ -241,7 +241,7 @@ let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode = Speculative | ReportErrors
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
@@ -294,7 +294,7 @@ type AssemblyResolution =
 type ImportedBinary =
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       ProviderGeneratedAssembly: System.Reflection.Assembly option
       IsProviderGenerated: bool
       ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap option
@@ -307,7 +307,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
@@ -893,7 +893,7 @@ type TcImportsSafeDisposal(tciLock: TcImportsLock, disposeActions: ResizeArray<u
                 GC.SuppressFinalize this
                 dispose ()
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // These are hacks in order to allow TcImports to be held as a weak reference inside a type provider.
 // The reason is due to older type providers compiled using an older TypeProviderSDK, that SDK used reflection on fields and properties to determine the contract.
 // The reflection code has now since been removed, see here: https://github.com/fsprojects/FSharp.TypeProviders.SDK/pull/305. But we still need to work on older type providers.
@@ -932,7 +932,7 @@ and TcImportsWeakHack (tciLock: TcImportsLock, tcImports: WeakReference<TcImport
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option, dependencyProviderOpt: DependencyProvider option)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                          as this
 #endif
        =
@@ -949,7 +949,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let disposeActions = ResizeArray()
     let disposeTypeProviderActions = ResizeArray()
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let mutable generatedTypeRoots = Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let tcImportsWeak = TcImportsWeakHack (tciLock, WeakReference<_> this)
 #endif
@@ -1018,7 +1018,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         CheckDisposed()
         dllTable
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member tcImports.Weak =
             CheckDisposed()
             tcImportsWeak
@@ -1039,7 +1039,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         RequireTcImportsLock(tcitok, dllInfos)
         RequireTcImportsLock(tcitok, dllTable)
         dllInfos <- dllInfos ++ dllInfo
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         tcImportsWeak.SetDllInfos dllInfos
 #endif
         dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable
@@ -1144,7 +1144,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | Some res -> res.FSharpViewOfMetadata.Deref.XmlDocumentationInfo
         | _ -> None
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly MaybeNull>) =
         match assembly with
         | Tainted.Null -> false,None
@@ -1248,7 +1248,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         RequireTcImportsLock(tcitok, disposeActions)
         disposeActions.Add action
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member private tcImports.AttachDisposeTypeProviderAction action =
         CheckDisposed()
         disposeTypeProviderActions.Add action
@@ -1327,7 +1327,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                  member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                  member _.GetProvidedAssemblyInfo (ctok, m, assembly) =
                      tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
 
@@ -1358,7 +1358,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         CheckDisposed()
         tcGlobals <- Some g
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity
             (typeProviderEnvironment,
              tcConfig: TcConfig,
@@ -1584,7 +1584,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
               ILScopeRef = ilScopeRef
               AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilModule
               AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilModule
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               IsProviderGenerated = false
               TypeProviders = []
 #endif
@@ -1592,7 +1592,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         tcImports.RegisterCcu ccuinfo
 
         let phase2 () =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList(), ccu.Contents, invalidateCcu, m)
 #endif
             [ResolvedImportedAssembly ccuinfo]
@@ -1600,7 +1600,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     member tcImports.PrepareToImportReferencedFSharpAssembly (ctok, m, filename, dllinfo: ImportedBinary) =
         CheckDisposed()
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         let tcConfig = tcConfigP.Get ctok
 #endif
         let ilModule = dllinfo.RawMetadata
@@ -1620,7 +1620,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 let minfo: PickledCcuInfo = data.RawData
                 let mspec = minfo.mspec
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 let invalidateCcu = Event<_>()
 #endif
 
@@ -1633,7 +1633,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       SourceCodeDirectory = codeDir (* note: in some cases we fix up this information later *)
                       IsFSharp=true
                       Contents = mspec
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                       InvalidateEvent=invalidateCcu.Publish
                       IsProviderGenerated = false
                       ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
@@ -1676,14 +1676,14 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes()
                       AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes()
                       FSharpOptimizationData=optdata
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                       IsProviderGenerated = false
                       TypeProviders = []
 #endif
                       ILScopeRef = ilScopeRef }
 
                 let phase2() =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                      match ilModule.TryGetILModuleDef() with
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
@@ -1709,7 +1709,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         RequireTcImportsLock(tcitok, ccuThunks)
                         ccuThunks.Add(ccuThunk, fixupThunk)
                 )
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
 #endif
             ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly
@@ -1755,7 +1755,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let dllinfo =
                 { RawMetadata=assemblyData
                   FileName=filename
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                   ProviderGeneratedAssembly=None
                   IsProviderGenerated=false
                   ProviderGeneratedStaticLinkMap = None
@@ -1826,7 +1826,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             if tryFile (assemblyName + ".dll") then ()
             else tryFile (assemblyName + ".exe") |> ignore
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName: string) : System.Reflection.Assembly option =
         // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
         match tcImports.TryFindDllInfo (ctok, range0, assemblyName, lookupOnly=true) with

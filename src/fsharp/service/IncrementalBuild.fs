@@ -760,7 +760,7 @@ module IncrementalBuilderHelpers =
           node {
             try
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
                     // When a CCU reports an invalidation, merge them together and just report a
                     // general "imports invalidated". This triggers a rebuild.
@@ -951,7 +951,7 @@ type IncrementalBuilderInitialState =
         fileChecked: Event<string>
         fileParsed: Event<string>
         projectChecked: Event<unit>
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         importsInvalidatedByTypeProvider: Event<unit>
 #endif
         allDependencies: string []
@@ -971,7 +971,7 @@ type IncrementalBuilderInitialState =
                             enablePartialTypeChecking,
                             beforeFileChecked: Event<string>,
                             fileChecked: Event<string>,
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                             importsInvalidatedByTypeProvider: Event<unit>,
 #endif
                             allDependencies,
@@ -992,14 +992,14 @@ type IncrementalBuilderInitialState =
                 fileChecked = fileChecked
                 fileParsed = Event<string>()
                 projectChecked = Event<unit>()
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 importsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider
 #endif
                 allDependencies = allDependencies
                 defaultTimeStamp = defaultTimeStamp
                 isImportsInvalidated = false
             }
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         importsInvalidatedByTypeProvider.Publish.Add(fun () -> initialState.isImportsInvalidated <- true)
 #endif
         initialState
@@ -1164,7 +1164,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     let fileNames = initialState.fileNames
     let beforeFileChecked = initialState.beforeFileChecked
     let fileChecked = initialState.fileChecked
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let importsInvalidatedByTypeProvider = initialState.importsInvalidatedByTypeProvider
 #endif
     let allDependencies = initialState.allDependencies
@@ -1236,7 +1236,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.ProjectChecked = projectChecked.Publish
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
@@ -1546,7 +1546,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let beforeFileChecked = Event<string>()
             let fileChecked = Event<string>()
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             let importsInvalidatedByTypeProvider = Event<unit>()
 #endif
 
@@ -1624,7 +1624,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     enablePartialTypeChecking,
                     beforeFileChecked,
                     fileChecked,
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                     importsInvalidatedByTypeProvider,
 #endif
                     allDependencies,

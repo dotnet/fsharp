@@ -2246,7 +2246,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     CheckAttribs cenv env rfield.FieldAttribs
 
 let CheckEntityDefn cenv env (tycon: Entity) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
   if not tycon.IsProvidedGeneratedTycon then
 #endif
     let g = cenv.g

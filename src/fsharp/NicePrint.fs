@@ -1507,7 +1507,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1626,7 +1626,7 @@ module TastDefinitionPrinting =
              r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
         | TAsmRepr _ 
         | TMeasureableRepr _ 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | TProvidedTypeRepr _
         | TProvidedNamespaceRepr _
 #endif
@@ -1840,7 +1840,7 @@ module TastDefinitionPrinting =
             |> List.map snd
 
         let nestedTypeLs =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
                 match tcref.TypeReprInfo with 

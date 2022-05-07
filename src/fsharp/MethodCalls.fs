@@ -28,7 +28,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -1023,7 +1023,7 @@ let MakeMethInfoCall amap m minfo minst args =
     | DefaultStructCtor(_, ty) -> 
        mkDefault (m, ty)
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
@@ -1037,7 +1037,7 @@ let MakeMethInfoCall amap m minfo minst args =
 
 #endif
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
@@ -1086,7 +1086,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     valUseFlags
 
         match minfo with 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         // By this time this is an erased method info, e.g. one returned from an expression
         // REVIEW: copied from tastops, which doesn't allow protected methods
         | ProvidedMeth (amap, providedMeth, _, _) -> 
@@ -1681,7 +1681,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
 //------------------------------------------------------------------------- 
 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 

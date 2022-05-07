@@ -1501,7 +1501,7 @@ val mkPrintfFormatTy: TcGlobals -> TType -> TType -> TType -> TType -> TType -> 
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
@@ -2170,7 +2170,7 @@ val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success
 val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif

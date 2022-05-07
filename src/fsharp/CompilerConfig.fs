@@ -26,7 +26,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
 #endif
 
@@ -242,7 +242,7 @@ type AssemblyReference =
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
@@ -251,7 +251,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
@@ -449,7 +449,7 @@ type TcConfigBuilder =
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
@@ -655,7 +655,7 @@ type TcConfigBuilder =
           showTimes = false
           showLoadedAssemblies = false
           continueAfterParseFailure = false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           showExtensionTypeMessages = false
 #endif
           pause = false
@@ -1044,7 +1044,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.showTimes = data.showTimes
     member x.showLoadedAssemblies = data.showLoadedAssemblies
     member x.continueAfterParseFailure = data.continueAfterParseFailure
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member x.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
     member x.pause = data.pause

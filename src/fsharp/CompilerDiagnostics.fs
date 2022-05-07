@@ -78,7 +78,7 @@ exception InternalCommandLineOption of string * range
 let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange e -> RangeFromException e
       | ExtensionTyping.ProvidedTypeResolution(m, _)
 #endif
@@ -211,7 +211,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e ->
           RangeFromException e.InnerException
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | :? TypeProviderError as e -> e.Range |> Some
 #endif
 
@@ -329,7 +329,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | UnresolvedConversionOperator _ -> 93
       // avoid 94-100 for safety
       | ObsoleteError _ -> 101
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange _
       | ExtensionTyping.ProvidedTypeResolution _ -> 103
 #endif
@@ -346,7 +346,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | ErrorWithSuggestions ((n, _), _, _, _) -> n
       | Failure _ -> 192
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
@@ -778,7 +778,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | ErrorFromAddingConstraint(_, e, _) ->
           OutputExceptionR os e
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       | ExtensionTyping.ProvidedTypeResolutionNoRange e
 
       | ExtensionTyping.ProvidedTypeResolution(_, e) ->
@@ -1871,7 +1871,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | {Exception = :? TypeProviderError as tpe} ->
             tpe.Iter (fun e ->
                 let newErr = {err with Exception = e}

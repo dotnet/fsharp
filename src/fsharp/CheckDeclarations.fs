@@ -37,7 +37,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -3513,7 +3513,7 @@ module EstablishTypeDefinitionCores =
         tycon.entity_tycon_repr <- repr
         attrs, getFinalAttrs
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
     let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
@@ -3739,7 +3739,7 @@ module EstablishTypeDefinitionCores =
             
             | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, m) ->
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               // Check we have not already decided that this is a generative provided type definition. If we have already done this (i.e. this is the second pass
               // for a generative provided type definition, then there is no more work to do).
               if (match tycon.entity_tycon_repr with TNoRepr -> true | _ -> false) then 

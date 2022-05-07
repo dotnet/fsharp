@@ -68,7 +68,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -1954,7 +1954,7 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
 /// Convert a MethInfo into the data we save in the TAST
 and MemberConstraintSolutionOfMethInfo css m minfo minst = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 #else
     // to prevent unused parameter warning
     ignore css
@@ -1971,7 +1971,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
         let g = amap.g
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here

@@ -4,7 +4,7 @@
 
 namespace rec FSharp.Compiler
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 open System
 open System.Collections.Concurrent
