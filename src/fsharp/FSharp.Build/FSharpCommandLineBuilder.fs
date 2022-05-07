@@ -48,7 +48,7 @@ type FSharpCommandLineBuilder () =
         // do not update "args", not used
         for item in filenames do
             let tmp = new CommandLineBuilder()
-            tmp.AppendSwitchUnquotedIfNotNull("", item.ItemSpec)  // we don't want to quote the filename, this is a way to get that
+            tmp.AppendSwitchUnquotedIfNotNull("", item.ItemSpec)  // we don't want to quote the file name, this is a way to get that
             let s = tmp.ToString()
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs

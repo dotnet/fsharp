@@ -277,13 +277,13 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
-and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, mf, argtys, retTy)) =
+and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, flags, argTys, retTy)) =
     let tysR = remapTypesAux tyenv tys
-    let argtysR = remapTypesAux tyenv argtys
+    let argTysR = remapTypesAux tyenv argTys
     let rtyR = Option.map (remapTypeAux tyenv) retTy
-    TraitWitnessInfo(tysR, nm, mf, argtysR, rtyR)
+    TraitWitnessInfo(tysR, nm, flags, argTysR, rtyR)
 
-and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, retTy, slnCell)) =
+and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
     let slnCell = 
         match slnCell.Value with 
         | None -> None
@@ -304,6 +304,11 @@ and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, retTy, slnCell)) =
                 | ClosedExprSln e -> 
                      ClosedExprSln e // no need to remap because it is a closed expression, referring only to external types
             Some sln
+    
+    let tysR = remapTypesAux tyenv tys
+    let argTysR = remapTypesAux tyenv argTys
+    let retTyR = Option.map (remapTypeAux tyenv) retTy
+
     // Note: we reallocate a new solution cell on every traversal of a trait constraint
     // This feels incorrect for trait constraints that are quantified: it seems we should have 
     // formal binders for trait constraints when they are quantified, just as
@@ -312,7 +317,9 @@ and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, retTy, slnCell)) =
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
     // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
-    TTrait(remapTypesAux tyenv tys, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) retTy, ref slnCell)
+    let newSlnCell = ref slnCell
+
+    TTrait(tysR, nm, flags, argTysR, retTyR, newSlnCell)
 
 and bindTypars tps tyargs tpinst =   
     match tps with 
@@ -427,8 +434,8 @@ let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
 // Basic equalities
 //---------------------------------------------------------------------------
 
-let tyconRefEq (g: TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingFslib g.fslibCcu tcref1 tcref2
-let valRefEq (g: TcGlobals) vref1 vref2 = primValRefEq g.compilingFslib g.fslibCcu vref1 vref2
+let tyconRefEq (g: TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingFSharpCore g.fslibCcu tcref1 tcref2
+let valRefEq (g: TcGlobals) vref1 vref2 = primValRefEq g.compilingFSharpCore g.fslibCcu vref1 vref2
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from units
@@ -988,22 +995,22 @@ type TypeEquivEnv with
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
-   let (TTrait(tys1, nm, mf1, argtys, retTy, _)) = traitInfo1
-   let (TTrait(tys2, nm2, mf2, argtys2, retTy2, _)) = traitInfo2
+   let (TTrait(tys1, nm, mf1, argTys, retTy, _)) = traitInfo1
+   let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _)) = traitInfo2
    mf1 = mf2 &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
-   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argTys argTys2
 
 and traitKeysAEquivAux erasureFlag g aenv witnessInfo1 witnessInfo2 =
-   let (TraitWitnessInfo(tys1, nm, mf1, argtys, retTy)) = witnessInfo1
-   let (TraitWitnessInfo(tys2, nm2, mf2, argtys2, retTy2)) = witnessInfo2
+   let (TraitWitnessInfo(tys1, nm, mf1, argTys, retTy)) = witnessInfo1
+   let (TraitWitnessInfo(tys2, nm2, mf2, argTys2, retTy2)) = witnessInfo2
    mf1 = mf2 &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
-   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argTys argTys2
 
 and returnTypesAEquivAux erasureFlag g aenv retTy retTy2 =
     match retTy, retTy2 with  
@@ -1729,9 +1736,9 @@ let reduceIteratedFunTy g ty args =
 let applyTyArgs g functy tyargs = 
     if isForallTy g functy then applyForallTy g functy tyargs else functy
 
-let applyTys g functy (tyargs, argtys) = 
+let applyTys g functy (tyargs, argTys) = 
     let afterTyappTy = applyTyArgs g functy tyargs
-    reduceIteratedFunTy g afterTyappTy argtys
+    reduceIteratedFunTy g afterTyappTy argTys
 
 let formalApplyTys g functy (tyargs, args) = 
     reduceIteratedFunTy g
@@ -1760,19 +1767,19 @@ type TraitWitnessInfos = TraitWitnessInfo list
 // A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     let nArgInfos = curriedArgInfos.Length
-    let argtys, retTy = stripFunTyN g nArgInfos tau
+    let argTys, retTy = stripFunTyN g nArgInfos tau
 
-    if nArgInfos <> argtys.Length then 
+    if nArgInfos <> argTys.Length then 
         error(Error(FSComp.SR.tastInvalidMemberSignature(), m))
 
-    let argtysl = 
-        (curriedArgInfos, argtys) ||> List.map2 (fun argInfos argty -> 
+    let argTysl = 
+        (curriedArgInfos, argTys) ||> List.map2 (fun argInfos argTy -> 
             match argInfos with 
             | [] -> [ (g.unit_ty, ValReprInfo.unnamedTopArg1) ]
-            | [argInfo] -> [ (argty, argInfo) ]
-            | _ -> List.zip (destRefTupleTy g argty) argInfos) 
+            | [argInfo] -> [ (argTy, argInfo) ]
+            | _ -> List.zip (destRefTupleTy g argTy) argInfos) 
 
-    argtysl, retTy
+    argTysl, retTy
 
 let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
     let tps, tau = (if isNil ntps then [], ty else tryDestForallTy g ty)
@@ -2280,15 +2287,15 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTrait opts (TTrait(tys, _, _, argtys, retTy, sln)) acc = 
+and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, sln)) acc = 
     Option.foldBack (accFreeInTraitSln opts) sln.Value
        (accFreeInTypes opts tys 
-         (accFreeInTypes opts argtys 
+         (accFreeInTypes opts argTys 
            (Option.foldBack (accFreeInType opts) retTy acc)))
 
-and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argtys, retTy)) acc = 
+and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argTys, retTy)) acc = 
        accFreeInTypes opts tys 
-         (accFreeInTypes opts argtys 
+         (accFreeInTypes opts argTys 
            (Option.foldBack (accFreeInType opts) retTy acc))
 
 and accFreeInTraitSln opts sln acc = 
@@ -2421,9 +2428,9 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argtys, retTy, _)) = 
+and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _)) = 
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
-    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argtys
+    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argTys
     let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc retTy
     acc
 
@@ -2712,8 +2719,8 @@ let prefixOfStaticReq s =
     | TyparStaticReq.None -> "'"
     | TyparStaticReq.HeadType -> " ^"
 
-let prefixOfRigidTypar (typar: Typar) =  
-  if (typar.Rigidity <> TyparRigidity.Rigid) then "_" else ""
+let prefixOfInferenceTypar (typar: Typar) =  
+  if typar.Rigidity <> TyparRigidity.Rigid then "_" else ""
 
 //---------------------------------------------------------------------------
 // Prettify: PrettyTyparNames/PrettifyTypes - make typar names human friendly
@@ -2982,7 +2989,7 @@ type DisplayEnv =
       showObsoleteMembers: bool
       showHiddenMembers: bool
       showTyparBinding: bool 
-      showImperativeTyparAnnotations: bool
+      showInferenceTyparAnnotations: bool
       suppressInlineKeyword: bool
       suppressMutableKeyword: bool
       showMemberContainers: bool
@@ -2990,7 +2997,7 @@ type DisplayEnv =
       useColonForReturnType: bool
       showAttributes: bool
       showOverrides: bool
-      showConstraintTyparAnnotations: bool
+      showStaticallyResolvedTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       showDocumentation: bool
@@ -3018,13 +3025,13 @@ type DisplayEnv =
         showObsoleteMembers = false
         showHiddenMembers = false
         showTyparBinding = false
-        showImperativeTyparAnnotations = false
+        showInferenceTyparAnnotations = false
         suppressInlineKeyword = true
         suppressMutableKeyword = false
         showMemberContainers = false
         showAttributes = false
         showOverrides = true
-        showConstraintTyparAnnotations = true
+        showStaticallyResolvedTyparAnnotations = true
         showDocumentation = false
         abbreviateAdditionalConstraints = false
         showTyparDefaultConstraints = false
@@ -3054,7 +3061,7 @@ type DisplayEnv =
     static member InitialForSigFileGeneration g =
         let denv =
             { DisplayEnv.Empty g with
-               showImperativeTyparAnnotations = true
+               showInferenceTyparAnnotations = true
                showHiddenMembers = true
                showObsoleteMembers = true
                showAttributes = true
@@ -3677,34 +3684,34 @@ let (|AttribBitwiseOrExpr|_|) g expr =
     // is defined. These get through type checking because enums implicitly support the '|||' operator through
     // the automatic resolution of undefined operators (see tc.fs, Item.ImplicitOp). This then compiles as an 
     // application of a lambda to two arguments. We recognize this pattern here
-    | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingFslib -> 
+    | Expr.App (Expr.Lambda _, _, _, [arg1;arg2], _) when g.compilingFSharpCore -> 
         Some(arg1, arg2)
     | _ -> None
 
 let isUncheckedDefaultOfValRef g vref = 
     valRefEq g vref g.unchecked_defaultof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "defaultof") 
+    || (g.compilingFSharpCore && vref.LogicalName = "defaultof") 
 
 let isTypeOfValRef g vref = 
     valRefEq g vref g.typeof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "typeof") 
+    || (g.compilingFSharpCore && vref.LogicalName = "typeof") 
 
 let isSizeOfValRef g vref = 
     valRefEq g vref g.sizeof_vref 
     // There is an internal version of typeof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "sizeof") 
+    || (g.compilingFSharpCore && vref.LogicalName = "sizeof") 
 
 let isNameOfValRef g vref =
     valRefEq g vref g.nameof_vref
     // There is an internal version of nameof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "nameof")
+    || (g.compilingFSharpCore && vref.LogicalName = "nameof")
 
 let isTypeDefOfValRef g vref = 
     valRefEq g vref g.typedefof_vref 
     // There is an internal version of typedefof defined in prim-types.fs that needs to be detected
-    || (g.compilingFslib && vref.LogicalName = "typedefof") 
+    || (g.compilingFSharpCore && vref.LogicalName = "typedefof") 
 
 let (|UncheckedDefaultOfExpr|_|) g expr = 
     match expr with 
@@ -3865,25 +3872,28 @@ module DebugPrint =
 #endif
 
     and auxTyparWrapL (env: SimplifyTypes.TypeSimplificationInfo) isAtomic (typar: Typar) =
-          let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
+
+          let tpText =
+              prefixOfStaticReq typar.StaticReq
+              + prefixOfInferenceTypar typar
+              + typar.DisplayName
+
+          let tpL = wordL (tagText tpText)
+
+          let varL = tpL |> stampL typar.Stamp 
+
           // There are several cases for pprinting of typar.
           // 
           //   'a - is multiple occurrence.
           //   #Type - inplace coercion constraint and singleton
           //   ('a :> Type) - inplace coercion constraint not singleton
           //   ('a.opM: S->T) - inplace operator constraint
-          let tpL =
-            wordL (tagText (prefixOfStaticReq typar.StaticReq
-                   + prefixOfRigidTypar typar
-                   + typar.DisplayName))
-          let varL = tpL |> stampL typar.Stamp 
-
           match Zmap.tryFind typar env.inplaceConstraints with
           | Some typarConstraintTy ->
               if Zset.contains typar env.singletons then
                 leftL (tagText "#") ^^ auxTyparConstraintTypL env typarConstraintTy
               else
-                (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy) |> wrap
+                (varL ^^ sepL (tagText ":>") ^^ auxTyparConstraintTypL env typarConstraintTy) |> bracketIfL isAtomic
           | _ -> varL
 
     and auxTypar2L env typar = auxTyparWrapL env false typar
@@ -3894,13 +3904,13 @@ module DebugPrint =
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-        let (TTrait(tys, nm, memFlags, argtys, retTy, _)) = ttrait 
+        let (TTrait(tys, nm, memFlags, argTys, retTy, _)) = ttrait 
         match global_g with
         | None -> wordL (tagText "<no global g>")
         | Some g -> 
             let retTy = GetFSharpViewOfReturnType g retTy
             let stat = layoutMemberFlags memFlags
-            let argsL = sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) argtys)
+            let argsL = sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) argTys)
             let resL = auxTypeL env retTy
             let methodTypeL = (argsL ^^ wordL (tagText "->")) ++ resL
             bracketL (stat ++ bracketL (sepListL (wordL (tagText "or")) (List.map (auxTypeAtomL env) tys)) ++ wordL (tagText "member") --- (wordL (tagText nm) ^^ wordL (tagText ":") -- methodTypeL))
@@ -4105,13 +4115,13 @@ module DebugPrint =
                 let adhocLs = adhoc |> List.map (fun vref -> valAtBindL g vref.Deref)
                 (wordL(tagText "with") @@-- aboveListL (iimplsLs @ adhocLs)) @@ wordL(tagText "end")
 
-        let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
+        let layoutUnionCaseArgTypes argTys = sepListL (wordL(tagText "*")) (List.map typeL argTys)
 
         let ucaseL prefixL (ucase: UnionCase) =
             let nmL = wordL (tagText ucase.DisplayName)
             match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
             | [] -> (prefixL ^^ nmL)
-            | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
+            | argTys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argTys
 
         let layoutUnionCases ucases =
             let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
@@ -4225,13 +4235,13 @@ module DebugPrint =
                     | None -> wordL(tagText "lam") ^^ formalsL ^^ rightL(tagText ".")
                     | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
                 (bindingL ++ exprL body) |> wrap
-            | Expr.TyLambda (_, argtyvs, body, _, _) -> 
-                ((wordL(tagText "LAM") ^^ spaceListL (List.map typarL argtyvs) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
-            | Expr.TyChoose (argtyvs, body, _) -> 
-                ((wordL(tagText "CHOOSE") ^^ spaceListL (List.map typarL argtyvs) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
-            | Expr.App (f, _, tys, argtys, _) -> 
+            | Expr.TyLambda (_, tps, body, _, _) -> 
+                ((wordL(tagText "LAM") ^^ spaceListL (List.map typarL tps) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
+            | Expr.TyChoose (tps, body, _) -> 
+                ((wordL(tagText "CHOOSE") ^^ spaceListL (List.map typarL tps) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
+            | Expr.App (f, _, tys, argTys, _) -> 
                 let flayout = atomL f
-                appL g flayout tys argtys |> wrap
+                appL g flayout tys argTys |> wrap
             | Expr.LetRec (binds, body, _, _) -> 
                 letRecL g binds (exprL body) |> wrap
             | Expr.Let (bind, body, _, _) -> 
@@ -4359,7 +4369,7 @@ module DebugPrint =
 
     and mexprL g x =
         match x with 
-        | ModuleOrNamespaceExprWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
+        | ModuleOrNamespaceContentsWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
 
     and mdefsL  g defs =
         wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
@@ -4371,7 +4381,7 @@ module DebugPrint =
         | TMDefDo(e, _) -> exprL g e
         | TMDefOpens _ -> wordL (tagText "open ... ")
         | TMDefs defs -> mdefsL g defs
-        | TMAbstract mexpr -> mexprL g mexpr
+        | TMWithSig mexpr -> mexprL g mexpr
 
     and mbindL g x =
        match x with
@@ -4450,7 +4460,7 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
     Construct.NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
 
-let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr = 
+let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
@@ -4622,7 +4632,7 @@ let rec accEntityRemapFromModuleOrNamespace msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accEntityRemapFromModuleOrNamespaceDefs msigty defs acc
-    | TMAbstract mexpr -> accEntityRemapFromModuleOrNamespaceType mexpr.Type msigty acc
+    | TMWithSig mexpr -> accEntityRemapFromModuleOrNamespaceType mexpr.Type msigty acc
 
 and accEntityRemapFromModuleOrNamespaceDefs msigty mdefs acc = 
     List.foldBack (accEntityRemapFromModuleOrNamespace msigty) mdefs acc
@@ -4645,7 +4655,7 @@ let rec accValRemapFromModuleOrNamespace g aenv msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accValRemapFromModuleOrNamespaceDefs g aenv msigty defs acc
-    | TMAbstract mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
+    | TMWithSig mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
 
 and accValRemapFromModuleOrNamespaceBind g aenv msigty x acc = 
     match x with 
@@ -4726,7 +4736,7 @@ let rec accImplHidingInfoAtAssemblyBoundary mdef acc =
                     accImplHidingInfoAtAssemblyBoundary def acc)
         acc
 
-    | TMAbstract mexpr -> 
+    | TMWithSig mexpr -> 
         accModuleOrNamespaceHidingInfoAtAssemblyBoundary mexpr.Type acc
 
     | TMDefOpens _openDecls ->  acc
@@ -5173,10 +5183,10 @@ and accFreeInOp opts op acc =
     | TOp.Reraise -> 
         accUsesRethrow true acc
 
-    | TOp.TraitCall (TTrait(tys, _, _, argtys, retTy, sln)) -> 
+    | TOp.TraitCall (TTrait(tys, _, _, argTys, retTy, sln)) -> 
         Option.foldBack (accFreeVarsInTraitSln opts) sln.Value
            (accFreeVarsInTys opts tys 
-             (accFreeVarsInTys opts argtys 
+             (accFreeVarsInTys opts argTys 
                (Option.foldBack (accFreeVarsInTy opts) retTy acc)))
 
     | TOp.LValueOp (_, vref) -> 
@@ -5226,7 +5236,7 @@ let rec accFreeInModuleOrNamespace opts mexpr acc =
     | TMDefDo(e, _) -> accFreeInExpr opts e acc
     | TMDefOpens _ -> acc
     | TMDefs defs -> accFreeInModuleOrNamespaces opts defs acc
-    | TMAbstract(ModuleOrNamespaceExprWithSig(_, mdef, _)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
+    | TMWithSig(ModuleOrNamespaceContentsWithSig(_, mdef, _)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
 
 and accFreeInModuleOrNamespaceBind opts mbind acc = 
     match mbind with 
@@ -5628,7 +5638,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
     
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
-          not (entityRefInThisAssembly ctxt.g.compilingFslib rfref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingFSharpCore rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
@@ -5637,7 +5647,7 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
           not (uref.FieldByIndex(cidx).IsMutable) && 
-          not (entityRefInThisAssembly ctxt.g.compilingFslib uref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingFSharpCore uref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
         let arg = remapExprImpl ctxt compgen tmenv arg 
@@ -6018,7 +6028,7 @@ and allEntitiesOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allEntitiesOfModDef def
-          | TMAbstract(ModuleOrNamespaceExprWithSig(mty, _, _)) -> 
+          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
               yield! allEntitiesOfModuleOrNamespaceTy mty }
 
 and allValsOfModDef mdef = 
@@ -6036,18 +6046,18 @@ and allValsOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allValsOfModDef def
-          | TMAbstract(ModuleOrNamespaceExprWithSig(mty, _, _)) -> 
+          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
               yield! allValsOfModuleOrNamespaceTy mty }
 
-and remapAndBindModuleOrNamespaceExprWithSig ctxt compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef ctxt compgen tmenv mdef
     let mty, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv mty
-    ModuleOrNamespaceExprWithSig(mty, mdef, m), tmenv
+    ModuleOrNamespaceContentsWithSig(mty, mdef, m), tmenv
 
-and remapModuleOrNamespaceExprWithSig ctxt compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef ctxt compgen tmenv mdef 
     let mty = remapModTy ctxt compgen tmenv mty 
-    ModuleOrNamespaceExprWithSig(mty, mdef, m)
+    ModuleOrNamespaceContentsWithSig(mty, mdef, m)
 
 and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
@@ -6086,9 +6096,9 @@ and remapAndRenameModDef ctxt compgen tmenv mdef =
     | TMDefs defs -> 
         let defs = remapAndRenameModDefs ctxt compgen tmenv defs
         TMDefs defs
-    | TMAbstract mexpr -> 
-        let mexpr = remapModuleOrNamespaceExprWithSig ctxt compgen tmenv mexpr
-        TMAbstract mexpr
+    | TMWithSig mexpr -> 
+        let mexpr = remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv mexpr
+        TMWithSig mexpr
 
 and remapAndRenameModBind ctxt compgen tmenv x = 
     match x with 
@@ -6102,7 +6112,7 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile ctxt compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModuleOrNamespaceExprWithSig ctxt compgen) tmenv mv
+    mapAccImplFile (remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen) tmenv mv
 
 // Entry points
 
@@ -6272,7 +6282,7 @@ let isExnDefinitelyMutable (_ecref: TyconRef) = true
 // with caution. Hence we are conservative and within FSharp.Core we don't treat list 
 // reads as if they were pure. 
 let isUnionCaseFieldMutable (g: TcGlobals) (ucref: UnionCaseRef) n = 
-    (g.compilingFslib && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
+    (g.compilingFSharpCore && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
     (ucref.FieldByIndex n).IsMutable
   
 let isExnFieldMutable ecref n = 
@@ -6311,7 +6321,7 @@ let mkRefTupledTy g tys = mkAnyTupledTy g tupInfoRef tys
 
 let mkRefTupledVarsTy g vs = mkRefTupledTy g (typesOfVals vs)
 
-let mkMethodTy g argtys retTy = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) retTy 
+let mkMethodTy g argTys retTy = mkIteratedFunTy g (List.map (mkRefTupledTy g) argTys) retTy 
 
 let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty], g.knownWithoutNull)
 
@@ -6322,15 +6332,15 @@ let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 //---------------------------------------------------------------------------
 
 let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
-    let (TraitWitnessInfo(_tys, _nm, _memFlags, argtys, _rty)) = traitInfo
-    let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
-    let argtysl = List.map List.singleton argtys
-    argtysl
+    let (TraitWitnessInfo(_tys, _nm, _memFlags, argTys, _rty)) = traitInfo
+    let argTys = if argTys.IsEmpty then [g.unit_ty] else argTys
+    let argTysl = List.map List.singleton argTys
+    argTysl
 
 let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let retTy = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
-    let argtysl = GenWitnessArgTys g traitInfo
-    mkMethodTy g argtysl retTy 
+    let argTysl = GenWitnessArgTys g traitInfo
+    mkMethodTy g argTysl retTy 
 
 let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
     if g.generateWitnesses then 
@@ -6696,7 +6706,7 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref: ValRef) mut =
     not vref.IsMutable &&
     not vref.IsMemberOrModuleBinding &&
     // Note: We can't add this:
-    //    || valRefInThisAssembly g.compilingFslib vref
+    //    || valRefInThisAssembly g.compilingFSharpCore vref
     // This is because we don't actually guarantee to generate static backing fields for all values like these, e.g. simple constants "let x = 1".  
     // We always generate a static property but there is no field to take an address of
     CanTakeAddressOf g m false vref.Type mut
@@ -6704,7 +6714,7 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref: ValRef) mut =
 let MustTakeAddressOfVal (g: TcGlobals) (vref: ValRef) = 
     vref.IsMutable &&
     // We can only take the address of mutable values in the same assembly
-    valRefInThisAssembly g.compilingFslib vref
+    valRefInThisAssembly g.compilingFSharpCore vref
 
 let MustTakeAddressOfByrefGet (g: TcGlobals) (vref: ValRef) = 
     isByrefTy g vref.Type && not (isInByrefTy g vref.Type)
@@ -6722,13 +6732,13 @@ let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) = MustTakeAddressOfRecdF
 
 let CanTakeAddressOfRecdFieldRef (g: TcGlobals) m (rfref: RecdFieldRef) tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
-    entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
+    entityRefInThisAssembly g.compilingFSharpCore rfref.TyconRef &&
     not rfref.RecdField.IsMutable &&
     CanTakeAddressOf g m false (actualTyOfRecdFieldRef rfref tinst) mut
 
 let CanTakeAddressOfUnionFieldRef (g: TcGlobals) m (uref: UnionCaseRef) cidx tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
-    entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
+    entityRefInThisAssembly g.compilingFSharpCore uref.TyconRef &&
     let rfref = uref.FieldByIndex cidx
     not rfref.IsMutable &&
     CanTakeAddressOf g m false (actualTyOfUnionFieldRef uref cidx tinst) mut
@@ -6911,7 +6921,7 @@ let mkUnionCaseFieldGetUnproven g (e, cref: UnionCaseRef, tinst, j, m) =
     let wrap, eR, _readonly, _writeonly = mkExprAddrOfExpr g cref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkUnionCaseFieldGetUnprovenViaExprAddr (eR, cref, tinst, j, m))
 
-let mkArray (argty, args, m) = Expr.Op (TOp.Array, [argty], args, m)
+let mkArray (argTy, args, m) = Expr.Op (TOp.Array, [argTy], args, m)
 
 //---------------------------------------------------------------------------
 // Compute fixups for letrec's.
@@ -6937,10 +6947,10 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
     let exprToFix = stripExpr exprToFix
     match exprToFix with 
     | Expr.Const _ -> ()
-    | Expr.Op (TOp.Tuple tupInfo, argtys, args, m) when not (evalTupInfoIsStruct tupInfo) ->
+    | Expr.Op (TOp.Tuple tupInfo, argTys, args, m) when not (evalTupInfoIsStruct tupInfo) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
-            (mkTupleFieldGet g (tupInfo, access, argtys, n, m), 
+            (mkTupleFieldGet g (tupInfo, access, argTys, n, m), 
             (fun e -> 
               // NICE: it would be better to do this check in the type checker 
               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeInConstructionOfTuple(), m))
@@ -6953,7 +6963,7 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
                let tcref = c.TyconRef
-               if not (c.FieldByIndex n).IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
+               if not (c.FieldByIndex n).IsMutable && not (entityRefInThisAssembly g.compilingFSharpCore tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName), m))
                mkUnionCaseFieldSet (access, c, tinst, n, e, m))))
 
@@ -6964,7 +6974,7 @@ let rec IterateRecursiveFixups g (selfv: Val option) rvs (access: Expr, set) exp
             (mkRecdFieldGetViaExprAddr (access, fref, tinst, m), 
              (fun e -> 
                // NICE: it would be better to do this check in the type checker 
-               if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
+               if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFSharpCore tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName), m))
                mkRecdFieldSetViaExprAddr (access, fref, tinst, e, m))) arg )
     | Expr.Val _
@@ -7050,15 +7060,15 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | Expr.Lambda (_lambdaId, _ctorThisValOpt, _baseValOpt, _argvs, body, _m, _rty) -> 
             exprF z body
 
-        | Expr.TyLambda (_lambdaId, _argtyvs, body, _m, _rty) -> 
+        | Expr.TyLambda (_lambdaId, _tps, body, _m, _rty) -> 
             exprF z body
 
         | Expr.TyChoose (_, body, _) -> 
             exprF z body
 
-        | Expr.App (f, _fty, _tys, argtys, _) -> 
+        | Expr.App (f, _fty, _tys, argTys, _) -> 
             let z = exprF z f
-            exprsF z argtys
+            exprsF z argTys
                 
         | Expr.LetRec (binds, body, _, _) -> 
             let z = valBindsF false z binds
@@ -7139,7 +7149,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
 
     and mexprF z x =
         match x with 
-        | ModuleOrNamespaceExprWithSig(_, def, _) -> mdefF z def
+        | ModuleOrNamespaceContentsWithSig(_, def, _) -> mdefF z def
 
     and mdefF z x = 
         match x with
@@ -7151,7 +7161,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | TMDefOpens _ -> z
         | TMDefDo(e, _) -> exprF z e
         | TMDefs defs -> List.fold mdefF z defs 
-        | TMAbstract x -> mexprF z x
+        | TMWithSig x -> mexprF z x
 
     and mbindF z x = 
         match x with 
@@ -8080,10 +8090,10 @@ let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delIn
 // Convert a use of a value to saturate to the given arity.
 //--------------------------------------------------------------------------- 
 
-let MakeArgsForTopArgs _g m argtysl tpenv =
-    argtysl |> List.mapi (fun i argtys -> 
-        argtys |> List.mapi (fun j (argty, argInfo: ArgReprInfo) -> 
-            let ty = instType tpenv argty
+let MakeArgsForTopArgs _g m argTysl tpenv =
+    argTysl |> List.mapi (fun i argTys -> 
+        argTys |> List.mapi (fun j (argTy, argInfo: ArgReprInfo) -> 
+            let ty = instType tpenv argTy
             let nm = 
                match argInfo.Name with 
                | None -> CompilerGeneratedName ("arg" + string i + string j)
@@ -8092,12 +8102,12 @@ let MakeArgsForTopArgs _g m argtysl tpenv =
 
 let AdjustValForExpectedArity g m (vref: ValRef) flags topValInfo =
 
-    let tps, argtysl, retTy, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
+    let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
     let tpsR = copyTypars tps
     let tyargsR = List.map mkTyparTy tpsR
     let tpenv = bindTypars tps tyargsR emptyTyparInst
     let rtyR = instType tpenv retTy
-    let vsl = MakeArgsForTopArgs g m argtysl tpenv
+    let vsl = MakeArgsForTopArgs g m argTysl tpenv
     let call = MakeApplicationAndBetaReduce g (Expr.Val (vref, flags, m), vref.Type, [tyargsR], (List.map (mkRefTupledVars g m) vsl), m)
     let tauexpr, tauty = 
         List.foldBack 
@@ -8194,9 +8204,9 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                 match stripExpr exprWithActualTy with 
                 | ExprValWithPossibleTypeInst(vref, _, _, _) when vref.ValReprInfo.IsSome -> 
 
-                    let _, argtysl, _, _ = GetTopValTypeInFSharpForm g vref.ValReprInfo.Value vref.Type expr.Range
-                    argtysl |> List.mapi (fun i argtys -> 
-                        argtys |> List.mapi (fun j (_, argInfo) -> 
+                    let _, argTysl, _, _ = GetTopValTypeInFSharpForm g vref.ValReprInfo.Value vref.Type expr.Range
+                    argTysl |> List.mapi (fun i argTys -> 
+                        argTys |> List.mapi (fun j (_, argInfo) -> 
                              match argInfo.Name with 
                              | None -> CompilerGeneratedName ("arg" + string i + string j)
                              | Some id -> id.idText))
@@ -9051,8 +9061,8 @@ let doesActivePatternHaveFreeTypars g (v: ValRef) =
     let vtps = v.Typars |> Zset.ofList typarOrder
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName), v.Range))
-    let argtys, resty = stripFunTy g vty
-    let argtps, restps= (freeInTypes CollectTypars argtys).FreeTypars, (freeInType CollectTypars resty).FreeTypars        
+    let argTys, resty = stripFunTy g vty
+    let argtps, restps= (freeInTypes CollectTypars argTys).FreeTypars, (freeInType CollectTypars resty).FreeTypars        
     // Error if an active pattern is generic in type variables that only occur in the result Choice<_, ...>.
     // Note: The test restricts to v.Typars since typars from the closure are considered fixed.
     not (Zset.isEmpty (Zset.inter (Zset.diff restps argtps) vtps)) 
@@ -9127,8 +9137,10 @@ and rewriteExprStructure env expr =
       Expr.Quote ((if env.RewriteQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
 
   | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
-      mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
-                  List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
+      let overridesR = List.map (rewriteObjExprOverride env) overrides
+      let basecallR = RewriteExpr env basecall
+      let iimplsR = List.map (rewriteObjExprInterfaceImpl env) iimpls
+      mkObjExpr(ty, basev, basecallR, overridesR, iimplsR, m)
 
   | Expr.Link eref -> 
       RewriteExpr env eref.Value
@@ -9142,12 +9154,12 @@ and rewriteExprStructure env expr =
       else Expr.Op (c, tyargs, argsR, m)
 
   | Expr.Lambda (_lambdaId, ctorThisValOpt, baseValOpt, argvs, body, m, bodyTy) -> 
-      let body = RewriteExpr env body
-      rebuildLambda m ctorThisValOpt baseValOpt argvs (body, bodyTy)
+      let bodyR = RewriteExpr env body
+      rebuildLambda m ctorThisValOpt baseValOpt argvs (bodyR, bodyTy)
 
-  | Expr.TyLambda (_lambdaId, argtyvs, body, m, bodyTy) -> 
-      let body = RewriteExpr env body
-      mkTypeLambda m argtyvs (body, bodyTy)
+  | Expr.TyLambda (_lambdaId, tps, body, m, bodyTy) -> 
+      let bodyR = RewriteExpr env body
+      mkTypeLambda m tps (bodyR, bodyTy)
 
   | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
       let dtreeR = RewriteDecisionTree env dtree
@@ -9155,9 +9167,9 @@ and rewriteExprStructure env expr =
       mkAndSimplifyMatch spBind exprm m ty dtreeR targetsR
 
   | Expr.LetRec (binds, e, m, _) ->
-      let binds = rewriteBinds env binds
+      let bindsR = rewriteBinds env binds
       let eR = RewriteExpr env e
-      Expr.LetRec (binds, eR, m, Construct.NewFreeVarsCache())
+      Expr.LetRec (bindsR, eR, m, Construct.NewFreeVarsCache())
 
   | Expr.Let _ -> failwith "unreachable - linear let"
 
@@ -9251,9 +9263,9 @@ and rewriteObjExprOverride env (TObjExprMethod(slotsig, attribs, tps, vs, e, m))
 and rewriteObjExprInterfaceImpl env (ty, overrides) = 
     (ty, List.map (rewriteObjExprOverride env) overrides)
     
-and rewriteModuleOrNamespaceExpr env x = 
+and rewriteModuleOrNamespaceContents env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(mty, def, m) -> ModuleOrNamespaceExprWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
+    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> ModuleOrNamespaceContentsWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
 
 and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef env) x
     
@@ -9264,7 +9276,7 @@ and rewriteModuleOrNamespaceDef env x =
     | TMDefDo(e, m) -> TMDefDo(RewriteExpr env e, m)
     | TMDefOpens _ -> x
     | TMDefs defs -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
-    | TMAbstract mexpr -> TMAbstract(rewriteModuleOrNamespaceExpr env mexpr)
+    | TMWithSig mexpr -> TMWithSig(rewriteModuleOrNamespaceContents env mexpr)
 
 and rewriteModuleOrNamespaceBinding env x = 
    match x with 
@@ -9273,7 +9285,7 @@ and rewriteModuleOrNamespaceBinding env x =
 
 and rewriteModuleOrNamespaceBindings env mbinds = List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
-and RewriteImplFile env mv = mapTImplFile (rewriteModuleOrNamespaceExpr env) mv
+and RewriteImplFile env mv = mapTImplFile (rewriteModuleOrNamespaceContents env) mv
 
 
 
@@ -9380,7 +9392,7 @@ type Entity with
 
     // Does a type have an override matching the given name and argument types? 
     // Used to detect the presence of 'Equals' and 'GetHashCode' in type checking 
-    member tycon.HasOverride g nm argtys = 
+    member tycon.HasOverride g nm argTys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
@@ -9391,11 +9403,11 @@ type Entity with
             let argInfos = ArgInfosOfMember g vref 
             match argInfos with
             | [argInfos] ->
-                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys &&  
+                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys &&  
                 membInfo.MemberFlags.IsOverrideOrExplicitImpl
             | _ -> false) 
     
-    member tycon.HasMember g nm argtys = 
+    member tycon.HasMember g nm argTys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
@@ -9405,14 +9417,14 @@ type Entity with
 
             let argInfos = ArgInfosOfMember g vref
             match argInfos with
-            | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys
+            | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argTys
             | _ -> false) 
 
 
 type EntityRef with 
     member tcref.HasInterface g ty = tcref.Deref.HasInterface g ty
-    member tcref.HasOverride g nm argtys = tcref.Deref.HasOverride g nm argtys
-    member tcref.HasMember g nm argtys = tcref.Deref.HasMember g nm argtys
+    member tcref.HasOverride g nm argTys = tcref.Deref.HasOverride g nm argTys
+    member tcref.HasMember g nm argTys = tcref.Deref.HasMember g nm argTys
 
 let mkFastForLoop g (spFor, spTo, m, idv: Val, start, dir, finish, body) =
     let dir = if dir then FSharpForLoopUp else FSharpForLoopDown 
@@ -9631,15 +9643,15 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref: ValRef) =
 //------------------------------------------------------------------------ 
 
 
-let rec mkCompiledTuple g isStruct (argtys, args, m) = 
-    let n = List.length argtys 
+let rec mkCompiledTuple g isStruct (argTys, args, m) = 
+    let n = List.length argTys 
     if n <= 0 then failwith "mkCompiledTuple"
-    elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argtys, args, m)
+    elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argTys, args, m)
     else
-        let argtysA, argtysB = List.splitAfter goodTupleFields argtys
+        let argTysA, argTysB = List.splitAfter goodTupleFields argTys
         let argsA, argsB = List.splitAfter goodTupleFields args
         let ty8, v8 = 
-            match argtysB, argsB with 
+            match argTysB, argsB with 
             | [ty8], [arg8] -> 
                 match ty8 with
                 // if it's already been nested or ended, pass it through
@@ -9650,12 +9662,12 @@ let rec mkCompiledTuple g isStruct (argtys, args, m) =
                     let v8enc = Expr.Op (TOp.Tuple (mkTupInfo isStruct), [ty8], [arg8], m) 
                     ty8enc, v8enc
             | _ -> 
-                let a, b, c, d = mkCompiledTuple g isStruct (argtysB, argsB, m)
+                let a, b, c, d = mkCompiledTuple g isStruct (argTysB, argsB, m)
                 let ty8plus = TType_app(a, b, g.knownWithoutNull)
                 let v8plus = Expr.Op (TOp.Tuple (mkTupInfo isStruct), b, c, d)
                 ty8plus, v8plus
-        let argtysAB = argtysA @ [ty8] 
-        (mkCompiledTupleTyconRef g isStruct (List.length argtysAB), argtysAB, argsA @ [v8], m)
+        let argTysAB = argTysA @ [ty8] 
+        (mkCompiledTupleTyconRef g isStruct (List.length argTysAB), argTysAB, argsA @ [v8], m)
 
 let mkILMethodSpecForTupleItem (_g: TcGlobals) (ty: ILType) n = 
     mkILNonGenericInstanceMethSpecInTy(ty, (if n < goodTupleFields then "get_Item"+(n+1).ToString() else "get_Rest"), [], mkILTyvarTy (uint16 n))

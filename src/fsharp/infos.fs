@@ -1067,7 +1067,7 @@ type MethInfo =
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
         match x with
-        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFslib vref
+        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> true
 #endif
@@ -2063,7 +2063,7 @@ type PropInfo =
     member x.HasDirectXmlComment =
         match x with
         | FSProp(g, _, Some vref, _)
-        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFslib vref
+        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> true
 #endif
