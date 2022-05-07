@@ -723,7 +723,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
             // The first argument is 'None' because we don't need XML comments when called from VS tokenizer
-            Lexer.singleLineComment (None, n, m, lexargs) skip lexbuf
+            Lexer.singleLineComment (None, n, m, m, lexargs) skip lexbuf
 
         | LexCont.StringInComment (ifdefs, stringNest, style, n, m) ->
             lexargs.ifdefStack <- ifdefs

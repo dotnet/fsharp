@@ -56,19 +56,20 @@ let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
 
 let mkRecdField lidwd = lidwd, true
 
-let mkSynDoBinding (vis, strict, expr, m) = 
+// Used for 'do expr' in a class.
+let mkSynDoBinding (vis, expr, m) = 
     match vis with
     | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
     | None -> ()
     SynBinding(None,
-             (if strict then SynBindingKind.Do else SynBindingKind.StandaloneExpression),
+             SynBindingKind.Do,
              false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
-             (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m),
+             SynPat.Const(SynConst.Unit, m),
              None, expr, m, DebugPointAtBinding.NoneAtDo,
              SynBindingTrivia.Zero)
 
-let mkSynDoDecl (e: SynExpr) = 
-    SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, e, e.Range)
+let mkSynExprDecl (e: SynExpr) = 
+    SynModuleDecl.Expr(e, e.Range)
 
 let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
 
@@ -614,8 +615,7 @@ interactiveExpr:
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
-        attrDecls @ [ mkSynDoDecl($3)] }
-
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
 /* A #directive interaction in F# Interactive */
 interactiveHash:      
@@ -1282,21 +1282,21 @@ moduleDefnsOrExpr:
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ mkSynDoDecl ($3) :: $5 }
+        attrDecls @ mkSynExprDecl $3 :: $5 }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
   | opt_attributes opt_declVisibility declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
   | moduleDefns 
       { $1 } 
@@ -1459,7 +1459,7 @@ namedModuleDefnBlock:
          // However in that case we do use type name lookup to make the resolution.
 
          match $2 with 
-         | [ SynModuleDecl.DoExpr (_, LongOrSingleIdent(false, LongIdentWithDots(path, _), None, _), _) ] -> 
+         | [ SynModuleDecl.Expr (LongOrSingleIdent(false, LongIdentWithDots(path, _), None, _), _) ] -> 
              Choice1Of2  path
          | _ -> 
              Choice2Of2 $2 
@@ -2793,7 +2793,7 @@ doBinding:
         let mWhole = unionRanges mDoKwd $2.Range
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, true, $2, mWhole)]), mWhole) }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, mWhole)]), mWhole) }
 
 
 /* A 'let ....' binding in the #light syntax */
@@ -2834,7 +2834,7 @@ hardwhiteDoBinding:
         let seqPt = DebugPointAtBinding.NoneAtDo 
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, true, $2, bindingSetRange)]), bindingSetRange), $2 }
+        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, bindingSetRange)]), bindingSetRange), $2 }
 
 
 /* The bindings in a class type definition */

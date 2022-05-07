@@ -1778,7 +1778,7 @@ type internal FsiDynamicCompiler
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m)
         let isLastCompiland = true
         let isExe = false
-        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = [] }))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
         let isIncrementalFragment = true
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState
@@ -1829,13 +1829,13 @@ type internal FsiDynamicCompiler
         [defA]
 
     // Construct an invisible call to Debugger.Break(), in the specified range
-    member _.CreateDebuggerBreak (m : range) =
+    member _.CreateDebuggerBreak (m: range) =
         let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
         let dots = List.replicate (breakPath.Length - 1) m
         let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
         let args = SynExpr.Const (SynConst.Unit, m)
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
-        SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, breakStatement, m)
+        SynModuleDecl.Expr(breakStatement, m)
 
     member _.EvalRequireReference (ctok, istate, m, path) =
         if FileSystem.IsInvalidPathShim(path) then
@@ -2609,7 +2609,7 @@ type internal FsiInteractionProcessor
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 istate,Completed None
 
-            | ParsedScriptInteraction.Definitions ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
+            | ParsedScriptInteraction.Definitions ([SynModuleDecl.Expr(expr, _)], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
 
@@ -2715,7 +2715,6 @@ type internal FsiInteractionProcessor
                 let isBreakable def =
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
-                    | SynModuleDecl.DoExpr (DebugPointAtBinding.Yes _, _, _)
                     | SynModuleDecl.Let (bindings=SynBinding(debugPoint=DebugPointAtBinding.Yes _) :: _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
@@ -2742,7 +2741,7 @@ type internal FsiInteractionProcessor
                     | [_] -> defsA
                     | _ ->
                         match List.rev defsA with
-                        | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
+                        | SynModuleDecl.Expr(expr, _) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding expr)
                         | _ -> defsA
 
                 Some (ParsedScriptInteraction.Definitions(defsA,m)),Some (ParsedScriptInteraction.Definitions(defsB,m)),istate
