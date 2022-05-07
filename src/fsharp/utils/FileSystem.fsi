@@ -13,19 +13,19 @@ exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255
-    val get: byte[] -> int -> int
+    val get: byte [] -> int -> int
 
-    val zeroCreate: int -> byte[]
+    val zeroCreate: int -> byte []
 
     /// each int must be 0 <= x <= 255
-    val ofInt32Array: int[] ->  byte[]
+    val ofInt32Array: int [] -> byte []
 
     /// each int will be 0 <= x <= 255
-    val blit: byte[] -> int -> byte[] -> int -> int -> unit
+    val blit: byte [] -> int -> byte [] -> int -> int -> unit
 
-    val stringAsUnicodeNullTerminated: string -> byte[]
+    val stringAsUnicodeNullTerminated: string -> byte []
 
-    val stringAsUtf8NullTerminated: string -> byte[]
+    val stringAsUtf8NullTerminated: string -> byte []
 
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
@@ -36,9 +36,9 @@ type public ByteMemory =
 
     abstract Length: int
 
-    abstract ReadAllBytes: unit -> byte[]
+    abstract ReadAllBytes: unit -> byte []
 
-    abstract ReadBytes: pos: int * count: int -> byte[]
+    abstract ReadBytes: pos: int * count: int -> byte []
 
     abstract ReadInt32: pos: int -> int
 
@@ -50,9 +50,9 @@ type public ByteMemory =
 
     abstract CopyTo: Stream -> unit
 
-    abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
+    abstract Copy: srcOffset: int * dest: byte [] * destOffset: int * count: int -> unit
 
-    abstract ToArray: unit -> byte[]
+    abstract ToArray: unit -> byte []
 
     /// Get a stream representation of the backing memory.
     /// Disposing this will not free up any of the backing memory.
@@ -63,7 +63,7 @@ type public ByteMemory =
     /// Stream cannot be written to.
     abstract AsReadOnlyStream: unit -> Stream
 
-[<Struct;NoEquality;NoComparison>]
+[<Struct; NoEquality; NoComparison>]
 type internal ReadOnlyByteMemory =
 
     new: ByteMemory -> ReadOnlyByteMemory
@@ -72,9 +72,9 @@ type internal ReadOnlyByteMemory =
 
     member Length: int
 
-    member ReadAllBytes: unit -> byte[]
+    member ReadAllBytes: unit -> byte []
 
-    member ReadBytes: pos: int * count: int -> byte[]
+    member ReadBytes: pos: int * count: int -> byte []
 
     member ReadInt32: pos: int -> int
 
@@ -86,9 +86,9 @@ type internal ReadOnlyByteMemory =
 
     member CopyTo: Stream -> unit
 
-    member Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
+    member Copy: srcOffset: int * dest: byte [] * destOffset: int * count: int -> unit
 
-    member ToArray: unit -> byte[]
+    member ToArray: unit -> byte []
 
     member AsStream: unit -> Stream
 
@@ -96,10 +96,10 @@ type internal ReadOnlyByteMemory =
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
 
-        static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+        static member TryFromByteMemory: bytes: ReadOnlyByteMemory -> MemoryMappedFile option
 
-        static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
-    
+        static member TryFromMemory: bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
+
 /// Filesystem helpers
 module internal FileSystemUtils =
     val checkPathForIllegalChars: (string -> unit)
@@ -133,10 +133,10 @@ module internal FileSystemUtils =
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
-    abstract AssemblyLoad: assemblyName:AssemblyName -> Assembly
+    abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
 
     /// Used to load type providers and located assemblies in F# Interactive
-    abstract AssemblyLoadFrom: fileName:string -> Assembly
+    abstract AssemblyLoadFrom: fileName: string -> Assembly
 
 /// Default implementation for IAssemblyLoader
 type DefaultAssemblyLoader =
@@ -148,17 +148,18 @@ type public IFileSystem =
 
     // Assembly loader.
     abstract AssemblyLoader: IAssemblyLoader
-    
+
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
     /// Open the file for writing. Returns a Stream.
-    abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    abstract OpenFileForWriteShim:
+        filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
     /// Take in a file name with an absolute path, and return the same file name
     /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt)
     /// and '..' portions
-    abstract GetFullPathShim: fileName:string -> string
+    abstract GetFullPathShim: fileName: string -> string
 
     /// Take in a directory, filename, and return canonicalized path to the file name in directory.
     /// If file name path is rooted, ignores directory and returns file name path.
@@ -166,13 +167,13 @@ type public IFileSystem =
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
 
     /// A shim over Path.IsPathRooted
-    abstract IsPathRootedShim: path:string -> bool
+    abstract IsPathRootedShim: path: string -> bool
 
     /// Removes relative parts from any full paths
     abstract NormalizePathShim: path: string -> string
 
     /// A shim over Path.IsInvalidPath
-    abstract IsInvalidPathShim: path:string -> bool
+    abstract IsInvalidPathShim: path: string -> bool
 
     /// A shim over Path.GetTempPath
     abstract GetTempPathShim: unit -> string
@@ -181,7 +182,7 @@ type public IFileSystem =
     abstract GetDirectoryNameShim: path: string -> string
 
     /// Utc time of the last modification
-    abstract GetLastWriteTimeShim: fileName:string -> DateTime
+    abstract GetLastWriteTimeShim: fileName: string -> DateTime
 
     // Utc time of creation
     abstract GetCreationTimeShim: path: string -> DateTime
@@ -212,7 +213,7 @@ type public IFileSystem =
     abstract EnumerateDirectoriesShim: path: string -> string seq
 
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
-    abstract IsStableFileHeuristic: fileName:string -> bool
+    abstract IsStableFileHeuristic: fileName: string -> bool
 
 
 /// Represents a default (memory-mapped) implementation of the file system
@@ -221,84 +222,87 @@ type DefaultFileSystem =
     new: unit -> DefaultFileSystem
     abstract AssemblyLoader: IAssemblyLoader
     override AssemblyLoader: IAssemblyLoader
-    
+
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     override OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
-    
-    abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
-    override OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
-    
+
+    abstract OpenFileForWriteShim:
+        filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    override OpenFileForWriteShim:
+        filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+
     abstract GetFullPathShim: fileName: string -> string
     override GetFullPathShim: fileName: string -> string
-    
+
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     override GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
-    
+
     abstract IsPathRootedShim: path: string -> bool
     override IsPathRootedShim: path: string -> bool
-    
+
     abstract NormalizePathShim: path: string -> string
     override NormalizePathShim: path: string -> string
-    
+
     abstract IsInvalidPathShim: path: string -> bool
     override IsInvalidPathShim: path: string -> bool
-    
+
     abstract GetTempPathShim: unit -> string
     override GetTempPathShim: unit -> string
-    
+
     abstract GetDirectoryNameShim: path: string -> string
     override GetDirectoryNameShim: path: string -> string
-    
+
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
     override GetLastWriteTimeShim: fileName: string -> DateTime
-    
+
     abstract GetCreationTimeShim: path: string -> DateTime
     override GetCreationTimeShim: path: string -> DateTime
-    
+
     abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
     override CopyShim: src: string * dest: string * overwrite: bool -> unit
-    
+
     abstract FileExistsShim: fileName: string -> bool
     override FileExistsShim: fileName: string -> bool
-    
+
     abstract FileDeleteShim: fileName: string -> unit
     override FileDeleteShim: fileName: string -> unit
-    
+
     abstract DirectoryCreateShim: path: string -> string
     override DirectoryCreateShim: path: string -> string
-    
+
     abstract DirectoryExistsShim: path: string -> bool
     override DirectoryExistsShim: path: string -> bool
-    
+
     abstract DirectoryDeleteShim: path: string -> unit
     override DirectoryDeleteShim: path: string -> unit
-    
+
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
     override EnumerateFilesShim: path: string * pattern: string -> string seq
-    
+
     abstract EnumerateDirectoriesShim: path: string -> string seq
     override EnumerateDirectoriesShim: path: string -> string seq
-    
+
     abstract IsStableFileHeuristic: fileName: string -> bool
     override IsStableFileHeuristic: fileName: string -> bool
-    
+
     interface IFileSystem
 
 [<AutoOpen>]
 module public StreamExtensions =
 
     type System.IO.Stream with
-        member GetWriter : ?encoding: Encoding -> TextWriter
-        member WriteAllLines : contents: string seq * ?encoding: Encoding -> unit
-        member Write<'a> : data:'a -> unit
-        member GetReader : codePage: int option * ?retryLocked: bool ->  StreamReader
-        member ReadBytes : start: int * len: int -> byte[]
-        member ReadAllBytes : unit -> byte[]
-        member ReadAllText : ?encoding: Encoding -> string
-        member ReadLines : ?encoding: Encoding -> string seq
-        member ReadAllLines : ?encoding: Encoding -> string array
-        member WriteAllText : text: string -> unit
-        member AsByteMemory : unit -> ByteMemory
+
+        member GetWriter: ?encoding: Encoding -> TextWriter
+        member WriteAllLines: contents: string seq * ?encoding: Encoding -> unit
+        member Write<'a> : data: 'a -> unit
+        member GetReader: codePage: int option * ?retryLocked: bool -> StreamReader
+        member ReadBytes: start: int * len: int -> byte []
+        member ReadAllBytes: unit -> byte []
+        member ReadAllText: ?encoding: Encoding -> string
+        member ReadLines: ?encoding: Encoding -> string seq
+        member ReadAllLines: ?encoding: Encoding -> string array
+        member WriteAllText: text: string -> unit
+        member AsByteMemory: unit -> ByteMemory
 
 [<AutoOpen>]
 module public FileSystemAutoOpens =
@@ -320,22 +324,22 @@ type internal ByteMemory with
     static member FromUnsafePointer: addr: nativeint * length: int * holder: obj -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
-    static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
+    static member FromArray: bytes: byte [] * offset: int * length: int -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array.
-    static member FromArray: bytes: byte[] -> ByteMemory
+    static member FromArray: bytes: byte [] -> ByteMemory
 
 [<Sealed>]
 type internal ByteStream =
-    member ReadByte : unit -> byte
-    member ReadBytes : int -> ReadOnlyByteMemory
-    member ReadUtf8String : int -> string
-    member Position : int
-    static member FromBytes : ReadOnlyByteMemory * start:int * length:int -> ByteStream
+    member ReadByte: unit -> byte
+    member ReadBytes: int -> ReadOnlyByteMemory
+    member ReadUtf8String: int -> string
+    member Position: int
+    static member FromBytes: ReadOnlyByteMemory * start: int * length: int -> ByteStream
 
 #if LAZY_UNPICKLE
-    member CloneAndSeek : int -> ByteStream
-    member Skip : int -> unit
+    member CloneAndSeek: int -> ByteStream
+    member Skip: int -> unit
 #endif
 
 /// Imperative buffers and streams of byte[]
@@ -345,63 +349,63 @@ type internal ByteBuffer =
     interface IDisposable
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member AsMemory : unit -> ReadOnlyMemory<byte>
+    member AsMemory: unit -> ReadOnlyMemory<byte>
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitIntAsByte : int -> unit
+    member EmitIntAsByte: int -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitIntsAsBytes : int[] -> unit
+    member EmitIntsAsBytes: int [] -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitByte : byte -> unit
+    member EmitByte: byte -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitBytes : byte[] -> unit
+    member EmitBytes: byte [] -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitMemory : ReadOnlyMemory<byte> -> unit
+    member EmitMemory: ReadOnlyMemory<byte> -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitByteMemory : ReadOnlyByteMemory -> unit
+    member EmitByteMemory: ReadOnlyByteMemory -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitInt32 : int32 -> unit
+    member EmitInt32: int32 -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitInt64 : int64 -> unit
+    member EmitInt64: int64 -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member FixupInt32 : pos: int -> value: int32 -> unit
+    member FixupInt32: pos: int -> value: int32 -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitInt32AsUInt16 : int32 -> unit
+    member EmitInt32AsUInt16: int32 -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitBoolAsByte : bool -> unit
+    member EmitBoolAsByte: bool -> unit
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member EmitUInt16 : uint16 -> unit
+    member EmitUInt16: uint16 -> unit
 
-    member Position : int
-    static member Create : capacity: int * ?useArrayPool: bool -> ByteBuffer
+    member Position: int
+    static member Create: capacity: int * ?useArrayPool: bool -> ByteBuffer
 
 [<Sealed>]
 type internal ByteStorage =
 
-    member GetByteMemory : unit -> ReadOnlyByteMemory
+    member GetByteMemory: unit -> ReadOnlyByteMemory
 
     /// Creates a ByteStorage whose backing bytes are the given ByteMemory. Does not make a copy.
-    static member FromByteMemory : ReadOnlyByteMemory -> ByteStorage
+    static member FromByteMemory: ReadOnlyByteMemory -> ByteStorage
 
     /// Creates a ByteStorage whose backing bytes are the given byte array. Does not make a copy.
-    static member FromByteArray : byte [] -> ByteStorage
+    static member FromByteArray: byte [] -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given ByteMemory.
-    static member FromByteMemoryAndCopy : ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
+    static member FromByteMemoryAndCopy: ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given Memory<byte>.
-    static member FromMemoryAndCopy : ReadOnlyMemory<byte> * useBackingMemoryMappedFile: bool -> ByteStorage
+    static member FromMemoryAndCopy: ReadOnlyMemory<byte> * useBackingMemoryMappedFile: bool -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given byte array.
-    static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage
+    static member FromByteArrayAndCopy: byte [] * useBackingMemoryMappedFile: bool -> ByteStorage
