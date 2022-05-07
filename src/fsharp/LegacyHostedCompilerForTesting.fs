@@ -145,7 +145,7 @@ type internal FscCompiler(legacyReferenceResolver) =
             | _ -> 
             match args with
             | [||] -> [|"fsc"|]
-            | a when not <| fscExeArg a.[0] -> Array.append [|"fsc"|] a
+            | a when not <| fscExeArg a[0] -> Array.append [|"fsc"|] a
             | _ -> args
 
         let errorRanges = args |> Seq.exists errorRangesArg

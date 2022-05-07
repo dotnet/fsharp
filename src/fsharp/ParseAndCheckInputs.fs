@@ -243,7 +243,7 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
     match moduleNamesDict.TryGetValue qualNameOfFile.Text with
     | true, paths ->
         if paths.ContainsKey path then
-            paths.[path], moduleNamesDict
+            paths[path], moduleNamesDict
         else
             let count = paths.Count + 1
             let id = qualNameOfFile.Id
@@ -514,7 +514,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilat
                     try
                         sourceFiles
                         |> ArrayParallel.mapi (fun i (filename, isLastCompiland) ->
-                            let delayedErrorLogger = delayedErrorLoggers.[i]
+                            let delayedErrorLogger = delayedErrorLoggers[i]
 
                             let directoryName = Path.GetDirectoryName filename
                             let input = parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, (isLastCompiland, isExe), delayedErrorLogger, retryLocked)

@@ -450,7 +450,7 @@ module ReflectUtils =
     let isListType ty = 
         FSharpType.IsUnion ty && 
         (let cases = FSharpType.GetUnionCases ty 
-         cases.Length > 0 && equivHeadTypes typedefof<list<_>> cases.[0].DeclaringType)
+         cases.Length > 0 && equivHeadTypes typedefof<list<_>> cases[0].DeclaringType)
 
     [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
     type TupleType =
@@ -484,7 +484,7 @@ module ReflectUtils =
 
             if FSharpType.IsTuple reprty then 
                 let tyArgs = FSharpType.GetTupleElements(reprty)
-                let fields = FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs.[i]))
+                let fields = FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs[i]))
                 let tupleType =
                     if reprty.Name.StartsWith "ValueTuple" then TupleType.Value
                     else TupleType.Reference
@@ -574,16 +574,16 @@ module Display =
     let pushBreak saving (Breaks(next, outer, stack)) =
         let stack = 
             if next = stack.Length then
-                Array.init (next + chunkN) (fun i -> if i < next then stack.[i] else 0) // expand if full 
+                Array.init (next + chunkN) (fun i -> if i < next then stack[i] else 0) // expand if full 
             else
                 stack
            
-        stack.[next] <- saving;
+        stack[next] <- saving;
         Breaks(next+1, outer, stack)
 
     let popBreak (Breaks(next, outer, stack)) =
         if next=0 then raise (Failure "popBreak: underflow");
-        let topBroke = stack.[next-1] < 0
+        let topBroke = stack[next-1] < 0
         let outer = if outer=next then outer-1 else outer  // if all broken, unwind 
         let next = next - 1
         Breaks(next, outer, stack), topBroke
@@ -593,8 +593,8 @@ module Display =
             // all broken 
             None
         else
-            let saving = stack.[outer]
-            stack.[outer] <- -stack.[outer];    
+            let saving = stack[outer]
+            stack[outer] <- -stack[outer];    
             let outer = outer+1
             Some (Breaks(next, outer, stack), saving)
 
@@ -841,8 +841,8 @@ module Display =
         | _ -> c.ToString()
             
     let formatString (s:string) =
-        let rec check i = i < s.Length && not (Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
-        let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
+        let rec check i = i < s.Length && not (Char.IsControl(s,i)) && s[i] <> '\"' && check (i+1) 
+        let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s[i] :: acc)  
         "\"" + s + "\""
 
     // Return a truncated version of the string, e.g.
@@ -919,7 +919,7 @@ module Display =
                                 match ty.GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
                                 | Null | [| |] -> None
                                 | NonNull res -> 
-                                structuredFormatObjectL showMode ty depthLim (res.[0] :?> StructuredFormatDisplayAttribute) x
+                                structuredFormatObjectL showMode ty depthLim (res[0] :?> StructuredFormatDisplayAttribute) x
 
 #if COMPILER
                         // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
@@ -974,9 +974,9 @@ module Display =
                     else Some (wordL (tagText(replaceEscapedBrackets(txt))))
                 else
                     // we have a hit on a property reference
-                    let preText = replaceEscapedBrackets(m.Groups.["pre"].Value) // everything before the first opening bracket
-                    let postText = m.Groups.["post"].Value // Everything after the closing bracket
-                    let prop = replaceEscapedBrackets(m.Groups.["prop"].Value) // Unescape everything between the opening and closing brackets
+                    let preText = replaceEscapedBrackets(m.Groups["pre"].Value) // everything before the first opening bracket
+                    let postText = m.Groups["post"].Value // Everything after the closing bracket
+                    let prop = replaceEscapedBrackets(m.Groups["prop"].Value) // Unescape everything between the opening and closing brackets
 
                     match catchExn (fun () -> getProperty ty obj prop) with
                     | Choice2Of2 e -> Some (wordL (tagText("<StructuredFormatDisplay exception: " + e.Message + ">")))
@@ -1005,7 +1005,7 @@ module Display =
                             let currentPostText =
                                 match postTextMatch.Success with
                                 | false -> postText 
-                                | true -> postTextMatch.Groups.["pre"].Value
+                                | true -> postTextMatch.Groups["pre"].Value
 
                             let newLayouts = (sepL (tagText preText) ^^ alternativeObjL ^^ sepL (tagText currentPostText)) :: layouts
                             match postText with
@@ -1016,13 +1016,13 @@ module Display =
                             | remainingPropertyText when postTextMatch.Success ->
                                                       
                                 // look for stray brackets in the text before the next opening bracket
-                                let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(postTextMatch.Groups.["pre"].Value, illFormedBracketPattern)
+                                let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(postTextMatch.Groups["pre"].Value, illFormedBracketPattern)
                                 if strayClosingMatch then
                                     None
                                 else 
                                     // More to process, keep going, using the postText starting at the next instance of a '{'
-                                    let openingBracketIndex = postTextMatch.Groups.["prop"].Index-1
-                                    buildObjMessageL remainingPropertyText.[openingBracketIndex..] newLayouts
+                                    let openingBracketIndex = postTextMatch.Groups["prop"].Index-1
+                                    buildObjMessageL remainingPropertyText[openingBracketIndex..] newLayouts
 
                             | remaingPropertyText ->
                                 // make sure we don't have any stray brackets
@@ -1294,7 +1294,7 @@ module Display =
                 if Double.IsNaN(d) then "nan"
                 elif Double.IsNegativeInfinity(d) then "-infinity"
                 elif Double.IsPositiveInfinity(d) then "infinity"
-                elif opts.FloatingPointFormat.[0] = 'g'  && String.forall(fun c -> Char.IsDigit(c) || c = '-')  s
+                elif opts.FloatingPointFormat[0] = 'g'  && String.forall(fun c -> Char.IsDigit(c) || c = '-')  s
                 then s + ".0" 
                 else s
             tagNumericLiteral t
@@ -1304,7 +1304,7 @@ module Display =
                 (if Single.IsNaN(d) then "nan"
                     elif Single.IsNegativeInfinity(d) then "-infinity"
                     elif Single.IsPositiveInfinity(d) then "infinity"
-                    elif opts.FloatingPointFormat.Length >= 1 && opts.FloatingPointFormat.[0] = 'g' 
+                    elif opts.FloatingPointFormat.Length >= 1 && opts.FloatingPointFormat[0] = 'g' 
                     && float32(Int32.MinValue) < d && d < float32(Int32.MaxValue) 
                     && float32(int32(d)) = d 
                     then (Convert.ToInt32 d).ToString(opts.FormatProvider) + ".0"

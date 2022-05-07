@@ -422,8 +422,8 @@ module DeclarationListHelpers =
                 ToolTipElement.Single (layout, xml)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
-            let argTy = argTys.[i]
-            let nm = anon.SortedNames.[i]
+            let argTy = argTys[i]
+            let nm = anon.SortedNames[i]
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
@@ -694,7 +694,7 @@ module internal DescriptionListsImpl =
             let apinfo = Option.get (TryGetActivePatternInfo v)
             let aparity = apinfo.Names.Length
             
-            let rty = if aparity <= 1 then resTy else (argsOfAppTy g resTy).[apref.CaseIndex]
+            let rty = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args rty
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
@@ -711,7 +711,7 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.AnonRecdField(_anonInfo, tys, i, _) ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys.[i]
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys[i]
             [], prettyRetTyL
 
         | Item.ILField finfo ->
@@ -1049,7 +1049,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 
                 let cutAttributeSuffix (name: string) =
                     if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && IsAttribute infoReader item.Item then
-                        name.[0..name.Length - "Attribute".Length - 1]
+                        name[0..name.Length - "Attribute".Length - 1]
                     else name
 
                 let textInDeclList = cutAttributeSuffix textInDeclList
@@ -1070,7 +1070,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         match currentNamespace with
                         | Some currentNs ->
                             if ns |> Array.startsWith currentNs then
-                                ns.[currentNs.Length..]
+                                ns[currentNs.Length..]
                             else ns
                         | None -> ns)
                     |> Option.bind (function
@@ -1139,7 +1139,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
-            if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
+            if parms.Length = 1 && parms[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
                 MethodGroupItem(meth.Description, meth.XmlDoc, meth.ReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)

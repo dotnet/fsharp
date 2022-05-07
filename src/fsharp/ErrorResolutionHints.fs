@@ -31,7 +31,7 @@ let IsInEditDistanceProximity idText suggestion =
 /// Demangles a suggestion
 let DemangleOperator (nm: string) =
     if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
-        nm.[2..nm.Length - 3]
+        nm[2..nm.Length - 3]
     else 
         nm
 
@@ -40,13 +40,13 @@ type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) 
     interface IEnumerator<string> with
         member _.Current 
             with get () = 
-                let kvpr = &data.[current]
+                let kvpr = &data[current]
                 kvpr.Value
     interface IEnumerator with
-        member _.Current with get () = box data.[current].Value
+        member _.Current with get () = box data[current].Value
         member _.MoveNext() =
             current <- current - 1
-            current > tail || (current = tail && data.[current] <> Unchecked.defaultof<_>)
+            current > tail || (current = tail && data[current] <> Unchecked.defaultof<_>)
         member _.Reset () = current <- data.Length
     interface System.IDisposable with
         member _.Dispose () = ()
@@ -60,15 +60,15 @@ type SuggestionBuffer(idText: string) =
 
     let insert (k,v) = 
         let mutable pos = tail
-        while pos < maxSuggestions && (let kv = &data.[pos] in kv.Key < k) do
+        while pos < maxSuggestions && (let kv = &data[pos] in kv.Key < k) do
             pos <- pos + 1
 
         if pos > 0 then
-            if pos >= maxSuggestions || (let kv = &data.[pos] in k <> kv.Key || v <> kv.Value) then
+            if pos >= maxSuggestions || (let kv = &data[pos] in k <> kv.Key || v <> kv.Value) then
                 if tail < pos - 1 then
                     for i = tail to pos - 2 do 
-                        data.[i] <- data.[i + 1]
-                data.[pos - 1] <- KeyValuePair(k,v)
+                        data[i] <- data[i + 1]
+                data[pos - 1] <- KeyValuePair(k,v)
                 if tail > 0 then tail <- tail - 1
 
     member _.Add (suggestion: string) =

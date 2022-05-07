@@ -215,7 +215,7 @@ type internal FsiTimeReporter(outWriter: TextWriter) =
         let res = f ()
         stopwatch.Stop()
         let total = ptime.TotalProcessorTime - startTotal
-        let spanGC = [ for i in 0 .. numGC-> GC.CollectionCount(i) - startGC.[i] ]
+        let spanGC = [ for i in 0 .. numGC-> GC.CollectionCount(i) - startGC[i] ]
         let elapsed = stopwatch.Elapsed
         fprintfn outWriter "%s" (FSIstrings.SR.fsiTimeInfoMainString((sprintf "%02d:%02d:%02d.%03d" (int elapsed.TotalHours) elapsed.Minutes elapsed.Seconds elapsed.Milliseconds),(sprintf "%02d:%02d:%02d.%03d" (int total.TotalHours) total.Minutes total.Seconds total.Milliseconds),(String.concat ", " (List.mapi (sprintf "%s%d: %d" (FSIstrings.SR.fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration())) spanGC))))
         res
@@ -290,7 +290,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
     let convTypeRef (tref: ILTypeRef) =
         if tref.Scope.IsLocalRef then 
             assert tref.Scope.IsLocalRef
-            let typ, _ = typeMap.[tref]
+            let typ, _ = typeMap[tref]
             typ
         else
             convTypeRefAux tref
@@ -332,7 +332,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
     /// Map the given ILTypeRef to the appropriate assembly fragment
     member _.MapTypeRef (tref: ILTypeRef) =
         if tref.Scope.IsLocalRef && typeMap.ContainsKey(tref) then
-            typeMap.[tref] |> snd
+            typeMap[tref] |> snd
         else
             tref
 
@@ -340,7 +340,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
     /// to use on the F# compiler logic.
     member _.ReverseMapTypeRef (tref: ILTypeRef) =
         if reverseTypeMap.ContainsKey(tref) then
-            reverseTypeMap.[tref]
+            reverseTypeMap[tref]
         else
             tref
 
@@ -717,7 +717,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
 
             let text = prune text
             let lines = text.Split '\n'
-            if 0 < i && i <= lines.Length then lines.[i-1] else ""
+            if 0 < i && i <= lines.Length then lines[i-1] else ""
 
     /// Display the given error.
     member syphon.PrintError (tcConfig:TcConfigBuilder, err) =
@@ -905,8 +905,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
 
          // We do not want to print the "script.fsx arg2..." as part of the options
          CompilerOption("script.fsx arg1 arg2 ...","",
-                                 OptionGeneral((fun args -> args.Length > 0 && IsScript args.[0]),
-                                               (fun args -> let scriptFile = args.[0]
+                                 OptionGeneral((fun args -> args.Length > 0 && IsScript args[0]),
+                                               (fun args -> let scriptFile = args[0]
                                                             let scriptArgs = List.tail args
                                                             inputFilesAcc <- inputFilesAcc @ [(scriptFile,true)]   (* record script.fsx for evaluation *)
                                                             List.iter recordExplicitArg scriptArgs            (* record rest of line as explicit arguments *)
@@ -990,7 +990,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     do
         let firstArg =
             match sourceFiles with
-            | [] -> argv.[0]
+            | [] -> argv[0]
             | _  -> fst (List.head (List.rev sourceFiles) )
         let args = Array.ofList (firstArg :: explicitArgs)
         fsi.ReportUserCommandLineArgs args
@@ -1229,8 +1229,8 @@ let convertReflectionTypeToILTypeRef (reflectionTy: Type) =
         ILTypeRef.Create(scoref, [], fullName)
     else
         let names = String.split StringSplitOptions.None [|"+";"."|] fullName
-        let enc = names.[..names.Length - 2]
-        let nm = names.[names.Length - 1]
+        let enc = names[..names.Length - 2]
+        let nm = names[names.Length - 1]
         ILTypeRef.Create(scoref, List.ofArray enc, nm)
 
 let rec convertReflectionTypeToILType (reflectionTy: Type) =
@@ -1240,8 +1240,8 @@ let rec convertReflectionTypeToILType (reflectionTy: Type) =
         if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
             let ctors = reflectionTy.GetConstructors(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
             if ctors.Length = 1 &&
-               not (isNull (box (ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>()))) &&
-               not ctors.[0].IsPublic &&
+               not (isNull (box (ctors[0].GetCustomAttribute<CompilerGeneratedAttribute>()))) &&
+               not ctors[0].IsPublic &&
                IsCompilerGeneratedName reflectionTy.Name then
                 let rec get (typ: Type) = if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then get typ.BaseType else typ
                 get reflectionTy
@@ -1534,7 +1534,7 @@ type internal FsiDynamicCompiler
 
         | MultipleInMemoryAssemblies emEnv ->
             // Get the last assembly emitted
-            let assembly = dynamicAssemblies.[dynamicAssemblies.Count-1]
+            let assembly = dynamicAssemblies[dynamicAssemblies.Count-1]
 
             for referencedTypeDefs, bytes in codegenResults.quotationResourceInfo do
                 let referencedTypes =
@@ -1656,7 +1656,7 @@ type internal FsiDynamicCompiler
         let mutable boundValues = istate.boundValues
         try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
-            let contentFile = contents.ImplementationFiles.[0]
+            let contentFile = contents.ImplementationFiles[0]
 
             // Skip the "FSI_NNNN"
             match contentFile.Declarations with
@@ -2421,7 +2421,7 @@ type internal FsiStdinLexerProvider
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
                 let ntrimmed = min len ninput
                 for i = 0 to ntrimmed-1 do
-                    buf.[i+start] <- input.[i]
+                    buf[i+start] <- input[i]
                 ntrimmed
           ))
 
@@ -3060,7 +3060,7 @@ type internal FsiInteractionProcessor
             if prefix.IndexOf(".",StringComparison.Ordinal) >= 0 then
                 let parts = prefix.Split('.')
                 let n = parts.Length
-                Array.sub parts 0 (n-1) |> Array.toList,parts.[n-1]
+                Array.sub parts 0 (n-1) |> Array.toList,parts[n-1]
             else
                 [],prefix
 
@@ -3749,7 +3749,7 @@ type CompilerInputStream() =
                         let lengthToRead = if (n < count) then n else count
                         let ret = Array.zeroCreate lengthToRead
                         for i in 0 .. lengthToRead - 1 do
-                            ret.[i] <- readQueue.Dequeue()
+                            ret[i] <- readQueue.Dequeue()
                         Some ret
                     else
                         None)
@@ -3779,7 +3779,7 @@ type CompilerInputStream() =
         lock readQueue (fun () ->
             let bytes = Encoding.UTF8.GetBytes(str)
             for i in 0 .. bytes.Length - 1 do
-                readQueue.Enqueue(bytes.[i]))
+                readQueue.Enqueue(bytes[i]))
 
 /// Defines a write-only stream used to capture output of the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]
@@ -3804,7 +3804,7 @@ type CompilerOutputStream()  =
 
         lock contentQueue (fun () ->
             for i in offset .. stop - 1 do
-                contentQueue.Enqueue(buffer.[i]))
+                contentQueue.Enqueue(buffer[i]))
 
     member _.Read() =
         lock contentQueue (fun () ->
@@ -3812,7 +3812,7 @@ type CompilerOutputStream()  =
             if (n > 0) then
                 let bytes = Array.zeroCreate n
                 for i in 0 .. n-1 do
-                    bytes.[i] <- contentQueue.Dequeue()
+                    bytes[i] <- contentQueue.Dequeue()
 
                 Encoding.UTF8.GetString(bytes, 0, n)
             else

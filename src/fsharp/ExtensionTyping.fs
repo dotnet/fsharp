@@ -247,7 +247,7 @@ module internal ExtensionTyping =
                 for s in nsp.Split('.') do
                     match s.IndexOfAny(PrettyNaming.IllegalCharactersInTypeAndNamespaceNames) with
                     | -1 -> ()
-                    | n -> errorR(Error(FSComp.SR.etIllegalCharactersInNamespaceName(string s.[n], s), m))  
+                    | n -> errorR(Error(FSComp.SR.etIllegalCharactersInNamespaceName(string s[n], s), m))  
 
     let bindingFlags =
         BindingFlags.DeclaredOnly |||
@@ -1245,7 +1245,7 @@ module internal ExtensionTyping =
         // This excludes, for example, types with '.' in them which would not be resolvable during name resolution.
         match expectedName.IndexOfAny(PrettyNaming.IllegalCharactersInTypeAndNamespaceNames) with
         | -1 -> ()
-        | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName.[n], expectedName), m))  
+        | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName[n], expectedName), m))  
 
         let staticParameters : Tainted<ProvidedParameterInfo[] MaybeNull> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
         if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
@@ -1363,7 +1363,7 @@ module internal ExtensionTyping =
             | Tainted.NonNull typeWithArguments -> 
                 let actualName = typeWithArguments.PUntaint((fun x -> x.Name), m)
                 let checkTypeName() = 
-                    let expectedTypeNameAfterArguments = fullTypePathAfterArguments.[fullTypePathAfterArguments.Length-1]
+                    let expectedTypeNameAfterArguments = fullTypePathAfterArguments[fullTypePathAfterArguments.Length-1]
                     if actualName <> expectedTypeNameAfterArguments then 
                         error(Error(FSComp.SR.etProvidedAppliedTypeHadWrongName(typeWithArguments.TypeProviderDesignation, expectedTypeNameAfterArguments, actualName), m))
                 Some (typeWithArguments, checkTypeName)

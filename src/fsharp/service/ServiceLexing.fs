@@ -175,7 +175,7 @@ module internal TokenClassifications =
                 // This is related to 4783. Recover by treating as lower case identifier.
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
-                if Char.ToUpperInvariant s.[0] = s.[0] then
+                if Char.ToUpperInvariant s[0] = s[0] then
                     (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
                 else
                     (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -644,8 +644,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         let delayed = ResizeArray<_>()
         f (fun (tok, s, e) -> delayed.Add (tok, s + ofs, e + ofs) )
         // delay all the tokens and return the remaining one
-        for i = delayed.Count - 1 downto 1 do delayToken delayed.[i]
-        delayed.[0]
+        for i = delayed.Count - 1 downto 1 do delayToken delayed[i]
+        delayed[0]
 
     // Split the following line:
     //  anywhite* ("#else"|"#endif") anywhite* ("//" [^'\n''\r']*)?
@@ -782,8 +782,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     | None -> ()
                     | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)
                     for i = greaters.Length - 1 downto 1 do
-                        delayToken(greaters.[i] false, leftc + i, rightc - opstr.Length + i + 1)
-                    false, (greaters.[0] false, leftc, rightc - opstr.Length + 1)
+                        delayToken(greaters[i] false, leftc + i, rightc - opstr.Length + i + 1)
+                    false, (greaters[0] false, leftc, rightc - opstr.Length + 1)
                 // break up any operators that start with '.' so that we can get auto-popup-completion for e.g. "x.+1"  when typing the dot
                 | INFIX_STAR_STAR_OP opstr when opstr.StartsWithOrdinal(".") ->
                     delayToken(INFIX_STAR_STAR_OP(opstr.Substring 1), leftc+1, rightc)

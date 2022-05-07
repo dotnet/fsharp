@@ -661,8 +661,8 @@ let NormalizeErrorString (text : string MaybeNull) =
     let mutable i = 0
     while i < text.Length do
         let delta = 
-            match text.[i] with
-            | '\r' when i + 1 < text.Length && text.[i + 1] = '\n' ->
+            match text[i] with
+            | '\r' when i + 1 < text.Length && text[i + 1] = '\n' ->
                 // handle \r\n sequence - replace it with one single space
                 buf.Append stringThatIsAProxyForANewlineInFlatErrors |> ignore
                 2

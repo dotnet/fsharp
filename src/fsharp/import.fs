@@ -148,7 +148,7 @@ let ImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
     | true, tcref -> tcref
     | _ ->
         let tcref = ImportILTypeRefUncached  env m tref
-        env.ILTypeRefToTyconRefCache.[tref] <- tcref
+        env.ILTypeRefToTyconRefCache[tref] <- tcref
         tcref
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
@@ -492,7 +492,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             match keylist with 
             | [] -> ()
             | key :: rest ->
-                buckets.[key] <-
+                buckets[key] <-
                     match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []

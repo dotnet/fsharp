@@ -647,7 +647,7 @@ module internal SymbolHelpers =
               | Item.ExnCase tcref -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
-              | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames.[i]
+              | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
@@ -704,10 +704,10 @@ module internal SymbolHelpers =
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_, vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo, _) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
-        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
+        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
-        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames.[i]
+        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)

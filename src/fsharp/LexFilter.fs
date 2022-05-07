@@ -1152,7 +1152,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             | None -> ()
                             | Some tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
                             for i = greaters.Length - 1 downto 0 do
-                                delayToken (pool.UseShiftedLocation(tokenTup, greaters.[i] res, i, -opstr.Length + i + 1))
+                                delayToken (pool.UseShiftedLocation(tokenTup, greaters[i] res, i, -opstr.Length + i + 1))
                             pool.Return tokenTup
                         | _ -> delayToken tokenTup
                     else

@@ -278,7 +278,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                     let success, sourceFiles, packageRoots =
                         let tupleFields = result |> FSharpValue.GetTupleFields
                         match tupleFields |> Array.length with
-                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.distinct |> List.toSeq
+                        | 3 -> tupleFields[0] :?> bool, tupleFields[1] :?> string list  |> List.toSeq, tupleFields[2] :?> string list |> List.distinct |> List.toSeq
                         | _ -> false, seqEmpty, seqEmpty
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, Array.empty, Array.empty, Seq.empty, sourceFiles, packageRoots)
                 else

@@ -419,7 +419,7 @@ module Structure =
         and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
-                    let range = Range.startToEnd attrs.[0].Range attrs.[attrs.Length-1].ArgExpr.Range
+                    let range = Range.startToEnd attrs[0].Range attrs[attrs.Length-1].ArgExpr.Range
                     rcheck Scope.Attribute Collapse.Same range range
 
             match  attrs with
@@ -562,7 +562,7 @@ module Structure =
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ 
                         when r.StartLine = last.EndLine + 1 || 
-                             sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
+                             sourceLines[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
                         loop rest res (r :: currentBulk)
                     | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
@@ -676,8 +676,8 @@ module Structure =
             |> List.filter (fun comment -> comment.Lines.Count > 1)
             |> List.map (fun comment ->
                 let lines = comment.Lines
-                let startLine, startStr = lines.[0]
-                let endLine, endStr = lines.[lines.Count - 1]
+                let startLine, startStr = lines[0]
+                let endLine, endStr = lines[lines.Count - 1]
                 let startCol = startStr.IndexOf '/'
                 let endCol = endStr.TrimEnd().Length
 

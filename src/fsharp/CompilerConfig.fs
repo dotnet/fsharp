@@ -83,7 +83,7 @@ let GetWarningNumber(m, warningNumber: string) =
         //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
-        if Char.IsDigit(warningNumber.[0]) then Some (int32 warningNumber)
+        if Char.IsDigit(warningNumber[0]) then Some (int32 warningNumber)
         elif warningNumber.StartsWithOrdinal("FS") = true then raise (ArgumentException())
         else None
     with _ ->
@@ -189,14 +189,14 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
             with
             | :? FileNotFoundException ->
                 defaultTimeStamp
-        files.[fileName] <- v
+        files[fileName] <- v
         v
 
     member cache.GetProjectReferenceTimeStamp (pr: IProjectReference) =
         let ok, v = projects.TryGetValue pr
         if ok then v else
         let v = defaultArg (pr.TryGetLogicalTimeStamp cache) defaultTimeStamp
-        projects.[pr] <- v
+        projects[pr] <- v
         v
 
 and [<RequireQualifiedAccess>]

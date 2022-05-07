@@ -269,7 +269,7 @@ module ScriptPreprocessClosure =
                                         for line in result.StdOut do Console.Out.WriteLine(line)
                                         for line in result.StdError do Console.Error.WriteLine(line)
 
-                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
+                                    packageReferences[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
                                     if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneToBuilder()
                                         for folder in result.Roots do
@@ -324,7 +324,7 @@ module ScriptPreprocessClosure =
                         yield! resolveDependencyManagerSources filename
 
                         let postSources = tcConfig.GetAvailableLoadedSources()
-                        let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+                        let sources = if preSources.Length < postSources.Length then postSources[preSources.Length..] else []
 
                         yield! resolveDependencyManagerSources filename
                         for m, subFile in sources do

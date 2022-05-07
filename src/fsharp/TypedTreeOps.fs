@@ -47,7 +47,7 @@ type TyparMap<'T> =
     member tm.Item 
         with get (v: Typar) = 
             let (TPMap m) = tm
-            m.[v.Stamp]
+            m[v.Stamp]
 
     member tm.ContainsKey (v: Typar) = 
         let (TPMap m) = tm
@@ -65,7 +65,7 @@ type TyparMap<'T> =
 
 [<NoEquality; NoComparison; Sealed>]
 type TyconRefMap<'T>(imap: StampMap<'T>) =
-    member m.Item with get (v: TyconRef) = imap.[v.Stamp]
+    member m.Item with get (v: TyconRef) = imap[v.Stamp]
     member m.TryFind (v: TyconRef) = imap.TryFind v.Stamp 
     member m.ContainsKey (v: TyconRef) = imap.ContainsKey v.Stamp 
     member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp, x))
@@ -80,7 +80,7 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
 type ValMap<'T>(imap: StampMap<'T>) = 
      
     member m.Contents = imap
-    member m.Item with get (v: Val) = imap.[v.Stamp]
+    member m.Item with get (v: Val) = imap[v.Stamp]
     member m.TryFind (v: Val) = imap.TryFind v.Stamp 
     member m.ContainsVal (v: Val) = imap.ContainsKey v.Stamp 
     member m.Add (v: Val) x = ValMap (imap.Add(v.Stamp, x))
@@ -635,9 +635,9 @@ let mkByrefTyWithInference (g: TcGlobals) ty1 ty2 =
 let mkArrayTy (g: TcGlobals) rank nullness ty m =
     if rank < 1 || rank > 32 then
         errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo rank, m))
-        TType_app (g.il_arr_tcr_map.[3], [ty], nullness)
+        TType_app (g.il_arr_tcr_map[3], [ty], nullness)
     else
-        TType_app (g.il_arr_tcr_map.[rank - 1], [ty], nullness)
+        TType_app (g.il_arr_tcr_map[rank - 1], [ty], nullness)
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -752,7 +752,7 @@ let rec stripTyEqnsA g canShortcut ty =
             // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
             // See RFC FS-1053.md
             if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref && g.byrefkind_InOut_tcr.CanDeref then 
-                mkByref2Ty g tinst.[0] (TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull))
+                mkByref2Ty g tinst[0] (TType_app(g.byrefkind_InOut_tcr, [], g.knownWithoutNull))
 
             // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
@@ -1095,8 +1095,8 @@ and structnessAEquiv un1 un2 =
 
 and measureAEquiv g aenv un1 un2 =
     let vars1 = ListMeasureVarOccs un1
-    let trans tp1 = if aenv.EquivTypars.ContainsKey tp1 then destAnyParTy g aenv.EquivTypars.[tp1] else tp1
-    let remapTyconRef tc = if aenv.EquivTycons.ContainsKey tc then aenv.EquivTycons.[tc] else tc
+    let trans tp1 = if aenv.EquivTypars.ContainsKey tp1 then destAnyParTy g aenv.EquivTypars[tp1] else tp1
+    let remapTyconRef tc = if aenv.EquivTycons.ContainsKey tc then aenv.EquivTycons[tc] else tc
     let vars1' = List.map trans vars1
     let vars2 = ListSet.subtract typarEq (ListMeasureVarOccs un2) vars1'
     let cons1 = ListMeasureConOccsAfterRemapping g remapTyconRef un1
@@ -1532,7 +1532,7 @@ type ValHash<'T> =
 
     member ht.Add (v: Val, x) = 
         let (ValHash t) = ht
-        t.[v.Stamp] <- x
+        t[v.Stamp] <- x
 
     static member Create() = ValHash (new Dictionary<_, 'T>(11))
 
@@ -1766,7 +1766,7 @@ let isListTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> t
 
 let isArrayTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> isArrayTyconRef g tcref | _ -> false) 
 
-let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.il_arr_tcr_map.[0] | _ -> false) 
+let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.il_arr_tcr_map[0] | _ -> false) 
 
 let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
 
@@ -5250,7 +5250,7 @@ let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttri
         
     let curriedArgInfos =
         (vsl, dtys) ||> List.mapi2 (fun i vs ty ->
-            let partialAttribs = if i < partialArgAttribsL.Length then partialArgAttribsL.[i] else []
+            let partialAttribs = if i < partialArgAttribsL.Length then partialArgAttribsL[i] else []
             let tys = 
                 match allowTypeDirectedDetupling with
                 | AllowTypeDirectedDetupling.No -> [ty] 
@@ -5862,7 +5862,7 @@ and remapModTy ctxt _compgen tmenv mty =
 and renameTycon g tyenv x = 
     let tcref = 
         try
-            let res = tyenv.tyconRefRemap.[mkLocalTyconRef x]
+            let res = tyenv.tyconRefRemap[mkLocalTyconRef x]
             res
         with :? KeyNotFoundException -> 
             errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL g x), x.Range))
@@ -5894,7 +5894,7 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
     let lookupVal (v: Val) = 
         let vref = 
             try  
-               let res = tmenvinner.valRemap.[v]
+               let res = tmenvinner.valRemap[v]
                res 
             with :? KeyNotFoundException -> 
                 errorR(InternalError(sprintf "couldn't remap internal value '%s'" v.LogicalName, v.Range))
@@ -5904,7 +5904,7 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
     let lookupTycon g tycon = 
         let tcref = 
             try 
-                let res = tmenvinner.tyconRefRemap.[mkLocalTyconRef tycon]
+                let res = tmenvinner.tyconRefRemap[mkLocalTyconRef tycon]
                 res
             with :? KeyNotFoundException -> 
                 errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL g tycon), tycon.Range))
@@ -6422,10 +6422,10 @@ let eliminateDeadTargetsFromMatch tree (targets:_[]) =
         let ntargets = targets.Length
         let tree' = 
             let remap = Array.create ntargets -1
-            Array.iteri (fun i tgn -> remap.[tgn] <- i) used
+            Array.iteri (fun i tgn -> remap[tgn] <- i) used
             tree |> mapTargetsOfDecisionTree (fun tgn -> 
-                 if remap.[tgn] = -1 then failwith "eliminateDeadTargetsFromMatch: failure while eliminating unused targets"
-                 remap.[tgn]) 
+                 if remap[tgn] = -1 then failwith "eliminateDeadTargetsFromMatch: failure while eliminating unused targets"
+                 remap[tgn]) 
         let targets' = Array.map (Array.get targets) used
         tree', targets'
     else 
@@ -6468,15 +6468,15 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                 | None -> ()
                 | Some tree -> accumulateTipsOfDecisionTree accBinds tree
             | TDSuccess (es, i) -> 
-                branchesToTargets.[i] <- (List.rev accBinds, es) :: branchesToTargets.[i]
+                branchesToTargets[i] <- (List.rev accBinds, es) :: branchesToTargets[i]
             | TDBind (bind, rest) -> 
                 accumulateTipsOfDecisionTree (bind :: accBinds) rest 
 
         // Compute the targets that can only be reached one way
         accumulateTipsOfDecisionTree [] tree 
         let isLinearTarget bs = match bs with [_] -> true | _ -> false
-        let isLinearTgtIdx i = isLinearTarget branchesToTargets.[i] 
-        let getLinearTgtIdx i = branchesToTargets.[i].Head
+        let isLinearTgtIdx i = isLinearTarget branchesToTargets[i] 
+        let getLinearTgtIdx i = branchesToTargets[i].Head
         let hasLinearTgtIdx = branchesToTargets |> Array.exists isLinearTarget
 
         if not hasLinearTgtIdx then 
@@ -6525,7 +6525,7 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
     match tree with 
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
-        let (TTarget(vs, rhs, _)) = targets.[n]
+        let (TTarget(vs, rhs, _)) = targets[n]
         if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", #targets = " + string targets.Length)
 
         // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
@@ -7007,9 +7007,9 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) -> 
             let z = dtreeF z dtree
-            let z = Array.fold targetF z targets.[0..targets.Length - 2]
+            let z = Array.fold targetF z targets[0..targets.Length - 2]
             // tailcall
-            targetF z targets.[targets.Length - 1]
+            targetF z targets[targets.Length - 1]
                 
         | Expr.Quote (e, dataCell, _, _, _) -> 
             let z = exprF z e
@@ -7202,15 +7202,15 @@ let inversePerm (sigma: int array) =
     let n = sigma.Length
     let invSigma = Array.create n -1
     for i = 0 to n-1 do
-        let sigma_i = sigma.[i]
+        let sigma_i = sigma[i]
         // assert( invSigma.[sigma_i] = -1 )
-        invSigma.[sigma_i] <- i
+        invSigma[sigma_i] <- i
     invSigma
   
 let permute (sigma: int[]) (data:'T[]) = 
     let n = sigma.Length
     let invSigma = inversePerm sigma
-    Array.init n (fun i -> data.[invSigma.[i]])
+    Array.init n (fun i -> data[invSigma[i]])
   
 let rec existsR a b pred = if a<=b then pred a || existsR (a+1) b pred else false
 
@@ -7222,8 +7222,8 @@ let liftAllBefore sigma =
 
     let lifted = 
         [ for i in 0 .. sigma.Length - 1 do 
-            let i' = sigma.[i]
-            if existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i) then 
+            let i' = sigma[i]
+            if existsR 0 (i' - 1) (fun j' -> invSigma[j'] > i) then 
                     yield i ]
 
     if lifted.IsEmpty then 0 else List.max lifted + 1
@@ -7238,7 +7238,7 @@ let permuteExprList (sigma: int[]) (exprs: Expr list) (ty: TType list) (names: s
 
     let rewrite rbinds (i, expri: Expr) =
         if i < liftLim then
-            let tmpvi, tmpei = mkCompGenLocal expri.Range names.[i] ty.[i]
+            let tmpvi, tmpei = mkCompGenLocal expri.Range names[i] ty[i]
             let bindi = mkCompGenBind tmpvi expri
             tmpei, bindi :: rbinds
         else
@@ -7261,8 +7261,8 @@ let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, un
     let sortedRecdFields = unsortedRecdFields |> List.indexed |> Array.ofList |> Array.sortBy (fun (_, r) -> r.Index)
     let sigma = Array.create sortedRecdFields.Length -1
     sortedRecdFields |> Array.iteri (fun sortedIdx (unsortedIdx, _) -> 
-        if sigma.[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
-        sigma.[unsortedIdx] <- sortedIdx) 
+        if sigma[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
+        sigma[unsortedIdx] <- sortedIdx) 
     
     let unsortedArgTys = unsortedRecdFields |> List.map (fun rfref -> actualTyOfRecdFieldRef rfref tinst)
     let unsortedArgNames = unsortedRecdFields |> List.map (fun rfref -> rfref.FieldName)
@@ -7271,13 +7271,13 @@ let mkRecordExpr g (lnk, tcref, tinst, unsortedRecdFields: RecdFieldRef list, un
     mkLetsBind m unsortedArgBinds core
 
 let mkAnonRecd (_g: TcGlobals) m (anonInfo: AnonRecdTypeInfo) (unsortedIds: Ident[]) (unsortedFieldExprs: Expr list) unsortedArgTys =
-    let sortedRecdFields = unsortedFieldExprs |> List.indexed |> Array.ofList |> Array.sortBy (fun (i,_) -> unsortedIds.[i].idText)
-    let sortedArgTys = unsortedArgTys |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
+    let sortedRecdFields = unsortedFieldExprs |> List.indexed |> Array.ofList |> Array.sortBy (fun (i,_) -> unsortedIds[i].idText)
+    let sortedArgTys = unsortedArgTys |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds[i].idText) |> List.map snd
 
     let sigma = Array.create sortedRecdFields.Length -1
     sortedRecdFields |> Array.iteri (fun sortedIdx (unsortedIdx, _) -> 
-        if sigma.[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
-        sigma.[unsortedIdx] <- sortedIdx) 
+        if sigma[unsortedIdx] <> -1 then error(InternalError("bad permutation", m))
+        sigma[unsortedIdx] <- sortedIdx) 
     
     let unsortedArgNames = unsortedIds |> Array.toList |> List.map (fun id -> id.idText)
     let unsortedArgBinds, sortedArgExprs = permuteExprList sigma unsortedFieldExprs unsortedArgTys unsortedArgNames
@@ -8959,7 +8959,7 @@ let GetMemberCallInfo g (vref: ValRef, vFlags) =
 let TryGetActivePatternInfo (vref: ValRef) =  
     // First is an optimization to prevent calls to string routines
     let logicalName = vref.LogicalName
-    if logicalName.Length = 0 || logicalName.[0] <> '|' then 
+    if logicalName.Length = 0 || logicalName[0] <> '|' then 
        None 
     else 
        ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
@@ -9952,7 +9952,7 @@ let (|MatchOptionExpr|_|) expr =
     match expr with
     | MatchTwoCasesExpr(cond, ucref, tg1, tg2, tgs, rebuildTwoCases) -> 
         let tgNone, tgSome = if ucref.CaseName = "None" then tg1, tg2 else tg2, tg1
-        match tgs.[tgNone], tgs.[tgSome] with 
+        match tgs[tgNone], tgs[tgSome] with 
         | TTarget([], noneBranchExpr, b2), 
           TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
                                Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a16) 
@@ -9961,8 +9961,8 @@ let (|MatchOptionExpr|_|) expr =
             // How to rebuild this construct
             let rebuild (cond, noneBranchExpr, someVar, someBranchExpr) =
                 let tgs = Array.zeroCreate 2
-                tgs.[tgNone] <- TTarget([], noneBranchExpr, b2)
-                tgs.[tgSome] <- TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
+                tgs[tgNone] <- TTarget([], noneBranchExpr, b2)
+                tgs[tgSome] <- TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
                                                     Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a16)
                 rebuildTwoCases (cond, ucref, tg1, tg2, tgs)
 
