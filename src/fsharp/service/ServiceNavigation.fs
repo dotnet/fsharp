@@ -142,7 +142,7 @@ module NavigationImpl =
                 | _ -> synExpr.Range
 
             match synPat, memberOpt with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
+            | SynPat.LongIdent(longDotId=SynLongIdent(lid,_,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
                   | SynMemberKind.ClassConstructor
@@ -158,7 +158,7 @@ module NavigationImpl =
                   | hd :: _ -> (lid, hd.idRange) 
                   | _ -> (lid, m)
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, enclosingEntityKind, isAbstract, access) ]
-            | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), _ -> 
+            | SynPat.LongIdent(longDotId=SynLongIdent(lid,_,_); accessibility=access), _ -> 
                 [ createMemberLid(lid, NavigationItemKind.Field, FSharpGlyph.Field, unionRanges (List.head lid).idRange m, enclosingEntityKind, isAbstract, access) ]
             | SynPat.Named (SynIdent(id,_), _, access, _), _ | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, access, _), _), _ -> 
                 let glyph = if isMember then FSharpGlyph.Method else FSharpGlyph.Field
@@ -574,10 +574,10 @@ module NavigateTo =
                     | _ -> NavigableItemKind.ModuleValue
     
             match headPat with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([_; id], _)) ->
+            | SynPat.LongIdent(longDotId=SynLongIdent([_; id], _,_)) ->
                 // instance members
                 addIdent kind id false container
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) ->
+            | SynPat.LongIdent(longDotId=SynLongIdent([id], _,_)) ->
                 // functions
                 addIdent kind id false container
             | SynPat.Named (SynIdent(id,_), _, _, _) | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, _, _), _) ->
