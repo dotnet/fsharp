@@ -89,7 +89,7 @@ module XmlDocParsing =
             | SynModuleDecl.Types(synTypeDefnList, _) -> (synTypeDefnList |> List.collect getXmlDocablesSynTypeDefn)
             | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> getXmlDocablesSynModuleOrNamespace synModuleOrNamespace
             | SynModuleDecl.ModuleAbbrev _
-            | SynModuleDecl.DoExpr _
+            | SynModuleDecl.Expr _
             | SynModuleDecl.Exception _
             | SynModuleDecl.Open _
             | SynModuleDecl.Attributes _

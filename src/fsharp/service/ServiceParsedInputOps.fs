@@ -719,7 +719,7 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> ifPosInRange range (fun _ -> List.tryPick (walkSynModuleDecl false) modules))
             | SynModuleDecl.Open _ -> None
             | SynModuleDecl.Let (_, bindings, _) -> List.tryPick walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.tryPick walkTypeDefn types
             | _ -> None
 
@@ -956,7 +956,7 @@ module ParsedInput =
                                     Some (CompletionContext.ParameterList args)
                                 | _ -> 
                                     defaultTraverse expr
-                            
+
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) = 
@@ -1060,13 +1060,20 @@ module ParsedInput =
 
                     member _.VisitSimplePats (_path, pats) =
                         pats |> List.tryPick (fun pat ->
-                            // No completions in an identifier or type in a pattern
+                            // No completions in an identifier in a pattern
                             match pat with
                             // fun x| ->
-                            | SynSimplePat.Id(range = range)
-                            // fun (x: int|) ->
-                            | SynSimplePat.Typed(SynSimplePat.Id(range = range), _, _) when rangeContainsPos range pos ->
+                            | SynSimplePat.Id(range = range) when rangeContainsPos range pos ->
                                 Some CompletionContext.Invalid
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = idRange), synType, _) ->
+                                // fun (x|: int) ->
+                                if rangeContainsPos idRange pos then
+                                    Some CompletionContext.Invalid
+                                // fun (x: int|) ->
+                                elif rangeContainsPos synType.Range pos then
+                                    Some CompletionContext.PatternType
+                                else
+                                    None
                             | _ -> None)
 
                     member _.VisitModuleDecl(_path, defaultTraverse, decl) =
@@ -1532,7 +1539,7 @@ module ParsedInput =
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.iter walkTypeDefn types
             | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
@@ -1600,7 +1607,7 @@ module ParsedInput =
                 match firstDecl with
                 | SynModuleDecl.NestedModule (range=r)
                 | SynModuleDecl.Let (range=r)
-                | SynModuleDecl.DoExpr (range=r)
+                | SynModuleDecl.Expr (range=r)
                 | SynModuleDecl.Types (range=r)
                 | SynModuleDecl.Exception (range=r)
                 | SynModuleDecl.Open (range=r)

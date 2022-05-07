@@ -12,7 +12,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -134,7 +134,7 @@ type ValRef with
 
     member ImplementedSlotSignatures: SlotSig list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// Get the return type of a provided method, where 'void' is returned as 'None'
 val GetCompiledReturnTyOfProvidedMethodInfo: amap:ImportMap ->m:range -> mi:Tainted<ProvidedMethodBase> -> TType option
 #endif
@@ -378,7 +378,7 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of tcGlobals: TcGlobals * structTy: TType
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of amap: ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
 #endif
@@ -514,7 +514,7 @@ type MethInfo =
     member NumArgs: int list
 
 /// Get the information about provided static parameters, if any
-#if NO_EXTENSIONTYPING
+#if NO_TYPEPROVIDERS
     member ProvidedStaticParameterInfo: obj option
 #else
     member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo> []) option
@@ -595,7 +595,7 @@ type ILFieldInfo =
      /// Represents a single use of a field backed by Abstract IL metadata
     | ILFieldInfo of ilTypeInfo: ILTypeInfo * ilFieldDef: ILFieldDef
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
      /// Represents a single use of a field backed by provided metadata
     | ProvidedField of amap: ImportMap * providedField: Tainted<ProvidedFieldInfo> * range: range
 #endif
@@ -807,7 +807,7 @@ type PropInfo =
     /// An F# use of a property backed by Abstract IL metadata
     | ILProp of ilPropInfo: ILPropInfo
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// An F# use of a property backed by provided metadata
     | ProvidedProp of amap: ImportMap * providedProp: Tainted<ProvidedPropertyInfo> * range: range
 #endif
@@ -967,7 +967,7 @@ type EventInfo =
     /// An F# use of an event backed by .NET metadata
     | ILEvent of ilEventInfo: ILEventInfo
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// An F# use of an event backed by provided metadata
     | ProvidedEvent of amap: ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: range
 #endif

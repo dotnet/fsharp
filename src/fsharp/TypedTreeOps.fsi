@@ -1326,7 +1326,7 @@ val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Ex
 
 /// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
 /// if the delegate expression is a construction of a delegate.
-val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> invokeRef: Expr * f: Expr * fty: TType * tyargs: TypeInst * argsl: Exprs * m: range -> Expr
+val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> delInvokeRef: Expr * delExpr: Expr * delInvokeTy: TType * delInvokeArg: Expr * m: range -> Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1501,7 +1501,7 @@ val mkPrintfFormatTy: TcGlobals -> TType -> TType -> TType -> TType -> TType -> 
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
@@ -2166,7 +2166,7 @@ val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 /// returns Some(assemblyName) for success
 val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif
@@ -2289,17 +2289,17 @@ val XmlDocArgsEnc: TcGlobals -> Typars * Typars -> TType list -> string
 
 val XmlDocSigOfVal: TcGlobals -> full: bool ->  string -> Val -> string
 
-val XmlDocSigOfUnionCase: (string list -> string)
+val XmlDocSigOfUnionCase: path: string list -> string
 
-val XmlDocSigOfField: (string list -> string)
+val XmlDocSigOfField: path: string list -> string
 
-val XmlDocSigOfProperty: (string list -> string)
+val XmlDocSigOfProperty: path: string list -> string
 
-val XmlDocSigOfTycon: (string list -> string)
+val XmlDocSigOfTycon: path: string list -> string
 
-val XmlDocSigOfSubModul: (string list -> string)
+val XmlDocSigOfSubModul: path: string list -> string
 
-val XmlDocSigOfEntity: EntityRef -> string
+val XmlDocSigOfEntity: eref: EntityRef -> string
 
 //---------------------------------------------------------------------------
 // Resolve static optimizations
@@ -2470,10 +2470,10 @@ val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
 /// Match expressions that represent the creation of an instance of an F# delegate value
-val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list list * Expr * range * (Expr -> Expr)) option
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list * Expr * range * (Expr -> Expr)) option
 
 /// Match a .Invoke on a delegate
-val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Exprs * range) option
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr * range) option
 
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
@@ -2554,3 +2554,6 @@ val mkDebugPoint: m: range -> expr: Expr -> Expr
 
 /// Match an if...then...else expression or the result of "a && b" or "a || b"
 val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option
+
+/// Determine if a value is a method implementing an interface dispatch slot using a private method impl
+val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool

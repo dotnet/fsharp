@@ -190,7 +190,7 @@ module AssemblyContent =
     let rec traverseEntity contentType (parent: Parent) (entity: FSharpEntity) = 
 
         seq { 
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
               if not entity.IsProvided then
 #endif
                 match contentType, entity.Accessibility.IsPublic with
@@ -267,7 +267,7 @@ module AssemblyContent =
         // on-demand.  However a more compete review may be warranted.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with
 #else
         match assemblies, fileName with

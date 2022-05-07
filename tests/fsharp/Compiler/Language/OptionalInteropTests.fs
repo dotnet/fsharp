@@ -155,5 +155,5 @@ Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
             CompilationUtil.CreateCSharpCompilation(csSrc, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31, additionalReferences = ImmutableArray.CreateRange [fsharpCoreAssembly])
             |> CompilationReference.Create
 
-        let fs = Compilation.Create(fsSrc, SourceKind.Fsx, CompileOutput.Exe, options = [|"--langversion:5.0"|], cmplRefs = [cs])
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [|"--langversion:5.0"|], cmplRefs = [cs])
         CompilerAssert.Compile fs

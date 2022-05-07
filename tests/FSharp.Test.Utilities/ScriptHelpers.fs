@@ -130,8 +130,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member _.Dispose() =
-            (fsi :> IDisposable).Dispose()
+        member this.Dispose() = ((this.Fsi) :> IDisposable).Dispose()
 
 [<AutoOpen>]
 module TestHelpers =

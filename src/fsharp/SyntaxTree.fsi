@@ -1945,9 +1945,8 @@ type SynModuleDecl =
         bindings: SynBinding list *
         range: range
 
-    /// A 'do expr' within a module
-    | DoExpr of
-       debugPoint: DebugPointAtBinding *
+    /// An 'expr' within a module.
+    | Expr of
        expr: SynExpr *
        range: range
 
@@ -2223,7 +2222,8 @@ type ParsedImplFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool)
+        isLastCompiland: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia
 
 /// Represents the full syntax tree, file name and other parsing information for a signature file
 [<NoEquality; NoComparison>]
@@ -2233,7 +2233,8 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list
+        modules: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

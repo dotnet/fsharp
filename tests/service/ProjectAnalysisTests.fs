@@ -133,7 +133,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
 let ``Test Project1 should have protected FullName and TryFullName return same results`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
     let rec getFullNameComparisons (entity: FSharpEntity) =
-        #if !NO_EXTENSIONTYPING
+        #if !NO_TYPEPROVIDERS
         seq { if not entity.IsProvided && entity.Accessibility.IsPublic then
         #else
         seq { if entity.Accessibility.IsPublic then
@@ -550,7 +550,7 @@ let ``Test project1 all uses of all symbols`` () =
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
     (set expected = set allUsesOfAllSymbols) |> shouldEqual true
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 [<Test>]
 let ``Test file explicit parse symbols`` () =
 
@@ -3957,7 +3957,7 @@ type Use() =
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 [<Test>]
 let ``Test project28 all symbols in signature`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project28.options) |> Async.RunImmediate
@@ -3967,7 +3967,7 @@ let ``Test project28 all symbols in signature`` () =
         |> Seq.map (fun s ->
                         let typeName = s.GetType().Name
                         match s with
-                        #if !NO_EXTENSIONTYPING
+                        #if !NO_TYPEPROVIDERS
                         | :? FSharpEntity as fse -> typeName, fse.DisplayName, fse.XmlDocSig
                         #endif
                         | :? FSharpField as fsf -> typeName, fsf.DisplayName, fsf.XmlDocSig
@@ -3976,7 +3976,7 @@ let ``Test project28 all symbols in signature`` () =
                         | :? FSharpActivePatternCase as ap -> typeName, ap.DisplayName, ap.XmlDocSig
                         | :? FSharpGenericParameter as fsg -> typeName, fsg.DisplayName, ""
                         | :? FSharpParameter as fsp -> typeName, fsp.DisplayName, ""
-                        #if !NO_EXTENSIONTYPING
+                        #if !NO_TYPEPROVIDERS
                         | :? FSharpStaticParameter as fss -> typeName, fss.DisplayName, ""
                         #endif
                         | _ -> typeName, s.DisplayName, "unknown")

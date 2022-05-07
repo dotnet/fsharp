@@ -229,7 +229,7 @@ module SyntaxTraversal =
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path)) |> pick decl
-                | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
+                | SynModuleDecl.Expr(synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open(_target, _range) -> None
@@ -808,7 +808,7 @@ module SyntaxTraversal =
             visitor.VisitBinding(origPath, defaultTraverse,b)
 
         match parseTree with
-        | ParsedInput.ImplFile (ParsedImplFileInput (_,_,_,_,_,l,_))-> 
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = l))-> 
             let fileRange =
 #if DEBUG
                 match l with [] -> range0 | _ -> l |> List.map (fun x -> x.Range) |> List.reduce unionRanges

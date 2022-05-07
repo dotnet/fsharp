@@ -247,10 +247,16 @@ type ExprAtomicFlag =
 [<RequireQualifiedAccess>]
 type SynBindingKind =
 
+    // Indicates 'expr' in a module, via ElimSynModuleDeclExpr
     | StandaloneExpression
 
     | Normal
 
+    // Covers 'do expr' in class or let-rec but not in a module.
+    //
+    // Note, in a module 'expr' corresponds to SynModuleDecl.Expr
+    // Note, in a module 'do expr' corresponds to SynModuleDecl.Expr with expression SynExpr.Do
+    // These are eliminated to bindings with 'StandaloneExpression' by ElimSynModuleDeclExpr
     | Do
 
 [<NoEquality; NoComparison>]
@@ -1776,8 +1782,7 @@ type SynModuleDecl =
         bindings: SynBinding list *
         range: range
 
-    | DoExpr of
-       debugPoint: DebugPointAtBinding *
+    | Expr of
        expr: SynExpr *
        range: range
 
@@ -1809,7 +1814,7 @@ type SynModuleDecl =
         | SynModuleDecl.ModuleAbbrev (range=m)
         | SynModuleDecl.NestedModule (range=m)
         | SynModuleDecl.Let (range=m)
-        | SynModuleDecl.DoExpr (range=m)
+        | SynModuleDecl.Expr (range=m)
         | SynModuleDecl.Types (range=m)
         | SynModuleDecl.Exception (range=m)
         | SynModuleDecl.Open (range=m)
@@ -2032,7 +2037,8 @@ type ParsedImplFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool)
+        isLastCompiland: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -2041,7 +2047,8 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list
+        modules: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =

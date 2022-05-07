@@ -316,7 +316,7 @@ type BackgroundCompiler(
         | None -> ()
         | Some builder -> 
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             // Register the behaviour that responds to CCUs being invalidated because of type
             // provider Invalidate events. This invalidates the configuration in the build.
             builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
@@ -928,6 +928,10 @@ type BackgroundCompiler(
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+            parseCacheLock.AcquireLock(fun ltok -> 
+                for sourceFile in options.SourceFiles do
+                    checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options))
+            )
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 
