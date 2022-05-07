@@ -125,7 +125,7 @@ type InterfaceData =
                         Some ("'" + s.idText)
                     | TyparStaticReq.HeadType -> 
                         Some ("^" + s.idText)
-                | SynType.LongIdent(LongIdentWithDots(xs, _)) ->
+                | SynType.LongIdent(SynLongIdent(xs, _, _)) ->
                     xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
                 | SynType.App(t, _, ts, _, _, isPostfix, _) ->
                     match t, ts with
@@ -503,7 +503,7 @@ module InterfaceStubGenerator =
         GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
-        | SynPat.LongIdent(longDotId=LongIdentWithDots(xs, _)) ->
+        | SynPat.LongIdent(longDotId=SynLongIdent(xs, _, _)) ->
 //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
             Some(last.idText, last.idRange)
