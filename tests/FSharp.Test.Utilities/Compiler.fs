@@ -314,6 +314,9 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
+
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported for F#" cUnit
 
@@ -934,7 +937,7 @@ module rec Compiler =
                     | ErrorType.Warning n-> $"Warning {n}"
                     | ErrorType.Hidden n-> $"Hidden {n}"
                     | ErrorType.Information n-> $"Information {n}"
-                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")"""
+                $"""({errorType}, Line {range.StartLine}, Col {range.StartColumn}, Line {range.EndLine}, Col {range.EndColumn}, "{message}")""". Replace("\r\n", "\n")
 
             let expectedErrors = expected |> List.map (fun error -> errorMessage error)
             let sourceErrors = source |> List.map (fun error -> errorMessage { error with Range = adjustRange error.Range libAdjust })

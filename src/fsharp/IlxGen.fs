@@ -4110,18 +4110,45 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
 
 and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
     let eenv = SetIsInLoop true eenv
-    let finish = CG.GenerateDelayMark cgbuf "while_finish"
 
-    match spWhile with
-    | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
-    | DebugPointAtWhile.No -> ()
+    // jmp test; body; test; if testPassed then jmp body else finish
+    // 
+    // This is a pattern recognized by the JIT and it results in the most efficient assembly.
+    if cgbuf.GetCurrentStack().IsEmpty then
+        let startTest = CG.GenerateDelayMark cgbuf "startTest"
+        CG.EmitInstr cgbuf (pop 0) Push0 (I_br startTest.CodeLabel)
 
-    let startTest = CG.GenerateMark cgbuf "startTest"
+        let startBody = CG.GenerateMark cgbuf "startBody"
+        GenExpr cenv cgbuf eenv bodyExpr discard
 
-    GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
+        | DebugPointAtWhile.No -> ()
 
-    GenExpr cenv cgbuf eenv bodyExpr (DiscardThen (Br startTest))
-    CG.SetMarkToHere cgbuf finish
+        CG.SetMarkToHere cgbuf startTest
+        GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp (BI_brtrue, startBody.CodeLabel) ]))
+
+    // In the rare cases when there is something already on the stack, e.g.
+    //
+    // let f() =
+    //     callSomething firstArgument ((while .... do ...); secondArgument)
+    //
+    // we emit
+    //
+    // test; if not testPassed jmp finish; body; jmp test; finish
+    else
+        let finish = CG.GenerateDelayMark cgbuf "while_finish"
+
+        match spWhile with
+        | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
+        | DebugPointAtWhile.No -> ()
+
+        let startTest = CG.GenerateMark cgbuf "startTest"
+
+        GenExpr cenv cgbuf eenv condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp (BI_brfalse, finish.CodeLabel) ]))
+
+        GenExpr cenv cgbuf eenv bodyExpr (DiscardThen (Br startTest))
+        CG.SetMarkToHere cgbuf finish
 
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 

@@ -18,6 +18,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags\Diags.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy\Legacy.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison\IComparison.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\ModuleDefinitions.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
@@ -28,6 +39,7 @@
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs" />
+    <Compile Include="Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs" />
     <Compile Include="Conformance\InferenceProcedures\RecursiveSafetyAnalysis\RecursiveSafetyAnalysis.fs" />
     <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
     <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
@@ -57,6 +69,7 @@
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
+    <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\AssemblyBoundary\AssemblyBoundary.fs" />
     <Compile Include="EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs" />
     <Compile Include="EmittedIL\AttributeTargets\AttributeTargets.fs" />
@@ -147,6 +160,11 @@
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\Override01.fsx" />
+    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
+    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
