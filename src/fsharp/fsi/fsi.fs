@@ -1626,7 +1626,7 @@ type internal FsiDynamicCompiler
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> TypeCheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+            lock tcLockObject (fun _ -> CheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
 
         let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
@@ -1988,7 +1988,7 @@ type internal FsiDynamicCompiler
                     input.MetaCommandDiagnostics |> List.iter diagnosticSink
                     let parsedInput =
                         match input.SyntaxTree with
-                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
+                        | None -> ParseOneInputFile(tcConfig, lexResourceManager, input.FileName, (true, false), errorLogger, (*retryLocked*)false)
                         | Some parseTree -> parseTree
                     input.FileName, parsedInput)
               |> List.unzip
@@ -2393,15 +2393,17 @@ module internal MagicAssemblyResolution =
 // Reading stdin
 //----------------------------------------------------------------------------
 
-type internal FsiStdinLexerProvider
-                          (tcConfigB, fsiStdinSyphon,
-                           fsiConsoleInput : FsiConsoleInput,
-                           fsiConsoleOutput : FsiConsoleOutput,
-                           fsiOptions : FsiCommandLineOptions,
-                           lexResourceManager : LexResourceManager) =
+type FsiStdinLexerProvider
+    (
+        tcConfigB, fsiStdinSyphon,
+        fsiConsoleInput: FsiConsoleInput,
+        fsiConsoleOutput: FsiConsoleOutput,
+        fsiOptions: FsiCommandLineOptions,
+        lexResourceManager: LexResourceManager
+    ) =
 
     // #light is the default for FSI
-    let interactiveInputLightSyntaxStatus =
+    let lightStatus =
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
@@ -2442,9 +2444,9 @@ type internal FsiStdinLexerProvider
 
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
-        let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
-        let lexargs = mkLexargs (defines, interactiveInputLightSyntaxStatus, lexResourceManager, [], errorLogger, PathMap.empty)
-        let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
+        let defines = tcConfigB.conditionalDefines
+        let lexargs = mkLexargs (defines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty)
+        let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
     // Create a new lexer to read stdin
@@ -2482,17 +2484,19 @@ type internal FsiStdinLexerProvider
 // It might be simpler if it ran on the parser thread.
 //----------------------------------------------------------------------------
 
-type internal FsiInteractionProcessor
-                            (fsi: FsiEvaluationSessionHostConfig,
-                             tcConfigB,
-                             fsiOptions: FsiCommandLineOptions,
-                             fsiDynamicCompiler: FsiDynamicCompiler,
-                             fsiConsolePrompt : FsiConsolePrompt,
-                             fsiConsoleOutput : FsiConsoleOutput,
-                             fsiInterruptController : FsiInterruptController,
-                             fsiStdinLexerProvider : FsiStdinLexerProvider,
-                             lexResourceManager : LexResourceManager,
-                             initialInteractiveState) =
+type FsiInteractionProcessor
+    (
+        fsi: FsiEvaluationSessionHostConfig,
+        tcConfigB,
+        fsiOptions: FsiCommandLineOptions,
+        fsiDynamicCompiler: FsiDynamicCompiler,
+        fsiConsolePrompt : FsiConsolePrompt,
+        fsiConsoleOutput : FsiConsoleOutput,
+        fsiInterruptController : FsiInterruptController,
+        fsiStdinLexerProvider : FsiStdinLexerProvider,
+        lexResourceManager : LexResourceManager,
+        initialInteractiveState
+    ) =
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
@@ -3190,6 +3194,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- LegacyResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
+    do tcConfigB.conditionalDefines <- "INTERACTIVE" :: tcConfigB.conditionalDefines
 
 #if NETSTANDARD
     do tcConfigB.SetUseSdkRefs true

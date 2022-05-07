@@ -829,7 +829,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 // OptionBlock: Language
 //----------------------
 
-let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
+let defineSymbol tcConfigB s = tcConfigB.conditionalDefines <- s :: tcConfigB.conditionalDefines
 
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
     CompilerOption
@@ -1060,7 +1060,8 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None)
     CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some s), None, None)
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None)
-    CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None) ]
+    CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None)
+  ]
 
 let internalFlags (tcConfigB:TcConfigBuilder) =
   [

@@ -5938,7 +5938,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
-    | SynExpr.Match (_mMatch, spMatch, synInputExpr, _mWith, synClauses, _m) ->
+    | SynExpr.Match (spMatch, synInputExpr, synClauses, _m, _trivia) ->
 
         let inputExpr, inputTy, tpenv =
             let env = { env with eIsControlFlow = false }
@@ -9530,19 +9530,23 @@ and TcMethodApplication
 
             let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
 
+            let singleMethodCurriedArgs =
+                match candidates with
+                | [calledMeth] when List.forall isNil namedCurriedCallerArgs  ->
+                    let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+                    match curriedCalledArgs with
+                    | [arg :: _] when isSimpleFormalArg arg -> Some(curriedCalledArgs)
+                    | _ -> None
+                | _ -> None
+
             // "single named item" rule. This is where we have a single accessible method
             //      member x.M(arg1)
             // being used with
             //      x.M (x, y)
             // Without this rule this requires
             //      x.M ((x, y))
-            match candidates with
-            | [calledMeth]
-                  when (namedCurriedCallerArgs |> List.forall isNil &&
-                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                        curriedCalledArgs.Length = 1 &&
-                        curriedCalledArgs.Head.Length = 1 &&
-                        curriedCalledArgs.Head.Head |> isSimpleFormalArg) ->
+            match singleMethodCurriedArgs, unnamedCurriedCallerArgs with
+            | Some [[_]], _ ->
                 let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
                 let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
                 (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
@@ -9554,15 +9558,7 @@ and TcMethodApplication
             // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p"
             // Without this rule this requires
             //      x.M (fst p, snd p)
-            | [calledMeth]
-                  when (namedCurriedCallerArgs |> List.forall isNil &&
-                        unnamedCurriedCallerArgs.Length = 1 &&
-                        unnamedCurriedCallerArgs.Head.Length = 1 &&
-                        let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                        curriedCalledArgs.Length = 1 &&
-                        curriedCalledArgs.Head.Length > 1 &&
-                        curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
-
+            | Some [_ :: args], [[_]] when List.forall isSimpleFormalArg args ->
                 // The call lambda has function type
                 let exprTy = mkFunTy g (NewInferenceType g) exprTy.Commit
 
@@ -9582,9 +9578,9 @@ and TcMethodApplication
                 (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
 
     let CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
-       let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-       curriedMethodArgAttribs.Length = 1 &&
-       curriedMethodArgAttribs.Head.Length = n
+       match calledMeth.NumArgs with
+       | [argAttribs] -> argAttribs = n
+       | _ -> false
 
     let GenerateMatchingSimpleArgumentTypes (calledMeth: MethInfo) =
         let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)

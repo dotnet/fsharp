@@ -82,6 +82,9 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinal value =
             x.EndsWith(value, StringComparison.Ordinal)
 
+        member inline x.EndsWithOrdinalIgnoreCase value =
+            x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
+
     /// Get an initialization hole 
     let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
