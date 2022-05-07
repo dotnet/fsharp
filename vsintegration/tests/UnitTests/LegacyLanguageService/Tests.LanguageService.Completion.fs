@@ -786,15 +786,15 @@ for i in 0..a."]
             ]
         let useCases = 
             [
-                "let _ = (* MARKER*){X", "(* MARKER*){X", [], ["XX"]
+                "let _ = (* MARKER*){X  }", "(* MARKER*){X", [], ["XX"]
                 "let _ = {(* MARKER*)Mod. = 1; O", "(* MARKER*)Mod.", ["XX"; "YY"], ["System"]
                 "let _ = {(* MARKER*)Mod.Rec. ", "(* MARKER*)Mod.Rec.", ["XX"; "YY"], ["System"]
+                "let _ = (* MARKER*){Mod.XX = 1;  }", "(* MARKER*){Mod.XX = 1; ", ["Mod"], ["XX"; "abs"]
             ]
 
         for (code, marker, should, shouldnot) in useCases do
             let code = prologue @ [code]
-            let shouldnot = shouldnot @ ["abs"]
-            AssertCtrlSpaceCompleteContains code marker should ["abs"]
+            AssertCtrlSpaceCompleteContains code marker should shouldnot
     
     [<Test>]
     [<Category("Records")>]
