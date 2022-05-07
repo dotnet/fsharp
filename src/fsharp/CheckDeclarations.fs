@@ -3249,7 +3249,10 @@ module EstablishTypeDefinitionCores =
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
         else ModuleOrType
 
-    let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
+    let AdjustModuleName modKind nm =
+        match modKind with
+        | FSharpModuleWithSuffix -> nm+FSharpModuleSuffix
+        | _ -> nm
 
     let InstanceMembersNeedSafeInitCheck (cenv: cenv) m thisTy = 
         let g = cenv.g
@@ -3271,22 +3274,33 @@ module EstablishTypeDefinitionCores =
         else
             NoSafeInitInfo
 
+    // We suppress all error reporting for this pre-analysis of the attributes,
+    // in case some attributes involve constructs not already in scope - we are
+    // only looking for the 'Measure' attributes, then we discard the generated type parameters
+    let TyparsAllHaveMeasureDeclEarlyCheck cenv env (TyparDecls synTypars) =
+        suppressErrorReporting (fun () -> 
+            synTypars|> List.forall (fun synTypar ->
+                try
+                    let (SynTyparDecl(Attributes synAttrs, _)) = synTypar
+                    let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
+                    HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
+                with _ -> false))
 
     let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
                 match d with 
-                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(_, TyparDecls typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
-                    if isAtOriginalTyconDefn && (TcTyparDecls cenv env typars |> List.forall (fun p -> p.Kind = TyparKind.Measure)) then 
+                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=synTypars; longId=ids), _, _, _, _, isAtOriginalTyconDefn), _) -> 
+                    if isAtOriginalTyconDefn && TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then 
                         yield (List.last ids).idText
                 | _ -> () ]
          |> set
 
-    let TypeNamesInNonMutRecDecls defs =
+    let TypeNamesInNonMutRecDecls cenv env defs =
             [ for def in defs do 
                 match def with 
                 | SynModuleDecl.Types (typeSpecs, _) -> 
-                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=TyparDecls typars; longId=ids); typeRepr=trepr) in typeSpecs do 
-                        if isNil typars then
+                    for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=synTypars; longId=ids); typeRepr=trepr) in typeSpecs do 
+                        if TyparsAllHaveMeasureDeclEarlyCheck cenv env synTypars then
                             match trepr with 
                             | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> ()
                             | _ -> yield (List.last ids).idText
@@ -4685,7 +4699,7 @@ module TcDeclarations =
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
-                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 if not (typarsAEquiv g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
@@ -5630,12 +5644,10 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
             if isNil otherDefs then unionRanges firstDef.Range endm
             else unionRanges (List.head otherDefs).Range endm
 
-        // Possibly better:
-        //let scopem = unionRanges h1.Range.EndRange endm
-        
-        let! firstDef', env', envAtEnd' = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+        let! firstDef, env, envAtEnd = TcModuleOrNamespaceElementNonMutRec cenv parent typeNames scopem env firstDef
+
         // tail recursive 
-        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef' :: defsSoFar), env', envAtEnd') otherDefs
+        return! TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ( (firstDef :: defsSoFar), env, envAtEnd) otherDefs
     | [] -> 
         return List.rev defsSoFar, envAtEnd
  }
@@ -5747,7 +5759,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0
         ensureCcuHasModuleOrNamespaceAtPath cenv.topCcu env.ePath env.eCompPath doc
 
     // Collect the type names so we can implicitly add the compilation suffix to module names
-    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls defs
+    let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecDecls cenv env defs
 
     match mutRecNSInfo with 
     | Some _ -> 

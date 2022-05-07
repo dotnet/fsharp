@@ -25,6 +25,7 @@ module rec Compiler =
     type BaselineFile =
         {
             FilePath: string
+            BslSource: string
             Content: string option
         }
 
@@ -233,7 +234,6 @@ module rec Compiler =
                 EndLine     = range.EndLine     - adjust
                 EndColumn   = range.EndColumn   + 1 }
 
-
     let FsxSourceCode source =
         SourceCodeFileKind.Fsx({FileName="test.fsx"; SourceText=Some source})
 
@@ -272,7 +272,6 @@ module rec Compiler =
 
     let CSharpFromPath (path: string) : CompilationUnit =
         csFromString (SourceFromPath path) |> CS
-
 
     let asFsx (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -766,6 +765,14 @@ module rec Compiler =
                     let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
+                        // Failed try update baselines if required
+                        // If we are here then the il file has been produced we can write it back to the baseline location
+                        // if the environment variable TEST_UPDATE_BSL has been set
+                        if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
+                            match baseline with
+                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                                | None -> ()
+
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
 
