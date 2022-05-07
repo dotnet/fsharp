@@ -7257,6 +7257,10 @@ FSharp.Compiler.Syntax.SynMeasure+Named: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMeasure+Named: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynMeasure+Named: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_longId()
 FSharp.Compiler.Syntax.SynMeasure+Named: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] longId
+FSharp.Compiler.Syntax.SynMeasure+Paren: FSharp.Compiler.Syntax.SynMeasure get_measure()
+FSharp.Compiler.Syntax.SynMeasure+Paren: FSharp.Compiler.Syntax.SynMeasure measure
+FSharp.Compiler.Syntax.SynMeasure+Paren: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynMeasure+Paren: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynMeasure+Power: FSharp.Compiler.Syntax.SynMeasure get_measure()
 FSharp.Compiler.Syntax.SynMeasure+Power: FSharp.Compiler.Syntax.SynMeasure measure
 FSharp.Compiler.Syntax.SynMeasure+Power: FSharp.Compiler.Syntax.SynRationalConst get_power()
@@ -7277,6 +7281,7 @@ FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Anon
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Divide
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Named
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 One
+FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Paren
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Power
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Product
 FSharp.Compiler.Syntax.SynMeasure+Tags: Int32 Seq
@@ -7289,6 +7294,7 @@ FSharp.Compiler.Syntax.SynMeasure: Boolean IsAnon
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsDivide
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsNamed
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsOne
+FSharp.Compiler.Syntax.SynMeasure: Boolean IsParen
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsPower
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsProduct
 FSharp.Compiler.Syntax.SynMeasure: Boolean IsSeq
@@ -7297,6 +7303,7 @@ FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsAnon()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsDivide()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsNamed()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsOne()
+FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsParen()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsPower()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsProduct()
 FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsSeq()
@@ -7304,6 +7311,7 @@ FSharp.Compiler.Syntax.SynMeasure: Boolean get_IsVar()
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewAnon(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewDivide(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewNamed(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewParen(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewPower(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Syntax.SynRationalConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewProduct(FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Syntax.SynMeasure, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure NewSeq(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMeasure], FSharp.Compiler.Text.Range)
@@ -7313,6 +7321,7 @@ FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure get_One()
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Anon
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Divide
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Named
+FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Paren
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Power
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Product
 FSharp.Compiler.Syntax.SynMeasure: FSharp.Compiler.Syntax.SynMeasure+Seq

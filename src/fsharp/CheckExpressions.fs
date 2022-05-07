@@ -836,6 +836,7 @@ let TcConst (cenv: cenv) (overallTy: TType) m env c =
         | SynMeasure.Seq(mss, _) -> ProdMeasures (List.map tcMeasure mss)
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
+        | SynMeasure.Paren(measure, _) -> tcMeasure measure
 
     let unif expected = UnifyTypes cenv env m overallTy expected
 
@@ -5914,7 +5915,7 @@ and TcNonControlFlowExpr (env: TcEnv) f =
         | NotedSourceConstruct.Combine
         | NotedSourceConstruct.With
         | NotedSourceConstruct.While
-        | NotedSourceConstruct.DelayOrQuoteOrRun -> 
+        | NotedSourceConstruct.DelayOrQuoteOrRun ->
             res, tpenv
         | NotedSourceConstruct.None ->
             // Skip outer debug point for "e1 && e2" and "e1 || e2"
@@ -5993,7 +5994,6 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     // e: ty
     | SynExpr.Typed (synBodyExpr, synType, m) ->
-        TcNonControlFlowExpr env <| fun env ->
         TcExprTypeAnnotated cenv overallTy env tpenv (synBodyExpr, synType, m)
 
     // e :? ty
