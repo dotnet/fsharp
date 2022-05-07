@@ -3314,7 +3314,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             fs, (remake >> (fun innerExprR -> Expr.DebugPoint (dp, innerExprR)))
 
         | _ -> 
-            [f], (fun newExprs -> (assert (newExprs.Length = 1)); List.head newExprs)
+            [f], (fun newExprs -> (assert (List.isSingleton newExprs)); List.head newExprs)
 
     match strip f0 with 
     | [f], remake -> 
