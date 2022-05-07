@@ -3,8 +3,9 @@
 module internal Internal.Utilities.Library.Extras
 
 open System
-open System.IO
 open System.Collections.Generic
+open System.IO
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.InteropServices
@@ -315,15 +316,19 @@ let equalOn f x y = (f x) = (f y)
 
 /// Buffer printing utility
 let bufs f =
-    let buf = System.Text.StringBuilder 100
+    let buf = StringBuilder 100
     f buf
     buf.ToString()
 
 /// Writing to output stream via a string buffer.
 let writeViaBuffer (os: TextWriter) f x =
-    let buf = System.Text.StringBuilder 100
+    let buf = StringBuilder 100
     f buf x
     os.Write(buf.ToString())
+
+type StringBuilder with
+
+    member this.AppendString(value: string) = this.Append(value) |> ignore
 
 //---------------------------------------------------------------------------
 // Imperative Graphs
@@ -341,9 +346,9 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     let tab = Map.ofList nodes
     let nodes = List.map snd nodes
     do for node in nodes do
-        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab.[nodeId])
+        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab[nodeId])
 
-    member g.GetNodeData nodeId = tab.[nodeId].nodeData
+    member g.GetNodeData nodeId = tab[nodeId].nodeData
 
     member g.IterateCycles f =
         let rec trace path node =
@@ -587,18 +592,18 @@ module ArrayParallel =
         let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
         try
             Parallel.For(0, arr.Length, parallelOptions, fun i ->
-                f i arr.[i]
+                f i arr[i]
             ) |> ignore
         with
         | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-            raise(ex.InnerExceptions.[0])
+            raise(ex.InnerExceptions[0])
 
     let inline iter f (arr: 'T []) =
         arr |> iteri (fun _ item -> f item)
 
     let inline mapi f (arr: 'T []) =
         let mapped = Array.zeroCreate arr.Length
-        arr |> iteri (fun i item -> mapped.[i] <- f i item)
+        arr |> iteri (fun i item -> mapped[i] <- f i item)
         mapped
 
     let inline map f (arr: 'T []) =

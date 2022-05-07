@@ -14,7 +14,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
-type env = Nix
+type env = | NoEnv
 
 let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
 
@@ -26,7 +26,7 @@ type cenv =
       mutable unsolved: Typars 
       stackGuard: StackGuard }
 
-    override x.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
 /// Walk types, collecting type variables
 let accTy cenv _env ty =
@@ -39,7 +39,7 @@ let accTypeInst cenv env tyargs =
     tyargs |> List.iter (accTy cenv env)
 
 /// Walk expressions, collecting type variables
-let rec accExpr (cenv:cenv) (env:env) expr =     
+let rec accExpr (cenv: cenv) (env: env) expr =
     cenv.stackGuard.Guard <| fun () ->
 
     let expr = stripExpr expr 
@@ -83,15 +83,15 @@ let rec accExpr (cenv:cenv) (env:env) expr =
         accExpr cenv env f
         accExprs cenv env argsl
 
-    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
+    | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
+        let ty = mkMultiLambdaTy cenv.g m argvs bodyTy 
         accLambdas cenv env topValInfo expr ty
 
-    | Expr.TyLambda (_, tps, _body, _m, rty)  -> 
+    | Expr.TyLambda (_, tps, _body, _m, bodyTy)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-        accTy cenv env rty
-        let ty = mkForallTyIfNeeded tps rty 
+        accTy cenv env bodyTy
+        let ty = mkForallTyIfNeeded tps bodyTy 
         accLambdas cenv env topValInfo expr ty
 
     | Expr.TyChoose (_tps, e1, _m)  -> 
@@ -128,9 +128,9 @@ let rec accExpr (cenv:cenv) (env:env) expr =
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l
 
-and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs, e, _m)) = 
+and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig, _attribs, _tps, vs, bodyExpr, _m)) = 
     vs |> List.iterSquared (accVal cenv env)
-    accExpr cenv env e
+    accExpr cenv env bodyExpr
 
 and accIntfImpls cenv env baseValOpt l = 
     List.iter (accIntfImpl cenv env baseValOpt) l
@@ -145,35 +145,35 @@ and accOp cenv env (op, tyargs, args, _m) =
     accExprs cenv env args
     match op with 
     // Handle these as special cases since mutables are allowed inside their bodies 
-    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTypes) ->
+    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTys) ->
         accTypeInst cenv env enclTypeInst
         accTypeInst cenv env methInst
-        accTypeInst cenv env retTypes
+        accTypeInst cenv env retTys
     | TOp.TraitCall traitInfo -> 
         accTraitInfo cenv env traitInfo
         
-    | TOp.ILAsm (_, retTypes) ->
-        accTypeInst cenv env retTypes
+    | TOp.ILAsm (_, retTys) ->
+        accTypeInst cenv env retTys
     | _ ->    ()
 
-and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
-    argtys |> accTypeInst cenv env 
-    rty |> Option.iter (accTy cenv env)
+and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+    argTys |> accTypeInst cenv env 
+    retTy |> Option.iter (accTy cenv env)
     tys |> List.iter (accTy cenv env)
 
-and accLambdas cenv env topValInfo e ety =
-    match stripDebugPoints e with
-    | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
+and accLambdas cenv env topValInfo expr exprTy =
+    match stripDebugPoints expr with
+    | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env topValInfo bodyExpr exprTy      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 
-        accTy cenv env bodyty
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda cenv.g cenv.amap topValInfo (expr, exprTy) 
+        accTy cenv env bodyTy
         vsl |> List.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)
         ctorThisValOpt |> Option.iter (accVal cenv env)
         accExpr cenv env body
     | _ -> 
-        accExpr cenv env e
+        accExpr cenv env expr
 
 and accExprs cenv env exprs = 
     exprs |> List.iter (accExpr cenv env) 
@@ -184,8 +184,8 @@ and accTargets cenv env m ty targets =
 and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
     accExpr cenv env e
 
-and accDTree cenv env x =
-    match x with 
+and accDTree cenv env dtree =
+    match dtree with 
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
     | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
@@ -231,13 +231,13 @@ and accVal cenv env v =
     v.ValReprInfo |> Option.iter (accValReprInfo cenv env)
     v.Type |> accTy cenv env 
 
-and accBind cenv env (bind:Binding) =
+and accBind cenv env (bind: Binding) =
     accVal cenv env bind.Var    
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
     accLambdas cenv env topValInfo bind.Expr bind.Var.Type
 
-and accBinds cenv env xs = 
-    xs |> List.iter (accBind cenv env) 
+and accBinds cenv env binds = 
+    binds |> List.iter (accBind cenv env) 
 
 let accTyconRecdField cenv env _tycon (rfield:RecdField) = 
     accAttribs cenv env rfield.PropertyAttribs
@@ -255,22 +255,22 @@ let accTycon cenv env (tycon:Tycon) =
 let accTycons cenv env tycons = 
     List.iter (accTycon cenv env) tycons
 
-let rec accModuleOrNamespaceExpr cenv env x = 
+let rec accModuleOrNamespaceContents cenv env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
+    | ModuleOrNamespaceContentsWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
     
-and accModuleOrNamespaceDefs cenv env x = 
-    List.iter (accModuleOrNamespaceDef cenv env) x
+and accModuleOrNamespaceDefs cenv env defs = 
+    List.iter (accModuleOrNamespaceDef cenv env) defs
 
-and accModuleOrNamespaceDef cenv env x = 
-    match x with 
+and accModuleOrNamespaceDef cenv env def = 
+    match def with 
     | TMDefRec(_, _opens, tycons, mbinds, _m) -> 
         accTycons cenv env tycons
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind, _m)  -> accBind cenv env bind 
     | TMDefDo(e, _m)  -> accExpr cenv env e
-    | TMDefOpens __ -> ()
-    | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
+    | TMDefOpens _ -> ()
+    | TMWithSig(def)  -> accModuleOrNamespaceContents cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 
 and accModuleOrNamespaceBinds cenv env xs = 
@@ -285,14 +285,14 @@ and accModuleOrNamespaceBind cenv env x =
         accModuleOrNamespaceDef cenv env rhs 
 
 let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
-   let cenv = 
-      { g =g  
-        amap=amap 
-        denv=denv 
-        unsolved = [] 
-        stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
-   accModuleOrNamespaceDef cenv Nix mdef
-   accAttribs cenv Nix extraAttribs
-   List.rev cenv.unsolved
+    let cenv = 
+        { g =g  
+          amap=amap 
+          denv=denv 
+          unsolved = [] 
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
+    accModuleOrNamespaceDef cenv NoEnv mdef
+    accAttribs cenv NoEnv extraAttribs
+    List.rev cenv.unsolved
 
 

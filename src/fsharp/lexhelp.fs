@@ -20,14 +20,14 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-/// The "mock" filename used by fsi.exe when reading from stdin.
+/// The "mock" file name used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
-let stdinMockFilename = "stdin" 
+let stdinMockFileName = "stdin" 
 
 /// Lexer args: status of #light processing.  Mutated when a #light
 /// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
-type LightSyntaxStatus(initial:bool,warn:bool) = 
+type IndentationAwareSyntaxStatus(initial:bool,warn:bool) = 
     let mutable status = None
     member x.Status 
        with get() = match status with None -> initial | Some v -> v
@@ -44,19 +44,19 @@ type LexResourceManager(?capacity: int) =
         | true, res -> res
         | _ ->
             let res = IDENT s
-            strings.[s] <- res
+            strings[s] <- res
             res
 
 /// Lexer parameters 
 type LexArgs =  
     {
-      defines: string list
+      conditionalDefines: string list
       resourceManager: LexResourceManager
       errorLogger: ErrorLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus : LightSyntaxStatus
+      mutable lightStatus : IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
     }
 
@@ -67,33 +67,35 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (defines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
+let mkLexargs (conditionalDefines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap: PathMap) =
     { 
-      defines = defines
-      ifdefStack= ifdefStack
-      lightStatus=lightStatus
-      resourceManager=resourceManager
-      errorLogger=errorLogger
-      applyLineDirectives=true
+      conditionalDefines = conditionalDefines
+      ifdefStack = ifdefStack
+      lightStatus = lightStatus
+      resourceManager = resourceManager
+      errorLogger = errorLogger
+      applyLineDirectives = true
       stringNest = []
-      pathMap=pathMap
+      pathMap = pathMap
     }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
+    LexbufCommentStore.ClearComments lexbuf
+    
     try
       f () 
     with e ->
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
-let resetLexbufPos filename (lexbuf: Lexbuf) = 
-    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
+let resetLexbufPos fileName (lexbuf: Lexbuf) = 
+    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile fileName)
 
-/// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
-    resetLexbufPos filename lexbuf
+/// Reset the lexbuf, configure the initial position with the given file name and call the given function
+let usingLexbufForParsing (lexbuf:Lexbuf, fileName) f =
+    resetLexbufPos fileName lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
 //------------------------------------------------------------------------
@@ -105,10 +107,10 @@ let stringBufferAsString (buf: ByteBuffer) =
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
-        let hi = buf.Span.[i*2+1]
-        let lo = buf.Span.[i*2]
+        let hi = buf.Span[i*2+1]
+        let lo = buf.Span[i*2]
         let c = char (((int hi) * 256) + (int lo))
-        chars.[i] <- c
+        chars[i] <- c
     String(chars)
 
 /// When lexing bytearrays we don't expect to see any unicode stuff. 
@@ -118,7 +120,7 @@ let stringBufferAsString (buf: ByteBuffer) =
 /// stored using addIntChar 
 let stringBufferAsBytes (buf: ByteBuffer) = 
     let bytes = buf.AsMemory()
-    Array.init (bytes.Length / 2) (fun i -> bytes.Span.[i*2]) 
+    Array.init (bytes.Length / 2) (fun i -> bytes.Span[i*2]) 
 
 [<Flags>]
 type LexerStringFinisherContext = 
@@ -188,7 +190,7 @@ let stringBufferIsBytes (buf: ByteBuffer) =
     let bytes = buf.AsMemory()
     let mutable ok = true 
     for i = 0 to bytes.Length / 2-1 do
-        if bytes.Span.[i*2+1] <> 0uy then ok <- false
+        if bytes.Span[i*2+1] <> 0uy then ok <- false
     ok
 
 let newline (lexbuf:LexBuffer<_>) = 
@@ -213,16 +215,16 @@ let hexdigit d =
 
 let unicodeGraphShort (s:string) =
     if s.Length <> 4 then failwith "unicodegraph"
-    uint16 (hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3])
+    uint16 (hexdigit s[0] * 4096 + hexdigit s[1] * 256 + hexdigit s[2] * 16 + hexdigit s[3])
 
 let hexGraphShort (s:string) =
     if s.Length <> 2 then failwith "hexgraph"
-    uint16 (hexdigit s.[0] * 16 + hexdigit s.[1])
+    uint16 (hexdigit s[0] * 16 + hexdigit s[1])
 
 let unicodeGraphLong (s:string) =
     if s.Length <> 8 then failwith "unicodeGraphLong"
-    let high = hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3] in 
-    let low = hexdigit s.[4] * 4096 + hexdigit s.[5] * 256 + hexdigit s.[6] * 16 + hexdigit s.[7] in 
+    let high = hexdigit s[0] * 4096 + hexdigit s[1] * 256 + hexdigit s[2] * 16 + hexdigit s[3] in 
+    let low = hexdigit s[4] * 4096 + hexdigit s[5] * 256 + hexdigit s[6] * 16 + hexdigit s[7] in 
     // not a surrogate pair
     if high = 0 then SingleChar(uint16 low)
     // invalid encoding
@@ -365,7 +367,7 @@ module Keywords =
             tab.Add(keyword, token)
         tab
         
-    let KeywordToken s = keywordTable.[s]
+    let KeywordToken s = keywordTable[s]
 
     let IdentifierToken args (lexbuf:Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
@@ -390,14 +392,14 @@ module Keywords =
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
-                let filename = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
+                let fileName = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
                 let dirname =
-                    if String.IsNullOrWhiteSpace(filename) then
+                    if String.IsNullOrWhiteSpace(fileName) then
                         String.Empty
-                    else if filename = stdinMockFilename then
+                    else if fileName = stdinMockFileName then
                         System.IO.Directory.GetCurrentDirectory()
                     else
-                        filename
+                        fileName
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                         |> System.IO.Path.GetDirectoryName
 

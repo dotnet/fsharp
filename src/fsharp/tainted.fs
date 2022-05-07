@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 open System
 open Internal.Utilities.Library 
@@ -94,56 +94,56 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     member _.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
 
-    member this.Protect f  (range:range) =
+    member this.Protect f  (range: range) =
         try 
             context.Lock.AcquireLock(fun _ -> f value)
         with
-            |   :? TypeProviderError -> reraise()
-            |   :? AggregateException as ae ->
+            | :? TypeProviderError -> reraise()
+            | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
                     let messages = [for e in ae.InnerExceptions -> e.Message]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
-            |   e -> 
+            | e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
                     raise <| TypeProviderError((errNum, e.Message), this.TypeProviderDesignation, range)
 
     member this.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
-    member this.PApply(f,range:range) = 
+    member this.PApply(f,range: range) = 
         let u = this.Protect f range
         Tainted(context, u)
 
-    member this.PApply2(f,range:range) = 
+    member this.PApply2(f,range: range) = 
         let u1,u2 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2)
 
-    member this.PApply3(f,range:range) = 
+    member this.PApply3(f,range: range) = 
         let u1,u2,u3 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3)
 
-    member this.PApply4(f,range:range) = 
+    member this.PApply4(f,range: range) = 
         let u1,u2,u3,u4 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3), Tainted(context, u4)
 
     member this.PApplyNoFailure f = this.PApply (f, range0)
 
-    member this.PApplyWithProvider(f,range:range) = 
-        let u = this.Protect (fun x -> f (x,context.TypeProvider)) range
+    member this.PApplyWithProvider(f, range: range) = 
+        let u = this.Protect (fun x -> f (x, context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f,methodName,range:range) =        
-        let a = this.Protect f range
+    member this.PApplyArray(f, methodName, range: range) =        
+        let a : 'U[] = this.Protect f range
         match a with 
-        |   null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
-        |   _ -> a |> Array.map (fun u -> Tainted(context,u))
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
-    member this.PApplyOption(f,range:range) =        
+    member this.PApplyOption(f, range: range) =        
         let a = this.Protect f range
         match a with 
         | None ->  None
-        | Some x -> Some (Tainted(context,x))
+        | Some x -> Some (Tainted(context, x))
 
-    member this.PUntaint(f,range:range) = this.Protect f range
+    member this.PUntaint(f,range: range) = this.Protect f range
 
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
 
@@ -156,15 +156,15 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 
     member this.OfType<'U> () =
         match box value with
-        |   :? 'U as u -> Some (Tainted(context,u))
-        |   _ -> None
+        | :? 'U as u -> Some (Tainted(context,u))
+        | _ -> None
 
-    member this.Coerce<'U> (range:range) =
+    member this.Coerce<'U> (range: range) =
         Tainted(context, this.Protect(fun value -> box value :?> 'U) range)
 
 module internal Tainted =
-    let (|Null|_|) (p:Tainted<'T>) =
-        if p.PUntaintNoFailure(fun p -> match p with null -> true | _ -> false) then Some() else None
+    let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null and 'T : not struct =
+        if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 

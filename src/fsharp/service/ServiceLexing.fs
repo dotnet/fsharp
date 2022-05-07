@@ -175,7 +175,7 @@ module internal TokenClassifications =
                 // This is related to 4783. Recover by treating as lower case identifier.
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
-                if Char.ToUpperInvariant s.[0] = s.[0] then
+                if Char.ToUpperInvariant s[0] = s[0] then
                     (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
                 else
                     (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -603,14 +603,14 @@ type SingleLineTokenState =
 [<Sealed>]
 type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                          maxLength: int option,
-                         filename: string option,
+                         fileName: string option,
                          lexargs: LexArgs) =
 
     let skip = false   // don't skip whitespace in the lexer
 
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
     let fsx =
-        match filename with
+        match fileName with
         | None -> false
         | Some value -> ParseAndCheckInputs.IsScript value
 
@@ -643,8 +643,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         let delayed = ResizeArray<_>()
         f (fun (tok, s, e) -> delayed.Add (tok, s + ofs, e + ofs) )
         // delay all the tokens and return the remaining one
-        for i = delayed.Count - 1 downto 1 do delayToken delayed.[i]
-        delayed.[0]
+        for i = delayed.Count - 1 downto 1 do delayToken delayed[i]
+        delayed[0]
 
     // Split the following line:
     //  anywhite* ("#else"|"#endif") anywhite* ("//" [^'\n''\r']*)?
@@ -676,7 +676,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             processWhiteAndComment str offset delay cont )
 
     // Set up the initial file position
-    do match filename with
+    do match fileName with
         | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
         | Some value -> resetLexbufPos value lexbuf
 
@@ -722,7 +722,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
             // The first argument is 'None' because we don't need XML comments when called from VS tokenizer
-            Lexer.singleLineComment (None, n, m, lexargs) skip lexbuf
+            Lexer.singleLineComment (None, n, m, m, lexargs) skip lexbuf
 
         | LexCont.StringInComment (ifdefs, stringNest, style, n, m) ->
             lexargs.ifdefStack <- ifdefs
@@ -781,8 +781,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     | None -> ()
                     | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)
                     for i = greaters.Length - 1 downto 1 do
-                        delayToken(greaters.[i] false, leftc + i, rightc - opstr.Length + i + 1)
-                    false, (greaters.[0] false, leftc, rightc - opstr.Length + 1)
+                        delayToken(greaters[i] false, leftc + i, rightc - opstr.Length + i + 1)
+                    false, (greaters[0] false, leftc, rightc - opstr.Length + 1)
                 // break up any operators that start with '.' so that we can get auto-popup-completion for e.g. "x.+1"  when typing the dot
                 | INFIX_STAR_STAR_OP opstr when opstr.StartsWithOrdinal(".") ->
                     delayToken(INFIX_STAR_STAR_OP(opstr.Substring 1), leftc+1, rightc)
@@ -825,7 +825,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         let lightStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
-        let lightStatus = LightSyntaxStatus(lightStatus, false)
+        let lightStatus = IndentationAwareSyntaxStatus(lightStatus, false)
 
         // Grab a token
         let isCached, (token, leftc, rightc) = getTokenWithPosition lexcont lightStatus
@@ -919,22 +919,22 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option) =
 
     let langVersion = LanguageVersion.Default
     let reportLibraryOnlyFeatures = true
 
     let lexResourceManager = LexResourceManager()
 
-    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs = mkLexargs(conditionalDefines, IndentationAwareSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
-        FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexargs)
+        FSharpLineTokenizer(lexbuf, Some lineText.Length, fileName, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
         let lexbuf = UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
-        FSharpLineTokenizer(lexbuf, None, filename, lexargs)
+        FSharpLineTokenizer(lexbuf, None, fileName, lexargs)
 
 module FSharpKeywords =
 
@@ -1511,7 +1511,7 @@ type FSharpToken =
 
 [<AutoOpen>]
 module FSharpLexerImpl =
-    let lexWithErrorLogger (text: ISourceText) conditionalCompilationDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
+    let lexWithErrorLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
         let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
         let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
         let isCompiling = (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
@@ -1519,8 +1519,8 @@ module FSharpLexerImpl =
         let canUseLexFilter = (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
-        let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
-        let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
+        let lightStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
+        let lexargs = mkLexargs (conditionalDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
 
         let getNextToken =
@@ -1540,18 +1540,18 @@ module FSharpLexerImpl =
             ct.ThrowIfCancellationRequested ()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
-    let lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
+    let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
         let errorLogger = CompilationErrorLogger("Lexer", FSharpDiagnosticOptions.Default)
-        lexWithErrorLogger text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
+        lexWithErrorLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
 
 [<AbstractClass;Sealed>]
 type FSharpLexer =
 
-    static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalCompilationDefines, ?flags, ?pathMap, ?ct) =
+    static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct) =
         let langVersion = defaultArg langVersion "latestmajor" |> LanguageVersion
         let flags = defaultArg flags FSharpLexerFlags.Default
         ignore filePath // can be removed at later point
-        let conditionalCompilationDefines = defaultArg conditionalCompilationDefines []
+        let conditionalDefines = defaultArg conditionalDefines []
         let pathMap = defaultArg pathMap Map.Empty
         let ct = defaultArg ct CancellationToken.None
 
@@ -1566,4 +1566,4 @@ type FSharpLexer =
                 | _ -> tokenCallback fsTok
 
         let reportLibraryOnlyFeatures = true
-        lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct
+        lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct

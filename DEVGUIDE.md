@@ -129,11 +129,29 @@ popd
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
+## Updating baselines in tests
+
+Some tests use "baseline" files.  There is sometimes a way to update these baselines en-masse in your local build,
+useful when some change affects many baselines.  For example, in the `fsharpqa` and `FSharp.Compiler.ComponentTests` tests the baselines
+are updated using scripts or utilities that allow the following environment variable to be set:
+
+Windows:
+
+```shell
+set TEST_UPDATE_BSL=1
+```
+
+Linux/macOS:
+
+```shell
+export TEST_UPDATE_BSL=1
+```
+
 ## Developing the F# tools for Visual Studio
 
 As you would expect, doing this requires both Windows and Visual Studio are installed.
 
-See (DEVGUIDE.md#Developing on Windows) for instructions to install what is needed; it's the same prerequisites.
+See [Developing on Windows](#Developing-on-Windows) for instructions to install what is needed; it's the same prerequisites.
 
 ### Quickly see your changes locally
 
@@ -147,7 +165,7 @@ Alternatively, you can do this entirely via the command line if you prefer that:
 devenv.exe /rootsuffix RoslynDev
 ```
 
-### Install your changes into a current Visual Studio installation
+### Deploy your changes into a current Visual Studio installation
 
 If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance:
 
@@ -157,10 +175,6 @@ VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
 ```
 
 It's important to use `Release` if you want to see if your changes have had a noticeable performance impact.
-
-### Performance and debugging
-
-Use the `Debug` configuration to test your changes locally. It is the default. Do not use the `Release` configuration! Local development and testing of Visual Studio tooling is not designed for the `Release` configuration.
 
 ### Troubleshooting a failed build of the tools
 
@@ -176,6 +190,165 @@ To fix this, delete these folders:
 * `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
 
 Where `<version>` corresponds to the latest Visual Studio version on your machine.
+
+## Performance and debugging
+
+Use the `Debug` configuration to test your changes locally. It is the default. Do not use the `Release` configuration! Local development and testing of Visual Studio tooling is not designed for the `Release` configuration.
+
+### Writing and running benchmarks
+
+Existing compiler benchmarks can be found in `tests\benchmarks\`.
+
+### Benchmarking and profiling the compiler
+
+**NOTE:** When running benchmarks or profiling compiler, and comparing results with upstream version, make sure:
+
+* Always build both versions of compiler/FCS from source and not use pre-built binaries from SDK (SDK binaries are crossgen'd, which can affect performance).
+* To run `Release` build of compiler/FCS.
+
+### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
+
+1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
+2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
+
+      ```shell
+      cd tests\benchmarks
+      dotnet new console -o FcsBench --name FcsBench -lang F#
+      ```
+
+3. Add needed packages and project references.
+
+    ```shell
+    cd FcsBench
+    dotnet add package BenchmarkDotNet
+    dotnet add reference ..\..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj
+    ```
+
+4. Additionally, if you want to test changes to the FSharp.Core
+
+     ```shell
+     dotnet add reference ..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj
+     ```
+
+    > as well as the following property have to be added to `FcsBench.fsproj`:
+
+    ```xml
+    <PropertyGroup>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    </PropertyGroup>
+    ```
+
+5. Add a new benchmark for FCS/FSharp.Core by editing `Program.fs`.
+
+      ```fsharp
+      open System.IO
+      open FSharp.Compiler.CodeAnalysis
+      open FSharp.Compiler.Diagnostics
+      open FSharp.Compiler.Text
+      open BenchmarkDotNet.Attributes
+      open BenchmarkDotNet.Running
+
+      [<MemoryDiagnoser>]
+      type CompilerService() =
+          let mutable checkerOpt = None
+          let mutable sourceOpt = None
+
+          let parsingOptions =
+              {
+                  SourceFiles = [|"CheckExpressions.fs"|]
+                  ConditionalDefines = []
+                  ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+                  LangVersionText = "default"
+                  IsInteractive = false
+                  LightSyntax = None
+                  CompilingFsLib = false
+                  IsExe = false
+              }
+
+          [<GlobalSetup>]
+          member _.Setup() =
+              match checkerOpt with
+              | None ->
+                  checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
+              | _ -> ()
+
+              match sourceOpt with
+              | None ->
+                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\fsharp\CheckExpressions.fs"""))
+              | _ -> ()
+
+
+          [<Benchmark>]
+          member _.ParsingTypeCheckerFs() =
+              match checkerOpt, sourceOpt with
+              | None, _ -> failwith "no checker"
+              | _, None -> failwith "no source"
+              | Some(checker), Some(source) ->
+                  let results = checker.ParseFile("CheckExpressions.fs",  source, parsingOptions) |> Async.RunSynchronously
+                  if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
+
+          [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
+          member _.ParsingTypeCheckerFsSetup() =
+              match checkerOpt with
+              | None -> failwith "no checker"
+              | Some(checker) ->
+                  checker.InvalidateAll()
+                  checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+                  checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+
+      [<EntryPoint>]
+      let main _ =
+          BenchmarkRunner.Run<CompilerService>() |> ignore
+          0
+      ```
+
+      > For more detailed information about available BenchmarkDotNet options, please refer to [BenchmarkDotNet Documentation](https://benchmarkdotnet.org/articles/overview.html).
+
+6. Build and run the benchmark.
+
+      ```shell
+      dotnet build -c Release
+      dotnet run -c Release
+      ```
+
+7. You can find results in `.\BenchmarkDotNet.Artifacts\results\` in the current benchmark project directory.
+
+    ```shell
+    > ls .\BenchmarkDotNet.Artifacts\results\
+
+        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
+
+    Mode                 LastWriteTime         Length Name
+    ----                 -------------         ------ ----
+    -a---           4/25/2022  1:42 PM            638 Program.CompilerService-report-github.md
+    -a---           4/25/2022  1:42 PM           1050 Program.CompilerService-report.csv
+    -a---           4/25/2022  1:42 PM           1169 Program.CompilerService-report.html
+    ```
+
+    > *-report-github.md can be used to post benchmark results to GitHub issue/PR/discussion or RFC.
+    >
+    >*-report.csv can be used for comparison purposes.
+
+    **Example output:**
+
+    ``` ini
+
+    BenchmarkDotNet=v0.13.1, OS=Windows 10.0.25102
+    Intel Core i7-8750H CPU 2.20GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
+    .NET SDK=6.0.200
+      [Host]     : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT DEBUG
+      Job-GDIBXX : .NET 6.0.3 (6.0.322.12309), X64 RyuJIT
+
+    InvocationCount=1  UnrollFactor=1
+
+    ```
+
+    |               Method |     Mean |   Error |  StdDev |   Median |     Gen 0 |     Gen 1 | Allocated |
+    |--------------------- |---------:|--------:|--------:|---------:|----------:|----------:|----------:|
+    | ParsingTypeCheckerFs | 199.4 ms | 3.84 ms | 9.78 ms | 195.5 ms | 4000.0000 | 1000.0000 |     28 MB |
+
+8. Repeat for any number of changes you would like to test.
+9. **Optionally:** benchmark code and results can be included as part of the PR for future reference.
 
 ## Additional resources
 

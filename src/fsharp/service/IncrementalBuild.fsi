@@ -36,8 +36,8 @@ type internal FrameworkImportsCache =
 module internal IncrementalBuilderEventTesting =
 
   type IBEvent =
-        | IBEParsed of string // filename
-        | IBETypechecked of string // filename
+        | IBEParsed of fileName: string
+        | IBETypechecked of fileName: string
         | IBECreated
 
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
@@ -152,7 +152,7 @@ type internal IncrementalBuilder =
       /// overall analysis results for the project will be quick.
       member ProjectChecked : IEvent<unit>
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       /// Raised when the build is invalidated.
       member ImportsInvalidatedByTypeProvider : IEvent<unit>
 #endif
@@ -171,75 +171,75 @@ type internal IncrementalBuilder =
       /// This is a very quick operation.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
+      member GetCheckResultsBeforeFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
 
       /// Get the typecheck state of a slot, without checking if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
       /// This is a very quick operation.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member GetCheckResultsForFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
+      member GetCheckResultsForFileInProjectEvenIfStale: fileName: string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
       /// This is a relatively quick operation.
       ///
       /// This is safe for use from non-compiler threads
-      member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
+      member AreCheckResultsBeforeFileInProjectReady: fileName:string -> bool
 
       /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member TryGetCheckResultsBeforeFileInProject: filename: string -> PartialCheckResults option
+      member TryGetCheckResultsBeforeFileInProject: fileName: string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
-      member GetCheckResultsBeforeFileInProject : filename:string -> NodeCode<PartialCheckResults>
+      member GetCheckResultsBeforeFileInProject: fileName:string -> NodeCode<PartialCheckResults>
 
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       /// This will get full type-check info for the file, meaning no partial type-checking.
-      member GetFullCheckResultsBeforeFileInProject : filename:string -> NodeCode<PartialCheckResults>
+      member GetFullCheckResultsBeforeFileInProject: fileName:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
-      member GetCheckResultsAfterFileInProject : filename:string -> NodeCode<PartialCheckResults>
+      member GetCheckResultsAfterFileInProject: fileName:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck state after checking a file. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       /// This will get full type-check info for the file, meaning no partial type-checking.
-      member GetFullCheckResultsAfterFileInProject : filename:string -> NodeCode<PartialCheckResults>
+      member GetFullCheckResultsAfterFileInProject: fileName:string -> NodeCode<PartialCheckResults>
 
       /// Get the typecheck result after the end of the last file. The typecheck of the project is not 'completed'.
       /// This may be a long-running operation.
-      member GetCheckResultsAfterLastFileInProject : unit -> NodeCode<PartialCheckResults>
+      member GetCheckResultsAfterLastFileInProject: unit -> NodeCode<PartialCheckResults>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
-      member GetCheckResultsAndImplementationsForProject : unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+      member GetCheckResultsAndImplementationsForProject: unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
 
       /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
       /// This may be a long-running operation.
       /// This will get full type-check info for the project, meaning no partial type-checking.
-      member GetFullCheckResultsAndImplementationsForProject : unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+      member GetFullCheckResultsAndImplementationsForProject: unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
 
       /// Does the given file exist in the builder's pipeline?
-      member ContainsFile: filename: string -> bool
+      member ContainsFile: fileName: string -> bool
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+      member GetParseResultsForFile: fileName:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
-          LegacyReferenceResolver *
+          legacyReferenceResolver: LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
-          FrameworkImportsCache *
+          frameworkTcImportsCache: FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *
           sourceFiles:string list *
           commandLineArgs:string list *

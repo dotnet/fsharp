@@ -307,7 +307,7 @@ Note that
 
 Summary
 -------
-In this tutorial, we looked at basic of working with checked declarations and expressions. 
+In this tutorial, we looked at the basics of working with checked declarations and expressions. 
 
 In practice, it is also useful to combine the information here
 with some information you can obtain from the [symbols](symbols.html) 

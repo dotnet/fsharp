@@ -127,6 +127,7 @@ namespace FSharp.Compiler.Symbols
 
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =
+
         val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
         val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
@@ -151,12 +152,12 @@ namespace FSharp.Compiler.Symbols
 
         val FlattenItems : TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
-        val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
-        val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+        val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
         val SimplerDisplayEnv : DisplayEnv -> DisplayEnv

@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.PatternMatchCompilation
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
@@ -11,12 +11,12 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-/// What should the decision tree contain for any incomplete match? 
-type ActionOnFailure = 
-    | ThrowIncompleteMatchException 
-    | IgnoreWithWarning 
-    | Throw 
-    | Rethrow 
+/// What should the decision tree contain for any incomplete match?
+type ActionOnFailure =
+    | ThrowIncompleteMatchException
+    | IgnoreWithWarning
+    | Throw
+    | Rethrow
     | FailFilter
 
 /// Represents the typechecked, elaborated form of a pattern, prior to pattern-match compilation.
@@ -40,40 +40,34 @@ type Pattern =
 
     member Range: range
 
-and PatternValBinding = 
-    | PBind of Val * TypeScheme
+and PatternValBinding = PBind of Val * TypeScheme
 
-and TypedMatchClause =  
-    | TClause of Pattern * Expr option * DecisionTreeTarget * range
+and TypedMatchClause = TClause of Pattern * Expr option * DecisionTreeTarget * range
 
 val ilFieldToTastConst: ILFieldInit -> Const
 
 /// Compile a pattern into a decision tree and a set of targets.
-val internal CompilePattern: 
+val internal CompilePattern:
     TcGlobals ->
     DisplayEnv ->
     Import.ImportMap ->
-    // tcVal
     (ValRef -> ValUseFlag -> TTypes -> range -> Expr * TType) ->
     InfoReader ->
-    // range of the expression we are matching on 
-    range ->  
+    // range of the expression we are matching on
+    range ->
     // range to report "incomplete match" on
-    range ->  
-    // warn on unused? 
-    bool ->   
-    ActionOnFailure -> 
-    // the value being matched against, perhaps polymorphic. Optionally includes the
-    // input expression, only for the case of immediate matching on a byref pointer
-    Val * Typars * Expr option -> 
-    // input type-checked syntax of pattern matching
-    TypedMatchClause list ->
-    // input type 
-    TType -> 
-    // result type
-    TType ->
-        // produce TAST nodes
-        DecisionTree * DecisionTreeTarget list
+    range ->
+    // warn on unused?
+    bool ->
+    ActionOnFailure ->
+    Val * Typars * Expr option ->
+        // input type-checked syntax of pattern matching
+        TypedMatchClause list ->
+        // input type
+        TType ->
+        // result type
+        TType ->
+            DecisionTree * DecisionTreeTarget list
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
 

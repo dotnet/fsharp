@@ -231,7 +231,6 @@ type PhasedDiagnostic =
         | BuildPhaseSubcategory.Parameter 
         | BuildPhaseSubcategory.Parse 
         | BuildPhaseSubcategory.TypeCheck -> true
-        | null 
         | BuildPhaseSubcategory.DefaultPhase 
         | BuildPhaseSubcategory.CodeGen 
         | BuildPhaseSubcategory.Optimize 
@@ -317,15 +316,14 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
-            | null -> (* assert false; *) BuildPhase.DefaultPhase
+            | Null -> BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             
     static member ErrorLogger
         with get() = 
             match box CompileThreadStatic.errorLogger with
-            | null -> AssertFalseErrorLogger
+            | Null -> AssertFalseErrorLogger
             | _ -> CompileThreadStatic.errorLogger
         and set v = CompileThreadStatic.errorLogger <- v
 
@@ -655,16 +653,16 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
-let NormalizeErrorString (text : string) =
-    if isNull text then nullArg "text"
+let NormalizeErrorString (text : string MaybeNull) =
+    let text = nullArgCheck "text" text
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()
     let mutable i = 0
     while i < text.Length do
         let delta = 
-            match text.[i] with
-            | '\r' when i + 1 < text.Length && text.[i + 1] = '\n' ->
+            match text[i] with
+            | '\r' when i + 1 < text.Length && text[i + 1] = '\n' ->
                 // handle \r\n sequence - replace it with one single space
                 buf.Append stringThatIsAProxyForANewlineInFlatErrors |> ignore
                 2

@@ -377,3 +377,15 @@ neg20.fs(448,30,448,33): typecheck error FS0001: This expression was expected to
     'string option'    
 but here has type
     'string'    
+
+neg20.fs(477,29,477,62): typecheck error FS0193: Type constraint mismatch. The type 
+    'Prim<'m>'    
+is not compatible with type
+    'IDerivedComparable<Prim<'m>>'    
+
+
+neg20.fs(478,29,478,61): typecheck error FS0193: Type constraint mismatch. The type 
+    'Prim<'m>'    
+is not compatible with type
+    'IDerivedEquatable<Prim<'m>>'    
+

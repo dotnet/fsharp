@@ -4060,6 +4060,7 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #clear;;                                      // Clear screen
     #quit;;                                       // Exit
 
   F# Interactive command line options:
@@ -6290,5 +6291,16 @@ val ShortName: string = "hi"
 > val inst1: TestLoadFile.ClassInFile1
 
 > val inst2: TestLoadFile2.ClassInFile2
+
+> type Test =
+  {
+    A: int
+    B: string
+  }
+
+> val list: Test list = [{ A = 1
+                         B = "a" }]
+
+> val list2: int list = [1]
 
 > > > 

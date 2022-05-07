@@ -78,8 +78,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             array
 
         // Clear checksum and security data directory
-        for i in 0 .. 3 do allHeaders.[checkSumOffset + i] <- 0uy
-        for i in 0 .. 7 do allHeaders.[securityDirectoryEntryOffset + i] <- 0uy
+        for i in 0 .. 3 do allHeaders[checkSumOffset + i] <- 0uy
+        for i in 0 .. 7 do allHeaders[securityDirectoryEntryOffset + i] <- 0uy
         hashAlgorithm.AppendData(allHeaders, 0, allHeadersSize)
 
         // Hash content of all sections
@@ -93,7 +93,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let sectionHeaders = peHeaders.SectionHeaders
 
         for i in 0 .. (sectionHeaders.Length - 1) do
-            let section = sectionHeaders.[i]
+            let section = sectionHeaders[i]
             let mutable st = section.PointerToRawData
             let en = st + section.SizeOfRawData
 
@@ -116,10 +116,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         val mutable _offset:int
         new (blob:byte[]) = { _blob = blob; _offset = 0; }
 
-        member x.ReadInt32:int =
+        member x.ReadInt32() : int =
             let offset = x._offset
             x._offset <- offset + 4
-            int x._blob.[offset] ||| (int x._blob.[offset + 1] <<< 8) ||| (int x._blob.[offset + 2] <<< 16) ||| (int x._blob.[offset + 3] <<< 24)
+            int x._blob[offset] ||| (int x._blob[offset + 1] <<< 8) ||| (int x._blob[offset + 2] <<< 16) ||| (int x._blob[offset + 3] <<< 24)
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
@@ -129,11 +129,11 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
     let RSAParamatersFromBlob (blob:byte[]) keyType =
         let mutable reader = BlobReader blob
-        if reader.ReadInt32 <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(getResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
-        reader.ReadInt32 |>ignore                                                                                                       // ALG_ID
-        if reader.ReadInt32 <> RSA_PRIV_MAGIC then raise (CryptographicException(getResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
+        if reader.ReadInt32() <> 0x00000207 && keyType = KeyType.KeyPair then raise (CryptographicException(getResourceString(FSComp.SR.ilSignPrivateKeyExpected())))
+        reader.ReadInt32() |> ignore                                                                                                      // ALG_ID
+        if reader.ReadInt32() <> RSA_PRIV_MAGIC then raise (CryptographicException(getResourceString(FSComp.SR.ilSignRsaKeyExpected())))  // 'RSA2'
         let byteLen, halfLen =
-            let bitLen = reader.ReadInt32
+            let bitLen = reader.ReadInt32()
             match bitLen % 16 with
             | 0 -> (bitLen / 8, bitLen / 16)
             | _ -> raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidBitLen())))
@@ -148,10 +148,14 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         key.D <- reader.ReadBigInteger byteLen
         key
 
-    let toCLRKeyBlob (rsaParameters:RSAParameters) (algId:int) : byte[] =
-        let validateRSAField (field:byte[]) expected (name:string) =
-            if field <> null && field.Length <> expected then
+    let validateRSAField (field: byte[] MaybeNull) expected (name: string) =
+        match field with 
+        | Null -> ()
+        | NonNull field ->
+            if field.Length <> expected then 
                 raise (CryptographicException(String.Format(getResourceString(FSComp.SR.ilSignInvalidRSAParams()), name)))
+
+    let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] = 
 
         // The original FCall this helper emulates supports other algId's - however, the only algid we need to support is CALG_RSA_KEYX. We will not port the codepaths dealing with other algid's.
         if algId <> CALG_RSA_KEYX then raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidAlgId())))
@@ -195,7 +199,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let expAsDword =
                 let mutable buffer = int 0
                 for i in 0 .. rsaParameters.Exponent.Length - 1 do
-                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent.[i]
+                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent[i]
                 buffer
 
             bw.Write expAsDword                                                        // RSAPubKey.pubExp
@@ -242,8 +246,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let signature = createSignature hash keyBlob KeyType.KeyPair
         patchSignature stream peReader signature
 
-    let signFile filename keyBlob =
-        use fs = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite)
+    let signFile fileName keyBlob =
+        use fs = FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
     let signatureSize (pk:byte[]) =
@@ -251,10 +255,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         let mutable reader = BlobReader pk
         reader.ReadBigInteger 12 |> ignore                                                     // Skip CLRHeader
         reader.ReadBigInteger 8  |> ignore                                                     // Skip BlobHeader
-        let magic = reader.ReadInt32                                                           // Read magic
+        let magic = reader.ReadInt32()                                                           // Read magic
         if not (magic = RSA_PRIV_MAGIC || magic = RSA_PUB_MAGIC) then                          // RSAPubKey.magic
             raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidPKBlob())))
-        let x = reader.ReadInt32 / 8
+        let x = reader.ReadInt32() / 8
         x
 
     // Returns a CLR Format Blob public key
@@ -551,9 +555,10 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let pkSignatureSize pk =
                 try
                     signerSignatureSize pk
-                with e ->
-                  failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-                  0x80
+                with exn ->
+                    failwith ("A call to StrongNameSignatureSize failed ("+exn.Message+")")
+                    0x80
+
             match s with
             | PublicKeySigner pk -> pkSignatureSize pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko

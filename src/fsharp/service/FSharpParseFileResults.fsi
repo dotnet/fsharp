@@ -20,6 +20,9 @@ type public FSharpParseFileResults =
     /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
     member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> (range * range * range) option
 
+    /// Attempts to find the range of the string interpolation that contains a given position.
+    member TryRangeOfStringInterpolationContainingPos: pos: pos -> range option
+
     /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
     member TryRangeOfExprInYieldOrReturn: pos: pos -> range option
 

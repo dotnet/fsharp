@@ -14,13 +14,14 @@ open FSharp.Compiler.TcGlobals
 val CheckTopImpl:
     g: TcGlobals *
     amap: ImportMap *
-    reportErrors: bool * 
+    reportErrors: bool *
     infoReader: InfoReader *
     internalsVisibleToPaths: CompilationPath list *
     viewCcu: CcuThunk *
     tcValF: ConstraintSolver.TcValF *
     denv: DisplayEnv *
-    mexpr: ModuleOrNamespaceExprWithSig *
-    extraAttribs: Attribs * (bool * bool) *
-    isInternalTestSpanStackReferring: bool 
-       -> bool * StampMap<AnonRecdTypeInfo>
+    mexpr: ModuleOrNamespaceContentsWithSig *
+    extraAttribs: Attribs *
+    (bool * bool) *
+    isInternalTestSpanStackReferring: bool ->
+        bool * StampMap<AnonRecdTypeInfo>

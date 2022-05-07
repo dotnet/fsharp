@@ -10,7 +10,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
@@ -31,7 +30,7 @@ type internal FSharpCompletionProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
 
-    inherit CompletionProvider()
+    inherit FSharpCompletionProviderBase()
 
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
@@ -115,7 +114,9 @@ type internal FSharpCompletionProvider
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorDisplayName assemblySymbol.Symbol.DisplayName))
-            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols)
+            let completionContextPos = Position.fromZ caretLinePos.Line caretLinePos.Character
+            let completionContext = ParsedInput.TryGetCompletionContext(completionContextPos, parseResults.ParseTree, line)
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, line, partialName, getAllSymbols, (completionContextPos, completionContext))
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -187,8 +188,6 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let completionContext = ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseResults.ParseTree, line)
-
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
@@ -196,7 +195,7 @@ type internal FSharpCompletionProvider
             return results
         }
 
-    override _.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+    override _.ShouldTriggerCompletionImpl(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger) =
         use _logBlock = Logger.LogBlock LogEditorFunctionId.Completion_ShouldTrigger
 
         let getInfo() = 

@@ -193,11 +193,11 @@ type public FSharpProjectContext =
 type public FSharpParsingOptions =
     { 
       SourceFiles: string[]
-      ConditionalCompilationDefines: string list
+      ConditionalDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
-      LightSyntax: bool option
+      IndentationAwareSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
     }
@@ -249,7 +249,10 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
-    member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> DeclarationListInfo
+    /// <param name="completionContextAtPos">
+    ///    Completion context for a particular position computed in advance.
+    /// </param>
+    member GetDeclarationListInfo: parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?completionContextAtPos: (pos * CompletionContext option) -> DeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -366,7 +369,7 @@ type public FSharpCheckFileResults =
 
     /// Internal constructor
     static member internal MakeEmpty : 
-        filename: string *
+        fileName: string *
         creationErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool 
           -> FSharpCheckFileResults
@@ -473,6 +476,7 @@ type public FSharpCheckProjectResults =
                  ModuleOrNamespaceType *
                  Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
+                 (unit -> IRawFSharpAssemblyData option) *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *

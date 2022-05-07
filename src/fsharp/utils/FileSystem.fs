@@ -16,21 +16,28 @@ exception IllegalFileNameChar of string * char
 
 #nowarn "9"
 module internal Bytes =
+
     let b0 n =  (n &&& 0xFF)
+
     let b1 n =  ((n >>> 8) &&& 0xFF)
+
     let b2 n =  ((n >>> 16) &&& 0xFF)
+
     let b3 n =  ((n >>> 24) &&& 0xFF)
 
     let dWw1 n = int32 ((n >>> 32) &&& 0xFFFFFFFFL)
-    let dWw0 n = int32 (n          &&& 0xFFFFFFFFL)
+
+    let dWw0 n = int32 (n &&& 0xFFFFFFFFL)
 
     let get (b:byte[]) n = int32 (Array.get b n)
+
     let zeroCreate n : byte[] = Array.zeroCreate n
 
     let sub ( b:byte[]) s l = Array.sub b s l
+
     let blit (a:byte[]) b c d e = Array.blit a b c d e
 
-    let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr.[i])
+    let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr[i])
 
     let stringAsUtf8NullTerminated (s:string) =
         Array.append (Encoding.UTF8.GetBytes s) (ofInt32Array [| 0x0 |])
@@ -72,8 +79,8 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             raise (ArgumentOutOfRangeException("offset"))
 
     override _.Item
-        with get i = bytes.[offset + i]
-        and set i v = bytes.[offset + i] <- v
+        with get i = bytes[offset + i]
+        and set i v = bytes[offset + i] <- v
 
     override _.Length = length
 
@@ -88,16 +95,16 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 
     override _.ReadInt32 pos =
         let finalOffset = offset + pos
-        (uint32 bytes.[finalOffset]) |||
-        ((uint32 bytes.[finalOffset + 1]) <<< 8) |||
-        ((uint32 bytes.[finalOffset + 2]) <<< 16) |||
-        ((uint32 bytes.[finalOffset + 3]) <<< 24)
+        (uint32 bytes[finalOffset]) |||
+        ((uint32 bytes[finalOffset + 1]) <<< 8) |||
+        ((uint32 bytes[finalOffset + 2]) <<< 16) |||
+        ((uint32 bytes[finalOffset + 3]) <<< 24)
         |> int
 
     override _.ReadUInt16 pos =
         let finalOffset = offset + pos
-        (uint16 bytes.[finalOffset]) |||
-        ((uint16 bytes.[finalOffset + 1]) <<< 8)
+        (uint16 bytes[finalOffset]) |||
+        ((uint16 bytes[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
         checkCount count
@@ -303,18 +310,31 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
 
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
-    member _.Item with get i = bytes.[i]
+
+    member _.Item with get i = bytes[i]
+
     member _.Length with get () = bytes.Length
+
     member _.ReadAllBytes() = bytes.ReadAllBytes()
+
     member _.ReadBytes(pos, count) = bytes.ReadBytes(pos, count)
+
     member _.ReadInt32 pos = bytes.ReadInt32 pos
+
     member _.ReadUInt16 pos = bytes.ReadUInt16 pos
+
     member _.ReadUtf8String(pos, count) = bytes.ReadUtf8String(pos, count)
+
     member _.Slice(pos, count) = bytes.Slice(pos, count) |> ReadOnlyByteMemory
+
     member _.CopyTo stream = bytes.CopyTo stream
+
     member _.Copy(srcOffset, dest, destOffset, count) = bytes.Copy(srcOffset, dest, destOffset, count)
+
     member _.ToArray() = bytes.ToArray()
+
     member _.AsStream() = bytes.AsReadOnlyStream()
+
     member _.Underlying = bytes
 
 [<AutoOpen>]
@@ -366,76 +386,100 @@ module internal FileSystemUtils =
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
 
-    let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
+    let checkSuffix (path: string) (suffix: string) = path.EndsWithOrdinalIgnoreCase(suffix)
 
-    let hasExtensionWithValidate (validate:bool) (s:string) =
+    let hasExtensionWithValidate (validate: bool) (s: string) =
         if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
-        (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".")
+        (sLen >= 1 && s[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
 
-    let hasExtension (s:string) = hasExtensionWithValidate true s
+    let hasExtension (path: string) = hasExtensionWithValidate true path
 
-    let chopExtension (s:string) =
-        checkPathForIllegalChars s
-        if s = "." then "" else // for OCaml compatibility
-        if not (hasExtensionWithValidate false s) then
+    let chopExtension (path:string) =
+        checkPathForIllegalChars path
+        if path = "." then "" else // for OCaml compatibility
+        if not (hasExtensionWithValidate false path) then
             raise (ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
-        Path.Combine (Path.GetDirectoryName s, Path.GetFileNameWithoutExtension(s))
+        Path.Combine (Path.GetDirectoryName path, Path.GetFileNameWithoutExtension(path))
 
-    let fileNameOfPath s =
-        checkPathForIllegalChars s
-        Path.GetFileName(s)
+    let fileNameOfPath path =
+        checkPathForIllegalChars path
+        Path.GetFileName(path)
 
-    let fileNameWithoutExtensionWithValidate (validate:bool) s =
-        if validate then checkPathForIllegalChars s
-        Path.GetFileNameWithoutExtension(s)
+    let fileNameWithoutExtensionWithValidate (validate:bool) path =
+        if validate then checkPathForIllegalChars path
+        Path.GetFileNameWithoutExtension(path)
 
-    let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
+    let fileNameWithoutExtension path = fileNameWithoutExtensionWithValidate true path
 
-    let trimQuotes (s:string) =
-        s.Trim( [|' '; '\"'|] )
+    let trimQuotes (path: string) =
+        path.Trim( [|' '; '\"'|] )
 
-    let hasSuffixCaseInsensitive suffix filename = (* case-insensitive *)
-        checkSuffix (String.lowercase filename) (String.lowercase suffix)
-
-    let isDll file = hasSuffixCaseInsensitive ".dll" file
+    let isDll fileName = checkSuffix fileName ".dll"
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IAssemblyLoader =
+
     abstract AssemblyLoadFrom: fileName: string -> Assembly
+
     abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultAssemblyLoader() =
+
     interface IAssemblyLoader with
+
         member _.AssemblyLoadFrom(fileName: string) = Assembly.UnsafeLoadFrom fileName
+
         member _.AssemblyLoad(assemblyName: AssemblyName) = Assembly.Load assemblyName
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
     // note: do not add members if you can put generic implementation under StreamExtensions below.
+
     abstract AssemblyLoader: IAssemblyLoader
+
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+
     abstract GetFullPathShim: fileName: string -> string
+
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+
     abstract IsPathRootedShim: path: string -> bool
+
     abstract NormalizePathShim: path: string -> string
+
     abstract IsInvalidPathShim: path: string -> bool
+
     abstract GetTempPathShim: unit -> string
+
     abstract GetDirectoryNameShim: path: string -> string
+
     abstract GetLastWriteTimeShim: fileName: string -> DateTime
+
     abstract GetCreationTimeShim: path: string -> DateTime
+
     abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
+
     abstract FileExistsShim: fileName: string -> bool
+
     abstract FileDeleteShim: fileName: string -> unit
+
     abstract DirectoryCreateShim: path: string -> string
+
     abstract DirectoryExistsShim: path: string -> bool
+
     abstract DirectoryDeleteShim: path: string -> unit
+
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
+
     abstract EnumerateDirectoriesShim: path: string -> string seq
+
     abstract IsStableFileHeuristic: fileName: string -> bool
+
     // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
@@ -526,19 +570,25 @@ type DefaultFileSystem() as this =
 
     abstract IsInvalidPathShim: path: string -> bool
     default _.IsInvalidPathShim(path: string) =
-        let isInvalidPath(p: string) =
-            String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+        let isInvalidPath(p: string MaybeNull) =
+            match p with
+            | Null | "" -> true
+            | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-        let isInvalidFilename(p: string) =
-            String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+        let isInvalidFilename(p: string MaybeNull) =
+            match p with
+            | Null | "" -> true
+            | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
-        let isInvalidDirectory(d: string) =
-            d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+        let isInvalidDirectory(d: string MaybeNull) =
+            match d with
+            | Null -> true
+            | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
         isInvalidPath path ||
         let directory = Path.GetDirectoryName path
-        let filename = Path.GetFileName path
-        isInvalidDirectory directory || isInvalidFilename filename
+        let fileName = Path.GetFileName path
+        isInvalidDirectory directory || isInvalidFilename fileName
 
     abstract GetTempPathShim: unit -> string
     default _.GetTempPathShim() = Path.GetTempPath()
@@ -751,9 +801,10 @@ type internal ByteStream =
     { bytes: ReadOnlyByteMemory
       mutable pos: int
       max: int }
+
     member b.ReadByte() =
         if b.pos >= b.max then failwith "end of stream"
-        let res = b.bytes.[b.pos]
+        let res = b.bytes[b.pos]
         b.pos <- b.pos + 1
         res
     member b.ReadUtf8String n =
@@ -808,7 +859,7 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- byte i
+        buf.bbArray[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
     member buf.EmitByte (b:byte) = 
@@ -823,15 +874,15 @@ type internal ByteBuffer =
         let bbArr = buf.bbArray
         let bbBase = buf.bbCurrent
         for i = 0 to n - 1 do
-            bbArr.[bbBase + i] <- byte arr.[i]
+            bbArr[bbBase + i] <- byte arr[i]
         buf.bbCurrent <- newSize
 
     member bb.FixupInt32 pos value =
         bb.CheckDisposed()
-        bb.bbArray.[pos] <- (Bytes.b0 value |> byte)
-        bb.bbArray.[pos + 1] <- (Bytes.b1 value |> byte)
-        bb.bbArray.[pos + 2] <- (Bytes.b2 value |> byte)
-        bb.bbArray.[pos + 3] <- (Bytes.b3 value |> byte)
+        bb.bbArray[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
         buf.CheckDisposed()
@@ -868,8 +919,8 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
-        buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
+        buf.bbArray[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
     member buf.EmitBoolAsByte (b:bool) = 
@@ -915,7 +966,7 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
         byteMemory
 
     member _.GetByteMemory() =
-        match cached with
+        match box cached with
         | null -> getAndCache ()
         | _ ->
             match cached.TryGetTarget() with

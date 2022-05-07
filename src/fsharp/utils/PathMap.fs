@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Functions to map real paths to paths to be written to PDB/IL
+// Functions to map real paths to paths to be written to PDB/IL
 namespace Internal.Utilities
 
 open System
@@ -38,7 +38,7 @@ module internal PathMap =
         |> Map.tryPick (fun oldPrefix replacementPrefix ->
             // oldPrefix always ends with a path separator, so there's no need
             // to check if it was a partial match
-            // e.g. for the map /goo=/bar and filename /goooo
+            // e.g. for the map /goo=/bar and file name /goooo
             if filePath.StartsWith(oldPrefix, StringComparison.Ordinal) then
                 let replacement = replacementPrefix + filePath.Substring (oldPrefix.Length - 1)
 

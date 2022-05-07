@@ -12,6 +12,11 @@
         <target state="translated">Включать исходный URI пакета при поиске пакетов</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="new">Clear screen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">Выпуск нескольких сборок (отключено по умолчанию для .NET Framework)</target>

@@ -6,6 +6,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
@@ -75,7 +76,7 @@ type IParseState with
             | true, gen -> gen
             | _ ->
                 let gen = box (SynArgNameGenerator())
-                bls.[key] <- gen
+                bls[key] <- gen
                 gen
         gen :?> SynArgNameGenerator
 
@@ -87,7 +88,6 @@ type IParseState with
 //------------------------------------------------------------------------
 
 /// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.
-/// This is the only use of the lexer BufferLocalStore in the codebase.
 module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
@@ -97,13 +97,13 @@ module LexbufLocalXmlDocStore =
         | true, collector -> collector
         | _ ->
             let collector = box (XmlDocCollector())
-            lexbuf.BufferLocalStore.[xmlDocKey] <- collector
+            lexbuf.BufferLocalStore[xmlDocKey] <- collector
             collector
 
         |> unbox<XmlDocCollector>
 
     let ClearXmlDoc (lexbuf: Lexbuf) =
-        lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
+        lexbuf.BufferLocalStore[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
@@ -176,6 +176,87 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
     | IfdefOr (l, r)     -> (LexerIfdefEval lookup l) || (LexerIfdefEval lookup r)
     | IfdefNot e        -> not (LexerIfdefEval lookup e)
     | IfdefId id        -> lookup id
+
+/// Ifdef F# lexer/parser state, held in the BufferLocalStore for the lexer.
+/// Used to capture #if, #else and #endif as syntax trivia.
+module LexbufIfdefStore =
+    // The key into the BufferLocalStore used to hold the compiler directives
+    let private ifDefKey = "Ifdef"
+
+    let private getStore (lexbuf: Lexbuf): ResizeArray<ConditionalDirectiveTrivia> =
+        match lexbuf.BufferLocalStore.TryGetValue ifDefKey with
+        | true, store -> store
+        | _ ->
+            let store = box (ResizeArray<ConditionalDirectiveTrivia>())
+            lexbuf.BufferLocalStore[ifDefKey] <- store
+            store
+        |> unbox<ResizeArray<ConditionalDirectiveTrivia>>
+
+    let private mkRangeWithoutLeadingWhitespace (lexed:string) (m:range): range =
+         let startColumn = lexed.Length - lexed.TrimStart().Length
+         mkFileIndexRange m.FileIndex (mkPos m.StartLine startColumn) m.End
+    
+    let SaveIfHash (lexbuf: Lexbuf, lexed:string, expr: LexerIfdefExpression, range: range) =
+        let store = getStore lexbuf
+
+        let expr =
+            let rec visit (expr: LexerIfdefExpression) : IfDirectiveExpression =
+                match expr with
+                | LexerIfdefExpression.IfdefAnd(l,r) -> IfDirectiveExpression.And(visit l, visit r)
+                | LexerIfdefExpression.IfdefOr(l, r) -> IfDirectiveExpression.Or(visit l, visit r)
+                | LexerIfdefExpression.IfdefNot e -> IfDirectiveExpression.Not(visit e)
+                | LexerIfdefExpression.IfdefId id -> IfDirectiveExpression.Ident id
+            
+            visit expr
+
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        
+        store.Add(ConditionalDirectiveTrivia.If(expr, m))
+
+    let SaveElseHash (lexbuf: Lexbuf, lexed:string, range: range) =
+        let store = getStore lexbuf
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        store.Add(ConditionalDirectiveTrivia.Else(m))
+
+    let SaveEndIfHash (lexbuf: Lexbuf, lexed:string, range: range) =
+        let store = getStore lexbuf
+        let m = mkRangeWithoutLeadingWhitespace lexed range
+        store.Add(ConditionalDirectiveTrivia.EndIf(m))
+
+    let GetTrivia (lexbuf: Lexbuf): ConditionalDirectiveTrivia list =
+        let store = getStore lexbuf
+        Seq.toList store
+
+/// Used to capture the ranges of code comments as syntax trivia
+module LexbufCommentStore =
+    // The key into the BufferLocalStore used to hold the compiler directives
+    let private commentKey = "Comments"
+
+    let private getStore (lexbuf: Lexbuf): ResizeArray<CommentTrivia> =
+        match lexbuf.BufferLocalStore.TryGetValue commentKey with
+        | true, store -> store
+        | _ ->
+            let store = box (ResizeArray<CommentTrivia>())
+            lexbuf.BufferLocalStore[commentKey] <- store
+            store
+        |> unbox<ResizeArray<CommentTrivia>>
+
+    let SaveSingleLineComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
+        let store = getStore lexbuf
+        let m = unionRanges startRange endRange
+        store.Add(CommentTrivia.LineComment(m))
+
+    let SaveBlockComment (lexbuf: Lexbuf, startRange: range, endRange: range) =
+        let store = getStore lexbuf
+        let m = unionRanges startRange endRange
+        store.Add(CommentTrivia.BlockComment(m))
+
+    let GetComments (lexbuf: Lexbuf): CommentTrivia list =
+        let store = getStore lexbuf
+        Seq.toList store
+
+    let ClearComments (lexbuf: Lexbuf): unit =
+        lexbuf.BufferLocalStore.Remove(commentKey) |> ignore
 
 //------------------------------------------------------------------------
 // Parsing: continuations for whitespace tokens

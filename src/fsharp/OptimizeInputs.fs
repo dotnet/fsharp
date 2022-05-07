@@ -25,8 +25,8 @@ let mutable showTermFileCount = 0
 let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
-            let filename = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
+            let fileName = outfile + ".terms"
+            use f = FileSystem.OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else
@@ -177,6 +177,7 @@ let GenerateIlxCode
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
           mainMethodInfo= mainMethodInfo
           ilxBackend = ilxBackend
+          fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt }

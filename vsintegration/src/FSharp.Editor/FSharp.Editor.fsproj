@@ -121,6 +121,7 @@
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
     <Compile Include="CodeFix\FixIndexerAccess.fs" />
     <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
+    <Compile Include="CodeFix\UseTripleQuotedInterpolation.fs" />
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
@@ -176,6 +177,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="System.Design" Version="$(SystemDesignVersion)" />
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+    <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
   </ItemGroup>
 
   <ItemGroup>

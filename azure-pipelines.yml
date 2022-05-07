@@ -75,10 +75,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.2') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
+          MirrorBranch: release/dev17.2
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -201,7 +202,7 @@ stages:
             #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore1ESPool-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -255,13 +256,39 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore1ESPool-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
+
+        # Check code formatting
+        - job: CheckCodeFormatting
+          pool:
+            vmImage: $(UbuntuMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool restore
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Install tools
+          - script: dotnet fantomas src/fsharp --check
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check code formatting (run dotnet fantomas src/fsharp to fix)
 
         # Linux
         - job: Linux
@@ -346,12 +373,12 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore1ESPool-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release
+          - script: .\Build.cmd -c Release -pack
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
@@ -362,12 +389,20 @@ stages:
           - name: _SignType
             value: Test
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore1ESPool-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: false
+              workingDirectory: $(Build.SourcesDirectory)/service
+              installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
@@ -394,7 +429,7 @@ stages:
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore1ESPool-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig

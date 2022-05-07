@@ -142,6 +142,11 @@
         <target state="translated">consumo de miembros de interfaz predeterminados</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDelegateTypeNameResolutionFix">
+        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
+        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
         <target state="translated">descartar enlace de patrón en uso</target>
@@ -220,6 +225,11 @@
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">formato binario para enteros</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -417,9 +427,29 @@
         <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInvalidRefAssembly">
+        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidRefOut">
+        <source>Invalid reference assembly path'</source>
+        <target state="new">Invalid reference assembly path'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOut">
+        <source>Produce a reference assembly with the specified file path.</source>
+        <target state="new">Produce a reference assembly with the specified file path.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

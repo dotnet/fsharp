@@ -3,7 +3,7 @@
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
 
-/// <summary>Basic F# type definitions, functions and operators </summary>
+// Basic F# type definitions, functions and operators
 namespace Microsoft.FSharp.Core
 
     open System
@@ -3114,10 +3114,10 @@ namespace Microsoft.FSharp.Core
         /// open System.IO
         /// exception FileNotFoundException of string
         /// 
-        /// let readFile (filename: string) = 
-        ///     if not (File.Exists(filename)) then
-        ///         raise(FileNotFoundException(filename))
-        ///     File.ReadAllText(filename)
+        /// let readFile (fileName: string) = 
+        ///     if not (File.Exists(fileName)) then
+        ///         raise(FileNotFoundException(fileName))
+        ///     File.ReadAllText(fileName)
         /// 
         /// readFile "/this-file-doest-exist"
         /// </code>
@@ -3138,11 +3138,11 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="reraise-example">
         /// <code lang="fsharp">
-        /// let readFile (filename: string) = 
+        /// let readFile (fileName: string) = 
         ///   try
-        ///     File.ReadAllText(filename)
+        ///     File.ReadAllText(fileName)
         ///   with ex ->
-        ///     eprintfn "Couldn't read %s" filename
+        ///     eprintfn "Couldn't read %s" fileName
         ///     reraise()
         ///   
         /// readFile "/this-file-doest-exist"  
@@ -3365,7 +3365,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="failwith-example">
         /// <code lang="fsharp">
@@ -3386,7 +3386,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="invalidarg-example">
         /// <code lang="fsharp">
@@ -3409,7 +3409,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
@@ -3433,7 +3433,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="invalidop-example">
         /// <code lang="fsharp">
-        /// type FileReader(filename: string) = 
+        /// type FileReader(fileName: string) = 
         ///     let mutable isOpen = false
         ///     member this.Open() = 
         ///       if isOpen then invalidOp "File is already open"
@@ -3599,8 +3599,8 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        ///
-        /// <returns>The result value.</returns>
+        /// 
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
         /// <code lang="fsharp">

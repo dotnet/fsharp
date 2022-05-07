@@ -12,7 +12,7 @@ index: 600
 Compiler Services: Project Analysis
 ==================================
 
-This tutorial demonstrates how to can analyze a whole project using services provided by the F# compiler.
+This tutorial demonstrates how you can analyze a whole project using services provided by the F# compiler.
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published.
 

@@ -110,7 +110,7 @@ let (|Decls|LetBindings|ValSig|LetOrUse|) = function
 
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.DoExpr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
+                SynModuleDecl.Expr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
         LetBindings(range, bindings)
 
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
@@ -198,6 +198,17 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
         let error = mapDiagnosticSeverity x.Severity x.ErrorNumber
         error, Line range.StartLine, Col range.StartColumn, Line range.EndLine, Col range.EndColumn, x.Message)
     |> shouldEqual expected
+
+[<Test>]
+let ``xml-doc eof``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+/// a"""
+        (fun _ -> ())
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|(Information 3520, Line 4, Col 0, Line 4, Col 5, "XML comment is not placed on a valid language element.")|])
 
 [<Test>]
 let ``comments after xml-doc``(): unit =
@@ -940,7 +951,7 @@ type A ///CTOR1
         failwith $"Unexpected ParsedInput %A{x}"
 
 [<Test>]
-let ``type members 07 - explicit ctor``(): unit =
+let ``type members 07 - explicit ctor signature``(): unit =
     let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
 module Test
 
@@ -962,6 +973,29 @@ type A =
         assertRange (5, 4) (6, 18) range
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
+
+[<Test>]
+let ``type members 08 - explicit ctor definition``(): unit =
+    let parseResults, checkResults = getParseAndCheckResults """
+type A =
+    ///ctor
+    new() = ()
+"""
+    checkResults
+    |> checkXmls [
+        "A", [||]
+        ".ctor", [|"ctor"|]
+       ]
+
+    parseResults
+    |> checkParsingErrors [||]
+
+    match parseResults.ParseTree with
+    | Members([SynMemberDefn.Member(range = range)]) ->
+        assertRange (3, 4) (4, 14) range
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
+
 
 [<Test>]
 let record(): unit =
@@ -1326,6 +1360,24 @@ val a: int
         assertRange (4, 0) (8, 10) valSigRange
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
+
+[<Test>]
+let ``namespace 01``(): unit =
+    checkSignatureAndImplementation """
+///N
+namespace N
+"""
+        (checkXml "N" [||])
+        (fun parseResults ->
+            parseResults |>
+            checkParsingErrors [|Information 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
+
+            match parseResults.ParseTree with
+            | ParsedInput.ImplFile(ParsedImplFileInput(modules = [SynModuleOrNamespace.SynModuleOrNamespace(range = range)]))
+            | ParsedInput.SigFile(ParsedSigFileInput(modules = [SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range = range)])) ->
+                assertRange (3, 0) (3, 11) range
+            | x ->
+                failwith $"Unexpected ParsedInput %A{x}")
 
 [<Test>]
 let ``Verify that OCaml style xml-doc are gone (i.e. treated as regular comments)``(): unit =

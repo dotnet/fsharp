@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <remarks>
     ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
-    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.Async"/> type.
+    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> type.
     ///
     ///  See also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
     /// </remarks> 
@@ -1133,7 +1133,7 @@ namespace Microsoft.FSharp.Control
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI to specified file.</summary>
             ///
             /// <param name="address">The URI to retrieve.</param>
-            /// <param name="fileName">The filename to save download to.</param>
+            /// <param name="fileName">The file name to save download to.</param>
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             /// 

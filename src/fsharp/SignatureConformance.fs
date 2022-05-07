@@ -20,17 +20,17 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.InfoReader
 
-#if !NO_EXTENSIONTYPING
-open FSharp.Compiler.ExtensionTyping
+#if !NO_TYPEPROVIDERS
+open FSharp.Compiler.TypeProviders
 #endif
 
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
 exception ValueNotContained of DisplayEnv * InfoReader * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
-exception ConstrNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
+exception UnionCaseNotContained of DisplayEnv * InfoReader * Tycon * UnionCase * UnionCase * (string * string -> string)
 
-exception ExnconstrNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
+exception FSharpExceptionNotContained of DisplayEnv * InfoReader * Tycon * Tycon * (string * string -> string)
 
 exception FieldNotContained of DisplayEnv * InfoReader * Tycon * RecdField * RecdField * (string * string -> string)
 
@@ -172,7 +172,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 false 
             else
             
-            checkExnInfo  (fun f -> ExnconstrNotContained(denv, infoReader, implTycon, sigTycon, f)) aenv infoReader implTycon implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
+            checkExnInfo  (fun f -> FSharpExceptionNotContained(denv, infoReader, implTycon, sigTycon, f)) aenv infoReader implTycon implTycon.ExceptionInfo sigTycon.ExceptionInfo &&
             
             let implTypars = implTycon.Typars m
             let sigTypars = sigTycon.Typars m
@@ -219,8 +219,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false
@@ -229,8 +229,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     false
                 else
 
-                let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
+                let aSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef implTycon))
+                let fSealed = isSealedTy g (generalizedTyconRef g (mkLocalTyconRef sigTycon))
                 if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false
@@ -357,7 +357,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 (errorR (err FSComp.SR.ExceptionDefsNotCompatibleExceptionDeclarationsDiffer); false)
 
         and checkUnionCase aenv infoReader (enclosingTycon: Tycon) implUnionCase sigUnionCase =
-            let err f = errorR(ConstrNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
+            let err f = errorR(UnionCaseNotContained(denv, infoReader, enclosingTycon, implUnionCase, sigUnionCase, f));false
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
             if implUnionCase.Id.idText <> sigUnionCase.Id.idText then  err FSComp.SR.ModuleContainsConstructorButNamesDiffer
@@ -490,7 +490,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TFSharpRecdRepr _ 
               | TFSharpUnionRepr _ 
               | TILObjectRepr _ 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
               | TProvidedTypeRepr _ 
               | TProvidedNamespaceRepr _
 #endif
@@ -542,7 +542,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | TMeasureableRepr ty1,  TMeasureableRepr ty2 -> 
                 if typeAEquiv g aenv ty1 ty2 then true else (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleRepresentationsDiffer(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m)); false)
             | TNoRepr, TNoRepr -> true
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | TProvidedTypeRepr info1, TProvidedTypeRepr info2 ->  
                 Tainted.EqTainted info1.ProvidedType.TypeProvider info2.ProvidedType.TypeProvider && ProvidedType.TaintedEquals(info1.ProvidedType, info2.ProvidedType)
             | TProvidedNamespaceRepr _, TProvidedNamespaceRepr _ -> 
@@ -583,7 +583,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             (implModType.ModulesAndNamespacesByDemangledName, signModType.ModulesAndNamespacesByDemangledName ) 
               ||> NameMap.suball2 
                    (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
-                   (fun x1 x2 -> checkModuleOrNamespace aenv infoReader (mkLocalModRef x1) x2)  &&
+                   (fun x1 x2 -> checkModuleOrNamespace aenv infoReader (mkLocalModuleRef x1) x2)  &&
 
             let sigValHadNoMatchingImplementation (fx: Val) (_closeActualVal: Val option) = 
                 errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
@@ -664,7 +664,7 @@ let rec CheckNamesOfModuleOrNamespaceContents denv infoReader (implModRef: Modul
         (implModType.ModulesAndNamespacesByDemangledName, signModType.ModulesAndNamespacesByDemangledName ) 
           ||> NameMap.suball2 
                 (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
-                (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv infoReader (mkLocalModRef x1) x2.ModuleOrNamespaceType)  &&
+                (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv infoReader (mkLocalModuleRef x1) x2.ModuleOrNamespaceType)  &&
 
         (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached) 
           ||> NameMap.suball2 

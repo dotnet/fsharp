@@ -35,7 +35,7 @@ let x = ()
     let (|UnionWithCases|_|) typeDefn =
         match typeDefn with
         | SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
-            cases |> List.map (fun (SynUnionCase (ident = ident)) -> ident.idText) |> Some
+            cases |> List.map (fun (SynUnionCase (ident = SynIdent(ident,_))) -> ident.idText) |> Some
         | _ -> None
 
     match getSingleModuleMemberDecls parseResults with
@@ -144,7 +144,7 @@ match () with
 b
 """
     match getSingleModuleMemberDecls parseResults with
-    | [ SynModuleDecl.DoExpr (_, (SynExpr.Match _ as m), _); SynModuleDecl.DoExpr (_, (SynExpr.Ident _ as i), _) ] ->
+    | [ SynModuleDecl.Expr (expr=(SynExpr.Match _ as m)); SynModuleDecl.Expr (expr=(SynExpr.Ident _ as i)) ] ->
         Assert.True(Position.posLt m.Range.End i.Range.Start)
     | _ -> failwith "Unexpected tree"
 
