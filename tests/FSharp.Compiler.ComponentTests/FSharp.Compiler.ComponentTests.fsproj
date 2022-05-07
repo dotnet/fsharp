@@ -32,6 +32,10 @@
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
+    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
+    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
+    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
+    <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
     <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
     <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
@@ -151,10 +155,10 @@
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="**\*.fs;**\*.fsx" Exclude="@(Compile)">
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx" Exclude="@(Compile)">
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
     <None Include="**\*.bsl">

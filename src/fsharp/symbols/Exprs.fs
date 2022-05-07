@@ -517,7 +517,7 @@ module FSharpExprConvert =
                 // type.  There is no witness for this case.  This is due to the code
                 //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
                 // in FSharp.Core. 
-                | ErrorResult _  when vref.LogicalName =  "op_LeftShift" && tyargs.Length = 1 -> []
+                | ErrorResult _  when vref.LogicalName = "op_LeftShift" && List.isSingleton tyargs -> []
                 | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
@@ -1153,7 +1153,7 @@ module FSharpExprConvert =
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
                 let argtys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
                 let rty = 
-                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType emptyILCustomAttrs scoref tinst1 tinst2 with 
+                    match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
                     | None -> if isCtor then  enclosingType else g.unit_ty
                     | Some ty -> ty
 
