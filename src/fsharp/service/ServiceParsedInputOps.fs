@@ -216,6 +216,8 @@ module ParsedInput =
         member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
+            | SynExpr.LongIdent(longDotId = SynLongIdent([id], [], [Some _])) ->
+                 defaultTraverse (SynExpr.Ident(id))
             | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
                 let _, r = CheckLongIdent longIdent
                 Some r
@@ -281,7 +283,7 @@ module ParsedInput =
                     traverseSynExpr synExpr
                 else
                     Some range 
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), rhs, _) 
                 when ident.idText = "op_ArrayLookup" 
                      && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
@@ -381,6 +383,8 @@ module ParsedInput =
                             | Some (n, _) -> Some ((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
                                                                               || (posGeq (List.item (n+1) lid).idRange.Start pos))  // foo.$bar
                         match expr with
+                        | SynExpr.LongIdent (longDotId = SynLongIdent([id], [], [Some _])) -> 
+                            defaultTraverse (SynExpr.Ident(id))
                         | SynExpr.LongIdent (_isOptional, lidwd, _altNameRefCell, _m) ->
                             traverseLidOrElse None lidwd
                         | SynExpr.LongIdentSet (lidwd, exprRhs, _m) ->
@@ -430,7 +434,7 @@ module ParsedInput =
                                     // the cursor is left of the dot
                                     None
                             | r -> r
-                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _m) 
+                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), lhs, _m) 
                             when ident.idText = "op_ArrayLookup" 
                                  && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
@@ -549,6 +553,8 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
         and walkExprWithKind (parentKind: EntityKind option) = function
+            | SynExpr.LongIdent(_, SynLongIdent([ident], _, [ Some _]), _, _) ->
+                ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
                 match dotRanges with
                 | [] when isPosInRange r -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
@@ -827,7 +833,7 @@ module ParsedInput =
 
         let (|Operator|_|) name e = 
             match e with
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ident])), lhs, _), rhs, _) 
                 when ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
@@ -839,7 +845,7 @@ module ParsedInput =
 
         let (|Setter|_|) e =
             match e with
-            | Operator "op_Equality" (SynExpr.Ident id, _) -> Some id
+            | Operator "op_Equality" (SynExpr.Ident id , _) -> Some id
             | _ -> None
 
         let findSetters argList =
@@ -853,11 +859,11 @@ module ParsedInput =
                 setters
             | _ -> emptyStringSet
 
-        let endOfLastIdent (lid: LongIdentWithDots) = 
-            let last = List.last lid.Lid
+        let endOfLastIdent (lid: SynLongIdent) = 
+            let last = List.last lid.LongIdent
             last.idRange.End
 
-        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithDots) =
+        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : SynLongIdent) =
             match mClosing with
             | Some m -> m.End
             | None -> endOfLastIdent lid
@@ -942,7 +948,8 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
                             // new (... A$)
-                            | SynExpr.Ident id when id.idRange.End = pos ->
+                            | SynExpr.Ident id
+                            | SynExpr.LongIdent(longDotId = SynLongIdent([id], [], [ Some _ ])) when id.idRange.End = pos ->
                                 match path with
                                 | PartOfParameterList None args -> 
                                     Some (CompletionContext.ParameterList args)
@@ -1139,7 +1146,7 @@ module ParsedInput =
                         |> Option.orElseWith (fun () -> if rangeContainsPos range pos then Some CompletionContext.Invalid else None)
 
                     member _.VisitUnionDefn(_path, cases, _range) =
-                        cases |> List.tryPick (fun (SynUnionCase (ident = id; caseType = caseType)) ->
+                        cases |> List.tryPick (fun (SynUnionCase (ident = SynIdent(id,_); caseType = caseType)) ->
                             if rangeContainsPos id.idRange pos then
                                 // No completions in a union case identifier
                                 Some CompletionContext.Invalid
@@ -1284,7 +1291,7 @@ module ParsedInput =
             | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
-            | SynPat.Named (ident, _, _, _) -> addIdent ident
+            | SynPat.Named (SynIdent(ident,_), _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t

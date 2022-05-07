@@ -2,6 +2,7 @@
 
 namespace rec FSharp.Compiler.Syntax
 
+open System
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -13,7 +14,11 @@ type Ident =
      new: text: string * range: range -> Ident
      member idText: string
      member idRange: range
-       
+
+/// Represents an identifier with potentially additional trivia information.
+type SynIdent =
+    | SynIdent of ident:Ident * trivia:IdentTrivia option
+
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
 
@@ -24,21 +29,37 @@ type LongIdent = Ident list
 /// if dotRanges.Length = lid.Length, then the parser must have reported an error, so the typechecker is allowed
 /// more freedom about typechecking these expressions.
 /// LongIdent can be empty list - it is used to denote that name of some AST element is absent (i.e. empty type name in inherit)
-type LongIdentWithDots =
-    | //[<Experimental("This construct is subject to change in future versions of FSharp.Compiler.Service and should only be used if no adequate alternative is available.")>]
-      LongIdentWithDots of id: LongIdent * dotRanges: range list
+type SynLongIdent =
+    | SynLongIdent of id: LongIdent * dotRanges: range list * trivia: IdentTrivia option list
 
     /// Gets the syntax range of this construct
     member Range: range
 
     /// Get the long ident for this construct
-    member Lid: LongIdent
+    member LongIdent: LongIdent
+    
+    /// Get the dot ranges
+    member Dots: range list
+    
+    /// Get the trivia of the idents
+    member Trivia: IdentTrivia list
+    
+    /// Get the idents with potential trivia attached
+    member IdentsWithTrivia: SynIdent list
 
     /// Indicates if the construct ends in '.' due to error recovery
     member ThereIsAnExtraDotAtTheEnd: bool
 
     /// Gets the syntax range for part of this construct
     member RangeWithoutAnyExtraDot: range
+
+[<AutoOpen>]
+module SynLongIdentHelpers =
+    [<Obsolete("Please use SynLongIdent or define a custom active pattern")>]
+    val (|LongIdentWithDots|): SynLongIdent -> LongIdent * range list
+
+    [<Obsolete("Please use SynLongIdent")>]
+    val LongIdentWithDots: LongIdent * range list -> SynLongIdent 
 
 /// Indicates if the construct arises from error recovery
 [<RequireQualifiedAccess>]
@@ -323,7 +344,7 @@ type BlockSeparator = range * pos option
 
 /// Represents a record field name plus a flag indicating if given record field name is syntactically
 /// correct and can be used in name resolution.
-type RecordFieldName = LongIdentWithDots * bool
+type RecordFieldName = SynLongIdent * bool
 
 /// Indicates if an expression is an atomic expression.
 ///
@@ -437,7 +458,7 @@ type SynType =
     
     /// F# syntax: A.B.C
     | LongIdent of
-        longDotId: LongIdentWithDots
+        longDotId: SynLongIdent
 
     /// F# syntax: type<type, ..., type> or type type or (type, ..., type) type
     ///   isPostfix: indicates a postfix type application e.g. "int list" or "(int, string) dict"
@@ -453,7 +474,7 @@ type SynType =
     /// F# syntax: type.A.B.C<type, ..., type>
     | LongIdentApp of
         typeName: SynType *
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         lessRange: range option *
         typeArgs: SynType list *
         commaRanges: range list * // interstitial commas
@@ -824,13 +845,13 @@ type SynExpr =
     /// variables in desugaring pattern matching. See SynSimplePat.Id
     | LongIdent of
         isOptional: bool *
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         range: range
 
     /// F# syntax: ident.ident...ident <- expr
     | LongIdentSet of
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         expr: SynExpr *
         range: range
 
@@ -838,13 +859,13 @@ type SynExpr =
     | DotGet of
         expr: SynExpr *
         rangeOfDot: range *
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         range: range
 
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of
         targetExpr: SynExpr *
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         rhsExpr: SynExpr *
         range: range
 
@@ -872,7 +893,7 @@ type SynExpr =
 
     /// F# syntax: Type.Items(e1) <- e2, rarely used named-property-setter notation, e.g. Foo.Bar.Chars(3) <- 'a'
     | NamedIndexedPropertySet of
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         expr1: SynExpr *
         expr2: SynExpr *
         range: range
@@ -880,7 +901,7 @@ type SynExpr =
     /// F# syntax: expr.Items (e1) <- e2, rarely used named-property-setter notation, e.g. (stringExpr).Chars(3) <- 'a'
     | DotNamedIndexedPropertySet of
         targetExpr: SynExpr *
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         argExpr: SynExpr *
         rhsExpr: SynExpr *
         range: range
@@ -1202,7 +1223,7 @@ type SynPat =
 
     /// A name pattern 'ident' 
     | Named of
-        ident: Ident *
+        ident: SynIdent *
         isThisVal: bool *
         accessibility: SynAccess option *
         range: range
@@ -1239,7 +1260,7 @@ type SynPat =
 
     /// A long identifier pattern possibly with argument patterns
     | LongIdent of
-        longDotId: LongIdentWithDots *
+        longDotId: SynLongIdent *
         propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
@@ -1347,7 +1368,7 @@ type SynMatchClause =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
     { /// The name of the type for the attribute
-      TypeName: LongIdentWithDots
+      TypeName: SynLongIdent
 
       /// The argument of the attribute, perhaps a tuple
       ArgExpr: SynExpr
@@ -1580,7 +1601,7 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdent *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1596,7 +1617,7 @@ type SynUnionCase =
 
     | SynUnionCase of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdent *
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
@@ -1709,7 +1730,7 @@ type SynComponentInfo =
 type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
-        ident: Ident *
+        ident: SynIdent *
         explicitValDecls: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
