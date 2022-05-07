@@ -21,17 +21,17 @@ open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// This exception is an old-style way of reporting a diagnostic
-exception AssemblyNotResolved of (*originalName*) string * range
+exception AssemblyNotResolved of string * range (*originalName*)
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
+exception MSBuildReferenceResolutionWarning of string (*Message*)  * string * range (*MSBuild warning code*)
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
+exception MSBuildReferenceResolutionError of string (*Message*)  * string * range (*MSBuild warning code*)
 
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
@@ -46,65 +46,65 @@ val GetSignatureDataResourceName: ILResource -> string
 
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
-    tcConfig:TcConfig *
-    tcGlobals:TcGlobals *
-    exportRemapping:Remap *
+    tcConfig: TcConfig *
+    tcGlobals: TcGlobals *
+    exportRemapping: Remap *
     generatedCcu: CcuThunk *
     outfile: string *
-    isIncrementalBuild: bool
-      -> ILAttribute list * ILResource list
+    isIncrementalBuild: bool ->
+        ILAttribute list * ILResource list
 
-val EncodeOptimizationData: 
-    tcGlobals:TcGlobals *
-    tcConfig:TcConfig *
+val EncodeOptimizationData:
+    tcGlobals: TcGlobals *
+    tcConfig: TcConfig *
     outfile: string *
-    exportRemapping:Remap *
+    exportRemapping: Remap *
     (CcuThunk * #CcuOptimizationInfo) *
-    isIncrementalBuild: bool
-      -> ILResource list
+    isIncrementalBuild: bool ->
+        ILResource list
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =
     | Speculative
     | ReportErrors
 
-type AssemblyResolution = 
-    {  /// The original reference to the assembly.
-       originalReference: AssemblyReference
+type AssemblyResolution =
+    { /// The original reference to the assembly.
+      originalReference: AssemblyReference
 
-       /// Path to the resolvedFile
-       resolvedPath: string    
+      /// Path to the resolvedFile
+      resolvedPath: string
 
-       /// Create the tooltip text for the assembly reference
-       prepareToolTip: unit -> string
+      /// Create the tooltip text for the assembly reference
+      prepareToolTip: unit -> string
 
-       /// Whether or not this is an installed system assembly (for example, System.dll)
-       sysdir: bool
+      /// Whether or not this is an installed system assembly (for example, System.dll)
+      sysdir: bool
 
-       /// Lazily populated ilAssemblyRef for this reference. 
-       mutable ilAssemblyRef: ILAssemblyRef option
-     }
+      /// Lazily populated ilAssemblyRef for this reference.
+      mutable ilAssemblyRef: ILAssemblyRef option }
 
 #if !NO_TYPEPROVIDERS
-type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
+type ResolvedExtensionReference =
+    | ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
 /// Represents a resolved imported binary
 [<RequireQualifiedAccess>]
-type ImportedBinary = 
+type ImportedBinary =
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData
 #if !NO_TYPEPROVIDERS
       ProviderGeneratedAssembly: System.Reflection.Assembly option
       IsProviderGenerated: bool
-      ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap  option
+      ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap option
 #endif
       ILAssemblyRefs: ILAssemblyRef list
-      ILScopeRef: ILScopeRef}
+      ILScopeRef: ILScopeRef }
 
 /// Represents a resolved imported assembly
 [<RequireQualifiedAccess>]
-type ImportedAssembly = 
+type ImportedAssembly =
     { ILScopeRef: ILScopeRef
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
@@ -113,44 +113,46 @@ type ImportedAssembly =
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
-      FSharpOptimizationData: Lazy<Option<LazyModuleInfo>>
-    }
+      FSharpOptimizationData: Lazy<Option<LazyModuleInfo>> }
 
 
 /// Tables of assembly resolutions
 [<Sealed>]
-type TcAssemblyResolutions = 
+type TcAssemblyResolutions =
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions: tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    static member SplitNonFoundationalResolutions:
+        tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
 
-    static member BuildFromPriorResolutions: tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
+    static member BuildFromPriorResolutions:
+        tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions
 
-    static member GetAssemblyResolutionInformation: tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
+    static member GetAssemblyResolutionInformation:
+        tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
 [<Sealed>]
 type RawFSharpAssemblyData =
 
-    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
+    new: ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
 
     interface IRawFSharpAssemblyData
 
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
-[<Sealed>] 
+[<Sealed>]
 type TcImports =
     interface IDisposable
     //new: TcImports option -> TcImports
-    member DllTable: NameMap<ImportedBinary> with get
+    member DllTable: NameMap<ImportedBinary>
 
     member GetImportedAssemblies: unit -> ImportedAssembly list
 
     member GetCcusInDeclOrder: unit -> CcuThunk list
 
     /// This excludes any framework imports (which may be shared between multiple builds)
-    member GetCcusExcludingBase: unit -> CcuThunk list 
+    member GetCcusExcludingBase: unit -> CcuThunk list
 
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
 
@@ -167,10 +169,13 @@ type TcImports =
     member DependencyProvider: DependencyProvider
 
     /// Try to resolve a referenced assembly based on TcConfig settings.
-    member TryResolveAssemblyReference: CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> OperationResult<AssemblyResolution list>
+    member TryResolveAssemblyReference:
+        CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode ->
+            OperationResult<AssemblyResolution list>
 
     /// Resolve a referenced assembly and report an error if the resolution fails.
-    member ResolveAssemblyReference: CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
+    member ResolveAssemblyReference:
+        CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
 
     /// Try to find the given assembly reference by simple name.  Used in magic assembly resolution.  Effectively does implicit
     /// unification of assemblies by simple assembly name.
@@ -181,7 +186,8 @@ type TcImports =
 
 #if !NO_TYPEPROVIDERS
     /// Try to find a provider-generated assembly
-    member TryFindProviderGeneratedAssemblyByName: CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option
+    member TryFindProviderGeneratedAssemblyByName:
+        CompilationThreadToken * assemblyName: string -> System.Reflection.Assembly option
 #endif
     /// Report unresolved references that also weren't consumed by any type providers.
     member ReportUnresolvedAssemblyReferences: UnresolvedAssemblyReference list -> unit
@@ -191,24 +197,22 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
-        TcConfigProvider *
-        AssemblyResolution list *
-        AssemblyResolution list
-            -> NodeCode<TcGlobals * TcImports>
+        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> NodeCode<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
-        TcConfigProvider * 
-        TcImports * 
-        AssemblyResolution list * 
-        UnresolvedAssemblyReference list * 
-        DependencyProvider 
-            -> NodeCode<TcImports>
+        TcConfigProvider * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list * DependencyProvider ->
+            NodeCode<TcImports>
 
     static member BuildTcImports:
-        tcConfigP: TcConfigProvider * 
-        dependencyProvider: DependencyProvider 
-            -> NodeCode<TcGlobals * TcImports>
+        tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL:
+    ctok: CompilationThreadToken *
+    tcImports: TcImports *
+    tcEnv: TcEnv *
+    thisAssemblyName: string *
+    referenceRange: range *
+    file: string ->
+        TcEnv * (ImportedBinary list * ImportedAssembly list)

@@ -405,9 +405,9 @@ and goutput_vararg_sig env os (csig:ILCallingSignature, varargs:ILVarArgs) =
    | Some varargs' ->
        goutput_typ env os csig.ReturnType
        output_string os " ("
-       let argtys = csig.ArgTypes
-       if argtys.Length <> 0 then
-           output_seq ", " (goutput_typ env)  os argtys
+       let argTys = csig.ArgTypes
+       if argTys.Length <> 0 then
+           output_seq ", " (goutput_typ env)  os argTys
        output_string os ", ..., "
        output_seq ", " (goutput_typ env) os varargs'
        output_string os ")"

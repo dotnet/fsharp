@@ -215,15 +215,15 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
 
     let tcConfig = TcConfig.Create(tcConfigB, validate=false)
 
-    let AddIfNotPresent(filename: string) =
-        if not(allSources |> List.contains filename) then
-            allSources <- filename :: allSources
+    let AddIfNotPresent (fileName: string) =
+        if not(allSources |> List.contains fileName) then
+            allSources <- fileName :: allSources
 
-    let AppendClosureInformation filename =
-        if IsScript filename then
+    let AppendClosureInformation fileName =
+        if IsScript fileName then
             let closure =
                 LoadClosure.ComputeClosureOfScriptFiles
-                   (tcConfig, [filename, rangeStartup], CodeContext.Compilation,
+                   (tcConfig, [fileName, rangeStartup], CodeContext.Compilation,
                     lexResourceManager, dependencyProvider)
 
             // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
@@ -244,11 +244,12 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
             tcConfigB.SetPrimaryAssembly (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
-            if tcConfigB.framework then
+
+            if tcConfigB.implicitlyReferenceDotNetAssemblies then
                 let references = closure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
-        else AddIfNotPresent filename
+        else AddIfNotPresent fileName
 
     // Find closure of .fsx files.
     commandLineSourceFiles |> List.iter AppendClosureInformation
@@ -319,7 +320,7 @@ module InterfaceFileWriter =
             (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
         let writeHeader filePath os =
-            if filePath <> "" && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpLightSyntaxFileSuffixes) then
+            if filePath <> "" && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpIndentationAwareSyntaxFileSuffixes) then
                 fprintfn os "#light"
                 fprintfn os ""
 
@@ -346,10 +347,10 @@ module InterfaceFileWriter =
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
             for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
-                let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
-                printfn "writing impl file to %s" filename
-                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
-                writeHeader filename os
+                let fileName = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                printfn "writing impl file to %s" fileName
+                use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
+                writeHeader fileName os
                 writeToFile os impl
 
         if tcConfig.printSignature then
@@ -630,8 +631,9 @@ let main1OfAst
 
     tcConfigB.target <- target
     tcConfigB.SetPrimaryAssembly primaryAssembly
+
     if noframework then
-        tcConfigB.framework <- false
+        tcConfigB.implicitlyReferenceDotNetAssemblies <- false
         tcConfigB.implicitlyResolveAssemblies <- false
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
@@ -782,13 +784,6 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
             errorRecoveryNoRange e
             exiter.Exit 1
 
-    // Perform optimization
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
-
-    let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-
-    let importMap = tcImports.GetImportMap()
-
     let metadataVersion =
         match tcConfig.metadataVersion with
         | Some v -> v
@@ -797,17 +792,25 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
              | _ -> ""
 
-    let optimizedImpls, optimizationData, _ =
-        ApplyAllOptimizations
-            (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile,
-             importMap, false, optEnv0, generatedCcu, typedImplFiles)
+    let optimizedImpls, optDataResources =
+        // Perform optimization
+        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
 
-    AbortOnError(errorLogger, exiter)
+        let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
-    // Encode the optimization data
-    ReportTime tcConfig "Encoding OptData"
+        let importMap = tcImports.GetImportMap()
 
-    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+        let optimizedImpls, optimizationData, _ =
+            ApplyAllOptimizations
+                (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+                 importMap, false, optEnv0, generatedCcu, typedImplFiles)
+
+        AbortOnError(errorLogger, exiter)
+
+        // Encode the optimization data
+        ReportTime tcConfig ("Encoding OptData")
+
+        optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger,
@@ -908,28 +911,71 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     match dynamicAssemblyCreator with
     | None ->
         try
-            try
-                ILBinaryWriter.WriteILBinaryFile
-                 ({ ilg = tcGlobals.ilg
-                    outfile = outfile
-                    pdbfile = pdbfile
-                    emitTailcalls = tcConfig.emitTailcalls
-                    deterministic = tcConfig.deterministic
-                    showTimes = tcConfig.showTimes
-                    portablePDB = tcConfig.portablePDB
-                    embeddedPDB = tcConfig.embeddedPDB
-                    embedAllSource = tcConfig.embedAllSource
-                    embedSourceList = tcConfig.embedSourceList
-                    sourceLink = tcConfig.sourceLink
-                    checksumAlgorithm = tcConfig.checksumAlgorithm
-                    signer = GetStrongNameSigner signingInfo
-                    dumpDebugInfo = tcConfig.dumpDebugInfo
-                    pathMap = tcConfig.pathMap },
-                  ilxMainModule,
-                  normalizeAssemblyRefs
-                  )
-            with Failure msg ->
-                error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.None -> ()
+            | _ ->
+                let outfile =
+                    match tcConfig.emitMetadataAssembly with
+                    | MetadataAssemblyGeneration.ReferenceOut outputPath -> outputPath
+                    | _ -> outfile
+                let referenceAssemblyAttribOpt =
+                    tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
+                    |> Option.map (fun ilTy ->
+                        mkILCustomAttribute (ilTy.TypeRef, [], [], [])
+                    )
+                try
+                    // We want to write no PDB info.
+                    ILBinaryWriter.WriteILBinaryFile
+                     ({ ilg = tcGlobals.ilg
+                        outfile = outfile
+                        pdbfile = None
+                        emitTailcalls = tcConfig.emitTailcalls
+                        deterministic = tcConfig.deterministic
+                        showTimes = tcConfig.showTimes
+                        portablePDB = false
+                        embeddedPDB = false
+                        embedAllSource = tcConfig.embedAllSource
+                        embedSourceList = tcConfig.embedSourceList
+                        sourceLink = tcConfig.sourceLink
+                        checksumAlgorithm = tcConfig.checksumAlgorithm
+                        signer = GetStrongNameSigner signingInfo
+                        dumpDebugInfo = tcConfig.dumpDebugInfo
+                        referenceAssemblyOnly = true
+                        referenceAssemblyAttribOpt = referenceAssemblyAttribOpt
+                        pathMap = tcConfig.pathMap },
+                      ilxMainModule,
+                      normalizeAssemblyRefs
+                      )
+                with Failure msg ->
+                    error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
+
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.ReferenceOnly -> ()
+            | _ ->
+                try
+                    ILBinaryWriter.WriteILBinaryFile
+                     ({ ilg = tcGlobals.ilg
+                        outfile = outfile
+                        pdbfile = pdbfile
+                        emitTailcalls = tcConfig.emitTailcalls
+                        deterministic = tcConfig.deterministic
+                        showTimes = tcConfig.showTimes
+                        portablePDB = tcConfig.portablePDB
+                        embeddedPDB = tcConfig.embeddedPDB
+                        embedAllSource = tcConfig.embedAllSource
+                        embedSourceList = tcConfig.embedSourceList
+                        sourceLink = tcConfig.sourceLink
+                        checksumAlgorithm = tcConfig.checksumAlgorithm
+                        signer = GetStrongNameSigner signingInfo
+                        dumpDebugInfo = tcConfig.dumpDebugInfo
+                        referenceAssemblyOnly = false
+                        referenceAssemblyAttribOpt = None
+                        pathMap = tcConfig.pathMap },
+                      ilxMainModule,
+                      normalizeAssemblyRefs
+                      )
+                with Failure msg ->
+                    error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e ->
             errorRecoveryNoRange e
             exiter.Exit 1
@@ -938,7 +984,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     AbortOnError(errorLogger, exiter)
 
     // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
-    if (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes) && not tcConfig.compilingFslib && not tcConfig.standalone then
+    if (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes) && not tcConfig.compilingFSharpCore && not tcConfig.standalone then
         CopyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     ReportTime tcConfig "Exiting"

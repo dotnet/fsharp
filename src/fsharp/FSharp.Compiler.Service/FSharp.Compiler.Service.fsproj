@@ -501,11 +501,11 @@
     <Compile Include="..\tainted.fs">
       <Link>TypedTree\tainted.fs</Link>
     </Compile>
-    <Compile Include="..\ExtensionTyping.fsi">
-      <Link>TypedTree\ExtensionTyping.fsi</Link>
+    <Compile Include="..\TypeProviders.fsi">
+      <Link>TypedTree\TypeProviders.fsi</Link>
     </Compile>
-    <Compile Include="..\ExtensionTyping.fs">
-      <Link>TypedTree\ExtensionTyping.fs</Link>
+    <Compile Include="..\TypeProviders.fs">
+      <Link>TypedTree\TypeProviders.fs</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fsi">
       <Link>TypedTree\QuotationPickler.fsi</Link>
@@ -1027,10 +1027,10 @@
     <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
 </Project>

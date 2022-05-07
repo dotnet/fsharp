@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CreateILModule 
+module internal FSharp.Compiler.CreateILModule
 
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -13,10 +13,10 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
 /// Represents the configuration settings used to perform strong-name signing
-type StrongNameSigningInfo 
+type StrongNameSigningInfo
 
 /// Validate the attributes and configuration settings used to perform strong-name signing
-val ValidateKeySigningAttributes: tcConfig:TcConfig * tcGlobals:TcGlobals * TopAttribs -> StrongNameSigningInfo
+val ValidateKeySigningAttributes: tcConfig: TcConfig * tcGlobals: TcGlobals * TopAttribs -> StrongNameSigningInfo
 
 /// Get the object used to perform strong-name signing
 val GetStrongNameSigner: signingInfo: StrongNameSigningInfo -> ILStrongNameSigner option
@@ -26,32 +26,33 @@ module AttributeHelpers =
     val TryFindStringAttribute: g: TcGlobals -> attrib: string -> attribs: Attribs -> string option
 
 module MainModuleBuilder =
-    
+
     /// Put together all the pieces of information to create the overall IL ModuleDef for
     /// the generated assembly
     val CreateMainModule:
         ctok: CompilationThreadToken *
-        tcConfig: TcConfig * 
-        tcGlobals: TcGlobals * 
-        tcImports: TcImports * 
-        pdbfile: 't option * 
-        assemblyName: string * 
-        outfile: string * 
-        topAttrs: TopAttribs * 
+        tcConfig: TcConfig *
+        tcGlobals: TcGlobals *
+        tcImports: TcImports *
+        pdbfile: 't option *
+        assemblyName: string *
+        outfile: string *
+        topAttrs: TopAttribs *
         sigDataAttributes: ILAttribute list *
         sigDataResources: ILResource list *
         optDataResources: ILResource list *
-        codegenResults: IlxGenResults * 
+        codegenResults: IlxGenResults *
         assemVerFromAttrib: ILVersionInfo option *
         metadataVersion: string *
-        secDecls: ILSecurityDecls 
-          -> ILModuleDef
+        secDecls: ILSecurityDecls ->
+            ILModuleDef
 
     /// For unit testing
-    val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val ComputeILFileVersion:
+        findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
 
     /// For unit testing
-    val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
+    val ComputeProductVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
 
     /// For unit testing
-    val productVersionToILVersionInfo: string -> ILVersionInfo
+    val ConvertProductVersionToILVersionInfo: string -> ILVersionInfo

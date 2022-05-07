@@ -2112,12 +2112,12 @@ let convertInitSemantics (init: ILTypeInit) =
 [<NoComparison; NoEquality>]
 type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes, genericParams: ILGenericParameterDefs,
                extends: ILType option, methods: ILMethodDefs, nestedTypes: ILTypeDefs, fields: ILFieldDefs, methodImpls: ILMethodImplDefs,
-               events: ILEventDefs, properties: ILPropertyDefs, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
+               events: ILEventDefs, properties: ILPropertyDefs, isKnownToBeAttribute: bool, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     let mutable customAttrsStored = customAttrsStored
 
-    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =
-       ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, isKnownToBeAttribute, securityDecls, customAttrs) =
+       ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, isKnownToBeAttribute, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
     member _.Name = name
     member _.Attributes = attributes
@@ -2132,10 +2132,11 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     member _.MethodImpls = methodImpls
     member _.Events = events
     member _.Properties = properties
+    member _.IsKnownToBeAttribute = isKnownToBeAttribute
     member _.CustomAttrsStored = customAttrsStored
     member _.MetadataIndex = metadataIndex
 
-    member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?customAttrs, ?securityDecls) =
+    member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?isKnownToBeAttribute, ?customAttrs, ?securityDecls) =
         ILTypeDef(name=defaultArg name x.Name,
                   attributes=defaultArg attributes x.Attributes,
                   layout=defaultArg layout x.Layout,
@@ -2149,6 +2150,7 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   methodImpls = defaultArg methodImpls x.MethodImpls,
                   events = defaultArg events x.Events,
                   properties = defaultArg properties x.Properties,
+                  isKnownToBeAttribute = defaultArg isKnownToBeAttribute x.IsKnownToBeAttribute,
                   customAttrs = defaultArg customAttrs x.CustomAttrs)
 
     member x.CustomAttrs =
@@ -2459,44 +2461,45 @@ let mkILTypeForGlobalFunctions scoref = mkILBoxedType (mkILNonGenericTySpec (ILT
 
 let isTypeNameForGlobalFunctions d = (d = typeNameForGlobalFunctions)
 
-let mkILMethRef (tref, callconv, nm, gparams, args, rty) =
+let mkILMethRef (tref, callconv, nm, numGenericParams, argTys, retTy) =
     { mrefParent=tref
       mrefCallconv=callconv
-      mrefGenericArity=gparams
+      mrefGenericArity=numGenericParams
       mrefName=nm
-      mrefArgs=args
-      mrefReturn=rty}
+      mrefArgs=argTys
+      mrefReturn=retTy}
 
-let mkILMethSpecForMethRefInTy (mref, ty, minst) =
+let mkILMethSpecForMethRefInTy (mref, ty, methInst) =
     { mspecMethodRef=mref
       mspecDeclaringType=ty
-      mspecMethodInst=minst }
+      mspecMethodInst=methInst }
 
-let mkILMethSpec (mref, vc, tinst, minst) = mkILMethSpecForMethRefInTy (mref, mkILNamedTy vc mref.DeclaringTypeRef tinst, minst)
+let mkILMethSpec (mref, vc, tinst, methInst) =
+    mkILMethSpecForMethRefInTy (mref, mkILNamedTy vc mref.DeclaringTypeRef tinst, methInst)
 
-let mkILMethSpecInTypeRef (tref, vc, cc, nm, args, rty, tinst, minst) =
-    mkILMethSpec (mkILMethRef ( tref, cc, nm, List.length minst, args, rty), vc, tinst, minst)
+let mkILMethSpecInTypeRef (tref, vc, cc, nm, argTys, retTy, tinst, methInst) =
+    mkILMethSpec (mkILMethRef ( tref, cc, nm, List.length methInst, argTys, retTy), vc, tinst, methInst)
 
-let mkILMethSpecInTy (ty: ILType, cc, nm, args, rty, minst: ILGenericArgs) =
-    mkILMethSpecForMethRefInTy (mkILMethRef (ty.TypeRef, cc, nm, minst.Length, args, rty), ty, minst)
+let mkILMethSpecInTy (ty: ILType, cc, nm, argTys, retTy, methInst: ILGenericArgs) =
+    mkILMethSpecForMethRefInTy (mkILMethRef (ty.TypeRef, cc, nm, methInst.Length, argTys, retTy), ty, methInst)
 
-let mkILNonGenericMethSpecInTy (ty, cc, nm, args, rty) =
-    mkILMethSpecInTy (ty, cc, nm, args, rty, [])
+let mkILNonGenericMethSpecInTy (ty, cc, nm, argTys, retTy) =
+    mkILMethSpecInTy (ty, cc, nm, argTys, retTy, [])
 
-let mkILInstanceMethSpecInTy (ty: ILType, nm, args, rty, minst) =
-    mkILMethSpecInTy (ty, ILCallingConv.Instance, nm, args, rty, minst)
+let mkILInstanceMethSpecInTy (ty: ILType, nm, argTys, retTy, methInst) =
+    mkILMethSpecInTy (ty, ILCallingConv.Instance, nm, argTys, retTy, methInst)
 
-let mkILNonGenericInstanceMethSpecInTy (ty: ILType, nm, args, rty) =
-    mkILInstanceMethSpecInTy (ty, nm, args, rty, [])
+let mkILNonGenericInstanceMethSpecInTy (ty: ILType, nm, argTys, retTy) =
+    mkILInstanceMethSpecInTy (ty, nm, argTys, retTy, [])
 
-let mkILStaticMethSpecInTy (ty, nm, args, rty, minst) =
-    mkILMethSpecInTy (ty, ILCallingConv.Static, nm, args, rty, minst)
+let mkILStaticMethSpecInTy (ty, nm, argTys, retTy, methInst) =
+    mkILMethSpecInTy (ty, ILCallingConv.Static, nm, argTys, retTy, methInst)
 
-let mkILNonGenericStaticMethSpecInTy (ty, nm, args, rty) =
-    mkILStaticMethSpecInTy (ty, nm, args, rty, [])
+let mkILNonGenericStaticMethSpecInTy (ty, nm, argTys, retTy) =
+    mkILStaticMethSpecInTy (ty, nm, argTys, retTy, [])
 
-let mkILCtorMethSpec (tref, args, cinst) =
-    mkILMethSpecInTypeRef (tref, AsObject, ILCallingConv.Instance, ".ctor", args, ILType.Void, cinst, [])
+let mkILCtorMethSpec (tref, argTys, tinst) =
+    mkILMethSpecInTypeRef (tref, AsObject, ILCallingConv.Instance, ".ctor", argTys, ILType.Void, tinst, [])
 
 let mkILCtorMethSpecForTy (ty, args) =
   mkILMethSpecInTy (ty, ILCallingConv.Instance, ".ctor", args, ILType.Void, [])
@@ -3355,6 +3358,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methodImpls=emptyILMethodImpls,
         properties=props,
         events=events,
+        isKnownToBeAttribute=false,
         securityDecls=emptyILSecurityDecls)
 
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
@@ -3372,6 +3376,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
               methodImpls=emptyILMethodImpls,
               properties=emptyILProperties,
               events=emptyILEvents,
+              isKnownToBeAttribute=false,
               securityDecls=emptyILSecurityDecls)
 
 
@@ -3452,23 +3457,24 @@ let buildILCode (_methName: string) lab2pc instrs tryspecs localspecs : ILCode =
 // --------------------------------------------------------------------
 
 let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms, rtv: ILReturn) =
-    let rty = rtv.Type
+    let retTy = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
     let ctor = mkILCtor (access, [ mkILParamNamed("object", ilg.typ_Object); mkILParamNamed("method", ilg.typ_IntPtr) ], MethodBody.Abstract)
     let ctor = ctor.WithRuntime(true).WithHideBySig(true)
     [ ctor
-      one "Invoke" parms rty
+      one "Invoke" parms retTy
       one "BeginInvoke" (parms @ [mkILParamNamed ("callback", iltyp_AsyncCallback); mkILParamNamed ("objects", ilg.typ_Object) ] ) iltyp_IAsyncResult
-      one "EndInvoke" [mkILParamNamed ("result", iltyp_IAsyncResult)] rty ]
+      one "EndInvoke" [mkILParamNamed ("result", iltyp_IAsyncResult)] retTy ]
 
 
 let mkCtorMethSpecForDelegate (ilg: ILGlobals) (ty: ILType, useUIntPtr) =
     let scoref = ty.TypeRef.Scope
-    mkILInstanceMethSpecInTy (ty, ".ctor", [rescopeILType scoref ilg.typ_Object
-                                            rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr)],
-                              ILType.Void, emptyILGenericArgsList)
+    let argTys =
+        [ rescopeILType scoref ilg.typ_Object
+          rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr) ]
+    mkILInstanceMethSpecInTy (ty, ".ctor", argTys, ILType.Void, emptyILGenericArgsList)
 
 type ILEnumInfo =
     { enumValues: (string * ILFieldInit) list
@@ -3854,10 +3860,10 @@ let encodeCustomAttrNamedArg (nm, ty, prop, elem) =
       yield! encodeCustomAttrValue ty elem |]
 
 let encodeCustomAttrArgs (mspec: ILMethodSpec) (fixedArgs: list<_>) (namedArgs: list<_>) =
-    let argtys = mspec.MethodRef.ArgTypes
+    let argTys = mspec.MethodRef.ArgTypes
     [| yield! [| 0x01uy; 0x00uy; |]
-       for argty, fixedArg in Seq.zip argtys fixedArgs do
-          yield! encodeCustomAttrValue argty fixedArg
+       for argTy, fixedArg in Seq.zip argTys fixedArgs do
+          yield! encodeCustomAttrValue argTy fixedArg
        yield! u16AsBytes (uint16 namedArgs.Length)
        for namedArg in namedArgs do
            yield! encodeCustomAttrNamedArg namedArg |]
@@ -3869,8 +3875,8 @@ let encodeCustomAttr (mspec: ILMethodSpec, fixedArgs: list<_>, namedArgs: list<_
 let mkILCustomAttribMethRef (mspec: ILMethodSpec, fixedArgs: list<_>, namedArgs: list<_>) =
     encodeCustomAttr (mspec, fixedArgs, namedArgs)
 
-let mkILCustomAttribute (tref, argtys, argvs, propvs) =
-    encodeCustomAttr (mkILNonGenericCtorMethSpec (tref, argtys), argvs, propvs)
+let mkILCustomAttribute (tref, argTys, argvs, propvs) =
+    encodeCustomAttr (mkILNonGenericCtorMethSpec (tref, argTys), argvs, propvs)
 
 let getCustomAttrData cattr =
     match cattr with
@@ -4049,8 +4055,8 @@ let decodeILAttribData (ca: ILAttribute) =
     let bb1, sigptr = sigptr_get_byte bytes sigptr
     if not (bb0 = 0x01 && bb1 = 0x00) then failwith "decodeILAttribData: invalid data"
 
-    let rec parseVal argty sigptr =
-      match argty with
+    let rec parseVal argTy sigptr =
+      match argTy with
       | ILType.Value tspec when tspec.Name = "System.SByte" ->
           let n, sigptr = sigptr_get_i8 bytes sigptr
           ILAttribElem.SByte n, sigptr
@@ -4120,13 +4126,15 @@ let decodeILAttribData (ca: ILAttribute) =
           let n, sigptr = sigptr_get_i32 bytes sigptr
           ILAttribElem.Int32 n, sigptr
       | _ -> failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
-    let rec parseFixed argtys sigptr =
-      match argtys with
-        [] -> [], sigptr
-      | h :: t ->
-          let nh, sigptr = parseVal h sigptr
-          let nt, sigptr = parseFixed t sigptr
-          nh :: nt, sigptr
+
+    let rec parseFixed argTys sigptr =
+        match argTys with
+        | [] -> [], sigptr
+        | h :: t ->
+            let nh, sigptr = parseVal h sigptr
+            let nt, sigptr = parseFixed t sigptr
+            nh :: nt, sigptr
+
     let fixedArgs, sigptr = parseFixed ca.Method.FormalArgTypes sigptr
     let nnamed, sigptr = sigptr_get_u16 bytes sigptr
     let rec parseNamed acc n sigptr =

@@ -21,19 +21,17 @@ type CodeContext =
     | Editing
 
 [<RequireQualifiedAccess>]
-type LoadClosureInput = 
-    {
-      FileName: string
-      
+type LoadClosureInput =
+    { FileName: string
+
       SyntaxTree: ParsedInput option
-      
-      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
-      
-      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
-    }
+
+      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
 [<RequireQualifiedAccess>]
-type LoadClosure = 
+type LoadClosure =
     { /// The source files along with the ranges of the #load positions in each file.
       SourceFiles: (string * range list) list
 
@@ -41,7 +39,7 @@ type LoadClosure =
       References: (string * AssemblyResolution list) list
 
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
-      PackageReferences: (range * string list)[]
+      PackageReferences: (range * string list) []
 
       /// Whether we're decided to use .NET Framework analysis for this script
       UseDesktopFramework: bool
@@ -62,44 +60,43 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)  list
+      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics to show for root of closure (used by fsc.fs)
       AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }   
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
-    /// Analyze a script text and find the closure of its references. 
-    /// Used from FCS, when editing a script file.  
+    /// Analyze a script text and find the closure of its references.
+    /// Used from FCS, when editing a script file.
     //
     // A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     // same arguments as the rest of the application.
     static member ComputeClosureOfScriptText:
-        legacyReferenceResolver: LegacyReferenceResolver * 
-        defaultFSharpBinariesDir: string * 
-        filename: string * 
-        sourceText: ISourceText * 
-        implicitDefines:CodeContext * 
-        useSimpleResolution: bool * 
-        useFsiAuxLib: bool * 
-        useSdkRefs: bool * 
-        sdkDir: string option * 
-        lexResourceManager: Lexhelp.LexResourceManager * 
-        applyCompilerOptions: (TcConfigBuilder -> unit) * 
-        assumeDotNetFramework: bool * 
+        legacyReferenceResolver: LegacyReferenceResolver *
+        defaultFSharpBinariesDir: string *
+        fileName: string *
+        sourceText: ISourceText *
+        implicitDefines: CodeContext *
+        useSimpleResolution: bool *
+        useFsiAuxLib: bool *
+        useSdkRefs: bool *
+        sdkDir: string option *
+        lexResourceManager: Lexhelp.LexResourceManager *
+        applyCompilerOptions: (TcConfigBuilder -> unit) *
+        assumeDotNetFramework: bool *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         reduceMemoryUsage: ReduceMemoryFlag *
-        dependencyProvider: DependencyProvider
-          -> LoadClosure
+        dependencyProvider: DependencyProvider ->
+            LoadClosure
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
-    /// Used from fsi.fs and fsc.fs, for #load and command line. 
-    static member ComputeClosureOfScriptFiles: 
-        tcConfig:TcConfig * 
-        (string * range) list * 
-        implicitDefines:CodeContext * 
+    /// Used from fsi.fs and fsc.fs, for #load and command line.
+    static member ComputeClosureOfScriptFiles:
+        tcConfig: TcConfig *
+        (string * range) list *
+        implicitDefines: CodeContext *
         lexResourceManager: Lexhelp.LexResourceManager *
-        dependencyProvider: DependencyProvider
-            -> LoadClosure
-
+        dependencyProvider: DependencyProvider ->
+            LoadClosure
