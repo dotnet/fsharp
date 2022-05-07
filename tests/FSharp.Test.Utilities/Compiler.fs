@@ -342,6 +342,12 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
+    let withDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug+" ] "debug+ is only supported on F#" cUnit
+
+    let withNoDebug (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--debug-" ] "debug- is only supported on F#" cUnit
+
     let withOcamlCompat (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--mlcompatibility" ] "withOcamlCompat is only supported on F#" cUnit
 
@@ -845,8 +851,8 @@ module rec Compiler =
                         // if the environment variable TEST_UPDATE_BSL has been set
                         if snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0 then
                             match baseline with
-                                | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
-                                | None -> ()
+                            | Some baseline -> System.IO.File.Copy(baseline.ILBaseline.FilePath, baseline.ILBaseline.BslSource, true)
+                            | None -> ()
 
                         createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
