@@ -2231,6 +2231,11 @@ module RegressionTests =
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
+    [<Test >]
+    let ``4715-optimized`` () =
+        let cfg = testConfig "regression/4715"
+        fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
+
 #if NETCOREAPP
     [<Test >]
     let ``Large inputs 12322 fsc.dll 64-bit fsc.dll .NET SDK generating optimized code`` () =
