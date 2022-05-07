@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module ComputationExpressions =
 
     let computationExprLibrary =
-        Fsx (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "ComputationExprLibrary.fs")))
+        FsFromPath (Path.Combine(__SOURCE_DIRECTORY__,  "ComputationExprLibrary.fs"))
         |> withName "ComputationExprLibrary"
 
     let verifyCompilation compilation =

@@ -4684,7 +4684,7 @@ module TcDeclarations =
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
                 // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
                 if nReqTypars <> synTypars.Length then 
-                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                    errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 if not (typarsAEquiv g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
