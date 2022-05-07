@@ -4414,18 +4414,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ErasedUnions m
         TcErasedUnionTypeOr cenv env tpenv synCases m
 
-<<<<<<< HEAD
-    | SynType.Fun(domainTy, resultTy, _) -> 
-        let domainTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
-        let resultTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv resultTy
-        (domainTy' --> resultTy'), tpenv
-=======
     | SynType.Fun(domainTy, resultTy, _) ->
         let domainTyR, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
         let resultTyR, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv resultTy
         let tyR = mkFunTy g domainTyR resultTyR
         tyR, tpenv
->>>>>>> 597446a4d3123316db356afcd205c49b05076642
 
     | SynType.Array (n, elemTy, m) ->
         let elemTy, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv elemTy
