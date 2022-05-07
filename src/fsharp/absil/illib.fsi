@@ -594,11 +594,9 @@ type internal LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
 [<AutoOpen>]
 module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
-
+        
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-
-        member Values: 'Value list
-
+        
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
         member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison

@@ -1096,3 +1096,62 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A single list containing triples of matching elements from the input lists.</returns>
         [<CompiledName("Zip3")>]
         val zip3: list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> ('T1 * 'T2 * 'T3) list
+        
+        /// <summary>Return a new list with the item at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="source">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
+        [<CompiledName("RemoveAt")>]
+        val removeAt: index: int -> source: 'T list -> 'T list
+
+        /// <summary>Return a new list with the number of items starting at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="count">The number of items to remove.</param>
+        /// <param name="source">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
+        [<CompiledName("RemoveManyAt")>]
+        val removeManyAt: index: int -> count: int -> source: 'T list -> 'T list
+    
+        /// <summary>Return a new list with the item at a given index set to the new value.</summary>
+        ///
+        /// <param name="index">The index of the item to be replaced.</param>
+        /// <param name="value">The new value.</param>
+        /// <param name="source">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
+        [<CompiledName("UpdateAt")>]
+        val updateAt: index: int -> value: 'T -> source: 'T list -> 'T list
+    
+        /// <summary>Return a new list with a new item inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the item should be inserted.</param>
+        /// <param name="value">The value to insert.</param>
+        /// <param name="source">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
+        [<CompiledName("InsertAt")>]
+        val insertAt: index: int -> value: 'T -> source: 'T list -> 'T list
+        
+        /// <summary>Return a new list with new items inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the items should be inserted.</param>
+        /// <param name="values">The values to insert.</param>
+        /// <param name="source">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
+        [<CompiledName("InsertManyAt")>]
+        val insertManyAt: index: int -> values: seq<'T> -> source: 'T list -> 'T list

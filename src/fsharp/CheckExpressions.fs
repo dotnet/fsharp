@@ -2369,7 +2369,7 @@ module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ... 
     /// In this case the semantics is let f a b = let A x = a in let B y = b 
     let private PushMultiplePatternsToRhs (cenv: cenv) isMember pats (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) = 
-        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember pats rhsExpr
+        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember pats None rhsExpr
         NormalizedBindingRhs(spatsL2@spatsL, rtyOpt, rhsExpr)
 
 
@@ -2553,7 +2553,7 @@ module EventDeclarationNormalization =
 
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
-                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), trueRhsExpr, _, m) ->
+                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), _, trueRhsExpr, _, m) ->
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -5891,7 +5891,11 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
-        let filterClauses = synWithClauses |> List.map (function SynMatchClause(pat, optWhenExpr, _, m, _) -> SynMatchClause(pat, optWhenExpr, (SynExpr.Const (SynConst.Int32 1, m)), m, DebugPointForTarget.No))
+        let filterClauses =
+            synWithClauses |> List.map (fun clause ->
+                let (SynMatchClause(pat, optWhenExpr, arrow, _, m, _)) = clause
+                let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
+                SynMatchClause(pat, optWhenExpr, arrow, oneExpr, m, DebugPointForTarget.No))
         let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty (MustEqual cenv.g.int_ty) env tpenv filterClauses
         let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
         let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
@@ -6084,7 +6088,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, spats, _, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
@@ -8687,7 +8691,7 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
     | SynExpr.AddressOf (true, a, _, m) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType cenv.g m)
-    | SynExpr.Lambda (_, _, _, a, _, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
+    | SynExpr.Lambda (body = a) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote (_, raw, a, _, _) ->
         if raw then mkRawQuotedExprTy cenv.g
         else mkQuotedExprTy cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a)
@@ -9090,7 +9094,8 @@ and TcMethodApplication
             | _ -> ()
     end
 
-    if (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
+    if not finalCalledMeth.IsIndexParamArraySetter &&
+       (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
         errorR(Deprecated(FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix(), mMethExpr))
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
@@ -9442,7 +9447,8 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let isFirst() = if first then first <- false; true else false
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv (SynMatchClause(pat, optWhenExpr, e, patm, spTgt)) =
+and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
+    let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
     let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e

@@ -425,7 +425,7 @@ module SyntaxTraversal =
                     else
                     traverseSynExpr synExpr
 
-                | SynExpr.Lambda (_, _, synSimplePats, synExpr, _, _range) ->
+                | SynExpr.Lambda (_, _, synSimplePats, _, synExpr, _, _range) ->
                     match synSimplePats with
                     | SynSimplePats.SimplePats(pats,_) ->
                         match visitor.VisitSimplePats(path, pats) with
@@ -753,7 +753,7 @@ module SyntaxTraversal =
             let defaultTraverse mc =
                 let path = SyntaxNode.SynMatchClause mc :: origPath
                 match mc with
-                | SynMatchClause(synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all ->
+                | SynMatchClause(synPat, synExprOption, _, synExpr, _range, _sequencePointInfoForTarget) as all ->
                     [dive synPat synPat.Range (traversePat path) ]
                     @
                     ([

@@ -322,7 +322,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <Ident> ident
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfnList
-%type <SynExpr> patternResult
+%type <Range * SynExpr> patternResult
 %type <SynExpr> declExpr
 %type <SynExpr> minusExpr
 %type <SynExpr> appExpr
@@ -3938,30 +3938,34 @@ patternAndGuard:
       
 patternClauses: 
   | patternAndGuard patternResult %prec prec_pat_pat_action
-     { let pat, guard, patm = $1 
-       let mLast = $2.Range 
-       let m = unionRanges $2.Range patm
-       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
+     { let pat, guard, patm = $1
+       let mArrow, resultExpr = $2
+       let mLast = resultExpr.Range
+       let m = unionRanges resultExpr.Range patm
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult BAR patternClauses 
      { let pat, guard, patm = $1 
+       let mArrow, resultExpr = $2
        let clauses, mLast = $4
-       let m = unionRanges $2.Range patm
-       (SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes) :: clauses), mLast }
+       let m = unionRanges resultExpr.Range patm
+       (SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
      { let pat, guard, patm = $1 
+       let mArrow, resultExpr = $2
        let mLast = rhs parseState 3 
-       let m = unionRanges $2.Range patm
+       let m = unionRanges resultExpr.Range patm
        // silent recovery
-       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast  }
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult error 
      { let pat, guard, patm = $1 
-       let mLast = $2.Range
-       let m = unionRanges $2.Range patm
+       let mArrow, resultExpr = $2
+       let mLast = resultExpr.Range
+       let m = unionRanges resultExpr.Range patm
        // silent recovery 
-       [SynMatchClause(pat, guard, $2, m, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast }
 
   | patternAndGuard error 
      { let pat, guard, patm = $1 
@@ -3971,7 +3975,7 @@ patternClauses:
            | Some e -> unionRanges patm e.Range 
            | _ -> patm
        // silent recovery 
-       [SynMatchClause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, None, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointForTarget.Yes)], mLast }
  
 patternGuard: 
   | WHEN declExpr 
@@ -3982,7 +3986,8 @@ patternGuard:
 
 patternResult: 
   | RARROW typedSeqExprBlockR  
-     { $2 }
+     { let mArrow = rhs parseState 1
+       mArrow, $2 }
 
 ifExprCases: 
   | ifExprThen ifExprElifs 
@@ -4839,34 +4844,40 @@ braceBarExprCore:
 anonLambdaExpr: 
   | FUN atomicPatterns RARROW typedSeqExprBlock 
      { let mAll = unionRanges (rhs parseState 1) $4.Range
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4 }
+       let mArrow = Some (rhs parseState 3)
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4 }
 
   | FUN atomicPatterns RARROW error
      { let mAll = rhs2 parseState 1 3
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (arbExpr("anonLambdaExpr1", (rhs parseState 4))) }
+       let mArrow = Some (rhs parseState 3)
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow (arbExpr("anonLambdaExpr1", (rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW typedSeqExprBlockR OEND
      { let mAll = unionRanges (rhs parseState 1) $4.Range
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4 }
+       let mArrow = Some (rhs parseState 3)
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4 }
 
   | OFUN atomicPatterns RARROW typedSeqExprBlockR recover
      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody());
        let mAll = unionRanges (rhs parseState 1) $4.Range
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4) }
+       let mArrow = Some (rhs parseState 3)
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4) }
 
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
      { reportParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsMissingFunctionBody())
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr2", (rhs parseState 4))) }
+       let mArrow = Some (rhs parseState 3)
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 mArrow (arbExpr("anonLambdaExpr2", (rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW recover
      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody())
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr3", (rhs parseState 4)))) }
+       let mArrow = Some (rhs parseState 3)
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 mArrow (arbExpr("anonLambdaExpr3", (rhs parseState 4)))) }
 
   | OFUN atomicPatterns error OEND
-     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 2) $2 (arbExpr("anonLambdaExpr4", (rhs parseState 3)))) }
+     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 2) $2 None (arbExpr("anonLambdaExpr4", (rhs parseState 3)))) }
 
   | OFUN error OEND
-     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs parseState 1) [] (arbExpr("anonLambdaExpr5", (rhs parseState 2)))) }
+     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs parseState 1) [] None (arbExpr("anonLambdaExpr5", (rhs parseState 2)))) }
 
 anonMatchingExpr: 
   | FUNCTION withPatternClauses %prec expr_function

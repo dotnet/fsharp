@@ -456,7 +456,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
     paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
-      { Position=struct(i,j)
+      { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
         CallerInfo = callerInfoFlags
@@ -474,31 +474,30 @@ type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       /// a function to help generate fresh type variables the property setters methods in generic classes
+       /// A function to help generate fresh type variables the property setters methods in generic classes
        freshenMethInfo,
-       /// range
+       /// Range
        m,
-       /// the access domain of the place where the call is taking place
+       /// The access domain of the place where the call is taking place
        ad,
-       /// the method we're attempting to call
+       /// The method we're attempting to call
        minfo: MethInfo,
-       /// the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
+       /// The 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
        calledTyArgs,
-       /// the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
-       // todo: consider CallerTypeArgs record
+       /// The 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
        callerTyArgs: TType list,
-       /// the property related to the method we're attempting to call, if any
+       /// The property related to the method we're attempting to call, if any
        pinfoOpt: PropInfo option,
-       /// the types of the actual object argument, if any
+       /// The types of the actual object argument, if any
        callerObjArgTys: TType list,
-       /// the 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
+       /// The 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
        callerArgs: CallerArgs<'T>,
-       /// do we allow the use of a param args method in its "expanded" form?
+       /// Do we allow the use of a param args method in its "expanded" form?
        allowParamArgs: bool,
-       /// do we allow the use of the transformation that converts out arguments as tuple returns?
+       /// Do we allow the use of the transformation that converts out arguments as tuple returns?
        allowOutAndOptArgs: bool,
-       /// method parameters
-       tyargsOpt : TType option)    
+       /// Method parameters
+       tyargsOpt: TType option)    
     =
     let g = infoReader.g
     let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
@@ -506,6 +505,12 @@ type CalledMeth<'T>
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
  
+    // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
+    let isIndexerSetter =
+        match pinfoOpt with
+        | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWith "set_"  && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
+        | _ -> false
+
     let argSetInfos = 
         (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
             // Find the arguments not given by name 
@@ -516,7 +521,7 @@ type CalledMeth<'T>
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
-            let minArgs, unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
+            let unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
@@ -524,25 +529,49 @@ type CalledMeth<'T>
                     
                     // Check if all optional/out arguments are byref-out args
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
-                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
+                        unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
                     // Check if all optional/out arguments are optional args
                     elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
-                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
+                        unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
                     // Otherwise drop them on the floor
                     else
-                        nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
+                        unnamedCalledArgs, [], []
                 else 
-                    nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
+                    unnamedCalledArgs, [], []
 
             let (unnamedCallerArgs, paramArrayCallerArgs), unnamedCalledArgs, paramArrayCalledArgOpt = 
+
+                let nUnnamedCallerArgs = unnamedCallerArgs.Length
+                let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 let supportsParamArgs = 
                     allowParamArgs && 
-                    minArgs >= 0 && 
-                    unnamedCalledArgs |> List.last |> (fun calledArg -> calledArg.IsParamArray && isArray1DTy g calledArg.CalledArgumentType)
+                    nUnnamedCalledArgs >= 1 && 
+                    nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
+                    let possibleParamArg =
+                        if isIndexerSetter then
+                            unnamedCalledArgs.[nUnnamedCalledArgs-2]
+                        else
+                            unnamedCalledArgs.[nUnnamedCalledArgs-1]
+                    possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
-                if supportsParamArgs  && unnamedCallerArgs.Length >= minArgs then
-                    let a, b = List.frontAndBack unnamedCalledArgs
-                    List.splitAt minArgs unnamedCallerArgs, a, Some(b)
+                if supportsParamArgs then
+                    if isIndexerSetter then
+                        // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
+                        let unnamedCalledArgs2 =
+                            unnamedCalledArgs.[0..unnamedCalledArgs.Length-3] @
+                            [unnamedCalledArgs.[unnamedCalledArgs.Length-1]]
+                        let paramArrayCalledArg =
+                            unnamedCalledArgs.[unnamedCalledArgs.Length-2]
+                        let unnamedCallerArgs2 =
+                            unnamedCallerArgs.[0..nUnnamedCalledArgs-3] @
+                            [unnamedCallerArgs.[nUnnamedCallerArgs-1]]
+                        let paramArrayCallerArgs = 
+                            unnamedCallerArgs.[nUnnamedCalledArgs-2..nUnnamedCallerArgs-2]
+                        (unnamedCallerArgs2, paramArrayCallerArgs), unnamedCalledArgs2, Some paramArrayCalledArg
+                    else
+                        let unnamedCalledArgs2, paramArrayCalledArg = List.frontAndBack unnamedCalledArgs
+                        let unnamedCallerArgs2, paramArrayCallerArgs = List.splitAt (nUnnamedCalledArgs-1) unnamedCallerArgs
+                        (unnamedCallerArgs2, paramArrayCallerArgs), unnamedCalledArgs2, Some paramArrayCalledArg
                 else
                     (unnamedCallerArgs, []), unnamedCalledArgs, None
 
@@ -693,6 +722,8 @@ type CalledMeth<'T>
 
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
 
+    member x.IsIndexParamArraySetter = isIndexerSetter && x.UsesParamArrayConversion
+
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
 
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
@@ -769,7 +800,7 @@ type ArgumentAnalysis =
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
         match e with 
-        | SynExpr.Lambda (_, _, _, rest, _, _) -> 1 + loop rest
+        | SynExpr.Lambda (body = rest) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
         | _ -> 0
     loop origRhsExpr
@@ -1586,10 +1617,22 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
     let outArgs, outArgExprs, outArgTmpBinds =
         AdjustOutCallerArgs g calledMeth mMethExpr
 
+    let adjustedNormalUnnamedArgs, setterValueArgs =
+        // IsIndexParamArraySetter onlye occurs for
+        //     expr.[indexes] <- value
+        // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
+        // Indeed in this case there will be no named/optional/out arguments.
+        if calledMeth.IsIndexParamArraySetter && not adjustedNormalUnnamedArgs.IsEmpty then
+            let a,b = List.frontAndBack adjustedNormalUnnamedArgs
+            a, [b]
+        else
+            adjustedNormalUnnamedArgs, []
+
     let allArgs =
         adjustedNormalUnnamedArgs @
         adjustedFinalAssignedNamedArgs @
         paramArrayArgs @
+        setterValueArgs @
         optArgs @ 
         outArgs
         

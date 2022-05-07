@@ -4320,11 +4320,12 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            | FullyQualified -> []
            | OpenQualified ->
                nenv.eUnqualifiedItems.Values
-               |> List.filter (function
+               |> Seq.filter (function
                    | Item.UnqualifiedType _ -> false
                    | Item.Value v -> not v.IsMember
                    | _ -> true)
-               |> List.filter (ItemIsUnseen ad g ncenv.amap m >> not)
+               |> Seq.filter (ItemIsUnseen ad g ncenv.amap m >> not)
+               |> Seq.toList
 
        let activePatternItems =
            match fullyQualified with
@@ -4352,17 +4353,19 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
        let tycons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref ->
+           |> Seq.filter (fun tcref ->
                not (tcref.LogicalName.Contains ",") &&
                not tcref.IsExceptionDecl &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
-           |> List.map (ItemOfTyconRef ncenv m)
+           |> Seq.map (ItemOfTyconRef ncenv m)
+           |> Seq.toList
 
        // Get all the constructors accessible from here
        let constructors =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.collect (InfosForTyconConstructors ncenv m ad)
+           |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> Seq.collect (InfosForTyconConstructors ncenv m ad)
+           |> Seq.toList
 
        unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors
 
@@ -4512,11 +4515,12 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
 
        let recdTyCons =
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref ->
+           |> Seq.filter (fun tcref ->
                not (tcref.LogicalName.Contains ",") &&
                tcref.IsRecordTycon &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
-           |> List.map (ItemOfTyconRef ncenv m)
+           |> Seq.map (ItemOfTyconRef ncenv m)
+           |> Seq.toList
 
        let recdFields =
            nenv.eFieldLabels

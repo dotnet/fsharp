@@ -245,6 +245,8 @@ type CalledMeth<'T> =
 
     member HasOutArgs: bool
 
+    member IsIndexParamArraySetter: bool
+
     /// The method we're attempting to call 
     member Method: MethInfo
 

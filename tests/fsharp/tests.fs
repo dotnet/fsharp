@@ -64,7 +64,10 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
 
-    [<Test>]
+    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
+    // It should land into preview7, which is set to be released August 10th 2021.
+    // These tests should be reenabled then.
+    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
     let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
 
     [<Test>]
@@ -110,7 +113,7 @@ module CoreTests =
     [<Test>]
     let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
 
-    [<Test; Ignore("test fails in debug mode, see https://github.com/dotnet/fsharp/pull/11763")>]
+    [<Test>]
     let ``genericmeasures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC_OPT_MINUS
 
     [<Test>]

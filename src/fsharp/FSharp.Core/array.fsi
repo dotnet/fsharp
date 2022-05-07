@@ -1001,7 +1001,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A copy of the input array, after removing the first N elements.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="T:System.ArgumentExcepion">Thrown when count is negative or exceeds the number of 
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative or exceeds the number of 
         /// elements in the array.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
@@ -1395,6 +1395,66 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The array of tupled elements.</returns>
         [<CompiledName("Zip3")>]
         val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
+
+
+        /// <summary>Return a new array with the item at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="source">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
+        [<CompiledName("RemoveAt")>]
+        val removeAt : index: int -> source: 'T[] -> 'T[]
+        
+        /// <summary>Return a new array with the number of items starting at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="count">The number of items to remove.</param>
+        /// <param name="source">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
+        [<CompiledName("RemoveManyAt")>]
+        val removeManyAt : index: int -> count: int -> source: 'T[] -> 'T[]
+        
+        /// <summary>Return a new array with the item at a given index set to the new value.</summary>
+        ///
+        /// <param name="index">The index of the item to be replaced.</param>
+        /// <param name="value">The new value.</param>
+        /// <param name="source">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
+        [<CompiledName("UpdateAt")>]
+        val updateAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+        
+        /// <summary>Return a new array with a new item inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the item should be inserted.</param>
+        /// <param name="value">The value to insert.</param>
+        /// <param name="source">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
+        [<CompiledName("InsertAt")>]
+        val insertAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+        
+        /// <summary>Return a new array with new items inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the items should be inserted.</param>
+        /// <param name="values">The values to insert.</param>
+        /// <param name="source">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
+        [<CompiledName("InsertManyAt")>]
+        val insertManyAt : index: int -> values: seq<'T> -> source: 'T[] -> 'T[]
 
         /// <summary>Provides parallel operations on arrays </summary>
         module Parallel =

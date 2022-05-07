@@ -6318,6 +6318,8 @@ FSharp.Compiler.Syntax.SynExpr+Lambda: FSharp.Compiler.Syntax.SynSimplePats args
 FSharp.Compiler.Syntax.SynExpr+Lambda: FSharp.Compiler.Syntax.SynSimplePats get_args()
 FSharp.Compiler.Syntax.SynExpr+Lambda: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Lambda: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] arrow
+FSharp.Compiler.Syntax.SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_arrow()
 FSharp.Compiler.Syntax.SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat],FSharp.Compiler.Syntax.SynExpr]] get_parsedData()
 FSharp.Compiler.Syntax.SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat],FSharp.Compiler.Syntax.SynExpr]] parsedData
 FSharp.Compiler.Syntax.SynExpr+Lazy: FSharp.Compiler.Syntax.SynExpr expr
@@ -6820,7 +6822,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewInferredDownca
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewInferredUpcast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynInterpolatedStringPart], FSharp.Compiler.Syntax.SynStringKind, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewJoinIn(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLambda(Boolean, Boolean, FSharp.Compiler.Syntax.SynSimplePats, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat],FSharp.Compiler.Syntax.SynExpr]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLambda(Boolean, Boolean, FSharp.Compiler.Syntax.SynSimplePats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat],FSharp.Compiler.Syntax.SynExpr]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLazy(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLetOrUse(Boolean, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLetOrUseBang(FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.Syntax.DebugPointAtBinding,System.Boolean,System.Boolean,FSharp.Compiler.Syntax.SynPat,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range]], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -7024,7 +7026,7 @@ FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointForTarge
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointForTarget get_debugPoint()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynExpr get_resultExpr()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynExpr resultExpr
-FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynMatchClause NewSynMatchClause(FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointForTarget)
+FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynMatchClause NewSynMatchClause(FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointForTarget)
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynPat get_pat()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynPat pat
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Text.Range Range
@@ -7037,6 +7039,8 @@ FSharp.Compiler.Syntax.SynMatchClause: Int32 Tag
 FSharp.Compiler.Syntax.SynMatchClause: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMatchClause: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] get_whenExpr()
 FSharp.Compiler.Syntax.SynMatchClause: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] whenExpr
+FSharp.Compiler.Syntax.SynMatchClause: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] arrow
+FSharp.Compiler.Syntax.SynMatchClause: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_arrow()
 FSharp.Compiler.Syntax.SynMatchClause: System.String ToString()
 FSharp.Compiler.Syntax.SynMeasure
 FSharp.Compiler.Syntax.SynMeasure+Anon: FSharp.Compiler.Text.Range get_range()

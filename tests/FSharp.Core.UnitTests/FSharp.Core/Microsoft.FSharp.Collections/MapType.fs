@@ -354,7 +354,32 @@ type MapType() =
     
         let e  = Map.empty<int,string>
     
-        Assert.AreEqual(e.TryFind(2), None)    
-            
+        Assert.AreEqual(e.TryFind(2), None)
     
+    [<Fact>]
+    member this.Keys() =
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "2"; "3"], m.Keys)
     
+        let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
+        Assert.AreEqual([1; 2; 3], m.Keys)
+        
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], m.Keys)
+        
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], m.Keys)
+
+    [<Fact>]
+    member this.Values() =
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "4"; "9"], m.Values)
+    
+        let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
+        Assert.AreEqual([1; 4; 9], m.Values)
+        
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], m.Values)
+        
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], m.Values)

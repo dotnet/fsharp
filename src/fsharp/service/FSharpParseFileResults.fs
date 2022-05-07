@@ -235,8 +235,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | None -> None
                     | Some clause ->
                         match clause with
-                        | SynMatchClause.SynMatchClause (_, whenExpr, resultExpr, _, _) ->
-                            match whenExpr with
+                        | SynMatchClause.SynMatchClause (_, whenExprOpt, _, resultExpr, _, _) ->
+                            match whenExprOpt with
                             | None ->
                                 getIdentRangeForFuncExprInApp traverseSynExpr resultExpr pos
                             | Some whenExpr ->
@@ -255,7 +255,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             // Capture the body of a lambda, often nested in a call to a collection function
-            | SynExpr.Lambda(_, _, _args, body, _, _) when rangeContainsPos body.Range pos -> 
+            | SynExpr.Lambda(_, _, _args, _, body, _, _) when rangeContainsPos body.Range pos -> 
                 getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
             | SynExpr.Do(expr, range) when rangeContainsPos range pos ->
@@ -454,15 +454,18 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   yield! walkExpr (isFunction || (match spInfo with DebugPointAtBinding.Yes _ -> false | _-> true)) synExpr ]
 
             and walkExprs es = List.collect (walkExpr false) es
-            and walkBinds es = List.collect walkBind es
-            and walkMatchClauses cl = 
-                [ for SynMatchClause(_, whenExpr, e, _, _) in cl do 
-                    match whenExpr with 
-                    | Some e -> yield! walkExpr false e 
-                    | _ -> ()
-                    yield! walkExpr true e ]
 
-            and walkExprOpt (spAlways: bool) eOpt = [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
+            and walkBinds es = List.collect walkBind es
+
+            and walkMatchClauses cl = 
+                [ for SynMatchClause(_, whenExprOpt, _, tgtExpr, _, _) in cl do 
+                    match whenExprOpt with 
+                    | Some whenExpr -> yield! walkExpr false whenExpr 
+                    | _ -> ()
+                    yield! walkExpr true tgtExpr ]
+
+            and walkExprOpt (spAlways: bool) eOpt =
+                [ match eOpt with Some e -> yield! walkExpr spAlways e | _ -> () ]
             
             and IsBreakableExpression e =
                 match e with
@@ -475,13 +478,13 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             // Determine the breakpoint locations for an expression. spAlways indicates we always
             // emit a breakpoint location for the expression unless it is a syntactic control flow construct
-            and walkExpr (spAlways: bool)  e =
-                let m = e.Range
+            and walkExpr (spAlways: bool)  expr =
+                let m = expr.Range
                 if not (isMatchRange m) then [] else
-                [ if spAlways && IsBreakableExpression e then 
+                [ if spAlways && IsBreakableExpression expr then 
                       yield! checkRange m
 
-                  match e with
+                  match expr with
                   | SynExpr.ArbitraryAfterError _ 
                   | SynExpr.LongIdent _
                   | SynExpr.LibraryOnlyILAssembly _
@@ -584,28 +587,28 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
-                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
+                      for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
-                  | SynExpr.Lambda (_, _, _, e, _, _) -> 
-                      yield! walkExpr true e 
+                  | SynExpr.Lambda (body = bodyExpr) -> 
+                      yield! walkExpr true bodyExpr 
 
-                  | SynExpr.Match (spBind, e, cl, _) ->
+                  | SynExpr.Match (spBind, inpExpr, cl, _) ->
                       yield! walkBindSeqPt spBind
-                      yield! walkExpr false e 
-                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
+                      yield! walkExpr false inpExpr 
+                      for SynMatchClause(_, whenExpr, _, tgtExpr, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
-                          yield! walkExpr true e 
+                          yield! walkExpr true tgtExpr 
 
-                  | SynExpr.LetOrUse (_, _, bs, e, _) -> 
-                      yield! walkBinds bs  
-                      yield! walkExpr true e
+                  | SynExpr.LetOrUse (_, _, binds, bodyExpr, _) -> 
+                      yield! walkBinds binds  
+                      yield! walkExpr true bodyExpr
 
-                  | SynExpr.TryWith (e, _, cl, _, _, spTry, spWith) -> 
+                  | SynExpr.TryWith (tryExpr, _, cl, _, _, spTry, spWith) -> 
                       yield! walkTrySeqPt spTry
                       yield! walkWithSeqPt spWith
-                      yield! walkExpr true e 
+                      yield! walkExpr true tryExpr 
                       yield! walkMatchClauses cl
                   
                   | SynExpr.TryFinally (e1, e2, _, spTry, spFinally) ->
@@ -650,7 +653,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.MatchBang (spBind, e, cl, _) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for SynMatchClause(_, whenExpr, e, _, _) in cl do 
+                      for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e ]
             

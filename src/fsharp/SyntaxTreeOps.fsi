@@ -87,7 +87,7 @@ val PushPatternToExpr: synArgNameGenerator:SynArgNameGenerator -> isMember:bool 
 ///        let (UnionCase x) = tmp1 in
 ///        let (UnionCase y) = tmp2 in
 ///        body"
-val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
+val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> arrow:Range option -> rhs:SynExpr -> SynSimplePats list * SynExpr
 
 val opNameParenGet: string
 
@@ -141,7 +141,7 @@ val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
-val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> e:SynExpr -> SynExpr
+val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> arrow:Range option -> e:SynExpr -> SynExpr
 
 val arbExpr: debugStr:string * range:range -> SynExpr
 

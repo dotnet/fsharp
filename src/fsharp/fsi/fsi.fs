@@ -1305,13 +1305,13 @@ type internal FsiDynamicCompiler
                             | None -> ()
 
                             let symbol = FSharpSymbol.Create(cenv, v.Item)
-                            let symbolUse = FSharpSymbolUse(tcGlobals, istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
+                            let symbolUse = FSharpSymbolUse(istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                             fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
 
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
                         let symbol = FSharpSymbol.Create(cenv, e.Item)
-                        let symbolUse = FSharpSymbolUse(tcGlobals, istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
+                        let symbolUse = FSharpSymbolUse(istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
 
                     | FSharpImplementationFileDeclaration.InitAction _ ->

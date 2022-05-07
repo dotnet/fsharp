@@ -670,6 +670,7 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
+        arrow: Range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
         range: range
@@ -1284,6 +1285,7 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
+        arrow: Range option *
         resultExpr: SynExpr *
         range: range *
         debugPoint: DebugPointForTarget
