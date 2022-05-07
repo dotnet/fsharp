@@ -60,24 +60,24 @@ let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) =
 
 let QualFileNameOfSpecs filename specs =
     match specs with
-    | [SynModuleOrNamespaceSig(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespaceSig(_, _, kind, _, _, _, _, m)] when not kind.IsModule -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespaceSig(longId = modname; kind = kind; range = m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespaceSig(kind = kind; range = m)] when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let QualFileNameOfImpls filename specs =
     match specs with
-    | [SynModuleOrNamespace(modname, _, kind, _, _, _, _, m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
-    | [SynModuleOrNamespace(_, _, kind, _, _, _, _, m)] when not kind.IsModule -> QualFileNameOfFilename m filename
+    | [SynModuleOrNamespace(longId = modname; kind = kind; range = m)] when kind.IsModule -> QualFileNameOfModuleName m filename modname
+    | [SynModuleOrNamespace(kind = kind; range = m)] when not kind.IsModule -> QualFileNameOfFilename m filename
     | _ -> QualFileNameOfFilename (mkRange filename pos0 pos0) filename
 
 let PrependPathToQualFileName x (QualifiedNameOfFile q) =
     ComputeQualifiedNameOfFileFromUniquePath (q.idRange, pathOfLid x@[q.idText])
 
-let PrependPathToImpl x (SynModuleOrNamespace(p, b, c, d, e, f, g, h)) =
-    SynModuleOrNamespace(x@p, b, c, d, e, f, g, h)
+let PrependPathToImpl x (SynModuleOrNamespace(longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
+    SynModuleOrNamespace(x@longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)
 
-let PrependPathToSpec x (SynModuleOrNamespaceSig(p, b, c, d, e, f, g, h)) =
-    SynModuleOrNamespaceSig(x@p, b, c, d, e, f, g, h)
+let PrependPathToSpec x (SynModuleOrNamespaceSig(longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)) =
+    SynModuleOrNamespaceSig(x@longId, isRecursive, kind, decls, xmlDoc, attribs, accessibility, range, trivia)
 
 let PrependPathToInput x inp =
     match inp with
@@ -104,14 +104,14 @@ let ComputeAnonModuleName check defaultNamespace filename (m: range) =
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) =
     match impl with
-    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) ->
+    | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
         let lid =
             match lid with
             | [id] when kind.IsModule && id.idText = MangledGlobalName ->
                 error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)
 
     | ParsedImplFileFragment.AnonModule (defs, m)->
         let isLast, isExe = isLastCompiland
@@ -121,26 +121,27 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m)
+        let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = None; NamespaceKeyword = None }
+        SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
 
-    | ParsedImplFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)->
+    | ParsedImplFileFragment.NamespaceFragment (lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia)->
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
                 rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
             | _ -> lid, kind
-        SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
+        SynModuleOrNamespace(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
 let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) =
     match intf with
-    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) ->
+    | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m, trivia)) ->
         let lid =
             match lid with
             | [id] when kind.IsModule && id.idText = MangledGlobalName ->
                 error(Error(FSComp.SR.buildInvalidModuleOrNamespaceName(), id.idRange))
             | id :: rest when id.idText = MangledGlobalName -> rest
             | _ -> lid
-        SynModuleOrNamespaceSig(lid, isRec, SynModuleOrNamespaceKind.NamedModule, decls, xmlDoc, attribs, access, m)
+        SynModuleOrNamespaceSig(lid, isRec, SynModuleOrNamespaceKind.NamedModule, decls, xmlDoc, attribs, access, m, trivia)
 
     | ParsedSigFileFragment.AnonModule (defs, m) ->
         let isLast, isExe = isLastCompiland
@@ -150,15 +151,16 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
-        SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m)
+        let trivia: SynModuleOrNamespaceSigTrivia = { ModuleKeyword = None; NamespaceKeyword = None }
+        SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
 
-    | ParsedSigFileFragment.NamespaceFragment (lid, a, kind, c, d, e, m)->
+    | ParsedSigFileFragment.NamespaceFragment (lid, isRecursive, kind, decls, xmlDoc, attributes, range, trivia)->
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
                 rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
             | _ -> lid, kind
-        SynModuleOrNamespaceSig(lid, a, kind, c, d, e, None, m)
+        SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
 let GetScopedPragmasForInput input =
     match input with
@@ -184,7 +186,7 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComme
         | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
 
 let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
-    match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
+    match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(longId = lid)) -> Some lid | _ -> None) with
     | Some lid when impls.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ ->
@@ -194,7 +196,7 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
     let isScript = IsScript filename
 
     let scopedPragmas =
-        [ for SynModuleOrNamespace(_, _, _, decls, _, _, _, _) in impls do
+        [ for SynModuleOrNamespace(decls = decls) in impls do
             for d in decls do
                 match d with
                 | SynModuleDecl.HashDirective (hd, _) -> yield! GetScopedPragmasForHashDirective hd
@@ -209,7 +211,7 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
     ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
 
 let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
-    match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
+    match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(longId = lid)) -> Some lid | _ -> None) with
     | Some lid when specs.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ ->
@@ -218,7 +220,7 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     let specs = specs |> List.mapi (fun i x -> PostParseModuleSpec(i, defaultNamespace, isLastCompiland, filename, x))
     let qualName = QualFileNameOfSpecs filename specs
     let scopedPragmas =
-        [ for SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _) in specs do
+        [ for SynModuleOrNamespaceSig(decls = decls) in specs do
             for d in decls do
                 match d with
                 | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
@@ -338,8 +340,8 @@ let ReportParsingStatistics res =
     let rec flattenDefns specs =
             specs |> List.collect (function SynModuleDecl.NestedModule (decls=subDecls) -> flattenDefns subDecls | defn -> [defn])
 
-    let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
-    let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
+    let flattenModSpec (SynModuleOrNamespaceSig(decls = decls)) = flattenSpecs decls
+    let flattenModImpl (SynModuleOrNamespace(decls = decls)) = flattenDefns decls
     match res with
     | ParsedInput.SigFile (ParsedSigFileInput (modules = specs)) ->
         printfn "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
@@ -640,7 +642,7 @@ let ProcessMetaCommandsFromInput
             | SynModuleDecl.NestedModule (decls=subDecls) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())
 
-    let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) =
+    let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig(decls = decls)) =
         List.fold (fun s d ->
             match d with
             | SynModuleSigDecl.HashDirective (h, _) -> ProcessMetaCommand s h
@@ -649,7 +651,7 @@ let ProcessMetaCommandsFromInput
          state
          decls
 
-    let ProcessMetaCommandsFromModuleImpl state (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) =
+    let ProcessMetaCommandsFromModuleImpl state (SynModuleOrNamespace(decls = decls)) =
         List.fold (fun s d ->
             match d with
             | SynModuleDecl.HashDirective (h, _) -> ProcessMetaCommand s h

@@ -625,7 +625,7 @@ module Structure =
 
             | _ -> ()
 
-        let parseModuleOrNamespace (SynModuleOrNamespace (longId, _, kind, decls, _, attribs, _, r)) =
+        let parseModuleOrNamespace (SynModuleOrNamespace (longId, _, kind, decls, _, attribs, _, r, _)) =
             parseAttributes attribs
             let idRange = longIdentRange longId
             let fullrange = Range.startToEnd idRange r  
@@ -848,7 +848,7 @@ module Structure =
                 List.iter parseModuleSigDeclaration decls
             | _ -> ()
 
-        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId, _, kind, decls, _, attribs, _, r)) =
+        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId, _, kind, decls, _, attribs, _, r, _)) =
             parseAttributes attribs
             let rangeEnd = lastModuleSigDeclRangeElse r decls
             let idrange = longIdentRange longId
