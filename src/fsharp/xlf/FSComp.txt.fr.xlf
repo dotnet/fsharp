@@ -267,6 +267,11 @@
         <target state="translated">mise en forme binaire pour les entiers</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">messages d’information liés aux cellules de référence</target>
@@ -467,9 +472,29 @@
         <target state="new">Enable nullness declarations and checks</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInvalidRefAssembly">
+        <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidRefOut">
+        <source>Invalid reference assembly path'</source>
+        <target state="new">Invalid reference assembly path'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Afficher les valeurs autorisées pour la version du langage, spécifier la version du langage comme 'dernière' ou 'préversion'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOut">
+        <source>Produce a reference assembly with the specified file path.</source>
+        <target state="new">Produce a reference assembly with the specified file path.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

@@ -1424,6 +1424,8 @@ type internal FsiDynamicCompiler
               checksumAlgorithm = tcConfig.checksumAlgorithm
               signer = None
               dumpDebugInfo = tcConfig.dumpDebugInfo
+              referenceAssemblyOnly = false
+              referenceAssemblyAttribOpt = None
               pathMap = tcConfig.pathMap }
 
         let normalizeAssemblyRefs = id
