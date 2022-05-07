@@ -74,6 +74,16 @@ type LexerIfdefExpression =
 
 val LexerIfdefEval: lookup:(string -> bool) -> _arg1:LexerIfdefExpression -> bool
 
+module LexbufIfdefStore =
+
+    val SaveIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * expr: LexerIfdefExpression * range: range -> unit
+
+    val SaveElseHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
+
+    val SaveEndIfHash: lexbuf:UnicodeLexing.Lexbuf * lexed:string * range: range -> unit
+
+    val GetTrivia: lexbuf:UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
+
 [<RequireQualifiedAccess>]
 type LexerStringStyle =
     | Verbatim

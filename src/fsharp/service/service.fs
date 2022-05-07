@@ -928,6 +928,10 @@ type BackgroundCompiler(
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
+            parseCacheLock.AcquireLock(fun ltok -> 
+                for sourceFile in options.SourceFiles do
+                    checkFileInProjectCache.RemoveAnySimilar(ltok, (sourceFile, 0L, options))
+            )
             let _ = createBuilderNode (options, userOpName, CancellationToken.None)
             ()
 
