@@ -2342,7 +2342,7 @@ val NormalizeAndAdjustPossibleSubsumptionExprs: TcGlobals -> Expr -> Expr
 // Erased union helper
 //-------------------------------------------------------------------------
 
-val tryUnsortedErasedUnionTyCases : TcGlobals -> TType -> TTypes ValueOption
+val tryUnsortedErasedUnionTyCases: TcGlobals -> TType -> TTypes ValueOption
 
 //-------------------------------------------------------------------------
 // XmlDoc signatures, used by both VS mode and XML-help emit
