@@ -678,6 +678,9 @@ let GetBasicNameOfPossibleCompilerGeneratedName (name: string) =
 let CompilerGeneratedNameSuffix (basicName: string) suffix =
     basicName+compilerGeneratedMarker+suffix
 
+let CompilerGeneratedNameSuffixSpaces (basicName: string) suffix =
+    basicName + " " + compilerGeneratedMarker + " " + suffix
+
 //-------------------------------------------------------------------------
 // Handle mangled .NET generic type names
 //------------------------------------------------------------------------- 

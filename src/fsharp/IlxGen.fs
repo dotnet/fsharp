@@ -3,6 +3,7 @@
 /// The ILX generator.
 module internal FSharp.Compiler.IlxGen
 
+open System
 open System.IO
 open System.Reflection
 open System.Collections.Generic
@@ -294,6 +295,9 @@ type CompileLocation =
 
       Enclosing: string list
 
+      /// Set for "<StartupCode$..." and "<PrivateImplementationDetails$..." types
+      IsSpecialName: bool
+
       QualifiedNameOfFile: string
     }
 
@@ -308,6 +312,7 @@ let CompLocForFragment fragName (ccu: CcuThunk) =
      TopImplQualifiedName = fragName
      Scope = ccu.ILScopeRef
      Namespace = None
+     IsSpecialName = true
      Enclosing = []}
 
 let CompLocForCcu (ccu: CcuThunk) = CompLocForFragment ccu.AssemblyName ccu
@@ -328,12 +333,14 @@ let CompLocForFixedPath fragName qname (CompPath(sref, cpath)) =
       TopImplQualifiedName = qname
       Scope = sref
       Namespace = ns
+      IsSpecialName = false
       Enclosing = encl }
 
-let CompLocForFixedModule fragName qname (mspec: ModuleOrNamespace) =
-   let cloc = CompLocForFixedPath fragName qname mspec.CompilationPath
-   let cloc = CompLocForSubModuleOrNamespace cloc mspec
-   cloc
+let CompLocForModuleDef fragName qname (mspec: ModuleOrNamespace) =
+    assert not mspec.IsNamespace
+    let cloc = CompLocForFixedPath fragName qname mspec.CompilationPath
+    let cloc = CompLocForSubModuleOrNamespace cloc mspec
+    cloc
 
 let NestedTypeRefForCompLoc cloc n =
     match cloc.Enclosing with
@@ -351,21 +358,20 @@ let CleanUpGeneratedTypeName (nm: string) =
 let TypeNameForInitClass cloc =
     "<StartupCode$" + (CleanUpGeneratedTypeName cloc.QualifiedNameOfFile) + ">.$" + cloc.TopImplQualifiedName
 
-let TypeNameForImplicitMainMethod cloc =
-    TypeNameForInitClass cloc + "$Main"
-
 let TypeNameForPrivateImplementationDetails cloc =
     "<PrivateImplementationDetails$" + (CleanUpGeneratedTypeName cloc.QualifiedNameOfFile) + ">"
 
 let CompLocForInitClass cloc =
-    {cloc with Enclosing=[TypeNameForInitClass cloc]; Namespace=None}
-
-let CompLocForImplicitMainMethod cloc =
-    {cloc with Enclosing=[TypeNameForImplicitMainMethod cloc]; Namespace=None}
+    {cloc with
+        IsSpecialName = true
+        Enclosing=[TypeNameForInitClass cloc]
+        Namespace=None}
 
 let CompLocForPrivateImplementationDetails cloc =
     {cloc with
-        Enclosing=[TypeNameForPrivateImplementationDetails cloc]; Namespace=None}
+        IsSpecialName = true
+        Enclosing=[TypeNameForPrivateImplementationDetails cloc]
+        Namespace=None}
 
 /// Compute an ILTypeRef for a CompilationLocation
 let rec TypeRefForCompLoc cloc =
@@ -1039,8 +1045,8 @@ and IlxGenEnv =
       /// REVIEW: generalize to arbitrary nested local loops??
       innerVals: (ValRef * (BranchCallItem * Mark)) list
 
-      /// Full list of enclosing bound values. First non-compiler-generated element is used to help give nice names for closures and other expressions.
-      letBoundVars: ValRef list
+      /// Name to prefix to generated closures.
+      cloNameInfo: Entity option * string
 
       /// The set of IL local variable indexes currently in use by lexically scoped variables, to allow reuse on different branches.
       /// Really an integer set.
@@ -1057,6 +1063,29 @@ and IlxGenEnv =
     }
 
     override _.ToString() = "<IlxGenEnv>"
+
+    // Inside the definition of a non-constructor member, top-level value or function-typed local, closures
+    // get prefixed with the compiled name of the value being defined.
+    //
+    // Constructors would just use name `.ctor` which is not useful
+    member eenv.EnterValDefinition (cenv: cenv) (vref: ValRef) =
+        if vref.IsCompilerGenerated then
+            eenv
+        elif not vref.IsMemberOrModuleBinding && not vref.IsCompiledAsTopLevel && not (isFunTy cenv.g vref.TauType) then
+            eenv
+        else
+            let name = vref.CompiledName cenv.g.CompilerGlobalState
+            let newPrefixInfo = 
+                match eenv.cloNameInfo with
+                | None, _ -> None, name
+                | Some ename, _ -> Some ename, name
+            { eenv with cloNameInfo = newPrefixInfo }
+
+    // Inside the definition of an entity, closures get prefixed with the display name of the entity being defined. We don't use the compiled
+    // name as this may include ` characters
+    member eenv.EnterEntityDefinition(entity: Entity) =
+        { eenv with
+            cloNameInfo = (Some entity, "cctor") }
 
 let discard = DiscardThen Continue
 let discardAndReturnVoid = DiscardThen ReturnVoid
@@ -1403,8 +1432,8 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
     (eenv, unrealizedSlots) ||> List.fold (fun eenv vref -> allocVal cloc vref.Deref eenv)
 
 /// Record how constructs are represented, for a sequence of definitions in a module or namespace fragment.
-let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
-    List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
+let rec AddBindingsForContentsOfModuleOrNamespace allocVal (cloc: CompileLocation) eenv mdefs =
+    List.fold (AddBindingsForContentOfModuleOrNamespace allocVal cloc) eenv mdefs
 
 and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
     let ilImports =
@@ -1436,7 +1465,7 @@ and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
                 
         { eenv with imports = Some imports }
 
-and AddBindingsForModuleDef allocVal cloc eenv x =
+and AddBindingsForContentOfModuleOrNamespace allocVal cloc eenv x =
     match x with
     | TMDefRec(_isRec, _opens, tycons, mbinds, _) ->
         // Virtual don't have 'let' bindings and must be added to the environment
@@ -1452,7 +1481,7 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
     | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) ->
         AddBindingsForLocalModuleType allocVal cloc eenv mtyp
     | TMDefs mdefs ->
-        AddBindingsForModuleDefs allocVal cloc eenv mdefs
+        AddBindingsForContentsOfModuleOrNamespace allocVal cloc eenv mdefs
 
 /// Record how constructs are represented, for a module or namespace.
 and AddBindingsForModule allocVal cloc x eenv =
@@ -1462,9 +1491,9 @@ and AddBindingsForModule allocVal cloc x eenv =
     | ModuleOrNamespaceBinding.Module (mspec, mdef) ->
         let cloc =
             if mspec.IsNamespace then cloc
-            else CompLocForFixedModule cloc.QualifiedNameOfFile cloc.TopImplQualifiedName mspec
+            else CompLocForModuleDef cloc.QualifiedNameOfFile cloc.TopImplQualifiedName mspec
 
-        AddBindingsForModuleDef allocVal cloc eenv mdef
+        AddBindingsForContentOfModuleOrNamespace allocVal cloc eenv mdef
 
 /// Record how constructs are represented, for the values and functions defined in a module or namespace fragment.
 and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
@@ -1482,7 +1511,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
             match mexpr with
-            | ModuleOrNamespaceExprWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
+            | ModuleOrNamespaceExprWithSig(_, mdef, _) -> AddBindingsForContentOfModuleOrNamespace allocVal cloc eenv mdef
         else
             AddBindingsForLocalModuleType allocVal cloc eenv mexpr.Type)
 
@@ -5200,11 +5229,17 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let g = cenv.g
 
     // Choose a base name for the closure
-    let basename =
-        let boundv = eenvouter.letBoundVars |> List.tryFind (fun v -> not v.IsCompilerGenerated)
-        match boundv with
-        | Some v -> v.CompiledName cenv.g.CompilerGlobalState
-        | None -> "clo"
+    let basename = 
+        match eenvouter.cloNameInfo with 
+        | None, methodName -> methodName
+        | Some entityName, methodName ->
+            // If generating into "StartupCode" or "ImplementationDetails" then add the name of the entity responsible for the closure.
+            // For example when generating closures related to the "main" method or .cctor
+            // This prevents a sea of "clo@365" closures without traceable names
+            if eenvouter.cloc.IsSpecialName then
+                entityName.DisplayNameCore + "::" + methodName
+            else 
+                methodName
 
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
     let uniq =
@@ -5974,12 +6009,13 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             | _ -> true)
 
     let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
-        match e with
+        match stripExpr e with
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
             let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
             let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
             let canUseStaticField = (match e with Expr.Obj _ -> false | _ -> true)
-            let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
+            let eenvclo = eenv.EnterValDefinition cenv (mkLocalValRef boundv)
+            let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars eenvclo e
             for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal cenv.g m fv eenvclo with
@@ -6074,9 +6110,11 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
     | _ -> ()
 
     let eenv =
-        if isStateVar then eenv 
-        else { eenv with letBoundVars = (mkLocalValRef vspec) :: eenv.letBoundVars;
-                         initLocals = eenv.initLocals && (match vspec.ApparentEnclosingEntity with Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs) | _ -> true) }
+        if isStateVar then
+            eenv 
+        else
+            let eenv = eenv.EnterValDefinition cenv (mkLocalValRef vspec)
+            { eenv with initLocals = eenv.initLocals && (match vspec.ApparentEnclosingEntity with Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs) | _ -> true) }
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
@@ -7116,7 +7154,7 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
      j, realloc, { eenv with liveLocals = IntMap.add j () eenv.liveLocals }
 
 /// Decide storage for local value and if necessary allocate an ILLocal for it
-and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
+and AllocLocalVal cenv cgbuf v (eenv: IlxGenEnv) repr scopeMarks =
     let g = cenv.g
     let repr, eenv =
         let ty = v.Type
@@ -7126,11 +7164,9 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
             | Some repr when IsNamedLocalTypeFuncVal g v repr ->
                 let ftyvs = (freeInExpr CollectTypars repr).FreeTyvars
                 // known, named, non-escaping type functions
-                let cloinfoGenerate eenv =
-                    let eenvinner =
-                        {eenv with
-                             letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvinner repr
+                let cloinfoGenerate (eenv: IlxGenEnv) =
+                    let eenvclo = eenv.EnterValDefinition cenv (mkLocalValRef v)
+                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvclo repr
                     cloinfo
 
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, g.ilg.typ_Object, false) scopeMarks
@@ -7372,16 +7408,15 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
          emptyILEvents,
          mkILCustomAttrs
            (GenAttrs cenv eenv attribs @
-            (if List.contains tref.Name [TypeNameForImplicitMainMethod cloc; TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]
+            (if List.contains tref.Name [TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]
              then [ ]
              else [mkCompilationMappingAttr g (int SourceConstructFlags.Module)])),
          initTrigger)
     let tdef = tdef.WithSealed(true).WithAbstract(true)
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
-
-and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
-    let (ModuleOrNamespaceExprWithSig(mty, def, _)) = x
+and GenContentOfNamespaceOrModuleWithSig cenv cgbuf qname lazyInitInfo eenv mexprWithSig =
+    let (ModuleOrNamespaceExprWithSig(mty, def, _)) = mexprWithSig
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings
     // We use one scope for all the bindings in the module, which makes them all appear with their "default" values
     // rather than incrementally as we step through the initializations in the module. This is a little unfortunate
@@ -7391,16 +7426,16 @@ and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
         let eenv = AddSignatureRemapInfo "defs" sigToImplRemapInfo eenv
 
         // Allocate all the values, including any shadow locals for static fields
-        let eenv = AddBindingsForModuleDef (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
-        let _eenvEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenv def
+        let eenv = AddBindingsForContentOfModuleOrNamespace (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
+        let _eenvEnd = GenContentOfNamespaceOrModule cenv cgbuf qname lazyInitInfo eenv def
         ())
 
-and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs =
-    let _eenvEnd = (eenv, mdefs) ||> List.fold (GenModuleDef cenv cgbuf qname lazyInitInfo)
+and GenContentsOfNamespaceOrModule cenv cgbuf qname lazyInitInfo eenv mdefs =
+    let _eenvEnd = (eenv, mdefs) ||> List.fold (GenContentOfNamespaceOrModule cenv cgbuf qname lazyInitInfo)
     ()
 
-and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
-    match x with
+and GenContentOfNamespaceOrModule cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo (eenv: IlxGenEnv) mdecl =
+    match mdecl with
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
         for tc in tycons do
@@ -7423,8 +7458,8 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                     |> List.skipWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) 
                 GenLetRecBindings cenv cgbuf eenv (recBinds, m)
                 bindsRemaining <- otherBinds
-            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
-                GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+            | (ModuleOrNamespaceBinding.Module (mspec, mdef)) :: rest ->
+                GenNamespaceOrModuleDef cenv cgbuf qname lazyInitInfo eenv mspec mdef
                 bindsRemaining <- rest
             | [] -> failwith "unreachable"
 
@@ -7443,25 +7478,22 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
         eenv
 
     | TMAbstract mexpr ->
-        GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+        GenContentOfNamespaceOrModuleWithSig cenv cgbuf qname lazyInitInfo eenv mexpr
         eenv
 
     | TMDefs mdefs ->
-        GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
+        GenContentsOfNamespaceOrModule cenv cgbuf qname lazyInitInfo eenv mdefs
         eenv
 
-// Generate a module binding
-and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) lazyInitInfo eenv m x =
-  match x with
-  | ModuleOrNamespaceBinding.Binding bind ->
-    GenLetRecBindings cenv cgbuf eenv ([bind], m)
-
-  | ModuleOrNamespaceBinding.Module (mspec, mdef) ->
+and GenNamespaceOrModuleDef cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) lazyInitInfo eenv mspec mdef =
     let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
     let eenvinner =
         if mspec.IsNamespace then eenv else
-        { eenv with cloc = CompLocForFixedModule cenv.opts.fragName qname.Text mspec; initLocals = eenv.initLocals && not (HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs) }
+        let eenv = eenv.EnterEntityDefinition mspec
+        { eenv with
+            cloc = CompLocForModuleDef cenv.opts.fragName qname.Text mspec
+            initLocals = eenv.initLocals && not (HasFSharpAttribute cenv.g cenv.g.attrib_SkipLocalsInitAttribute mspec.Attribs) }
 
     // Create the class to hold the contents of this module. No class needed if
     // we're compiling it as a namespace.
@@ -7478,14 +7510,13 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         GenTypeDefForCompLoc (cenv, eenvinner, cgbuf.mgbuf, eenvinner.cloc, hidden, mspec.Attribs, staticClassTrigger, false, (* atEnd= *) true)
 
     // Generate the declarations in the module and its initialization code
-    let _envAtEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenvinner mdef
+    let _envAtEnd = GenContentOfNamespaceOrModule cenv cgbuf qname lazyInitInfo eenvinner mdef
 
     // If the module has a .cctor for some mutable fields, we need to ensure that when
     // those fields are "touched" the InitClass .cctor is forced. The InitClass .cctor will
     // then fill in the value of the mutable fields.
     if not mspec.IsNamespace && (cgbuf.mgbuf.GetCurrentFields(TypeRefForCompLoc eenvinner.cloc) |> Seq.isEmpty |> not) then
         GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo (TypeRefForCompLoc eenvinner.cloc) eenv.imports mspec.Range
-
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedImplFileAfterOptimization) =
@@ -7510,9 +7541,22 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
 
     let initClassTrigger = (* if isFinalFile then *) ILTypeInit.OnAny (* else ILTypeInit.BeforeField *)
 
-    let eenv = {eenv with cloc = initClassCompLoc
-                          isFinalFile = isFinalFile
-                          someTypeInThisAssembly = initClassTy }
+    // This method name is only used internally in ilxgen.fs to aid debugging
+    let methodName =
+        match mainInfoOpt with
+        //   Library file
+        | None -> ".cctor"
+        //   Final file, explicit entry point
+        | Some _ when hasExplicitEntryPoint -> ".cctor"
+        //   Final file, implicit entry point
+        | Some _ -> mainMethName
+
+    let eenv =
+        {eenv with
+            cloc = initClassCompLoc
+            isFinalFile = isFinalFile
+            cloNameInfo = (None, methodName)
+            someTypeInThisAssembly = initClassTy }
 
     // Create the class to hold the initialization code and static fields for this file.
     //     internal static class $<StartupCode...> {}
@@ -7529,22 +7573,12 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     // codegen .cctor/main for outer module
     let clocCcu = CompLocForCcu cenv.viewCcu
 
-    // This method name is only used internally in ilxgen.fs to aid debugging
-    let methodName =
-        match mainInfoOpt with
-        //   Library file
-        | None -> ".cctor"
-        //   Final file, explicit entry point
-        | Some _ when hasExplicitEntryPoint -> ".cctor"
-        //   Final file, implicit entry point
-        | Some _ -> mainMethName
-
     // topInstrs is ILInstr[] and contains the abstract IL for this file's top-level actions. topCode is the ILMethodBody for that same code.
     let topInstrs, topCode =
         CodeGenMethod cenv mgbuf
             ([], methodName, eenv, 0, None,
              (fun cgbuf eenv ->
-                  GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+                  GenContentOfNamespaceOrModuleWithSig cenv cgbuf qname lazyInitInfo eenv mexpr
                   CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
 
     // The code generation for the initialization is now complete and the IL code is in topCode.
@@ -7812,9 +7846,10 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                yield mdef
       | _ -> () ]
 
-and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
+and GenTypeDef cenv mgbuf lazyInitInfo (eenv: IlxGenEnv) m (tycon: Tycon) =
     let g = cenv.g
     let tcref = mkLocalTyconRef tycon
+    let eenv = eenv.EnterEntityDefinition tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with
 #if !NO_EXTENSIONTYPING
@@ -8426,6 +8461,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
     let g = cenv.g
     let exncref = mkLocalEntityRef exnc
+    let eenv = eenv.EnterEntityDefinition exnc
     match exnc.ExceptionInfo with
     | TExnAbbrevRepr _ | TExnAsmRepr _ | TExnNone -> ()
     | TExnFresh _ ->
@@ -8536,8 +8572,8 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                     let lazyInitInfo = ResizeArray()
                     let qname = QualifiedNameOfFile(mkSynId range0 "unused")
                     LocalScope "module" cgbuf (fun (_, endMark) ->
-                        let eenv = AddBindingsForModuleDef (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
-                        let _eenvEnv = GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr
+                        let eenv = AddBindingsForContentOfModuleOrNamespace (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
+                        let _eenvEnv = GenContentOfNamespaceOrModule cenv cgbuf qname lazyInitInfo eenv mexpr
                         ())), range0)
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
@@ -8559,7 +8595,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       suppressWitnesses = false
       someTypeInThisAssembly= g.ilg.typ_Object // dummy value
       isFinalFile = false
-      letBoundVars=[]
+      cloNameInfo = (None, "clo")
       liveLocals=IntMap.empty()
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
@@ -8645,8 +8681,6 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
 // The storage in the eenv says if the vref is stored in a static field.
 // If we know how/where the field was generated, then we can lookup via reflection.
 //-------------------------------------------------------------------------
-
-open System
 
 /// The lookup* functions are the conversions available from ilreflect.
 type ExecutionContext =

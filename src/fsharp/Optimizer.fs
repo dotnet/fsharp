@@ -3324,7 +3324,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
 /// Extract a sequence of pipe-right operations (note the pipe-right operator is left-associative
 /// so we start with the full thing and descend down taking apps off the end first)
 /// The pipeline begins with a |>, ||> or |||>
-and getPipes g expr acc =
+and GetPipeRights g expr acc =
     // Note, we strip any outer debug points because we are replacing it with more specific debug points along
     // the pipeline.
     //
@@ -3336,7 +3336,7 @@ and getPipes g expr acc =
     //    let test () = DP(x) |> DP(f)
     match stripDebugPoints expr with
     | OpPipeRight g (resType, xExpr, fExpr, m) ->
-        getPipes g xExpr (([xExpr.Range], resType, fExpr, m) :: acc) 
+        GetPipeRights g xExpr (([xExpr.Range], resType, fExpr, m) :: acc) 
     | OpPipeRight2 g (resType, x1Expr, x2Expr, fExpr, m) ->
         [x1Expr; x2Expr], (([x1Expr.Range; x2Expr.Range], resType, fExpr, m) :: acc)
     | OpPipeRight3 g (resType, x1Expr, x2Expr, x3Expr, fExpr, m) ->
@@ -3350,7 +3350,7 @@ and OptimizeDebugPipeRights cenv env expr =
     let g = cenv.g
 
     env.methEnv.pipelineCount <- env.methEnv.pipelineCount + 1
-    let xs0, pipes = getPipes g expr []
+    let xs0, pipes = GetPipeRights g expr []
     
     let xs0R, xs0Infos = OptimizeExprsThenConsiderSplits cenv env xs0
     let xs0Info = CombineValueInfosUnknown xs0Infos

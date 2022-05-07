@@ -162,6 +162,8 @@ val internal GetBasicNameOfPossibleCompilerGeneratedName: name:string -> string
 
 val internal CompilerGeneratedNameSuffix: basicName:string -> suffix:string -> string
 
+val internal CompilerGeneratedNameSuffixSpaces: basicName:string -> suffix:string -> string
+
 val internal TryDemangleGenericNameAndPos: n:string -> int voption
 
 type internal NameArityPair = | NameArityPair of string * int

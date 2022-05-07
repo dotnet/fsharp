@@ -60,7 +60,8 @@ type StableNiceNameGenerator() =
                     match basicNameCounts.TryGetValue basicName with
                     | true, c -> c
                     | _ -> 0
-                let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
+                let suffix = "line " + string m.StartLine + (match n with 0 -> "" | n -> " closure " + string n)
+                let nm = CompilerGeneratedNameSuffixSpaces basicName suffix                
                 names.[key] <- nm
                 basicNameCounts.[basicName] <- n + 1
                 nm
