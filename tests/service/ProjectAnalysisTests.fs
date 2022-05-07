@@ -1485,16 +1485,16 @@ let ``Test project 5 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.Range, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("symbol ", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
-            ("symbol ", "Odd", "file1", ((4, 11), (4, 14)), ["defn"]);
+          [|("symbol Even", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
+            ("symbol Odd", "Odd", "file1", ((4, 11), (4, 14)), ["defn"]);
             ("val input", "input", "file1", ((4, 17), (4, 22)), ["defn"]);
             ("val op_Equality", "Microsoft.FSharp.Core.Operators.(=)", "file1",
              ((4, 38), (4, 39)), []);
             ("val op_Modulus", "Microsoft.FSharp.Core.Operators.(%)", "file1",
              ((4, 34), (4, 35)), []);
             ("val input", "input", "file1", ((4, 28), (4, 33)), []);
-            ("symbol ", "Even", "file1", ((4, 47), (4, 51)), ["defn"]);
-            ("symbol ", "Odd", "file1", ((4, 57), (4, 60)), ["defn"]);
+            ("symbol Even", "Even", "file1", ((4, 47), (4, 51)), ["defn"]);
+            ("symbol Odd", "Odd", "file1", ((4, 57), (4, 60)), ["defn"]);
             ("val |Even|Odd|", "ActivePatterns.(|Even|Odd|)", "file1", ((4, 5), (4, 15)),
              ["defn"]); ("val input", "input", "file1", ((7, 15), (7, 20)), ["defn"]);
             ("val input", "input", "file1", ((8, 9), (8, 14)), []);
@@ -1509,7 +1509,7 @@ let ``Test project 5 all symbols`` () =
              "file1", ((10, 12), (10, 19)), []);
             ("val input", "input", "file1", ((10, 32), (10, 37)), []);
             ("val TestNumber", "ActivePatterns.TestNumber", "file1", ((7, 4), (7, 14)),
-             ["defn"]); ("symbol ", "Float", "file1", ((13, 6), (13, 11)), ["defn"]);
+             ["defn"]); ("symbol Float", "Float", "file1", ((13, 6), (13, 11)), ["defn"]);
             ("string", "Microsoft.FSharp.Core.string", "file1", ((13, 22), (13, 28)),
              ["type"]); ("val str", "str", "file1", ((13, 17), (13, 20)), ["defn"]);
             ("val floatvalue", "floatvalue", "file1", ((14, 15), (14, 25)), ["defn"]);
@@ -5108,6 +5108,8 @@ module M
     // Access can be nested
     let f3 (v : {| X: {| X : int; Y : string |} |}) = v.X.X
 
+    let (|Foo|Bar|) _ =
+        if true then Foo else Bar 
     """
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
     let fileNames = [fileName1]
@@ -5172,6 +5174,11 @@ let ``Test project41 all symbols`` () =
            ("X", ((18, 54), (18, 59)),
             ["field"; "anon(0, [//<>f__AnonymousType4026451324`2]X,Y)"], (18, 25));
            ("f3", ((18, 8), (18, 10)), ["val"], (18, 8));
+           ("Foo", ((20, 10), (20, 13)), ["apatcase0"], (20, 10));
+           ("Bar", ((20, 14), (20, 17)), ["apatcase1"], (20, 14));
+           ("Foo", ((21, 21), (21, 24)), ["apatcase0"], (20, 9));
+           ("Bar", ((21, 30), (21, 33)), ["apatcase1"], (20, 9));
+           ("(|Foo|Bar|)", ((20, 9), (20, 18)), ["apat"; "val"], (20, 9));
            ("M", ((2, 7), (2, 8)), ["module"], (2, 7))]
 
 

@@ -246,6 +246,7 @@ type Item =
     member d.DisplayNameCore =
         match d with
         | Item.Value v -> v.DisplayNameCore
+        | Item.ActivePatternResult (apinfo, _ty, n, _) -> apinfo.ActiveTags.[n]
         | Item.ActivePatternCase apref -> apref.Name 
         | Item.UnionCase(uinfo, _) -> uinfo.DisplayNameCore
         | Item.ExnCase tcref -> tcref.DisplayNameCore

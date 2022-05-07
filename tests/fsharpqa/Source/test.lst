@@ -5,6 +5,7 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
+<<<<<<< HEAD
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
@@ -29,6 +30,8 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
+=======
+>>>>>>> c0213ff40860873b60f013b1f055bd0844db7b02
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
@@ -261,9 +264,6 @@ Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
 Misc02,CodeGen			Optimizations\AssemblyBoundary
-Misc02,CodeGen			Optimizations\ForLoop
-Misc02,CodeGen			Optimizations\GenericComparison
-Misc02,CodeGen			Optimizations\Inlining
 Misc02,NoMT		Printing
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents
