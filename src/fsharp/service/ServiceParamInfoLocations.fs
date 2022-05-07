@@ -6,6 +6,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.SyntaxTreeOps
 
 type TupledArgumentLocation = { IsNamedArgument: bool; ArgumentRange: range }
@@ -60,6 +61,7 @@ module internal ParameterLocationsImpl =
         // we found it, dig out ident
         match synExpr with
         | SynExpr.Ident id -> Some ([id.idText], id.idRange)
+        | SynExpr.LongIdent(_, SynLongIdent([id], [], [ Some _ ]), _, _) -> Some ([id.idText], id.idRange)
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
@@ -80,15 +82,15 @@ module internal ParameterLocationsImpl =
         match e with
         // f(x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
-                        SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
-                                    SynExpr.Ident n, 
-                                    _range), 
+                        SynExpr.App (ExprAtomicFlag.NonAtomic, true,
+                                     SynExpr.LongIdent(longDotId = SynLongIdent(id = [op])),
+                                     SynExpr.Ident n, 
+                                     _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
-                                    SynExpr.Ident op, 
+                                    SynExpr.LongIdent(longDotId = SynLongIdent(id = [op])),
                                     SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
@@ -202,7 +204,7 @@ module internal ParameterLocationsImpl =
                     | _ -> traverseSynExpr synExpr
 
             // EXPR<  = error recovery of a form of half-written TypeApp
-            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
+            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [op])), synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
                 // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with

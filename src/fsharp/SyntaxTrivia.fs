@@ -5,6 +5,12 @@ namespace FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
+type IdentTrivia =
+    | OriginalNotation of text: string
+    | OriginalNotationWithParen of leftParenRange: range * text:string * rightParenRange: range
+    | HasParenthesis of leftParenRange: range * rightParenRange: range
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
     | If of expr:IfDirectiveExpression * range:range
     | Else of range:range
