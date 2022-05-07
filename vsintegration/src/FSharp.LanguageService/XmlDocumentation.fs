@@ -86,8 +86,8 @@ type internal IDocumentationBuilder_DEPRECATED =
     /// Append the given raw XML formatted into the string builder
     abstract AppendDocumentationFromProcessedXML : collector: ITaggedTextCollector_DEPRECATED * processedXml:string * showExceptions:bool * showParameters:bool * paramName:string option-> unit
 
-    /// Appends text for the given filename and signature into the StringBuilder
-    abstract AppendDocumentation : collector: ITaggedTextCollector_DEPRECATED * filename: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
+    /// Appends text for the given file name and signature into the StringBuilder
+    abstract AppendDocumentation : collector: ITaggedTextCollector_DEPRECATED * fileName: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
 
 /// Documentation helpers.
 module internal XmlDocumentation =
@@ -123,8 +123,8 @@ module internal XmlDocumentation =
     let AppendXmlComment_DEPRECATED(documentationProvider:IDocumentationBuilder_DEPRECATED, sink: ITaggedTextCollector_DEPRECATED, xml, showExceptions, showParameters, paramName) =
         match xml with
         | FSharpXmlDoc.None -> ()
-        | FSharpXmlDoc.FromXmlFile(filename,signature) -> 
-            documentationProvider.AppendDocumentation(sink, filename, signature, showExceptions, showParameters, paramName)
+        | FSharpXmlDoc.FromXmlFile(fileName,signature) -> 
+            documentationProvider.AppendDocumentation(sink, fileName, signature, showExceptions, showParameters, paramName)
         | FSharpXmlDoc.FromXmlText(xmlDoc) ->
             let processedXml = ProcessXml("\n\n" + String.concat "\n" xmlDoc.UnprocessedLines)
             documentationProvider.AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)

@@ -206,8 +206,8 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                     (match minfo.GetParamTypes(amap, m, []) with
                      | [[a]] -> typeEquiv g a actualTy 
                      | _ -> false) &&
-                    (let rty = minfo.GetFSharpReturnTy(amap, m, []) 
-                     typeEquiv g rty reqdTy2)
+                    (let retTy = minfo.GetFSharpReturnTy(amap, m, []) 
+                     typeEquiv g retTy reqdTy2)
                 )
 
             match implicits with
@@ -1225,9 +1225,11 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
         | None -> 
         
             if List.exists (isByrefTy g) delArgTys then
-                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys), m)) 
+                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
-            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg" + string i) argty)) 
+            let delArgVals =
+                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+
             let expr = 
                 let args = 
                     match eventInfoOpt with 
@@ -1263,15 +1265,24 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
        mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr2, ref None, false, m, mkQuotedExprTy g delegateTy))
 
    // Adhoc int32 --> int64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.int64_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToInt64Operator g m actualTy expr
 
    // Adhoc int32 --> nativeint
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.nativeint_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToIntPtrOperator g m actualTy expr
 
    // Adhoc int32 --> float64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.float_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToDoubleOperator g m actualTy expr
 
    else
@@ -2197,8 +2208,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let witnessInfo = traitInfo.TraitKey
-    let argtysl = GenWitnessArgTys g witnessInfo
-    let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
+    let argTysl = GenWitnessArgTys g witnessInfo
+    let vse = argTysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 

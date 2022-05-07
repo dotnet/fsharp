@@ -4088,12 +4088,12 @@ let OpenILModuleReader fileName opts =
 module Shim =
 
     type IAssemblyReader =
-        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+        abstract GetILModuleReader: fileName: string * readerOptions: ILReaderOptions -> ILModuleReader
 
     [<Sealed>]
     type DefaultAssemblyReader() =
         interface IAssemblyReader with
-            member _.GetILModuleReader(filename, readerOptions) =
-                OpenILModuleReader filename readerOptions
+            member _.GetILModuleReader(fileName, readerOptions) =
+                OpenILModuleReader fileName readerOptions
 
     let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

@@ -20,14 +20,14 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-/// The "mock" filename used by fsi.exe when reading from stdin.
+/// The "mock" file name used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
-let stdinMockFilename = "stdin" 
+let stdinMockFileName = "stdin" 
 
 /// Lexer args: status of #light processing.  Mutated when a #light
 /// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
-type LightSyntaxStatus(initial:bool,warn:bool) = 
+type IndentationAwareSyntaxStatus(initial:bool,warn:bool) = 
     let mutable status = None
     member x.Status 
        with get() = match status with None -> initial | Some v -> v
@@ -56,7 +56,7 @@ type LexArgs =
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus : LightSyntaxStatus
+      mutable lightStatus : IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
     }
 
@@ -90,12 +90,12 @@ let reusingLexbufForParsing lexbuf f =
     with e ->
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
-let resetLexbufPos filename (lexbuf: Lexbuf) = 
-    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
+let resetLexbufPos fileName (lexbuf: Lexbuf) = 
+    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile fileName)
 
-/// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
-    resetLexbufPos filename lexbuf
+/// Reset the lexbuf, configure the initial position with the given file name and call the given function
+let usingLexbufForParsing (lexbuf:Lexbuf, fileName) f =
+    resetLexbufPos fileName lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
 //------------------------------------------------------------------------
@@ -392,14 +392,14 @@ module Keywords =
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
-                let filename = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
+                let fileName = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
                 let dirname =
-                    if String.IsNullOrWhiteSpace(filename) then
+                    if String.IsNullOrWhiteSpace(fileName) then
                         String.Empty
-                    else if filename = stdinMockFilename then
+                    else if fileName = stdinMockFileName then
                         System.IO.Directory.GetCurrentDirectory()
                     else
-                        filename
+                        fileName
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                         |> System.IO.Path.GetDirectoryName
 

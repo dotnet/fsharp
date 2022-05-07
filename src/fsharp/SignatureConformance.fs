@@ -583,7 +583,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             (implModType.ModulesAndNamespacesByDemangledName, signModType.ModulesAndNamespacesByDemangledName ) 
               ||> NameMap.suball2 
                    (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
-                   (fun x1 x2 -> checkModuleOrNamespace aenv infoReader (mkLocalModRef x1) x2)  &&
+                   (fun x1 x2 -> checkModuleOrNamespace aenv infoReader (mkLocalModuleRef x1) x2)  &&
 
             let sigValHadNoMatchingImplementation (fx: Val) (_closeActualVal: Val option) = 
                 errorR(RequiredButNotSpecified(denv, implModRef, "value", (fun os -> 
@@ -664,7 +664,7 @@ let rec CheckNamesOfModuleOrNamespaceContents denv infoReader (implModRef: Modul
         (implModType.ModulesAndNamespacesByDemangledName, signModType.ModulesAndNamespacesByDemangledName ) 
           ||> NameMap.suball2 
                 (fun s fx -> errorR(RequiredButNotSpecified(denv, implModRef, (if fx.IsModule then "module" else "namespace"), (fun os -> Printf.bprintf os "%s" s), m)); false) 
-                (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv infoReader (mkLocalModRef x1) x2.ModuleOrNamespaceType)  &&
+                (fun x1 (x2: ModuleOrNamespace) -> CheckNamesOfModuleOrNamespace denv infoReader (mkLocalModuleRef x1) x2.ModuleOrNamespaceType)  &&
 
         (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached) 
           ||> NameMap.suball2 

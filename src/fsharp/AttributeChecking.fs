@@ -100,9 +100,9 @@ type AttribInfo =
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
-              [ for argty, argval in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     ty, obj ]
 
     member x.NamedArguments = 
@@ -115,9 +115,9 @@ type AttribInfo =
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
-              [ for nm, argty, isProp, argval in namedArgs ->
-                    let ty = ImportILType scoref amap m [] argty
-                    let obj = evalILAttribElem argval
+              [ for nm, argTy, isProp, arg in namedArgs ->
+                    let ty = ImportILType scoref amap m [] argTy
+                    let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]
 
@@ -251,7 +251,7 @@ let langVersionPrefix = "--langversion:preview"
 /// returning errors and warnings as data
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
     let isExperimentalAttributeDisabled (s:string) =
-        if g.compilingFslib then
+        if g.compilingFSharpCore then
             true
         else
             g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -282,7 +282,7 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
             // If we are using a compiler that supports nameof then error 3501 is always suppressed.
             // See attribute on FSharp.Core 'nameof'
             if n = 3501 then CompleteD
-            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            elif isError && (not g.compilingFSharpCore || n <> 1204) then ErrorD msg 
             else WarnD msg
         | _ -> 
             CompleteD

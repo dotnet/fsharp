@@ -261,7 +261,7 @@ module MainModuleBuilder =
 
             // Add the type forwarders to any .NET DLL post-.NET-2.0, to give binary compatibility
             let exportedTypesList =
-                if tcConfig.compilingFslib then
+                if tcConfig.compilingFSharpCore then
                    List.append (createMscorlibExportList tcGlobals) (createSystemNumericsExportList tcConfig tcImports)
                 else
                     []

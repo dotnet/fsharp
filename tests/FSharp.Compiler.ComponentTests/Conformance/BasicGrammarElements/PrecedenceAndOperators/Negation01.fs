@@ -1,5 +1,5 @@
 // #Conformance #BasicGrammarElements #Operators 
-#light
+
 
 // Verify you can negate any numeric value
 let negByte  (x : sbyte) = -x

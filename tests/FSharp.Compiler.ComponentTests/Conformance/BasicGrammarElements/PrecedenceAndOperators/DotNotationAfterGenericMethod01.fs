@@ -1,7 +1,7 @@
 // #Regression #Conformance #BasicGrammarElements #Operators 
 // FSharp1.0:4760 - A method<instantiated>(with,arguments) can not appear mid-way down a path-lookup
 
-#light
+
 
 type Variable<'a>() =
     static member New<'T>() = new Variable<'T>()

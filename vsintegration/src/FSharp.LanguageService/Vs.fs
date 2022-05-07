@@ -56,7 +56,7 @@ module internal VsHierarchy =
         let hr, guid = hier.GetGuidProperty(itemid, int32 __VSHPROPID.VSHPROPID_TypeGuid)
         Com.Succeeded hr && guid = VirtualFolderGuid
         
-    /// Get the path+filename for a particular item, return empty string if none
+    /// Get the path+file name for a particular item, return empty string if none
     let filenameOrEmpty (hier:IVsHierarchy) (itemid:uint32) = 
         let hr, canonicalName = hier.GetCanonicalName(itemid)
         if Com.Succeeded hr then canonicalName else System.String.Empty

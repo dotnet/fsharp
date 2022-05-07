@@ -441,11 +441,11 @@ module rec CompilerAssertHelpers =
                         | CompilationReference (cmpl, staticLink) ->
                             compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
-                            let filename =
+                            let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                 | _ -> tryCreateTemporaryFileName()
-                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
+                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
                             (([||], tmp), []), false)
@@ -545,10 +545,10 @@ module rec CompilerAssertHelpers =
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
-        let filename = outputFilePath
+        let fileName = outputFilePath
         let arguments = ""
 #else
-        let filename = "dotnet"
+        let fileName = "dotnet"
         let arguments = outputFilePath
 
         let runtimeconfig = """
@@ -568,7 +568,7 @@ module rec CompilerAssertHelpers =
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 open CompilerAssertHelpers
 

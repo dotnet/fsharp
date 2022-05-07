@@ -60,7 +60,7 @@ type CreateFSharpManifestResourceName public () =
             cSharpResult
             
         
-    override this.IsSourceFile (filename:string) = 
-        let extension = Path.GetExtension(filename)
+    override _.IsSourceFile (fileName: string) = 
+        let extension = Path.GetExtension(fileName)
         (String.Equals(extension, ".fs", StringComparison.OrdinalIgnoreCase) ||
             String.Equals(extension, ".ml", StringComparison.OrdinalIgnoreCase))

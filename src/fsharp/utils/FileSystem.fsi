@@ -104,30 +104,31 @@ module internal MemoryMappedFileExtensions =
 module internal FileSystemUtils =
     val checkPathForIllegalChars: (string -> unit)
 
-    /// <c>checkSuffix f s</c> returns True if filename "f" ends in suffix "s",
+    /// <c>checkSuffix f s</c> returns True if file name "f" ends in suffix "s",
     /// e.g. checkSuffix "abc.fs" ".fs" returns true.
     /// Disregards casing, e.g. checkSuffix "abc.Fs" ".fs" returns true.
-    val checkSuffix: string -> string -> bool
+    val checkSuffix: path: string -> suffix: string -> bool
 
     /// <c>chopExtension f</c> removes the extension from the given
-    /// filename. Raises <c>ArgumentException</c> if no extension is present.
-    val chopExtension: string -> string
+    /// file name. Raises <c>ArgumentException</c> if no extension is present.
+    val chopExtension: path: string -> string
 
-    /// Return True if the filename has a "." extension.
-    val hasExtension: string -> bool
+    /// Return True if the path has a "." extension.
+    val hasExtension: path: string -> bool
 
-    /// Get the filename of the given path.
-    val fileNameOfPath: string -> string
+    /// Get the file name of the given path.
+    val fileNameOfPath: path: string -> string
 
-    /// Get the filename without extension of the given path.
-    val fileNameWithoutExtensionWithValidate: bool -> string -> string
-    val fileNameWithoutExtension: string -> string
+    /// Get the file name without extension of the given path.
+    val fileNameWithoutExtensionWithValidate: validate: bool -> path: string -> string
+
+    val fileNameWithoutExtension: path: string -> string
 
     /// Trim the quotes and spaces from either end of a string
-    val trimQuotes: string -> string
+    val trimQuotes: path: string -> string
 
     /// Checks whether file is dll (ends in .dll)
-    val isDll: string -> bool
+    val isDll: fileName: string -> bool
 
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
@@ -146,7 +147,7 @@ type DefaultAssemblyLoader =
 type public IFileSystem =
 
     // Assembly loader.
-    abstract AssemblyLoader : IAssemblyLoader
+    abstract AssemblyLoader: IAssemblyLoader
     
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
@@ -154,14 +155,14 @@ type public IFileSystem =
     /// Open the file for writing. Returns a Stream.
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
-    /// Take in a filename with an absolute path, and return the same filename
+    /// Take in a file name with an absolute path, and return the same file name
     /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt)
     /// and '..' portions
     abstract GetFullPathShim: fileName:string -> string
 
-    /// Take in a directory, filename, and return canonicalized path to the filename in directory.
-    /// If filename path is rooted, ignores directory and returns filename path.
-    /// Otherwise, combines directory with filename and gets full path via GetFullPathShim(string).
+    /// Take in a directory, filename, and return canonicalized path to the file name in directory.
+    /// If file name path is rooted, ignores directory and returns file name path.
+    /// Otherwise, combines directory with file name and gets full path via GetFullPathShim(string).
     abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
 
     /// A shim over Path.IsPathRooted

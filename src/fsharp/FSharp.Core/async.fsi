@@ -1133,7 +1133,7 @@ namespace Microsoft.FSharp.Control
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI to specified file.</summary>
             ///
             /// <param name="address">The URI to retrieve.</param>
-            /// <param name="fileName">The filename to save download to.</param>
+            /// <param name="fileName">The file name to save download to.</param>
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             /// 

@@ -136,7 +136,7 @@ type CompilerService() =
             ErrorSeverityOptions = FSharpDiagnosticOptions.Default
             LangVersionText = "default"
             IsInteractive = false
-            LightSyntax = None
+            IndentationAwareSyntax = None
             CompilingFsLib = false
             IsExe = false
         }

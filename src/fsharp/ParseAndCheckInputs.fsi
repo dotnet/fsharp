@@ -38,7 +38,7 @@ val ParseInput:
     errorLogger: ErrorLogger *
     lexbuf: Lexbuf *
     defaultNamespace: string option *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) ->
         ParsedInput
 
@@ -60,7 +60,7 @@ val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
 val ParseOneInputStream:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     retryLocked: bool *
@@ -71,7 +71,7 @@ val ParseOneInputStream:
 val ParseOneInputSourceText:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     sourceText: ISourceText ->
@@ -81,7 +81,7 @@ val ParseOneInputSourceText:
 val ParseOneInputFile:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     retryLocked: bool ->
@@ -91,12 +91,12 @@ val ParseOneInputLexbuf:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     lexbuf: Lexbuf *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger ->
         ParsedInput
 
-val EmptyParsedInput: filename: string * isLastCompiland: (bool * bool) -> ParsedInput
+val EmptyParsedInput: fileName: string * isLastCompiland: (bool * bool) -> ParsedInput
 
 /// Parse multiple input files from disk
 val ParseInputFiles:

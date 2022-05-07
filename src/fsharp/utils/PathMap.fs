@@ -38,7 +38,7 @@ module internal PathMap =
         |> Map.tryPick (fun oldPrefix replacementPrefix ->
             // oldPrefix always ends with a path separator, so there's no need
             // to check if it was a partial match
-            // e.g. for the map /goo=/bar and filename /goooo
+            // e.g. for the map /goo=/bar and file name /goooo
             if filePath.StartsWith(oldPrefix, StringComparison.Ordinal) then
                 let replacement = replacementPrefix + filePath.Substring (oldPrefix.Length - 1)
 

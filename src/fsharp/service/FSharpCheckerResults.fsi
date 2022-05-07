@@ -197,7 +197,7 @@ type public FSharpParsingOptions =
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
-      LightSyntax: bool option
+      IndentationAwareSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
     }
@@ -369,7 +369,7 @@ type public FSharpCheckFileResults =
 
     /// Internal constructor
     static member internal MakeEmpty : 
-        filename: string *
+        fileName: string *
         creationErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool 
           -> FSharpCheckFileResults

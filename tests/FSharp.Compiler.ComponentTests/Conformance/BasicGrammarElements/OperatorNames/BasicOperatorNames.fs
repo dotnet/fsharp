@@ -1,5 +1,5 @@
 // #Conformance #BasicGrammarElements #Operators 
-#light
+
 
 // Test basic operator names
 

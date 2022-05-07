@@ -29,10 +29,10 @@ let cleanUpFSharpCore cfg =
     { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
 // Generate a project files
-let emitFile filename (body:string) =
+let emitFile fileName (body:string) =
     try
         // Create a file to write to
-        use sw = File.CreateText(filename)
+        use sw = File.CreateText(fileName)
         sw.WriteLine(body)
     with | _ -> ()
 

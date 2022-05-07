@@ -67,10 +67,10 @@ module FilesystemHelpers =
             let _ = Directory.CreateDirectory(dir)
             dir
        
-    /// Create a temporary filename, invoke callback with that filename, then clean up temp file.
-    let DoWithTempFile (filename : string) (f : string (*filePath*) -> 'a) = 
+    /// Create a temporary file name, invoke callback with that fileName, then clean up temp file.
+    let DoWithTempFile (fileName : string) (f : string (*filePath*) -> 'a) = 
         let dir = NewTempDirectory "fsc-tests"
-        let filePath = Path.Combine(dir, filename)
+        let filePath = Path.Combine(dir, fileName)
         let r = f filePath
         let rec DeleteAll dir =
             for f in Directory.GetFiles(dir) do
@@ -217,9 +217,9 @@ module Spawn =
 
         FilesystemHelpers.DoWithTempFile
             "$$temp-batch.cmd"
-            (fun filename->
-                File.WriteAllText(filename,batchText)
-                spawnDetailed capture capture exitWithResult filename "")
+            (fun fileName->
+                File.WriteAllText(fileName,batchText)
+                spawnDetailed capture capture exitWithResult fileName "")
 
 
 

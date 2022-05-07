@@ -90,7 +90,7 @@ type internal Position =
      /// Apply a #line directive.
      member ApplyLineDirective: fileIdx:int * line:int -> Position
 
-     /// Get an arbitrary position, with the empty string as filename. 
+     /// Get an arbitrary position, with the empty string as file name. 
      static member Empty: Position
 
      static member FirstLine: fileIdx:int -> Position

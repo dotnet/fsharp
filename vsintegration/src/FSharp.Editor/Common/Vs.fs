@@ -54,7 +54,7 @@ module internal VsTextLines =
     /// Get the color state
     let TextColorState (buffer:IVsTextLines) : IVsTextColorState= unbox(box(buffer))
 
-    /// Get the filename of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
+    /// Get the file name of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
     let GetFilename(buffer : IVsTextLines) =
         let ud = (box buffer) :?> IVsUserData
         VsUserData.GetBufferMonker(ud)

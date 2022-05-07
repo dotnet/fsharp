@@ -12,13 +12,13 @@ open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Text
 
-val stdinMockFilename: string
+val stdinMockFileName: string
 
 /// Lexer args: status of #light processing.  Mutated when a #light
 /// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
-type LightSyntaxStatus =
-    new: initial: bool * warn: bool -> LightSyntaxStatus
+type IndentationAwareSyntaxStatus =
+    new: initial: bool * warn: bool -> IndentationAwareSyntaxStatus
     member ExplicitlySet: bool
     member Status: bool
     member Status: bool with set
@@ -36,7 +36,7 @@ type LexArgs =
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus: LightSyntaxStatus
+      mutable lightStatus: IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting }
 
 type LongUnicodeLexResult =
@@ -48,7 +48,7 @@ val resetLexbufPos: string -> Lexbuf -> unit
 
 val mkLexargs:
     conditionalDefines: string list *
-    lightStatus: LightSyntaxStatus *
+    lightStatus: IndentationAwareSyntaxStatus *
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
     errorLogger: ErrorLogger *

@@ -175,8 +175,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
 
     /// Get the framework implementation directory of the currently running process
     let getRunningImplementationAssemblyDir() =
-        let filename = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-        if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
+        let fileName = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+        if String.IsNullOrWhiteSpace fileName then getFSharpCompilerLocation() else fileName
 
     // Compute the framework implementation directory, either of the selected SDK or the currently running process as a backup
     // F# interactive/reflective scenarios use the implementation directory of the currently running process
@@ -777,13 +777,13 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
 
     member _.GetSystemAssemblies() = systemAssemblies
 
-    member _.IsInReferenceAssemblyPackDirectory filename =
+    member _.IsInReferenceAssemblyPackDirectory fileName =
       fxlock.AcquireLock <| fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
 
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
-            let path = Path.GetDirectoryName(filename)
+            let path = Path.GetDirectoryName(fileName)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 

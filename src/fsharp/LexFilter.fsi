@@ -18,7 +18,7 @@ type LexFilter =
 
     /// Create a lex filter
     new:
-        lightStatus: LightSyntaxStatus *
+        lightStatus: IndentationAwareSyntaxStatus *
         compilingFsLib: bool *
         lexer: (LexBuffer<char> -> token) *
         lexbuf: LexBuffer<char> ->

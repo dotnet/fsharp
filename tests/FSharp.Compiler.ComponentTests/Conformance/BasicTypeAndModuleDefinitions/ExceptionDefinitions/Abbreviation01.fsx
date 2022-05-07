@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Exceptions 
 // Abbreviation - using short and long identifiers
 //<Expects status="success"></Expects>
-#light
+
 
 module M = 
     module N = 

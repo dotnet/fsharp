@@ -61,9 +61,9 @@ let projectDisplayNameOf projectFileName =
 type Refreshable<'T> = 'T * (bool -> 'T)
 
 /// Convert from FSharpProjectOptions into IProjectSite.
-type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions: FSharpProjectOptions) = 
+type private ProjectSiteOfScriptFile(fileName:string, referencedProjectFileNames, checkOptions: FSharpProjectOptions) = 
     interface IProjectSite with
-        override this.Description = sprintf "Script Closure at Root %s" filename
+        override this.Description = sprintf "Script Closure at Root %s" fileName
         override this.CompilationSourceFiles = checkOptions.SourceFiles
         override this.CompilationOptions = checkOptions.OtherOptions
         override this.CompilationReferences =
@@ -84,7 +84,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
 
-    override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" filename
+    override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" fileName
 
 /// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
 /// By design, these are never going to typecheck because there is no affiliated references.
@@ -213,28 +213,28 @@ type internal ProjectSitesAndFiles() =
         referencedProjectFileNames, option
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
-    static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
-        if CompilerEnvironment.MustBeSingleFileProject(filename) then 
+    static member ProjectSiteOfSingleFile(fileName:string) : IProjectSite = 
+        if CompilerEnvironment.MustBeSingleFileProject(fileName) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-        new ProjectSiteOfSingleFile(filename) :> IProjectSite
+        new ProjectSiteOfSingleFile(fileName) :> IProjectSite
 
     member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, filename, useUniqueStamp) =
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, fileName, useUniqueStamp) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, filename, useUniqueStamp)
+        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, fileName, useUniqueStamp)
 
     /// Create project site for these project options
-    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
-        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
+    static member CreateProjectSiteForScript (fileName, referencedProjectFileNames, checkOptions) = 
+        ProjectSiteOfScriptFile (fileName, referencedProjectFileNames, checkOptions) :> IProjectSite
 
-    member art.TryGetSourceOfFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename:string) : IFSharpSource_DEPRECATED option =
-        match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
+    member art.TryGetSourceOfFile_DEPRECATED(rdt:IVsRunningDocumentTable, fileName:string) : IFSharpSource_DEPRECATED option =
+        match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName) with 
         | Some(_hier, textLines) ->
             match textLines with
             | null -> None
@@ -249,33 +249,33 @@ type internal ProjectSitesAndFiles() =
         | None -> None                
 
 
-    member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string, checker:FSharpChecker) =
+    member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, fileName : string, checker:FSharpChecker) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
-        if CompilerEnvironment.MustBeSingleFileProject(filename) then
+        if CompilerEnvironment.MustBeSingleFileProject(fileName) then
             let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
             CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
         else 
             let siteOpt = 
-                match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
+                match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName) with 
                 | Some(hier,_) -> tryGetProjectSite(hier) 
                 | None -> None
 
             let site = 
                match siteOpt with
                | Some site -> site
-               | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
+               | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
 
             let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilationOptions |> Array.toList)
             CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
-    member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
-        if CompilerEnvironment.MustBeSingleFileProject(filename) then None
+    member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, fileName) = 
+        if CompilerEnvironment.MustBeSingleFileProject(fileName) then None
         else
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
+            match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,fileName) with 
             | Some(hier, _textLines) ->
                 match tryGetProjectSite(hier) with
                 | Some(site) -> 
-                    if site.CompilationSourceFiles |> Array.exists (fun src -> StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then
+                    if site.CompilationSourceFiles |> Array.exists (fun src -> StringComparer.OrdinalIgnoreCase.Equals(src,fileName)) then
                         Some site
                     else
                         None
@@ -283,7 +283,7 @@ type internal ProjectSitesAndFiles() =
             | None -> None
                         
 
-    member art.FindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
-        match art.TryFindOwningProject_DEPRECATED(rdt, filename) with
+    member art.FindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, fileName) = 
+        match art.TryFindOwningProject_DEPRECATED(rdt, fileName) with
         | Some site -> site
-        | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
+        | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)

@@ -1,5 +1,5 @@
 // #Conformance #BasicGrammarElements #Operators 
-#light
+
 
 // Verify you can create a function named '*' without
 // the lexer thinking its a comment.

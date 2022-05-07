@@ -39,13 +39,13 @@ let code_instr2instrs f (code: ILCode) =
          Instrs = codebuf.ToArray()
          Labels = labels }
 
-let code_instr2instr_ty2ty (finstr,fty) (code: ILCode) = 
+let code_instr2instr_ty2ty (finstr,fTy) (code: ILCode) = 
     let codeR = code_instr2instr finstr code
     let exnSpecsR =
         [ for exnSpec in codeR.Exceptions do
             let clause =
                 match exnSpec.Clause with
-                | ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fty ilty, b)
+                | ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fTy ilty, b)
                 | cl -> cl
             { exnSpec with Clause = clause } ]
     { codeR with Exceptions = exnSpecsR }
@@ -73,7 +73,7 @@ let rec morphILTypeRefsInILType f x =
 and tspec_tref2tref f (tspec: ILTypeSpec) = 
     mkILTySpec(f tspec.TypeRef, List.map (morphILTypeRefsInILType f) tspec.GenericArgs)
 
-let rec ty_scoref2scoref_tyvar2ty ((_fscope, ftyvar) as fs) ty = 
+let rec ty_scoref2scoref_tyvar2ty ((_fscope, fTyvar) as fs) ty = 
     match ty with 
     | ILType.Ptr elemTy -> ILType.Ptr (ty_scoref2scoref_tyvar2ty fs elemTy)
     | ILType.FunctionPointer callsig -> ILType.FunctionPointer (callsig_scoref2scoref_tyvar2ty fs callsig)
@@ -81,7 +81,7 @@ let rec ty_scoref2scoref_tyvar2ty ((_fscope, ftyvar) as fs) ty =
     | ILType.Boxed tspec -> mkILBoxedType (tspec_scoref2scoref_tyvar2ty fs tspec)
     | ILType.Value tspec -> ILType.Value (tspec_scoref2scoref_tyvar2ty fs tspec)
     | ILType.Array (shape, elemTy) -> ILType.Array (shape,ty_scoref2scoref_tyvar2ty fs elemTy)
-    | ILType.TypeVar idx ->  ftyvar idx
+    | ILType.TypeVar idx ->  fTyvar idx
     | x -> x
 
 and tspec_scoref2scoref_tyvar2ty fs (x:ILTypeSpec) = 
@@ -120,19 +120,19 @@ let mref_ty2ty (f: ILType -> ILType) (x:ILMethodRef) =
 
 type formal_scopeCtxt = Choice<ILMethodSpec, ILFieldSpec>
 
-let mspec_ty2ty ((factualty : ILType -> ILType, fformalty: formal_scopeCtxt -> ILType -> ILType)) (x: ILMethodSpec) = 
-    mkILMethSpecForMethRefInTy(mref_ty2ty (fformalty (Choice1Of2 x)) x.MethodRef,
-                               factualty x.DeclaringType, 
-                               tys_ty2ty factualty  x.GenericArgs)
+let mspec_ty2ty ((factualTy : ILType -> ILType, fformalTy: formal_scopeCtxt -> ILType -> ILType)) (x: ILMethodSpec) = 
+    mkILMethSpecForMethRefInTy(mref_ty2ty (fformalTy (Choice1Of2 x)) x.MethodRef,
+                               factualTy x.DeclaringType, 
+                               tys_ty2ty factualTy  x.GenericArgs)
 
 let fref_ty2ty (f: ILType -> ILType) fref = 
     { fref with
         DeclaringTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec fref.DeclaringTypeRef))).TypeRef
         Type= f fref.Type }
 
-let fspec_ty2ty ((factualty,fformalty : formal_scopeCtxt -> ILType -> ILType)) fspec = 
-    { FieldRef=fref_ty2ty (fformalty (Choice2Of2 fspec)) fspec.FieldRef
-      DeclaringType= factualty fspec.DeclaringType }
+let fspec_ty2ty ((factualTy,fformalTy : formal_scopeCtxt -> ILType -> ILType)) fspec = 
+    { FieldRef=fref_ty2ty (fformalTy (Choice2Of2 fspec)) fspec.FieldRef
+      DeclaringType= factualTy fspec.DeclaringType }
 
 let rec celem_ty2ty f celem =
     match celem with
@@ -162,24 +162,24 @@ let cattr_ty2ty f (c: ILAttribute) =
 let cattrs_ty2ty f (cs: ILAttributes) =
     mkILCustomAttrs (List.map (cattr_ty2ty f) (cs.AsList()))
 
-let fdef_ty2ty ftye (fdef: ILFieldDef) = 
-    fdef.With(fieldType=ftye fdef.FieldType,
-            customAttrs=cattrs_ty2ty ftye fdef.CustomAttrs)
+let fdef_ty2ty fTyInCtxt (fdef: ILFieldDef) = 
+    fdef.With(fieldType=fTyInCtxt fdef.FieldType,
+            customAttrs=cattrs_ty2ty fTyInCtxt fdef.CustomAttrs)
 
 let morphILLocal f (l: ILLocal) = {l with Type = f l.Type}
 
 let morphILVarArgs f (varargs: ILVarArgs) = Option.map (List.map f) varargs
 
-let morphILTypesInILInstr ((factualty,fformalty)) i = 
-    let factualty = factualty (Some i) 
-    let conv_fspec fr = fspec_ty2ty (factualty,fformalty (Some i)) fr 
-    let conv_mspec mr = mspec_ty2ty (factualty,fformalty (Some i)) mr 
+let morphILTypesInILInstr ((factualTy,fformalTy)) i = 
+    let factualTy = factualTy (Some i) 
+    let conv_fspec fr = fspec_ty2ty (factualTy,fformalTy (Some i)) fr 
+    let conv_mspec mr = mspec_ty2ty (factualTy,fformalTy (Some i)) mr 
     match i with 
-    | I_calli (a,mref,varargs) ->  I_calli (a,callsig_ty2ty factualty mref, morphILVarArgs factualty varargs)
-    | I_call (a,mr,varargs) ->  I_call (a,conv_mspec mr, morphILVarArgs factualty varargs)
-    | I_callvirt (a,mr,varargs) ->   I_callvirt (a,conv_mspec mr, morphILVarArgs factualty varargs)
-    | I_callconstraint (a,ty,mr,varargs) ->   I_callconstraint (a,factualty ty,conv_mspec mr, morphILVarArgs factualty varargs)
-    | I_newobj (mr,varargs) ->  I_newobj (conv_mspec mr, morphILVarArgs factualty varargs)
+    | I_calli (a,mref,varargs) ->  I_calli (a,callsig_ty2ty factualTy mref, morphILVarArgs factualTy varargs)
+    | I_call (a,mr,varargs) ->  I_call (a,conv_mspec mr, morphILVarArgs factualTy varargs)
+    | I_callvirt (a,mr,varargs) ->   I_callvirt (a,conv_mspec mr, morphILVarArgs factualTy varargs)
+    | I_callconstraint (a,ty,mr,varargs) ->   I_callconstraint (a,factualTy ty,conv_mspec mr, morphILVarArgs factualTy varargs)
+    | I_newobj (mr,varargs) ->  I_newobj (conv_mspec mr, morphILVarArgs factualTy varargs)
     | I_ldftn mr ->  I_ldftn (conv_mspec mr)
     | I_ldvirtftn mr ->  I_ldvirtftn (conv_mspec mr)
     | I_ldfld (a,b,fr) ->  I_ldfld (a,b,conv_fspec fr)
@@ -188,23 +188,23 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
     | I_ldflda fr ->  I_ldflda (conv_fspec fr)
     | I_stfld (a,b,fr) -> I_stfld (a,b,conv_fspec fr)
     | I_stsfld (a,fr) -> I_stsfld (a,conv_fspec fr)
-    | I_castclass ty -> I_castclass (factualty ty)
-    | I_isinst ty -> I_isinst (factualty ty)
-    | I_initobj ty -> I_initobj (factualty ty)
-    | I_cpobj ty -> I_cpobj (factualty ty)
-    | I_stobj (al,vol,ty) -> I_stobj (al,vol,factualty ty)
-    | I_ldobj (al,vol,ty) -> I_ldobj (al,vol,factualty ty)
-    | I_box ty -> I_box (factualty ty)
-    | I_unbox ty -> I_unbox (factualty ty)
-    | I_unbox_any ty -> I_unbox_any (factualty ty)
-    | I_ldelem_any (shape,ty) ->  I_ldelem_any (shape,factualty ty)
-    | I_stelem_any (shape,ty) ->  I_stelem_any (shape,factualty ty)
-    | I_newarr (shape,ty) ->  I_newarr (shape,factualty ty)
-    | I_ldelema (ro,isNativePtr,shape,ty) ->  I_ldelema (ro,isNativePtr,shape,factualty ty)
-    | I_sizeof ty ->  I_sizeof (factualty ty)
+    | I_castclass ty -> I_castclass (factualTy ty)
+    | I_isinst ty -> I_isinst (factualTy ty)
+    | I_initobj ty -> I_initobj (factualTy ty)
+    | I_cpobj ty -> I_cpobj (factualTy ty)
+    | I_stobj (al,vol,ty) -> I_stobj (al,vol,factualTy ty)
+    | I_ldobj (al,vol,ty) -> I_ldobj (al,vol,factualTy ty)
+    | I_box ty -> I_box (factualTy ty)
+    | I_unbox ty -> I_unbox (factualTy ty)
+    | I_unbox_any ty -> I_unbox_any (factualTy ty)
+    | I_ldelem_any (shape,ty) ->  I_ldelem_any (shape,factualTy ty)
+    | I_stelem_any (shape,ty) ->  I_stelem_any (shape,factualTy ty)
+    | I_newarr (shape,ty) ->  I_newarr (shape,factualTy ty)
+    | I_ldelema (ro,isNativePtr,shape,ty) ->  I_ldelema (ro,isNativePtr,shape,factualTy ty)
+    | I_sizeof ty ->  I_sizeof (factualTy ty)
     | I_ldtoken tok -> 
         match tok with 
-        | ILToken.ILType ty ->   I_ldtoken (ILToken.ILType (factualty ty))
+        | ILToken.ILType ty ->   I_ldtoken (ILToken.ILType (factualTy ty))
         | ILToken.ILMethod mr -> I_ldtoken (ILToken.ILMethod (conv_mspec mr))
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
@@ -232,30 +232,30 @@ let morphILLocals f locals =
     List.map (morphILLocal f) locals
 
 let ilmbody_instr2instr_ty2ty fs (ilmbody: ILMethodBody) = 
-    let finstr,ftye = fs 
+    let finstr, fTyInCtxt = fs 
     {ilmbody with
-        Code=code_instr2instr_ty2ty (finstr,ftye) ilmbody.Code
-        Locals = morphILLocals ftye ilmbody.Locals }
+        Code=code_instr2instr_ty2ty (finstr, fTyInCtxt) ilmbody.Code
+        Locals = morphILLocals fTyInCtxt ilmbody.Locals }
 
-let morphILMethodBody filmbody (x: MethodBody) = 
+let morphILMethodBody fMethBody (x: MethodBody) = 
     match x with
     | MethodBody.IL il -> 
-        let ilCode = filmbody il.Value // Eager
+        let ilCode = fMethBody il.Value // Eager
         MethodBody.IL (lazy ilCode)
     | x -> x
 
 let ospec_ty2ty f (OverridesSpec(mref,ty)) = OverridesSpec(mref_ty2ty f mref, f ty)
 
 let mdef_ty2ty_ilmbody2ilmbody fs (md: ILMethodDef)  = 
-    let ftye,filmbody = fs 
-    let ftyeR = ftye (Some md) 
-    let bodyR = morphILMethodBody (filmbody (Some md)) md.Body 
+    let fTyInCtxt,fMethBody = fs 
+    let fTyInCtxtR = fTyInCtxt (Some md) 
+    let bodyR = morphILMethodBody (fMethBody (Some md)) md.Body 
     md.With(
-        genericParams=gparams_ty2ty ftyeR md.GenericParams,
+        genericParams=gparams_ty2ty fTyInCtxtR md.GenericParams,
         body= notlazy bodyR,
-        parameters = List.map (morphILParameter ftyeR) md.Parameters,
-        ret = morphILReturn ftyeR md.Return,
-        customAttrs=cattrs_ty2ty ftyeR md.CustomAttrs
+        parameters = List.map (morphILParameter fTyInCtxtR) md.Parameters,
+        ret = morphILReturn fTyInCtxtR md.Return,
+        customAttrs=cattrs_ty2ty fTyInCtxtR md.CustomAttrs
     )
 
 let fdefs_ty2ty f fdefs =
@@ -297,21 +297,21 @@ let mimpls_ty2ty f (mimpls : ILMethodImplDefs) =
     mkILMethodImpls (mimpls.AsList() |> List.map (mimpl_ty2ty f))
 
 let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (tdef: ILTypeDef) = 
-   let ftye,fmdefs = fs 
-   let ftyeR = ftye (Some (enc,tdef)) None 
-   let mdefsR = fmdefs (enc, tdef) tdef.Methods 
-   let fdefsR = fdefs_ty2ty ftyeR tdef.Fields 
+   let fTyInCtxt,fMethodDefs = fs 
+   let fTyInCtxtR = fTyInCtxt (Some (enc,tdef)) None 
+   let mdefsR = fMethodDefs (enc, tdef) tdef.Methods 
+   let fdefsR = fdefs_ty2ty fTyInCtxtR tdef.Fields 
    tdef.With(
-       implements= List.map ftyeR tdef.Implements,
-       genericParams= gparams_ty2ty ftyeR tdef.GenericParams,
-       extends = Option.map ftyeR tdef.Extends,
+       implements= List.map fTyInCtxtR tdef.Implements,
+       genericParams= gparams_ty2ty fTyInCtxtR tdef.GenericParams,
+       extends = Option.map fTyInCtxtR tdef.Extends,
        methods=mdefsR,
        nestedTypes=tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs (enc@[tdef]) fs tdef.NestedTypes,
        fields=fdefsR,
-       methodImpls = mimpls_ty2ty ftyeR tdef.MethodImpls,
-       events = edefs_ty2ty ftyeR tdef.Events,
-       properties = pdefs_ty2ty ftyeR tdef.Properties,
-       customAttrs = cattrs_ty2ty ftyeR tdef.CustomAttrs
+       methodImpls = mimpls_ty2ty fTyInCtxtR tdef.MethodImpls,
+       events = edefs_ty2ty fTyInCtxtR tdef.Events,
+       properties = pdefs_ty2ty fTyInCtxtR tdef.Properties,
+       customAttrs = cattrs_ty2ty fTyInCtxtR tdef.CustomAttrs
    )
 
 and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs tdefs = 
@@ -324,33 +324,33 @@ and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs tdefs =
 let manifest_ty2ty f (m : ILAssemblyManifest) =
     { m with CustomAttrsStored = storeILCustomAttrs (cattrs_ty2ty f m.CustomAttrs) }
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (ftye: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType, fmdefs) modul = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (fTyInCtxt: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType, fMethodDefs) modul = 
 
-    let ftdefs = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs [] (ftye modul, fmdefs modul) 
+    let ftdefs = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs [] (fTyInCtxt modul, fMethodDefs modul) 
 
     { modul with
         TypeDefs=ftdefs modul.TypeDefs
-        CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty (ftye modul None None) modul.CustomAttrs)
-        Manifest=Option.map (manifest_ty2ty (ftye modul None None)) modul.Manifest  }
+        CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty (fTyInCtxt modul None None) modul.CustomAttrs)
+        Manifest=Option.map (manifest_ty2ty (fTyInCtxt modul None None)) modul.Manifest  }
     
 let morphILInstrsAndILTypesInILModule fs modul = 
-    let fcode,ftye = fs 
-    let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_ty2ty (fcode modCtxt tdefCtxt mdefCtxt, ftye modCtxt (Some tdefCtxt) mdefCtxt) 
-    let fmdefs modCtxt tdefCtxt = mdefs_ty2ty_ilmbody2ilmbody (ftye modCtxt (Some tdefCtxt), filmbody modCtxt tdefCtxt) 
-    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (ftye, fmdefs) modul 
+    let fCode, fTyInCtxt = fs 
+    let fMethBody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_ty2ty (fCode modCtxt tdefCtxt mdefCtxt, fTyInCtxt modCtxt (Some tdefCtxt) mdefCtxt) 
+    let fMethodDefs modCtxt tdefCtxt = mdefs_ty2ty_ilmbody2ilmbody (fTyInCtxt modCtxt (Some tdefCtxt), fMethBody modCtxt tdefCtxt) 
+    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (fTyInCtxt, fMethodDefs) modul 
 
 let morphILInstrsInILCode f ilcode =
     code_instr2instrs f ilcode
 
-let morphILTypeInILModule ftye modul = 
+let morphILTypeInILModule fTyInCtxt modul = 
     let finstr modCtxt tdefCtxt mdefCtxt =
-        let fty = ftye modCtxt (Some tdefCtxt) mdefCtxt 
-        morphILTypesInILInstr ((fun _instrCtxt -> fty), (fun _instrCtxt _formalCtxt -> fty)) 
-    morphILInstrsAndILTypesInILModule (finstr, ftye) modul
+        let fTy = fTyInCtxt modCtxt (Some tdefCtxt) mdefCtxt 
+        morphILTypesInILInstr ((fun _instrCtxt -> fTy), (fun _instrCtxt _formalCtxt -> fTy)) 
+    morphILInstrsAndILTypesInILModule (finstr, fTyInCtxt) modul
 
 let morphILTypeRefsInILModuleMemoized f modul = 
-    let fty = Tables.memoize (morphILTypeRefsInILType f)
-    morphILTypeInILModule (fun _ _ _ ty -> fty ty) modul
+    let fTy = Tables.memoize (morphILTypeRefsInILType f)
+    morphILTypeInILModule (fun _ _ _ ty -> fTy ty) modul
 
 let morphILScopeRefsInILModuleMemoized f modul = 
     morphILTypeRefsInILModuleMemoized (morphILScopeRefsInILTypeRef f) modul

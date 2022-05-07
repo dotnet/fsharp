@@ -1,5 +1,5 @@
 // #Regression #Conformance #BasicGrammarElements #Operators 
-#light
+
 
 // FSB 3993, Operator overloading of == and != is inconsistent
 
