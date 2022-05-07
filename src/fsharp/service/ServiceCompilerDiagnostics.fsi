@@ -6,7 +6,7 @@ namespace FSharp.Compiler.Diagnostics
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =
     | AddIndexerDot
-    | ReplaceWithSuggestion of suggestion:string
+    | ReplaceWithSuggestion of suggestion: string
 
 /// Exposes compiler diagnostic error messages.
 module CompilerDiagnostics =

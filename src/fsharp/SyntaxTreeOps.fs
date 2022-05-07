@@ -67,7 +67,7 @@ let (|LongOrSingleIdent|_|) inp =
 
 let (|SingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (false, LongIdentWithDots([id], _), None, _) -> Some id
+    | SynExpr.LongIdent (false, SynLongIdent([id], _, _), None, _) -> Some id
     | SynExpr.Ident id -> Some id
     | _ -> None
 
@@ -171,7 +171,7 @@ let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, S
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.LongIdent (longDotId=SynLongIdent([_], _, _); argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -225,7 +225,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
