@@ -11,7 +11,7 @@ open FSharp.Compiler.Symbols
 
 /// Represents an evaluated F# value
 [<Class>]
-type FsiValue = 
+type FsiValue =
 
     /// The value, as an object
     member ReflectionValue: obj
@@ -52,32 +52,32 @@ type EvaluationEventArgs =
     member ImplementationDeclaration: FSharpImplementationFileDeclaration
 
 [<AbstractClass>]
-type public FsiEvaluationSessionHostConfig = 
+type public FsiEvaluationSessionHostConfig =
     new: unit -> FsiEvaluationSessionHostConfig
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract FormatProvider: IFormatProvider  
+    abstract FormatProvider: IFormatProvider
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract FloatingPointFormat: string 
+    abstract FloatingPointFormat: string
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)>  list
+    abstract AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract ShowDeclarationValues: bool  
+    abstract ShowDeclarationValues: bool
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract ShowIEnumerable: bool  
+    abstract ShowIEnumerable: bool
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract ShowProperties: bool  
+    abstract ShowProperties: bool
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract PrintSize: int  
+    abstract PrintSize: int
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract PrintDepth: int  
+    abstract PrintDepth: int
 
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintWidth: int
@@ -85,7 +85,7 @@ type public FsiEvaluationSessionHostConfig =
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintLength: int
 
-    /// The evaluation session calls this to report the preferred view of the command line arguments after 
+    /// The evaluation session calls this to report the preferred view of the command line arguments after
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
     abstract ReportUserCommandLineArgs: string [] -> unit
 
@@ -99,7 +99,7 @@ type public FsiEvaluationSessionHostConfig =
     /// given (always combine with --readline-), and OptionalConsoleReadLine is given.
     /// When a console is used, special rules apply to "peekahead", which allows early typing on the console.
     /// Peekahead happens if --peekahead- is not specified (the default).
-    /// In this case, a prompt is printed early, a background thread is created and 
+    /// In this case, a prompt is printed early, a background thread is created and
     /// the OptionalConsoleReadLine is used to read the first line.
     /// If a console is not used, then inReader.Peek() is called early instead.
     /// </para><para> </para>
@@ -108,12 +108,11 @@ type public FsiEvaluationSessionHostConfig =
     /// If not provided, lines are read using inReader.ReadLine().</para>
     /// <para> </para>
     ///</summary>
-
-    abstract GetOptionalConsoleReadLine: probeToSeeIfConsoleWorks: bool -> (unit -> string) option 
+    abstract GetOptionalConsoleReadLine: probeToSeeIfConsoleWorks: bool -> (unit -> string) option
 
     /// The evaluation session calls this at an appropriate point in the startup phase if the --fsi-server parameter was given
-    abstract StartServer: fsiServerName:string -> unit
-    
+    abstract StartServer: fsiServerName: string -> unit
+
     /// Called by the evaluation session to ask the host to enter a dispatch loop like Application.Run().
     /// Only called if --gui option is used (which is the default).
     /// Gets called towards the end of startup and every time a ThreadAbort escaped to the backup driver loop.
@@ -127,23 +126,23 @@ type public FsiEvaluationSessionHostConfig =
     abstract EventLoopScheduleRestart: unit -> unit
 
     /// Implicitly reference FSharp.Compiler.Interactive.Settings.dll
-    abstract UseFsiAuxLib: bool 
+    abstract UseFsiAuxLib: bool
 
 /// Thrown when there was an error compiling the given code in FSI.
 [<Class>]
 type FsiCompilationException =
     inherit Exception
-    new: string * FSharpDiagnostic[] option -> FsiCompilationException
-    member ErrorInfos: FSharpDiagnostic[] option
+    new: string * FSharpDiagnostic [] option -> FsiCompilationException
+    member ErrorInfos: FSharpDiagnostic [] option
 
 /// Represents an F# Interactive evaluation session.
 [<Class>]
-type FsiEvaluationSession = 
+type FsiEvaluationSession =
 
     interface IDisposable
 
     /// <summary>Create an FsiEvaluationSession, reading from the given text input, writing to the given text output and error writers</summary>
-    /// 
+    ///
     /// <param name="fsiConfig">The dynamic configuration of the evaluation session</param>
     /// <param name="argv">The command line arguments for the evaluation session</param>
     /// <param name="inReader">Read input from the given reader</param>
@@ -151,7 +150,15 @@ type FsiEvaluationSession =
     /// <param name="outWriter">Write output to the given writer</param>
     /// <param name="collectible">Optionally make the dynamic assembly for the session collectible</param>
     /// <param name="legacyReferenceResolver">An optional resolver for legacy MSBuild references</param>
-    static member Create: fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?legacyReferenceResolver: LegacyReferenceResolver -> FsiEvaluationSession
+    static member Create:
+        fsiConfig: FsiEvaluationSessionHostConfig *
+        argv: string [] *
+        inReader: TextReader *
+        outWriter: TextWriter *
+        errorWriter: TextWriter *
+        ?collectible: bool *
+        ?legacyReferenceResolver: LegacyReferenceResolver ->
+            FsiEvaluationSession
 
     /// A host calls this to request an interrupt on the evaluation thread.
     member Interrupt: unit -> unit
@@ -178,7 +185,8 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteractionNonThrowing: code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+    member EvalInteractionNonThrowing:
+        code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic []
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there
@@ -194,11 +202,11 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalScriptNonThrowing: filePath: string -> Choice<unit, exn> * FSharpDiagnostic[]
+    member EvalScriptNonThrowing: filePath: string -> Choice<unit, exn> * FSharpDiagnostic []
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
-    /// of the input. Errors are sent to the output writer. Parsing is performed on the current thread, and execution is performed 
+    /// of the input. Errors are sent to the output writer. Parsing is performed on the current thread, and execution is performed
     /// synchronously on the 'main' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
@@ -208,18 +216,18 @@ type FsiEvaluationSession =
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors and warnings are collected apart from any exception arising from execution
-    /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed 
+    /// which is returned via a Choice. Parsing is performed on the current thread, and execution is performed
     /// synchronously on the 'main' thread.
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalExpressionNonThrowing: code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
+    member EvalExpressionNonThrowing: code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic []
 
     /// Format a value to a string using the current PrintDepth, PrintLength etc settings provided by the active fsi configuration object
     member FormatValue: reflectionValue: obj * reflectionType: Type -> string
 
     /// Raised when an interaction is successfully typechecked and executed, resulting in an update to the
-    /// type checking state.  
+    /// type checking state.
     ///
     /// This event is triggered after parsing and checking, either via input from 'stdin', or via a call to EvalInteraction.
     member PartialAssemblySignatureUpdated: IEvent<unit>
@@ -229,12 +237,13 @@ type FsiEvaluationSession =
     /// check brace matching and other information.
     ///
     /// Operations may be run concurrently with other requests to the InteractiveChecker.
-    member ParseAndCheckInteraction: code: string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
+    member ParseAndCheckInteraction:
+        code: string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
 
     /// The single, global interactive checker to use in conjunction with other operations
-    /// on the FsiEvaluationSession.  
+    /// on the FsiEvaluationSession.
     ///
-    /// If you are using an FsiEvaluationSession in this process, you should only use this InteractiveChecker 
+    /// If you are using an FsiEvaluationSession in this process, you should only use this InteractiveChecker
     /// for additional checking operations.
     member InteractiveChecker: FSharpChecker
 
@@ -242,7 +251,7 @@ type FsiEvaluationSession =
     member CurrentPartialAssemblySignature: FSharpAssemblySignature
 
     /// Get all the dynamically generated assemblies
-    member DynamicAssemblies: System.Reflection.Assembly[]
+    member DynamicAssemblies: System.Reflection.Assembly []
 
     /// A host calls this to determine if the --gui parameter is active
     member IsGui: bool
@@ -290,20 +299,20 @@ type FsiEvaluationSession =
     static member GetDefaultConfiguration: fsiObj: obj -> FsiEvaluationSessionHostConfig
 
     /// Get a configuration that uses a private inbuilt implementation of the 'fsi' object and does not
-    /// implicitly reference FSharp.Compiler.Interactive.Settings.dll. 
+    /// implicitly reference FSharp.Compiler.Interactive.Settings.dll.
     static member GetDefaultConfiguration: unit -> FsiEvaluationSessionHostConfig
 
 /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration()
-module Settings = 
+module Settings =
     /// <summary>An event loop used by the currently executing F# Interactive session to execute code
     /// in the context of a GUI or another event-based system.</summary>
     type IEventLoop =
         /// <summary>Run the event loop.</summary>
         /// <returns>True if the event loop was restarted; false otherwise.</returns>
-        abstract Run: unit -> bool  
+        abstract Run: unit -> bool
         /// <summary>Request that the given operation be run synchronously on the event loop.</summary>
         /// <returns>The result of the operation.</returns>
-        abstract Invoke: (unit -> 'T) -> 'T 
+        abstract Invoke: (unit -> 'T) -> 'T
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart: unit -> unit
 
@@ -311,31 +320,31 @@ module Settings =
     [<Sealed>]
     type InteractiveSettings =
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>
-        member FloatingPointFormat: string with get,set
+        member FloatingPointFormat: string with get, set
 
         /// <summary>Get or set the format provider used in the output of the interactive session.</summary>
-        member FormatProvider: IFormatProvider  with get,set
+        member FormatProvider: IFormatProvider with get, set
 
         /// <summary>Get or set the print width of the interactive session.</summary>
-        member PrintWidth: int  with get,set
+        member PrintWidth: int with get, set
 
         /// <summary>Get or set the print depth of the interactive session.</summary>
-        member PrintDepth: int  with get,set
+        member PrintDepth: int with get, set
 
         /// <summary>Get or set the total print length of the interactive session.</summary>
-        member PrintLength: int  with get,set
+        member PrintLength: int with get, set
 
         /// <summary>Get or set the total print size of the interactive session.</summary>
-        member PrintSize: int  with get,set      
+        member PrintSize: int with get, set
 
         /// <summary>When set to 'false', disables the display of properties of evaluated objects in the output of the interactive session.</summary>
-        member ShowProperties: bool  with get,set
+        member ShowProperties: bool with get, set
 
         /// <summary>When set to 'false', disables the display of sequences in the output of the interactive session.</summary>
-        member ShowIEnumerable: bool  with get,set
+        member ShowIEnumerable: bool with get, set
 
         /// <summary>When set to 'false', disables the display of declaration values in the output of the interactive session.</summary>
-        member ShowDeclarationValues: bool  with get,set      
+        member ShowDeclarationValues: bool with get, set
 
         /// <summary>Register a printer that controls the output of the interactive session.</summary>
         member AddPrinter: ('T -> string) -> unit
@@ -343,19 +352,18 @@ module Settings =
         /// <summary>Register a print transformer that controls the output of the interactive session.</summary>
         member AddPrintTransformer: ('T -> obj) -> unit
 
-        member internal AddedPrinters: Choice<Type * (obj -> string), 
-                                               Type * (obj -> obj)>  list
+        member internal AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
 
-    
+
         /// <summary>The command line arguments after ignoring the arguments relevant to the interactive
         /// environment and replacing the first argument with the name of the last script file,
         /// if any. Thus 'fsi.exe test1.fs test2.fs -- hello goodbye' will give arguments
         /// 'test2.fs', 'hello', 'goodbye'.  This value will normally be different to those
         /// returned by System.Environment.GetCommandLineArgs.</summary>
-        member CommandLineArgs: string [] with get,set
-    
+        member CommandLineArgs: string [] with get, set
+
         /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
-        member EventLoop: IEventLoop with get,set
+        member EventLoop: IEventLoop with get, set
 
     /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration().  Note this
     /// is a different object to FSharp.Compiler.Interactive.Settings.fsi in FSharp.Compiler.Interactive.Settings.dll,
@@ -365,15 +373,15 @@ module Settings =
 
 /// Defines a read-only input stream used to feed content to the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]
-type CompilerInputStream = 
+type CompilerInputStream =
     inherit Stream
     new: unit -> CompilerInputStream
     /// Feeds content into the stream.
-    member Add: str:string -> unit
+    member Add: str: string -> unit
 
 /// Defines a write-only stream used to capture output of the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]
-type CompilerOutputStream  =
+type CompilerOutputStream =
     inherit Stream
     new: unit -> CompilerOutputStream
 

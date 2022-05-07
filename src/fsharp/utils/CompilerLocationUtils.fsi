@@ -16,7 +16,7 @@ module internal FSharpEnvironment =
     val FSharpBinaryMetadataFormatRevision: string
 
     val isRunningOnCoreClr: bool
-  
+
     val tryCurrentDomain: unit -> string option
 
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
@@ -26,18 +26,18 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
-    val BinFolderOfDefaultFSharpCompiler: probePoint:string option -> string option
+    val BinFolderOfDefaultFSharpCompiler: probePoint: string option -> string option
 
     val toolingCompatiblePaths: unit -> string list
 
-    val searchToolPaths: path:string option -> compilerToolPaths:seq<string> -> seq<string>
+    val searchToolPaths: path: string option -> compilerToolPaths: seq<string> -> seq<string>
 
     val getTypeProviderAssembly:
-      runTimeAssemblyFileName:string *
-      designTimeAssemblyName:string *
-      compilerToolPaths:string list *
-      raiseError:(string option -> exn -> System.Reflection.Assembly option)
-           -> System.Reflection.Assembly option
+        runTimeAssemblyFileName: string *
+        designTimeAssemblyName: string *
+        compilerToolPaths: string list *
+        raiseError: (string option -> exn -> System.Reflection.Assembly option) ->
+            System.Reflection.Assembly option
 
     val getFSharpCompilerLocation: unit -> string
 
@@ -45,7 +45,7 @@ module internal FSharpEnvironment =
 
     val getDefaultFsiLibraryLocation: unit -> string
 
-    val getCompilerToolsDesignTimeAssemblyPaths: compilerToolPaths:seq<string> -> seq<string>
+    val getCompilerToolsDesignTimeAssemblyPaths: compilerToolPaths: seq<string> -> seq<string>
 
     val fsiLibraryName: string
 
