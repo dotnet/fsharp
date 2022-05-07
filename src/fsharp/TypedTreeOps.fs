@@ -7913,12 +7913,12 @@ let MultiLambdaToTupledLambdaIfNeeded g (vs, arg) body =
 
 let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, argsl: Expr list, m) =
   match f with 
-  | Expr.Let (bind, body, mlet, _) ->
+  | Expr.Let (bind, body, mLet, _) ->
       // Lift bindings out, i.e. (let x = e in f) y --> let x = e in f y 
       // This increases the scope of 'x', which I don't like as it mucks with debugging 
       // scopes of variables, but this is an important optimization, especially when the '|>' 
       // notation is used a lot. 
-      mkLetBind mlet bind (MakeApplicationAndBetaReduceAux g (body, fty, tyargsl, argsl, m))
+      mkLetBind mLet bind (MakeApplicationAndBetaReduceAux g (body, fty, tyargsl, argsl, m))
   | _ -> 
   match tyargsl with 
   | [] :: rest -> 
@@ -7968,14 +7968,14 @@ let MakeApplicationAndBetaReduce g (f, fty, tyargsl, argl, m) =
 let (|NewDelegateExpr|_|) g expr =
     match expr with
     | Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, body, f)], [], m) when isDelegateTy g ty ->
-        Some (lambdaId, tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
+        Some (lambdaId, List.concat tmvs, body, m, (fun bodyR -> Expr.Obj (lambdaId, ty, a, b, [TObjExprMethod(c, d, e, tmvs, bodyR, f)], [], m)))
     | _ -> None
 
 let (|DelegateInvokeExpr|_|) g expr =
     match expr with
-    | Expr.App ((Expr.Val (invokeRef, _, _)) as iref, fty, tyargs, (f :: args), m) 
-        when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g f) -> 
-            Some(iref, fty, tyargs, f, args, m)
+    | Expr.App ((Expr.Val (invokeRef, _, _)) as delInvokeRef, delInvokeTy, [], [delExpr;delInvokeArg], m) 
+        when invokeRef.LogicalName = "Invoke" && isFSharpDelegateTy g (tyOfExpr g delExpr) -> 
+            Some(delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m)
     | _ -> None
 
 let (|OpPipeRight|_|) g expr =
@@ -7999,19 +7999,17 @@ let (|OpPipeRight3|_|) g expr =
             Some(resType, arg1, arg2, arg3, fExpr, m)
     | _ -> None
 
-let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, fty, tyargs, argsl: Expr list, m) =
-    match f with 
-    | Expr.Let (bind, body, mlet, _) ->
-        mkLetBind mlet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, body, fty, tyargs, argsl, m))
+let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
+    match delExpr with 
+    | Expr.Let (bind, body, mLet, _) ->
+        mkLetBind mLet bind (MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, body, delInvokeTy, delInvokeArg, m))
+    | NewDelegateExpr g (_, argvs, body, m, _) when argvs.Length > 0 -> 
+        let pairs, body = MultiLambdaToTupledLambdaIfNeeded g (argvs, delInvokeArg) body
+        let argvs2, args2 = List.unzip pairs
+        mkLetsBind m (mkCompGenBinds argvs2 args2) body
     | _ -> 
-        match f with
-        | NewDelegateExpr g (_, argvsl, body, m, _) when argvsl.Length = argsl.Length -> 
-            let pairs, body = List.mapFoldBack (MultiLambdaToTupledLambdaIfNeeded g) (List.zip argvsl argsl) body
-            let argvs2, args2 = List.unzip (List.concat pairs)
-            mkLetsBind m (mkCompGenBinds argvs2 args2) body
-        | _ -> 
-            // Remake the delegate invoke
-            Expr.App (invokeRef, fty, tyargs, (f :: argsl), m) 
+        // Remake the delegate invoke
+        Expr.App (delInvokeRef, delInvokeTy, [], [delExpr; delInvokeArg], m) 
       
 //---------------------------------------------------------------------------
 // Adjust for expected usage
@@ -8526,14 +8524,14 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_measure _ -> "?"
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
-     match args with     
-     | [] -> ""
-     | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
-     | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
+    match args with     
+    | [] -> ""
+    | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
+    | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
 
 let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
-  if isNil argTys then "" 
-  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
+    if isNil argTys then "" 
+    else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
 
 let buildAccessPath (cp: CompilationPath option) =
     match cp with
@@ -8541,64 +8539,72 @@ let buildAccessPath (cp: CompilationPath option) =
         let ap = cp.AccessPath |> List.map fst |> List.toArray
         System.String.Join(".", ap)      
     | None -> "Extension Type"
+
 let prependPath path name = if path = "" then name else path + "." + name
 
 let XmlDocSigOfVal g full path (v: Val) =
-  let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
+    let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
 
-    // CLEANUP: this is one of several code paths that treat module values and members 
-    // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
-    // were lined up so code paths like this could be uniform
+        // CLEANUP: this is one of several code paths that treat module values and members 
+        // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
+        // were lined up so code paths like this could be uniform
     
-    match v.MemberInfo with 
-    | Some membInfo when not v.IsExtensionMember -> 
-        // Methods, Properties etc.
-        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
-        let prefix, name = 
-          match membInfo.MemberFlags.MemberKind with 
-          | SynMemberKind.ClassConstructor 
-          | SynMemberKind.Constructor -> "M:", "#ctor"
-          | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
-          | SynMemberKind.PropertyGetSet 
-          | SynMemberKind.PropertySet
-          | SynMemberKind.PropertyGet -> "P:", v.PropertyName
-        let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
-        let parentTypars, methTypars = 
-          match PartitionValTypars g v with
-          | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
-          | None -> [], tps
-        parentTypars, methTypars, witnessInfos, argInfos, rty, prefix, path, name
-    | _ ->
-        // Regular F# values and extension members 
-        let w = arityOfVal v
-        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, rty, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
-        let name = v.CompiledName g.CompilerGlobalState
-        let prefix =
-          if w.NumCurriedArgs = 0 && isNil tps then "P:"
-          else "M:"
-        [], tps, witnessInfos, argInfos, rty, prefix, path, name
+        match v.MemberInfo with 
+        | Some membInfo when not v.IsExtensionMember -> 
 
-  let witnessArgTys = GenWitnessTys g cxs
-  let argTys = argInfos |> List.concat |> List.map fst
-  let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
-  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
-  let arity = List.length methTypars in (* C# XML doc adds ``<arity> to *generic* member names *)
-  let genArity = if arity=0 then "" else sprintf "``%d" arity
-  prefix + prependPath path name + genArity + args
+            // Methods, Properties etc.
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+            let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
+
+            let prefix, name = 
+                match membInfo.MemberFlags.MemberKind with 
+                | SynMemberKind.ClassConstructor 
+                | SynMemberKind.Constructor -> "M:", "#ctor"
+                | SynMemberKind.Member -> "M:", v.CompiledName g.CompilerGlobalState
+                | SynMemberKind.PropertyGetSet 
+                | SynMemberKind.PropertySet
+                | SynMemberKind.PropertyGet -> "P:", v.PropertyName
+
+            let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
+
+            let parentTypars, methTypars = 
+                match PartitionValTypars g v with
+                | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
+                | None -> [], tps
+
+            parentTypars, methTypars, witnessInfos, argInfos, rty, prefix, path, name
+
+        | _ ->
+            // Regular F# values and extension members 
+            let w = arityOfVal v
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+            let tps, witnessInfos, argInfos, rty, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
+            let name = v.CompiledName g.CompilerGlobalState
+            let prefix =
+                if w.NumCurriedArgs = 0 && isNil tps then "P:"
+                else "M:"
+            [], tps, witnessInfos, argInfos, rty, prefix, path, name
+
+    let witnessArgTys = GenWitnessTys g cxs
+    let argTys = argInfos |> List.concat |> List.map fst
+    let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
+    let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
+    let arity = List.length methTypars
+    let genArity = if arity=0 then "" else sprintf "``%d" arity
+    prefix + prependPath path name + genArity + args
   
-let BuildXmlDocSig prefix paths = prefix + List.fold prependPath "" paths
+let BuildXmlDocSig prefix path = prefix + List.fold prependPath "" path
 
-let XmlDocSigOfUnionCase = BuildXmlDocSig "T:" // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
+// Would like to use "U:", but ParseMemberSignature only accepts C# signatures
+let XmlDocSigOfUnionCase path = BuildXmlDocSig "T:" path
 
-let XmlDocSigOfField = BuildXmlDocSig "F:"
+let XmlDocSigOfField path = BuildXmlDocSig "F:" path
 
-let XmlDocSigOfProperty = BuildXmlDocSig "P:"
+let XmlDocSigOfProperty path = BuildXmlDocSig "P:" path
 
-let XmlDocSigOfTycon = BuildXmlDocSig "T:"
+let XmlDocSigOfTycon path = BuildXmlDocSig "T:" path
 
-let XmlDocSigOfSubModul = BuildXmlDocSig "T:"
+let XmlDocSigOfSubModul path = BuildXmlDocSig "T:" path
 
 let XmlDocSigOfEntity (eref: EntityRef) =
     XmlDocSigOfTycon [(buildAccessPath eref.CompilationPathOpt); eref.Deref.CompiledName]
@@ -10000,9 +10006,9 @@ let (|StructStateMachineExpr|_|) g expr =
     match expr with
     | ValApp g g.cgh__stateMachine_vref ([dataTy; _resultTy], [moveNext; setStateMachine; afterCode], _m) ->
         match moveNext, setStateMachine, afterCode with 
-        | NewDelegateExpr g (_, [[moveNextThisVar]], moveNextBody, _, _),
-          NewDelegateExpr g (_, [[setStateMachineThisVar;setStateMachineStateVar]], setStateMachineBody, _, _),
-          NewDelegateExpr g (_, [[afterCodeThisVar]], afterCodeBody, _, _) ->
+        | NewDelegateExpr g (_, [moveNextThisVar], moveNextBody, _, _),
+          NewDelegateExpr g (_, [setStateMachineThisVar;setStateMachineStateVar], setStateMachineBody, _, _),
+          NewDelegateExpr g (_, [afterCodeThisVar], afterCodeBody, _, _) ->
               Some (dataTy, 
                     (moveNextThisVar, moveNextBody), 
                     (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody), 
@@ -10051,3 +10057,30 @@ let (|ResumableCodeInvoke|_|) g expr =
         Some (iref, f, args, m, (fun (f2, args2) -> Expr.App ((iref, a, b, (f2 :: args2), m))))
     | _ -> None
 
+let ComputeUseMethodImpl g (v: Val) =
+    v.ImplementedSlotSigs |> List.exists (fun slotsig ->
+        let oty = slotsig.ImplementedType
+        let otcref = tcrefOfAppTy g oty
+        let tcref = v.MemberApparentEntity
+
+        // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode
+        isInterfaceTy g oty &&
+
+        (let isCompare =
+            Option.isSome tcref.GeneratedCompareToValues &&
+             (typeEquiv g oty g.mk_IComparable_ty ||
+              tyconRefEq g g.system_GenericIComparable_tcref otcref)
+
+         not isCompare) &&
+
+        (let isGenericEquals =
+            Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues &&
+            tyconRefEq g g.system_GenericIEquatable_tcref otcref
+
+         not isGenericEquals) &&
+
+        (let isStructural =
+            (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv g oty g.mk_IStructuralComparable_ty) ||
+            (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv g oty g.mk_IStructuralEquatable_ty)
+
+         not isStructural))

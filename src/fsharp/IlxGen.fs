@@ -221,6 +221,8 @@ type IlxGenOptions =
 
       ilxBackend: IlxGenBackend
 
+      fsiMultiAssemblyEmit: bool
+
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive: bool
@@ -1722,8 +1724,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilFieldDefs =
                 mkILFields
                     [ for _, fldName, fldTy in flds ->
-                        // The F# Interactive backend may split to multiple assemblies.
-                        let access = (if cenv.opts.isInteractive then ILMemberAccess.Public else  ILMemberAccess.Private)
+                        // Don't hide fields when splitting to multiple assemblies.
+                        let access = 
+                            if cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit then ILMemberAccess.Public
+                            else ILMemberAccess.Private
                         let fdef = mkILInstanceField (fldName, fldTy, None, access)
                         fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
 
@@ -6569,52 +6573,26 @@ and GenEventForProperty cenv eenvForMeth (mspec: ILMethodSpec) (v: Val) ilAttrsT
                otherMethods= [],
                customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
 
-and ComputeUseMethodImpl cenv (v: Val, slotsig: SlotSig) =
-    let oty = slotsig.ImplementedType
-    let otcref = tcrefOfAppTy cenv.g oty
-    let tcref = v.MemberApparentEntity
-    // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
-    isInterfaceTy cenv.g oty &&
-    (let isCompare =
-        Option.isSome tcref.GeneratedCompareToValues &&
-         (typeEquiv cenv.g oty cenv.g.mk_IComparable_ty ||
-          tyconRefEq cenv.g cenv.g.system_GenericIComparable_tcref otcref)
-
-     not isCompare) &&
-
-    (let isGenericEquals =
-        Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && tyconRefEq cenv.g cenv.g.system_GenericIEquatable_tcref otcref
-
-     not isGenericEquals) &&
-    (let isStructural =
-        (Option.isSome tcref.GeneratedCompareToWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralComparable_ty) ||
-        (Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues && typeEquiv cenv.g oty cenv.g.mk_IStructuralEquatable_ty)
-
-     not isStructural)
-
-and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     if isNil memberInfo.ImplementedSlotSigs then
+and ComputeMethodImplNameFixupForMemberBinding cenv (v: Val) =
+     if isNil v.ImplementedSlotSigs then
          None
      else
-         let slotsig = memberInfo.ImplementedSlotSigs |> List.last
-         let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+         let slotsig = v.ImplementedSlotSigs |> List.last
+         let useMethodImpl = ComputeUseMethodImpl cenv.g v
          let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
          Some nameOfOverridingMethod
 
-and ComputeFlagFixupsForMemberBinding cenv (v: Val, memberInfo: ValMemberInfo) =
-     [ if isNil memberInfo.ImplementedSlotSigs then
-           yield fixupVirtualSlotFlags
-       else
-           for slotsig in memberInfo.ImplementedSlotSigs do
-             let useMethodImpl = ComputeUseMethodImpl cenv (v, slotsig)
+and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
+     [ let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
-             if useMethodImpl then
-                yield fixupMethodImplFlags
-             else
-                yield fixupVirtualSlotFlags
-           match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
-           | Some nm -> yield renameMethodDef nm
-           | None -> () ]
+       if useMethodImpl then
+          fixupMethodImplFlags
+       else
+          fixupVirtualSlotFlags
+
+       match ComputeMethodImplNameFixupForMemberBinding cenv v with
+       | Some nm -> renameMethodDef nm
+       | None -> () ]
 
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
@@ -6805,10 +6783,10 @@ and GenMethodForBinding
                ((memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                 memberInfo.MemberFlags.IsOverrideOrExplicitImpl) then
 
-                let useMethodImpl = memberInfo.ImplementedSlotSigs |> List.exists (fun slotsig -> ComputeUseMethodImpl cenv (v, slotsig))
+                let useMethodImpl = ComputeUseMethodImpl cenv.g v
 
                 let nameOfOverridingMethod =
-                    match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with
+                    match ComputeMethodImplNameFixupForMemberBinding cenv v with
                     | None -> mspec.Name
                     | Some nm -> nm
 
@@ -6853,7 +6831,7 @@ and GenMethodForBinding
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
-                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v, memberInfo)
+                       let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
                        let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
                        let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
@@ -8060,7 +8038,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   // The IL field is hidden if the property/field is hidden OR we're using a property
                   // AND the field is not mutable (because we can take the address of a mutable field).
                   // Otherwise fields are always accessed via their property getters/setters
-                  let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
+                  //
+                  // Additionally, don't hide fields for multiemit in F# Interactive
+                  let isFieldHidden =
+                      isPropHidden ||
+                      (not useGenuineField && 
+                       not isFSharpMutable &&
+                       not (cenv.opts.isInteractive && cenv.opts.fsiMultiAssemblyEmit))
 
                   let extraAttribs =
                      match tyconRepr with
@@ -8068,6 +8052,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeMemberAccess isFieldHidden
+
                   let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
 
                   let fdef =

@@ -2702,6 +2702,12 @@ type Val =
         | Some memberInfo when memberInfo.MemberFlags.IsOverrideOrExplicitImpl -> true
         | _ -> false
             
+    /// Gets the dispatch slots implemented by this method
+    member x.ImplementedSlotSigs =
+        match x.MemberInfo with 
+        | Some memberInfo -> memberInfo.ImplementedSlotSigs
+        | _ -> []
+            
     /// Indicates if this is declared 'mutable'
     member x.IsMutable = (match x.val_flags.MutabilityInfo with Immutable -> false | Mutable -> true)
 
@@ -3805,6 +3811,9 @@ type ValRef =
 
     /// Indicates if this value was a member declared 'override' or an implementation of an interface slot
     member x.IsOverrideOrExplicitImpl = x.Deref.IsOverrideOrExplicitImpl
+
+    /// Gets the dispatch slots implemented by this method
+    member x.ImplementedSlotSigs = x.Deref.ImplementedSlotSigs
 
     /// Is this a member, if so some more data about the member.
     member x.MemberInfo = x.Deref.MemberInfo

@@ -353,11 +353,11 @@ module DeclarationListHelpers =
         // The 'fake' representation of constructors of .NET delegate types
         | Item.DelegateCtor delty -> 
            let delty, _cxs = PrettyTypes.PrettifyType g delty
-           let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+           let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
            let layout =
                NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
                LeftL.leftParen ^^
-               NicePrint.layoutType denv fty ^^
+               NicePrint.layoutType denv delFuncTy ^^
                RightL.rightParen
            let layout = toArray layout
            ToolTipElement.Single(layout, xml)
@@ -769,10 +769,10 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delty
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group

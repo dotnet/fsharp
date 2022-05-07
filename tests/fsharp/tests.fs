@@ -882,9 +882,9 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /r:split\a-part1.dll /out:split\a.dll /define:PART2;SPLIT""" ["a.cs"]
 
-        copy_y cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
+        copy cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
 
-        copy_y cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
+        copy cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
 
         fsc cfg """-o:orig\test.exe -r:orig\b.dll -r:orig\a.dll""" ["test.fs"]
 
@@ -897,6 +897,22 @@ module CoreTests =
         peverify cfg ("split" ++ "b.dll")
 
         peverify cfg ("split" ++ "c.dll")
+
+    [<Test>]
+    let xmldoc () =
+        let cfg = testConfig "core/xmldoc"
+
+        fsc cfg "%s -a --doc:lib.xml -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
+        let outFile = "lib.xml"
+        let expectedFile = "lib.xml.bsl"
+
+        if not (fileExists cfg expectedFile) then
+            copy cfg outFile expectedFile
+
+        let diffs = fsdiff cfg outFile expectedFile
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
 
     [<Test>]
     let fsfromcs () =
@@ -1099,8 +1115,6 @@ module CoreTests =
 
        if requireENCulture () then
 
-        let copy from' = Commands.copy_y cfg.Directory from' >> checkResult
-
         let ``fsi <a >b 2>c`` =
             // "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
             let ``exec <a >b 2>c`` (inFile, outFile, errFile) p =
@@ -1122,12 +1136,11 @@ module CoreTests =
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
 
-        let withDefault default' to' =
-            if not (fileExists cfg to') then copy default' to'
+        let withDefault defaultFile toFile =
+            if not (fileExists cfg toFile) then copy cfg defaultFile toFile
 
         expectedFileOut |> withDefault diffFileOut
         expectedFileErr |> withDefault diffFileErr
-
 
         match fsdiff cfg diffFileOut expectedFileOut with
         | "" -> ()
@@ -1155,14 +1168,14 @@ module CoreTests =
     // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
     // as it feeds in many incremental fragments into stdin of the FSI process.
     [<Test>]
-    let ``printing-legacyemitoff`` () =
-         runPrintingTest "--multiemit+ --debug+" "output.legacyemitoff"
+    let ``printing-multiemit`` () =
+         runPrintingTest "--multiemit+ --debug+" "output.multiemit"
 
     // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
     // needs to be tested with optimizations off.  The output should not change.
     [<Test>]
-    let ``printing-legacyemitoff-optimizeoff`` () =
-         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.legacyemitoff"
+    let ``printing-multiemit-optimizeoff`` () =
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.multiemit"
 
     [<Test>]
     let ``printing-width-1000`` () =
