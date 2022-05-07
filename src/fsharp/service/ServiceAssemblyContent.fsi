@@ -7,9 +7,9 @@ open FSharp.Compiler.Symbols
 
 /// Assembly content type.
 [<RequireQualifiedAccess>]
-type public AssemblyContentType = 
-/// Public assembly content only.
-    | Public 
+type public AssemblyContentType =
+    /// Public assembly content only.
+    | Public
     /// All assembly content.
     | Full
 
@@ -24,14 +24,13 @@ type public AssemblyPath = string
 
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
-type public AssemblySymbol = 
-    {
-      /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
+type public AssemblySymbol =
+    { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName).
       FullName: string
 
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
       /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
-      /// Note: *all* parts are cleaned, not the last one. 
+      /// Note: *all* parts are cleaned, not the last one.
       CleanedIdents: ShortIdents
 
       /// `FSharpEntity.Namespace`.
@@ -52,21 +51,18 @@ type public AssemblySymbol =
       Kind: LookupType -> EntityKind
 
       /// Cache display name and namespace, used for completion.
-      UnresolvedSymbol: UnresolvedSymbol
-    }
+      UnresolvedSymbol: UnresolvedSymbol }
 
 /// `RawEntity` list retrieved from an assembly.
 type internal AssemblyContentCacheEntry =
-    {
-      /// Assembly file last write time.
-      FileWriteTime: DateTime 
+    { /// Assembly file last write time.
+      FileWriteTime: DateTime
 
       /// Content type used to get assembly content.
-      ContentType: AssemblyContentType 
+      ContentType: AssemblyContentType
 
       /// Assembly content.
-      Symbols: AssemblySymbol list
-    }
+      Symbols: AssemblySymbol list }
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
@@ -79,26 +75,25 @@ type public IAssemblyContentCache =
 
 /// Thread safe wrapper over `IAssemblyContentCache`.
 type public EntityCache =
-    interface IAssemblyContentCache 
-    new : unit -> EntityCache
+    interface IAssemblyContentCache
+    new: unit -> EntityCache
 
     /// Clears the cache.
-    member Clear : unit -> unit
+    member Clear: unit -> unit
 
     /// Performs an operation on the cache in thread safe manner.
-    member Locking : (IAssemblyContentCache -> 'T) -> 'T
+    member Locking: (IAssemblyContentCache -> 'T) -> 'T
 
 /// Provides assembly content.
 module public AssemblyContent =
 
     /// Given a `FSharpAssemblySignature`, returns assembly content.
-    val GetAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
+    val GetAssemblySignatureContent: AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
     /// Returns (possibly cached) assembly content.
-    val GetAssemblyContent : 
-          withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
-          -> contentType: AssemblyContentType 
-          -> fileName: string option 
-          -> assemblies: FSharpAssembly list 
-          -> AssemblySymbol list
-
+    val GetAssemblyContent:
+        withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list) ->
+        contentType: AssemblyContentType ->
+        fileName: string option ->
+        assemblies: FSharpAssembly list ->
+            AssemblySymbol list

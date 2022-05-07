@@ -14,7 +14,7 @@ module public FSharpSymbolPatterns =
 
     val (|ValueType|_|): FSharpEntity -> unit option
 
-    val (|Class|_|): original: FSharpEntity * abbreviated: FSharpEntity * 'a -> unit option 
+    val (|Class|_|): original: FSharpEntity * abbreviated: FSharpEntity * 'a -> unit option
 
     val (|Record|_|): FSharpEntity -> unit option
 
@@ -30,9 +30,9 @@ module public FSharpSymbolPatterns =
 
     val (|FSharpType|_|): FSharpEntity -> unit option
 
-#if !NO_TYPEPROVIDERS    
+#if !NO_TYPEPROVIDERS
     val (|ProvidedType|_|): FSharpEntity -> unit option
-#endif    
+#endif
 
     val (|ByRef|_|): FSharpEntity -> unit option
 
@@ -42,7 +42,7 @@ module public FSharpSymbolPatterns =
 
     val (|Namespace|_|): FSharpEntity -> unit option
 
-#if !NO_TYPEPROVIDERS    
+#if !NO_TYPEPROVIDERS
     val (|ProvidedAndErasedType|_|): FSharpEntity -> unit option
 #endif
 
@@ -82,4 +82,3 @@ module public FSharpSymbolPatterns =
     val (|Event|_|): FSharpMemberOrFunctionOrValue -> unit option
 
     val internal hasModuleSuffixAttribute: FSharpEntity -> bool
-

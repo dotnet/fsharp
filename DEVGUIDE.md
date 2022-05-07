@@ -147,6 +147,22 @@ Linux/macOS:
 export TEST_UPDATE_BSL=1
 ```
 
+## Automated Source Code Formatting
+
+Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
+
+```cmd
+dotnet fantomas src/fsharp -r
+```
+
+The formatting is checked automatically by CI:
+
+```cmd
+dotnet fantomas src/fsharp -r --check
+```
+
+At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
+
 ## Developing the F# tools for Visual Studio
 
 As you would expect, doing this requires both Windows and Visual Studio are installed.
@@ -190,6 +206,20 @@ To fix this, delete these folders:
 * `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
 
 Where `<version>` corresponds to the latest Visual Studio version on your machine.
+
+## Coding conventions
+
+* Coding conventions vary from file to file
+
+* Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
+
+* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generaly use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
+
+* Avoid abbreviations like `bodyty` that run together lowercase are bad, really hard to head for newcomers. Use `bodyTy` instead.
+
+* See the comiler docs for common abbreviations
+
+* Don't use `List.iter` and `Array.iter` in the compiler, a `for ... do ...` loop is simpler to read and debug
 
 ## Performance and debugging
 
