@@ -46,7 +46,7 @@ val TcOpenModuleOrNamespaceDecl:
 
 val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
 
-val CheckOneImplFile: 
+val CheckOneImplFile:
     TcGlobals *
     NiceNameGenerator *
     ImportMap *
@@ -61,11 +61,18 @@ val CheckOneImplFile:
     ParsedImplFileInput ->
         Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
-val CheckOneSigFile : 
-      TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool
-      -> TcEnv                             
-      -> ParsedSigFileInput
-      -> Cancellable<TcEnv * ModuleOrNamespaceType * bool>
+val CheckOneSigFile:
+    TcGlobals *
+    NiceNameGenerator *
+    ImportMap *
+    CcuThunk *
+    (unit -> bool) *
+    ConditionalDefines option *
+    TcResultsSink *
+    bool ->
+        TcEnv ->
+        ParsedSigFileInput ->
+            Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
 exception ParameterlessStructCtor of range
 

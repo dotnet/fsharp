@@ -466,7 +466,7 @@ type TcConfigBuilder =
       /// Take '#line' into account? Defaults to true
       mutable applyLineDirectives: bool
 
-      mutable pathMap : PathMap
+      mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
 
