@@ -37,22 +37,22 @@
 }
 .mresource public FSharpSignatureData.Linq101Partitioning01
 {
-  // Offset: 0x00000000 Length: 0x0000040C
+  // Offset: 0x00000000 Length: 0x0000041A
   // WARNING: managed resource file FSharpSignatureData.Linq101Partitioning01 created
 }
 .mresource public FSharpOptimizationData.Linq101Partitioning01
 {
-  // Offset: 0x00000410 Length: 0x00000138
+  // Offset: 0x00000420 Length: 0x00000138
   // WARNING: managed resource file FSharpOptimizationData.Linq101Partitioning01 created
 }
 .module Linq101Partitioning01.exe
-// MVID: {62466677-FFA3-FF6E-A745-038377664662}
+// MVID: {62501638-D05C-9DF8-A745-038338165062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000025BD3220000
+// Image base: 0x00000251D8F30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -101,7 +101,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (int32 V_0,
                int32 V_1)
@@ -116,13 +116,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
@@ -133,47 +133,46 @@
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0043:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0050:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldc.i4.0
-      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #1 input at line 11@12'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldc.i4.0
+      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #1 input at line 11@12'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #1 input at line 11@12'::GenerateNext
 
     .method public strict virtual instance void 
@@ -566,7 +565,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (int32 V_0,
                int32 V_1)
@@ -581,13 +580,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
@@ -598,47 +597,46 @@
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0043:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0050:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldc.i4.0
-      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #3 input at line 28@29'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldc.i4.0
+      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #3 input at line 28@29'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #3 input at line 28@29'::GenerateNext
 
     .method public strict virtual instance void 
@@ -1031,7 +1029,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (int32 V_0,
                int32 V_1)
@@ -1046,13 +1044,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
@@ -1063,47 +1061,46 @@
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0043:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0050:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldc.i4.0
-      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #5 input at line 44@45'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldc.i4.0
+      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #5 input at line 44@45'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #5 input at line 44@45'::GenerateNext
 
     .method public strict virtual instance void 
@@ -1334,7 +1331,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (int32 V_0,
                int32 V_1)
@@ -1349,13 +1346,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
@@ -1366,47 +1363,46 @@
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0043:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0050:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldc.i4.0
-      IL_008e:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101Partitioning01/'Pipe #6 input at line 51@52'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldc.i4.0
+      IL_008d:  stfld      int32 Linq101Partitioning01/'Pipe #6 input at line 51@52'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #6 input at line 51@52'::GenerateNext
 
     .method public strict virtual instance void 

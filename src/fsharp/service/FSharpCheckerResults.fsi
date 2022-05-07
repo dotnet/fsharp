@@ -209,7 +209,7 @@ type public FSharpParsingOptions =
 
       IsInteractive: bool
 
-      LightSyntax: bool option
+      IndentationAwareSyntax: bool option
 
       CompilingFsLib: bool
 
@@ -383,7 +383,7 @@ type public FSharpCheckFileResults =
 
     /// Internal constructor
     static member internal MakeEmpty : 
-        filename: string *
+        fileName: string *
         creationErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool 
           -> FSharpCheckFileResults
@@ -490,6 +490,7 @@ type public FSharpCheckProjectResults =
                  ModuleOrNamespaceType *
                  Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
+                 (unit -> IRawFSharpAssemblyData option) *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *

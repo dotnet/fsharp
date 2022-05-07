@@ -142,7 +142,14 @@ type CompilationUtil private () =
                 | _ -> LanguageVersion.Default
 
         let tf = defaultArg tf TargetFramework.NetStandard20
-        let source = source.GetSourceText |> Option.defaultValue ""
+        let source =
+            match source.GetSourceText with
+            | Some text ->
+                // In memory source file copy it to the build directory
+                text
+            | None ->
+                // On Disk file
+                File.ReadAllText(source.GetSourceFileName)
         let name = defaultArg name (Guid.NewGuid().ToString ())
         let additionalReferences = defaultArg additionalReferences ImmutableArray<PortableExecutableReference>.Empty
         let references = TargetFrameworkUtil.getReferences tf
@@ -251,13 +258,14 @@ module rec CompilerAssertHelpers =
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
-            let asm = ctxt.LoadFromAssemblyPath(assembly)
-            let entryPoint = asm.EntryPoint
             ctxt.add_Resolving(fun ctxt name ->
                 deps
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
+
+            let asm = ctxt.LoadFromAssemblyPath(assembly)
+            let entryPoint = asm.EntryPoint
             let args = mkDefaultArgs entryPoint
             (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
@@ -387,8 +395,8 @@ module rec CompilerAssertHelpers =
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
 
         let checkEqual k a b =
-            if a <> b then
-                Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+           if a <> b then
+               Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -433,11 +441,11 @@ module rec CompilerAssertHelpers =
                         | CompilationReference (cmpl, staticLink) ->
                             compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
-                            let filename =
+                            let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                 | _ -> tryCreateTemporaryFileName()
-                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
+                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
                             (([||], tmp), []), false)
@@ -537,10 +545,10 @@ module rec CompilerAssertHelpers =
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
-        let filename = outputFilePath
+        let fileName = outputFilePath
         let arguments = ""
 #else
-        let filename = "dotnet"
+        let fileName = "dotnet"
         let arguments = outputFilePath
 
         let runtimeconfig = """
@@ -560,7 +568,7 @@ module rec CompilerAssertHelpers =
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 open CompilerAssertHelpers
 
@@ -612,6 +620,12 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member Checker = checker
 
     static member DefaultProjectOptions = defaultProjectOptions
+
+    static member GenerateFsInputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+
+    static member GenerateDllOutputPath() =
+        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -956,7 +970,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)

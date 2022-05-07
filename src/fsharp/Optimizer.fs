@@ -242,7 +242,7 @@ type Summary<'Info> =
 //------------------------------------------------------------------------- 
 
 let rec SizeOfValueInfos (arr:_[]) =
-    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr.[0])
+    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr[0])
 
 and SizeOfValueInfo x =
     match x with
@@ -533,7 +533,7 @@ let FindOrCreateGlobalModuleInfo n (ss: LayeredMap<_, _>) =
 
 let rec BindValueInSubModuleFSharpCore (mp: string[]) i (v: Val) vval ss =
     if i < mp.Length then 
-        {ss with ModuleOrNamespaceInfos = BindValueInModuleForFslib mp.[i] mp (i+1) v vval ss.ModuleOrNamespaceInfos }
+        {ss with ModuleOrNamespaceInfos = BindValueInModuleForFslib mp[i] mp (i+1) v vval ss.ModuleOrNamespaceInfos }
     else 
         // REVIEW: this line looks quadratic for performance when compiling FSharp.Core
         {ss with ValInfos = ValInfos(Seq.append ss.ValInfos.Entries (Seq.singleton (mkLocalValRef v, vval))) }
@@ -560,7 +560,7 @@ let BindInternalLocalVal cenv (v: Val) vval env =
     match vval.ValExprInfo with 
     | UnknownValue -> env
     | _ ->
-        cenv.localInternalVals.[v.Stamp] <- vval
+        cenv.localInternalVals[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
@@ -581,7 +581,7 @@ let BindExternalLocalVal cenv (v: Val) vval env =
     //
     // A similar code path exists in ilxgen.fs for the tables of "representations" for values
     let env = 
-        if g.compilingFslib then 
+        if g.compilingFSharpCore then 
             // Passing an empty remap is sufficient for FSharp.Core.dll because it turns out the remapped type signature can
             // still be resolved.
             match tryRescopeVal g.fslibCcu Remap.Empty v with 
@@ -647,7 +647,7 @@ let TryGetInfoForEntity sv n =
 
 let rec TryGetInfoForPath sv (p:_[]) i = 
     if i >= p.Length then Some sv else 
-    match TryGetInfoForEntity sv p.[i] with 
+    match TryGetInfoForEntity sv p[i] with 
     | Some info -> TryGetInfoForPath info p (i+1)
     | None -> None
 
@@ -670,7 +670,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
             | None -> 
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
-                  if g.compilingFslib then 
+                  if g.compilingFSharpCore then 
                       match structInfo.ValInfos.TryFindForFslib (g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
@@ -1618,7 +1618,7 @@ let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, co
         let tc2, ec2 = CountBoolLogicTree data defaultTree 
         tc1 + tc2, ec1 + ec2
     | TDSuccess([], idx) -> 
-        match targets.[idx] with
+        match targets[idx] with
         | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
         | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
         | _ -> 100, 100 
@@ -1634,7 +1634,7 @@ let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, oute
         let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
         TDSwitch (expr, cases2, defaultTree2, range)
     | TDSuccess([], idx) -> 
-        match targets.[idx] with 
+        match targets[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
         | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
@@ -2190,14 +2190,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         | Some newExpr -> OptimizeExpr cenv env newExpr
         | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
 
-    | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, rty) -> 
+    | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
-        let ty = mkMultiLambdaTy g m argvs rty
+        let ty = mkMultiLambdaTy g m argvs bodyTy
         OptimizeLambdas None cenv env topValInfo expr ty
 
-    | Expr.TyLambda (_lambdaId, tps, _body, _m, rty) -> 
+    | Expr.TyLambda (_lambdaId, tps, _body, _m, bodyTy) -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
-        let ty = mkForallTyIfNeeded tps rty
+        let ty = mkForallTyIfNeeded tps bodyTy
         OptimizeLambdas None cenv env topValInfo expr ty
 
     | Expr.TyChoose _ -> 
@@ -2455,7 +2455,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
           // We count the proof as size 0
           // We maintain the value of the source of the proof-cast if it is known to be a UnionCaseValue
           let valu = 
-              match argValues.[0] with 
+              match argValues[0] with 
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
               | _ -> valu
           0, valu
@@ -2536,7 +2536,7 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
         | None ->
             let n = r.Index
             if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range", m))
-            Some finfos.[n]
+            Some finfos[n]
     | _ -> None
   
 and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
@@ -2545,7 +2545,7 @@ and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
         let len = tups.Length 
         if len <> tys.Length then errorR(InternalError("error: tuple lengths don't match", m))
         if n >= len then errorR(InternalError("TryOptimizeTupleFieldGet: tuple index out of range", m))
-        Some tups.[n]
+        Some tups[n]
     | _ -> None
       
 and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
@@ -2553,7 +2553,7 @@ and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     match e1info.Info with
     | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminateUnionCaseFieldGet() && not e1info.HasEffect && g.unionCaseRefEq cspec cspec2 ->
         if n >= args.Length then errorR(InternalError( "TryOptimizeUnionCaseGet: term argument out of range", m))
-        Some args.[n]
+        Some args[n]
     | _ -> None
 
 /// Optimize/analyze a for-loop
@@ -3182,7 +3182,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
            else true))) ->
             
         let isBaseCall = not (List.isEmpty args) &&
-                              match args.[0] with
+                              match args[0] with
                               | Expr.Val (vref, _, _) when vref.IsBaseVal -> true
                               | _ -> false
         
@@ -3192,7 +3192,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // confuse the optimizer if the assembly is referenced on 4.0, since there will be no value to tie back
         // to FSharp.Core                              
         let isValFromLazyExtensions =
-            if g.compilingFslib then
+            if g.compilingFSharpCore then
                 false
             else
                 match finfo.Info with
@@ -3301,11 +3301,11 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             let remake (newExprs: Expr list) = 
                 let newExprsInChunks, _ = 
                     ((newExprs,0), chunkSizes) ||> Array.mapFold (fun (acc,i) chunkSize -> 
-                        let chunk = acc.[0..chunkSize-1]
-                        let acc = acc.[chunkSize..]
+                        let chunk = acc[0..chunkSize-1]
+                        let acc = acc[chunkSize..]
                         chunk, (acc, i+chunkSize))
                 let targetsR = (newExprsInChunks, targetRemakes) ||> Array.map2 (fun newExprsChunk targetRemake -> targetRemake newExprsChunk)
-                let tyR = tyOfExpr g targetsR.[0].TargetExpression
+                let tyR = tyOfExpr g targetsR[0].TargetExpression
                 Expr.Match (spMatch, exprm, dtree, targetsR, dflt, tyR)
             fs, remake
 
@@ -3314,7 +3314,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             fs, (remake >> (fun innerExprR -> Expr.DebugPoint (dp, innerExprR)))
 
         | _ -> 
-            [f], (fun newExprs -> (assert (newExprs.Length = 1)); List.head newExprs)
+            [f], (fun newExprs -> (assert (List.isSingleton newExprs)); List.head newExprs)
 
     match strip f0 with 
     | [f], remake -> 
@@ -3555,21 +3555,21 @@ and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, d
                    Info=ValueOfExpr newExpr }
 
 /// Optimize/analyze a lambda expression
-and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety = 
+and OptimizeLambdas (vspec: Val option) cenv env topValInfo expr exprTy = 
     let g = cenv.g
 
-    match e with
+    match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo e
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap topValInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
-        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
+        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -3604,14 +3604,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         // can't inline any values with semi-recursive object references to self or base 
         let valu =   
           match baseValOpt with 
-          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, ety) 
+          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyty)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
+                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
+                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, exprTy) 
                   
         let estimatedSize = 
             match vspec with
@@ -3624,7 +3624,8 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                  MightMakeCriticalTailcall = false
                  Info= valu }
 
-    | _ -> OptimizeExpr cenv env e 
+    | _ ->
+        OptimizeExpr cenv env expr 
       
 and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) = 
     let g = cenv.g
@@ -3924,7 +3925,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                // ilxgen.fs, hence treat them as if no-inline (when preparing the inline information for 
                // FSharp.Core).
                (let nvref = mkLocalValRef vref 
-                g.compilingFslib &&
+                g.compilingFSharpCore &&
                    (valRefEq g nvref g.seq_vref ||
                     valRefEq g nvref g.seq_generated_vref ||
                     valRefEq g nvref g.seq_finally_vref ||
@@ -3959,7 +3960,7 @@ and OptimizeBindings cenv isRec env xs =
 and OptimizeModuleExprWithSig cenv env mexpr = 
     let g = cenv.g
     match mexpr with   
-    | ModuleOrNamespaceExprWithSig(mty, def, m) -> 
+    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> 
         // Optimize the module implementation
         let (def, info), (_env, bindInfosColl) = OptimizeModuleDef cenv (env, []) def  
         let bindInfosColl = List.concat bindInfosColl 
@@ -4010,7 +4011,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
                 mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
-            let rec elimModDef x =                  
+            let rec elimModuleDefn x =                  
                 match x with 
                 | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
@@ -4019,24 +4020,24 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                     if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], [], m) else x
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
-                | TMDefs defs -> TMDefs(List.map elimModDef defs) 
-                | TMAbstract _ -> x 
+                | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
+                | TMWithSig _ -> x 
 
-            and elimModuleBinding x = 
-                match x with 
+            and elimModuleBinding modBind = 
+                match modBind with 
                 | ModuleOrNamespaceBinding.Binding bind -> 
                      if bind.Var |> Zset.memberOf deadSet then None
-                     else Some x
+                     else Some modBind
                 | ModuleOrNamespaceBinding.Module(mspec, d) ->
                     // Clean up the ModuleOrNamespaceType by mutation
                     elimModSpec mspec
-                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModDef d))
+                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModuleDefn d))
             
-            elimModDef def 
+            elimModuleDefn def 
 
         let info = AbstractAndRemapModulInfo "defs" g m rpi info
 
-        ModuleOrNamespaceExprWithSig(mty, def, m), info 
+        ModuleOrNamespaceContentsWithSig(mty, def, m), info 
 
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
@@ -4056,10 +4057,10 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
 
-    | TMAbstract mexpr -> 
+    | TMWithSig mexpr -> 
         let mexpr, info = OptimizeModuleExprWithSig cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
-        (TMAbstract mexpr, info), (env, bindInfosColl)
+        (TMWithSig mexpr, info), (env, bindInfosColl)
 
     | TMDefOpens _openDecls ->  
         (input, EmptyModuleInfo), (env, bindInfosColl)
@@ -4072,8 +4073,8 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
         (env, ([bindInfo] :: bindInfosColl))
 
     | TMDefDo(e, m) ->
-        let e, _einfo = OptimizeExpr cenv env e
-        (TMDefDo(e, m), EmptyModuleInfo), 
+        let eR, _einfo = OptimizeExpr cenv env e
+        (TMDefDo(eR, m), EmptyModuleInfo), 
         (env, bindInfosColl)
 
     | TMDefs defs -> 
@@ -4110,7 +4111,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
+        | ModuleOrNamespaceContentsWithSig(mty, def, m) when isIncrementalFragment -> 
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
@@ -4122,7 +4123,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                 else
                     AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo, hidden
+            env, ModuleOrNamespaceContentsWithSig(mty, defR, m), minfo, hidden
         | _ ->
             // This optimizes and builds minfo w.r.t. the signature
             let mexprR, minfo = OptimizeModuleExprWithSig cenv env mexpr

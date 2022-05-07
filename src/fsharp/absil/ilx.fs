@@ -25,7 +25,7 @@ type IlxUnionCase =
       altCustomAttrs: ILAttributes }
 
     member x.FieldDefs = x.altFields
-    member x.FieldDef n = x.altFields.[n]
+    member x.FieldDef n = x.altFields[n]
     member x.Name = x.altName
     member x.IsNullary  = (x.FieldDefs.Length = 0)
     member x.FieldTypes = x.FieldDefs |> Array.map (fun fd -> fd.Type) 
@@ -49,7 +49,7 @@ type IlxUnionSpec =
     member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_, _, _, np, _), _)) = x in np
     member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_, _, _, _, b), _)) = x in b
     member x.Alternatives = Array.toList x.AlternativesArray
-    member x.Alternative idx = x.AlternativesArray.[idx]
+    member x.Alternative idx = x.AlternativesArray[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
 
 type IlxClosureLambdas = 
@@ -62,17 +62,19 @@ type IlxClosureApps =
   | Apps_app of ILType * IlxClosureApps 
   | Apps_done of ILType
 
-let rec instAppsAux n inst = function
-  | Apps_tyapp (ty, rty) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rty)
-  | Apps_app (dty, rty) ->  Apps_app(instILTypeAux n inst dty, instAppsAux n inst rty)
-  | Apps_done rty ->  Apps_done(instILTypeAux n inst rty)
+let rec instAppsAux n inst apps =
+    match apps with
+    | Apps_tyapp (ty, rest) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rest)
+    | Apps_app (dty, rest) ->  Apps_app(instILTypeAux n inst dty, instAppsAux n inst rest)
+    | Apps_done retTy ->  Apps_done(instILTypeAux n inst retTy)
 
-let rec instLambdasAux n inst = function
-  | Lambdas_forall (b, rty) -> 
-      Lambdas_forall(b, instLambdasAux n inst rty)
-  | Lambdas_lambda (p, rty) ->  
-      Lambdas_lambda({ p with Type=instILTypeAux n inst p.Type}, instLambdasAux n inst rty)
-  | Lambdas_return rty ->  Lambdas_return(instILTypeAux n inst rty)
+let rec instLambdasAux n inst lambdas =
+    match lambdas with
+    | Lambdas_forall (gpdef, bodyTy) -> 
+        Lambdas_forall(gpdef, instLambdasAux n inst bodyTy)
+    | Lambdas_lambda (pdef, bodyTy) ->  
+        Lambdas_lambda({ pdef with Type=instILTypeAux n inst pdef.Type}, instLambdasAux n inst bodyTy)
+    | Lambdas_return retTy ->  Lambdas_return(instILTypeAux n inst retTy)
 
 let instLambdas i t = instLambdasAux 0 i t
 
@@ -85,7 +87,6 @@ let mkILFreeVar (name, compgen, ty) =
     { fvName=name
       fvCompilerGenerated=compgen
       fvType=ty }
-
 
 type IlxClosureRef = 
     | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]

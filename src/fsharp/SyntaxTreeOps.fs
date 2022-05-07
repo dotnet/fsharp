@@ -46,12 +46,13 @@ let mkSynIdGet m n = SynExpr.Ident (mkSynId m n)
 let mkSynLidGet m path n =
     let lid = pathToSynLid m path @ [mkSynId m n]
     let dots = List.replicate (lid.Length - 1) m
-    SynExpr.LongIdent (false, LongIdentWithDots(lid, dots), None, m)
+    let trivia: IdentTrivia option list = List.replicate lid.Length None
+    SynExpr.LongIdent (false, SynLongIdent(lid, dots, trivia), None, m)
 
 let mkSynIdGetWithAlt m id altInfo =
     match altInfo with
     | None -> SynExpr.Ident id
-    | _ -> SynExpr.LongIdent (false, LongIdentWithDots([id], []), altInfo, m)
+    | _ -> SynExpr.LongIdent (false, SynLongIdent([id], [], [None]), altInfo, m)
 
 let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt, id.idRange)
 
@@ -61,7 +62,7 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Ident id -> Some (false, SynLongIdent([id], [], [None]), None, id.idRange)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
@@ -72,7 +73,7 @@ let (|SingleIdent|_|) inp =
 
 let (|SynBinOp|_|) input =
     match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.LongIdent (longDotId = SynLongIdent(id = [synId])), x1, _m1), x2, _m2) ->
         Some (synId, x1, x2)
     | _ -> None
 
@@ -161,9 +162,9 @@ let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, 
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
-let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
+let mkSynPatVar vis (id: Ident) = SynPat.Named (SynIdent(id, None), false, vis, id.idRange)
 
-let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
+let mkSynThisPatVar (id: Ident) = SynPat.Named (SynIdent(id, None), true, None, id.idRange)
 
 let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
 
@@ -208,7 +209,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Attrib(p2, attribs, m),
         laterF
 
-    | SynPat.Named (v, thisV, _, m) ->
+    | SynPat.Named (SynIdent(v,_), thisV, _, m) ->
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
@@ -232,8 +233,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
-            | SynPat.Named(ident, _, _, _)
-            | SynPat.As(_, SynPat.Named(ident, _, _, _), _) ->
+            | SynPat.Named(SynIdent(ident,_), _, _, _)
+            | SynPat.As(_, SynPat.Named(SynIdent(ident,_), _, _, _), _) ->
                 // named pats should be referred to as their name in docs, tooltips, etc.
                 let item = mkSynIdGet m ident.idText
                 false, None, ident, item
@@ -249,7 +250,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 Some (fun e ->
                     let clause = SynMatchClause(p, None, e, m, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
                     let artificialMatchRange = (unionRanges m e.Range).MakeSynthetic()
-                    SynExpr.Match (artificialMatchRange, DebugPointAtBinding.NoneAtInvisible, item, artificialMatchRange, [clause], artificialMatchRange))
+                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange, { MatchKeyword = artificialMatchRange
+                                                                                                                WithKeyword = artificialMatchRange }))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
 
@@ -330,7 +332,15 @@ let opNameParenGet  = CompileOpName parenGet
 
 let opNameQMark = CompileOpName qmark
 
-let mkSynOperator opm oper = mkSynIdGet opm (CompileOpName oper)
+let mkSynOperator (opm:range) (oper:string) =
+    let trivia =
+        if oper.StartsWith("~") && ((opm.EndColumn - opm.StartColumn) = (oper.Length - 1)) then
+            // PREFIX_OP token where the ~ was actually absent
+            IdentTrivia.OriginalNotation (string(oper.[1..]))
+        else
+            IdentTrivia.OriginalNotation oper
+        
+    SynExpr.LongIdent(false, SynLongIdent([ident(CompileOpName oper, opm)], [], [Some trivia]), None, opm)
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
@@ -411,28 +421,28 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     | SynExpr.App (_, _, SynExpr.DotGet (e, _, v, _), x, _)  -> SynExpr.DotNamedIndexedPropertySet (e, v, x, r, m)
     | l  -> SynExpr.Set (l, r, m)
 
-let mkSynDot dotm m l r =
+let mkSynDot dotm m l (SynIdent(r, rTrivia)) =
     match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
+    | SynExpr.LongIdent (isOpt, SynLongIdent(lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent (isOpt, LongIdentWithDots(lid@[r], dots@[dotm]), None, m)
+        SynExpr.LongIdent (isOpt, SynLongIdent(lid@[r], dots@[dotm], trivia@[rTrivia]), None, m)
     | SynExpr.Ident id ->
-        SynExpr.LongIdent (false, LongIdentWithDots([id;r], [dotm]), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
+        SynExpr.LongIdent (false, SynLongIdent([id;r], [dotm], [None; rTrivia]), None, m)
+    | SynExpr.DotGet (e, dm, SynLongIdent(lid, dots, trivia), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid@[r], dots@[dotm]), m)
+        SynExpr.DotGet (e, dm, SynLongIdent(lid@[r], dots@[dotm], trivia@[rTrivia]), m)
     | expr ->
-        SynExpr.DotGet (expr, dotm, LongIdentWithDots([r], []), m)
+        SynExpr.DotGet (expr, dotm, SynLongIdent([r], [], [rTrivia]), m)
 
 let mkSynDotMissing dotm m l =
     match l with
-    | SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots), None, _) ->
+    | SynExpr.LongIdent (isOpt, SynLongIdent(lid, dots, trivia), None, _) ->
          // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-         SynExpr.LongIdent (isOpt, LongIdentWithDots(lid, dots@[dotm]), None, m)
+         SynExpr.LongIdent (isOpt, SynLongIdent(lid, dots@[dotm], trivia), None, m)
     | SynExpr.Ident id ->
-        SynExpr.LongIdent (false, LongIdentWithDots([id], [dotm]), None, m)
-    | SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots), _) ->
-        SynExpr.DotGet (e, dm, LongIdentWithDots(lid, dots@[dotm]), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+        SynExpr.LongIdent (false, SynLongIdent([id], [dotm], []), None, m)
+    | SynExpr.DotGet (e, dm, SynLongIdent(lid, dots, trivia), _) ->
+        SynExpr.DotGet (e, dm, SynLongIdent(lid, dots@[dotm], trivia), m)// REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr ->
         SynExpr.DiscardAfterMissingQualificationAfterDot (expr, m)
 
@@ -887,3 +897,8 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
+
+let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) dotm lid =
+    match lid with
+    | SynLongIdent(lid, dots, trivia) ->
+        SynLongIdent(ident :: lid, dotm :: dots, identTrivia :: trivia)

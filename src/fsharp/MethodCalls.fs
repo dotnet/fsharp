@@ -29,7 +29,7 @@ open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
@@ -206,8 +206,8 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                     (match minfo.GetParamTypes(amap, m, []) with
                      | [[a]] -> typeEquiv g a actualTy 
                      | _ -> false) &&
-                    (let rty = minfo.GetFSharpReturnTy(amap, m, []) 
-                     typeEquiv g rty reqdTy2)
+                    (let retTy = minfo.GetFSharpReturnTy(amap, m, []) 
+                     typeEquiv g retTy reqdTy2)
                 )
 
             match implicits with
@@ -555,24 +555,24 @@ type CalledMeth<'T>
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
                         if isIndexerSetter then
-                            unnamedCalledArgs.[nUnnamedCalledArgs-2]
+                            unnamedCalledArgs[nUnnamedCalledArgs-2]
                         else
-                            unnamedCalledArgs.[nUnnamedCalledArgs-1]
+                            unnamedCalledArgs[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
                 if supportsParamArgs then
                     if isIndexerSetter then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
-                            unnamedCalledArgs.[0..unnamedCalledArgs.Length-3] @
-                            [unnamedCalledArgs.[unnamedCalledArgs.Length-1]]
+                            unnamedCalledArgs[0..unnamedCalledArgs.Length-3] @
+                            [unnamedCalledArgs[unnamedCalledArgs.Length-1]]
                         let paramArrayCalledArg =
-                            unnamedCalledArgs.[unnamedCalledArgs.Length-2]
+                            unnamedCalledArgs[unnamedCalledArgs.Length-2]
                         let unnamedCallerArgs2 =
-                            unnamedCallerArgs.[0..nUnnamedCalledArgs-3] @
-                            [unnamedCallerArgs.[nUnnamedCallerArgs-1]]
+                            unnamedCallerArgs[0..nUnnamedCalledArgs-3] @
+                            [unnamedCallerArgs[nUnnamedCallerArgs-1]]
                         let paramArrayCallerArgs = 
-                            unnamedCallerArgs.[nUnnamedCalledArgs-2..nUnnamedCallerArgs-2]
+                            unnamedCallerArgs[nUnnamedCalledArgs-2..nUnnamedCallerArgs-2]
                         (unnamedCallerArgs2, paramArrayCallerArgs), unnamedCalledArgs2, Some paramArrayCalledArg
                     else
                         let unnamedCalledArgs2, paramArrayCalledArg = List.frontAndBack unnamedCalledArgs
@@ -1001,8 +1001,8 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
     let vtinst = argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
-    let exprty = instType (mkTyparInst tpsorig vtinst) tau
-    BuildFSharpMethodApp g m vref expr exprty args
+    let exprTy = instType (mkTyparInst tpsorig vtinst) tau
+    BuildFSharpMethodApp g m vref expr exprTy args
     
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
@@ -1225,9 +1225,11 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
         | None -> 
         
             if List.exists (isByrefTy g) delArgTys then
-                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys), m)) 
+                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(delArgTys.Length), m)) 
 
-            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg" + string i) argty)) 
+            let delArgVals =
+                delArgTys |> List.mapi (fun i argTy -> fst (mkCompGenLocal m ("delegateArg" + string i) argTy)) 
+
             let expr = 
                 let args = 
                     match eventInfoOpt with 
@@ -1263,15 +1265,24 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
        mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr2, ref None, false, m, mkQuotedExprTy g delegateTy))
 
    // Adhoc int32 --> int64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.int64_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToInt64Operator g m actualTy expr
 
    // Adhoc int32 --> nativeint
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.nativeint_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToIntPtrOperator g m actualTy expr
 
    // Adhoc int32 --> float64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
+   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
+        typeEquiv g g.float_ty reqdTy &&
+        typeEquiv g g.int32_ty actualTy then 
+
        mkCallToDoubleOperator g m actualTy expr
 
    else
@@ -1946,7 +1957,7 @@ module ProvidedMethodCalls =
             let vRaw = v.PUntaint (id, m)
             let tyT = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
             let vT, vTe = if mut then mkMutableCompGenLocal m nm tyT else mkCompGenLocal m nm tyT
-            varConv.[vRaw] <- (Some vT, vTe)
+            varConv[vRaw] <- (Some vT, vTe)
             vT
 
         and removeVar (v: Tainted<ProvidedVar>) =    
@@ -2026,9 +2037,9 @@ module ProvidedMethodCalls =
         try                   
             let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
 
-            let exprty = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
-            let expr = mkCoerceIfNeeded g exprty retTy expr
-            methInfoOpt, expr, exprty
+            let exprTy = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
+            let expr = mkCoerceIfNeeded g exprTy retTy expr
+            methInfoOpt, expr, exprTy
         with
             | :? TypeProviderError as tpe ->
                 let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
@@ -2145,18 +2156,18 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
         // static setter
         | true, true, 1 -> 
-            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs[0], m))
 
         // instance setter
         | true, false, 2 -> 
             // If we resolve to an instance field on a struct and we haven't yet taken 
             // the address of the object then go do that 
-            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs[0])) then 
                 let h = List.head argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
-                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs[1], m)))
             else        
-                Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+                Some (mkRecdFieldSetViaExprAddr (argExprs[0], rfref, tinst, argExprs[1], m))
 
         // static getter
         | false, true, 0 -> 
@@ -2164,19 +2175,19 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // instance getter
         | false, false, 1 -> 
-            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-                Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs[0]) then 
+                Some (mkRecdFieldGetViaExprAddr (argExprs[0], rfref, tinst, m))
             else 
-                Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+                Some (mkRecdFieldGet g (argExprs[0], rfref, tinst, m))
 
         | _ -> None 
 
     | Choice3Of5 (anonInfo, tinst, i) -> 
         let tupInfo = anonInfo.TupInfo
-        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs.[0], tinst, i, m))
+        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs[0]) then 
+            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs[0], tinst, i, m))
         else 
-            Some (mkAnonRecdFieldGet g (anonInfo, argExprs.[0], tinst, i, m))
+            Some (mkAnonRecdFieldGet g (anonInfo, argExprs[0], tinst, i, m))
 
     | Choice4Of5 expr -> 
         Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
@@ -2197,8 +2208,8 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let witnessInfo = traitInfo.TraitKey
-    let argtysl = GenWitnessArgTys g witnessInfo
-    let vse = argtysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
+    let argTysl = GenWitnessArgTys g witnessInfo
+    let vse = argTysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 

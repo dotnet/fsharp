@@ -175,8 +175,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
 
     /// Get the framework implementation directory of the currently running process
     let getRunningImplementationAssemblyDir() =
-        let filename = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-        if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
+        let fileName = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+        if String.IsNullOrWhiteSpace fileName then getFSharpCompilerLocation() else fileName
 
     // Compute the framework implementation directory, either of the selected SDK or the currently running process as a backup
     // F# interactive/reflective scenarios use the implementation directory of the currently running process
@@ -197,7 +197,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
-                    let ver = dotnetConfig.[startPos..endPos-1]
+                    let ver = dotnetConfig[startPos..endPos-1]
                     let path = FileSystem.GetFullPathShim(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
                     if FileSystem.DirectoryExistsShim(path) then
                         path, warnings
@@ -408,7 +408,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 match attrOpt with
                 | Some attr ->
                     let fv = (downcast attr : AssemblyFileVersionAttribute).Version.Split([|'.'|]) |> Array.map(fun e ->  Int32.Parse(e))
-                    fv.[0], fv.[1], fv.[2], fv.[3]
+                    fv[0], fv[1], fv[2], fv[3]
                 | _ -> defaultMscorlibVersion
             with _ -> defaultMscorlibVersion
 
@@ -777,13 +777,13 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
 
     member _.GetSystemAssemblies() = systemAssemblies
 
-    member _.IsInReferenceAssemblyPackDirectory filename =
+    member _.IsInReferenceAssemblyPackDirectory fileName =
       fxlock.AcquireLock <| fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
 
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
-            let path = Path.GetDirectoryName(filename)
+            let path = Path.GetDirectoryName(fileName)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
@@ -813,7 +813,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     let pattern = "\"tfm\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
-                    let tfm = dotnetConfig.[startPos..endPos-1]
+                    let tfm = dotnetConfig[startPos..endPos-1]
                     //printfn "GetTfmAndRid, tfm = '%s'" tfm
                     tfm
                 | None ->

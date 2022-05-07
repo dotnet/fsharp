@@ -60,12 +60,12 @@ type public HashIfExpression() =
                     member x.ErrorCount         = errors.Count
             }
 
-        let lightSyntax = LightSyntaxStatus(true, false)
+        let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines = []
         let applyLineDirectives = true
         let startPos = Position.Empty
-        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty, applyLineDirectives)
+        let args = mkLexargs (defines, indentationSyntaxStatus, resourceManager, [], errorLogger, PathMap.empty, applyLineDirectives)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

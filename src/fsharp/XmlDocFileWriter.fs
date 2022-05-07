@@ -79,8 +79,8 @@ module XmlDocWriter =
 
         doModuleSig None generatedCcu.Contents
 
-    let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlfile) =
-        if not (FileSystemUtils.hasSuffixCaseInsensitive "xml" xmlfile ) then
+    let WriteXmlDocFile (g, assemblyName, generatedCcu: CcuThunk, xmlFile) =
+        if not (FileSystemUtils.checkSuffix xmlFile "xml" ) then
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup))
 
         let mutable members = []
@@ -135,7 +135,7 @@ module XmlDocWriter =
 
         doModule generatedCcu.Contents
 
-        use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.Create).GetWriter()
+        use os = FileSystem.OpenFileForWriteShim(xmlFile, FileMode.Create).GetWriter()
 
         fprintfn os "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         fprintfn os "<doc>"

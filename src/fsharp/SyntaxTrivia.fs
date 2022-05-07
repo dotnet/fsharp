@@ -5,6 +5,12 @@ namespace FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
+type IdentTrivia =
+    | OriginalNotation of text: string
+    | OriginalNotationWithParen of leftParenRange: range * text:string * rightParenRange: range
+    | HasParenthesis of leftParenRange: range * rightParenRange: range
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ConditionalDirectiveTrivia =
     | If of expr:IfDirectiveExpression * range:range
     | Else of range:range
@@ -65,6 +71,16 @@ type SynExprLetOrUseBangTrivia =
     { EqualsRange: range option }
     static member Zero: SynExprLetOrUseBangTrivia =
         { EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynExprMatchTrivia =
+    { MatchKeyword: range
+      WithKeyword: range }
+    
+[<NoEquality; NoComparison>]
+type SynExprMatchBangTrivia =
+    { MatchBangKeyword: range
+      WithKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -131,3 +147,19 @@ type SynModuleSigDeclNestedModuleTrivia =
     { ModuleKeyword: range option
       EqualsRange: range option }
     static member Zero: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceTrivia =
+    { ModuleKeyword: range option
+      NamespaceKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceSigTrivia =
+    { ModuleKeyword: range option
+      NamespaceKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynValSigTrivia =
+    { ValKeyword: range option
+      WithKeyword: range option }
+    static member Zero: SynValSigTrivia = { ValKeyword = None; WithKeyword = None }

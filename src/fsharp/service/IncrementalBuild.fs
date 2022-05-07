@@ -56,11 +56,11 @@ module IncrementalBuilderEventTesting =
         let mutable curIndex = 0
         let mutable numAdds = 0
         // called by the product, to note when a parse/typecheck happens for a file
-        member this.Add(filename:'T) =
+        member _.Add(fileName:'T) =
             numAdds <- numAdds + 1
-            data.[curIndex] <- Some filename
+            data[curIndex] <- Some fileName
             curIndex <- (curIndex + 1) % MAX
-        member this.CurrentEventNum = numAdds
+        member _.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
         member this.MostRecentList(n: int) : list<'T> =
             if n < 0 || n > MAX then
@@ -71,7 +71,7 @@ module IncrementalBuilderEventTesting =
             while remaining <> 0 do
                 if i < 0 then
                     i <- MAX - 1
-                match data.[i] with
+                match data[i] with
                 | None -> ()
                 | Some x -> s <- x :: s
                 i <- i - 1
@@ -79,8 +79,8 @@ module IncrementalBuilderEventTesting =
             List.rev s
 
     type IBEvent =
-        | IBEParsed of string // filename
-        | IBETypechecked of string // filename
+        | IBEParsed of fileName: string
+        | IBETypechecked of fileName: string
         | IBECreated
 
     // ++GLOBAL MUTABLE STATE FOR TESTING++
@@ -105,7 +105,7 @@ module IncrementalBuildSyntaxTree =
             isLastCompiland
         ) =
 
-        let filename = source.FilePath
+        let fileName = source.FilePath
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
@@ -114,14 +114,13 @@ module IncrementalBuildSyntaxTree =
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
             try
-                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-                let lower = String.lowercase filename
-                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)
+                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
                 let input =
                     if canSkip then
                         ParsedInput.ImplFile(
                             ParsedImplFileInput(
-                                filename,
+                                fileName,
                                 false,
                                 sigNameOpt.Value,
                                 [],
@@ -135,15 +134,15 @@ module IncrementalBuildSyntaxTree =
                         use text = source.GetTextContainer()
                         match text with
                         | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
+                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
                         | TextContainer.SourceText(sourceText) ->
-                            ParseOneInputSourceText(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, sourceText)
+                            ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, sourceText)
                         | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, (*retryLocked*)true)
 
-                fileParsed.Trigger filename
+                fileParsed.Trigger fileName
 
-                let res = input, sourceRange, filename, errorLogger.GetDiagnostics()
+                let res = input, sourceRange, fileName, errorLogger.GetDiagnostics()
                 // If we do not skip parsing the file, then we can cache the real result.
                 if not canSkip then
                     weakCache <- Some(WeakReference<_>(res))
@@ -165,7 +164,7 @@ module IncrementalBuildSyntaxTree =
         member _.Invalidate() =
             SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, source, isLastCompiland)
 
-        member _.FileName = filename
+        member _.FileName = fileName
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
@@ -465,25 +464,25 @@ type BoundModel private (tcConfig: TcConfig,
                     else
                         None
                 match syntaxTree.Parse sigNameOpt with
-                | input, _sourceRange, filename, parseErrors ->
+                | input, _sourceRange, fileName, parseErrors ->
 
-                    IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
+                    IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
                     let capturingErrorLogger = CapturingErrorLogger("TypeCheck")
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.errorSeverityOptions, capturingErrorLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
-                    beforeFileChecked.Trigger filename
+                    beforeFileChecked.Trigger fileName
                     let prevModuleNamesDict = prevTcInfo.moduleNamesDict
                     let prevTcState = prevTcInfo.tcState
                     let prevTcErrorsRev = prevTcInfo.tcErrorsRev
                     let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
                         
-                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
+                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
                     let sink = TcResultsSinkImpl(tcGlobals)
                     let hadParseErrors = not (Array.isEmpty parseErrors)
                     let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
                         
-                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                         CheckOneInput
@@ -496,9 +495,9 @@ type BoundModel private (tcConfig: TcConfig,
                                 partialCheck)
                         |> NodeCode.FromCancellable
 
-                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+                    Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
-                    fileChecked.Trigger filename
+                    fileChecked.Trigger fileName
                     let newErrors = Array.append parseErrors (capturingErrorLogger.Diagnostics |> List.toArray)
                     let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
@@ -510,7 +509,7 @@ type BoundModel private (tcConfig: TcConfig,
                             latestCcuSigForFile = Some ccuSigForFile
                             tcErrorsRev = newErrors :: prevTcErrorsRev
                             topAttribs = Some topAttribs
-                            tcDependencyFiles = filename :: prevTcDependencyFiles
+                            tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
                                 match input with
                                 | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
@@ -525,7 +524,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
@@ -543,7 +542,7 @@ type BoundModel private (tcConfig: TcConfig,
                                 sckBuilder.WriteAll semanticClassification
                         
                                 let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                 res
                             else
                                 None, None
@@ -777,9 +776,9 @@ module IncrementalBuilderHelpers =
                         | _ -> ()))
 #endif
                 return tcImports
-            with e ->
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" e)
-                errorLogger.Warning e
+            with exn ->
+                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+                errorLogger.Warning exn
                 return frameworkTcImports
           }
 
@@ -864,7 +863,7 @@ module IncrementalBuilderHelpers =
         let results = results |> List.ofSeq
 
         // Get the state at the end of the type-checking of the last file
-        let finalBoundModel = boundModels.[boundModels.Length-1]
+        let finalBoundModel = boundModels[boundModels.Length-1]
 
         let! finalInfo = finalBoundModel.GetOrComputeTcInfo()
 
@@ -887,8 +886,8 @@ module IncrementalBuilderHelpers =
                             match GetStrongNameSigner signingInfo with
                             | None -> None
                             | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
-                        with e ->
-                            errorRecoveryNoRange e
+                        with exn ->
+                            errorRecoveryNoRange exn
                             None
                     let locale = TryFindFSharpStringAttribute tcGlobals (tcGlobals.FindSysAttrib "System.Reflection.AssemblyCultureAttribute") topAttrs.assemblyAttrs
                     let assemVerFromAttrib =
@@ -913,12 +912,12 @@ module IncrementalBuilderHelpers =
                             ProjectAssemblyDataResult.Unavailable true
                         else
                             ProjectAssemblyDataResult.Available (RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generatedCcu, outfile, topAttrs, assemblyName, ilAssemRef) :> IRawFSharpAssemblyData)
-                    with e ->
-                        errorRecoveryNoRange e
+                    with exn ->
+                        errorRecoveryNoRange exn
                         ProjectAssemblyDataResult.Unavailable true
                 ilAssemRef, tcAssemblyDataOpt, Some tcAssemblyExpr
-            with e ->
-                errorRecoveryNoRange e
+            with exn ->
+                errorRecoveryNoRange exn
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
         let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
@@ -1015,11 +1014,11 @@ type IncrementalBuilderState =
 module IncrementalBuilderStateHelpers =
 
     let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: blockbuilder<GraphNode<BoundModel>>) i =
-        let fileInfo = initialState.fileNames.[i]
+        let fileInfo = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
             | 0 (* first file *) -> initialBoundModel
-            | _ -> boundModels.[i - 1]
+            | _ -> boundModels[i - 1]
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         GraphNode(node {
             let! prevBoundModel = prevBoundModelGraphNode.GetOrComputeValue()
@@ -1029,7 +1028,7 @@ module IncrementalBuilderStateHelpers =
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: blockbuilder<GraphNode<BoundModel>>) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
-            let! _ = boundModels.[boundModels.Count - 1].GetOrComputeValue()
+            let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
                 boundModels.ToImmutable()
                 |> Block.map (fun x -> x.TryPeekValue().Value)
@@ -1047,11 +1046,11 @@ module IncrementalBuilderStateHelpers =
         })
 
     and computeStampedFileName (initialState: IncrementalBuilderInitialState) (state: IncrementalBuilderState) (cache: TimeStampCache) slot fileInfo =
-        let currentStamp = state.stampedFileNames.[slot]
+        let currentStamp = state.stampedFileNames[slot]
         let stamp = StampFileNameTask cache fileInfo
 
         if currentStamp <> stamp then
-            match state.boundModels.[slot].TryPeekValue() with
+            match state.boundModels[slot].TryPeekValue() with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | ValueSome(boundModel) when initialState.enablePartialTypeChecking && boundModel.BackingSignature.IsSome ->
                 let newBoundModel = boundModel.ClearTcInfoExtras()
@@ -1067,10 +1066,10 @@ module IncrementalBuilderStateHelpers =
 
                 // Invalidate the file and all files below it.
                 for j = 0 to stampedFileNames.Count - slot - 1 do
-                    let stamp = StampFileNameTask cache initialState.fileNames.[slot + j]
-                    stampedFileNames.[slot + j] <- stamp
-                    logicalStampedFileNames.[slot + j] <- stamp
-                    boundModels.[slot + j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels (slot + j)
+                    let stamp = StampFileNameTask cache initialState.fileNames[slot + j]
+                    stampedFileNames[slot + j] <- stamp
+                    logicalStampedFileNames[slot + j] <- stamp
+                    boundModels[slot + j] <- createBoundModelGraphNode initialState state.initialBoundModel boundModels (slot + j)
 
                 { state with
                     // Something changed, the finalized view of the project must be invalidated.
@@ -1099,12 +1098,12 @@ module IncrementalBuilderStateHelpers =
         initialState.referencedAssemblies
         |> Block.iteri (fun i asmInfo ->
 
-            let currentStamp = state.stampedReferencedAssemblies.[i]
+            let currentStamp = state.stampedReferencedAssemblies[i]
             let stamp = StampReferencedAssemblyTask cache asmInfo
 
             if currentStamp <> stamp then
                 referencesUpdated <- true
-                stampedReferencedAssemblies.[i] <- stamp
+                stampedReferencedAssemblies[i] <- stamp
         )
 
         if referencesUpdated then
@@ -1167,9 +1166,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
     let projectChecked = initialState.projectChecked
 
     let tryGetSlot (state: IncrementalBuilderState) slot =
-        match state.boundModels.[slot].TryPeekValue() with
+        match state.boundModels[slot].TryPeekValue() with
         | ValueSome boundModel ->
-            (boundModel, state.stampedFileNames.[slot])
+            (boundModel, state.stampedFileNames[slot])
             |> Some
         | _ ->
             None
@@ -1187,8 +1186,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             if targetSlot < 0 then
                 return Some(initialBoundModel, defaultTimeStamp)
             else
-                let! boundModel = state.boundModels.[targetSlot].GetOrComputeValue()
-                return Some(boundModel, state.stampedFileNames.[targetSlot])
+                let! boundModel = state.boundModels[targetSlot].GetOrComputeValue()
+                return Some(boundModel, state.stampedFileNames[targetSlot])
         }
 
     let MaxTimeStampInDependencies stamps =
@@ -1251,33 +1250,33 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         projectChecked.Trigger()
       }
 
-    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option  =
-        let slotOfFile = builder.GetSlotOfFileName filename
+    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale fileName: PartialCheckResults option  =
+        let slotOfFile = builder.GetSlotOfFileName fileName
         let result = tryGetBeforeSlot currentState slotOfFile
 
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
 
-    member builder.GetCheckResultsForFileInProjectEvenIfStale filename: PartialCheckResults option  =
-        let slotOfFile = builder.GetSlotOfFileName filename
+    member builder.GetCheckResultsForFileInProjectEvenIfStale fileName: PartialCheckResults option  =
+        let slotOfFile = builder.GetSlotOfFileName fileName
         let result = tryGetSlot currentState slotOfFile
 
         match result with
         | Some (boundModel, timestamp) -> Some (PartialCheckResults (boundModel, timestamp))
         | _ -> None
 
-    member builder.TryGetCheckResultsBeforeFileInProject filename =
+    member builder.TryGetCheckResultsBeforeFileInProject fileName =
         let cache = TimeStampCache defaultTimeStamp
         let tmpState = computeStampedFileNames initialState currentState cache
 
-        let slotOfFile = builder.GetSlotOfFileName filename
+        let slotOfFile = builder.GetSlotOfFileName fileName
         match tryGetBeforeSlot tmpState slotOfFile with
         | Some(boundModel, timestamp) -> PartialCheckResults(boundModel, timestamp) |> Some
         | _ -> None
 
-    member builder.AreCheckResultsBeforeFileInProjectReady filename =
-        (builder.TryGetCheckResultsBeforeFileInProject filename).IsSome
+    member builder.AreCheckResultsBeforeFileInProjectReady fileName =
+        (builder.TryGetCheckResultsBeforeFileInProject fileName).IsSome
 
     member _.GetCheckResultsBeforeSlotInProject slotOfFile =
       node {
@@ -1301,21 +1300,21 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | None -> return! failwith "Expected results to be ready. (GetFullCheckResultsBeforeSlotInProject)."
       }
 
-    member builder.GetCheckResultsBeforeFileInProject filename =
-        let slotOfFile = builder.GetSlotOfFileName filename
+    member builder.GetCheckResultsBeforeFileInProject fileName =
+        let slotOfFile = builder.GetSlotOfFileName fileName
         builder.GetCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetCheckResultsAfterFileInProject filename =
-        let slotOfFile = builder.GetSlotOfFileName filename + 1
+    member builder.GetCheckResultsAfterFileInProject fileName =
+        let slotOfFile = builder.GetSlotOfFileName fileName + 1
         builder.GetCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetFullCheckResultsBeforeFileInProject filename =
-        let slotOfFile = builder.GetSlotOfFileName filename
+    member builder.GetFullCheckResultsBeforeFileInProject fileName =
+        let slotOfFile = builder.GetSlotOfFileName fileName
         builder.GetFullCheckResultsBeforeSlotInProject slotOfFile
 
-    member builder.GetFullCheckResultsAfterFileInProject filename =
+    member builder.GetFullCheckResultsAfterFileInProject fileName =
         node {
-            let slotOfFile = builder.GetSlotOfFileName filename + 1
+            let slotOfFile = builder.GetSlotOfFileName fileName + 1
             let! result = builder.GetFullCheckResultsBeforeSlotInProject(slotOfFile)
             return result
         }
@@ -1345,30 +1344,30 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let tmpState = computeStampedFileNames initialState currentState cache
         computeProjectTimeStamp tmpState
 
-    member _.TryGetSlotOfFileName(filename: string) =
+    member _.TryGetSlotOfFileName(fileName: string) =
         // Get the slot of the given file and force it to build.
         let CompareFileNames (_, f2: FSharpSource, _) =
             let result =
-                   String.Compare(filename, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
-                || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
+                   String.Compare(fileName, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
+                || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
             result
         match fileNames |> Block.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 
-    member this.GetSlotOfFileName(filename: string) =
-        match this.TryGetSlotOfFileName(filename) with
+    member this.GetSlotOfFileName(fileName: string) =
+        match this.TryGetSlotOfFileName(fileName) with
         | Some slot -> slot
-        | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
+        | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" fileName)
 
     member _.GetSlotsCount () = fileNames.Length
 
-    member this.ContainsFile(filename: string) =
-        (this.TryGetSlotOfFileName filename).IsSome
+    member this.ContainsFile(fileName: string) =
+        (this.TryGetSlotOfFileName fileName).IsSome
 
-    member builder.GetParseResultsForFile filename =
-        let slotOfFile = builder.GetSlotOfFileName filename
-        let fileInfo = fileNames.[slotOfFile]
+    member builder.GetParseResultsForFile fileName =
+        let slotOfFile = builder.GetSlotOfFileName fileName
+        let fileInfo = fileNames[slotOfFile]
         // re-parse on demand instead of retaining
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
@@ -1419,7 +1418,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
                 let getSwitchValue switchString =
                     match commandLineArgs |> List.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
-                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
+                    | Some idx -> Some(commandLineArgs[idx].Substring(switchString.Length))
                     | _ -> None
 
                 let sdkDirOverride =
@@ -1468,7 +1467,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 tcConfigB.xmlDocInfoLoader <-
                     { new IXmlDocumentationInfoLoader with
                         /// Try to load xml documentation associated with an assembly by the same file path with the extension ".xml".
-                        member _.TryLoad(assemblyFileName, _ilModule) =
+                        member _.TryLoad(assemblyFileName) =
                             let xmlFileName = Path.ChangeExtension(assemblyFileName, ".xml")
 
                             // REVIEW: File IO - Will eventually need to change this to use a file system interface of some sort.
@@ -1607,8 +1606,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let sourceFiles =
                 sourceFiles
-                |> List.map (fun (m, filename, isLastCompiland) ->
-                    (m, FSharpSource.CreateFromFile(filename), isLastCompiland)
+                |> List.map (fun (m, fileName, isLastCompiland) ->
+                    (m, FSharpSource.CreateFromFile(fileName), isLastCompiland)
                 )
 
             let initialState =
@@ -1632,8 +1631,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             let builder = IncrementalBuilder(initialState, IncrementalBuilderState.Create(initialState))
             return Some builder
-          with e ->
-            errorRecoveryNoRange e
+          with exn ->
+            errorRecoveryNoRange exn
             return None
          }
 

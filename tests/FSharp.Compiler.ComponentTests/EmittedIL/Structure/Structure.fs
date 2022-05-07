@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module Structure =
 
     //# This file is needed by the rest of the suite. It is not really a testcase...
-    //	SOURCE=CodeGenHelper.fs       SCFLAGS="-a -g"			# CodeGenHelper.fs
+    // SOURCE=CodeGenHelper.fs       SCFLAGS="-a -g"      # CodeGenHelper.fs
     let codeGenHelperLibrary =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "CodeGenHelper.fs")))
         |> withName "CodeGenHelper"
@@ -30,6 +30,17 @@ module Structure =
         |> setupCompilation
         |> compileExeAndRun
         |> shouldSucceed
+
+    let verifyIl compilation =
+        compilation
+        |> withOptions [ "--test:EmitFeeFeeAs100001" ]
+        |> asExe
+        |> withNoOptimize
+        |> withEmbeddedPdb
+        |> withEmbedAllSource
+        |> ignoreWarnings
+        |> verifyILBaseline
+
 
     // SOURCE=AttributesOnLet01.fs   SCFLAGS="-r:CodeGenHelper.dll" # AttributesOnLet01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributesOnLet01.fs"|])>]
@@ -79,6 +90,17 @@ module Structure =
         compilation
         |> verifyExecution
 
+    // SOURCE=ReadOnlyStructFromLib.fs SCFLAGS="-r:ReadWriteLib.dll" PRECMD="\$CSC_PIPE /target:library /reference:System.Core.dll ReadWriteLib.cs"	# ReadOnlyStructFromLib.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ReadOnlyStructFromLib.fs"|])>]
+    let ``ReadOnlyStructFromLib_fs`` compilation =
+        let readWriteLib =
+            CSharpFromPath (Path.Combine(__SOURCE_DIRECTORY__, "ReadWriteLib.cs"))
+            |> withName "ReadWriteLib"
+
+        compilation
+        |> withReferences([readWriteLib])
+        |> verifyCompilation
+
     // SOURCE=DiscUnionCodeGen1.fs SCFLAGS="-r:CodeGenHelper.dll"       # DiscUnionCodeGen1.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"DiscUnionCodeGen1.fs"|])>]
     let ``DiscUnionCodeGen1_fs`` compilation =
@@ -115,6 +137,12 @@ module Structure =
         compilation
         |> verifyCompilation
 
+    // SOURCE=FloatsAndDoubles.fs  SCFLAGS="-g --out:FloatsAndDoubles.exe" COMPILE_ONLY=1 POSTCMD="comparebsl.cmd  FloatsAndDoubles.exe" # FloatsAndDoubles.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FloatsAndDoubles.fs"|])>]
+    let ``FloatsAndDoubles_fs`` compilation =
+        compilation
+        |> verifyIl
+
     // SOURCE=FunctionArity01.fs     SCFLAGS="-r:CodeGenHelper.dll" # FunctionArity01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"FunctionArity01.fs"|])>]
     let ``FunctionArity01_fs`` compilation =
@@ -133,7 +161,7 @@ module Structure =
         compilation
         |> verifyExecution
 
-#if !TESTING_ON_LINUX
+#if !NETCOREAPP && !NETSTANDARD
     // SOURCE=NativePtr01.fs         PEVER=/Exp_Fail SCFLAGS="-r:CodeGenHelper.dll" # NativePtr01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtr01.fs"|])>]
     let ``NativePtr01_fs`` compilation =

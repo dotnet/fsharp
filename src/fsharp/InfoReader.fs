@@ -114,13 +114,13 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
         | (true, FSProp (_, ty, Some vref1, _)), FSProp (_, _, _, Some vref2)
         | (true, FSProp (_, ty, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
             let pinfo = FSProp (g, ty, Some vref1, Some vref2)
-            props.[pinfo] <- pinfo 
+            props[pinfo] <- pinfo 
         | (true, _), _ -> 
             // This assert fires while editing bad code. We will give a warning later in check.fs
             //assert ("unexpected case"= "")
             ()
         | _ ->
-            props.[pinfo] <- pinfo
+            props[pinfo] <- pinfo
 
     member _.Collect(membInfo: ValMemberInfo, vref: ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
@@ -973,7 +973,7 @@ let ArgsTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
     let amap = infoReader.amap
     let dty = einfo.GetDelegateType(amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
-    | Some(argtys, _) -> argtys
+    | Some(argTys, _) -> argTys
     | None -> error(nonStandardEventError einfo.EventName m)
 
 /// Get the type of the event when looked at as if it is a property 

@@ -26,7 +26,7 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> QualifiedNa
 val PrependPathToInput: Ident list -> ParsedInput -> ParsedInput
 
 /// State used to de-deduplicate module names along a list of file names
-type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
+type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
@@ -38,17 +38,15 @@ val ParseInput:
     errorLogger: ErrorLogger *
     lexbuf: Lexbuf *
     defaultNamespace: string option *
-    filename: string *
+    fileName: string *
     isLastCompiland:(bool * bool)
         -> ParsedInput
 
 /// A general routine to process hash directives
-val ProcessMetaCommandsFromInput : 
-    ('T -> range * string -> 'T) * 
-    ('T -> range * string * Directive -> 'T) *
-    ('T -> range * string -> unit)
-      -> TcConfigBuilder * ParsedInput * string * 'T 
-      -> 'T
+val ProcessMetaCommandsFromInput:
+    ('T -> range * string -> 'T) * ('T -> range * string * Directive -> 'T) * ('T -> range * string -> unit) ->
+        TcConfigBuilder * ParsedInput * string * 'T ->
+            'T
 
 /// Process all the #r, #I etc. in an input.  For non-scripts report warnings about ignored directives.
 val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
@@ -64,7 +62,7 @@ val GetScopedPragmasForInput:
 val ParseOneInputStream:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     retryLocked: bool *
@@ -75,7 +73,7 @@ val ParseOneInputStream:
 val ParseOneInputSourceText:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     sourceText: ISourceText
@@ -85,7 +83,7 @@ val ParseOneInputSourceText:
 val ParseOneInputFile:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger *
     retryLocked: bool
@@ -95,13 +93,13 @@ val ParseOneInputLexbuf:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     lexbuf: Lexbuf *
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool) *
     errorLogger: ErrorLogger
         -> ParsedInput
 
 val EmptyParsedInput:
-    filename: string *
+    fileName: string *
     isLastCompiland: (bool * bool)
         -> ParsedInput 
 
@@ -119,7 +117,7 @@ val ParseInputFiles:
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
 val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
-                
+
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
@@ -127,7 +125,7 @@ type TcState =
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
-    
+
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures: TcEnv
 
@@ -143,16 +141,8 @@ type TcState =
     member CreatesGeneratedProvidedTypes: bool
 
 /// Get the initial type checking state for a set of inputs
-val GetInitialTcState: 
-    range *
-    string *
-    TcConfig *
-    TcGlobals *
-    TcImports *
-    NiceNameGenerator *
-    TcEnv *
-    OpenDeclaration list
-        -> TcState
+val GetInitialTcState:
+    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv * OpenDeclaration list -> TcState
 
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:

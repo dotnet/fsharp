@@ -77,6 +77,9 @@ module internal PervasiveAutoOpens =
         member inline x.EndsWithOrdinal value =
             x.EndsWith(value, StringComparison.Ordinal)
 
+        member inline x.EndsWithOrdinalIgnoreCase value =
+            x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
+
     /// Get an initialization hole 
     let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
@@ -151,7 +154,7 @@ module Array =
             let mutable eq = true
             let mutable i = 0 
             while eq && i < len do 
-                if not (inp.[i] === res.[i]) then eq <- false
+                if not (inp[i] === res[i]) then eq <- false
                 i <- i + 1
             if eq then inp else res
 
@@ -166,23 +169,23 @@ module Array =
                   if c <> 0 then c else
                   let rec loop i = 
                       if i >= xs.Length then 0 else
-                      let c = eltOrder.Compare(xs.[i], ys.[i])
+                      let c = eltOrder.Compare(xs[i], ys[i])
                       if c <> 0 then c else
                       loop (i+1)
                   loop 0 }
 
     let existsOne p l = 
         let rec forallFrom p l n =
-          (n >= Array.length l) || (p l.[n] && forallFrom p l (n+1))
+          (n >= Array.length l) || (p l[n] && forallFrom p l (n+1))
 
         let rec loop p l n =
             (n < Array.length l) && 
-            (if p l.[n] then forallFrom (fun x -> not (p x)) l (n+1) else loop p l (n+1))
+            (if p l[n] then forallFrom (fun x -> not (p x)) l (n+1) else loop p l (n+1))
           
         loop p l 0
 
     let existsTrue (arr: bool[]) = 
-        let rec loop n = (n < arr.Length) && (arr.[n] || loop (n+1))
+        let rec loop n = (n < arr.Length) && (arr[n] || loop (n+1))
         loop 0
     
     let findFirstIndexWhereTrue (arr: _[]) p = 
@@ -192,10 +195,10 @@ module Array =
             if lo = hi then lo
             else
                 let i = (lo+hi)/2
-                if p arr.[i] then 
+                if p arr[i] then 
                     if i = 0 then i 
                     else
-                        if p arr.[i-1] then 
+                        if p arr[i-1] then 
                             look lo i
                         else 
                             i
@@ -209,10 +212,10 @@ module Array =
         if Array.isEmpty array then () else
         let arrLen, revLen = array.Length-1, array.Length/2 - 1
         for idx in 0 .. revLen do
-            let t1 = array.[idx] 
-            let t2 = array.[arrLen-idx]
-            array.[idx] <- t2
-            array.[arrLen-idx] <- t1
+            let t1 = array[idx] 
+            let t2 = array[arrLen-idx]
+            array[idx] <- t2
+            array[arrLen-idx] <- t1
 
     /// Async implementation of Array.map.
     let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
@@ -221,8 +224,8 @@ module Array =
 
         async { // Apply the mapping function to each array element.
             for i in 0 .. len - 1 do
-                let! mappedValue = mapping array.[i]
-                result.[i] <- mappedValue
+                let! mappedValue = mapping array[i]
+                result[i] <- mappedValue
 
             // Return the completed results.
             return result
@@ -232,7 +235,7 @@ module Array =
     let replace index value (array: _ []) =
         if index >= array.Length then raise (IndexOutOfRangeException "index")
         let res = Array.copy array
-        res.[index] <- value
+        res[index] <- value
         res
 
     /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
@@ -249,7 +252,7 @@ module Array =
             let mutable i = 0
             let mutable result = true
             while i < xs.Length && not break' do
-                if xs.[i] <> ys.[i] then 
+                if xs[i] <> ys[i] then 
                     break' <- true
                     result <- false
                 i <- i + 1
@@ -260,7 +263,7 @@ module Array =
     let heads (array: 'T []) =
         let res = Array.zeroCreate<'T[]> array.Length
         for i = array.Length - 1 downto 0 do
-            res.[i] <- array.[0..i]
+            res[i] <- array[0..i]
         res
 
     /// check if subArray is found in the wholeArray starting 
@@ -271,7 +274,7 @@ module Array =
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
             if subidx = subArray.Length then true 
-            elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
+            elif subArray[subidx] = wholeArray[idx] then loop (subidx+1) (idx+1) 
             else false
         loop 0 index
         
@@ -473,6 +476,11 @@ module List =
         | [] -> true
         | h::t -> t |> List.forall (fun h2 -> h = h2)
 
+    let isSingleton xs =
+        match xs with
+        | [_] -> true
+        | _ -> false
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
@@ -500,7 +508,7 @@ module ResizeArray =
                 // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
                 // none are significantly better.
                 for i in 0 .. takeCount - 1 do
-                    holder.[i] <- f items.[i]
+                    holder[i] <- f items[i]
                 yield holder |]
 
     /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
@@ -524,7 +532,7 @@ module ValueOptionInternal =
 module String =
     let make (n: int) (c: char) : string = String(c, n)
 
-    let get (str: string) i = str.[i]
+    let get (str: string) i = str[i]
 
     let sub (s: string) (start: int) (len: int) = s.Substring(start, len)
 
@@ -550,19 +558,19 @@ module String =
             if isUpper = Char.IsLower c then Char.IsLetter c
             else isUpper
 
-        s.Length >= 1 && isUpperCaseCharacter s.[0]
+        s.Length >= 1 && isUpperCaseCharacter s[0]
 
     let capitalize (s: string) =
         if s.Length = 0 then s 
-        else uppercase s.[0..0] + s.[ 1.. s.Length - 1 ]
+        else uppercase s[0..0] + s[ 1.. s.Length - 1 ]
 
     let uncapitalize (s: string) =
         if s.Length = 0 then s
-        else lowercase s.[0..0] + s.[ 1.. s.Length - 1 ]
+        else lowercase s[0..0] + s[ 1.. s.Length - 1 ]
 
-    let dropPrefix (s: string) (t: string) = s.[t.Length..s.Length - 1]
+    let dropPrefix (s: string) (t: string) = s[t.Length..s.Length - 1]
 
-    let dropSuffix (s: string) (t: string) = s.[0..s.Length - t.Length - 1]
+    let dropSuffix (s: string) (t: string) = s[0..s.Length - t.Length - 1]
 
     let inline toCharArray (str: string) = str.ToCharArray()
 
@@ -573,7 +581,7 @@ module String =
         match Array.tryHead strArr with
         | None -> str
         | Some c  -> 
-            strArr.[0] <- Char.ToLower c
+            strArr[0] <- Char.ToLower c
             String strArr
 
     let extractTrailingIndex (str: string) =
@@ -632,8 +640,8 @@ type DictionaryExtensions() =
     [<Extension>]
     static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
         match dic.TryGetValue key with
-        | true, values -> dic.[key] <- value :: values
-        | _ -> dic.[key] <- [value]
+        | true, values -> dic[key] <- value :: values
+        | _ -> dic[key] <- [value]
 
     [<Extension>]
     static member inline BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
@@ -802,32 +810,32 @@ module Cancellable =
     let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
-    let inline catch e = 
-        let (Cancellable f) = e
+    let inline catch comp = 
+        let (Cancellable f) = comp
         Cancellable (fun ct -> 
             try 
                 match f ct with 
-                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
-                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+                | ValueOrCancelled.Value res -> ValueOrCancelled.Value (Choice1Of2 res) 
+                | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn 
             with err -> 
                 ValueOrCancelled.Value (Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
-    let inline tryFinally e compensation =
-        catch e |> bind (fun res ->
+    let inline tryFinally comp compensation =
+        catch comp |> bind (fun res ->
             compensation()
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
 
     /// Implement try/with for a cancellable computation
-    let inline tryWith e handler = 
-        catch e |> bind (fun res ->
+    let inline tryWith comp handler = 
+        catch comp |> bind (fun res ->
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
 type CancellableBuilder() = 
 
-    member inline _.BindReturn(e, k) = Cancellable.map k e
+    member inline _.BindReturn(comp, k) = Cancellable.map k comp
 
-    member inline _.Bind(e, k) = Cancellable.bind k e
+    member inline _.Bind(comp, k) = Cancellable.bind k comp
 
     member inline _.Return v = Cancellable.ret v
 
@@ -837,11 +845,11 @@ type CancellableBuilder() =
 
     member inline _.For(es, f) = es |> Cancellable.each f 
 
-    member inline _.TryWith(e, handler) = Cancellable.tryWith e handler
+    member inline _.TryWith(comp, handler) = Cancellable.tryWith comp handler
 
-    member inline _.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+    member inline _.Using(resource, comp) = Cancellable.tryFinally (comp resource) (fun () -> (resource :> IDisposable).Dispose())
 
-    member inline _.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
+    member inline _.TryFinally(comp, compensation) =  Cancellable.tryFinally comp compensation
 
     member inline _.Delay f = Cancellable.delay f
 
@@ -862,13 +870,13 @@ type UniqueStampGenerator<'T when 'T : equality>() =
         | _ ->
             lock gate (fun () ->
                 let idx = nItems
-                encodeTab.[str] <- idx
+                encodeTab[str] <- idx
                 nItems <- nItems + 1
                 idx)
 
-    member this.Encode str = encode str
+    member _.Encode str = encode str
 
-    member this.Table = encodeTab.Keys
+    member _.Table = encodeTab.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
@@ -885,7 +893,7 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
                     | true, res -> res
                     | _ ->
                         let res = compute x
-                        table.[x] <- res
+                        table[x] <- res
                         res)
         else compute x
 
@@ -904,7 +912,7 @@ type LazyWithContextFailure(exn: exn) =
 /// on forcing back to at least one sensible user location
 [<DefaultAugmentation(false)>]
 [<NoEquality; NoComparison>]
-type LazyWithContext<'T, 'ctxt> = 
+type LazyWithContext<'T, 'Ctxt> = 
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
 
@@ -915,12 +923,12 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'Ctxt->'T, findOriginalException) : LazyWithContext<'T, 'Ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
 
-    static member NotLazy(x:'T) : LazyWithContext<'T, 'ctxt> = 
+    static member NotLazy(x:'T) : LazyWithContext<'T, 'Ctxt> = 
         { value = x
           funcOrException = null
           findOriginalException = id }
@@ -929,7 +937,7 @@ type LazyWithContext<'T, 'ctxt> =
 
     member x.IsForced = (match x.funcOrException with null -> true | _ -> false)
 
-    member x.Force(ctxt:'ctxt) = 
+    member x.Force(ctxt:'Ctxt) = 
         match x.funcOrException with 
         | null -> x.value 
         | _ -> 
@@ -946,15 +954,15 @@ type LazyWithContext<'T, 'ctxt> =
         | :? LazyWithContextFailure as res -> 
               // Re-raise the original exception 
               raise (x.findOriginalException res.Exception)
-        | :? ('ctxt -> 'T) as f -> 
+        | :? ('Ctxt -> 'T) as f -> 
               x.funcOrException <- box(LazyWithContextFailure.Undefined)
               try 
                   let res = f ctxt 
                   x.value <- res
                   x.funcOrException <- null
                   res
-              with e -> 
-                  x.funcOrException <- box(LazyWithContextFailure(e))
+              with exn -> 
+                  x.funcOrException <- box(LazyWithContextFailure(exn))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -968,7 +976,7 @@ module Tables =
             | true, res -> res
             | _ ->
                 let res = f x
-                t.[x] <- res
+                t[x] <- res
                 res
 
 /// Interface that defines methods for comparing objects using partial equality relation
@@ -1001,7 +1009,7 @@ module IPartialEqualityComparer =
         seq |> List.filter (fun v -> 
             let key = Wrap v
             if (per.InEqualityRelation v) then 
-                if dict.ContainsKey key then false else (dict.[key] <- null; true)
+                if dict.ContainsKey key then false else (dict[key] <- null; true)
             else true)
 
 //-------------------------------------------------------------------------
@@ -1142,7 +1150,7 @@ module MapAutoOpens =
 [<Sealed>]
 type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key, 'Value list>) = 
 
-    member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x.[k]))
+    member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x[k]))
 
     member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
