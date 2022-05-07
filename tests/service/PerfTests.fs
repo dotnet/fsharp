@@ -37,7 +37,6 @@ module internal Project1 =
 
 
 [<Test>]
-[<Ignore("https://github.com/dotnet/fsharp/issues/11184")>]
 let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "starting test..."

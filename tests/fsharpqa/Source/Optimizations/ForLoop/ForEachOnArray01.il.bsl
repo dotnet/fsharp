@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ForEachOnArray01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000001E0 Length: 0x0000007C
 }
 .module ForEachOnArray01.dll
-// MVID: {60BE1F17-7E2E-D3AE-A745-0383171FBE60}
+// MVID: {61F0294F-7E2E-D3AE-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F50000
+// Image base: 0x07580000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,16 +62,17 @@
     .line 6,6 : 6,23 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnArray01.fs'
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
-    .line 7,7 : 6,21 ''
+    .line 7,7 : 6,9 ''
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
     IL_0004:  br.s       IL_0016
 
-    .line 7,7 : 6,21 ''
+    .line 16707566,16707566 : 0,0 ''
     IL_0006:  ldarg.0
     IL_0007:  ldloc.1
     IL_0008:  ldelem     [mscorlib]System.Int32
     IL_000d:  stloc.2
+    .line 8,8 : 10,20 ''
     IL_000e:  ldloc.0
     IL_000f:  ldloc.2
     IL_0010:  add
@@ -80,7 +81,7 @@
     IL_0013:  ldc.i4.1
     IL_0014:  add
     IL_0015:  stloc.1
-    .line 7,7 : 6,21 ''
+    .line 7,7 : 12,14 ''
     IL_0016:  ldloc.1
     IL_0017:  ldarg.0
     IL_0018:  ldlen

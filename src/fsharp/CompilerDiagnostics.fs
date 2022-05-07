@@ -52,7 +52,7 @@ exception HashIncludeNotAllowedInNonScript of range
 exception HashReferenceNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
+exception HashLoadedSourceHasIssues of informationals: exn list * warnings: exn list * errors: exn list * range
 
 /// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedScriptConsideredSource of range
@@ -175,14 +175,13 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _)
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
-      | ConstraintSolverRelatedInformation(_, m, _)
       | SelfRefObjCtor(_, m) ->
           Some m
 
       | NotAFunction(_, _, mfun, _) ->
           Some mfun
 
-      | NotAFunctionButIndexer(_, _, _, mfun, _) ->
+      | NotAFunctionButIndexer(_, _, _, mfun, _, _) ->
           Some mfun
 
       | IllegalFileNameChar _ -> Some rangeCmdArgs
@@ -202,7 +201,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | MSBuildReferenceResolutionWarning(_, _, m)
       | MSBuildReferenceResolutionError(_, _, m)
       | AssemblyNotResolved(_, m)
-      | HashLoadedSourceHasIssues(_, _, m)
+      | HashLoadedSourceHasIssues(_, _, _, m)
       | HashLoadedScriptConsideredSource m ->
           Some m
       // Strip TargetInvocationException wrappers
@@ -367,25 +366,26 @@ let GetWarningLevel err =
     // Level 2
     | _ -> 2
 
-let warningOn err level specificWarnOn =
-    let n = GetDiagnosticNumber err
+let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     List.contains n specificWarnOn ||
-    // Some specific warnings are never on by default, i.e. unused variable warnings
+    // Some specific warnings/informational are never on by default, i.e. unused variable warnings
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3186 -> false // pickleMissingDefinition - off by default
+    | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
-    | _ -> level >= GetWarningLevel err 
+    | 3390 -> false // xmlDocBadlyFormed - off by default
+    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
+    | _ -> 
+        (severity = FSharpDiagnosticSeverity.Info) ||
+        (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | ConstraintSolverRelatedInformation(fopt, m2, e) ->
-          let e, related = SplitRelatedException e
-          ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromAddingTypeEquation(g, denv, t1, t2, e.Exception, m)|>ToPhased, related
@@ -561,6 +561,7 @@ let HashReferenceNotAllowedInNonScriptE() = DeclareResourceString("HashReference
 let HashDirectiveNotAllowedInNonScriptE() = DeclareResourceString("HashDirectiveNotAllowedInNonScript", "")
 let FileNameNotResolvedE() = DeclareResourceString("FileNameNotResolved", "%s%s")
 let AssemblyNotResolvedE() = DeclareResourceString("AssemblyNotResolved", "%s")
+let HashLoadedSourceHasIssues0E() = DeclareResourceString("HashLoadedSourceHasIssues0", "")
 let HashLoadedSourceHasIssues1E() = DeclareResourceString("HashLoadedSourceHasIssues1", "")
 let HashLoadedSourceHasIssues2E() = DeclareResourceString("HashLoadedSourceHasIssues2", "")
 let HashLoadedScriptConsideredSourceE() = DeclareResourceString("HashLoadedScriptConsideredSource", "")
@@ -661,12 +662,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
          if m.StartLine <> m2.StartLine then
             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
 
-      | ConstraintSolverRelatedInformation(fopt, _, e) ->
-          match e with
-          | ConstraintSolverError _ -> OutputExceptionR os e
-          | _ -> ()
-          fopt |> Option.iter (Printf.bprintf os " %s")
-
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, t1', t2', m, _, contextInfo), _)
          when typeEquiv g t1 t1'
               && typeEquiv g t2 t2' ->
@@ -762,7 +757,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
               let retTy =
                   knownReturnType
-                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+                  |> Option.defaultValue (TType_var (Typar.NewUnlinked(), 0uy))
 
               let argRepr =
                   callerArgs.ArgumentNamesAndTypes
@@ -859,10 +854,15 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | InterfaceNotRevealed(denv, ity, _) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
 
-      | NotAFunctionButIndexer(_, _, name, _, _) ->
-          match name with
-          | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
-          | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+      | NotAFunctionButIndexer(_, _, name, _, _, old) ->
+          if old then
+              match name with
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+          else
+              match name with
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2()) |> ignore
 
       | NotAFunction(_, _, _, marg) ->
           if marg.StartColumn = 0 then
@@ -1161,7 +1161,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   printfn "   ----"
                   //printfn "   state %d" state
                   for rp in rps do
-                      printfn "       non-terminal %+A: ... " (Parser.prodIdxToNonTerminal rp)
+                      printfn "       non-terminal %+A (idx %d): ... " (Parser.prodIdxToNonTerminal rp) rp
 #endif
 
           match ctxt.CurrentToken with
@@ -1179,7 +1179,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
                         | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
-                        | Parser.NONTERM_typedSeqExprBlock
+                        | Parser.NONTERM_typedSequentialExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
 
@@ -1326,7 +1326,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts ->
+                  | TType_app (maybeUnit, [], _) :: ts ->
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1334,7 +1334,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ ->
@@ -1607,10 +1607,13 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | IllegalFileNameChar(fileName, invalidChar) ->
           os.Append(FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar)|>snd) |> ignore
 
-      | HashLoadedSourceHasIssues(warnings, errors, _) ->
+      | HashLoadedSourceHasIssues(infos, warnings, errors, _) ->
         let Emit(l: exn list) =
             OutputExceptionR os (List.head l)
-        if errors=[] then
+        if isNil warnings && isNil errors then
+            os.Append(HashLoadedSourceHasIssues0E().Format) |> ignore
+            Emit infos
+        elif isNil errors then
             os.Append(HashLoadedSourceHasIssues1E().Format) |> ignore
             Emit warnings
         else
@@ -1653,7 +1656,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then
+          if showAssertForUnexpectedException.Value then
               Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 
@@ -1866,14 +1869,45 @@ let OutputDiagnosticContext prefix fileLineFunction os err =
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-let ReportWarning options err =
-    warningOn err options.WarnLevel options.WarnOn && not (List.contains (GetDiagnosticNumber err) options.WarnOff)
+let ReportDiagnosticAsInfo options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> false
+    | FSharpDiagnosticSeverity.Warning -> false
+    | FSharpDiagnosticSeverity.Info ->
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        not (List.contains n options.WarnOff)
+    | FSharpDiagnosticSeverity.Hidden -> false
 
-let ReportWarningAsError options err =
-    warningOn err options.WarnLevel options.WarnOn &&
-    not (List.contains (GetDiagnosticNumber err) options.WarnAsWarn) &&
-    ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
-     List.contains (GetDiagnosticNumber err) options.WarnAsError)
+let ReportDiagnosticAsWarning options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> false
+    | FSharpDiagnosticSeverity.Warning ->
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        not (List.contains n options.WarnOff)
+    // Informational become warning if explicitly on and not explicitly off
+    | FSharpDiagnosticSeverity.Info ->
+        let n = GetDiagnosticNumber err
+        List.contains n options.WarnOn && 
+        not (List.contains n options.WarnOff)
+    | FSharpDiagnosticSeverity.Hidden -> false
+
+let ReportDiagnosticAsError options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> true
+    // Warnings become errors in some situations
+    | FSharpDiagnosticSeverity.Warning ->
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
+        not (List.contains n options.WarnAsWarn) &&
+        ((options.GlobalWarnAsError && not (List.contains n options.WarnOff)) ||
+         List.contains n options.WarnAsError)
+    // Informational become errors if explicitly WarnAsError
+    | FSharpDiagnosticSeverity.Info ->
+        let n = GetDiagnosticNumber err
+        List.contains n options.WarnAsError
+    | FSharpDiagnosticSeverity.Hidden -> false
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -1887,27 +1921,33 @@ let ReportWarningAsError options err =
 // However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger: ErrorLogger) =
+type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
     override x.DiagnosticSink (phasedError, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
             errorLogger.DiagnosticSink (phasedError, severity)
         else
-          let report =
-            let warningNum = GetDiagnosticNumber phasedError
-            match GetRangeOfDiagnostic phasedError with
-            | Some m ->
-                not (scopedPragmas |> List.exists (fun pragma ->
-                    match pragma with
-                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
-                        warningNum = warningNumFromPragma &&
-                        (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        posGeq m.Start pragmaRange.Start))
-            | None -> true
-          if report then errorLogger.DiagnosticSink(phasedError, severity)
+            let report =
+                let warningNum = GetDiagnosticNumber phasedError
+                match GetRangeOfDiagnostic phasedError with
+                | Some m ->
+                    not (scopedPragmas |> List.exists (fun pragma ->
+                        match pragma with
+                        | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
+                            warningNum = warningNumFromPragma &&
+                            (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
+                            posGeq m.Start pragmaRange.Start))
+                | None -> true
+            if report then
+                if ReportDiagnosticAsError diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Error)
+                elif ReportDiagnosticAsWarning diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Warning)
+                elif ReportDiagnosticAsInfo diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, severity)
 
     override x.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) =
-    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) :> ErrorLogger)
+let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger) =
+    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> ErrorLogger)

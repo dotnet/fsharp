@@ -258,10 +258,14 @@ module ExtraTopLevelOperators =
         let inline int8 value = Checked.sbyte value
 
     [<CompiledName("SpliceExpression")>]
-    let (~%) (_:Microsoft.FSharp.Quotations.Expr<'a>) : 'a = raise <| InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)) 
+    let (~%) (expression:Microsoft.FSharp.Quotations.Expr<'T>) : 'T =
+        ignore expression
+        raise (InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)))
 
     [<CompiledName("SpliceUntypedExpression")>]
-    let (~%%) (_: Microsoft.FSharp.Quotations.Expr) : 'a = raise <| InvalidOperationException (SR.GetString(SR.firstClassUsesOfSplice)) 
+    let (~%%) (expression: Microsoft.FSharp.Quotations.Expr) : 'T =
+        ignore expression
+        raise (InvalidOperationException (SR.GetString(SR.firstClassUsesOfSplice)))
 
     [<assembly: AutoOpen("Microsoft.FSharp")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators")>]
@@ -364,7 +368,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type ITypeProvider =
         inherit System.IDisposable
         abstract GetNamespaces : unit -> IProvidedNamespace[] 
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[] 
+        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
         abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string[] * staticArguments:obj[] -> Type 
         abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Microsoft.FSharp.Quotations.Expr[] -> Microsoft.FSharp.Quotations.Expr
 

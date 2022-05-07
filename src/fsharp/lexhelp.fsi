@@ -104,14 +104,5 @@ module Keywords =
 
     val IdentifierToken: LexArgs -> Lexbuf -> string -> token
 
-    val DoesIdentifierNeedQuotation: string -> bool
-
-    val QuoteIdentifierIfNeeded: string -> string
-
-    val NormalizeIdentifierBackticks: string -> string
-
     val keywordNames: string list
-
-    /// Keywords paired with their descriptions. Used in completion and quick info.
-    val keywordsWithDescription: (string * string) list
 

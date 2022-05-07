@@ -811,6 +811,7 @@ Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData]: System.IAsyn
 Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData]: Void .ctor(System.Object, IntPtr)
 Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData]: Void EndInvoke(System.IAsyncResult)
 Microsoft.FSharp.Core.CompilerServices.MoveNextMethodImpl`1[TData]: Void Invoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef)
+Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute: Void .ctor()
 Microsoft.FSharp.Core.CompilerServices.ResumableCode: Boolean CombineDynamic[TData,T](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,T])
 Microsoft.FSharp.Core.CompilerServices.ResumableCode: Boolean TryFinallyAsyncDynamic[TData,T](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,T], Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.CompilerServices.ResumableCode: Boolean TryWithDynamic[TData,T](Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,T], Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,Microsoft.FSharp.Core.CompilerServices.ResumableCode`2[TData,T]])
@@ -2492,6 +2493,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
 "
 #if NETCOREAPP
 // This is in netstandard 2.1

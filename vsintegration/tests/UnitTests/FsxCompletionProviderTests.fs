@@ -59,7 +59,7 @@ type Worker () =
         let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
-            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
+            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
                     |> Async.RunSynchronously 
             x |> Option.defaultValue (ResizeArray())
             |> Seq.toList

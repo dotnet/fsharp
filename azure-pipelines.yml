@@ -11,7 +11,7 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/compiler-guide.md
+    - docs/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -34,7 +34,7 @@ pr:
     - '*'
     exclude:
     - .github/*
-    - docs/compiler-guide.md
+    - docs/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -75,10 +75,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.2') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
+          MirrorBranch: release/dev17.2
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -94,8 +95,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCoreInternal-Pool
-            queue: buildpool.windows.10.amd64.vs2019
+            name: NetCore1ESPool-Svc-Internal
+            demands: ImageOverride -equals Build.Windows.Amd64.VS2022
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -198,11 +199,11 @@ stages:
         - job: Windows
           pool:
             # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=BuildPool.Windows.10.Amd64.VS2019.Open
+            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCorePublic-Pool
-            queue: $(WindowsMachineQueueName)
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4
@@ -255,7 +256,8 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            vmImage: windows-latest
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
@@ -265,7 +267,7 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -305,7 +307,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macOS-latest
+            vmImage: $(MacOSMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -345,13 +347,37 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            vmImage: windows-latest
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release
+          - script: .\Build.cmd -c Release -pack
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
+
+        # Determinism, we want to run it only in PR builds
+        - job: Determinism_Debug
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+          - name: _SignType
+            value: Test
+          pool:
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            displayName: Determinism tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
@@ -367,35 +393,42 @@ stages:
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
         # Plain build Windows
-        # Disabled until the Windows Proto compiler is coreclr
-        # - job: Plain_Build_Windows
-        #   pool:
-        #     vmImage: windows-latest
-        #   variables:
-        #   - name: _BuildConfig
-        #     value: Debug
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: .\Build.cmd
-        #     displayName: Initial build
-        #   - script: dotnet --list-sdks
-        #     displayName: Report dotnet SDK versions
-        #   - task: UseDotNet@2
-        #       displayName: install SDK
-        #       inputs:
-        #         packageType: sdk
-        #         useGlobalJson: true
-        #         includePreviewVersions: true
-        #         workingDirectory: $(Build.SourcesDirectory)
-        #         installationPath: $(Agent.ToolsDirectory)/dotnet
-        #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-        #     displayName: Regular rebuild
+        - job: Plain_Build_Windows
+          pool:
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Linux
         - job: Plain_Build_Linux
           pool:
-            vmImage: ubuntu-latest
+            vmImage: $(UbuntuMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -415,12 +448,19 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-latest
+            vmImage: $(MacOSMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
@@ -440,7 +480,14 @@ stages:
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
@@ -475,8 +522,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.9
-      insertTargetBranch: rel/d16.9
+      componentBranchName: refs/heads/release/dev17.0
+      insertTargetBranch: rel/d17.0
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

@@ -34,9 +34,17 @@ module internal PervasiveAutoOpens =
         | [_] -> true
         | _ -> false
 
-    let inline isNonNull x = not (isNull x)
+    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
 
-    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+    let inline isNotNull (x: 'T) = not (isNull x)
+
+    let inline (|NonNullQuick|) (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline nonNull (x: 'T MaybeNull) = match x with null -> raise (NullReferenceException()) | v -> v
+
+    let inline (|Null|NonNull|) (x: 'T MaybeNull) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+
+    let inline nullArgCheck paramName (x: 'T MaybeNull) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
@@ -70,7 +78,7 @@ module internal PervasiveAutoOpens =
             x.EndsWith(value, StringComparison.Ordinal)
 
     /// Get an initialization hole 
-    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+    let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
     let reportTime =
         let mutable tFirst =None
@@ -100,8 +108,8 @@ module internal PervasiveAutoOpens =
                 cancellationToken)
             task.Result
 
-[<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+[<Struct>]
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
@@ -258,8 +266,7 @@ module Array =
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
     let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -504,8 +511,8 @@ module ResizeArray =
         // rounding down here is good because it ensures we don't go over
         let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
+        // chunk the provided input into arrays that are smaller than the LOH limit
+        // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
@@ -570,25 +577,18 @@ module String =
             String strArr
 
     let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
-            let charr = str.ToCharArray() 
-            Array.revInPlace charr
-            let digits = Array.takeWhile Char.IsDigit charr
-            Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+        let charr = str.ToCharArray() 
+        Array.revInPlace charr
+        let digits = Array.takeWhile Char.IsDigit charr
+        Array.revInPlace digits
+        String digits
+        |> function
+            | "" -> str, None
+            | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-        if isNull value then null else value.Split(separator, options)
+        value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -1130,11 +1130,13 @@ module MapAutoOpens =
         
         static member Empty : Map<'Key, 'Value> = Map.empty
     
-        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
+#if USE_SHIPPED_FSCORE        
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
+#endif
 
-        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
+        member x.AddMany (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-        member x.MarkAsCollapsible () = x
+        member x.AddOrModify (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -1142,19 +1144,15 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x.[k]))
 
-    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
+    member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = 
-        let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-        x.MarkAsCollapsible()
+    member x.AddMany (kvs: _[]) = 
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-    member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member _.TryFind k = contents.TryFind k
 
-    member x.TryFind k = contents.TryFind k
+    member _.TryGetValue k = contents.TryGetValue k
 
-    member x.TryGetValue k = contents.TryGetValue k
-
-    member x.Values = contents.Values |> List.concat
+    member _.Values = contents.Values |> List.concat
 
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
-

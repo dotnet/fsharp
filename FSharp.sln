@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28729.10
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32113.165
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Server.Shared", "src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
 EndProject
@@ -25,6 +25,11 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\fsharp\FSharpSuite.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D0E98C0D-490B-4C61-9329-0862F6E87645} = {D0E98C0D-490B-4C61-9329-0862F6E87645}
+		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B} = {8B3E283D-B5FE-4055-9D80-7E3A32F3967B}
+		{C94C257C-3C0A-4858-B5D8-D746498D1F08} = {C94C257C-3C0A-4858-B5D8-D746498D1F08}
+	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject
@@ -37,10 +42,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{3058BC79-8E79-4645-B05D-48CC182FA8A6}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build.UnitTests", "tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj", "{53C0DAAD-158C-4658-8EC7-D7341530239F}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Packages", "Packages", "{3840F2E7-3898-45F7-8CF7-1E6829E56DB8}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.FSharp.Compiler", "src\fsharp\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.csproj", "{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "src\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{8B7BF62E-7D8C-4928-BE40-4E392A9EE851}"
 EndProject
@@ -75,6 +76,39 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj", "{F8743670-C8D4-41B3-86BE-BBB1226C352F}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestTP", "tests\service\data\TestTP\TestTP.fsproj", "{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}"
+	ProjectSection(SolutionItems) = preProject
+		docs\coding-standards.md = docs\coding-standards.md
+		docs\compiler-startup-performance.md = docs\compiler-startup-performance.md
+		docs\diagnostics.md = docs\diagnostics.md
+		docs\fsharp-core-notes.md = docs\fsharp-core-notes.md
+		docs\index.md = docs\index.md
+		docs\large-inputs-and-stack-overflows.md = docs\large-inputs-and-stack-overflows.md
+		docs\memory-usage.md = docs\memory-usage.md
+		docs\optimizations.md = docs\optimizations.md
+		docs\overview.md = docs\overview.md
+		docs\public-fcs-api.md = docs\public-fcs-api.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78}"
+	ProjectSection(SolutionItems) = preProject
+		docs\fcs\caches.fsx = docs\fcs\caches.fsx
+		docs\fcs\compiler.fsx = docs\fcs\compiler.fsx
+		docs\fcs\corelib.fsx = docs\fcs\corelib.fsx
+		docs\fcs\editor.fsx = docs\fcs\editor.fsx
+		docs\fcs\filesystem.fsx = docs\fcs\filesystem.fsx
+		docs\fcs\index.md = docs\fcs\index.md
+		docs\fcs\interactive.fsx = docs\fcs\interactive.fsx
+		docs\fcs\project.fsx = docs\fcs\project.fsx
+		docs\fcs\react.fsx = docs\fcs\react.fsx
+		docs\fcs\symbols.fsx = docs\fcs\symbols.fsx
+		docs\fcs\tokenizer.fsx = docs\fcs\tokenizer.fsx
+		docs\fcs\typedtree.fsx = docs\fcs\typedtree.fsx
+		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
+	EndProjectSection
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fscAnyCpu", "src\fsharp\fscAnyCpu\fscAnyCpu.fsproj", "{8ACA60C2-7266-425A-B641-A2946396B7D1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -230,18 +264,6 @@ Global
 		{53C0DAAD-158C-4658-8EC7-D7341530239F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{53C0DAAD-158C-4658-8EC7-D7341530239F}.Release|x86.ActiveCfg = Release|Any CPU
 		{53C0DAAD-158C-4658-8EC7-D7341530239F}.Release|x86.Build.0 = Release|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Debug|x86.Build.0 = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Proto|Any CPU.Build.0 = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Proto|x86.ActiveCfg = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Proto|x86.Build.0 = Debug|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Release|x86.ActiveCfg = Release|Any CPU
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7}.Release|x86.Build.0 = Release|Any CPU
 		{8B7BF62E-7D8C-4928-BE40-4E392A9EE851}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8B7BF62E-7D8C-4928-BE40-4E392A9EE851}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B7BF62E-7D8C-4928-BE40-4E392A9EE851}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -386,6 +408,18 @@ Global
 		{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F}.Release|x86.ActiveCfg = Release|Any CPU
 		{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F}.Release|x86.Build.0 = Release|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Debug|x86.Build.0 = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Proto|x86.ActiveCfg = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Proto|x86.Build.0 = Debug|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Release|x86.ActiveCfg = Release|Any CPU
+		{8ACA60C2-7266-425A-B641-A2946396B7D1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -394,7 +428,7 @@ Global
 		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{DED3BBD7-53F4-428A-8C9F-27968E768605} = {3058BC79-8E79-4645-B05D-48CC182FA8A6}
 		{702A7979-BCF9-4C41-853E-3ADFC9897890} = {B8DDA694-7939-42E3-95E5-265C2217C142}
-		{C94C257C-3C0A-4858-B5D8-D746498D1F08} = {3881429D-A97A-49EB-B7AE-A82BA5FE9C77}
+		{C94C257C-3C0A-4858-B5D8-D746498D1F08} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{649FA588-F02E-457C-9FCF-87E46407481E} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{D0E98C0D-490B-4C61-9329-0862F6E87645} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B} = {B8DDA694-7939-42E3-95E5-265C2217C142}
@@ -403,7 +437,6 @@ Global
 		{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{88E2D422-6852-46E3-A740-83E391DC7973} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{53C0DAAD-158C-4658-8EC7-D7341530239F} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
-		{81B9FE26-C976-4FC7-B6CC-C7DB5903CAA7} = {3840F2E7-3898-45F7-8CF7-1E6829E56DB8}
 		{8B7BF62E-7D8C-4928-BE40-4E392A9EE851} = {3881429D-A97A-49EB-B7AE-A82BA5FE9C77}
 		{4FEDF286-0252-4EBC-9E75-879CCA3B85DC} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{FAC5A3BF-C0D6-437A-868A-E962AA00B418} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
@@ -420,6 +453,8 @@ Global
 		{452EED3C-AA87-471F-B9AC-0F4479C5820C} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{F8743670-C8D4-41B3-86BE-BBB1226C352F} = {452EED3C-AA87-471F-B9AC-0F4479C5820C}
 		{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F} = {452EED3C-AA87-471F-B9AC-0F4479C5820C}
+		{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78} = {4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}
+		{8ACA60C2-7266-425A-B641-A2946396B7D1} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD5177C7-1380-40E7-94D2-7768E1A8B1B8}

@@ -10,10 +10,16 @@
 //      - Different visual debuggers
 
 open System
+open System.Threading
 open System.Threading.Tasks
 
 type U2 = U2 of int * int
 
+
+let (!) (r: 'T ref)  = r.Value
+let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
+let incr (r: int ref)  = r.Value <- r.Value + 1
+let decr (r: int ref)  = r.Value <- r.Value - 1
 
 let InnerRecursiveFunction (str: string) =
     let rec even n = if n = 0 then str else odd (n-1)
@@ -92,8 +98,6 @@ let AsyncExpressionSteppingTest6b () =
             let! x4 = f2()
             let z = x1 + !y + x4
             return z }
-
-
 
 let AsyncBreakpoints1 () = 
     async { let! res1 = 
@@ -256,6 +260,10 @@ and rwalk2 x = seq { yield x; yield! rwalk1 (x+1) }
 
 let SeqExpressionTailCalls02() = rwalk2 3 |> Seq.truncate 3 |> Seq.length
 
+SeqExpressionSteppingTest7()
+SeqExpressionTailCalls01()
+SeqExpressionTailCalls02()
+
 let SteppingMatch01 (n) =   
         match n with                                    
         | Choice2Of2 _ ->
@@ -263,8 +271,6 @@ let SteppingMatch01 (n) =
         | Choice1Of2 _ ->            
             Console.WriteLine("B")
     
-
-
 let SteppingMatch03 (n) =   
         match n with                                    
         | Choice1Of2 _ ->            
@@ -539,34 +545,7 @@ let TestFunction9(x) =
     | 4 -> "four"
     | _ -> "five"
 
-
 let TestFunction9b(x) =
-    match x with 
-    | [1;2] -> "three"
-    | [3;4] -> "seven"
-    | [a;b] when a+b = 4 -> "four"
-    | _ -> "big"
-
-
-let TestFunction9c(x) =
-    match x with 
-    | [1;2] -> "three"
-    | [3;4] -> "seven"
-    | [a;b] when a+b = 4 -> "four"
-    | _ -> "big"
-// #NoMono #NoMT #CodeGen #EmittedIL 
-
-
-let TestFunction9d(x) =
-    match x with 
-    | [1;2] -> "three"
-    | [3;4] -> "seven"
-    | [a;b] when a+b = 4 -> "four"
-    | _ -> "big"
-// #NoMono #NoMT #CodeGen #EmittedIL 
-
-
-let TestFunction9e(x) =
     match x with 
     | [1;2] -> "three"
     | [3;4] -> "seven"
@@ -578,7 +557,6 @@ let TestFunction22() =
     let x2 = if DateTime.Now.Day = 1 then DateTime.Now.Day else DateTime.MinValue.Day
     let x3 = if DateTime.Now.Day > 1 then DateTime.Now.Day else DateTime.MinValue.Day
     (x1,x2,x3)
-
 
 let InnerFunctionDefinitionHadTwoBreakpoints (str: string) =
     let isVowel (ch: char) =
@@ -605,8 +583,6 @@ let InnerRecursiveFunctionDefinitionHadTwoBreakpoints (str: string) =
         str + "way"
     else
         str.[1..str.Length-1] + string(firstChar) + "ay"
-
-
 
 let LocalValueShadowsArgument1 x =
     let x = // quick watch 1
@@ -794,23 +770,23 @@ module Pipelined =
         
             printfn "%A" newData
 
-TailcallRecursionTest1 3
-TailcallRecursionTest2 (U2(3,4))
-SteppingMatch01 (Choice1Of2 3)
+TailcallRecursionTest1 2
+TailcallRecursionTest2 (U2(2,3))
 SteppingMatch01 (Choice2Of2 3)
+SteppingMatch01 (Choice1Of2 3)
 SteppingMatch03 (Choice1Of2 3)
 SteppingMatch03 (Choice2Of2 "3")
 SteppingMatch03b (Choice1Of3 3)
 SteppingMatch03b (Choice2Of3 "3")
 SteppingMatch03b (Choice3Of3 5.0)
-SteppingMatch04 (Choice1Of3 3)
 SteppingMatch04 (Choice2Of3 "3")
 SteppingMatch04 (Choice3Of3 5.0)
-SteppingMatch05 (Choice1Of3 3)
-SteppingMatch05 (Choice2Of3 "3")
+SteppingMatch04 (Choice1Of3 3)
 SteppingMatch05 (Choice3Of3 5.0)
-SteppingMatch06 CaseA
+SteppingMatch05 (Choice2Of3 "3")
+SteppingMatch05 (Choice1Of3 3)
 SteppingMatch06 CaseB
+SteppingMatch06 CaseA
 SteppingMatch07 CaseA
 SteppingMatch07 CaseB
 SteppingMatch08 0
@@ -846,14 +822,18 @@ TestFunction18 3
 TestFunction19 3
 TestFunction21(U2(3,4))
 TestFunction22()
+TestFunction9b [1;2]
+TestFunction9b [3;4]
+TestFunction9b [3;1]
+TestFunction9b [3]
 
-AsyncBreakpoints1() |> Async.RunSynchronously
 AsyncExpressionSteppingTest1() |> Async.RunSynchronously
 AsyncExpressionSteppingTest2() |> Async.RunSynchronously
 AsyncExpressionSteppingTest3() |> Async.RunSynchronously
 AsyncExpressionSteppingTest4() |> Async.RunSynchronously
 AsyncExpressionSteppingTest5() |> Async.RunSynchronously
 AsyncExpressionSteppingTest6b() |> Async.RunSynchronously
+AsyncBreakpoints1() |> Async.RunSynchronously
 ListExpressionSteppingTest1()
 ListExpressionSteppingTest2()
 ListExpressionSteppingTest3()
@@ -890,3 +870,1201 @@ TaskBreakpoints1() |> Task.RunSynchronously
 InlinedCode.test()
 Pipelined.testListPipeline()
 Pipelined.testArrayPipeline()
+
+module BooleanLogic =
+
+    let testFunctionWithAnd x y =
+        x && y
+
+    let testFunctionWithOr x y =
+        x || y
+
+    let testFunctionWithMultipleAnd x y z =
+        x && y && z
+
+    let testFunctionWithMultipleOr x y z =
+        x || y || z
+
+    let testFunctionWithIfOfAnd x y =
+        if x && y then
+            1
+        else
+            2
+
+    let testFunctionWithIfOfOr x y =
+        if x || y then
+            1
+        else
+            2
+
+    testFunctionWithAnd true false
+    testFunctionWithMultipleAnd true true false
+    testFunctionWithMultipleOr false false true
+    testFunctionWithOr true false
+    testFunctionWithIfOfAnd true false
+    testFunctionWithIfOfOr false false
+
+// See https://github.com/dotnet/fsharp/issues/11977
+module FalseSteppingBug =
+    type U = 
+       | A1 of int
+       | A2 of int
+       | A3 of int
+       | A4 of int
+
+    let testFunc f u = 
+        match u with 
+        | A1 n -> f n
+        | A2 n when n > 4 -> f n // this was falsely hit
+        | A2 n -> f n
+        | A3 n -> f n
+        | A4 n -> f n
+
+    testFunc id (A3 4)
+
+
+
+// https://github.com/dotnet/fsharp/pull/11981
+module MissingFirstTry =
+    let TestFunction3() =
+        try 
+           let x = 1+1
+           System.Console.WriteLine "Hello";
+        with _ -> 
+           System.Console.WriteLine "World"      
+
+    TestFunction3()
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhen1 =
+
+    let TestMatchWithWhen x y =
+        match x with
+        | [_] when y > 4 -> 5
+        | [_] when y < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [1] 3
+    TestMatchWithWhen [1] 4
+    TestMatchWithWhen [1] 5
+    TestMatchWithWhen [1] 6
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithVariableBinding =
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [x] when x > 4 -> 5
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4]
+    TestMatchWithWhen [5]
+    TestMatchWithWhen [6]
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithUnionClauses=
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [_;x] 
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4;5]
+    TestMatchWithWhen [5;4]
+    TestMatchWithWhen [6]
+
+module NestedScopesWithShadowing =
+
+    let f2 (a, b) =
+        let v1 = 1
+        if a then
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+        else
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+
+
+    f2 (true, true)
+    f2 (true, false)
+    f2 (false, true)
+    f2 (false, false)
+
+module ForLoopRegularCode =
+    let testSimpleForEachSeqLoopWithOneStatement inp =
+        for x in inp do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachSeqLoopWithTwoStatements inp =
+        for x in inp do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachArrayLoopWithOneStatement (inp:int array) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachArrayLoopWithTwoStatements (inp:int array) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachListLoopWithOneStatement (inp:int list) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachListLoopWithTwoStatements (inp:int list) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachStringLoopWithOneStatement (inp:string) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachStringLoopWithTwoStatements (inp:string) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopWithOneStatement (start, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopWithTwoStatements (start, stop) =
+        for x in start .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopDownWithOneStatement (start, stop) =
+        for x in stop .. -1 .. start do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        for x in stop .. -1 .. start do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntLoopWithOneStatement (start, stop) =
+        for x = start to stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntLoopWithTwoStatements (start, stop) =
+        for x = start to stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntLoopDownWithOneStatement (start, stop) =
+        for x = stop downto start do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntLoopDownWithTwoStatements (start, stop) =
+        for x = stop downto start do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    testSimpleForEachSeqLoopWithOneStatement [1;2;3]
+    testSimpleForEachSeqLoopWithTwoStatements [1;2;3]
+    testSimpleForEachArrayLoopWithOneStatement [|1;2;3|]
+    testSimpleForEachArrayLoopWithTwoStatements [|1;2;3|]
+    testSimpleForEachListLoopWithOneStatement [1;2;3]
+    testSimpleForEachListLoopWithTwoStatements [1;2;3]
+    testSimpleForEachStringLoopWithOneStatement "123"
+    testSimpleForEachStringLoopWithTwoStatements "123"
+    testSimpleForEachIntRangeLoopWithOneStatement (1, 3)
+    testSimpleForEachIntRangeLoopWithTwoStatements (1, 3)
+    testSimpleForEachIntRangeLoopDownWithOneStatement (1, 3)
+    testSimpleForEachIntRangeLoopDownWithTwoStatements (1, 3)
+    testSimpleForEachIntLoopWithOneStatement (1, 3)
+    testSimpleForEachIntLoopWithTwoStatements (1, 3)
+    testSimpleForEachIntLoopDownWithOneStatement (1, 3)
+    testSimpleForEachIntLoopDownWithTwoStatements (1, 3)
+
+#if NETCOREAPP
+    let testSimpleForEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =
+        [ for x in inp do
+            printfn $"hello, x = {x}" ]
+
+    let testSimpleForEachSpanLoopWithOneStatement (inp: System.Span<char>) =
+        for x in inp do
+            printfn $"hello, x = {x}"
+
+    testSimpleForEachReadOnlySpanLoopWithOneStatement ("abc".AsSpan())
+    testSimpleForEachSpanLoopWithOneStatement ([|'a'..'c'|].AsSpan())
+#endif
+
+module ForLoopInGeneratedList =
+    let testSimpleListEachSeqLoopWithOneStatement inp =
+        [ for x in inp do
+             yield x+1 ]
+
+    let testSimpleListEachSeqLoopWithTwoStatements inp =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachArrayLoopWithOneStatement (inp:int array) =
+        [ for x in inp do
+            yield x + 1 ]
+
+    let testSimpleListEachArrayLoopWithTwoStatements (inp:int array) =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachListLoopWithOneStatement (inp:int list) =
+        [ for x in inp do
+            yield x + 1 ]
+
+    let testSimpleListEachListLoopWithTwoStatements (inp:int list) =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachStringLoopWithOneStatement (inp:string) =
+        [ for x in inp do
+            yield x ]
+
+    let testSimpleListEachStringLoopWithTwoStatements (inp:string) =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x ]
+
+    let testSimpleListEachIntRangeLoopWithOneStatement (start, stop) =
+        [ for x in start .. stop do
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopWithTwoStatements (start, stop) =
+        [ for x in start .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopDownWithOneStatement (start, stop) =
+        [ for x in stop .. -1 .. start do
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        [ for x in stop .. -1 .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachIntLoopWithOneStatement (start, stop) =
+        [ for x = start to stop do
+            yield x + 1 ]
+
+    let testSimpleListEachIntLoopWithTwoStatements (start, stop) =
+        [ for x = start to stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachIntLoopDownWithOneStatement (start, stop) =
+        [ for x = stop downto start do
+            yield x + 1 ]
+
+    let testSimpleListEachIntLoopDownWithTwoStatements (start, stop) =
+        [ for x = stop downto start do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    testSimpleListEachSeqLoopWithOneStatement [1;2;3]
+    testSimpleListEachSeqLoopWithTwoStatements [1;2;3]
+    testSimpleListEachArrayLoopWithOneStatement [|1;2;3|]
+    testSimpleListEachArrayLoopWithTwoStatements [|1;2;3|]
+    testSimpleListEachListLoopWithOneStatement [1;2;3]
+    testSimpleListEachListLoopWithTwoStatements [1;2;3]
+    testSimpleListEachStringLoopWithOneStatement "123"
+    testSimpleListEachStringLoopWithTwoStatements "123"
+    testSimpleListEachIntRangeLoopWithOneStatement (1, 3)
+    testSimpleListEachIntRangeLoopWithTwoStatements (1, 3)
+    testSimpleListEachIntRangeLoopDownWithOneStatement (1, 3)
+    testSimpleListEachIntRangeLoopDownWithTwoStatements (1, 3)
+    testSimpleListEachIntLoopWithOneStatement (1, 3)
+    testSimpleListEachIntLoopWithTwoStatements (1, 3)
+    testSimpleListEachIntLoopDownWithOneStatement (1, 3)
+    testSimpleListEachIntLoopDownWithTwoStatements (1, 3)
+
+#if NETCOREAPP
+    let testSimpleListEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachSpanLoopWithOneStatement (inp: System.Span<char>) =
+        [ for x in inp do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    testSimpleListEachReadOnlySpanLoopWithOneStatement ("abc".AsSpan())
+    testSimpleListEachSpanLoopWithOneStatement ([|'a'..'c'|].AsSpan())
+#endif
+
+module ForLoopTaskCode =
+    let testSimpleTaskEachSeqLoopWithOneStatement inp =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}" 
+            return 1
+        }
+
+    let testSimpleTaskEachSeqLoopWithTwoStatements inp =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+
+    let testSimpleTaskEachArrayLoopWithOneStatement (inp:int array) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachArrayLoopWithTwoStatements (inp:int array) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachListLoopWithOneStatement (inp:int list) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachListLoopWithTwoStatements (inp:int list) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachStringLoopWithOneStatement (inp:string) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachStringLoopWithTwoStatements (inp:string) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopWithOneStatement (start, stop) =
+        task {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopWithTwoStatements (start, stop) =
+        task {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopDownWithOneStatement (start, stop) =
+        task {
+            for x in stop .. -1 .. start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        task {
+            for x in stop .. -1 .. start do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntLoopWithOneStatement (start, stop) =
+        task {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntLoopWithTwoStatements (start, stop) =
+        task {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntLoopDownWithOneStatement (start, stop) =
+        task {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntLoopDownWithTwoStatements (start, stop) =
+        task {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    testSimpleTaskEachSeqLoopWithOneStatement [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachSeqLoopWithTwoStatements [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachArrayLoopWithOneStatement [|1;2;3|] |> fun t -> t.Result
+    testSimpleTaskEachArrayLoopWithTwoStatements [|1;2;3|] |> fun t -> t.Result
+    testSimpleTaskEachListLoopWithOneStatement [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachListLoopWithTwoStatements [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachStringLoopWithOneStatement "123" |> fun t -> t.Result
+    testSimpleTaskEachStringLoopWithTwoStatements "123" |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopWithOneStatement (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopWithTwoStatements (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithOneStatement (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithTwoStatements (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntLoopWithOneStatement (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntLoopWithTwoStatements (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntLoopDownWithOneStatement (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntLoopDownWithTwoStatements (1, 3) |> fun t -> t.Result
+
+#if NETCOREAPP
+    let testSimpleTaskEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachSpanLoopWithOneStatement (inp: System.Span<char>) =
+        task {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    testSimpleTaskEachReadOnlySpanLoopWithOneStatement ("abc".AsSpan()) |> fun t -> t.Result
+    testSimpleTaskEachSpanLoopWithOneStatement ([|'a'..'c'|].AsSpan()) |> fun t -> t.Result
+#endif
+
+
+module ForLoopSeqCode =
+    let testSimpleSeqEachSeqLoopWithOneStatement inp =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachSeqLoopWithTwoStatements inp =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachArrayLoopWithOneStatement (inp:int array) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachArrayLoopWithTwoStatements (inp:int array) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachListLoopWithOneStatement (inp:int list) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachListLoopWithTwoStatements (inp:int list) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachStringLoopWithOneStatement (inp:string) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachStringLoopWithTwoStatements (inp:string) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopWithOneStatement (start, stop) =
+        seq {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopWithTwoStatements (start, stop) =
+        seq {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopDownWithOneStatement (start, stop) =
+        seq {
+            for x in stop .. -1 .. start do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        seq {
+            for x in stop .. -1 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntLoopWithOneStatement (start, stop) =
+        seq {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntLoopWithTwoStatements (start, stop) =
+        seq {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntLoopDownWithOneStatement (start, stop) =
+        seq {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntLoopDownWithTwoStatements (start, stop) =
+        seq {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    testSimpleSeqEachSeqLoopWithOneStatement [1;2;3] |> Seq.toList
+    testSimpleSeqEachSeqLoopWithTwoStatements [1;2;3] |> Seq.toList
+    testSimpleSeqEachArrayLoopWithOneStatement [|1;2;3|] |> Seq.toList
+    testSimpleSeqEachArrayLoopWithTwoStatements [|1;2;3|] |> Seq.toList
+    testSimpleSeqEachListLoopWithOneStatement [1;2;3] |> Seq.toList
+    testSimpleSeqEachListLoopWithTwoStatements [1;2;3] |> Seq.toList
+    testSimpleSeqEachStringLoopWithOneStatement "123" |> Seq.toList
+    testSimpleSeqEachStringLoopWithTwoStatements "123" |> Seq.toList
+    testSimpleSeqEachIntRangeLoopWithOneStatement (1, 3) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopWithTwoStatements (1, 3) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithOneStatement (1, 3) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithTwoStatements (1, 3) |> Seq.toList
+    testSimpleSeqEachIntLoopWithOneStatement (1, 3) |> Seq.toList
+    testSimpleSeqEachIntLoopWithTwoStatements (1, 3) |> Seq.toList
+    testSimpleSeqEachIntLoopDownWithOneStatement (1, 3) |> Seq.toList
+    testSimpleSeqEachIntLoopDownWithTwoStatements (1, 3) |> Seq.toList
+
+#if NETCOREAPP
+    let testSimpleSeqEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                yield 1
+        }
+
+    let testSimpleSeqEachSpanLoopWithOneStatement (inp: System.Span<char>) =
+        seq {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                yield 1
+        }
+
+    testSimpleSeqEachReadOnlySpanLoopWithOneStatement ("abc".AsSpan())
+    testSimpleSeqEachSpanLoopWithOneStatement ([|'a'..'c'|].AsSpan())
+#endif
+
+module ForLoopAsyncCode =
+    let testSimpleAsyncEachSeqLoopWithOneStatement inp =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}" 
+            return 1
+        }
+
+    let testSimpleAsyncEachSeqLoopWithTwoStatements inp =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+
+    let testSimpleAsyncEachArrayLoopWithOneStatement (inp:int array) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachArrayLoopWithTwoStatements (inp:int array) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachListLoopWithOneStatement (inp:int list) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachListLoopWithTwoStatements (inp:int list) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachStringLoopWithOneStatement (inp:string) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachStringLoopWithTwoStatements (inp:string) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopWithOneStatement (start, stop) =
+        async {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopWithTwoStatements (start, stop) =
+        async {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopDownWithOneStatement (start, stop) =
+        async {
+            for x in stop .. -1 .. start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        async {
+            for x in stop .. -1 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntLoopWithOneStatement (start, stop) =
+        async {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntLoopWithTwoStatements (start, stop) =
+        async {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntLoopDownWithOneStatement (start, stop) =
+        async {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntLoopDownWithTwoStatements (start, stop) =
+        async {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    testSimpleAsyncEachSeqLoopWithOneStatement [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachSeqLoopWithTwoStatements [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachArrayLoopWithOneStatement [|1;2;3|] |> Async.RunSynchronously
+    testSimpleAsyncEachArrayLoopWithTwoStatements [|1;2;3|] |> Async.RunSynchronously
+    testSimpleAsyncEachListLoopWithOneStatement [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachListLoopWithTwoStatements [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachStringLoopWithOneStatement "123" |> Async.RunSynchronously
+    testSimpleAsyncEachStringLoopWithTwoStatements "123" |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopWithOneStatement (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopWithTwoStatements (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithOneStatement (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithTwoStatements (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntLoopWithOneStatement (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntLoopWithTwoStatements (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntLoopDownWithOneStatement (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntLoopDownWithTwoStatements (1, 3) |> Async.RunSynchronously
+
+#if NETCOREAPP
+    let testSimpleAsyncEachReadOnlySpanLoopWithOneStatement (inp: System.ReadOnlySpan<char>) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachSpanLoopWithOneStatement (inp: System.Span<char>) =
+        async {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    testSimpleAsyncEachReadOnlySpanLoopWithOneStatement ("abc".AsSpan()) |> Async.RunSynchronously
+    testSimpleAsyncEachSpanLoopWithOneStatement ([|'a'..'c'|].AsSpan()) |> Async.RunSynchronously
+#endif
+
+//-------------------------------------------------------------
+
+
+[<RequireQualifiedAccess; Struct>] 
+type ValueOrCancelled<'TResult> =
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
+
+/// Represents a cancellable computation with explicit representation of a cancelled result.
+///
+/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
+//[<Struct>]
+type Cancellable<'TResult> = (*Cancellable of*) (CancellationToken -> ValueOrCancelled<'TResult>)
+
+module Cancellable = 
+
+    /// Run a cancellable computation using the given cancellation token
+    let run (ct: CancellationToken) (comp : Cancellable<_>) = 
+        if ct.IsCancellationRequested then 
+            ValueOrCancelled.Cancelled (OperationCanceledException ct) 
+        else
+            comp ct 
+
+(*
+    /// Bind the result of a cancellable computation
+    let inline bind f comp1 : Cancellable<_> = 
+       (fun ct -> 
+            match run ct comp1 with 
+            | ValueOrCancelled.Value v1 -> run ct (f v1) 
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+*)
+
+    /// Return a simple value as the result of a cancellable computation
+    let inline ret x : Cancellable<_> = (fun _ -> ValueOrCancelled.Value x)
+
+    let one = ret 1
+
+    /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
+    /// ValueOrCancelled.Cancelled.
+    let runWithoutCancellation comp = 
+        let res = run CancellationToken.None comp 
+        match res with 
+        | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
+        | ValueOrCancelled.Value r -> r
+
+    /// Bind the cancellation token associated with the computation
+    let token () : Cancellable<_> =  (fun ct -> ValueOrCancelled.Value ct)
+
+    /// Represents a canceled computation
+    let canceled() : Cancellable<_> = (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
+
+(*
+    /// Catch exceptions in a computation
+    let inline catch e : Cancellable<_> = 
+        (fun ct -> 
+            try 
+                match e ct with 
+                | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
+                | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
+            with err -> 
+                ValueOrCancelled.Value (Choice2Of2 err))
+
+    /// Implement try/finally for a cancellable computation
+    let inline tryFinally e compensation : Cancellable<_> =
+        catch e |> bind (fun res ->
+            compensation()
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
+
+    /// Implement try/with for a cancellable computation
+    let inline tryWith e handler : Cancellable<_> = 
+        catch e |> bind (fun res ->
+            match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
+*)
+
+let inline invoke ([<InlineIfLambda>] f: Cancellable<'T>) ct = f ct
+
+type CancellableBuilder() = 
+
+    member inline _.Delay ([<InlineIfLambda>] f: unit -> Cancellable<'T>) : Cancellable<'T> = 
+        (fun ct ->
+            let g = f()
+            invoke g ct)
+
+    member inline _.BindReturn([<InlineIfLambda>] comp: Cancellable<'T>, [<InlineIfLambda>] f: ('T -> 'U)) : Cancellable<'U> = 
+        (fun ct -> 
+            if ct.IsCancellationRequested then 
+                ValueOrCancelled.Cancelled (OperationCanceledException ct) 
+            else
+                match comp ct with
+                | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
+                | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+
+    member inline _.Bind([<InlineIfLambda>] comp: Cancellable<'T>, [<InlineIfLambda>] f: ('T -> Cancellable<'U>)) : Cancellable<'U> =
+       (fun ct -> 
+            if ct.IsCancellationRequested then 
+                ValueOrCancelled.Cancelled (OperationCanceledException ct) 
+            else
+                match comp ct with
+                | ValueOrCancelled.Value res ->
+                    let comp2 = f res
+                    invoke comp2 ct
+                | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+
+    member inline _.Return v =
+         (fun _ -> ValueOrCancelled.Value v)
+
+    member inline _.ReturnFrom ([<InlineIfLambda>] v: Cancellable<'T>) : Cancellable<'T> =
+         (fun ct -> v ct)
+
+    member inline _.Combine([<InlineIfLambda>] comp1: Cancellable<unit>, [<InlineIfLambda>] comp2: Cancellable<'T>) : Cancellable<'T> = 
+        (fun ct -> 
+            if ct.IsCancellationRequested then 
+                ValueOrCancelled.Cancelled (OperationCanceledException ct) 
+            else
+                match comp1 ct with
+                | ValueOrCancelled.Value () -> comp2 ct
+                | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
+
+    member inline _.For(sequence: seq<'T>, [<InlineIfLambda>] (f: 'T -> Cancellable<_>)) : Cancellable<unit> = 
+        (fun ct ->
+            use ie = sequence.GetEnumerator()
+            let mutable fin = false
+            let mutable res = Unchecked.defaultof<_>
+            while not fin do
+                if ie.MoveNext() then
+                    let step = f ie.Current
+                    match invoke step ct with
+                    | ValueOrCancelled.Value () -> ()
+                    | ValueOrCancelled.Cancelled err ->
+                        fin <- true
+                        res <- ValueOrCancelled.Cancelled err
+                else
+                    fin <- true
+                    res <- ValueOrCancelled.Value ()
+            res)
+
+(*
+    member (* inline *) _.TryWith(e, handler) = Cancellable.tryWith e handler
+
+    member (* inline *) _.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+
+    member (* inline *) _.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
+
+*)
+    member inline _.Zero() : Cancellable<unit> =
+         (fun _ -> ValueOrCancelled.Value ())
+
+[<AutoOpen>]
+module CancellableAutoOpens =
+    let cancellable = CancellableBuilder()
+
+// 1. Internal delayed type must be a function to flatten the code with InlineIfLambda
+// 1. Bind and BindReturn methods must be inlined to flatten the code
+
+module CancellableBasicTests =
+    let test0() = 
+        cancellable.Delay (fun () ->
+            cancellable.Return(0xABBA))
+
+    test0() |> Cancellable.runWithoutCancellation
+
+    let test1() = 
+        cancellable {
+             return 12345
+        }
+
+    test1() |> Cancellable.runWithoutCancellation
+
+    let test2() = 
+        cancellable {
+             printfn "hello"
+             return 12345
+        }
+
+    test2() |> Cancellable.runWithoutCancellation
+
+    let testLetBinding() = 
+        cancellable {
+             let x = 1
+             return 12345 + x
+        }
+
+    testLetBinding() |> Cancellable.runWithoutCancellation
+
+    let testLetFunctionBinding() = 
+        cancellable {
+             let f () = 1
+             return 12345 + f()
+        }
+
+    testLetFunctionBinding() |> Cancellable.runWithoutCancellation
+
+    let testBindReturn1() = 
+        cancellable {
+             let! one = Cancellable.one
+             return 12345 + one
+        }
+
+    testBindReturn1() |> Cancellable.runWithoutCancellation
+
+    let testBindReturn2() = 
+        cancellable {
+             System.Console.WriteLine()
+             let! one = Cancellable.one
+             return 12345 + one
+        }
+
+    testBindReturn2() |> Cancellable.runWithoutCancellation
+
+    let testBindReturn3() = 
+        cancellable {
+             let! one = Cancellable.one
+             System.Console.WriteLine()
+             return 12345 + one
+        }
+
+    testBindReturn3() |> Cancellable.runWithoutCancellation
+
+    let testBind1() = 
+        cancellable {
+             let! one = Cancellable.one
+             let! one = Cancellable.one
+             System.Console.WriteLine()
+             return 12345 + one + one
+        }
+
+    testBind1() |> Cancellable.runWithoutCancellation
+
+
+module ForLoopCancellableCode =
+    let testSimpleCancellableEachSeqLoopWithOneStatement inp =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}" 
+            return 1
+        }
+
+    let testSimpleCancellableEachSeqLoopWithTwoStatements inp =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+
+    let testSimpleCancellableEachArrayLoopWithOneStatement (inp:int array) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachArrayLoopWithTwoStatements (inp:int array) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachListLoopWithOneStatement (inp:int list) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachListLoopWithTwoStatements (inp:int list) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachStringLoopWithOneStatement (inp:string) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachStringLoopWithTwoStatements (inp:string) =
+        cancellable {
+            for x in inp do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopWithOneStatement (start, stop) =
+        cancellable {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopWithTwoStatements (start, stop) =
+        cancellable {
+            for x in start .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopDownWithOneStatement (start, stop) =
+        cancellable {
+            for x in stop .. -1 .. start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopDownWithTwoStatements (start, stop) =
+        cancellable {
+            for x in stop .. -1 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntLoopWithOneStatement (start, stop) =
+        cancellable {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntLoopWithTwoStatements (start, stop) =
+        cancellable {
+            for x = start to stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntLoopDownWithOneStatement (start, stop) =
+        cancellable {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntLoopDownWithTwoStatements (start, stop) =
+        cancellable {
+            for x = stop downto start do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    testSimpleCancellableEachSeqLoopWithOneStatement [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachSeqLoopWithTwoStatements [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachArrayLoopWithOneStatement [|1;2;3|] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachArrayLoopWithTwoStatements [|1;2;3|] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachListLoopWithOneStatement [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachListLoopWithTwoStatements [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachStringLoopWithOneStatement "123" |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachStringLoopWithTwoStatements "123" |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntLoopWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntLoopWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntLoopDownWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntLoopDownWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
+

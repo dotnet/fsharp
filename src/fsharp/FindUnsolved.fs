@@ -5,7 +5,9 @@ module internal FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -14,12 +16,15 @@ open FSharp.Compiler.TypeRelations
 
 type env = Nix
 
+let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
+
 /// The environment and collector
 type cenv = 
     { g: TcGlobals 
       amap: Import.ImportMap 
       denv: DisplayEnv 
-      mutable unsolved: Typars }
+      mutable unsolved: Typars 
+      stackGuard: StackGuard }
 
     override x.ToString() = "<cenv>"
 
@@ -34,10 +39,12 @@ let accTypeInst cenv env tyargs =
     tyargs |> List.iter (accTy cenv env)
 
 /// Walk expressions, collecting type variables
-let rec accExpr   (cenv:cenv) (env:env) expr =     
+let rec accExpr (cenv:cenv) (env:env) expr =     
+    cenv.stackGuard.Guard <| fun () ->
+
     let expr = stripExpr expr 
     match expr with
-    | Expr.Sequential (e1, e2, _, _, _) -> 
+    | Expr.Sequential (e1, e2, _, _) -> 
         accExpr cenv env e1 
         accExpr cenv env e2
 
@@ -78,7 +85,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
+        let ty = mkMultiLambdaTy cenv.g m argvs rty 
         accLambdas cenv env topValInfo expr ty
 
     | Expr.TyLambda (_, tps, _body, _m, rty)  -> 
@@ -112,7 +119,11 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.WitnessArg (traitInfo, _m) ->
         accTraitInfo cenv env traitInfo
 
-    | Expr.Link _eref -> failwith "Unexpected Expr.Link"
+    | Expr.Link eref ->
+        accExpr cenv env eref.Value
+
+    | Expr.DebugPoint (_, innerExpr) ->
+        accExpr cenv env innerExpr
 
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l
@@ -151,7 +162,7 @@ and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
     tys |> List.iter (accTy cenv env)
 
 and accLambdas cenv env topValInfo e ety =
-    match e with
+    match stripDebugPoints e with
     | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
@@ -170,7 +181,7 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs, e, _, _)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
@@ -253,11 +264,12 @@ and accModuleOrNamespaceDefs cenv env x =
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(_, tycons, mbinds, _m) -> 
+    | TMDefRec(_, _opens, tycons, mbinds, _m) -> 
         accTycons cenv env tycons
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind, _m)  -> accBind cenv env bind 
     | TMDefDo(e, _m)  -> accExpr cenv env e
+    | TMDefOpens __ -> ()
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 
@@ -277,7 +289,8 @@ let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
       { g =g  
         amap=amap 
         denv=denv 
-        unsolved = [] }
+        unsolved = [] 
+        stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
    accModuleOrNamespaceDef cenv Nix mdef
    accAttribs cenv Nix extraAttribs
    List.rev cenv.unsolved

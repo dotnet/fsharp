@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckExpressions
 
 open System
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler 
@@ -10,6 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -46,10 +48,10 @@ val InitialImplicitCtorInfo: unit -> CtorInfo
 [<NoEquality; NoComparison>]
 type UngeneralizableItem
 
-[<NoEquality; NoComparison>]
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
+[<NoEquality; NoComparison>]
 type TcEnv =
     { /// Name resolution information 
       eNameResEnv: NameResolutionEnv 
@@ -101,6 +103,8 @@ type TcEnv =
 
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
+
+      eIsControlFlow: bool
     } 
 
     member DisplayEnv : DisplayEnv
@@ -115,7 +119,7 @@ type TcEnv =
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -180,8 +184,8 @@ type TcFileState =
       /// we infer type parameters 
       mutable recUses: ValMultiMap<Expr ref * range * bool>
       
-      /// Checks to run after all inference is complete. 
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
+      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+      stackGuard: StackGuard
 
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
@@ -225,11 +229,16 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
             
+      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+
       isInternalTestSpanStackReferring: bool
+
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
@@ -246,7 +255,7 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         // forward call to CheckComputationExpressions.fs
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
         tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
@@ -657,6 +666,10 @@ val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
+/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+val RewriteRangeExpr: expr: SynExpr -> SynExpr option
+
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    
 
@@ -698,7 +711,7 @@ val TcLetrecBinding: cenv:TcFileState * envRec:TcEnv * scopem:range * extraGener
 val TcLetrecComputeCtorSafeThisValBind: cenv:TcFileState -> safeThisValOpt:Val option -> Binding option    
 
 /// Check a collection of `let rec` bindings
-val TcLetrec: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
+val TcLetrecBindings: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
 
 /// Part of check a collection of recursive bindings that might include members
 val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGeneralizationRecursiveBinding -> PostSpecialValsRecursiveBinding

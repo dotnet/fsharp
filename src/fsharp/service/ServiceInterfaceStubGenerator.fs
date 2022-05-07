@@ -52,13 +52,6 @@ module internal CodeGenerationUtils =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
-    let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, _, e2, _, _, _) -> [e1; e2]
-        | SynIndexerArg.One (e, _, _) -> [e]
-
-    let (|IndexerArgList|) xs =
-        List.collect (|IndexerArg|) xs
-        
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential (_, _, e, Sequentials es, _) ->
@@ -510,7 +503,7 @@ module InterfaceStubGenerator =
         GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
-        | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
+        | SynPat.LongIdent(longDotId=LongIdentWithDots(xs, _)) ->
 //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
             Some(last.idText, last.idRange)
@@ -521,14 +514,11 @@ module InterfaceStubGenerator =
     // On merged properties (consisting both getters and setters), they have the same range values,
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) = function
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertyGet ->
+        | SynBinding(valData=SynValData(memberFlags=Some mf); headPat=LongIdentPattern(name, range)) when mf.MemberKind = SynMemberKind.PropertyGet ->
             if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertySet ->
+        | SynBinding(valData=SynValData(memberFlags=Some mf); headPat=LongIdentPattern(name, range)) when mf.MemberKind = SynMemberKind.PropertySet ->
             if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) ->
+        | SynBinding(headPat=LongIdentPattern(name, range)) ->
             Some(name, range)
         | _ ->
             None
@@ -693,7 +683,7 @@ module InterfaceStubGenerator =
                 None
             else
                 match decl with
-                | SynModuleDecl.Exception(SynExceptionDefn(_, synMembers, _), _) -> 
+                | SynModuleDecl.Exception(SynExceptionDefn(_, _, synMembers, _), _) -> 
                     List.tryPick walkSynMemberDefn synMembers
                 | SynModuleDecl.Let(_isRecursive, bindings, _range) ->
                     List.tryPick walkBinding bindings
@@ -701,7 +691,7 @@ module InterfaceStubGenerator =
                     None
                 | SynModuleDecl.NamespaceFragment(fragment) ->
                     walkSynModuleOrNamespace fragment
-                | SynModuleDecl.NestedModule(_, _, modules, _, _) ->
+                | SynModuleDecl.NestedModule(decls = modules) ->
                     List.tryPick walkSynModuleDecl modules
                 | SynModuleDecl.Types(typeDefs, _range) ->
                     List.tryPick walkSynTypeDefn typeDefs
@@ -712,7 +702,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(typeRepr=representation; members=members; range=range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -737,9 +727,9 @@ module InterfaceStubGenerator =
                 match memberDefn with
                 | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) ->
                     None
-                | SynMemberDefn.AutoProperty(_attributes, _isStatic, _id, _type, _memberKind, _memberFlags, _xmlDoc, _access, expr, _r1, _r2) ->
+                | SynMemberDefn.AutoProperty(synExpr=expr) ->
                     walkExpr expr
-                | SynMemberDefn.Interface(interfaceType, members, _range) ->
+                | SynMemberDefn.Interface(interfaceType=interfaceType; members=members) ->
                     if rangeContainsPos interfaceType.Range pos then
                         Some(InterfaceData.Interface(interfaceType, members))
                     else
@@ -757,7 +747,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Inherit _ -> None
                 | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
+        and walkBinding (SynBinding(expr=expr)) =
             walkExpr expr
 
         and walkExpr expr =
@@ -781,18 +771,19 @@ module InterfaceStubGenerator =
                     List.tryPick walkExpr synExprList
 
                 | SynExpr.Record (_inheritOpt, _copyOpt, fields, _range) -> 
-                    List.tryPick (fun (_, e, _) -> Option.bind walkExpr e) fields
+                    List.tryPick (fun (SynExprRecordField(expr=e)) -> Option.bind walkExpr e) fields
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.ObjExpr (ty, baseCallOpt, binds, ifaces, _range1, _range2) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; members=ms; extraImpls=ifaces) ->
+                    let binds = unionBindingAndMembers binds ms
                     match baseCallOpt with
                     | None -> 
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(interfaceTy=ty; bindings=binds; range=range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)
@@ -800,31 +791,37 @@ module InterfaceStubGenerator =
                         // Ignore object expressions of normal objects
                         None
 
-                | SynExpr.While (_sequencePointInfoForWhileLoop, synExpr1, synExpr2, _range) ->
-                    List.tryPick walkExpr [synExpr1; synExpr2]
-                | SynExpr.ForEach (_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
+                | SynExpr.While (_spWhile, synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr1, _, synExpr2, synExpr3, _range) -> 
+                | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
+                    List.tryPick walkExpr [synExpr1; synExpr2]
+
+                | SynExpr.For (identBody=synExpr1; toBody=synExpr2; doBody=synExpr3) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
 
-                | SynExpr.ArrayOrListOfSeqExpr (_, synExpr, _range) ->
+                | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.CompExpr (_, _, synExpr, _range) ->
+
+                | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
+
+                | SynExpr.Lambda (body=synExpr) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
                     synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
-                | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
+
+                | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) ->
                     walkExpr synExpr
                     |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.Do (synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.Assert (synExpr, _range) -> 
                     walkExpr synExpr
 
@@ -834,19 +831,19 @@ module InterfaceStubGenerator =
                 | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUse (_, _, synBindingList, synExpr, _range) -> 
+                | SynExpr.LetOrUse (bindings=synBindingList; body=synExpr) -> 
                     Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
-                | SynExpr.TryWith (synExpr, _range, _synMatchClauseList, _range2, _range3, _sequencePointInfoForTry, _sequencePointInfoForWith) -> 
+                | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
-                | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 
+                | SynExpr.TryFinally (tryExpr=synExpr1; finallyExpr=synExpr2) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (ifExpr=synExpr1; thenExpr=synExpr2; elseExpr=synExprOpt) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
@@ -871,13 +868,11 @@ module InterfaceStubGenerator =
                 | SynExpr.Set (synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.DotIndexedGet (synExpr, IndexerArgList synExprList, _range, _range2) -> 
-                    Option.orElse (walkExpr synExpr) (List.tryPick walkExpr synExprList) 
+                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> 
+                    Option.orElse (walkExpr synExpr) (walkExpr indexArgs)
 
-                | SynExpr.DotIndexedSet (synExpr1, IndexerArgList synExprList, synExpr2, _, _range, _range2) -> 
-                    [ yield synExpr1
-                      yield! synExprList
-                      yield synExpr2 ]
+                | SynExpr.DotIndexedSet (synExpr1, indexArgs, synExpr2, _, _range, _range2) -> 
+                    [ synExpr1; indexArgs; synExpr2 ]
                     |> List.tryPick walkExpr
 
                 | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) ->
@@ -909,10 +904,10 @@ module InterfaceStubGenerator =
                 | SynExpr.DoBang (synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
+                | SynExpr.LetOrUseBang (rhs=synExpr1; andBangs=synExprAndBangs; body=synExpr2) -> 
                     [
                         yield synExpr1
-                        for _,_,_,_,eAndBang,_ in synExprAndBangs do
+                        for SynExprAndBang(body=eAndBang) in synExprAndBangs do
                             yield eAndBang
                         yield synExpr2
                     ]

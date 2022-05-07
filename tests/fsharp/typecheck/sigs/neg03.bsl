@@ -32,11 +32,11 @@ neg03.fs(28,15,28,19): typecheck error FS0001: This expression was expected to h
 but here has type
     'bool'    
 
-neg03.fs(40,31,40,36): typecheck error FS0001: Type mismatch. Expecting a
-    'Map<string,string>'    
-but given a
+neg03.fs(40,31,40,36): typecheck error FS0193: Type constraint mismatch. The type 
     'Map<string,int>'    
-The type 'string' does not match the type 'int'
+is not compatible with type
+    'Map<string,string>'    
+
 
 neg03.fs(45,20,45,26): typecheck error FS0685: The generic function 'typeof' must be given explicit type argument(s)
 
@@ -88,9 +88,9 @@ neg03.fs(84,9,84,23): typecheck error FS0025: Incomplete pattern matches on this
 
 neg03.fs(85,9,85,27): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '"a"' may indicate a case not covered by the pattern(s).
 
-neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s).
+neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s).
 
-neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s).
+neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).
 
 neg03.fs(91,11,91,26): typecheck error FS0026: This rule will never be matched
 

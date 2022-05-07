@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionSteppingTest4
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest4.exe
-// MVID: {60B78A59-2432-93E0-A745-0383598AB760}
+// MVID: {61FD4A6D-2432-93E0-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06580000
+// Image base: 0x069C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -177,7 +177,6 @@
         IL_0098:  ldc.i4.1
         IL_0099:  ret
 
-        .line 7,7 : 19,20 ''
         IL_009a:  ldarg.0
         IL_009b:  ldnull
         IL_009c:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y
@@ -311,13 +310,17 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
-    .maxstack  8
-    .line 13,13 : 13,30 ''
+    // Code size       14 (0xe)
+    .maxstack  3
+    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 13')
+    .line 13,13 : 13,17 ''
     IL_0000:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4::f3()
-    IL_0005:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_000a:  pop
-    IL_000b:  ret
+    IL_0005:  stloc.0
+    .line 13,13 : 20,30 ''
+    IL_0006:  ldloc.0
+    IL_0007:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_000c:  pop
+    IL_000d:  ret
   } // end of method $SeqExpressionSteppingTest4::main@
 
 } // end of class '<StartupCode$SeqExpressionSteppingTest4>'.$SeqExpressionSteppingTest4

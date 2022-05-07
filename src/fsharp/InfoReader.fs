@@ -66,7 +66,7 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let mdefs = tinfo.RawMetadata.Methods
-            let mdefs = match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm
+            let mdefs = match optFilter with None -> mdefs.AsList() | Some nm -> mdefs.FindByName nm
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -148,8 +148,8 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 match optFilter with
                 |   Some name ->
                         match st.PApply((fun st -> st.GetProperty name), m) with
-                        |   Tainted.Null -> [||]
-                        |   pi -> [|pi|]
+                        | Tainted.Null -> [||]
+                        | Tainted.NonNull pi -> [|pi|]
                 |   None ->
                         st.PApplyArray((fun st -> st.GetProperties()), "GetProperties", m)
             matchingProps
@@ -160,7 +160,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let pdefs = tinfo.RawMetadata.Properties
-            let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
+            let pdefs = match optFilter with None -> pdefs.AsList() | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pdef -> ILProp(ILPropInfo(tinfo, pdef))) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -191,7 +191,7 @@ let IsIndexerType g amap ty =
     isListTy g ty ||
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
-        let _, entityTy = generalizeTyconRef tcref
+        let entityTy = generalizedTyconRef g tcref
         let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | ValueNone -> false
@@ -306,13 +306,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                         [ for fi in st.PApplyArray((fun st -> st.GetFields()), "GetFields", m) -> ProvidedField(amap, fi, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetField name), m) with
-                        |   Tainted.Null -> []
-                        |   fi -> [  ProvidedField(amap, fi, m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull fi -> [  ProvidedField(amap, fi, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let fdefs = tinfo.RawMetadata.Fields
-                let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
+                let fdefs = match optFilter with None -> fdefs.AsList() | Some nm -> fdefs.LookupByName nm
                 fdefs |> List.map (fun pd -> ILFieldInfo(tinfo, pd)) 
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
@@ -331,13 +331,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                         [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents", m) -> ProvidedEvent(amap, ei, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetEvent name), m) with
-                        |   Tainted.Null -> []
-                        |   ei -> [  ProvidedEvent(amap, ei, m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull ei -> [  ProvidedEvent(amap, ei, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let edefs = tinfo.RawMetadata.Events
-                let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
+                let edefs = match optFilter with None -> edefs.AsList() | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
                     let ileinfo = ILEventInfo(tinfo, edef)
                     if IsILEventInfoAccessible g amap m ad ileinfo then 
@@ -421,7 +421,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m (interfaceTys: TType list) ty acc =
         match tryAppTy g ty with
         | ValueSome (tcref, _) when tcref.IsILTycon && tcref.ILTyconRawMetadata.IsInterface ->
-            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
+            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList()
             let mdefs = tcref.ILTyconRawMetadata.Methods
 
             // MethodImpls contains a list of methods that override.
@@ -446,7 +446,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                             |> List.tryPick (fun ty -> 
                                 match tryTcrefOfAppTy g ty with
                                 | ValueSome tcref when tcref.IsILTycon && tcref.ILTyconRawMetadata.Name = overridesTyFullName ->
-                                    generalizedTyconRef tcref
+                                    generalizedTyconRef g tcref
                                     |> Some
                                 | _ -> 
                                     None)
@@ -537,7 +537,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
               // Remove any virtuals that are signature-equivalent to virtuals in subtypes, except for newslots
               // That is, keep if it's 
-              ///      (a) not virtual
+              //       (a) not virtual
               //       (b) is a new slot or 
               //       (c) not equivalent
               // We keep virtual finals around for error detection later on
@@ -622,7 +622,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // a decent hash function for these.
               canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, []) -> tcref.TypeContents.tcaug_closed 
+                                    | TType_app(tcref, [], _) -> tcref.TypeContents.tcaug_closed 
                                     | _ -> false),
               
               keyComparer=
@@ -631,13 +631,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g typ1, stripTyEqns g typ2 with 
-                                    | TType_app(tcref1, []), TType_app(tcref2, []) -> tyconRefEq g tcref1 tcref2
+                                    | TType_app(tcref1, [], _), TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
                                     | _ -> false
                        member _.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, []) -> hash tcref.LogicalName
+                                     | TType_app(tcref, [], _) -> hash tcref.LogicalName
                                      | _ -> 0) })
     
     let FindImplicitConversionsUncached (ad, m, ty) = 
@@ -924,7 +924,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
         | _ -> compiledViewOfDelArgTys
     let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
     CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
-    let fty = mkIteratedFunTy fsharpViewOfDelArgTys delRetTy
+    let fty = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
     SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, delRetTy, fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
@@ -939,18 +939,18 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
 /// Indicates if an event info is associated with a delegate type that is a "standard" .NET delegate type
 /// with a sender parameter.
 //
-/// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the 
-/// of the "Add" methods associated with events.  If you want to access it you
-/// can use AddHandler instead.
+// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the
+// of the "Add" methods associated with events.  If you want to access it you
+// can use AddHandler instead.
    
-/// The .NET Framework guidelines indicate that the delegate type used for
-/// an event should take two parameters, an "object source" parameter
-/// indicating the source of the event, and an "e" parameter that
-/// encapsulates any additional information about the event. The type of
-/// the "e" parameter should derive from the EventArgs class. For events
-/// that do not use any additional information, the .NET Framework has
-/// already defined an appropriate delegate type: EventHandler.
-/// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp) 
+// The .NET Framework guidelines indicate that the delegate type used for
+// an event should take two parameters, an "object source" parameter
+// indicating the source of the event, and an "e" parameter that
+// encapsulates any additional information about the event. The type of
+// the "e" parameter should derive from the EventArgs class. For events
+// that do not use any additional information, the .NET Framework has
+// already defined an appropriate delegate type: EventHandler.
+// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp)
 let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let dty = einfo.GetDelegateType(infoReader.amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
@@ -983,7 +983,7 @@ let TryFindMetadataInfoOfExternalEntityRef (infoReader: InfoReader) m eref =
         // Generalize to get a formal signature 
         let formalTypars = eref.Typars m
         let formalTypeInst = generalizeTypars formalTypars
-        let ty = TType_app(eref, formalTypeInst)
+        let ty = TType_app(eref, formalTypeInst, 0uy)
         if isILAppTy g ty then
             let formalTypeInfo = ILTypeInfo.FromType g ty
             Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
@@ -1031,7 +1031,7 @@ let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) =
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
     if rfref.RecdField.XmlDocSig = "" then
-        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
+        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
@@ -1056,9 +1056,10 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
             let args = 
-                match ilminfo.IsILExtensionMethod with
-                | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
+                if ilminfo.IsILExtensionMethod then
+                    filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
+                else
+                    filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
             // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
             // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 

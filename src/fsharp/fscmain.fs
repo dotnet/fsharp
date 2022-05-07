@@ -4,7 +4,9 @@ module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Reflection
+open System.Runtime
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
@@ -18,28 +20,36 @@ open FSharp.Compiler.Text
 
 [<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] 
 do ()
-    
+
 [<EntryPoint>]
 let main(argv) =
-    
+
+    let compilerName =
+        // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
+        if Environment.Is64BitProcess && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib" then
+            "fscAnyCpu.exe"
+        else
+            "fsc.exe"
+
     // Set the garbage collector to batch mode, which improves overall performance.
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
-    
+    GCSettings.LatencyMode <- GCLatencyMode.Batch
+    Thread.CurrentThread.Name <- "F# Main Thread"
+
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
     // An SDL recommendation
     UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
 
-    try 
+    try
 
         // We are on a compilation thread
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         // The F# compiler expects 'argv' to include the executable name, though it makes no use of it.
-        let argv = Array.append [| "fsc.exe" |] argv
+        let argv = Array.append [| compilerName |] argv
         
-        // Check for --pause as the very first step so that a compiler can be attached here.
+        // Check for --pause as the very first step so that a debugger can be attached here.
         let pauseFlag = argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause")
         if pauseFlag then 
             System.Console.WriteLine("Press return to continue...")
@@ -48,9 +58,9 @@ let main(argv) =
         // Set up things for the --times testing flag
 #if !FX_NO_APP_DOMAINS
         let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
-        if timesFlag then 
+        if timesFlag then
             let stats = ILBinaryReader.GetStatistics()
-            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
+            AppDomain.CurrentDomain.ProcessExit.Add(fun _ ->
                 printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" 
                     stats.byteFileCount 
                     stats.memoryMapFileOpenedCount 

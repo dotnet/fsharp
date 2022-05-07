@@ -5,7 +5,7 @@ module Core_genericMeasures =
 #endif
 
     [<AllowNullLiteral>]
-    type C<'T> = class end
+    type C<'T> = member x.P = 1
     
     [<Measure>] type t
     [<Measure>] type t2

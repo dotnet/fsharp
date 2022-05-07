@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3c.exe
-// MVID: {60BD4158-A662-4FAC-A745-03835841BD60}
+// MVID: {61F2AFF9-A662-4FAC-A745-0383F9AFF261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06570000
+// Image base: 0x07520000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,7 +80,7 @@
 
   .method public static void  TestFunction3c() cil managed
   {
-    // Code size       95 (0x5f)
+    // Code size       96 (0x60)
     .maxstack  4
     .locals init ([0] int32 x,
              [1] string V_1,
@@ -88,59 +88,65 @@
              [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3,
              [4] string msg,
              [5] string V_5)
-    .line 11,11 : 8,31 ''
+    .line 10,10 : 5,8 ''
     .try
     {
-      IL_0000:  call       int32 TestFunction3c::TestFunction1()
-      IL_0005:  stloc.0
+      IL_0000:  nop
+      .line 11,11 : 8,31 ''
+      IL_0001:  call       int32 TestFunction3c::TestFunction1()
+      IL_0006:  stloc.0
       .line 12,12 : 8,24 ''
-      IL_0006:  ldstr      "hello"
-      IL_000b:  stloc.1
-      IL_000c:  ldloc.1
-      IL_000d:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-      IL_0012:  throw
+      IL_0007:  ldstr      "hello"
+      IL_000c:  stloc.1
+      IL_000d:  ldloc.1
+      IL_000e:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+      IL_0013:  throw
 
       .line 13,13 : 5,9 ''
     }  // end .try
     catch [mscorlib]System.Object 
     {
-      IL_0013:  castclass  [mscorlib]System.Exception
-      IL_0018:  stloc.2
-      IL_0019:  ldloc.2
-      IL_001a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [mscorlib]System.Exception)
-      IL_001f:  stloc.3
-      IL_0020:  ldloc.3
-      IL_0021:  brfalse.s  IL_0053
-
-      IL_0023:  ldloc.3
-      IL_0024:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
-      IL_0029:  stloc.s    msg
-      IL_002b:  ldloc.s    msg
-      IL_002d:  ldstr      "hello"
-      IL_0032:  call       bool [netstandard]System.String::Equals(string,
-                                                                   string)
-      IL_0037:  brfalse.s  IL_0053
-
-      IL_0039:  ldloc.3
-      IL_003a:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
-      IL_003f:  stloc.s    V_5
-      .line 14,14 : 8,23 ''
-      IL_0041:  ldstr      "World"
-      IL_0046:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_004b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0050:  pop
-      IL_0051:  leave.s    IL_005e
+      IL_0014:  castclass  [mscorlib]System.Exception
+      IL_0019:  stloc.2
+      IL_001a:  ldloc.2
+      IL_001b:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [mscorlib]System.Exception)
+      IL_0020:  stloc.3
+      .line 100001,100001 : 0,0 ''
+      IL_0021:  ldloc.3
+      IL_0022:  brfalse.s  IL_0054
 
       .line 100001,100001 : 0,0 ''
-      IL_0053:  rethrow
-      IL_0055:  ldnull
-      IL_0056:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_005b:  pop
-      IL_005c:  leave.s    IL_005e
+      IL_0024:  ldloc.3
+      IL_0025:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
+      IL_002a:  stloc.s    msg
+      .line 13,13 : 27,40 ''
+      IL_002c:  ldloc.s    msg
+      IL_002e:  ldstr      "hello"
+      IL_0033:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
+      IL_0038:  brfalse.s  IL_0054
+
+      .line 100001,100001 : 0,0 ''
+      IL_003a:  ldloc.3
+      IL_003b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
+      IL_0040:  stloc.s    V_5
+      .line 14,14 : 8,23 ''
+      IL_0042:  ldstr      "World"
+      IL_0047:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_004c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0051:  pop
+      IL_0052:  leave.s    IL_005f
+
+      .line 100001,100001 : 0,0 ''
+      IL_0054:  rethrow
+      IL_0056:  ldnull
+      IL_0057:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_005c:  pop
+      IL_005d:  leave.s    IL_005f
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_005e:  ret
+    IL_005f:  ret
   } // end of method TestFunction3c::TestFunction3c
 
 } // end of class TestFunction3c

@@ -3,12 +3,14 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
+open System.IO
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
@@ -30,7 +32,7 @@ type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
+val ParseInput: (Lexbuf -> Parser.token) * FSharpDiagnosticOptions * ErrorLogger * Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
@@ -46,6 +48,12 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 /// Process the #nowarn in an input and integrate them into the TcConfig
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
+/// Parse one input stream
+val ParseOneInputStream: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool * stream: Stream -> ParsedInput
+
+/// Parse one input source text
+val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * sourceText: ISourceText -> ParsedInput
+
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool -> ParsedInput
 
@@ -54,10 +62,10 @@ val ParseInputFiles: TcConfig * Lexhelp.LexResourceManager * conditionalCompilat
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv
+val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
                 
-[<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
+[<Sealed>]
 type TcState =
     member NiceNameGenerator: NiceNameGenerator
 
@@ -80,7 +88,15 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
+    range *
+    string *
+    TcConfig *
+    TcGlobals *
+    TcImports *
+    NiceNameGenerator *
+    TcEnv *
+    OpenDeclaration list
+        -> TcState
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInput:
@@ -112,7 +128,8 @@ val TypeCheckClosedInputSet:
     TcImports *
     TcGlobals *
     LongIdent option *
-    TcState * ParsedInput list
+    TcState *
+    ParsedInput list
       -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking

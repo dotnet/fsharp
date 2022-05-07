@@ -132,9 +132,9 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName isListItem ppF fnF r = 
+    let OutputFullName displayFullName ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
-      if not isListItem then 
+      if not displayFullName then 
         match ppF r with 
         | None -> emptyL
         | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
@@ -145,7 +145,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -153,11 +153,11 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
             let resL = toArray resL
@@ -167,7 +167,7 @@ module DeclarationListHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -198,7 +198,7 @@ module DeclarationListHelpers =
             let tau = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
@@ -215,7 +215,7 @@ module DeclarationListHelpers =
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv infoReader ecref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -238,7 +238,7 @@ module DeclarationListHelpers =
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name) |> mkNav rfield.DefinitionRange) ^^
+                wordL (tagRecordField rfield.DisplayName |> mkNav rfield.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty ^^
                 (
@@ -363,7 +363,7 @@ module DeclarationListHelpers =
            ToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, TType_app(tcref, _) :: _)
+        | Item.Types(_, TType_app(tcref, _, _) :: _)
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with
                             // tooltips are space-constrained, so use shorter names
@@ -372,8 +372,8 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -445,19 +445,19 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
         |  _ -> 
             ToolTipElement.None
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
         ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-/// Represents one parameter for one method (or other item) in a group. 
 type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.
@@ -492,10 +492,8 @@ module internal DescriptionListsImpl =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
         let display = toArray display
         MethodGroupItemParameter(
-          name = f.Name,
+          name = f.DisplayNameCore,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
-          // Note: the instantiation of any type parameters is currently incorporated directly into the type
-          // rather than being returned separately.
           display = display,
           isOptional=false)
     
@@ -505,8 +503,6 @@ module internal DescriptionListsImpl =
             if isGenerated i f then 
                 initial.Display 
             else 
-                // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
-                // the union type containing this case.
                 let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
                 toArray display
 
@@ -686,7 +682,7 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let rtyL = NicePrint.layoutType denv rty
             prettyParams, rtyL
 
@@ -793,13 +789,13 @@ module internal DescriptionListsImpl =
             match repr with
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
-                | TTyconClass -> FSharpGlyph.Class
-                | TTyconInterface -> FSharpGlyph.Interface
-                | TTyconStruct -> FSharpGlyph.Struct
-                | TTyconDelegate _ -> FSharpGlyph.Delegate
-                | TTyconEnum _ -> FSharpGlyph.Enum
-            | TRecdRepr _ -> FSharpGlyph.Type
-            | TUnionRepr _ -> FSharpGlyph.Union
+                | TFSharpClass -> FSharpGlyph.Class
+                | TFSharpInterface -> FSharpGlyph.Interface
+                | TFSharpStruct -> FSharpGlyph.Struct
+                | TFSharpDelegate _ -> FSharpGlyph.Delegate
+                | TFSharpEnum _ -> FSharpGlyph.Enum
+            | TFSharpRecdRepr _ -> FSharpGlyph.Type
+            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct
@@ -809,8 +805,8 @@ module internal DescriptionListsImpl =
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> FSharpGlyph.Typedef 
-            | TProvidedNamespaceExtensionPoint  _-> FSharpGlyph.Typedef  
+            | TProvidedTypeRepr _-> FSharpGlyph.Typedef 
+            | TProvidedNamespaceRepr  _-> FSharpGlyph.Typedef  
 #endif
             | TNoRepr -> FSharpGlyph.Class  
          
@@ -912,16 +908,16 @@ module internal DescriptionListsImpl =
 
 /// An intellisense declaration
 [<Sealed>]
-type DeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
+type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
-    member _.Name = name
+    member _.Name = textInDeclList
 
-    member _.NameInCode = nameInCode
+    member _.NameInCode = textInCode
 
     member _.Description = 
         match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv) -> 
-            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
+        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst))
         | Choice2Of2 result -> 
             result
 
@@ -946,6 +942,23 @@ type DeclarationListItem(name: string, nameInCode: string, fullName: string, gly
 type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, isError: bool) = 
     static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
 
+    // Check whether this item looks like an operator.
+    static let isOperatorItem name (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorDisplayName name
+            | _ -> false
+        | _ -> false              
+
+    static let isActivePatternItem (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value vref -> IsActivePatternName vref.DisplayNameCoreMangled
+            | _ -> false
+        | _ -> false
+
     member _.Items = declarations
 
     member _.IsForType = isForType
@@ -953,7 +966,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
@@ -970,10 +983,10 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, TType_app(tcref, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, TType_app(tcref, _, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                | Item.FakeInterfaceCtor (TType_app(tcref, _)) 
-                | Item.DelegateCtor (TType_app(tcref, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                | Item.FakeInterfaceCtor (TType_app(tcref, _, _)) 
+                | Item.DelegateCtor (TType_app(tcref, _, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
@@ -992,7 +1005,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by full name for unresolved items and by display name for resolved ones.
-        let items = 
+        let decls = 
             items
             |> List.rev
             // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
@@ -1006,99 +1019,67 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
+
             |> List.map (fun (_, items) -> 
                 let item = items.Head
-                let name = 
+                let textInDeclList = 
+                    match item.Unresolved with
+                    | Some u -> u.DisplayName
+                    | None -> item.Item.DisplayNameCore
+                let textInCode = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayName
-                name, items)
+                textInDeclList, textInCode, items)
 
-        // Filter out operators, active patterns (as values) and the empty list
-        let items = 
-            // Check whether this item looks like an operator.
-            let isOperatorItem name (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
-                    | _ -> false
-                | _ -> false              
-
-            let isActivePatternItem (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
-                    | _ -> false
-                | _ -> false
-
-            items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem displayName items) && 
-                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+            // Filter out operators, active patterns (as values)
+            |> List.filter (fun (_textInDeclList, textInCode, items) -> 
+                not (isOperatorItem textInCode items) && 
                 not (isActivePatternItem items))
 
-        let decls = 
-            items 
-            |> List.map (fun (displayName, itemsWithSameFullName) -> 
-                match itemsWithSameFullName with
-                | [] -> failwith "Unexpected empty bag"
-                | _ ->
-                    let items =
-                        match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
-                        | [], unresolved -> unresolved
-                        // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
-                        | resolved, _ -> resolved 
+            |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 
+                let items =
+                    match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
+                    | [], unresolved -> unresolved
+                    // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
+                    | resolved, _ -> resolved 
                     
-                    let item = items.Head
-                    let glyph = GlyphOfItem(denv, item.Item)
+                let item = items.Head
+                let glyph = GlyphOfItem(denv, item.Item)
 
-                    let name, nameInCode =
-                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
-                            let cleanName = displayName.[2..displayName.Length - 3]
-                            cleanName,
-                            if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
-                        else 
-                            displayName,
-                            match item.Unresolved with
-                            | Some _ -> displayName
-                            | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
+                let cutAttributeSuffix (name: string) =
+                    if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && IsAttribute infoReader item.Item then
+                        name.[0..name.Length - "Attribute".Length - 1]
+                    else name
 
-                    let isAttributeItem = lazy (IsAttribute infoReader item.Item)
-
-                    let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
-                            name.[0..name.Length - "Attribute".Length - 1]
-                        else name
-
-                    let name = cutAttributeSuffix name
-                    let nameInCode = cutAttributeSuffix nameInCode
+                let textInDeclList = cutAttributeSuffix textInDeclList
+                let textInCode = cutAttributeSuffix textInCode
                     
-                    let fullName = 
-                        match item.Unresolved with
-                        | Some x -> x.FullName
-                        | None -> FullNameOfItem g item.Item
+                let fullName = 
+                    match item.Unresolved with
+                    | Some x -> x.FullName
+                    | None -> FullNameOfItem g item.Item
                     
-                    let namespaceToOpen = 
-                        item.Unresolved 
-                        |> Option.map (fun x -> x.Namespace)
-                        |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith fsharpNamespace then None
-                            else Some ns)
-                        |> Option.map (fun ns ->
-                            match currentNamespace with
-                            | Some currentNs ->
-                               if ns |> Array.startsWith currentNs then
-                                 ns.[currentNs.Length..]
-                               else ns
-                            | None -> ns)
-                        |> Option.bind (function
-                            | [||] -> None
-                            | ns -> Some (System.String.Join(".", ns)))
+                let namespaceToOpen = 
+                    item.Unresolved 
+                    |> Option.map (fun x -> x.Namespace)
+                    |> Option.bind (fun ns ->
+                        if ns |> Array.startsWith fsharpNamespace then None
+                        else Some ns)
+                    |> Option.map (fun ns ->
+                        match currentNamespace with
+                        | Some currentNs ->
+                            if ns |> Array.startsWith currentNs then
+                                ns.[currentNs.Length..]
+                            else ns
+                        | None -> ns)
+                    |> Option.bind (function
+                        | [||] -> None
+                        | ns -> Some (System.String.Join(".", ns)))
 
-                    DeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv), getAccessibility item.Item,
-                        item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
+                DeclarationListItem(
+                    textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
+                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)
     
@@ -1171,7 +1152,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
     member _.Methods = methods
 
-    static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
+    static member Create (infoReader: InfoReader, ad, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
         if isNil items then MethodGroup("", [| |]) else
         let name = items.Head.Item.DisplayName 
@@ -1192,7 +1173,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv { item with Item = flatItem }]
+                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem }]
 
                         let hasParamArrayArg = 
                             match flatItem with 

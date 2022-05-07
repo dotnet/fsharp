@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
-//<Expects status="error" span="(6,5-6,25)" id="FS0501">The object constructor 'StructuralComparisonAttribute' takes 0 argument\(s\) but is here given 1\. The required signature is 'new : unit -> StructuralComparisonAttribute'\.$</Expects>
+//<Expects status="error" span="(6,5-6,25)" id="FS0501">The object constructor 'StructuralComparisonAttribute' takes 0 argument\(s\) but is here given 1\. The required signature is 'new: unit -> StructuralComparisonAttribute'\.$</Expects>
 
 module M21 = 
   (* [<ReferenceEquality(true)>] *)

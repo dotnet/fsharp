@@ -76,7 +76,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     override x.ErrorCount = errors
 
     override x.DiagnosticSink(err, severity) =
-      if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError tcConfigB.errorSeverityOptions err then
+      if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
         if errors >= tcConfigB.maxErrors then
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
@@ -91,7 +91,10 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportWarning tcConfigB.errorSeverityOptions err then
+      elif ReportDiagnosticAsWarning tcConfigB.errorSeverityOptions (err, severity) then
+          x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Warning)
+
+      elif ReportDiagnosticAsInfo tcConfigB.errorSeverityOptions (err, severity) then
           x.HandleIssue(tcConfigB, err, severity)
 
 
@@ -173,11 +176,11 @@ let AbortOnError (errorLogger: ErrorLogger, exiter : Exiter) =
     if errorLogger.ErrorCount > 0 then
         exiter.Exit 1
 
-let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
+let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, openDecls0, inputs, exiter: Exiter) =
     try
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), rangeStartup))
         let ccuName = assemblyName
-        let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
+        let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0, openDecls0)
         TypeCheckClosedInputSet (ctok, (fun () -> errorLogger.ErrorCount > 0), tcConfig, tcImports, tcGlobals, None, tcInitialState, inputs)
     with e ->
         errorRecovery e rangeStartup
@@ -312,7 +315,7 @@ module InterfaceFileWriter =
         let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
         let denv = { denv with shrinkOverloads = false; printVerboseSignatures = true }
 
-        let writeToFile os (TImplFile (_, _, mexpr, _, _, _)) =
+        let writeToFile os (TImplFile (implExprWithSig=mexpr)) =
           writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
             (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
@@ -327,7 +330,7 @@ module InterfaceFileWriter =
                 if tcConfig.printSignatureFile = "" then
                     Console.Out
                 else
-                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.OpenOrCreate).GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -343,10 +346,10 @@ module InterfaceFileWriter =
                 ".fsi"
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
-            for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
+            for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
                 let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
-                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
+                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
                 writeHeader filename os
                 writeToFile os impl
 
@@ -576,13 +579,13 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
-    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    let tcEnv0, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -697,11 +700,11 @@ let main1OfAst
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    let tcEnv0, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -725,8 +728,8 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger =
-        let scopedPragmas = [ for TImplFile (_, pragmas, _, _, _, _) in typedImplFiles do yield! pragmas ]
-        GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
+        let scopedPragmas = [ for TImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
+        GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.errorSeverityOptions, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
 
@@ -737,7 +740,10 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
            match tcConfig.version with
            | VersionNone -> Some v
            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(), rangeStartup)); None
-        | _ -> None
+        | _ ->
+            match tcConfig.version with
+            | VersionNone -> Some (ILVersionInfo (0us,0us,0us,0us))               //If no attribute was specified in source then version is 0.0.0.0
+            | _ -> Some (tcConfig.version.GetVersionInfo tcConfig.implicitIncludeDir)
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"
@@ -793,7 +799,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
 
     let optimizedImpls, optimizationData, _ =
         ApplyAllOptimizations
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+            (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile,
              importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
@@ -903,10 +909,10 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     | None ->
         try
             try
-                ILBinaryWriter.WriteILBinary
-                 (outfile,
-                  { ilg = tcGlobals.ilg
-                    pdbfile=pdbfile
+                ILBinaryWriter.WriteILBinaryFile
+                 ({ ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes

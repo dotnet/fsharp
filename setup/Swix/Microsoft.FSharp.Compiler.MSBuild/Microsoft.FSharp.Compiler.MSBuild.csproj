@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fscAnyCpu\fscAnyCpu.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
@@ -70,6 +71,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\%(_XlfLan
 
 package name=Microsoft.FSharp.Compiler
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.Dependencies
@@ -77,8 +79,10 @@ vs.dependencies
                 type=Required
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
-  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsc.exe"
+  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=x86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsc.exe"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
+  file source="$(BinariesFolder)fscAnyCpu\$(Configuration)\$(TargetFramework)\fscAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fscAnyCpu.exe"
+  file source="$(BinariesFolder)fscAnyCpu\$(Configuration)\$(TargetFramework)\fscAnyCpu.exe.config"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsi.exe"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
   file source="$(BinariesFolder)fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsiAnyCpu.exe"
@@ -106,6 +110,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
   file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.xml"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.Portable.FSharp.Targets"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Core.NetSdk.props"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.props"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.targets"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"

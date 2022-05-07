@@ -272,7 +272,7 @@ module DispatchSlotChecking =
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
         // The override has to actually be in some subtype of the dispatch slot
-        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
+        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef g availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
 
     /// Check if a dispatch slot is already implemented
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
@@ -460,7 +460,7 @@ module DispatchSlotChecking =
     /// Finds the override interface methods from the most specific overrides by the given method.
     let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m (mostSpecificOverrides: NameMultiMap<TType * MethInfo>) (minfo: MethInfo) =
         let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
-        let minfoTy = generalizedTyconRef minfo.ApparentEnclosingTyconRef
+        let minfoTy = generalizedTyconRef g minfo.ApparentEnclosingTyconRef
         NameMultiMap.find minfo.LogicalName mostSpecificOverrides
         |> List.filter (fun (overridenTy, minfo2) -> 
             typeEquiv g overridenTy minfoTy && 
@@ -587,8 +587,6 @@ module DispatchSlotChecking =
                     | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod (sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) meth.LogicalName), m))
                     | _ -> ()
 
-
-
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
     /// simultaneously, e.g.
@@ -682,7 +680,7 @@ module DispatchSlotChecking =
                           if not minfo.IsAbstract then 
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
 
-            /// Check that no interface type is implied twice
+            // Check that no interface type is implied twice
             for j, _, _, impliedTys2 in reqdTyInfos do
                 if i > j then
                     for ty, dispatchSlots in dispatchSlotSet do
@@ -718,7 +716,7 @@ module DispatchSlotChecking =
         let tcaug = tycon.TypeContents        
         let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (ity, _compgen, m) -> (ity, m))
 
-        let overallTy = generalizedTyconRef (mkLocalTyconRef tycon)
+        let overallTy = generalizedTyconRef g (mkLocalTyconRef tycon)
 
         let allReqdTys = (overallTy, tycon.Range) :: interfaces 
 

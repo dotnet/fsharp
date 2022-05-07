@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 fsi、.fsx 或 .fsscript。若要啟用已被取代的 .ml 或 .mli 副檔名，請使用 '--langversion:5.0' and '--mlcompatibility'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 .fs、.fsi、.fsx 或 .fsscript。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
@@ -15,6 +25,26 @@
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
         <target state="translated">功能 '{0}' 需要語言版本 {1} 或更高的 F# 程式庫。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellAssign">
+        <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
+        <target state="translated">透過 F# 程式庫使用 ':=' 的方式已淘汰。請參閱 https://aka.ms/fsharp-refcell-ops。舉例來說，請將 'cell := expr' 變更為 'cell.Value &lt;- expr'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDecr">
+        <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
+        <target state="translated">透過 F# 程式庫使用 'decr' 的方式已淘汰。請參閱 https://aka.ms/fsharp-refcell-ops。舉例來說，請將 'decr cell' 變更為 'cell.Value &lt;- cell.Value - 1'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDeref">
+        <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
+        <target state="translated">透過 F# 程式庫使用 '!' 的方式已淘汰。請參閱 https://aka.ms/fsharp-refcell-ops。舉例來說，請將 '!cell' 變更為 'cell.Value'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellIncr">
+        <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
+        <target state="translated">透過 F# 程式庫使用 'incr' 的方式已淘汰。請參閱 https://aka.ms/fsharp-refcell-ops。舉例來說，請將 'incr cell' 變更為 'cell.Value &lt;- cell.Value + 1'。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -89,7 +119,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">其他類型導向轉換</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -100,6 +130,11 @@
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">'module' 關鍵字右邊的屬性</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">自動產生 'exception' 宣告的 'Message' 屬性</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -137,9 +172,19 @@
         <target state="translated">隱含 yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureIndexerNotationWithoutDot">
+        <source>expr[idx] notation for indexing and slicing</source>
+        <target state="translated">用於編製索引和分割的 expr[idx] 註釋</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">具有多個泛型具現化的介面</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="translated">ML 相容性修訂</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -177,6 +222,11 @@
         <target state="translated">整數的二進位格式化</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRefCellNotationInformationals">
+        <source>informational messages related to reference cells</source>
+        <target state="translated">與參考儲存格相關的資訊訊息</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">空白字元放寬</target>
@@ -184,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
-        <target state="new">whitespace relaxation v2</target>
+        <target state="translated">空格鍵放鬆 v2</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -243,13 +293,18 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">從結尾處切割需要語言版本 5.0，請使用 /langversion:preview。</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">「從末端分割」功能需要語言版本「預覽」。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">無效的指示詞 '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">未知的偵錯點 '{0}'。可用的偵錯點為 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -262,6 +317,11 @@
         <target state="translated">'InlineIfLambda' 屬性存在於簽章中，但不存在於實作中。</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">XML 註解沒有放置在有效的語言元素上。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">用於在型別提供者中，將常數常值指定為型別參數引數的關鍵字。</target>
@@ -270,6 +330,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">位元組字串不能是插補字串</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="translated">不再支援 IF-FSHARP/IF-CAML 區域</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -287,6 +352,41 @@
         <target state="translated">插補字串無效。三引號字串常值不可用於插補運算式。請考慮為內插補點運算式使用明確的 'let' 繫結。</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">此建構已被取代。{0}。您可以使用 '--langversion:5.0' and '--mlcompatibility' 來啟用此功能。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="translated">在舊版本的 F# '{0}' 是保留關鍵字，但是使用此關鍵字現已被取代</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">在 F# 2.0 #light使用 'off\" 或 '#indent off\"'已被取代，而且已不再支援</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">在 F# 2.0 中，在泛型型別名稱前 (例如 '(int, int) Map') 使用多個小括號內的型別參數已被取代，而且已不再支援</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M: sig ... end ' 已被取代，而且已不再支援。將 ':' 變更為 '=' 並移除 'sig' 和 'end' ，並改用縮排</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M = sig ... end ' 已被取代，而且已不再支援。移除 'sig' 和 'end' ，並改用縮排</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M = struct ... end ' 已被取代，而且已不再支援。移除 'struct' 和 'end'，並改用縮排</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">資料流未以 null 資源開頭，並且未使用 '.RES' 格式。</target>
@@ -295,6 +395,16 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">從位移 {0} 開始的資源標頭格式錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexer2">
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
+        <target state="translated">此運算式並非函式，因而無法套用。您要用 'expr[index]' 存取索引子嗎?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexerWithName2">
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
+        <target state="translated">此值並非函式，因而無法套用。您要用 '{0}[index]' 存取索引子嗎?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -333,8 +443,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">套件管理功能需要語言版本 5.0，請使用 /langversion:preview</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">「套件管理」功能需要語言版本 5.0 或更新版本</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -365,6 +475,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">型別定義中出現非預期的權杖。類型 '{0}' 之後應該要有 '='。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">此成員存取不明確。請在物件建立前後加上括弧，例如「(new SomeType(args)).MemberName」</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -447,11 +562,6 @@
         <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。目錄 '{1}' 中 '{0} --version' 的輸出為: '{2}'，結束代碼為 '{3}'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAmbiguousImplicitConversion">
-        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
         <target state="translated">無法判斷此指令碼的 .NET SDK。找不到 dotnet.exe，請確保已安裝 .NET SDK。</target>
@@ -460,6 +570,11 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。未預期的錯誤 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="translated">此運算式的類型為 '{0}'，僅可透過不明確的隱含轉換使其與類型 '{1}' 相容。請考慮使用明確呼叫 'op_Implicit'。適用的隱含轉換為: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -492,24 +607,39 @@
         <target state="translated">屬性無法套用到類型延伸模組。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
+        <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
+        <target state="translated">語法 'expr1[expr2]' 已用於編製索引。請考慮新增類型註釋來啟用編製索引，或是呼叫函式並新增空格，例如 'expr1 [expr2]'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
+        <target state="translated">語法 'expr1[expr2]' 現已為編製索引保留。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫函式，請在函式與引數之間新增空格，例如 'someFunction [expr]'。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">開放式類型宣告中不允許 Byref 類型。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
+        <target state="translated">語法 'arr.[idx]' 現已修訂為 'arr[idx]'。請更新您的程式碼。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">此運算式使用內建隱含轉換將類型 '{0}' 轉換為類型 '{1}'。請參閲 https://aka.ms/fsharp-implicit-convs。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">此運算式使用隱含轉換 '{0}' 將類型 '{1}' 轉換為類型 '{2}'.。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">此運算式使用隱含轉換 '{0}' 將類型 '{1}' 轉換為類型 '{2}'。請參閱 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 停用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -527,6 +657,11 @@
         <target state="translated">插補字串中的對齊無效</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">成員宣告無效。成員的名稱遺失或有括弧。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">建構 '{0}' 只能用於有效的可繼續程式碼。</target>
@@ -542,6 +677,21 @@
         <target state="translated">use! 不可與 and! 合併</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="translated">在清單運算式中使用反向索引無效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">語法 '[expr1][expr2]' 用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果您要編製索引或切割，則必須在引數位置使用 '(expr1).[expr2]'。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction [expr1] [expr2]'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentReserved">
+        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">語法 '[expr1][expr2]' 現已為編製索引保留，但用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction [expr1] [expr2]'。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">[&lt;Literal&gt;] 宣告不能對其識別碼使用現用模式</target>
@@ -555,6 +705,51 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">無法將 '{0}' 指派給標記為常值的值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">使用具有 'NoEagerConstraintApplicationAttribute' 的方法需要 /langversion:6.0 或更新版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
+        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">此運算式支援編製索引，例如 'expr.[index]'。語法 'expr[index]' 需要 /langversion:preview。請參閱 https://aka.ms/fsharp-index-notation。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
+        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">此值支援編製索引，例如 '{0}.[index]'。語法 '{1}[index]' 需要 /langversion:preview。請參閱 https://aka.ms/fsharp-index-notation。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
+        <source>This expression is not a function and does not support index notation.</source>
+        <target state="translated">此運算式並非函式，不支援索引標記法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
+        <source>The value '{0}' is not a function and does not support index notation.</source>
+        <target state="translated">值 '{0}' 並非函式，不支援索引標記法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">語法 'expr1[expr2]' 用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果您要編製索引或切割，則必須在引數位置使用 'expr1.[expr2]'。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction expr1 [expr2]'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">語法 'expr1[expr2]' 現已為編製索引保留，但用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction expr1 [expr2]'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">語法 '(expr1)[expr2]' 用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果您要編製索引或切割，則必須在引數位置使用 '(expr1).[expr2]'。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction (expr1) [expr2]'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
+        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">語法 '(expr1)[expr2]' 現已為編製索引保留，但用作引數時不明確。請參閱 https://aka.ms/fsharp-index-notation。如果要呼叫具有多個調用引數的函式，請在它們之間新增空格，例如 'someFunction (expr1) [expr2]'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -594,7 +789,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">此運算式將類型 '{0}' 隱含轉換為類型 '{1}'。請參閱 https://aka.ms/fsharp-implicit-convs。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -704,12 +899,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">清單建構函式運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻為類型 '{1}'。</target>
+        <target state="translated">清單建構函式運算式的所有項目都必須可隱含轉換成同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">陣列建構函式運算式的所有項目都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <target state="translated">陣列建構函式運算式的所有項目都必須可隱含轉換成同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -724,12 +919,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">if' 運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <target state="translated">if 運算式的所有分支都傳回可隱含轉換為同一種類型的值。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">模式比對運算式的所有分支，都必須傳回相同類型的值。第一個分支傳回了類型 '{0}' 的值，但此分支卻傳回了類型 '{1}' 的值。</target>
+        <target state="translated">模式比對運算式的所有分支都傳回可隱含轉換為同一種類型的值。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3528,8 +3723,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">無效的索引子運算式</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="translated">運算式不完整，或使用的索引子語法無效</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -4138,8 +4333,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">若也提供了常數值，宣告就只能是 [&lt;Literal&gt;] 屬性，例如 'val x : int = 1'</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="translated">若也提供了常數值，宣告就只能是 [&lt;Literal&gt;] 屬性，例如 'val x: int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -7443,8 +7638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">用以宣告結構類型。也會用在泛型參數條件約束中。用於模組定義中的 OCaml 相容性。</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">用來宣告結構類型。也用於泛型參數限制。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">
@@ -7568,13 +7763,13 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via {0}.[index] instead?</source>
-        <target state="translated">此值並非函式，因而無法套用。您要改用 {0}.[index] 來存取索引子嗎?</target>
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
+        <target state="translated">此值並非函式，因而無法套用。您要用 '{0}.[index]' 存取索引子嗎?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?</source>
-        <target state="translated">此運算式並非函式，因而無法套用。您要改用 expr.[index] 來存取索引子嗎?</target>
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
+        <target state="translated">此運算式並非函式，因而無法套用。您要用 'expr.[index]' 存取索引子嗎?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

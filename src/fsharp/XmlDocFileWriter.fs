@@ -23,8 +23,15 @@ module XmlDocWriter =
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do
                 doValSig ptext vref.Deref
+
             for uc in tc.UnionCasesArray do
-                if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
+                if (hasDoc uc.XmlDoc) then
+                    uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
+                for field in uc.RecdFieldsArray do
+                    if (hasDoc field.XmlDoc) then
+                        // union case fields are exposed as properties
+                        field.XmlDocSig <- XmlDocSigOfProperty [ptext; tc.CompiledName; uc.Id.idText; field.Id.idText]
+
             for rf in tc.AllFieldsArray do
                 if (hasDoc rf.XmlDoc) then
                     rf.XmlDocSig <-
@@ -68,9 +75,12 @@ module XmlDocWriter =
                 let doc = xmlDoc.GetXmlText()
                 members <- (id, doc) :: members
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
-        let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
         let doField (rf: RecdField) = addMember rf.XmlDocSig rf.XmlDoc
-        let doTycon (tc: Tycon) =
+        let doUnionCase (uc: UnionCase) =
+            addMember uc.XmlDocSig uc.XmlDoc
+            for field in uc.RecdFieldsArray do
+                addMember field.XmlDocSig field.XmlDoc
+        let doTycon (tc: Tycon) = 
             addMember tc.XmlDocSig tc.XmlDoc
             for vref in tc.MembersOfFSharpTyconSorted do
                 doVal vref.Deref
@@ -96,7 +106,7 @@ module XmlDocWriter =
 
         doModule generatedCcu.Contents
 
-        use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.OpenOrCreate).GetWriter()
+        use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.Create).GetWriter()
 
         fprintfn os "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         fprintfn os "<doc>"

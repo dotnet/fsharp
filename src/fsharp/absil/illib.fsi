@@ -23,9 +23,24 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l:'a list -> bool
 
-    val inline isNonNull: x:'a -> bool when 'a: null
+    /// Returns true if the argument is non-null.
+    val inline isNotNull: x:'T -> bool when 'T: null
 
-    val inline nonNull: msg:string -> x:'a -> 'a when 'a: null
+    /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
+    /// replacement for 'string?' for example for future FS-1060.
+    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
+ 
+    /// Asserts the argument is non-null and raises an exception if it is
+    val inline (|NonNullQuick|): 'T MaybeNull -> 'T
+
+    /// Match on the nullness of an argument.
+    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit,'T>
+
+    /// Asserts the argument is non-null and raises an exception if it is
+    val inline nonNull: x: 'T MaybeNull -> 'T
+
+    /// Checks the argument is non-null
+    val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T
 
     val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
 
@@ -241,9 +256,6 @@ module internal String =
     val lowerCaseFirstChar: str:string -> string
 
     val extractTrailingIndex: str:string -> string * int option
-
-    /// Remove all trailing and leading whitespace from the string, return null if the string is null
-    val trim: value:string -> string
 
     /// Splits a string into substrings based on the strings in the array separators
     val split : options:StringSplitOptions -> separator:string [] -> value:string -> string []
@@ -475,7 +487,7 @@ module internal Tables =
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
     inherit IEqualityComparer<'T>
-    abstract member InEqualityRelation: 'T -> bool
+    abstract InEqualityRelation: 'T -> bool
   
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
@@ -596,13 +608,14 @@ module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
         
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-        
-        member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
-        member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
+#if USE_SHIPPED_FSCORE        
+        member Values: 'Value list
+#endif
 
-    type internal Map<'Key,'Value when 'Key: comparison> with
-        member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
+        member AddMany: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
+
+        member AddOrModify: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -612,9 +625,7 @@ type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     member Add: k:'Key * v:'Value -> LayeredMultiMap<'Key,'Value>
 
-    member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
-
-    member MarkAsCollapsible: unit -> LayeredMultiMap<'Key,'Value>
+    member AddMany: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
 
     member TryFind: k:'Key -> 'Value list option
 

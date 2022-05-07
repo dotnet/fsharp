@@ -169,7 +169,7 @@ module ConvertViaOpImplicit5 =
         static member M1(x:X) = 1
     type Y() =
         static member op_Implicit(y:Y) = X()
-    let x = X.M1(Y())
+    let x = X.M1(Y()) // Note this counts as a use in a method arg position, when processing the return type of 'Y'
 
 module ConvertViaOpImplicitGeneric =
     type C<'T>() = 
@@ -543,6 +543,95 @@ module TestNoWidening =
     let x4 : float32 list = [1;2;3;4]
     let x5 : float64 list = [1.0f;2.0f;3.0f;4.0f]
 #endif
+
+
+module TestRecursiveInferenceForPropagatingCases =
+
+    module Bug1 = 
+        type RecordTypeA =
+            { Name: string
+              FieldA: string }
+
+        type RecordTypeB =
+            { Name: string
+              FieldB: int}
+
+        // When the record expression is encountered, it must commit to "RecordTypeA"
+        // because the return type of "f" is, at that point, a variable type
+        // and must be correctly inferred by the point where we process the subsequence 
+        // dot-notation "f().Name"
+        let rec f() =
+            { Name=""
+              FieldA =  f().Name  
+            }
+
+    module Bug2 = 
+
+        type RecordTypeB =
+            { Name: string
+              FieldB: int}
+
+        // When the anonymous record expression is encountered, it must commit to "RecordTypeA".
+        // The return type of "f" is, at that point, a variable type
+        // and must be correctly inferred by the point where we process the subsequence 
+        // dot-notation "f().Name"
+        let rec f() =
+            {| Name=""
+               FieldA =  f().Name  
+            |}
+
+    module Test3 = 
+
+        // Check the return type of 'f' is known by the time we process "f().Length"
+        let rec f() = [ f().Length  ]
+
+    module Test4 = 
+
+        // Check the return type of 'f' is known by the time we process "f().CompareTo(y)"
+        let rec f() = { new System.IComparable with member x.CompareTo(y) = f().CompareTo(y) }
+
+module MoreTests1 =
+    open System
+
+    /// string -> unit
+    let print (s: string) = printfn "%s" s
+
+    /// int -> string
+    let stringify (i: int) = string i
+
+    /// int -> unit
+    let stringifyThenPrint = stringify >> print
+
+    /// int -> unit
+    let doit (i: int) = stringifyThenPrint i
+
+    // Action<int> -> int -> unit
+    let actioner (a: Action<int>) i = a.Invoke i
+    let bleh = actioner stringifyThenPrint
+
+module MoreTests2 =
+    type Test() =
+        //member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+    let test x = x + 1
+    Test().Test (test)
+
+module MoreTests3 =
+
+    type Test() =
+        //member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+    let test x = x + 1
+    Test().Test (fun x -> test x)
+
+module MoreTests4 =
+    type Test() =
+        member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+
+    let test x = x + 1
+    Test().Test (test)
+
 printfn "test done"
 
 let aa =

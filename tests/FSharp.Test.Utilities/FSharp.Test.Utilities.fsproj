@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net5.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -24,15 +24,18 @@
     <Compile Include="Assert.fs" />
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
-    <Compile Include="Xunit\Attributes\DirectoryAttribute.fs" />
+    <Compile Include="DirectoryAttribute.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(SolutionName)' != 'FSharp.Compiler.Service'">
     <!-- CompilerAssert dependencies.
          Make sure they are getting built with the Utilities. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
@@ -42,41 +45,41 @@
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
   <ItemGroup>
-        <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
-        <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
-        <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
-        <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-        <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-        <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-        <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
-        <PackageReference Include="Microsoft.NETCore.App.Ref" Version="5.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
+    <PackageReference Include="Microsoft.NETCore.App.Ref" Version="6.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\mscorlib.dll" LogicalName="net5.01.mscorlib.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.dll" LogicalName="net5.01.System.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Core.dll" LogicalName="net5.01.System.Core.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Console.dll" LogicalName="net5.01.System.Console.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Runtime.dll" LogicalName="net5.01.System.Runtime.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Dynamic.Runtime.dll" LogicalName="net5.01.System.Runtime.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\netstandard.dll" LogicalName="net5.01.netstandard.dll">
-                <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\mscorlib.dll" LogicalName="net6.01.mscorlib.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.dll" LogicalName="net6.01.System.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Core.dll" LogicalName="net6.01.System.Core.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Console.dll" LogicalName="net6.01.System.Console.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Runtime.dll" LogicalName="net6.01.System.Runtime.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Dynamic.Runtime.dll" LogicalName="net6.01.System.Runtime.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\netstandard.dll" LogicalName="net6.01.netstandard.dll">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
 </Project>

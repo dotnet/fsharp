@@ -21,25 +21,13 @@ open TestFramework
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (expectedIL: string list) =
+    member _.VerifyIL (expectedIL: string list) =
         ILChecker.checkIL dllFilePath expectedIL
 
-    //member this.VerifyILWithDebugPoints (expectedIL: string list) =
-    //    ILChecker.checkILWithDebugPoints dllFilePath expectedIL
+[<Sealed>]
+type PdbDebugInfo(debugInfo: string) =
 
-type Worker () =
-    inherit MarshalByRefObject()
-
-    member x.ExecuteTestCase assemblyPath (deps: string[]) =
-        AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
-            deps
-            |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
-            |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
-            |> Option.map Assembly.LoadFile
-            |> Option.defaultValue null))
-        let asm = Assembly.LoadFrom(assemblyPath)
-        let entryPoint = asm.EntryPoint
-        (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+    member _.InfoText = debugInfo
 
 type SourceKind =
     | Fs
@@ -61,20 +49,37 @@ type CompilationReference =
     static member Create(cmpl: TestCompilation) =
         TestCompilationReference cmpl
 
-and Compilation = private Compilation of source: string * SourceKind * CompileOutput * options: string[] * CompilationReference list * name: string option with
+and Compilation =
+    private Compilation of
+        source: string *
+        sourceKind: SourceKind *
+        outputType: CompileOutput *
+        options: string[] *
+        CompilationReference list *
+        name: string option *
+        outputDirectory: DirectoryInfo option with
 
-    static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name) =
-        let options = defaultArg options [||]
-        let cmplRefs = defaultArg cmplRefs []
-        Compilation(source, sourceKind, output, options, cmplRefs, name)
+        static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo) =
+            let options = defaultArg options [||]
+            let cmplRefs = defaultArg cmplRefs []
+            let name =
+                match defaultArg name null with
+                | null -> None
+                | n -> Some n
+            Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
 
-[<Sealed;AbstractClass>]
-type CompilerAssert private () =
+module rec CompilerAssertHelpers =
 
-    static let checker = FSharpChecker.Create(suggestNamesForErrors=true)
+    let checker = FSharpChecker.Create(suggestNamesForErrors=true)
+
+    // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
+    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
+        if entryPoint.GetParameters().Length = 1 then
+            yield Array.empty<string>
+    |]
 
 #if FX_NO_APP_DOMAINS
-    static let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
             let asm = ctxt.LoadFromAssemblyPath(assembly)
@@ -84,25 +89,41 @@ type CompilerAssert private () =
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+            let args = mkDefaultArgs entryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
             ctxt.Unload()
 #else
+    type Worker () =
+        inherit MarshalByRefObject()
 
-    static let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
+        member x.ExecuteTestCase assemblyPath (deps: string[]) =
+            AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
+                deps
+                |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
+                |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
+                |> Option.map Assembly.LoadFile
+                |> Option.defaultValue null))
+            let asm = Assembly.LoadFrom(assemblyPath)
+            let entryPoint = asm.EntryPoint
+            let args = mkDefaultArgs entryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
 
-    static let adSetup =
+    let adSetup =
         let setup = new System.AppDomainSetup ()
-        setup.PrivateBinPath <- pathToThisDll
+        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        setup.ApplicationBase <- directory
         setup
 
-    static let executeBuiltApp assembly deps =
+    let executeBuiltApp assembly deps =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+        let worker =
+            use _ = new AlreadyLoadedAppDomainResolver()
+            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
         worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
 #endif
 
-    static let defaultProjectOptions =
+    let defaultProjectOptions =
         {
             ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
@@ -123,21 +144,20 @@ type CompilerAssert private () =
             Stamp = None
         }
 
-    static let rawCompile inputFilePath outputFilePath isExe options source =
+    let rawCompile inputFilePath outputFilePath isExe options source =
         File.WriteAllText (inputFilePath, source)
         let args =
             [| yield "fsc.dll"; 
                yield inputFilePath; 
                yield "-o:" + outputFilePath; 
                yield (if isExe then "--target:exe" else "--target:library"); 
-               yield "--nowin32manifest" 
                yield! defaultProjectOptions.OtherOptions
                yield! options
              |]
         let errors, _ = checker.Compile args |> Async.RunImmediate
         errors, outputFilePath
 
-    static let compileAux isExe options source f : unit =
+    let compileAux isExe options source f : unit =
         let inputFilePath = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
         let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
@@ -146,16 +166,16 @@ type CompilerAssert private () =
             try File.Delete inputFilePath with | _ -> ()
             try File.Delete outputFilePath with | _ -> ()
 
-    static let compileDisposable outputPath isScript isExe options nameOpt source =
+    let compileDisposable (outputDirectory:DirectoryInfo) isScript isExe options nameOpt source =
         let ext =
             if isScript then ".fsx"
             else ".fs"
-        let inputFilePath = Path.ChangeExtension(Path.Combine(outputPath, Path.GetRandomFileName()), ext)
+        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, tryCreateTemporaryFileName()), ext)
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> Path.GetRandomFileName()
-        let outputFilePath = Path.ChangeExtension (Path.Combine(outputPath, name), if isExe then ".exe" else ".dll")
+            | _ -> tryCreateTemporaryFileName()
+        let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         let o =
             { new IDisposable with
                 member _.Dispose() =
@@ -168,10 +188,10 @@ type CompilerAssert private () =
             o.Dispose()
             reraise()
 
-    static let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
+    let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning && error.Severity <> FSharpDiagnosticSeverity.Info else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
@@ -193,79 +213,80 @@ type CompilerAssert private () =
             checkEqual "ErrorRange" expectedErrorRange actualErrorRange
             checkEqual "Message" expectedErrorMsg actualErrorMsg)
 
-    static let compile isExe options source f =
+    let compile isExe options source f =
         compileAux isExe options source f
 
-    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
-        let compilationRefs, deps =
-            match cmpl with
-            | Compilation(_, _, _, _, cmpls, _) ->
-                let compiledRefs =
-                    cmpls
-                    |> List.map (fun cmpl ->
-                            match cmpl with
-                            | CompilationReference (cmpl, staticLink) ->
-                                compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
-                            | TestCompilationReference (cmpl) ->
-                                let filename =
-                                 match cmpl with
-                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                 | _ -> Path.GetRandomFileName()
-                                let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
-                                disposals.Add({ new IDisposable with
-                                                    member _.Dispose() =
-                                                        try File.Delete tmp with | _ -> () })
-                                cmpl.EmitAsFile tmp
-                                (([||], tmp), []), false)
+    let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
+        match cmpl with
+        | Compilation(_, _, _, _, cmpls, _, _) ->
+            let compiledRefs =
+                cmpls
+                |> List.map (fun cmpl ->
+                        match cmpl with
+                        | CompilationReference (cmpl, staticLink) ->
+                            compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
+                        | TestCompilationReference (cmpl) ->
+                            let filename =
+                                match cmpl with
+                                | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
+                                | _ -> tryCreateTemporaryFileName()
+                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
+                            disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
+                            cmpl.EmitAsFile tmp
+                            (([||], tmp), []), false)
 
-                let compilationRefs =
-                    compiledRefs
-                    |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
-                        assertErrors 0 ignoreWarnings errors [||]
-                        let rOption = "-r:" + outputFilePath
-                        if staticLink then
-                            [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]
-                        else
-                            [rOption])
-                    |> List.concat
-                    |> Array.ofList
+            let compilationRefs =
+                compiledRefs
+                |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
+                    assertErrors 0 ignoreWarnings errors [||]
+                    let rOption = "-r:" + outputFilePath
+                    if staticLink then
+                        [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]
+                    else
+                        [rOption])
+                |> List.concat
+                |> Array.ofList
 
-                let deps =
-                    compiledRefs
-                    |> List.map (fun ((_, deps), _) -> deps)
-                    |> List.concat
-                    |> List.distinct
+            let deps =
+                compiledRefs
+                |> List.map (fun ((_, deps), _) -> deps)
+                |> List.concat
+                |> List.distinct
 
-                compilationRefs, deps
+            compilationRefs, deps
+
+    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+
+        let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
 
         let isScript =
             match cmpl with
-            | Compilation(_, kind, _, _, _, _) ->
+            | Compilation(_, kind, _, _, _, _, _) ->
                 match kind with
                 | Fs -> false
                 | Fsx -> true
 
         let isExe =
             match cmpl with
-            | Compilation(_, _, output, _, _, _) ->
+            | Compilation(_, _, output, _, _, _, _) ->
                 match output with
                 | Library -> false
                 | Exe -> true
 
         let source =
             match cmpl with
-            | Compilation(source, _, _, _, _, _) -> source
+            | Compilation(source, _, _, _, _, _, _) -> source
 
         let options =
             match cmpl with
-            | Compilation(_, _, _, options, _, _) -> options
+            | Compilation(_, _, _, options, _, _, _) -> options
 
         let nameOpt =
             match cmpl with
-            | Compilation(_, _, _, _, _, nameOpt) -> nameOpt
+            | Compilation(_, _, _, _, _, nameOpt, _) -> nameOpt
 
-        let disposal, res = compileDisposable outputPath isScript isExe (Array.append options compilationRefs) nameOpt source
-        disposals.Add disposal
+        let disposal, res = compileDisposable outputDirectory isScript isExe (Array.append options compilationRefs) nameOpt source
+        disposals.Add(disposal)
 
         let deps2 =
             compilationRefs
@@ -275,26 +296,29 @@ type CompilerAssert private () =
 
         res, (deps @ deps2)
 
-    static let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+    let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
-            Directory.CreateDirectory(compileDirectory) |> ignore
-            f (compileCompilationAux compileDirectory disposals ignoreWarnings cmpl)
+            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
+            disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
+            f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
-            try Directory.Delete compileDirectory with | _ -> ()
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
     // NOTE: This function will not clean up all the compiled projects after itself.
     // The reason behind is so we can compose verification of test runs easier.
     // TODO: We must not rely on the filesystem when compiling
-    static let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
-        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
-        Directory.CreateDirectory(compileDirectory) |> ignore
-        compileCompilationAux compileDirectory (ResizeArray()) ignoreWarnings cmpl
+    let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
+        let outputDirectory =
+            match cmpl with
+            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
 
-    static let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+        outputDirectory.Create() |> ignore
+        compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
+
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
         let out = Console.Out
         let err = Console.Error
 
@@ -323,7 +347,7 @@ type CompilerAssert private () =
 
         (exitCode, stdout.ToString(), stderr.ToString())
 
-    static let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
+    let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
         let filename = outputFilePath
         let arguments = ""
@@ -334,7 +358,7 @@ type CompilerAssert private () =
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net5.0",
+        "tfm": "net6.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "6.0"
@@ -350,6 +374,11 @@ type CompilerAssert private () =
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
+
+open CompilerAssertHelpers
+
+[<Sealed;AbstractClass>]
+type CompilerAssert private () =
 
     static member Checker = checker
 
@@ -374,8 +403,16 @@ type CompilerAssert private () =
            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
+
+        let copyDependenciesToOutputDir (outputFilePath:string) (deps: string list) =
+            let outputDirectory = Path.GetDirectoryName(outputFilePath)
+            for dep in deps do
+                let outputFilePath = Path.Combine(outputDirectory, Path.GetFileName(dep))
+                if not (File.Exists(outputFilePath)) then
+                    File.Copy(dep, outputFilePath)
+
         let ignoreWarnings = defaultArg ignoreWarnings false
-        let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
+        let beforeExecute = defaultArg beforeExecute copyDependenciesToOutputDir
         let newProcess = defaultArg newProcess false
         let onOutput = defaultArg onOutput (fun _ -> ())
         compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
@@ -622,6 +659,28 @@ type CompilerAssert private () =
             f (ILVerifier outputFilePath)
         )
 
+    static member CompileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: string) =
+        let options = [| yield! options; yield"--test:DumpDebugInfo" |]
+        compile false options source (fun (errors, outputFilePath) ->
+            let errors =
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had errors: %A" errors)
+            let debugInfoFile = outputFilePath + ".debuginfo"
+            if not (File.Exists expectedFile) then 
+                File.Copy(debugInfoFile, expectedFile)
+                failwith $"debug info expected file {expectedFile} didn't exist, now copied over"
+            let debugInfo = File.ReadAllLines(debugInfoFile)
+            let expected = File.ReadAllLines(expectedFile)
+            if debugInfo <> expected then 
+                File.Copy(debugInfoFile, expectedFile, overwrite=true)
+                failwith $"""debug info mismatch
+Expected is in {expectedFile}
+Actual is in {debugInfoFile}
+Updated automatically, please check diffs in your pull request, changes must be scrutinized
+"""
+        )
+
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
@@ -668,13 +727,17 @@ type CompilerAssert private () =
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
-    static member Parse (source: string) =
-        let sourceFileName = "test.fs"
-        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
+    static member Parse (source: string, ?langVersion: string, ?fileName: string) =
+        let langVersion = defaultArg langVersion "default"
+        let sourceFileName = defaultArg fileName "test.fsx"
+        let parsingOptions =
+            { FSharpParsingOptions.Default with
+                SourceFiles = [| sourceFileName |]
+                LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string) expectedParseErrors =
-        let parseResults = CompilerAssert.Parse source
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+        let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
 
@@ -682,6 +745,7 @@ type CompilerAssert private () =
             parseResults.Diagnostics
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
+        printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
         Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors

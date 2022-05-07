@@ -110,9 +110,7 @@ module ScriptPreprocessClosure =
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
 
-        let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
-        let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, sourceText)
 
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger)
@@ -252,10 +250,10 @@ module ScriptPreprocessClosure =
                         | _ ->
                             let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
                             match dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
-                            | null ->
+                            | Null ->
                                 errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
-                            | dependencyManager ->
+                            | NonNull dependencyManager ->
                                 let directive d =
                                     match d with
                                     | Directive.Resolution -> "r"
@@ -473,7 +471,7 @@ module ScriptPreprocessClosure =
 type LoadClosure with
     /// Analyze a script text and find the closure of its references.
     /// Used from FCS, when editing a script file.
-    //
+    ///
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText

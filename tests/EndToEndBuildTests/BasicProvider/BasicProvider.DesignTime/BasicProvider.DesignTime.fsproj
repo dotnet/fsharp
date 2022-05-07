@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net5.0;net472</TargetFrameworks>
+    <TargetFrameworks>net6.0;net472</TargetFrameworks>
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <DefineConstants>IS_DESIGNTIME</DefineConstants>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

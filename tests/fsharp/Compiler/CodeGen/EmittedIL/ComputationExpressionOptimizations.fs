@@ -7,6 +7,7 @@ open NUnit.Framework
 
 open System
 
+#if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
 [<TestFixture>]
 module ComputationExpressionOptimizations =
 
@@ -315,3 +316,4 @@ module Examples =
             """
             ])
 
+#endif

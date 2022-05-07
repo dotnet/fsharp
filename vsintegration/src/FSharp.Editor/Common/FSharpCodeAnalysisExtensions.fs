@@ -14,13 +14,13 @@ type FSharpParseFileResults with
 
             override _.VisitBinding(_path, defaultTraverse, binding) =
                 match binding with
-                | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, pat, _, _, _, _) as binding ->
+                | SynBinding(kind=SynBindingKind.Normal; headPat=pat) as binding ->
                     if Position.posEq binding.RangeOfHeadPattern.Start pos then
                         Some binding.RangeOfBindingWithRhs
                     else
                         // Check if it's an operator
                         match pat with
-                        | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) when id.idText.StartsWith("op_") ->
+                        | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) when id.idText.StartsWith("op_") ->
                             if Position.posEq id.idRange.Start pos then
                                 Some binding.RangeOfBindingWithRhs
                             else

@@ -53,8 +53,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <RestoreAdditionalProjectSources Condition="'$(_NETCoreSdkIsPreview)' != 'false' and '$(DisableFSharpCorePreviewCheck)' != 'true'">$(RestoreAdditionalProjectSources);https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
+  <PropertyGroup Condition=" '$(DisableImplicitLibraryPacksFolder)' != 'true' ">
+    <RestoreAdditionalProjectSources Condition="Exists('$(_FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(_FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="_GetFrameworkAssemblyReferences">

@@ -26,6 +26,7 @@ doSomething {Record.field1=0; field2=0}
 type Person = { Name : string; Age : int; City : string }
 let x = { Name = "Isaac", Age = 21, City = "London" }
         """
+        |> withLangVersion50
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
@@ -49,7 +50,7 @@ let p =
             (Error   39,  Line 7, Col 12, Line 7, Col 16, "The value or constructor 'Name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   nameof" + System.Environment.NewLine + "   nan")
             (Warning 20,  Line 7, Col 12, Line 7, Col 25, "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.")
             (Error   39,  Line 8, Col 12, Line 8, Col 15, "The value or constructor 'Age' is not defined.")
-            (Error   501, Line 7, Col 5,  Line 8, Col 21, "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'. If some of the arguments are meant to assign values to properties, consider separating those arguments with a comma (',').")]
+            (Error   501, Line 7, Col 5,  Line 8, Col 21, "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> Person'. If some of the arguments are meant to assign values to properties, consider separating those arguments with a comma (',').")]
 
     [<Fact>]
     let ``Missing Ctor Value``() =
@@ -64,7 +65,7 @@ let p =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 496, Line 7, Col 5, Line 8, Col 21, "The member or object constructor 'Person' requires 1 argument(s). The required signature is 'new : x:int -> Person'.")
+        |> withSingleDiagnostic (Error 496, Line 7, Col 5, Line 8, Col 21, "The member or object constructor 'Person' requires 1 argument(s). The required signature is 'new: x: int -> Person'.")
 
     [<Fact>]
     let ``Extra Argument In Ctor``() =
@@ -79,7 +80,7 @@ let p =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 501, Line 7, Col 5, Line 7, Col 14,
-                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'.")
+                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> Person'.")
 
     [<Fact>]
     let ``Extra Argument In Ctor2``() =
@@ -96,7 +97,7 @@ let p =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 501, Line 9, Col 5, Line 9, Col 16,
-                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'.")
+                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> Person'.")
 
     [<Fact>]
     let ``Valid Comma In Rec Ctor``() =

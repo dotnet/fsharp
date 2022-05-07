@@ -129,5 +129,56 @@ type X () =
   
   .maxstack  6
   .locals (int32 V_0)
-"""]
+""" ]
+
+    [<Fact>]
+    let ``Zero init performed to get defaults despite the attribute``() =
+        FSharp """
+module SkipLocalsInit
+open System
+
+[<System.Runtime.CompilerServices.SkipLocalsInit>]
+let z () =
+    let mutable a = Unchecked.defaultof<System.DateTime>
+    a
+
+[<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
+let x f =
+    let a = if 1 / 1 = 1 then Nullable () else Nullable 5L
+    f a |> ignore
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+.locals (valuetype [runtime]System.DateTime V_0)
+IL_0000:  ldloca.s   V_0
+IL_0002:  initobj    [runtime]System.DateTime
+IL_0008:  ldloc.0
+IL_0009:  ret
+        """
+        
+                     """
+.locals (valuetype [runtime]System.Nullable`1<int64> V_0,
+         valuetype [runtime]System.Nullable`1<int64> V_1,
+         !!a V_2)
+IL_0000:  ldc.i4.1
+IL_0001:  ldc.i4.1
+IL_0002:  div
+IL_0003:  ldc.i4.1
+IL_0004:  bne.un.s   IL_0011
+
+IL_0006:  ldloca.s   V_1
+IL_0008:  initobj    valuetype [runtime]System.Nullable`1<int64>
+IL_000e:  ldloc.1
+IL_000f:  br.s       IL_0018
+
+IL_0011:  ldc.i4.5
+IL_0012:  conv.i8
+IL_0013:  newobj     instance void valuetype [runtime]System.Nullable`1<int64>::.ctor(!0)
+IL_0018:  stloc.0
+IL_0019:  ldarg.0
+IL_001a:  ldloc.0
+IL_001b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [runtime]System.Nullable`1<int64>,!!a>::Invoke(!0)
+IL_0020:  stloc.2
+IL_0021:  ret"""]
 #endif

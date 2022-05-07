@@ -94,7 +94,7 @@ module TcResolutionsExtensions =
                     match rfinfo.TyconRef.TypeReprInfo with
                     | TFSharpObjectRepr x ->
                         match x.fsobjmodel_kind with
-                        | TTyconEnum -> Some ()
+                        | TFSharpEnum -> Some ()
                         | _ -> None
                     | _ -> None
 
@@ -138,7 +138,7 @@ module TcResolutionsExtensions =
                     protectAssemblyExplorationNoReraise false false (fun () -> ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
-                    let ty = generalizedTyconRef tyconRef
+                    let ty = generalizedTyconRef g tyconRef
                     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                     isStructTy g underlyingTy
 
@@ -180,7 +180,7 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.Property
                         elif vref.IsMember then
                             add m SemanticClassificationType.Method
-                        elif IsOperatorName vref.DisplayName then
+                        elif IsOperatorDisplayName vref.DisplayName then
                             add m SemanticClassificationType.Operator
                         else
                             add m SemanticClassificationType.Function
@@ -251,7 +251,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _, _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->
@@ -259,13 +259,13 @@ module TcResolutionsExtensions =
                             match repr with
                             | TFSharpObjectRepr om -> 
                                 match om.fsobjmodel_kind with 
-                                | TTyconClass -> SemanticClassificationType.ReferenceType
-                                | TTyconInterface -> SemanticClassificationType.Interface
-                                | TTyconStruct -> SemanticClassificationType.ValueType
-                                | TTyconDelegate _ -> SemanticClassificationType.Delegate
-                                | TTyconEnum _ -> SemanticClassificationType.Enumeration
-                            | TRecdRepr _
-                            | TUnionRepr _ -> 
+                                | TFSharpClass -> SemanticClassificationType.ReferenceType
+                                | TFSharpInterface -> SemanticClassificationType.Interface
+                                | TFSharpStruct -> SemanticClassificationType.ValueType
+                                | TFSharpDelegate _ -> SemanticClassificationType.Delegate
+                                | TFSharpEnum _ -> SemanticClassificationType.Enumeration
+                            | TFSharpRecdRepr _
+                            | TFSharpUnionRepr _ -> 
                                 if isStructTyconRef tcref then
                                     SemanticClassificationType.ValueType
                                 else
@@ -284,8 +284,8 @@ module TcResolutionsExtensions =
                             | TAsmRepr _ -> SemanticClassificationType.TypeDef
                             | TMeasureableRepr _-> SemanticClassificationType.TypeDef 
 #if !NO_EXTENSIONTYPING
-                            | TProvidedTypeExtensionPoint _-> SemanticClassificationType.TypeDef 
-                            | TProvidedNamespaceExtensionPoint  _-> SemanticClassificationType.TypeDef  
+                            | TProvidedTypeRepr _-> SemanticClassificationType.TypeDef 
+                            | TProvidedNamespaceRepr  _-> SemanticClassificationType.TypeDef  
 #endif
                             | TNoRepr -> SemanticClassificationType.ReferenceType
 

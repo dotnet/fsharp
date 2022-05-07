@@ -37,12 +37,29 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 let stringMethods =
-    ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetEnumerator"; "GetHashCode"; "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
-    "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
+    [
+        "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
+#if NETCOREAPP
+        "EnumerateRunes";
+#endif
+        "Equals"; "GetEnumerator"; "GetHashCode";
+#if NETCOREAPP
+        "GetPinnableReference";
+#endif
+        "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
+        "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
+        "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";
+        "Replace";
+#if NETCOREAPP
+        "ReplaceLineEndings";
+#endif
+        "Split"; "StartsWith"; "Substring";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
+#if NETCOREAPP
+        "TryCopyTo"
+#endif
+]
 
 let input =
   """
@@ -85,7 +102,7 @@ let ``Intro test`` () =
 
     // Get tool tip at the specified location
     let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
-    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
+    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo: unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
@@ -113,28 +130,6 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
-// TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
-//[<Test>]
-//let ``Basic cancellation test`` () =
-//   try
-//    printfn "locally injecting a cancellation condition in incremental building"
-//    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
-//
-//    // Split the input & define file name
-//    let inputLines = input.Split('\n')
-//    let file = "/home/user/Test.fsx"
-//    async {
-//        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-//        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
-//        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions)
-//        return parseResult, typedRes
-//    } |> Async.RunImmediate
-//      |> ignore
-//    Assert.Fail("expected a cancellation")
-//   with :? OperationCanceledException -> ()
-#endif
-
 [<Test>]
 let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbolUse`` () =
 
@@ -153,23 +148,36 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
     let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines.[4], ["String"; "Concat"])
     match methodsSymbols with
     | Some methods ->
-        [ for ms in methods do
-            yield ms.Symbol.DisplayName, extractCurriedParams ms ]
-        |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
-        |> shouldEqual
+        let results =
+            [ for ms in methods do
+                yield ms.Symbol.DisplayName, extractCurriedParams ms ]
+            |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
+        let expected =
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj []")]);
-             ("Concat", [("values", "string []")]);
+             ("Concat", [("args", "obj[]")]);
+             ("Concat", [("values", "string[]")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>"); ("str3", "ReadOnlySpan<char>")]);
+#endif
 #if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
+        
+        results |> shouldEqual expected
+
     | None -> failwith "No symbols returned"
 
 
@@ -268,9 +276,6 @@ let date = System.DateTime.Now.ToString().PadRight(25)
   """
 
 [<Test>]
-#if COMPILED
-[<Ignore("This isn't picking up changes in Fsharp.Core")>]
-#endif
 let ``Expression typing test`` () =
 
     printfn "------ Expression typing test -----------------"
@@ -655,18 +660,8 @@ let _ = arr.[..number2]
           ("val number2", (3, 13, 3, 20))
           ("val number1", (3, 4, 3, 11))
           ("val arr", (4, 8, 4, 11))
-          ("Microsoft", (4, 11, 4, 12))
-          ("OperatorIntrinsics", (4, 11, 4, 12))
-          ("Operators", (4, 11, 4, 12))
-          ("Core", (4, 11, 4, 12))
-          ("FSharp", (4, 11, 4, 12))
           ("val number1", (4, 16, 4, 23))
           ("val arr", (5, 8, 5, 11))
-          ("Microsoft", (5, 11, 5, 12))
-          ("OperatorIntrinsics", (5, 11, 5, 12))
-          ("Operators", (5, 11, 5, 12))
-          ("Core", (5, 11, 5, 12))
-          ("FSharp", (5, 11, 5, 12))
           ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
 
@@ -1131,6 +1126,350 @@ type FooImpl() =
            (("        )", 17, 7), (10, 8, 17, 9));
            (("        )", 17, 8), (10, 8, 17, 9))]
 
+let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults) =
+    let lines = input.Replace("\r", "").Split( [| '\n' |])
+    let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
+    [ for pos, line in positions do
+        match parseResult.ValidateBreakpointLocation pos with
+        | Some r -> 
+            let text = 
+                [ if r.StartLine = r.EndLine then
+                      lines.[r.StartLine-1].[r.StartColumn..r.EndColumn-1]
+                  else
+                      lines.[r.StartLine-1].[r.StartColumn..]
+                      for l in r.StartLine..r.EndLine-2 do 
+                            lines.[l]
+                      lines.[r.EndLine-1].[..r.EndColumn-1] ]
+                |> String.concat "$"
+            ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
+        | None -> 
+            ()]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for pipe`` () =
+    let input =
+      """
+let f () =
+    [2]
+    |> List.map (fun b -> b+1)
+    |> List.map (fun b -> b+1)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual
+        [((3, 0), (3, 4, 3, 7, "[2]")); ((3, 1), (3, 4, 3, 7, "[2]"));
+         ((3, 2), (3, 4, 3, 7, "[2]")); ((3, 3), (3, 4, 3, 7, "[2]"));
+         ((3, 4), (3, 4, 3, 7, "[2]")); ((3, 5), (3, 4, 3, 7, "[2]"));
+         ((3, 6), (3, 4, 3, 7, "[2]"));
+         ((4, 0), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 1), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 2), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 3), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 4), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 5), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 6), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 7), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 8), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 9), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 10), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 11), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 12), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 13), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 14), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 15), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 16), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 17), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 18), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 19), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 20), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 21), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 22), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 23), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 24), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 25), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 26), (4, 26, 4, 29, "b+1")); ((4, 27), (4, 26, 4, 29, "b+1"));
+         ((4, 28), (4, 26, 4, 29, "b+1")); ((4, 29), (4, 26, 4, 29, "b+1"));
+         ((5, 0), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 1), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 2), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 3), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 4), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 5), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 6), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 7), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 8), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 9), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 10), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 11), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 12), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 13), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 14), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 15), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 16), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 17), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 18), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 19), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 20), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 21), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 22), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 23), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 24), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 25), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 26), (5, 26, 5, 29, "b+1")); ((5, 27), (5, 26, 5, 29, "b+1"));
+         ((5, 28), (5, 26, 5, 29, "b+1")); ((5, 29), (5, 26, 5, 29, "b+1"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for pipe2`` () =
+    let input =
+      """
+let f () =
+    ([1],[2]) 
+    ||> List.zip
+    |> List.map (fun (b,c) -> (c,b))
+    |> List.unzip"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual 
+        [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
+         ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
+         ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
+         ((3, 6), (3, 5, 3, 8, "[1]")); ((3, 7), (3, 5, 3, 8, "[1]"));
+         ((3, 8), (3, 5, 3, 8, "[1]")); ((3, 9), (3, 9, 3, 12, "[2]"));
+         ((3, 10), (3, 9, 3, 12, "[2]")); ((3, 11), (3, 9, 3, 12, "[2]"));
+         ((3, 12), (3, 9, 3, 12, "[2]")); ((3, 13), (3, 5, 3, 8, "[1]"));
+         ((4, 0), (4, 8, 4, 16, "List.zip")); ((4, 1), (4, 8, 4, 16, "List.zip"));
+         ((4, 2), (4, 8, 4, 16, "List.zip")); ((4, 3), (4, 8, 4, 16, "List.zip"));
+         ((4, 4), (4, 8, 4, 16, "List.zip")); ((4, 5), (4, 8, 4, 16, "List.zip"));
+         ((4, 6), (4, 8, 4, 16, "List.zip")); ((4, 7), (4, 8, 4, 16, "List.zip"));
+         ((4, 8), (4, 8, 4, 16, "List.zip")); ((4, 9), (4, 8, 4, 16, "List.zip"));
+         ((4, 10), (4, 8, 4, 16, "List.zip")); ((4, 11), (4, 8, 4, 16, "List.zip"));
+         ((4, 12), (4, 8, 4, 16, "List.zip")); ((4, 13), (4, 8, 4, 16, "List.zip"));
+         ((4, 14), (4, 8, 4, 16, "List.zip")); ((4, 15), (4, 8, 4, 16, "List.zip"));
+         ((5, 0), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 1), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 2), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 3), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 4), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 5), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 6), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 7), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 8), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 9), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 10), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 11), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 12), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 13), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 14), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 15), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 16), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 17), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 18), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 19), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 20), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 21), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 22), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 23), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 24), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 25), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 26), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 27), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 28), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 29), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 30), (5, 30, 5, 35, "(c,b)")); ((5, 31), (5, 30, 5, 35, "(c,b)"));
+         ((5, 32), (5, 30, 5, 35, "(c,b)")); ((5, 33), (5, 30, 5, 35, "(c,b)"));
+         ((5, 34), (5, 30, 5, 35, "(c,b)")); ((5, 35), (5, 30, 5, 35, "(c,b)"));
+         ((6, 0), (6, 7, 6, 17, "List.unzip")); ((6, 1), (6, 7, 6, 17, "List.unzip"));
+         ((6, 2), (6, 7, 6, 17, "List.unzip")); ((6, 3), (6, 7, 6, 17, "List.unzip"));
+         ((6, 4), (6, 7, 6, 17, "List.unzip")); ((6, 5), (6, 7, 6, 17, "List.unzip"));
+         ((6, 6), (6, 7, 6, 17, "List.unzip")); ((6, 7), (6, 7, 6, 17, "List.unzip"));
+         ((6, 8), (6, 7, 6, 17, "List.unzip")); ((6, 9), (6, 7, 6, 17, "List.unzip"));
+         ((6, 10), (6, 7, 6, 17, "List.unzip")); ((6, 11), (6, 7, 6, 17, "List.unzip"));
+         ((6, 12), (6, 7, 6, 17, "List.unzip")); ((6, 13), (6, 7, 6, 17, "List.unzip"));
+         ((6, 14), (6, 7, 6, 17, "List.unzip")); ((6, 15), (6, 7, 6, 17, "List.unzip"));
+         ((6, 16), (6, 7, 6, 17, "List.unzip"))]
+
+    
+[<Test>]
+let ``ValidateBreakpointLocation tests for pipe3`` () =
+    let input =
+      """
+let f () =
+    ([1],[2],[3]) 
+    |||> List.zip3
+    |> List.map (fun (a,b,c) -> (c,b,a))
+    |> List.unzip3"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual 
+        [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
+         ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
+         ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
+         ((3, 6), (3, 5, 3, 8, "[1]")); ((3, 7), (3, 5, 3, 8, "[1]"));
+         ((3, 8), (3, 5, 3, 8, "[1]")); ((3, 9), (3, 9, 3, 12, "[2]"));
+         ((3, 10), (3, 9, 3, 12, "[2]")); ((3, 11), (3, 9, 3, 12, "[2]"));
+         ((3, 12), (3, 9, 3, 12, "[2]")); ((3, 13), (3, 13, 3, 16, "[3]"));
+         ((3, 14), (3, 13, 3, 16, "[3]")); ((3, 15), (3, 13, 3, 16, "[3]"));
+         ((3, 16), (3, 13, 3, 16, "[3]")); ((3, 17), (3, 5, 3, 8, "[1]"));
+         ((4, 0), (4, 9, 4, 18, "List.zip3")); ((4, 1), (4, 9, 4, 18, "List.zip3"));
+         ((4, 2), (4, 9, 4, 18, "List.zip3")); ((4, 3), (4, 9, 4, 18, "List.zip3"));
+         ((4, 4), (4, 9, 4, 18, "List.zip3")); ((4, 5), (4, 9, 4, 18, "List.zip3"));
+         ((4, 6), (4, 9, 4, 18, "List.zip3")); ((4, 7), (4, 9, 4, 18, "List.zip3"));
+         ((4, 8), (4, 9, 4, 18, "List.zip3")); ((4, 9), (4, 9, 4, 18, "List.zip3"));
+         ((4, 10), (4, 9, 4, 18, "List.zip3")); ((4, 11), (4, 9, 4, 18, "List.zip3"));
+         ((4, 12), (4, 9, 4, 18, "List.zip3")); ((4, 13), (4, 9, 4, 18, "List.zip3"));
+         ((4, 14), (4, 9, 4, 18, "List.zip3")); ((4, 15), (4, 9, 4, 18, "List.zip3"));
+         ((4, 16), (4, 9, 4, 18, "List.zip3")); ((4, 17), (4, 9, 4, 18, "List.zip3"));
+         ((5, 0), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 1), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 2), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 3), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 4), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 5), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 6), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 7), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 8), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 9), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 10), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 11), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 12), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 13), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 14), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 15), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 16), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 17), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 18), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 19), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 20), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 21), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 22), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 23), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 24), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 25), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 26), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 27), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 28), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 29), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 30), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 31), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 32), (5, 32, 5, 39, "(c,b,a)")); ((5, 33), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 34), (5, 32, 5, 39, "(c,b,a)")); ((5, 35), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 36), (5, 32, 5, 39, "(c,b,a)")); ((5, 37), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 38), (5, 32, 5, 39, "(c,b,a)")); ((5, 39), (5, 32, 5, 39, "(c,b,a)"));
+         ((6, 0), (6, 7, 6, 18, "List.unzip3")); ((6, 1), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 2), (6, 7, 6, 18, "List.unzip3")); ((6, 3), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 4), (6, 7, 6, 18, "List.unzip3")); ((6, 5), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 6), (6, 7, 6, 18, "List.unzip3")); ((6, 7), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 8), (6, 7, 6, 18, "List.unzip3")); ((6, 9), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 10), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 11), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 12), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 13), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 14), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 15), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 16), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 17), (6, 7, 6, 18, "List.unzip3"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for lambda with pattern arg`` () =
+    let input =
+      """
+let bodyWrapper () =
+   id (fun (A(b,c)) ->
+        let x = 1
+        x)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+        [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 8), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 9), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 10), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 11), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 12), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 13), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 14), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 15), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 16), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 17), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 18), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 19), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 20), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 21), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 0), (4, 8, 4, 17, "let x = 1"));
+         ((4, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 8), (4, 8, 4, 17, "let x = 1")); ((4, 9), (4, 8, 4, 17, "let x = 1"));
+         ((4, 10), (4, 8, 4, 17, "let x = 1")); ((4, 11), (4, 8, 4, 17, "let x = 1"));
+         ((4, 12), (4, 8, 4, 17, "let x = 1")); ((4, 13), (4, 8, 4, 17, "let x = 1"));
+         ((4, 14), (4, 8, 4, 17, "let x = 1")); ((4, 15), (4, 8, 4, 17, "let x = 1"));
+         ((4, 16), (4, 8, 4, 17, "let x = 1")); ((5, 0), (5, 8, 5, 9, "x"));
+         ((5, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 8), (5, 8, 5, 9, "x")); ((5, 9), (5, 8, 5, 9, "x"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for boolean logic`` () =
+    let input =
+      """
+let bodyWrapper (a, b, c) = a || b && c"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+        [((2, 0), (2, 28, 2, 29, "a")); ((2, 1), (2, 28, 2, 29, "a"));
+         ((2, 2), (2, 28, 2, 29, "a")); ((2, 3), (2, 28, 2, 29, "a"));
+         ((2, 4), (2, 28, 2, 29, "a")); ((2, 5), (2, 28, 2, 29, "a"));
+         ((2, 6), (2, 28, 2, 29, "a")); ((2, 7), (2, 28, 2, 29, "a"));
+         ((2, 8), (2, 28, 2, 29, "a")); ((2, 9), (2, 28, 2, 29, "a"));
+         ((2, 10), (2, 28, 2, 29, "a")); ((2, 11), (2, 28, 2, 29, "a"));
+         ((2, 12), (2, 28, 2, 29, "a")); ((2, 13), (2, 28, 2, 29, "a"));
+         ((2, 14), (2, 28, 2, 29, "a")); ((2, 15), (2, 28, 2, 29, "a"));
+         ((2, 16), (2, 28, 2, 29, "a")); ((2, 17), (2, 28, 2, 29, "a"));
+         ((2, 18), (2, 28, 2, 29, "a")); ((2, 19), (2, 28, 2, 29, "a"));
+         ((2, 20), (2, 28, 2, 29, "a")); ((2, 21), (2, 28, 2, 29, "a"));
+         ((2, 22), (2, 28, 2, 29, "a")); ((2, 23), (2, 28, 2, 29, "a"));
+         ((2, 24), (2, 28, 2, 29, "a")); ((2, 25), (2, 28, 2, 29, "a"));
+         ((2, 26), (2, 28, 2, 29, "a")); ((2, 27), (2, 28, 2, 29, "a"));
+         ((2, 28), (2, 28, 2, 29, "a")); ((2, 29), (2, 28, 2, 29, "a"));
+         ((2, 30), (2, 33, 2, 34, "b")); ((2, 31), (2, 33, 2, 34, "b"));
+         ((2, 32), (2, 33, 2, 34, "b")); ((2, 33), (2, 33, 2, 34, "b"));
+         ((2, 34), (2, 33, 2, 34, "b")); ((2, 35), (2, 38, 2, 39, "c"));
+         ((2, 36), (2, 38, 2, 39, "c")); ((2, 37), (2, 38, 2, 39, "c"));
+         ((2, 38), (2, 38, 2, 39, "c"))]
+
 [<Test>]
 let ``Partially valid namespaces should be reported`` () =
     let input =
@@ -1487,3 +1826,15 @@ let x8 = $\"\"\"abc{  {contents=1} }def{2}hij\"\"\"
           ((3, 20, 3, 21), (3, 22, 3, 23)); ((4, 16, 4, 17), (4, 18, 4, 19));
           ((4, 22, 4, 23), (4, 24, 4, 25)); ((5, 19, 5, 20), (5, 30, 5, 31));
           ((5, 16, 5, 17), (5, 32, 5, 33)); ((5, 36, 5, 37), (5, 38, 5, 39))|]
+
+
+[<Test>]
+let ``Active pattern 01 - Named args`` () =
+    let _, checkResults = getParseAndCheckResults """
+do let x = 1 in ()
+"""
+    let su = checkResults |> findSymbolUseByName "x"
+    match checkResults.GetDescription(su.Symbol, su.GenericArguments, true, su.Range) with
+    | ToolTipText [ToolTipElement.Group [data]] ->
+        data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
+    | elements -> failwith $"Tooltip elements: {elements}"

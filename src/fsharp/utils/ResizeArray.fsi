@@ -2,8 +2,8 @@
 
 namespace Internal.Utilities
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// Generic operations on the type System.Collections.Generic.List, which is called ResizeArray in the F# libraries.
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal ResizeArray =
 
     /// Return the length of the collection.  You can also use property <c>arr.Length</c>.

@@ -1,0 +1,27 @@
+ENTRYPOINT
+  false
+
+DOCUMENTS
+ [0] <elided-for-testing>
+     Type: None
+     Language: None
+     Vendor: None
+
+METHODS
+ f
+     Params: []
+     Range: Some "[0,4:9] - [0,4:10]"
+     Points:
+      - Doc: 0 Offset:0 [4:5]-[4-14]
+      - Doc: 0 Offset:2 [5:5]-[5-16]
+      - Doc: 0 Offset:6 [6:5]-[6-16]
+      - Doc: 0 Offset:10 [7:5]-[7-6]
+     Scopes:
+      - [0-12]
+        - [1-5]
+          Locals: ["0: y"]
+        - [5-9]
+          Locals: ["0: y (shadowed)"; "1: y"]
+        - [9-12]
+          Locals: ["1: y (shadowed)"; "0: y (shadowed)"; "2: y"]
+

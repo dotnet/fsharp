@@ -1,20 +1,23 @@
 {
-    "sdk": {
-        "version": "6.0.100-preview.6.21355.2",
-        "allowPrerelease": true,
-        "rollForward": "minor"
-    },
-    "tools": {
-        "dotnet": "6.0.100-preview.6.21355.2",
-        "vs": {
-            "version": "16.8",
-            "components": [
-                "Microsoft.VisualStudio.Component.FSharp"
-            ]
-        }
-    },
-    "msbuild-sdks": {
-      "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.21376.4",
-      "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
+  "sdk": {
+    "version": "6.0.200",
+    "allowPrerelease": true,
+    "rollForward": "minor"
+  },
+  "tools": {
+    "dotnet": "6.0.200",
+    "vs": {
+      "version": "16.8",
+      "components": [
+        "Microsoft.VisualStudio.Component.FSharp"
+      ]
     }
+  },
+  "native-tools": {
+    "perl": "5.32.1.1"
+  },
+  "msbuild-sdks": {
+    "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22157.6",
+    "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
+  }
 }

@@ -213,7 +213,7 @@ namespace ProviderImplementation.ProvidedTypes
         member SetFieldAttributes: attributes: FieldAttributes -> unit
 
         /// Create a new provided literal field. It is not initially associated with any specific provided type definition.
-        static member Literal : fieldName: string * fieldType: Type * literalValue:obj -> ProvidedField
+        static member Literal: fieldName: string * fieldType: Type * literalValue:obj -> ProvidedField
 
 
     /// Represents an array or other symbolic type involving a provided type as the argument.
@@ -397,7 +397,7 @@ namespace ProviderImplementation.ProvidedTypes
         /// </summary>
         /// <param name="types">A list of nested ProvidedTypeDefinitions to add to the ProvidedAssembly.</param>
         /// <param name="enclosingGeneratedTypeNames">A path of type names to wrap the generated types. The generated types are then generated as nested types.</param>
-        member AddNestedTypes : types : ProvidedTypeDefinition list * enclosingGeneratedTypeNames: string list -> unit
+        member AddNestedTypes: types: ProvidedTypeDefinition list * enclosingGeneratedTypeNames: string list -> unit
 
 #endif
 
@@ -416,13 +416,13 @@ namespace ProviderImplementation.ProvidedTypes
         member ReferencedAssemblyPaths: string list
 
         /// Get the resolved referenced assemblies determined by the type provider configuration
-        member GetTargetAssemblies : unit -> Assembly[]
+        member GetTargetAssemblies: unit -> Assembly[]
 
         /// Get the set of design-time assemblies available to use as a basis for authoring provided types.
-        member GetSourceAssemblies : unit -> Assembly[]
+        member GetSourceAssemblies: unit -> Assembly[]
 
         /// Add an assembly to the set of design-time assemblies available to use as a basis for authoring provided types
-        member AddSourceAssembly : Assembly -> unit
+        member AddSourceAssembly: Assembly -> unit
 
         /// Try to get the version of FSharp.Core referenced. May raise an exception if FSharp.Core has not been correctly resolved
         member FSharpCoreAssemblyVersion: Version
@@ -502,7 +502,7 @@ namespace ProviderImplementation.ProvidedTypes
 
 #if !NO_GENERATIVE
         /// Register that a given file is a provided generated target assembly, e.g. an assembly produced by an external
-        /// code generation tool.  This assembly should be a target assembly, i.e. use the same asssembly references
+        /// code generation tool.  This assembly should be a target assembly, i.e. use the same assembly references
         /// as given by TargetContext.ReferencedAssemblyPaths
         member RegisterGeneratedTargetAssembly: fileName: string -> Assembly
 #endif

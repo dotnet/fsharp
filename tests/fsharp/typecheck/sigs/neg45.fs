@@ -70,15 +70,15 @@ module CheckThatNoConstraintPropagationHappensForTypeParameters =
         member x.P = 1
 
     type Negative1<'T> = C<'T>
-    type Negative2<'T>() = inherit C<'T>()        /// EXPECT ERROR
-    type Negative3<'T >() = abstract X : C<'T>    /// EXPECT ERROR
-    type Negative4<'T > = UnionCase1 of C<'T>     /// EXPECT ERROR
-    type Negative5<'T > = { rf1 : C<'T> }         /// EXPECT ERROR
-    type Negative6<'T >(rf1: C<'T>) = struct end  /// EXPECT ERROR
-    type Negative7<'T > =  val rf1 : C<'T>          /// EXPECT ERROR
-    type Negative8<'T >(c: C<'T>) = member x.P = 1  /// EXPECT ERROR
-    type Negative9<'T>(x : C<'T> when 'T :> System.IComparable) = member x.P = 1  /// EXPECT ERROR
-    type Negative10<'T when 'T :> C<'T> > = member x.P = 1  /// EXPECT ERROR
+    type Negative2<'T>() = inherit C<'T>()        // EXPECT ERROR
+    type Negative3<'T >() = abstract X : C<'T>    // EXPECT ERROR
+    type Negative4<'T > = UnionCase1 of C<'T>     // EXPECT ERROR
+    type Negative5<'T > = { rf1 : C<'T> }         // EXPECT ERROR
+    type Negative6<'T >(rf1: C<'T>) = struct end  // EXPECT ERROR
+    type Negative7<'T > =  val rf1 : C<'T>          // EXPECT ERROR
+    type Negative8<'T >(c: C<'T>) = member x.P = 1  // EXPECT ERROR
+    type Negative9<'T>(x : C<'T> when 'T :> System.IComparable) = member x.P = 1  // EXPECT ERROR
+    type Negative10<'T when 'T :> C<'T> > = member x.P = 1  // EXPECT ERROR
 
 
 module CheckNoOverloadResolutionAgainstSignatureInformationGivenByTUpledAndRecordPatterns = 

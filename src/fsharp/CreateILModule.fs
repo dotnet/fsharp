@@ -270,7 +270,7 @@ module MainModuleBuilder =
             let isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target = CompilerTarget.Module)
             mkILSimpleModule assemblyName ilModuleName isDLL tcConfig.subsystemVersion tcConfig.useHighEntropyVA ilTypeDefs hashAlg locale flags (mkILExportedTypes exportedTypesList) metadataVersion
 
-        let disableJitOptimizations = not (tcConfig.optSettings.jitOpt())
+        let disableJitOptimizations = not tcConfig.optSettings.JitOptimizationsEnabled
 
         let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
 
@@ -297,11 +297,10 @@ module MainModuleBuilder =
         let manifestAttrs =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then
-                       yield mkILCustomAttribute
-                                 (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
-                                  [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
+                       yield mkILCustomAttribute (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
                    yield! sigDataAttributes
                    yield! codegenResults.ilAssemAttrs
+
                    if Option.isSome pdbfile then
                        yield (tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) ))
                    yield! reflectedDefinitionAttrs ]
@@ -454,9 +453,15 @@ module MainModuleBuilder =
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
             // otherwise, include the default manifest
             else
-                let path = Path.Combine(AppContext.BaseDirectory, @"default.win32manifest")
-                if FileSystem.FileExistsShim(path) then path
-                else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
+                let path=Path.Combine(FSharpEnvironment.getFSharpCompilerLocation(), @"default.win32manifest")
+                if FileSystem.FileExistsShim(path) then
+                    path
+                else
+                    let path = Path.Combine(AppContext.BaseDirectory, @"default.win32manifest")
+                    if FileSystem.FileExistsShim(path) then
+                        path
+                    else
+                        Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 
         let nativeResources =
             [ for av in assemblyVersionResources assemblyVersion do
@@ -468,7 +473,8 @@ module MainModuleBuilder =
                                                  yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
-                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileForWriteShim(tcConfig.win32icon))
+                  use iconStream = FileSystem.OpenFileForReadShim(tcConfig.win32icon)
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, iconStream)
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
 

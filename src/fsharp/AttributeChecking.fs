@@ -51,7 +51,7 @@ let rec private evalILAttribElem e =
     | ILAttribElem.TypeRef None     -> null
 
 let rec private evalFSharpAttribArg g e = 
-    match e with
+    match stripDebugPoints e with
     | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
@@ -125,7 +125,7 @@ type AttribInfo =
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
 let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
-    attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+    attribs.AsList()  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
 
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -434,7 +434,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
         | _ -> 
         // This attribute check is done by name to ensure compilation doesn't take a dependency 
@@ -443,7 +443,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsArray 
+                tcref.ILTyconRawMetadata.CustomAttrs.AsArray()
                 |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
@@ -452,9 +452,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
-
-    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
+    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
@@ -497,7 +495,6 @@ let CheckValAttributes g (x:ValRef) m =
 let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
-    
 // Identify any security attributes
 let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
     // There's no CAS on Silverlight, so we have to be careful here
@@ -518,3 +515,10 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
 
+// Identify any AssemblyVersion attributes
+let IsAssemblyVersionAttribute (g: TcGlobals) (Attrib(tcref, _, _, _, _, _, _)) =
+
+    match g.TryFindSysAttrib("System.Reflection.AssemblyVersionAttribute") with
+    | None -> false
+    | Some attr ->
+        attr.TyconRef.CompiledRepresentationForNamedType.QualifiedName = tcref.CompiledRepresentationForNamedType.QualifiedName

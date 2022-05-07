@@ -131,26 +131,24 @@ type IlxClosureInfo =
       cloUseStaticField: bool}
 
 type IlxUnionInfo = 
-    { /// is the representation public? 
-      cudReprAccess: ILMemberAccess 
+    { 
+      UnionCasesAccessibility: ILMemberAccess 
 
-      /// are the representation public? 
-      cudHelpersAccess: ILMemberAccess 
+      HelpersAccessibility: ILMemberAccess 
 
-      /// generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers 
+      HasHelpers: IlxUnionHasHelpers 
 
-      /// generate the helpers? 
-      cudDebugProxies: bool 
+      GenerateDebugProxies: bool 
 
-      cudDebugDisplayAttributes: ILAttribute list
+      DebugDisplayAttributes: ILAttribute list
 
-      cudAlternatives: IlxUnionCase[]
+      UnionCases: IlxUnionCase[]
 
-      cudNullPermitted: bool
+      IsNullPermitted: bool
 
-      /// debug info for generated code for classunions 
-      cudWhere: ILSourceMarker option
+      DebugPoint: ILDebugPoint option
+
+      DebugImports: ILDebugImports option
      }
 
 // --------------------------------------------------------------------

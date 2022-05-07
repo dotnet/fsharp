@@ -64,7 +64,7 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     | TType_var _, _  
     | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2 ->
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
@@ -77,9 +77,10 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) d1 d2 && (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) r1 r2
-        
+    | TType_fun (d1, r1, _), TType_fun (d2, r2, _) -> 
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m d1 d2 &&
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m r1 r2
+
     | TType_erased_union (_, l1), TType_erased_union (_, l2)     -> 
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
@@ -106,18 +107,17 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     match ty1, ty2 with 
     | TType_var _, _  | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
 
     | TType_tuple _, TType_tuple _
     | TType_anon _, TType_anon _
-    | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
+    | TType_fun _, TType_fun _ ->
+        TypesFeasiblyEquiv ndeep g amap m ty1 ty2
+
     | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
         ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
-    | _, TType_erased_union (_, l2) ->
-        List.forall (TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce) l2
-    | TType_erased_union (_, l1), _ ->
-        List.exists (fun x1 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce ty2) l1
+
     | TType_measure _, TType_measure _ ->
         true
 
@@ -220,7 +220,7 @@ let IterativelySubstituteTyparSolutions g tps solutions =
     loop 0 solutions
 
 let ChooseTyparSolutionsForFreeChoiceTypars g amap e = 
-    match e with 
+    match stripDebugPoints e with 
     | Expr.TyChoose (tps, e1, _m)  -> 
     
         /// Only make choices for variables that are actually used in the expression 
@@ -239,7 +239,7 @@ let ChooseTyparSolutionsForFreeChoiceTypars g amap e =
 /// PostTypeCheckSemanticChecks before we've eliminated these nodes.
 let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
     let rec stripLambdaUpto n (e, ty) = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.Lambda (_, None, None, v, b, _, retTy) when n > 0 -> 
             let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (v :: vs', b', retTy') 
@@ -247,7 +247,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
             ([], e, ty)
 
     let rec startStripLambdaUpto n (e, ty) = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.Lambda (_, ctorThisValOpt, baseValOpt, v, b, _, retTy) when n > 0 -> 
             let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (ctorThisValOpt, baseValOpt, (v :: vs'), b', retTy') 
@@ -258,7 +258,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
 
     let n = tvd.NumCurriedArgs
     let tps, taue, tauty = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.TyLambda (_, tps, b, _, retTy) when not (isNil tpNames) -> tps, b, retTy 
         | _ -> [], e, ty
     let ctorThisValOpt, baseValOpt, vsl, body, retTy = startStripLambdaUpto n (taue, tauty)

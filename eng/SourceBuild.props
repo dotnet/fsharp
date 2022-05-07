@@ -41,7 +41,7 @@
     <Exec
       Command="./build.sh --bootstrap --skipBuild"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
-      EnvironmentVariables="@(InnerBuildEnv)" />
+      EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
   </Target>
 
 </Project>

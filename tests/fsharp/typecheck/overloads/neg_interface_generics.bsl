@@ -6,5 +6,5 @@ neg_interface_generics.fsx(20,9,20,27): typecheck error FS0041: No overloads mat
 Known types of arguments: string * XmlReader
 
 Available overloads:
- - abstract member IFoo.Foo : t:Type * r:TextReader -> obj * 't // Argument 't' doesn't match
- - abstract member IFoo.Foo : t:string * r:TextReader -> obj * 't // Argument 'r' doesn't match
+ - abstract IFoo.Foo: t: Type * r: TextReader -> obj * 't // Argument 't' doesn't match
+ - abstract IFoo.Foo: t: string * r: TextReader -> obj * 't // Argument 'r' doesn't match

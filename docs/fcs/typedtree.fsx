@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Expressions
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 500
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -45,7 +53,7 @@ let parseAndCheckSingleFile (input) =
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
     let projOptions, _errors = 
-        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 
@@ -299,7 +307,7 @@ Note that
 
 Summary
 -------
-In this tutorial, we looked at basic of working with checked declarations and expressions. 
+In this tutorial, we looked at the basics of working with checked declarations and expressions. 
 
 In practice, it is also useful to combine the information here
 with some information you can obtain from the [symbols](symbols.html) 
