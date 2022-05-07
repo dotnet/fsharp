@@ -37,7 +37,7 @@ module internal Bytes =
 
     let blit (a:byte[]) b c d e = Array.blit a b c d e
 
-    let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr.[i])
+    let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr[i])
 
     let stringAsUtf8NullTerminated (s:string) =
         Array.append (Encoding.UTF8.GetBytes s) (ofInt32Array [| 0x0 |])
@@ -79,8 +79,8 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             raise (ArgumentOutOfRangeException("offset"))
 
     override _.Item
-        with get i = bytes.[offset + i]
-        and set i v = bytes.[offset + i] <- v
+        with get i = bytes[offset + i]
+        and set i v = bytes[offset + i] <- v
 
     override _.Length = length
 
@@ -95,16 +95,16 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 
     override _.ReadInt32 pos =
         let finalOffset = offset + pos
-        (uint32 bytes.[finalOffset]) |||
-        ((uint32 bytes.[finalOffset + 1]) <<< 8) |||
-        ((uint32 bytes.[finalOffset + 2]) <<< 16) |||
-        ((uint32 bytes.[finalOffset + 3]) <<< 24)
+        (uint32 bytes[finalOffset]) |||
+        ((uint32 bytes[finalOffset + 1]) <<< 8) |||
+        ((uint32 bytes[finalOffset + 2]) <<< 16) |||
+        ((uint32 bytes[finalOffset + 3]) <<< 24)
         |> int
 
     override _.ReadUInt16 pos =
         let finalOffset = offset + pos
-        (uint16 bytes.[finalOffset]) |||
-        ((uint16 bytes.[finalOffset + 1]) <<< 8)
+        (uint16 bytes[finalOffset]) |||
+        ((uint16 bytes[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
         checkCount count
@@ -311,7 +311,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
 
-    member _.Item with get i = bytes.[i]
+    member _.Item with get i = bytes[i]
 
     member _.Length with get () = bytes.Length
 
@@ -391,7 +391,7 @@ module internal FileSystemUtils =
     let hasExtensionWithValidate (validate:bool) (s:string) =
         if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
-        (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".")
+        (sLen >= 1 && s[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
 
     let hasExtension (s:string) = hasExtensionWithValidate true s
@@ -807,7 +807,7 @@ type internal ByteStream =
 
     member b.ReadByte() =
         if b.pos >= b.max then failwith "end of stream"
-        let res = b.bytes.[b.pos]
+        let res = b.bytes[b.pos]
         b.pos <- b.pos + 1
         res
     member b.ReadUtf8String n =
@@ -862,7 +862,7 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 1
         buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- byte i
+        buf.bbArray[buf.bbCurrent] <- byte i
         buf.bbCurrent <- newSize
 
     member buf.EmitByte (b:byte) = 
@@ -877,15 +877,15 @@ type internal ByteBuffer =
         let bbArr = buf.bbArray
         let bbBase = buf.bbCurrent
         for i = 0 to n - 1 do
-            bbArr.[bbBase + i] <- byte arr.[i]
+            bbArr[bbBase + i] <- byte arr[i]
         buf.bbCurrent <- newSize
 
     member bb.FixupInt32 pos value =
         bb.CheckDisposed()
-        bb.bbArray.[pos] <- (Bytes.b0 value |> byte)
-        bb.bbArray.[pos + 1] <- (Bytes.b1 value |> byte)
-        bb.bbArray.[pos + 2] <- (Bytes.b2 value |> byte)
-        bb.bbArray.[pos + 3] <- (Bytes.b3 value |> byte)
+        bb.bbArray[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n =
         buf.CheckDisposed()
@@ -922,8 +922,8 @@ type internal ByteBuffer =
         buf.CheckDisposed()
         let newSize = buf.bbCurrent + 2
         buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
-        buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
+        buf.bbArray[buf.bbCurrent] <- (Bytes.b0 n |> byte)
+        buf.bbArray[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
         buf.bbCurrent <- newSize
 
     member buf.EmitBoolAsByte (b:bool) = 

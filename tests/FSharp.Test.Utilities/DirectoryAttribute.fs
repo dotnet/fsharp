@@ -61,6 +61,7 @@ type DirectoryAttribute(dir: string) =
         with | e ->
             raise (new InvalidOperationException($" '{e.Message}'.  Can't get the location of the executing assembly"))
 
+    let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
 
     let readFileOrDefault (path: string) : string option =
@@ -80,22 +81,24 @@ type DirectoryAttribute(dir: string) =
             let ilBslPaths = [|
 #if DEBUG
     #if NETCOREAPP
-                yield sourceFilePath + ".il.netcore.debug.bsl"
-                yield sourceFilePath + ".il.netcore.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + ".il.net472.debug.bsl"
-                yield sourceFilePath + ".il.net472.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + ".il.debug.bsl"
-                yield sourceFilePath + ".il.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
     #if NETCOREAPP
-                yield sourceFilePath + ".il.netcore.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + ".il.net472.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + ".il.release.bsl"
-                yield sourceFilePath + ".il.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
             |]
 
@@ -104,7 +107,7 @@ type DirectoryAttribute(dir: string) =
                 |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
             match findBaseline with
             | Some s -> s
-            | None -> sourceFilePath + ".il.bsl"
+            | None -> sourceFilePath + baselineSuffix + ".il.bsl"
 
         let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ fs, ".err"))
         let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ fs, ".il"))
@@ -128,6 +131,7 @@ type DirectoryAttribute(dir: string) =
             References          = []
             OutputDirectory     = outputDirectory } |> FS
 
+    member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
 
     override _.GetData(method: MethodInfo) =

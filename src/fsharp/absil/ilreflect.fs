@@ -193,7 +193,7 @@ type TypeBuilder with
 
 
 type OpCode with
-    member opcode.RefEmitName = (string (Char.ToUpper(opcode.Name.[0])) + opcode.Name.[1..]).Replace(".", "_").Replace("_i4", "_I4")
+    member opcode.RefEmitName = (string (Char.ToUpper(opcode.Name[0])) + opcode.Name[1..]).Replace(".", "_").Replace("_i4", "_I4")
 
 type ILGenerator with
     member ilG.DeclareLocalAndLog (ty: Type, isPinned) =
@@ -459,7 +459,7 @@ let envGetTypeDef emEnv (tref: ILTypeRef) =
 
 let envSetLocals emEnv locs = assert (emEnv.emLocals.Length = 0); // check "locals" is not yet set (scopes once only)
                               {emEnv with emLocals = locs}
-let envGetLocal emEnv i = emEnv.emLocals.[i] // implicit bounds checking
+let envGetLocal emEnv i = emEnv.emLocals[i] // implicit bounds checking
 
 let envSetLabel emEnv name lab =
     assert (not (Zmap.mem name emEnv.emLabels))
@@ -480,7 +480,7 @@ let envGetTyvar emEnv u16 =
         if i<0 || i>= Array.length tvs then
             failwith (sprintf "want tyvar #%d, but only had %d tyvars" i (Array.length tvs))
         else
-            tvs.[i]
+            tvs[i]
 
 let isEmittedTypeRef emEnv tref = Zmap.mem tref emEnv.emTypMap
 
@@ -1284,7 +1284,7 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
     let emEnv =
         (emEnv, code.Labels) ||> Seq.fold (fun emEnv (KeyValue(label, pc)) ->
             let lab = ilG.DefineLabelAndLog ()
-            pc2lab.[pc] <-
+            pc2lab[pc] <-
                 match pc2lab.TryGetValue pc with
                 | true, labels -> lab :: labels
                 | _ -> [lab]
@@ -1294,8 +1294,8 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
     let pc2action = Dictionary()
     let lab2pc = code.Labels
     let add lab action =
-        let pc = lab2pc.[lab]
-        pc2action.[pc] <-
+        let pc = lab2pc[lab]
+        pc2action[pc] <-
             match pc2action.TryGetValue pc with
             | true, actions -> actions @ [action]
             | _ -> [action]
@@ -1340,8 +1340,8 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
         | _ -> ()
 
         if pc < instrs.Length then
-            match instrs.[pc] with
-            | I_br l when code.Labels.[l] = pc + 1 -> () // compress I_br to next instruction
+            match instrs[pc] with
+            | I_br l when code.Labels[l] = pc + 1 -> () // compress I_br to next instruction
             | i -> emitInstr cenv modB emEnv ilG i
 
 
@@ -1395,7 +1395,7 @@ let buildGenParamsPass1 _emEnv defineGenericParameters (gps: ILGenericParameterD
 let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParameterDefs) =
     let genpBs = genArgs |> Array.map (fun x -> (x :?> GenericTypeParameterBuilder))
     gps |> List.iteri (fun i (gp: ILGenericParameterDef) ->
-        let gpB = genpBs.[i]
+        let gpB = genpBs[i]
         // the Constraints are either the parent (base) type or interfaces.
         let constraintTs = convTypes cenv emEnv gp.Constraints
         let interfaceTs, baseTs = List.partition (fun (ty: Type) -> ty.IsInterface) constraintTs
@@ -1954,7 +1954,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
 
         // Re-run traverseTypeDef if we've never visited the type.
         if not (visited.ContainsKey tref) then
-            visited.[tref] <- true
+            visited[tref] <- true
             let tdef = envGetTypeDef emEnv tref
             if verbose2 then dprintf "- traversing type %s\n" typB.FullName
             // This looks like a special case (perhaps bogus) of the dependency logic above, where
@@ -1984,7 +1984,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
             // At this point, we've done everything we can to prepare the type for loading by eagerly forcing the
             // load of other types. Everything else is up to the implementation of System.Reflection.Emit.
             if not (created.ContainsKey tref) then
-                created.[tref] <- true
+                created[tref] <- true
                 if verbose2 then dprintf "- creating type %s\n" typB.FullName
                 typB.CreateTypeAndLog () |> ignore
 

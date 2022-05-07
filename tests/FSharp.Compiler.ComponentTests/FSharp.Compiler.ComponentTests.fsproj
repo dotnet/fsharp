@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Compile Include="EmittedIL\Literals.fs" />
-    <Compile Include="EmittedIL\Misc.fs" />
+    <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
@@ -31,16 +31,26 @@
     <Compile Include="EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs" />
     <Compile Include="EmittedIL\ComputationExpressions\ComputationExpressions.fs" />
     <Compile Include="EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs" />
+    <Compile Include="EmittedIL\ForLoop\ForLoop.fs" />
     <Compile Include="EmittedIL\GeneratedIterators\GeneratedIterators.fs" />
+    <Compile Include="EmittedIL\GenericComparison\GenericComparison.fs" />
     <Compile Include="EmittedIL\InequalityComparison\InequalityComparison.fs" />
+    <Compile Include="EmittedIL\Inlining\Inlining.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
+    <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
+    <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
     <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
-    <Compile Include="EmittedIL\StringEncoding\StringEncoding.fs" />
+    <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
+    <Compile Include="EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs" />
+    <Compile Include="EmittedIL\StaticInit\StaticInit.fs" />
+    <Compile Include="EmittedIL\SteppingMatch\SteppingMatch.fs" />
     <Compile Include="EmittedIL\Structure\Structure.fs" />
+    <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
+    <Compile Include="EmittedIL\Tuples\Tuples.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
@@ -126,11 +136,17 @@
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="EmittedIL\**\*.fs" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="EmittedIL\ForLoop\*.bsl">
+      <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
+
 </Project>

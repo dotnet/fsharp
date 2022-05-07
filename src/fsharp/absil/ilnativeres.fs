@@ -231,8 +231,8 @@ type COFFResourceReader() =
         do 
             let mutable (i: int) = 0
             while (i < int rsrc1.NumberOfRelocations) do
-                relocationOffsets.[i] <- reader.ReadUInt32 ()
-                relocationSymbolIndices.[i] <- reader.ReadUInt32 ()
+                relocationOffsets[i] <- reader.ReadUInt32 ()
+                relocationSymbolIndices[i] <- reader.ReadUInt32 ()
                 reader.ReadUInt16 () |> ignore<uint16> //we do nothing with the "Type"
                 i <- i + 1
         stream.Position <- int64 peHeaders.CoffHeader.PointerToSymbolTable
@@ -248,9 +248,9 @@ type COFFResourceReader() =
         do 
             let mutable (i: int) = 0
             while (i < relocationSymbolIndices.Length) do
-                if int relocationSymbolIndices.[i] > peHeaders.CoffHeader.NumberOfSymbols then
+                if int relocationSymbolIndices[i] > peHeaders.CoffHeader.NumberOfSymbols then
                     raise <| ResourceException "CoffResourceInvalidRelocation"
-                let mutable offsetOfSymbol = int64 peHeaders.CoffHeader.PointerToSymbolTable + int64 relocationSymbolIndices.[i] * int64 ImageSizeOfSymbol
+                let mutable offsetOfSymbol = int64 peHeaders.CoffHeader.PointerToSymbolTable + int64 relocationSymbolIndices[i] * int64 ImageSizeOfSymbol
                 stream.Position <- offsetOfSymbol
                 stream.Position <- stream.Position + 8L
                 let mutable symValue = reader.ReadUInt32 ()
@@ -259,7 +259,7 @@ type COFFResourceReader() =
                 let mutable (IMAGE_SYM_TYPE_NULL: uint16) = uint16 0x0000
                 if symType <> IMAGE_SYM_TYPE_NULL || symSection <> 3s then
                     raise <| ResourceException("CoffResourceInvalidSymbol")
-                outputStream.Position <- int64 relocationOffsets.[i]
+                outputStream.Position <- int64 relocationOffsets[i]
                 writer.Write (uint32 (int64 symValue + int64 rsrc1.SizeOfRawData))
                 i <- i + 1
 
@@ -329,7 +329,7 @@ type VersionHelper() =
             false
         else
             let mutable (elements: string[]) = s.Split '.'
-            let mutable (hasWildcard: bool) = allowWildcard && elements.[(int (elements.Length - 1))] = "*"
+            let mutable (hasWildcard: bool) = allowWildcard && elements[(int (elements.Length - 1))] = "*"
             if hasWildcard && elements.Length < 3 || elements.Length > 4 then
                 version <- VersionHelper.NullVersion
                 false
@@ -345,19 +345,19 @@ type VersionHelper() =
                     let mutable (i: int) = 0
                     let mutable breakLoop = false
                     while (i < lastExplicitValue) && not breakLoop do
-                        if not (UInt16.TryParse (elements.[i], NumberStyles.None, CultureInfo.InvariantCulture, ref values.[i])) || values.[i] > maxValue then
+                        if not (UInt16.TryParse (elements[i], NumberStyles.None, CultureInfo.InvariantCulture, ref values[i])) || values[i] > maxValue then
                             if not allowPartialParse then
                                 earlyReturn <- Some false
                                 breakLoop <- true
                                 version <- VersionHelper.NullVersion
                             else
                                 parseError <- true
-                                if String.IsNullOrWhiteSpace elements.[i] then
-                                    values.[i] <- 0us
+                                if String.IsNullOrWhiteSpace elements[i] then
+                                    values[i] <- 0us
                                     breakLoop <- true
                                 else
-                                    if values.[i] > maxValue then
-                                        values.[i] <- 0us
+                                    if values[i] > maxValue then
+                                        values[i] <- 0us
                                         breakLoop <- true
                                     else
                                         let mutable (invalidFormat: bool) = false
@@ -365,16 +365,16 @@ type VersionHelper() =
                                         do 
                                             let mutable idx = 0
                                             let mutable breakLoop = false
-                                            while (idx < elements.[i].Length) && not breakLoop do
-                                                if not (Char.IsDigit elements.[i].[idx]) then
+                                            while (idx < elements[i].Length) && not breakLoop do
+                                                if not (Char.IsDigit elements[i].[idx]) then
                                                     invalidFormat <- true
-                                                    VersionHelper.TryGetValue ((elements.[i].Substring (0, idx)), ref values.[i]) |> ignore<bool>
+                                                    VersionHelper.TryGetValue ((elements[i].Substring (0, idx)), ref values[i]) |> ignore<bool>
                                                     breakLoop <- true
                                                 else
                                                     idx <- idx + 1
                                         let mutable doBreak = true
                                         if not invalidFormat then
-                                            if VersionHelper.TryGetValue (elements.[i], ref values.[i]) then
+                                            if VersionHelper.TryGetValue (elements[i], ref values[i]) then
                                                 //For this scenario the old compiler would continue processing the remaining version elements
                                                 //so continue processing
                                                 doBreak <- false
@@ -385,9 +385,9 @@ type VersionHelper() =
                 if hasWildcard then
                     let mutable (i: int) = lastExplicitValue
                     while (i < values.Length) do
-                        values.[i] <- UInt16.MaxValue
+                        values[i] <- UInt16.MaxValue
                         i <- i + 1
-                version <- Version(int values.[0], int values.[1], int values.[2], int values.[3])
+                version <- Version(int values[0], int values[1], int values[2], int values[3])
                 not parseError
 
     static member private TryGetValue(s: string, [<Out>] value: byref<uint16>): bool = 
@@ -645,23 +645,23 @@ type Win32ResourceConversions () =
         do 
             let mutable (i: uint16) = 0us
             while (i < count) do
-                iconDirEntries.[(int i)].bWidth <- iconReader.ReadByte ()
-                iconDirEntries.[(int i)].bHeight <- iconReader.ReadByte ()
-                iconDirEntries.[(int i)].bColorCount <- iconReader.ReadByte ()
-                iconDirEntries.[(int i)].bReserved <- iconReader.ReadByte ()
-                iconDirEntries.[(int i)].wPlanes <- iconReader.ReadUInt16 ()
-                iconDirEntries.[(int i)].wBitCount <- iconReader.ReadUInt16 ()
-                iconDirEntries.[(int i)].dwBytesInRes <- iconReader.ReadUInt32 ()
-                iconDirEntries.[(int i)].dwImageOffset <- iconReader.ReadUInt32 ()
+                iconDirEntries[(int i)].bWidth <- iconReader.ReadByte ()
+                iconDirEntries[(int i)].bHeight <- iconReader.ReadByte ()
+                iconDirEntries[(int i)].bColorCount <- iconReader.ReadByte ()
+                iconDirEntries[(int i)].bReserved <- iconReader.ReadByte ()
+                iconDirEntries[(int i)].wPlanes <- iconReader.ReadUInt16 ()
+                iconDirEntries[(int i)].wBitCount <- iconReader.ReadUInt16 ()
+                iconDirEntries[(int i)].dwBytesInRes <- iconReader.ReadUInt32 ()
+                iconDirEntries[(int i)].dwImageOffset <- iconReader.ReadUInt32 ()
                 i <- i + 1us
         do
             let mutable (i: uint16) = 0us
             while (i < count) do
-                iconStream.Position <- int64 iconDirEntries.[(int i)].dwImageOffset
+                iconStream.Position <- int64 iconDirEntries[(int i)].dwImageOffset
                 if iconReader.ReadUInt32 () = 40u then 
                     iconStream.Position <- iconStream.Position + 8L
-                    iconDirEntries.[(int i)].wPlanes <- iconReader.ReadUInt16 ()
-                    iconDirEntries.[(int i)].wBitCount <- iconReader.ReadUInt16 ()
+                    iconDirEntries[(int i)].wPlanes <- iconReader.ReadUInt16 ()
+                    iconDirEntries[(int i)].wBitCount <- iconReader.ReadUInt16 ()
                 i <- i + 1us
 
         let mutable resWriter = new BinaryWriter(resStream)
@@ -670,7 +670,7 @@ type Win32ResourceConversions () =
             let mutable (i: uint16) = 0us
             while (i < count) do
                 resStream.Position <- resStream.Position + 3L &&& ~~~3L
-                resWriter.Write iconDirEntries.[(int i)].dwBytesInRes
+                resWriter.Write iconDirEntries[(int i)].dwBytesInRes
                 resWriter.Write 0x00000020u
                 resWriter.Write 0xFFFFus
                 resWriter.Write RT_ICON
@@ -681,8 +681,8 @@ type Win32ResourceConversions () =
                 resWriter.Write 0x0000us
                 resWriter.Write 0x00000000u
                 resWriter.Write 0x00000000u
-                iconStream.Position <- int64 iconDirEntries.[(int i)].dwImageOffset
-                resWriter.Write (iconReader.ReadBytes (int iconDirEntries.[int i].dwBytesInRes))
+                iconStream.Position <- int64 iconDirEntries[(int i)].dwImageOffset
+                resWriter.Write (iconReader.ReadBytes (int iconDirEntries[int i].dwBytesInRes))
                 i <- i + 1us
 
         let mutable (RT_GROUP_ICON: WORD) = (RT_ICON + 11us)
@@ -704,13 +704,13 @@ type Win32ResourceConversions () =
         do
             let mutable (i: uint16) = 0us
             while (i < count) do
-                resWriter.Write iconDirEntries.[(int i)].bWidth
-                resWriter.Write iconDirEntries.[(int i)].bHeight
-                resWriter.Write iconDirEntries.[(int i)].bColorCount
-                resWriter.Write iconDirEntries.[(int i)].bReserved
-                resWriter.Write iconDirEntries.[(int i)].wPlanes
-                resWriter.Write iconDirEntries.[(int i)].wBitCount
-                resWriter.Write iconDirEntries.[(int i)].dwBytesInRes
+                resWriter.Write iconDirEntries[(int i)].bWidth
+                resWriter.Write iconDirEntries[(int i)].bHeight
+                resWriter.Write iconDirEntries[(int i)].bColorCount
+                resWriter.Write iconDirEntries[(int i)].bReserved
+                resWriter.Write iconDirEntries[(int i)].wPlanes
+                resWriter.Write iconDirEntries[(int i)].wBitCount
+                resWriter.Write iconDirEntries[(int i)].dwBytesInRes
                 resWriter.Write (i + 1us)
                 i <- i + 1us
         ()
@@ -876,7 +876,7 @@ type NativeResourceWriter () =
                 let mutable (nameOffset: uint32) = uint32 dataWriter.Count + sizeOfDirectoryTree
                 let mutable (directoryOffset: uint32) = k
                 let isDir =
-                    match directory.Entries.[int i] with
+                    match directory.Entries[int i] with
                     | :? Directory as subDir ->
                         id <- subDir.ID
                         name <- subDir.Name
@@ -925,7 +925,7 @@ type NativeResourceWriter () =
         do 
             let mutable (i: int) = 0
             while (uint32 i < n) do
-                match directory.Entries.[i] with
+                match directory.Entries[i] with
                 | :? Directory as subDir ->
                     NativeResourceWriter.WriteDirectory (subDir, writer, k, (level + 1u), sizeOfDirectoryTree, virtualAddressBase, dataWriter)
                     if level = 0u then
@@ -942,7 +942,7 @@ type NativeResourceWriter () =
         do 
             let mutable (i: int) = 0
             while (uint32 i < n) do
-                match directory.Entries.[i] with
+                match directory.Entries[i] with
                 | :? Directory as subDir ->
                     size <- size + 16u + 8u * uint32 subDir.Entries.Count
                 | _ -> ()

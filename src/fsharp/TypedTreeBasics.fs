@@ -276,7 +276,7 @@ let mkNestedValRef (cref: EntityRef) (v: Val) : ValRef =
         mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
-let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p.[0..p.Length-2])
+let rescopePubPathToParent viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p[0..p.Length-2])
 
 /// From Ref_private to Ref_nonlocal when exporting data.
 let rescopePubPath viewedCcu (PubPath p) = NonLocalEntityRef(viewedCcu, p)
@@ -310,7 +310,7 @@ let arrayPathEq (y1: string[]) (y2: string[]) =
     let len1 = y1.Length 
     let len2 = y2.Length 
     (len1 = len2) && 
-    (let rec loop i = (i >= len1) || (y1.[i] = y2.[i] && loop (i+1)) 
+    (let rec loop i = (i >= len1) || (y1[i] = y2[i] && loop (i+1)) 
      loop 0)
 
 let nonLocalRefEq (NonLocalEntityRef(x1, y1) as smr1) (NonLocalEntityRef(x2, y2) as smr2) = 
