@@ -4278,8 +4278,11 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (SynTypar(id, _, _
 and TcTypar cenv env newOk tpenv tp =
     TcTyparOrMeasurePar (Some TyparKind.Type) cenv env newOk tpenv tp
 
-and TcTyparDecl cenv env (SynTyparDecl(Attributes synAttrs, (SynTypar(id, _, _) as stp))) =
+and TcTyparDecl cenv env synTyparDecl =
     let g = cenv.g
+
+    let (SynTyparDecl(Attributes synAttrs, synTypar)) = synTyparDecl
+    let (SynTypar(id, _, _)) = synTypar
 
     let attrs = TcAttributes cenv env AttributeTargets.GenericParameter synAttrs
     let hasMeasureAttr = HasFSharpAttribute g g.attrib_MeasureAttribute attrs
@@ -4287,7 +4290,7 @@ and TcTyparDecl cenv env (SynTyparDecl(Attributes synAttrs, (SynTypar(id, _, _) 
     let hasCompDepAttr = HasFSharpAttribute g g.attrib_ComparisonConditionalOnAttribute attrs
     let attrs = attrs |> List.filter (IsMatchingFSharpAttribute g g.attrib_MeasureAttribute >> not)
     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
+    let tp = Construct.NewTypar (kind, TyparRigidity.WarnIfNotRigid, synTypar, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
 
     match TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs with
     | Some compiledName ->

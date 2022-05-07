@@ -791,9 +791,11 @@ let splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
     | true -> Array.append mangledText.[0..(count-2)] [| mangledText.[(count-1)..] |> String.concat (Char.ToString separator) |]
     | false -> mangledText
 
-let [<Literal>] FSharpModuleSuffix = "Module"
+[<Literal>]
+let FSharpModuleSuffix = "Module"
 
-let [<Literal>] MangledGlobalName = "`global`"
+[<Literal>]
+let MangledGlobalName = "`global`"
     
 let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
 

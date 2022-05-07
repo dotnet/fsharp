@@ -2872,49 +2872,52 @@ hardwhiteDefnBindingsTerminator:
 
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
-  | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN cArgs rparen 
+  | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen 
       { let rty, vis, nm, args  = $2, $3, $4, $7
         let nmm = rhs parseState 3 
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
         let mWhole = lhs parseState
         let mRhs = lhs parseState 
-        let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
-                                  false,
-                                  SynExpr.Ident (ident("failwith", rhs parseState 6)),
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
-                                  mRhs)
+        let rhsExpr =
+            SynExpr.App (
+                ExprAtomicFlag.NonAtomic,
+                false,
+                SynExpr.Ident (ident("failwith", rhs parseState 6)),
+                SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
+                mRhs)
         (fun attrs _ ->
             let bindingPat = SynPat.LongIdent (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
-            let binding = mkSynBinding 
-                              (xmlDoc, bindingPat) 
-                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+            let binding =
+                mkSynBinding 
+                    (xmlDoc, bindingPat) 
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
-cArgs: 
-  | cMoreArgs 
+externArgs: 
+  | externMoreArgs 
      { List.rev $1 }
 
-  | cArg 
+  | externArg 
      { [$1] }
   |       
      { [] }
   
 
 /* Part of the list of arguments in an 'extern' DllImport function definition */
-cMoreArgs: 
-  | cMoreArgs COMMA cArg 
+externMoreArgs: 
+  | externMoreArgs COMMA externArg 
      { $3 :: $1 }
 
-  | cArg COMMA cArg 
+  | externArg COMMA externArg 
      { [$3; $1] }
 
 
 /* A single argument in an 'extern' DllImport function definition */
-cArg: 
+externArg: 
   | opt_attributes cType       
      { let m = lhs parseState in SynPat.Typed(SynPat.Wild m, $2, m) |> addAttribs $1 }
 

@@ -7,7 +7,7 @@ open FSharp.Test.Compiler
 
 module ``Misc`` =
     [<Fact>]
-    let ``Empty array construct compiles to System.Array.Empty<_>()``() =
+    let ``Empty array construct compiles to System_Array_Empty<_>()``() =
         FSharp """
 module Misc
 
