@@ -15,12 +15,13 @@ type InterfaceData =
 
     member Range: range
 
-    member TypeParameters: string[]
+    member TypeParameters: string []
 
 module InterfaceStubGenerator =
 
     /// Get members in the decreasing order of inheritance chain
-    val GetInterfaceMembers: entity: FSharpEntity -> seq<FSharpMemberOrFunctionOrValue * seq<FSharpGenericParameter * FSharpType>>
+    val GetInterfaceMembers:
+        entity: FSharpEntity -> seq<FSharpMemberOrFunctionOrValue * seq<FSharpGenericParameter * FSharpType>>
 
     /// Check whether an interface is empty
     val HasNoInterfaceMember: entity: FSharpEntity -> bool
@@ -30,14 +31,28 @@ module InterfaceStubGenerator =
     /// positions of 'member', which indicate the indentation for generating new members
     val GetMemberNameAndRanges: interfaceData: InterfaceData -> (string * range) list
 
-    /// Get interface member signatures 
-    val GetImplementedMemberSignatures: getMemberByLocation: (string * range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
+    /// Get interface member signatures
+    val GetImplementedMemberSignatures:
+        getMemberByLocation: (string * range -> FSharpSymbolUse option) ->
+        FSharpDisplayContext ->
+        InterfaceData ->
+            Async<Set<string>>
 
     /// Check whether an entity is an interface or type abbreviation of an interface
     val IsInterface: entity: FSharpEntity -> bool
 
     /// Generate stub implementation of an interface at a start column
-    val FormatInterface: startColumn: int  -> indentation: int -> typeInstances: string [] ->  objectIdent: string -> methodBody: string -> displayContext: FSharpDisplayContext ->  excludedMemberSignatures: Set<string> -> FSharpEntity -> verboseMode: bool -> string
+    val FormatInterface:
+        startColumn: int ->
+        indentation: int ->
+        typeInstances: string [] ->
+        objectIdent: string ->
+        methodBody: string ->
+        displayContext: FSharpDisplayContext ->
+        excludedMemberSignatures: Set<string> ->
+        FSharpEntity ->
+        verboseMode: bool ->
+            string
 
     /// Find corresponding interface declaration at a given position
     val TryFindInterfaceDeclaration: pos: pos -> parsedInput: ParsedInput -> InterfaceData option

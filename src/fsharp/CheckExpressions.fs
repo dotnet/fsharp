@@ -1865,7 +1865,8 @@ let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars
     let origTypars = declaredTyconTypars
     let freshTypars = copyTypars origTypars
     if rigid <> TyparRigidity.Rigid then
-        freshTypars |> List.iter (fun tp -> tp.SetRigidity rigid)
+        for tp in freshTypars do
+            tp.SetRigidity rigid
 
     let renaming, tinst = FixupNewTypars m [] [] origTypars freshTypars
     let origTy = TType_app(tcref, List.map mkTyparTy origTypars, g.knownWithoutNull)
@@ -9040,7 +9041,7 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution 
     // by looking at List.Head we are letting the intrinsics determine indexed/non-indexed
     let pinfo = List.head pinfos
 
-    let _, tyargsOpt, args, delayed, tpenv =
+    let _, tyArgsOpt, args, delayed, tpenv =
         if pinfo.IsIndexer then
             GetMemberApplicationArgs delayed cenv env tpenv
         else
@@ -9067,19 +9068,19 @@ and TcPropertyItemThen cenv overallTy env nm pinfos tpenv mItem afterResolution 
 
             // x.P <- ... byref setter
             if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
         else
             let args = if pinfo.IsIndexer then args else []
             if isNil meths then
                 errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
             // Note: static calls never mutate a struct object argument
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
     | _ ->
         // Static Property Get (possibly indexer)
         let meths = pinfos |> GettersOfPropInfos
         if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
         // Note: static calls never mutate a struct object argument
-        TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
+        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
 
 and TcILFieldItemThen cenv overallTy env finfo tpenv mItem delayed =
     let g = cenv.g
@@ -9159,16 +9160,16 @@ and GetSynMemberApplicationArgs delayed tpenv =
     | otherDelayed ->
         (ExprAtomicFlag.NonAtomic, None, [], otherDelayed, tpenv)
 
-and TcMemberTyArgsOpt cenv env tpenv tyargsOpt =
-    match tyargsOpt with
+and TcMemberTyArgsOpt cenv env tpenv tyArgsOpt =
+    match tyArgsOpt with
     | None -> None, tpenv
     | Some (tyargs, mTypeArgs) ->
         let tyargsChecked, tpenv = TcTypesOrMeasures None cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tyargs mTypeArgs
         Some tyargsChecked, tpenv
 
 and GetMemberApplicationArgs delayed cenv env tpenv =
-    let atomicFlag, tyargsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv
-    let tyArgsOptChecked, tpenv = TcMemberTyArgsOpt cenv env tpenv tyargsOpt
+    let atomicFlag, tyArgsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv
+    let tyArgsOptChecked, tpenv = TcMemberTyArgsOpt cenv env tpenv tyArgsOpt
     atomicFlag, tyArgsOptChecked, args, delayed, tpenv
 
 and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId delayed mExprAndLongId =
@@ -9192,13 +9193,13 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
     match item with
     | Item.MethodGroup (methodName, minfos, _) ->
-        let atomicFlag, tyargsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv
+        let atomicFlag, tyArgsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv
         // We pass PossiblyMutates here because these may actually mutate a value type object
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
 #if !NO_TYPEPROVIDERS
-        match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with
+        match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
         | Some minfoAfterStaticArguments ->
             // Replace the resolution including the static parameters, plus the extra information about the original method info
             let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos[0])
@@ -9210,10 +9211,10 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
 #endif
 
-        let tyargsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyargsOpt
+        let tyArgsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyArgsOpt
         let meths = minfos |> List.map (fun minfo -> minfo, None)
 
-        TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem methodName ad mutates false meths afterResolution NormalValUse args atomicFlag delayed
+        TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem methodName ad mutates false meths afterResolution NormalValUse args atomicFlag delayed
 
     | Item.Property (nm, pinfos) ->
         // Instance property
@@ -9221,7 +9222,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // if there are both intrinsics and extensions in pinfos, intrinsics will be listed first.
         // by looking at List.Head we are letting the intrinsics determine indexed/non-indexed
         let pinfo = List.head pinfos
-        let atomicFlag, tyargsOpt, args, delayed, tpenv =
+        let atomicFlag, tyArgsOpt, args, delayed, tpenv =
             if pinfo.IsIndexer
             then GetMemberApplicationArgs delayed cenv env tpenv
             else ExprAtomicFlag.Atomic, None, [mkSynUnit mItem], delayed, tpenv
@@ -9241,16 +9242,16 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
                     errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
                 // x.P <- ... byref setter
                 if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed
+                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed
             else
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
-                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag []
+                TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag []
         | _ ->
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
             if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed
+            TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed
 
     | Item.RecdField rfinfo ->
         // Get or set instance F# field or literal
@@ -9430,13 +9431,319 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
         else mkQuotedExprTy g (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | _ -> NewInferenceType g
 
+and CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
+    match calledMeth.NumArgs with
+    | [argAttribs] -> argAttribs = n
+    | _ -> false
+
+and isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfo: CallerInfo, _reflArgInfo: ReflectedArgInfo) =
+    not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
+
+and GenerateMatchingSimpleArgumentTypes cenv (calledMeth: MethInfo) mItem =
+    let g = cenv.g
+    let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+    curriedMethodArgAttribs
+    |> List.map (List.filter isSimpleFormalArg >> NewInferenceTypes g)
+
+and UnifyMatchingSimpleArgumentTypes cenv (env: TcEnv) exprTy (calledMeth: MethInfo) mMethExpr mItem =
+    let g = cenv.g
+    let denv = env.DisplayEnv
+    let curriedArgTys = GenerateMatchingSimpleArgumentTypes cenv calledMeth mItem
+    let returnTy =
+        (exprTy, curriedArgTys) ||> List.fold (fun exprTy argTys ->
+            let domainTy, resultTy = UnifyFunctionType None cenv denv mMethExpr exprTy
+            UnifyTypes cenv env mMethExpr domainTy (mkRefTupledTy g argTys)
+            resultTy)
+    curriedArgTys, returnTy
+
+/// Split the syntactic arguments (if any) into named and unnamed parameters
+///
+/// In one case (the second "single named item" rule) we delay the application of a
+/// argument until we've produced a lambda that detuples an input tuple
+and TcMethodApplication_SplitSynArguments
+    cenv
+    (env: TcEnv)
+    tpenv
+    isProp
+    (candidates: MethInfo list)
+    (exprTy: OverallTy)
+    curriedCallerArgs
+    mItem =
+
+    let g = cenv.g
+    let denv = env.DisplayEnv
+
+    match curriedCallerArgs with
+    | [] ->
+        None, None, exprTy
+    | _ ->
+        let unnamedCurriedCallerArgs, namedCurriedCallerArgs = curriedCallerArgs |> List.map GetMethodArgs |> List.unzip
+
+        // There is an mismatch when _uses_ of indexed property setters in the tc.fs code that calls this function.
+        // The arguments are passed as if they are curried with arity [numberOfIndexParameters;1], however in the TAST, indexed property setters
+        // are uncurried and have arity [numberOfIndexParameters+1].
+        //
+        // Here we work around this mismatch by crunching all property argument lists to uncurried form.
+        // Ideally the problem needs to be solved at its root cause at the callsites to this function
+        let unnamedCurriedCallerArgs, namedCurriedCallerArgs =
+            if isProp then
+                [List.concat unnamedCurriedCallerArgs], [List.concat namedCurriedCallerArgs]
+            else
+                unnamedCurriedCallerArgs, namedCurriedCallerArgs
+
+        let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
+
+        let singleMethodCurriedArgs =
+            match candidates with
+            | [calledMeth] when List.forall isNil namedCurriedCallerArgs  ->
+                let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
+                match curriedCalledArgs with
+                | [arg :: _] when isSimpleFormalArg arg -> Some(curriedCalledArgs)
+                | _ -> None
+            | _ -> None
+
+        // "single named item" rule. This is where we have a single accessible method
+        //      member x.M(arg1)
+        // being used with
+        //      x.M (x, y)
+        // Without this rule this requires
+        //      x.M ((x, y))
+        match singleMethodCurriedArgs, unnamedCurriedCallerArgs with
+        | Some [[_]], _ ->
+            let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
+            let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
+            (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
+
+        // "single named item" rule. This is where we have a single accessible method
+        //      member x.M(arg1, arg2)
+        // being used with
+        //      x.M p
+        // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p"
+        // Without this rule this requires
+        //      x.M (fst p, snd p)
+        | Some [_ :: args], [[_]] when List.forall isSimpleFormalArg args ->
+            // The call lambda has function type
+            let exprTy = mkFunTy g (NewInferenceType g) exprTy.Commit
+
+            (None, Some unnamedCurriedCallerArgs.Head.Head, MustEqual exprTy)
+
+        | _ ->
+            let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
+            let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) ->
+                let ty = GetNewInferenceTypeForMethodArg cenv env tpenv x
+                // #435263: compiler crash with .net optional parameters and F# optional syntax
+                // named optional arguments should always have option type
+                // STRUCT OPTIONS: if we allow struct options as optional arguments then we should relax this and rely
+                // on later inference to work out if this is a struct option or ref option
+                let ty = if isOpt then mkOptionTy denv.g ty else ty
+                nm, isOpt, x, ty, x.Range)
+
+            (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
+
+// STEP 1. UnifyUniqueOverloading. This happens BEFORE we type check the arguments.
+// Extract what we know about the caller arguments, either type-directed if
+// no arguments are given or else based on the syntax of the arguments.
+and TcMethodApplication_UniqueOverloadInference
+    cenv
+    (env: TcEnv)
+    (exprTy: OverallTy)
+    tyArgsOpt
+    ad
+    objTyOpt
+    isCheckingAttributeCall
+    callerObjArgTys
+    methodName
+    curriedCallerArgsOpt
+    candidateMethsAndProps
+    candidates
+    mMethExpr
+    mItem =
+
+    let g = cenv.g
+    let denv = env.DisplayEnv
+    let dummyExpr = mkSynUnit mItem
+
+    // Build the CallerArg values for the caller's arguments.
+    // Fake up some arguments if this is the use of a method as a first class function
+    let unnamedCurriedCallerArgs, namedCurriedCallerArgs, returnTy =
+
+        match curriedCallerArgsOpt, candidates with
+        // "single named item" rule. This is where we have a single accessible method
+        //      member x.M(arg1, ..., argN)
+        // being used in a first-class way, i.e.
+        //      x.M
+        // Because there is only one accessible method info available based on the name of the item
+        // being accessed we know the number of arguments the first class use of this
+        // method will take. Optional and out args are _not_ included, which means they will be resolved
+        // to their default values (for optionals) and be part of the return tuple (for out args).
+        | None, [calledMeth] ->
+            let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
+            let unnamedCurriedCallerArgs = curriedArgTys |> List.mapSquared (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr))
+            let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
+            unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
+
+        // "type directed" rule for first-class uses of ambiguous methods.
+        // By context we know a type for the input argument. If it's a tuple
+        // this gives us the a potential number of arguments expected. Indeed even if it's a variable
+        // type we assume the number of arguments is just "1".
+        | None, _ ->
+
+            let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
+            let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
+            // Only apply this rule if a candidate method exists with this number of arguments
+            let argTys =
+                if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then
+                    argTys
+                else
+                    [domainTy]
+            let unnamedCurriedCallerArgs = [argTys |> List.map (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr)) ]
+            let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
+            unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
+
+        | Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), _ ->
+            let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
+            let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
+            unnamedCurriedCallerArgs, namedCurriedCallerArgs, exprTy
+
+    let callerArgCounts = (List.sumBy List.length unnamedCurriedCallerArgs, List.sumBy List.length namedCurriedCallerArgs)
+
+    let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
+
+    let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
+        let minst = FreshenMethInfo mItem minfo
+        let callerTyArgs =
+            match tyArgsOpt with
+            | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
+            | None -> minst
+        CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt)
+
+    let preArgumentTypeCheckingCalledMethGroup =
+        [ for minfo, pinfoOpt in candidateMethsAndProps do
+            let meth = makeOneCalledMeth (minfo, pinfoOpt, true)
+            yield meth
+            if meth.UsesParamArrayConversion then
+                yield makeOneCalledMeth (minfo, pinfoOpt, false) ]
+
+    let uniquelyResolved =
+        UnifyUniqueOverloading denv cenv.css mMethExpr callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
+
+    uniquelyResolved, preArgumentTypeCheckingCalledMethGroup
+
+/// MethodApplication - STEP 2a. First extract what we know about the caller arguments, either type-directed if
+/// no arguments are given or else based on the syntax of the arguments.
+and TcMethodApplication_CheckArguments
+    cenv
+    (env: TcEnv)
+    (exprTy: OverallTy)
+    curriedCallerArgsOpt
+    candidates
+    (preArgumentTypeCheckingCalledMethGroup: CalledMeth<SynExpr> list)
+    callerObjArgTys
+    ad
+    mMethExpr
+    mItem 
+    tpenv =
+
+    let g = cenv.g
+    let denv = env.DisplayEnv
+    match curriedCallerArgsOpt with
+    | None ->
+        let curriedArgTys, returnTy =
+            match candidates with
+            // "single named item" rule. This is where we have a single accessible method
+            //      member x.M(arg1, ..., argN)
+            // being used in a first-class way, i.e.
+            //      x.M
+            // Because there is only one accessible method info available based on the name of the item
+            // being accessed we know the number of arguments the first class use of this
+            // method will take. Optional and out args are _not_ included, which means they will be resolved
+            // to their default values (for optionals) and be part of the return tuple (for out args).
+            | [calledMeth] ->
+                let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes cenv env exprTy.Commit calledMeth mMethExpr mItem
+                curriedArgTys, MustEqual returnTy
+            | _ ->
+                let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
+                let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
+                // Only apply this rule if a candidate method exists with this number of arguments
+                let argTys =
+                    if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then
+                        argTys
+                    else
+                        [domainTy]
+                [argTys], MustEqual returnTy
+
+        let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
+        let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr g e, e.Range, false, e))
+        let namedCurriedCallerArgs = lambdaVarsAndExprs |> List.map (fun _ -> [])
+        let lambdaVars = List.mapSquared fst lambdaVarsAndExprs
+        unnamedCurriedCallerArgs, namedCurriedCallerArgs, Some lambdaVars, returnTy, tpenv
+
+    | Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs) ->
+        // This is the case where some explicit arguments have been given.
+
+        let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
+        let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
+
+        // Collect the information for F# 3.1 lambda propagation rule, and apply the caller's object type to the method's object type if the rule is relevant.
+        let lambdaPropagationInfo =
+            if preArgumentTypeCheckingCalledMethGroup.Length > 1 then
+                [| for meth in preArgumentTypeCheckingCalledMethGroup do
+                    match ExamineMethodForLambdaPropagation g mMethExpr meth ad with
+                    | Some (unnamedInfo, namedInfo) ->
+                        let calledObjArgTys = meth.CalledObjArgTys mMethExpr
+                        if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
+                            let noEagerConstraintApplication = MethInfoHasAttribute g mMethExpr g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+
+                            // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+                            // Tasks and Resumable Code RFC
+                            if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
+
+                            let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight g true callerTy) else emptyFreeTypars
+
+                            AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
+
+                            yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
+                    | None -> () |]
+            else
+                [| |]
+
+        // Now typecheck the argument expressions
+        let unnamedCurriedCallerArgs, (lambdaPropagationInfo, tpenv) = TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv unnamedCurriedCallerArgs
+        let namedCurriedCallerArgs, (_, tpenv) = TcMethodNamedArgs cenv env lambdaPropagationInfo tpenv namedCurriedCallerArgs
+        unnamedCurriedCallerArgs, namedCurriedCallerArgs, None, exprTy, tpenv
+
+// Adhoc constraints on use of .NET methods
+// - Uses of Object.GetHashCode and Object.Equals imply an equality constraint on the object argument
+// - Uses of a Dictionary() constructor without an IEqualityComparer argument imply an equality constraint on the first type argument.
+and TcAdhocChecksOnLibraryMethods cenv (env: TcEnv) isInstance (finalCalledMeth: CalledMeth<_>) (finalCalledMethInfo: MethInfo) objArgs mMethExpr mItem =
+    let g = cenv.g
+
+    if (isInstance &&
+        finalCalledMethInfo.IsInstance &&
+        typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty &&
+        (finalCalledMethInfo.LogicalName = "GetHashCode" || finalCalledMethInfo.LogicalName = "Equals")) then
+
+        for objArg in objArgs do
+            AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace (tyOfExpr g objArg)
+
+    if HasHeadType g g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.ApparentEnclosingType &&
+        finalCalledMethInfo.IsConstructor &&
+        not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs)
+            |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, _, ty)) ->
+                HasHeadType g g.tcref_System_Collections_Generic_IEqualityComparer ty)) then
+
+        match argsOfAppTy g finalCalledMethInfo.ApparentEnclosingType with
+        | [dty; _] -> AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace dty
+        | _ -> ()
+
 /// Method calls, property lookups, attribute constructions etc. get checked through here
 and TcMethodApplication
         isCheckingAttributeCall
         cenv
         env
         tpenv
-        tyargsOpt
+        tyArgsOpt
         objArgs
         mMethExpr // range of the entire method expression
         mItem
@@ -9455,12 +9762,7 @@ and TcMethodApplication
 
     let g = cenv.g
     let denv = env.DisplayEnv
-
-    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfo: CallerInfo, _reflArgInfo: ReflectedArgInfo) =
-        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
-
     let callerObjArgTys = objArgs |> List.map (tyOfExpr g)
-
     let calledMeths = calledMethsAndProps |> List.map fst
 
     // Uses of curried members are ALWAYS treated as if they are first class uses of members.
@@ -9482,97 +9784,9 @@ and TcMethodApplication
 
     let candidates = candidateMethsAndProps |> List.map fst
 
-
-    // Split the syntactic arguments (if any) into named and unnamed parameters
-    //
-    // In one case (the second "single named item" rule) we delay the application of a
-    // argument until we've produced a lambda that detuples an input tuple
+    // Step 0. Split the syntactic arguments (if any) into named and unnamed parameters
     let curriedCallerArgsOpt, unnamedDelayedCallerArgExprOpt, exprTy =
-        match curriedCallerArgs with
-        | [] ->
-            None, None, exprTy
-        | _ ->
-            let unnamedCurriedCallerArgs, namedCurriedCallerArgs = curriedCallerArgs |> List.map GetMethodArgs |> List.unzip
-
-            // There is an mismatch when _uses_ of indexed property setters in the tc.fs code that calls this function.
-            // The arguments are passed as if they are curried with arity [numberOfIndexParameters;1], however in the TAST, indexed property setters
-            // are uncurried and have arity [numberOfIndexParameters+1].
-            //
-            // Here we work around this mismatch by crunching all property argument lists to uncurried form.
-            // Ideally the problem needs to be solved at its root cause at the callsites to this function
-            let unnamedCurriedCallerArgs, namedCurriedCallerArgs =
-                if isProp then
-                    [List.concat unnamedCurriedCallerArgs], [List.concat namedCurriedCallerArgs]
-                else
-                    unnamedCurriedCallerArgs, namedCurriedCallerArgs
-
-            let MakeUnnamedCallerArgInfo x = (x, GetNewInferenceTypeForMethodArg cenv env tpenv x, x.Range)
-
-            let singleMethodCurriedArgs =
-                match candidates with
-                | [calledMeth] when List.forall isNil namedCurriedCallerArgs  ->
-                    let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-                    match curriedCalledArgs with
-                    | [arg :: _] when isSimpleFormalArg arg -> Some(curriedCalledArgs)
-                    | _ -> None
-                | _ -> None
-
-            // "single named item" rule. This is where we have a single accessible method
-            //      member x.M(arg1)
-            // being used with
-            //      x.M (x, y)
-            // Without this rule this requires
-            //      x.M ((x, y))
-            match singleMethodCurriedArgs, unnamedCurriedCallerArgs with
-            | Some [[_]], _ ->
-                let unnamedCurriedCallerArgs = curriedCallerArgs |> List.map (MakeUnnamedCallerArgInfo >> List.singleton)
-                let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.map (fun _ -> [])
-                (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
-
-            // "single named item" rule. This is where we have a single accessible method
-            //      member x.M(arg1, arg2)
-            // being used with
-            //      x.M p
-            // We typecheck this as if it has been written "(fun (v1, v2) -> x.M(v1, v2)) p"
-            // Without this rule this requires
-            //      x.M (fst p, snd p)
-            | Some [_ :: args], [[_]] when List.forall isSimpleFormalArg args ->
-                // The call lambda has function type
-                let exprTy = mkFunTy g (NewInferenceType g) exprTy.Commit
-
-                (None, Some unnamedCurriedCallerArgs.Head.Head, MustEqual exprTy)
-
-            | _ ->
-                let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
-                let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (isOpt, nm, x) ->
-                    let ty = GetNewInferenceTypeForMethodArg cenv env tpenv x
-                    // #435263: compiler crash with .net optional parameters and F# optional syntax
-                    // named optional arguments should always have option type
-                    // STRUCT OPTIONS: if we allow struct options as optional arguments then we should relax this and rely
-                    // on later inference to work out if this is a struct option or ref option
-                    let ty = if isOpt then mkOptionTy denv.g ty else ty
-                    nm, isOpt, x, ty, x.Range)
-
-                (Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), None, exprTy)
-
-    let CalledMethHasSingleArgumentGroupOfThisLength n (calledMeth: MethInfo) =
-       match calledMeth.NumArgs with
-       | [argAttribs] -> argAttribs = n
-       | _ -> false
-
-    let GenerateMatchingSimpleArgumentTypes (calledMeth: MethInfo) =
-        let curriedMethodArgAttribs = calledMeth.GetParamAttribs(cenv.amap, mItem)
-        curriedMethodArgAttribs
-        |> List.map (List.filter isSimpleFormalArg >> NewInferenceTypes g)
-
-    let UnifyMatchingSimpleArgumentTypes exprTy (calledMeth: MethInfo) =
-        let curriedArgTys = GenerateMatchingSimpleArgumentTypes calledMeth
-        let returnTy =
-            (exprTy, curriedArgTys) ||> List.fold (fun exprTy argTys ->
-                let domainTy, resultTy = UnifyFunctionType None cenv denv mMethExpr exprTy
-                UnifyTypes cenv env mMethExpr domainTy (mkRefTupledTy g argTys)
-                resultTy)
-        curriedArgTys, returnTy
+        TcMethodApplication_SplitSynArguments cenv env tpenv isProp candidates exprTy curriedCallerArgs mItem
 
     if isProp && Option.isNone curriedCallerArgsOpt then
         error(Error(FSComp.SR.parsIndexerPropertyRequiresAtLeastOneArgument(), mItem))
@@ -9581,145 +9795,11 @@ and TcMethodApplication
     // Extract what we know about the caller arguments, either type-directed if
     // no arguments are given or else based on the syntax of the arguments.
     let uniquelyResolved, preArgumentTypeCheckingCalledMethGroup =
-        let dummyExpr = mkSynUnit mItem
+        TcMethodApplication_UniqueOverloadInference cenv env exprTy tyArgsOpt ad objTyOpt isCheckingAttributeCall callerObjArgTys methodName curriedCallerArgsOpt candidateMethsAndProps candidates mMethExpr mItem
 
-        // Build the CallerArg values for the caller's arguments.
-        // Fake up some arguments if this is the use of a method as a first class function
-        let unnamedCurriedCallerArgs, namedCurriedCallerArgs, returnTy =
-
-            match curriedCallerArgsOpt, candidates with
-            // "single named item" rule. This is where we have a single accessible method
-            //      member x.M(arg1, ..., argN)
-            // being used in a first-class way, i.e.
-            //      x.M
-            // Because there is only one accessible method info available based on the name of the item
-            // being accessed we know the number of arguments the first class use of this
-            // method will take. Optional and out args are _not_ included, which means they will be resolved
-            // to their default values (for optionals) and be part of the return tuple (for out args).
-            | None, [calledMeth] ->
-                let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes exprTy.Commit calledMeth
-                let unnamedCurriedCallerArgs = curriedArgTys |> List.mapSquared (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr))
-                let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
-                unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
-
-            // "type directed" rule for first-class uses of ambiguous methods.
-            // By context we know a type for the input argument. If it's a tuple
-            // this gives us the a potential number of arguments expected. Indeed even if it's a variable
-            // type we assume the number of arguments is just "1".
-            | None, _ ->
-
-                let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
-                let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
-                // Only apply this rule if a candidate method exists with this number of arguments
-                let argTys =
-                    if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then
-                       argTys
-                    else
-                       [domainTy]
-                let unnamedCurriedCallerArgs = [argTys |> List.map (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr)) ]
-                let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
-                unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
-
-            | Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), _ ->
-                let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
-                let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
-                unnamedCurriedCallerArgs, namedCurriedCallerArgs, exprTy
-
-        let callerArgCounts = (List.sumBy List.length unnamedCurriedCallerArgs, List.sumBy List.length namedCurriedCallerArgs)
-
-        let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
-
-        let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
-            let minst = FreshenMethInfo mItem minfo
-            let callerTyArgs =
-                match tyargsOpt with
-                | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
-                | None -> minst
-            CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt)
-
-        let preArgumentTypeCheckingCalledMethGroup =
-            [ for minfo, pinfoOpt in candidateMethsAndProps do
-                let meth = makeOneCalledMeth (minfo, pinfoOpt, true)
-                yield meth
-                if meth.UsesParamArrayConversion then
-                    yield makeOneCalledMeth (minfo, pinfoOpt, false) ]
-
-        let uniquelyResolved =
-            UnifyUniqueOverloading denv cenv.css mMethExpr callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
-
-        uniquelyResolved, preArgumentTypeCheckingCalledMethGroup
-
-    // STEP 2. Type check arguments
+    // STEP 2. Check arguments
     let unnamedCurriedCallerArgs, namedCurriedCallerArgs, lambdaVars, returnTy, tpenv =
-
-        // STEP 2a. First extract what we know about the caller arguments, either type-directed if
-        // no arguments are given or else based on the syntax of the arguments.
-        match curriedCallerArgsOpt with
-        | None ->
-            let curriedArgTys, returnTy =
-                match candidates with
-                // "single named item" rule. This is where we have a single accessible method
-                //      member x.M(arg1, ..., argN)
-                // being used in a first-class way, i.e.
-                //      x.M
-                // Because there is only one accessible method info available based on the name of the item
-                // being accessed we know the number of arguments the first class use of this
-                // method will take. Optional and out args are _not_ included, which means they will be resolved
-                // to their default values (for optionals) and be part of the return tuple (for out args).
-                | [calledMeth] ->
-                    let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes exprTy.Commit calledMeth
-                    curriedArgTys, MustEqual returnTy
-                | _ ->
-                    let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
-                    let argTys = if isUnitTy g domainTy then [] else tryDestRefTupleTy g domainTy
-                    // Only apply this rule if a candidate method exists with this number of arguments
-                    let argTys =
-                        if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then
-                            argTys
-                        else
-                            [domainTy]
-                    [argTys], MustEqual returnTy
-
-            let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
-            let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr g e, e.Range, false, e))
-            let namedCurriedCallerArgs = lambdaVarsAndExprs |> List.map (fun _ -> [])
-            let lambdaVars = List.mapSquared fst lambdaVarsAndExprs
-            unnamedCurriedCallerArgs, namedCurriedCallerArgs, Some lambdaVars, returnTy, tpenv
-
-        | Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs) ->
-            // This is the case where some explicit arguments have been given.
-
-            let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
-            let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id, isOpt, argExpr, argTy, mArg) -> CallerNamedArg(id, CallerArg(argTy, mArg, isOpt, argExpr)))
-
-            // Collect the information for F# 3.1 lambda propagation rule, and apply the caller's object type to the method's object type if the rule is relevant.
-            let lambdaPropagationInfo =
-                if preArgumentTypeCheckingCalledMethGroup.Length > 1 then
-                    [| for meth in preArgumentTypeCheckingCalledMethGroup do
-                        match ExamineMethodForLambdaPropagation g mMethExpr meth ad with
-                        | Some (unnamedInfo, namedInfo) ->
-                            let calledObjArgTys = meth.CalledObjArgTys mMethExpr
-                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
-                                let noEagerConstraintApplication = MethInfoHasAttribute g mMethExpr g.attrib_NoEagerConstraintApplicationAttribute meth.Method
-
-                                // The logic associated with NoEagerConstraintApplicationAttribute is part of the
-                                // Tasks and Resumable Code RFC
-                                if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                                    errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
-
-                                let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight g true callerTy) else emptyFreeTypars
-
-                                AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
-
-                                yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
-                        | None -> () |]
-                else
-                    [| |]
-
-            // Now typecheck the argument expressions
-            let unnamedCurriedCallerArgs, (lambdaPropagationInfo, tpenv) = TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv unnamedCurriedCallerArgs
-            let namedCurriedCallerArgs, (_, tpenv) = TcMethodNamedArgs cenv env lambdaPropagationInfo tpenv namedCurriedCallerArgs
-            unnamedCurriedCallerArgs, namedCurriedCallerArgs, None, exprTy, tpenv
+        TcMethodApplication_CheckArguments cenv env exprTy curriedCallerArgsOpt candidates preArgumentTypeCheckingCalledMethGroup callerObjArgTys ad mMethExpr mItem tpenv
 
     let preArgumentTypeCheckingCalledMethGroup =
        preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
@@ -9741,9 +9821,9 @@ and TcMethodApplication
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
 
         let postArgumentTypeCheckingCalledMethGroup =
-            preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo: MethInfo, minst, pinfoOpt, usesParamArrayConversion) ->
+            preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo, minst, pinfoOpt, usesParamArrayConversion) ->
                 let callerTyArgs =
-                    match tyargsOpt with
+                    match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
                     | None -> minst
                 CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt))
@@ -9809,31 +9889,10 @@ and TcMethodApplication
     finalCalledMeth.AssociatedPropertyInfo |> Option.iter (fun pinfo -> CheckPropInfoAttributes pinfo mItem |> CommitOperationResult)
 
     let isInstance = not (isNil objArgs)
-    MethInfoChecks g cenv.amap isInstance tyargsOpt objArgs ad mItem finalCalledMethInfo
 
-    // Adhoc constraints on use of .NET methods
-    begin
-        // Uses of Object.GetHashCode and Object.Equals imply an equality constraint on the object argument
-        //
-        if (isInstance &&
-            finalCalledMethInfo.IsInstance &&
-            typeEquiv g finalCalledMethInfo.ApparentEnclosingType g.obj_ty &&
-            (finalCalledMethInfo.LogicalName = "GetHashCode" || finalCalledMethInfo.LogicalName = "Equals")) then
+    MethInfoChecks g cenv.amap isInstance tyArgsOpt objArgs ad mItem finalCalledMethInfo
 
-            objArgs |> List.iter (fun expr -> AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace (tyOfExpr g expr))
-
-        // Uses of a Dictionary() constructor without an IEqualityComparer argument imply an equality constraint
-        // on the first type argument.
-        if HasHeadType g g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.ApparentEnclosingType &&
-           finalCalledMethInfo.IsConstructor &&
-           not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs)
-                |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, _, ty)) ->
-                    HasHeadType g g.tcref_System_Collections_Generic_IEqualityComparer ty)) then
-
-            match argsOfAppTy g finalCalledMethInfo.ApparentEnclosingType with
-            | [dty; _] -> AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace dty
-            | _ -> ()
-    end
+    TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
     if not finalCalledMeth.IsIndexParamArraySetter &&
        (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
@@ -9853,9 +9912,7 @@ and TcMethodApplication
             let item = Item.ArgName (defaultArg assignedArg.CalledArg.NameOpt id, assignedArg.CalledArg.CalledArgumentType, Some(ArgumentContainer.Method finalCalledMethInfo))
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad))
 
-
     /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
-    ///
 
     let callExpr0, exprTy =
         BuildPossiblyConditionalMethodCall cenv env mut mMethExpr isProp finalCalledMethInfo isSuperInit finalCalledMethInst objArgs allArgsCoerced
@@ -9872,7 +9929,8 @@ and TcMethodApplication
     // Bind "out" parameters as part of the result tuple
     let callExpr2, exprTy =
         let expr = callExpr1
-        if isNil outArgTmpBinds then expr, exprTy
+        if isNil outArgTmpBinds then
+            expr, exprTy
         else
             let outArgTys = outArgExprs |> List.map (tyOfExpr g)
             let expr =
@@ -9945,6 +10003,7 @@ and TcMethodApplication
 
     (callExpr6, finalAttributeAssignedNamedItems, delayed), tpenv
 
+/// For Method(X = expr) 'X' can be a property, IL Field or F# record field
 and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) =
     let g = cenv.g
 
