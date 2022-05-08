@@ -16,7 +16,8 @@ open FSharp.Compiler.TcGlobals
 [<AbstractClass>]
 type DiagnosticsLoggerProvider =
     new: unit -> DiagnosticsLoggerProvider
-    abstract CreateDiagnosticsLoggerUpToMaxErrors: tcConfigBuilder: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
+    abstract CreateDiagnosticsLoggerUpToMaxErrors:
+        tcConfigBuilder: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
 /// The default DiagnosticsLoggerProvider implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider =

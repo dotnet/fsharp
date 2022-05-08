@@ -216,7 +216,8 @@ module DiagnosticsLoggerExtensions =
 val PushThreadBuildPhaseUntilUnwind: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushDiagnosticsLoggerPhaseUntilUnwind: errorLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val PushDiagnosticsLoggerPhaseUntilUnwind:
+    errorLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 

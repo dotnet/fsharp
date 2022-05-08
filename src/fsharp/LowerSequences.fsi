@@ -11,7 +11,8 @@ open FSharp.Compiler.Text
 /// Detect a 'seq<int>' type
 val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType option
 
-val callNonOverloadedILMethod: g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
+val callNonOverloadedILMethod:
+    g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.
