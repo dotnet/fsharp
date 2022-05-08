@@ -395,7 +395,7 @@ type BackgroundCompiler(
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
         lock gate (fun () ->
             if ct.IsCancellationRequested then
-                GraphNode(node { return None, [||] })
+                GraphNode(node.Return(None, [||]))
             else
                 let getBuilderNode = 
                     GraphNode(CreateOneIncrementalBuilder(options, userOpName))
@@ -1422,4 +1422,3 @@ type CompilerEnvironment() =
     static member MustBeSingleFileProject file =
         let ext = Path.GetExtension file
         singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e, ext, StringComparison.OrdinalIgnoreCase))
-
