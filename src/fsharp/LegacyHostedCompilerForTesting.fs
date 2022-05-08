@@ -55,7 +55,7 @@ type internal CompilationOutput =
       Warnings : Diagnostic[]  }
 
 type internal InProcCompiler(legacyReferenceResolver) = 
-    member this.Compile(argv) = 
+    member _.Compile(argv) = 
 
         // Explanation: Compilation happens on whichever thread calls this function.
         let ctok = AssumeCompilationThreadWithoutEvidence ()
@@ -64,7 +64,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
         let mutable exitCode = 0
         let exiter = 
             { new Exiter with
-                 member this.Exit n = exitCode <- n; raise StopProcessing }
+                 member _.Exit n = exitCode <- n; raise StopProcessing }
         try 
             mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
@@ -136,7 +136,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         fun arg -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
-    member this.Compile(args : string array) =
+    member _.Compile(args : string array) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =

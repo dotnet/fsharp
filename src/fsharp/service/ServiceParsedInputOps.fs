@@ -355,7 +355,7 @@ module ParsedInput =
         let pick x = SyntaxTraversal.pick pos x
         let walker = 
             { new SyntaxVisitorBase<_>() with
-                member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                     let pick = pick expr.Range
                     let traverseSynExpr, defaultTraverse, expr = traverseSynExpr, defaultTraverse, expr  // for debugging: debugger does not get object expression params as local vars
                     if not(rangeContainsPos expr.Range pos) then 

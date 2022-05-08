@@ -5395,7 +5395,7 @@ namespace Microsoft.FSharp.Core
                     member _.GetEnumerator () = variableStepRangeEnumerator ()
 
                   interface IEnumerable with
-                    member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
+                    member _.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
 
             let inline simpleIntegralRange minValue maxValue n step m =
                 if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue then 

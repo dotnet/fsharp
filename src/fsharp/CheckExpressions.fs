@@ -1819,19 +1819,19 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
             let values, vspecMap =
                 let sink =
                     { new ITypecheckResultsSink with
-                        member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
+                        member _.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
 
-                        member this.NotifyNameResolution(pos, item, itemTyparInst, occurence, nenv, ad, m, replacing) =
+                        member _.NotifyNameResolution(pos, item, itemTyparInst, occurence, nenv, ad, m, replacing) =
                             notifyNameResolution (pos, item, item, itemTyparInst, occurence, nenv, ad, m, replacing)
 
-                        member this.NotifyMethodGroupNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) =
+                        member _.NotifyMethodGroupNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) =
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
-                        member this.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
-                        member this.NotifyFormatSpecifierLocation(_, _) = ()
-                        member this.NotifyOpenDeclaration _ = ()
-                        member this.CurrentSourceText = None
-                        member this.FormatStringCheckContext = None }
+                        member _.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member _.NotifyFormatSpecifierLocation(_, _) = ()
+                        member _.NotifyOpenDeclaration _ = ()
+                        member _.CurrentSourceText = None
+                        member _.FormatStringCheckContext = None }
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
                 MakeAndPublishSimpleVals cenv env names

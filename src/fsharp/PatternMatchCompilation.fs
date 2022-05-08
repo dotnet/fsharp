@@ -55,21 +55,21 @@ type Pattern =
 
     member this.Range =
         match this with
-        |   TPat_const(_, m) -> m
-        |   TPat_wild m -> m
-        |   TPat_as(_, _, m) -> m
-        |   TPat_disjs(_, m) -> m
-        |   TPat_conjs(_, m) -> m
-        |   TPat_query(_, _, m) -> m
-        |   TPat_unioncase(_, _, _, m) -> m
-        |   TPat_exnconstr(_, _, m) -> m
-        |   TPat_tuple(_, _, _, m) -> m
-        |   TPat_array(_, _, m) -> m
-        |   TPat_recd(_, _, _, m) -> m
-        |   TPat_range(_, _, m) -> m
-        |   TPat_null m -> m
-        |   TPat_isinst(_, _, _, m) -> m
-        |   TPat_error m -> m
+        | TPat_const(_, m) -> m
+        | TPat_wild m -> m
+        | TPat_as(_, _, m) -> m
+        | TPat_disjs(_, m) -> m
+        | TPat_conjs(_, m) -> m
+        | TPat_query(_, _, m) -> m
+        | TPat_unioncase(_, _, _, m) -> m
+        | TPat_exnconstr(_, _, m) -> m
+        | TPat_tuple(_, _, _, m) -> m
+        | TPat_array(_, _, m) -> m
+        | TPat_recd(_, _, _, m) -> m
+        | TPat_range(_, _, m) -> m
+        | TPat_null m -> m
+        | TPat_isinst(_, _, _, m) -> m
+        | TPat_error m -> m
 
 and PatternValBinding = PBind of Val * TypeScheme
 
@@ -859,7 +859,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     compactify (Some (h :: prev :: moreprev)) t
                 | Const.Char cprev, Const.Char cnext when (int32 cprev + 1 = int32 cnext) ->
                     compactify (Some (h :: prev :: moreprev)) t
-                |       _ ->  (List.rev (prev :: moreprev)) :: compactify None edges
+                | _ ->  (List.rev (prev :: moreprev)) :: compactify None edges
 
             | _ -> failwith "internal error: compactify"
         let edgeGroups = compactify None edges'

@@ -57,14 +57,17 @@ module IncrementalBuilderEventTesting =
         let data = Array.create MAX None
         let mutable curIndex = 0
         let mutable numAdds = 0
+
         // called by the product, to note when a parse/typecheck happens for a file
         member _.Add(fileName:'T) =
             numAdds <- numAdds + 1
             data[curIndex] <- Some fileName
             curIndex <- (curIndex + 1) % MAX
+
         member _.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
-        member this.MostRecentList(n: int) : list<'T> =
+
+        member _.MostRecentList(n: int) : list<'T> =
             if n < 0 || n > MAX then
                 raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
             let mutable remaining = n
@@ -360,7 +363,7 @@ type BoundModel private (tcConfig: TcConfig,
         else
             this
 
-    member this.Next(syntaxTree, tcInfo) =
+    member _.Next(syntaxTree, tcInfo) =
         BoundModel(
             tcConfig,
             tcGlobals,
@@ -376,7 +379,7 @@ type BoundModel private (tcConfig: TcConfig,
             Some syntaxTree,
             None)
 
-    member this.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
+    member _.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
         node {
             let createFinish tcInfo =
                 { tcInfo  with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
@@ -1358,15 +1361,15 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | Some slot -> Some slot
         | None -> None
 
-    member this.GetSlotOfFileName(fileName: string) =
-        match this.TryGetSlotOfFileName(fileName) with
+    member builder.GetSlotOfFileName(fileName: string) =
+        match builder.TryGetSlotOfFileName(fileName) with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" fileName)
 
     member _.GetSlotsCount () = fileNames.Length
 
-    member this.ContainsFile(fileName: string) =
-        (this.TryGetSlotOfFileName fileName).IsSome
+    member builder.ContainsFile(fileName: string) =
+        (builder.TryGetSlotOfFileName fileName).IsSome
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName

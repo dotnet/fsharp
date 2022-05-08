@@ -58,9 +58,12 @@ type AssemblyLoader =
 [<Sealed>]
 type ImportMap(g: TcGlobals, assemblyLoader: AssemblyLoader) =
     let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef, TyconRef>()
-    member this.g = g
-    member this.assemblyLoader = assemblyLoader
-    member this.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
+
+    member _.g = g
+
+    member _.assemblyLoader = assemblyLoader
+
+    member _.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
 let CanImportILScopeRef (env: ImportMap) m scoref = 
 

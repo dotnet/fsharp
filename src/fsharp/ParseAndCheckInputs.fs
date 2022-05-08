@@ -497,7 +497,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorL
             let mutable exitCode = 0
             let delayedExiter =
                 { new Exiter with
-                        member this.Exit n = exitCode <- n; raise StopProcessing }
+                    member _.Exit n = exitCode <- n; raise StopProcessing }
 
             // Check input files and create delayed error loggers before we try to parallel parse.
             let delayedDiagnosticsLoggers =

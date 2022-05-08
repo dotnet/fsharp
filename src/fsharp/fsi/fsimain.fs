@@ -123,11 +123,11 @@ let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) =
 #if FSI_SERVER
     let server =
         {new Server.Shared.FSharpInteractiveServer() with
-           member this.Interrupt() = 
+           member _.Interrupt() = 
             //printf "FSI-SERVER: received CTRL-C request...\n"
             try 
                 fsiSession.Interrupt()
-            with e -> 
+            with _ -> 
                 // Final sanity check! - catch all exns - but not expected 
                 assert false
                 ()    

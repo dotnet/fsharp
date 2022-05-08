@@ -1841,14 +1841,23 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
 type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
-    member this.Pos = m.End
-    member this.Item = i
-    member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
-    member this.ItemOccurence = io
-    member this.DisplayEnv = nre.DisplayEnv
-    member this.NameResolutionEnv = nre
-    member this.AccessorDomain = ad
-    member this.Range = m
+
+    member _.Pos = m.End
+
+    member _.Item = i
+
+    member _.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
+
+    member _.ItemOccurence = io
+
+    member _.DisplayEnv = nre.DisplayEnv
+
+    member _.NameResolutionEnv = nre
+
+    member _.AccessorDomain = ad
+
+    member _.Range = m
+
     member this.DebugToString() =
         sprintf "%A: %+A" (this.Pos.Line, this.Pos.Column) i
 
@@ -1861,10 +1870,13 @@ type TcResolutions
 
     static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
-    member this.CapturedEnvs = capturedEnvs
-    member this.CapturedExpressionTypings = capturedExprTypes
-    member this.CapturedNameResolutions = capturedNameResolutions
-    member this.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
+    member _.CapturedEnvs = capturedEnvs
+
+    member _.CapturedExpressionTypings = capturedExprTypes
+
+    member _.CapturedNameResolutions = capturedNameResolutions
+
+    member _.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
 
     static member Empty = empty
 
@@ -1890,7 +1902,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     let capturedNameResolutions = ()
     do capturedNameResolutions // don't capture this!
 
-    member this.GetUsesOfSymbol item =
+    member _.GetUsesOfSymbol item =
         // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
         // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
         // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
@@ -1899,9 +1911,9 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
                     yield symbolUse |]
 
-    member this.AllUsesOfSymbols = allUsesOfSymbols
+    member _.AllUsesOfSymbols = allUsesOfSymbols
 
-    member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
+    member _.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
     static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), Array.empty)
 
@@ -1969,16 +1981,16 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
                 { SourceText = sourceText
                   LineStartPositions = positions })
 
-    member this.GetResolutions() =
+    member _.GetResolutions() =
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
-    member this.GetSymbolUses() =
+    member _.GetSymbolUses() =
         TcSymbolUses(tcGlobals, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
-    member this.GetOpenDeclarations() =
+    member _.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
-    member this.GetFormatSpecifierLocations() =
+    member _.GetFormatSpecifierLocations() =
         capturedFormatSpecifierLocations.ToArray()
 
     interface ITypecheckResultsSink with

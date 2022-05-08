@@ -334,10 +334,20 @@ module internal TestExpose =
 type FSharpTokenizerLexState =
     { PosBits: int64
       OtherBits: int64 }
+
     static member Initial = { PosBits = 0L; OtherBits = 0L }
-    member this.Equals (other: FSharpTokenizerLexState) = (this.PosBits = other.PosBits) && (this.OtherBits = other.OtherBits)
-    override this.Equals (obj: obj) = match obj with :? FSharpTokenizerLexState as other -> this.Equals other | _ -> false
-    override this.GetHashCode () = hash this.PosBits + hash this.OtherBits
+
+    member this.Equals (other: FSharpTokenizerLexState) =
+        (this.PosBits = other.PosBits) &&
+        (this.OtherBits = other.OtherBits)
+
+    override this.Equals (obj: obj) =
+        match obj with
+        | :? FSharpTokenizerLexState as other -> this.Equals other
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.PosBits + hash this.OtherBits
 
 type FSharpTokenizerColorState =
     | Token = 1

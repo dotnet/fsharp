@@ -2503,7 +2503,7 @@ type FsiStdinLexerProvider
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
-    member this.CreateStringLexer (sourceFileName, source, errorLogger) =
+    member _.CreateStringLexer (sourceFileName, source, errorLogger) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, source)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
