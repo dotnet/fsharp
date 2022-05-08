@@ -67,11 +67,11 @@ type public FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromExceptionAndAdjustEof:
-        PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * lastPosInFile: (int * int) * suggestNames: bool ->
+        diag: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * lastPosInFile: (int * int) * suggestNames: bool ->
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool -> FSharpDiagnostic
+        diag: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool -> FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
     /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo

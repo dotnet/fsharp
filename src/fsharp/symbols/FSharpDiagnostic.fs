@@ -71,23 +71,23 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, severity, fallbackRange: range, suggestNames: bool) =
-        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
-        let errorNum = GetDiagnosticNumber exn
-        FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum, "FS")
+    static member CreateFromException(diag, severity, fallbackRange: range, suggestNames: bool) =
+        let m = match GetRangeOfDiagnostic diag with Some m -> m | None -> fallbackRange 
+        let msg = bufs (fun buf -> OutputPhasedDiagnostic buf diag false suggestNames)
+        let errorNum = GetDiagnosticNumber diag
+        FSharpDiagnostic(m, severity, msg, diag.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
-        let r = FSharpDiagnostic.CreateFromException(exn, severity, fallbackRange, suggestNames)
+    static member CreateFromExceptionAndAdjustEof(diag, severity, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
+        let diag = FSharpDiagnostic.CreateFromException(diag, severity, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
-        let startline, schange = min (Line.toZ r.Range.StartLine, false) (linesCount, true)
-        let endline, echange = min (Line.toZ r.Range.EndLine, false)  (linesCount, true)
+        let startline, schange = min (Line.toZ diag.Range.StartLine, false) (linesCount, true)
+        let endline, echange = min (Line.toZ diag.Range.EndLine, false)  (linesCount, true)
         
-        if not (schange || echange) then r
+        if not (schange || echange) then diag
         else
-            let r = if schange then r.WithStart(mkPos startline lastLength) else r
+            let r = if schange then diag.WithStart(mkPos startline lastLength) else diag
             if echange then r.WithEnd(mkPos endline (1 + lastLength)) else r
 
     static member NewlineifyErrorString(message) = NewlineifyErrorString(message)

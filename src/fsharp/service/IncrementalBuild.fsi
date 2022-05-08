@@ -57,13 +57,14 @@ type internal TcInfo =
       latestCcuSigForFile: ModuleOrNamespaceType option
 
       /// Accumulated errors, last file first
-      tcErrorsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] list
+      tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] list
 
       tcDependencyFiles: string list
 
       sigNameOpt: (string * QualifiedNameOfFile) option }
 
-    member TcErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity) []
+    /// Accumulated diagnostics
+    member TcDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) []
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]

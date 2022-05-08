@@ -181,16 +181,16 @@ type TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
-        /// Accumulated errors, last file first
-        tcErrorsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        /// Accumulated diagnostics, last file first
+        tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
 
         sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
-    member x.TcErrors =
-        Array.concat (List.rev x.tcErrorsRev)
+    member x.TcDiagnostics =
+        Array.concat (List.rev x.tcDiagnosticsRev)
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
@@ -375,10 +375,10 @@ type BoundModel private (tcConfig: TcConfig,
             Some syntaxTree,
             None)
 
-    member this.Finish(finalTcErrorsRev, finalTopAttribs) =
+    member this.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
         node {
             let createFinish tcInfo =
-                { tcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
+                { tcInfo  with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
 
             let! finishState =
                 node {
@@ -475,7 +475,7 @@ type BoundModel private (tcConfig: TcConfig,
                     beforeFileChecked.Trigger fileName
                     let prevModuleNamesDict = prevTcInfo.moduleNamesDict
                     let prevTcState = prevTcInfo.tcState
-                    let prevTcErrorsRev = prevTcInfo.tcErrorsRev
+                    let prevTcDiagnosticsRev = prevTcInfo.tcDiagnosticsRev
                     let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
                         
                     ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
@@ -508,7 +508,7 @@ type BoundModel private (tcConfig: TcConfig,
                             tcEnvAtEndOfFile = tcEnvAtEndOfFile
                             moduleNamesDict = moduleNamesDict
                             latestCcuSigForFile = Some ccuSigForFile
-                            tcErrorsRev = newErrors :: prevTcErrorsRev
+                            tcDiagnosticsRev = newErrors :: prevTcDiagnosticsRev
                             topAttribs = Some topAttribs
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
@@ -799,7 +799,7 @@ module IncrementalBuilderHelpers =
               tcEnvAtEndOfFile=tcInitial
               topAttribs=None
               latestCcuSigForFile=None
-              tcErrorsRev = [ initialErrors ]
+              tcDiagnosticsRev = [ initialErrors ]
               moduleNamesDict = Map.empty
               tcDependencyFiles = basicDependencies
               sigNameOpt = None
@@ -921,7 +921,7 @@ module IncrementalBuilderHelpers =
                 errorRecoveryNoRange exn
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
-        let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
+        let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
@@ -1402,7 +1402,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
       node {
 
-        // Trap and report warnings and errors from creation.
+        // Trap and report diagnostics from creation.
         let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
         use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
 
@@ -1641,7 +1641,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 errorLogger.GetDiagnostics()
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, severity) -> FSharpDiagnostic.CreateFromException(d, severity, range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (diag, severity) ->
+                FSharpDiagnostic.CreateFromException(diag, severity, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }
