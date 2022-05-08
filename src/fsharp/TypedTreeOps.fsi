@@ -9,7 +9,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -2636,3 +2636,6 @@ val (|SeqEmpty|_|) : TcGlobals -> Expr -> range option
 
 /// Detect a 'seq { ... }' expression
 val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
+
+/// Indicates if an F# type is the type associated with an F# exception declaration
+val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool

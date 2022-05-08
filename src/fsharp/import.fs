@@ -10,7 +10,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -640,3 +640,15 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
         }
                 
     CcuThunk.Create(nm, ccuData)
+
+//-------------------------------------------------------------------------
+// From IL types to F# types
+//-------------------------------------------------------------------------
+
+/// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
+let RescopeAndImportILType scoref amap m importInst ilty =
+    ilty |> rescopeILType scoref |>  ImportILType amap m importInst
+
+let CanRescopeAndImportILType scoref amap m ilty =
+    ilty |> rescopeILType scoref |>  CanImportILType amap m
+

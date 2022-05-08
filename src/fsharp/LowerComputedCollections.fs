@@ -2,23 +2,18 @@
 
 module internal FSharp.Compiler.LowerComputedCollectionExpressions
 
-open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Infos
 open FSharp.Compiler.LowerSequenceExpressions
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 let LowerComputedCollectionsStackGuardDepth = StackGuard.GetDepthOption "LowerComputedCollections"
 

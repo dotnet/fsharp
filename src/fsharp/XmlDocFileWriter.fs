@@ -5,7 +5,7 @@ module internal FSharp.Compiler.XmlDocFileWriter
 open System.IO
 open System.Reflection
 open Internal.Utilities.Library
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml

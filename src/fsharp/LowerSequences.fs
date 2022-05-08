@@ -2,12 +2,11 @@
 
 module internal FSharp.Compiler.LowerSequenceExpressions
 
-open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
@@ -16,6 +15,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 let LowerSequenceExpressionsStackGuardDepth = StackGuard.GetDepthOption "LowerSequenceExpressions"
 

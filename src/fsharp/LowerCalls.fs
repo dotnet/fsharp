@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.LowerCalls
 
 open Internal.Utilities.Library
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 

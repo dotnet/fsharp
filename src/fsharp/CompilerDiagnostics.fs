@@ -22,7 +22,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -1960,7 +1960,7 @@ let ReportDiagnosticAsError options (diag, severity) =
 // Scoped #nowarn pragmas
 
 
-/// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
 //
 // NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
 // #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
@@ -1968,8 +1968,8 @@ let ReportDiagnosticAsError options (diag, severity) =
 // However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger) =
-    inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
+type DiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
     override x.DiagnosticSink (phasedError, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
@@ -1998,5 +1998,5 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOp
 
     override _.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) =
-    ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> ErrorLogger
+let GetDiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) =
+    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> DiagnosticsLogger

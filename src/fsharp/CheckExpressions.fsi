@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -112,7 +112,7 @@ type TcEnv =
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to
-// use ErrorLogger.
+// use DiagnosticsLogger.
 //-------------------------------------------------------------------------
 
 exception BakedInMemberConstraintName of string * range

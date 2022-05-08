@@ -17,7 +17,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.QuotationPickler
@@ -812,7 +812,7 @@ type Entity =
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_exn_info = exn_info }
 
     /// Indicates if the entity represents an F# exception declaration.
-    member x.IsExceptionDecl = match x.ExceptionInfo with TExnNone -> false | _ -> true
+    member x.IsFSharpException = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
     /// Demangle the module name, if FSharpModuleWithSuffix is used
     member x.DemangledModuleOrNamespaceName =  
@@ -1933,10 +1933,10 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     member _.ActivePatternElemRefLookupTable = activePatternElemRefCache
   
     /// Get a list of types defined within this module, namespace or type. 
-    member _.TypeDefinitions = entities |> Seq.filter (fun x -> not x.IsExceptionDecl && not x.IsModuleOrNamespace) |> Seq.toList
+    member _.TypeDefinitions = entities |> Seq.filter (fun x -> not x.IsFSharpException && not x.IsModuleOrNamespace) |> Seq.toList
 
     /// Get a list of F# exception definitions defined within this module, namespace or type. 
-    member _.ExceptionDefinitions = entities |> Seq.filter (fun x -> x.IsExceptionDecl) |> Seq.toList
+    member _.ExceptionDefinitions = entities |> Seq.filter (fun x -> x.IsFSharpException) |> Seq.toList
 
     /// Get a list of module and namespace definitions defined within this module, namespace or type. 
     member _.ModuleAndNamespaceDefinitions = entities |> Seq.filter (fun x -> x.IsModuleOrNamespace) |> Seq.toList
@@ -3434,7 +3434,7 @@ type EntityRef =
     member x.ExceptionInfo = x.Deref.ExceptionInfo
 
     /// Indicates if the entity represents an F# exception declaration.
-    member x.IsExceptionDecl = x.Deref.IsExceptionDecl
+    member x.IsFSharpException = x.Deref.IsFSharpException
     
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
     /// 

@@ -15,7 +15,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
@@ -55,7 +55,7 @@ type public HashIfExpression() =
 
         let errorLogger =
             {
-                new ErrorLogger("TestErrorLogger") with
+                new DiagnosticsLogger("TestDiagnosticsLogger") with
                     member x.DiagnosticSink(e, sev)    = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
@@ -66,7 +66,7 @@ type public HashIfExpression() =
         let startPos = Position.Empty
         let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
 
-        CompileThreadStatic.ErrorLogger <- errorLogger
+        CompileThreadStatic.DiagnosticsLogger <- errorLogger
 
         let parser (s : string) =
             let lexbuf          = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
@@ -83,7 +83,7 @@ type public HashIfExpression() =
     interface IDisposable with // Teardown
         member _.Dispose() =
             CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
-            CompileThreadStatic.ErrorLogger <- CompileThreadStatic.ErrorLogger
+            CompileThreadStatic.DiagnosticsLogger <- CompileThreadStatic.DiagnosticsLogger
 
     [<Fact>]
     member this.PositiveParserTestCases()=

@@ -13,7 +13,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Core.Printf

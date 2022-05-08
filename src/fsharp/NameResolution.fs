@@ -17,7 +17,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -32,6 +32,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -1315,7 +1316,7 @@ and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
 
 /// Add an F# exception definition to the name resolution environment
 let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref: TyconRef) =
-    assert ecref.IsExceptionDecl
+    assert ecref.IsFSharpException
     let item = Item.ExnCase ecref
     {nenv with
        eUnqualifiedItems =
@@ -4347,7 +4348,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
            |> Seq.filter (fun tcref ->
                not (tcref.LogicalName.Contains ",") &&
-               not tcref.IsExceptionDecl &&
+               not tcref.IsFSharpException &&
                not (IsTyconUnseen ad g ncenv.amap m tcref))
            |> Seq.map (ItemOfTyconRef ncenv m)
            |> Seq.toList
@@ -4945,7 +4946,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
            | Item.Types _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
-                   if not tcref.IsExceptionDecl
+                   if not tcref.IsFSharpException
                       && not (tcref.LogicalName.Contains ",")
                       && not (IsTyconUnseen ad g ncenv.amap m tcref)
                    then yield ItemOfTyconRef ncenv m tcref

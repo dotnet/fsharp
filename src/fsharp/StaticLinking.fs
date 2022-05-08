@@ -13,7 +13,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Text.Range

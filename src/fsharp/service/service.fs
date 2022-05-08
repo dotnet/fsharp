@@ -22,7 +22,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
@@ -95,18 +95,18 @@ module CompileHelpers =
             List.iter oneError relatedErrors
 
         let errorLogger = 
-            { new ErrorLogger("CompileAPI") with 
+            { new DiagnosticsLogger("CompileAPI") with 
                 member x.DiagnosticSink(exn, isError) = errorSink isError exn
                 member x.ErrorCount = errors |> Seq.filter (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> Seq.length }
 
         let loggerProvider = 
-            { new ErrorLoggerProvider() with 
-                member x.CreateErrorLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = errorLogger    }
+            { new DiagnosticsLoggerProvider() with 
+                member x.CreateDiagnosticsLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = errorLogger    }
         errors, errorLogger, loggerProvider
 
     let tryCompile errorLogger f = 
         use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse            
-        use unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+        use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
         let exiter = { new Exiter with member x.Exit n = raise StopProcessing }
         try 
             f exiter
@@ -517,7 +517,7 @@ type BackgroundCompiler(
                 return FSharpParseFileResults(creationDiags, parseTree, true, [| |])
             | Some builder -> 
                 let parseTree,_,_,parseDiags = builder.GetParseResultsForFile fileName
-                let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, fileName, parseDiags, suggestNamesForErrors) |]
+                let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.diagnosticsOptions, false, fileName, parseDiags, suggestNamesForErrors) |]
                 return FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
         }
 
@@ -726,7 +726,7 @@ type BackgroundCompiler(
                 let latestImplementationFile = tcInfoExtras.latestImplFile
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcErrors = tcInfo.TcErrors
-                let errorOptions = builder.TcConfig.errorSeverityOptions
+                let errorOptions = builder.TcConfig.diagnosticsOptions
                 let parseDiags = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, fileName, parseDiags, suggestNamesForErrors) |]
                 let tcErrors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, fileName, tcErrors, suggestNamesForErrors) |]
                 let parseResults = FSharpParseFileResults(diagnostics=parseDiags, input=parseTree, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
@@ -815,7 +815,7 @@ type BackgroundCompiler(
             return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
         | Some builder -> 
             let! tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
-            let errorOptions = tcProj.TcConfig.errorSeverityOptions
+            let errorOptions = tcProj.TcConfig.diagnosticsOptions
             let fileName = DummyFileNameForRangesWithoutASpecificLocation
 
             // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
@@ -878,7 +878,7 @@ type BackgroundCompiler(
 
     member _.GetProjectOptionsFromScript(fileName, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, _userOpName) = 
           cancellable {
-            use errors = new ErrorScope()
+            use errors = new DiagnosticsScope()
 
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
@@ -1295,7 +1295,7 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new ErrorScope()
+        use errorScope = new DiagnosticsScope()
         let tcConfigB = 
             TcConfigBuilder.CreateNew(legacyReferenceResolver,
                 defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
@@ -1368,7 +1368,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 
 type CompilerEnvironment() =
     /// Source file extensions

@@ -20,7 +20,7 @@ open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
@@ -37,6 +37,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
@@ -7441,7 +7442,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
         for tc in tycons do
-            if tc.IsExceptionDecl then
+            if tc.IsFSharpException then
                 GenExnDef cenv cgbuf.mgbuf eenvinner m tc
             else
                 GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc

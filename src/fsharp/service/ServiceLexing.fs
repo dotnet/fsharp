@@ -11,7 +11,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Parser
@@ -822,7 +822,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     member x.ScanToken (lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
+        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         let lightStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
         let lightStatus = IndentationAwareSyntaxStatus(lightStatus, false)
@@ -1511,7 +1511,7 @@ type FSharpToken =
 
 [<AutoOpen>]
 module FSharpLexerImpl =
-    let lexWithErrorLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
+    let lexWithDiagnosticsLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
         let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
         let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
         let isCompiling = (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
@@ -1533,7 +1533,7 @@ module FSharpLexerImpl =
                 lexer
 
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
+        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
         resetLexbufPos "" lexbuf
         while not lexbuf.IsPastEndOfStream do
@@ -1541,8 +1541,8 @@ module FSharpLexerImpl =
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
     let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
-        let errorLogger = CompilationErrorLogger("Lexer", FSharpDiagnosticOptions.Default)
-        lexWithErrorLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
+        let errorLogger = CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
+        lexWithDiagnosticsLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
 
 [<AbstractClass;Sealed>]
 type FSharpLexer =

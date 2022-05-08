@@ -10,7 +10,7 @@ open System.IO
 open System.Text.RegularExpressions
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -60,7 +60,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
         // Explanation: Compilation happens on whichever thread calls this function.
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
-        let loggerProvider = InProcErrorLoggerProvider()
+        let loggerProvider = InProcDiagnosticsLoggerProvider()
         let mutable exitCode = 0
         let exiter = 
             { new Exiter with

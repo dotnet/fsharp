@@ -13,8 +13,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -29,6 +28,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
+open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic

@@ -14,7 +14,7 @@ open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -10173,3 +10173,8 @@ let (|SeqEmpty|_|) g expr =
     match expr with
     | ValApp g g.seq_empty_vref (_, [], m) -> Some m
     | _ -> None
+
+let isFSharpExceptionTy g ty =
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref -> tcref.IsFSharpException
+    | _ -> false

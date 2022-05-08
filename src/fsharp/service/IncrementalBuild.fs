@@ -4,6 +4,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
@@ -22,7 +23,7 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
@@ -109,7 +110,7 @@ module IncrementalBuildSyntaxTree =
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
-            let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
+            let errorLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
@@ -467,8 +468,8 @@ type BoundModel private (tcConfig: TcConfig,
                 | input, _sourceRange, fileName, parseErrors ->
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
-                    let capturingErrorLogger = CapturingErrorLogger("TypeCheck")
-                    let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.errorSeverityOptions, capturingErrorLogger)
+                    let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+                    let errorLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
@@ -498,7 +499,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                     fileChecked.Trigger fileName
-                    let newErrors = Array.append parseErrors (capturingErrorLogger.Diagnostics |> List.toArray)
+                    let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
                     let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
                     let tcInfo =
@@ -746,7 +747,7 @@ module IncrementalBuilderHelpers =
                                               fileChecked,
                                               importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
       node {
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
+        let errorLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
@@ -777,7 +778,7 @@ module IncrementalBuilderHelpers =
 #endif
                 return tcImports
             with exn ->
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+                Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
                 errorLogger.Warning exn
                 return frameworkTcImports
           }
@@ -839,7 +840,7 @@ module IncrementalBuilderHelpers =
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: block<BoundModel>) =
       node {
-        let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
+        let errorLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         let! results =
@@ -1402,7 +1403,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
       node {
 
         // Trap and report warnings and errors from creation.
-        let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
+        let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
         use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
 
         let! builderOpt =
@@ -1513,8 +1514,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
-            let errorOptions = tcConfig.errorSeverityOptions
-            let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
+            let errorLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
             use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
             // Get the names and time stamps of all the non-framework referenced assemblies, which will act
@@ -1524,7 +1524,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let nonFrameworkAssemblyInputs =
                 // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.
-                let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
+                let errorLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
@@ -1535,10 +1535,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
 
-            //
-            //
-            //
-            //
             // Start importing
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
@@ -1639,8 +1635,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let diagnostics =
             match builderOpt with
             | Some builder ->
-                let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
-                let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
+                let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
+                let errorLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
                 delayedLogger.CommitDelayedDiagnostics errorLogger
                 errorLogger.GetDiagnostics()
             | _ ->

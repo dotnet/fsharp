@@ -97,3 +97,10 @@ val internal ImportILAssembly:
 /// Import the type forwarder table for an IL assembly
 val internal ImportILAssemblyTypeForwarders:
     (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<string array * string, Lazy<EntityRef>>
+
+/// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
+/// being compiled. importInst gives the context for interpreting type variables.
+val RescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilty: ILType -> TType
+
+val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilty: ILType -> bool
+

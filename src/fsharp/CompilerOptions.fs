@@ -19,7 +19,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 
 open Internal.Utilities
 
@@ -613,15 +613,15 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         | false, _ -> None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch ->
-            tcConfigB.errorSeverityOptions <-
-                { tcConfigB.errorSeverityOptions with
+            tcConfigB.diagnosticsOptions <-
+                { tcConfigB.diagnosticsOptions with
                     GlobalWarnAsError = switch <> OptionSwitch.Off }), None, Some (FSComp.SR.optsWarnaserrorPM()))
 
         CompilerOption("warnaserror", tagWarnList, OptionStringListSwitch (fun n switch ->
             match trimFStoInt n with
             | Some n ->
-                let options = tcConfigB.errorSeverityOptions
-                tcConfigB.errorSeverityOptions <-
+                let options = tcConfigB.diagnosticsOptions
+                tcConfigB.diagnosticsOptions <-
                     if switch = OptionSwitch.Off then
                         { options with
                             WarnAsError = ListSet.remove (=) n options.WarnAsError
@@ -633,8 +633,8 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             | None -> ()), None, Some (FSComp.SR.optsWarnaserror()))
 
         CompilerOption("warn", tagInt, OptionInt (fun n ->
-                 tcConfigB.errorSeverityOptions <-
-                     { tcConfigB.errorSeverityOptions with
+                 tcConfigB.diagnosticsOptions <-
+                     { tcConfigB.diagnosticsOptions with
                          WarnLevel = if (n >= 0 && n <= 5) then n else error(Error (FSComp.SR.optsInvalidWarningLevel n, rangeCmdArgs)) }
             ), None, Some (FSComp.SR.optsWarn()))
 

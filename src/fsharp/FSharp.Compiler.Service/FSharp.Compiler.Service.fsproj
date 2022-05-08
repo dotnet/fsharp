@@ -241,11 +241,11 @@
     <Compile Include="..\TextLayoutRender.fs">
       <Link>ErrorLogging\TextLayoutRender.fs</Link>
     </Compile>
-    <Compile Include="..\ErrorLogger.fsi">
-      <Link>ErrorLogging\ErrorLogger.fsi</Link>
+    <Compile Include="..\DiagnosticsLogger.fsi">
+      <Link>ErrorLogging\DiagnosticsLogger.fsi</Link>
     </Compile>
-    <Compile Include="..\ErrorLogger.fs">
-      <Link>ErrorLogging\ErrorLogger.fs</Link>
+    <Compile Include="..\DiagnosticsLogger.fs">
+      <Link>ErrorLogging\DiagnosticsLogger.fs</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fsi">
       <Link>ErrorLogging\ErrorResolutionHints.fsi</Link>
@@ -549,6 +549,12 @@
     <Compile Include="..\import.fs">
       <Link>Logic\import.fs</Link>
     </Compile>
+    <Compile Include="..\TypeHierarchy.fsi">
+      <Link>Logic\TypeHierarchy.fsi</Link>
+    </Compile>
+    <Compile Include="..\TypeHierarchy.fs">
+      <Link>Logic\TypeHierarchy.fs</Link>
+    </Compile>
     <Compile Include="..\infos.fsi">
       <Link>Logic\infos.fsi</Link>
     </Compile>
@@ -824,6 +830,12 @@
     </Compile>
 
     <!-- the symbol API. -->
+    <Compile Include="..\symbols\FSharpDiagnostic.fsi">
+      <Link>Symbols/FSharpDiagnostic.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\FSharpDiagnostic.fs">
+      <Link>Symbols/FSharpDiagnostic.fs</Link>
+    </Compile>
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>

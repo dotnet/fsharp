@@ -6,12 +6,12 @@ module internal FSharp.Compiler.TypeRelations
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification. 

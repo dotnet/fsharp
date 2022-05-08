@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 

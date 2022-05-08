@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps

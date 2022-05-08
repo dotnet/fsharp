@@ -5,7 +5,7 @@ module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -114,8 +114,8 @@ val CollectDiagnostic:
         seq<Diagnostic>
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
-val GetErrorLoggerFilteringByScopedPragmas:
-    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * ErrorLogger -> ErrorLogger
+val GetDiagnosticsLoggerFilteringByScopedPragmas:
+    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * DiagnosticsLogger -> DiagnosticsLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 

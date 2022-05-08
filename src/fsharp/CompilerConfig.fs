@@ -16,7 +16,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -368,7 +368,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
       mutable embedResources: string list
-      mutable errorSeverityOptions: FSharpDiagnosticOptions
+      mutable diagnosticsOptions: FSharpDiagnosticOptions
       mutable mlCompatibility: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
@@ -579,7 +579,7 @@ type TcConfigBuilder =
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
-          errorSeverityOptions = FSharpDiagnosticOptions.Default
+          diagnosticsOptions = FSharpDiagnosticOptions.Default
           embedResources = []
           inputCodePage = None
           subsystemVersion = 4, 0 // per spec for 357994
@@ -770,8 +770,8 @@ type TcConfigBuilder =
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- true
-            tcConfigB.errorSeverityOptions <-
-                { tcConfigB.errorSeverityOptions with WarnOff = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOff }
+            tcConfigB.diagnosticsOptions <-
+                { tcConfigB.diagnosticsOptions with WarnOff = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOff }
 
     member tcConfigB.TurnWarningOn(m, s: string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -780,8 +780,8 @@ type TcConfigBuilder =
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- false
-            tcConfigB.errorSeverityOptions <-
-                { tcConfigB.errorSeverityOptions with WarnOn = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOn }
+            tcConfigB.diagnosticsOptions <-
+                { tcConfigB.diagnosticsOptions with WarnOn = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOn }
 
     member tcConfigB.AddIncludePath (m, path, pathIncludedFrom) =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
@@ -1062,7 +1062,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.useHighEntropyVA = data.useHighEntropyVA
     member _.inputCodePage = data.inputCodePage
     member _.embedResources = data.embedResources
-    member _.errorSeverityOptions = data.errorSeverityOptions
+    member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
