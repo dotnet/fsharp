@@ -9,12 +9,12 @@ open FSharp.Compiler.Text
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
-type ErrorStyle =
-    | DefaultErrors
-    | EmacsErrors
-    | TestErrors
-    | VSErrors
-    | GccErrors
+type DiagnosticStyle =
+    | Default
+    | Emacs
+    | Test
+    | VisualStudio
+    | Gcc
 
 /// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range
@@ -41,29 +41,41 @@ val (|StopProcessing|_|): exn: exn -> unit option
 
 val StopProcessing<'T> : exn
 
-exception Error of (int * string) * range
+/// Represents a diagnostic exeption whose text comes via SR.*
+exception SRDiagnostic of number: int * message: string * range: range
 
-exception InternalError of msg: string * range
+/// Creates a diagnostic exeption whose text comes via SR.*
+val Error: (int * string) * range -> exn
 
-exception UserCompilerMessage of string * int * range
+exception InternalError of message: string * range: range
 
-exception LibraryUseOnly of range
+exception UserCompilerMessage of message: string * number: int * range: range
 
-exception Deprecated of string * range
+exception LibraryUseOnly of range: range
 
-exception Experimental of string * range
+exception Deprecated of message: string * range: range
 
-exception PossibleUnverifiableCode of range
+exception Experimental of message: string * range: range
 
-exception UnresolvedReferenceNoRange of string
+exception PossibleUnverifiableCode of range: range
 
-exception UnresolvedReferenceError of string * range
+exception UnresolvedReferenceNoRange of assemblyName: string
 
-exception UnresolvedPathReferenceNoRange of string * string
+exception UnresolvedReferenceError of assemblyName: string * range: range
 
-exception UnresolvedPathReference of string * string * range
+exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string
 
-exception ErrorWithSuggestions of (int * string) * range * string * Suggestions
+exception UnresolvedPathReference of assemblyName: string * path: string * range: range
+
+exception SRDiagnosticWithSuggestions of
+    number: int *
+    message: string *
+    range: range *
+    identifier: string *
+    suggestions: Suggestions
+
+/// Creates a SRDiagnosticWithSuggestions whose text comes via SR.*
+val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
 
 val inline protectAssemblyExploration: dflt: 'a -> f: (unit -> 'a) -> 'a
 

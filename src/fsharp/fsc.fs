@@ -107,7 +107,7 @@ let ConsoleDiagnosticsLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : 
 
             member _.HandleIssue(tcConfigB, err, severity) =
                 DoWithDiagnosticColor severity (fun () ->
-                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, severity)
+                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.diagnosticStyle, severity)
                     writeViaBuffer stderr diag err
                     stderr.WriteLine())
     } :> DiagnosticsLogger
@@ -139,19 +139,19 @@ type InProcDiagnosticsLoggerProvider() =
     member _.Provider =
         { new DiagnosticsLoggerProvider() with
 
-            member log.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
+            member _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
 
                 { new DiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
 
-                    member this.HandleTooManyErrors text =
+                    member _.HandleTooManyErrors text =
                         warnings.Add(Diagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member this.HandleIssue(tcConfigBuilder, err, severity) =
+                    member _.HandleIssue(tcConfigBuilder, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
                         let diagnostics =
                             CollectDiagnostic
                                 (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, severity, err, true)
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.diagnosticStyle, severity, err, true)
                         match severity with
                         | FSharpDiagnosticSeverity.Error ->
                            errors.AddRange(diagnostics)
@@ -169,7 +169,8 @@ type ConsoleLoggerProvider() =
 
     inherit DiagnosticsLoggerProvider()
 
-    override this.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) = ConsoleDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter)
+    override _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
+        ConsoleDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter)
 
 /// Notify the exiter if any error has occurred
 let AbortOnError (errorLogger: DiagnosticsLogger, exiter : Exiter) =

@@ -430,7 +430,7 @@ type TcConfigBuilder =
       mutable legacyReferenceResolver: LegacyReferenceResolver
 
       mutable showFullPaths: bool
-      mutable errorStyle: ErrorStyle
+      mutable diagnosticStyle: DiagnosticStyle
       mutable utf8output: bool
       mutable flatErrors: bool
 
@@ -646,7 +646,7 @@ type TcConfigBuilder =
           includewin32manifest = true
           linkResources = []
           showFullPaths = false
-          errorStyle = ErrorStyle.DefaultErrors
+          diagnosticStyle = DiagnosticStyle.Default
 
           utf8output = false
           flatErrors = false
@@ -1118,7 +1118,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.includewin32manifest = data.includewin32manifest
     member _.linkResources = data.linkResources
     member _.showFullPaths = data.showFullPaths
-    member _.errorStyle = data.errorStyle
+    member _.diagnosticStyle = data.diagnosticStyle
     member _.utf8output = data.utf8output
     member _.flatErrors = data.flatErrors
     member _.maxErrors = data.maxErrors

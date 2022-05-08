@@ -366,7 +366,7 @@ type TcConfigBuilder =
 
       mutable showFullPaths: bool
 
-      mutable errorStyle: ErrorStyle
+      mutable diagnosticStyle: DiagnosticStyle
 
       mutable utf8output: bool
 
@@ -674,7 +674,7 @@ type TcConfig =
 
     member showFullPaths: bool
 
-    member errorStyle: ErrorStyle
+    member diagnosticStyle: DiagnosticStyle
 
     member utf8output: bool
 

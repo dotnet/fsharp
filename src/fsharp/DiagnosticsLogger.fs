@@ -14,12 +14,12 @@ open Internal.Utilities.Library.Extras
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
-type ErrorStyle = 
-    | DefaultErrors 
-    | EmacsErrors 
-    | TestErrors 
-    | VSErrors
-    | GccErrors
+type DiagnosticStyle = 
+    | Default 
+    | Emacs 
+    | Test 
+    | VisualStudio
+    | Gcc
 
 /// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range with
@@ -66,46 +66,52 @@ let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _
 
 let StopProcessing<'T> = StopProcessingExn None
 
-exception Error of (int * string) * range with   // int is e.g. 191 in FS0191
+// int is e.g. 191 in FS0191
+exception SRDiagnostic of number: int * message: string * range: range with
     override this.Message =
         match this :> exn with
-        | Error((_, msg), _) -> msg
+        | SRDiagnostic(_, msg, _) -> msg
         | _ -> "impossible"
 
-exception InternalError of msg: string * range with 
+exception InternalError of message: string * range: range with 
     override this.Message = 
         match this :> exn with 
         | InternalError(msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
-exception UserCompilerMessage of string * int * range
+exception UserCompilerMessage of message: string * number: int * range: range
 
-exception LibraryUseOnly of range
+exception LibraryUseOnly of range: range
 
-exception Deprecated of string * range
+exception Deprecated of message: string * range: range
 
-exception Experimental of string * range
+exception Experimental of message: string * range: range
 
-exception PossibleUnverifiableCode of range
+exception PossibleUnverifiableCode of range: range
 
-exception UnresolvedReferenceNoRange of (*assemblyName*) string 
+exception UnresolvedReferenceNoRange of assemblyName: string 
 
-exception UnresolvedReferenceError of (*assemblyName*) string * range
+exception UnresolvedReferenceError of assemblyName: string * range: range
 
-exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
+exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string with
     override this.Message =
         match this :> exn with
         | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
         | _ -> "impossible"
 
-exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
+exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
-exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
+exception SRDiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
-        | ErrorWithSuggestions((_, msg), _, _, _) -> msg
+        | SRDiagnosticWithSuggestions(_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
+/// The F# compiler code currently uses 'Error(...)' to create an SRDiagnostic as an exception even if it's a warning
+let Error ((n, text), m) = SRDiagnostic (n, text, m)
+
+/// The F# compiler code currently uses 'ErrorWithSuggestions(...)' to create an SRDiagnostic as an exception even if it's a warning
+let ErrorWithSuggestions ((n, message), m, id, suggestions) = SRDiagnosticWithSuggestions (n, message, m, id, suggestions)
 
 let inline protectAssemblyExploration dflt f = 
     try 

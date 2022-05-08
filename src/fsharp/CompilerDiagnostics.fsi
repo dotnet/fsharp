@@ -64,7 +64,7 @@ val OutputDiagnostic:
     implicitIncludeDir: string *
     showFullPaths: bool *
     flattenErrors: bool *
-    errorStyle: ErrorStyle *
+    diagnosticStyle: DiagnosticStyle *
     severity: FSharpDiagnosticSeverity ->
         StringBuilder ->
         PhasedDiagnostic ->
@@ -107,7 +107,7 @@ val CollectDiagnostic:
     implicitIncludeDir: string *
     showFullPaths: bool *
     flattenErrors: bool *
-    errorStyle: ErrorStyle *
+    diagnosticStyle: DiagnosticStyle *
     severity: FSharpDiagnosticSeverity *
     PhasedDiagnostic *
     suggestNames: bool ->

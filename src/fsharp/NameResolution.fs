@@ -1525,8 +1525,8 @@ let AddResults res1 res2 =
     | Exception (UndefinedName(n1, _, _, _) as e1), Exception (UndefinedName(n2, _, _, _) as e2) ->
         if n1 < n2 then Exception e2 else Exception e1
     // Prefer more concrete errors about things being undefined
-    | Exception (UndefinedName _ as e1), Exception (Error _) -> Exception e1
-    | Exception (Error _), Exception (UndefinedName _ as e2) -> Exception e2
+    | Exception (UndefinedName _ as e1), Exception (SRDiagnostic _) -> Exception e1
+    | Exception (SRDiagnostic _), Exception (UndefinedName _ as e2) -> Exception e2
     | Exception e1, Exception _ -> Exception e1
 
 let NoResultsOrUsefulErrors = Result []

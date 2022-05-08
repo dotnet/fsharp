@@ -729,9 +729,9 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
         ignoreAllErrors (fun () ->
             let severity = FSharpDiagnosticSeverity.Error
             DoWithDiagnosticColor severity (fun () ->
-                errorWriter.WriteLine();
-                writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err;
-                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,severity))  err;
+                errorWriter.WriteLine()
+                writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err
+                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.diagnosticStyle,severity))  err
                 errorWriter.WriteLine()
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
@@ -783,7 +783,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
@@ -791,7 +791,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
