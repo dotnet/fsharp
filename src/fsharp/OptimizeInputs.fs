@@ -118,7 +118,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                 else implFile
 
             let implFile =
-                LowerCallsAndSeqs.LowerImplFile tcGlobals implFile
+                LowerCalls.LowerImplFile tcGlobals implFile
 
             let implFile, optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then

@@ -687,11 +687,23 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
-    <Compile Include="..\LowerCallsAndSeqs.fsi">
-      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
+    <Compile Include="..\LowerCalls.fsi">
+      <Link>Optimize\LowerCalls.fsi</Link>
     </Compile>
-    <Compile Include="..\LowerCallsAndSeqs.fs">
-      <Link>Optimize\LowerCallsAndSeqs.fs</Link>
+    <Compile Include="..\LowerCalls.fs">
+      <Link>Optimize\LowerCalls.fs</Link>
+    </Compile>
+    <Compile Include="..\LowerSequenceExpressions.fsi">
+      <Link>Optimize\LowerSequenceExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerSequenceExpressions.fs">
+      <Link>Optimize\LowerSequenceExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\LowerComputedCollectionExpressions.fsi">
+      <Link>Optimize\LowerComputedCollectionExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerComputedCollectionExpressions.fs">
+      <Link>Optimize\LowerComputedCollectionExpressions.fs</Link>
     </Compile>
     <Compile Include="..\LowerStateMachines.fsi">
       <Link>Optimize\LowerStateMachines.fsi</Link>
