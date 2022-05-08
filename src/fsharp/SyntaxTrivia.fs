@@ -147,3 +147,19 @@ type SynModuleSigDeclNestedModuleTrivia =
     { ModuleKeyword: range option
       EqualsRange: range option }
     static member Zero: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceTrivia =
+    { ModuleKeyword: range option
+      NamespaceKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynModuleOrNamespaceSigTrivia =
+    { ModuleKeyword: range option
+      NamespaceKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynValSigTrivia =
+    { ValKeyword: range option
+      WithKeyword: range option }
+    static member Zero: SynValSigTrivia = { ValKeyword = None; WithKeyword = None }

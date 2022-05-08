@@ -237,7 +237,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                 // This computation can only be canceled if the requestCount reaches zero.
                                 let! result = computation |> Async.AwaitNodeCode
                                 cachedResult <- Task.FromResult(result)
-                                cachedResultNode <- node { return result }
+                                cachedResultNode <- node.Return result
                                 computation <- Unchecked.defaultof<_>
                                 if not callerCancellationToken.IsCancellationRequested then
                                     replyChannel.Reply(Ok result)
@@ -326,7 +326,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                         },
                                         (fun res ->
                                             cachedResult <- Task.FromResult(res)
-                                            cachedResultNode <- node { return res }
+                                            cachedResultNode <- node.Return res
                                             computation <- Unchecked.defaultof<_>
                                             tcs.SetResult(res)
                                         ),

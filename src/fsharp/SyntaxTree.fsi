@@ -1436,8 +1436,8 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
-        withKeyword: range option *
-        range: range
+        range: range *
+        trivia: SynValSigTrivia
 
     member RangeOfId: range
 
@@ -1727,7 +1727,8 @@ type SynModuleOrNamespace =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1743,7 +1744,8 @@ type SynModuleOrNamespaceSig =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1779,7 +1781,8 @@ type ParsedImplFileFragment =
         decls: SynModuleDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
 /// Represents the syntax tree for the contents of a parsed signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1799,7 +1802,8 @@ type ParsedSigFileFragment =
         decls: SynModuleSigDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

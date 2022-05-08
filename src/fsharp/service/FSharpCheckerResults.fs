@@ -1673,7 +1673,7 @@ type FSharpParsingOptions =
       ErrorSeverityOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
-      LightSyntax: bool option
+      IndentationAwareSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool }
 
@@ -1687,7 +1687,7 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
-          LightSyntax = None
+          IndentationAwareSyntax = None
           CompilingFsLib = false
           IsExe = false }
 
@@ -1697,8 +1697,8 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
-          LightSyntax = tcConfig.light
-          CompilingFsLib = tcConfig.compilingFslib
+          IndentationAwareSyntax = tcConfig.indentationAwareSyntax
+          CompilingFsLib = tcConfig.compilingFSharpCore
           IsExe = tcConfig.target.IsExe }
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
@@ -1708,8 +1708,8 @@ type FSharpParsingOptions =
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
-          LightSyntax = tcConfigB.light
-          CompilingFsLib = tcConfigB.compilingFslib
+          IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
+          CompilingFsLib = tcConfigB.compilingFSharpCore
           IsExe = tcConfigB.target.IsExe
         }
 
@@ -1764,9 +1764,9 @@ module internal ParseAndCheckFile =
         member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
-        let lightOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpLightSyntaxFileSuffixes
-        let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
-        LightSyntaxStatus(lightStatus, true)
+        let indentationAwareSyntaxOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
+        let lightStatus = if indentationAwareSyntaxOnByDefault then (options.IndentationAwareSyntax <> Some false) else (options.IndentationAwareSyntax = Some true)
+        IndentationAwareSyntaxStatus(lightStatus, true)
 
     let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
         let lightStatus = getLightSyntaxStatus fileName options
@@ -2076,7 +2076,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 // Note: objects returned by the methods of this type do not require the corresponding background builder to be alive.
 [<Sealed>]
 type FSharpCheckFileResults
-        (filename: string,
+        (fileName: string,
          errors: FSharpDiagnostic[],
          scopeOptX: TypeCheckInfo option,
          dependencyFiles: string[],
@@ -2263,10 +2263,10 @@ type FSharpCheckFileResults
                 FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
-    override _.ToString() = "FSharpCheckFileResults(" + filename + ")"
+    override _.ToString() = "FSharpCheckFileResults(" + fileName + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) =
-        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
+    static member MakeEmpty(fileName: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) =
+        FSharpCheckFileResults (fileName, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment,
                              creationErrors: FSharpDiagnostic[],
@@ -2498,11 +2498,11 @@ type FsiInteractiveChecker(legacyReferenceResolver,
     member _.ParseAndCheckInteraction (sourceText: ISourceText, ?userOpName: string) =
         cancellable {
             let userOpName = defaultArg userOpName "Unknown"
-            let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
+            let fileName = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             let suggestNamesForErrors = true // Will always be true, this is just for readability
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
-            let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
+            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| fileName |], true)
+            let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parsedInput, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
 
@@ -2516,7 +2516,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
-                    filename, sourceText, CodeContext.Editing,
+                    fileName, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, tcConfig.sdkDirOverride, LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
@@ -2541,15 +2541,15 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let! tcErrors, tcFileInfo =
                 ParseAndCheckFile.CheckOneFile
-                    (parseResults, sourceText, filename, projectOptions, projectOptions.ProjectFileName,
+                    (parseResults, sourceText, fileName, projectOptions, projectOptions.ProjectFileName,
                      tcConfig, tcGlobals, tcImports,  tcState,
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      suggestNamesForErrors)
 
             let errors = Array.append parseErrors tcErrors
-            let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, false)
+            let typeCheckResults = FSharpCheckFileResults (fileName, errors, Some tcFileInfo, dependencyFiles, None, false)
             let projectResults =
-                FSharpCheckProjectResults (filename, Some tcConfig,
+                FSharpCheckProjectResults (fileName, Some tcConfig,
                     keepAssemblyContents, errors,
                     Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
                             (Choice2Of2 tcFileInfo.ScopeSymbolUses), None, (fun () -> None), mkSimpleAssemblyRef "stdin",

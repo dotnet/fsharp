@@ -27,7 +27,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// Represents information about the initialization field used to check that object constructors
@@ -258,6 +258,7 @@ type TcFileState =
           -> UnscopedTyparEnv
           -> range * Expr * TType * SynExpr
           -> Expr * UnscopedTyparEnv }
+
     static member Create:
         g: TcGlobals *
         isScript: bool *
@@ -287,6 +288,7 @@ type MemberOrValContainerInfo =
 /// Provides information about the context for a value or member definition.
 type ContainerInfo =
     | ContainerInfo of ParentRef * MemberOrValContainerInfo option
+
     member ParentRef: ParentRef
 
 val ExprContainerInfo: ContainerInfo
@@ -435,6 +437,7 @@ type RecursiveBindingInfo =
         visibility: SynAccess option *
         ty: TType *
         declKind: DeclKind
+
     member Val: Val
     member EnclosingDeclaredTypars: Typar list
     member Index: int
@@ -494,6 +497,7 @@ type PostGeneralizationRecursiveBinding =
     { ValScheme: ValScheme
       CheckedBinding: CheckedBindingInfo
       RecBindingInfo: RecursiveBindingInfo }
+
     member GeneralizedTypars: Typar list
 
 /// Represents a recursive binding after it has been both checked and generalized and after
@@ -529,7 +533,7 @@ val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
 val AddLocalVals: g: TcGlobals -> tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
-val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
+val AdjustRecType: v: Val -> vscheme: ValScheme -> unit
 
 /// Process a normalized recursive binding and prepare for progressive generalization
 val AnalyzeAndMakeAndPublishRecursiveValue:
@@ -859,7 +863,7 @@ val TcLetBindings:
     declKind: DeclKind ->
     tpenv: UnscopedTyparEnv ->
     binds: SynBinding list * bindsm: range * scopem: range ->
-        ModuleOrNamespaceExpr list * TcEnv * UnscopedTyparEnv
+        ModuleOrNamespaceContents list * TcEnv * UnscopedTyparEnv
 
 /// Check an individual `let rec` binding
 val TcLetrecBinding:

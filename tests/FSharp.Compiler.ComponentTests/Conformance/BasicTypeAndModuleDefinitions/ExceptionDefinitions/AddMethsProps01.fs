@@ -1,5 +1,5 @@
 // #Regression #Conformance #TypesAndModules #Exceptions 
-#light
+
 
 // FSB 1384, Suggestion: allow explicit exception type definitions to override members - specifically the Message property
 

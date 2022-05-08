@@ -11,7 +11,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies
@@ -89,7 +89,7 @@ val internal ImportILAssembly:
     IXmlDocumentationInfoLoader option *
     ILScopeRef *
     sourceDir: string *
-    filename: string option *
+    fileName: string option *
     ILModuleDef *
     IEvent<string> ->
         CcuThunk

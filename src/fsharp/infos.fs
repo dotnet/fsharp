@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 
 #if !NO_TYPEPROVIDERS
-open FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.TypeProviders
 #endif
 
 //-------------------------------------------------------------------------
@@ -1050,7 +1050,7 @@ type MethInfo =
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
         match x with
-        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFslib vref
+        | FSMeth(g, _, vref, _) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> true
 #endif
@@ -2046,7 +2046,7 @@ type PropInfo =
     member x.HasDirectXmlComment =
         match x with
         | FSProp(g, _, Some vref, _)
-        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFslib vref
+        | FSProp(g, _, _, Some vref) -> valRefInThisAssembly g.compilingFSharpCore vref
 #if !NO_TYPEPROVIDERS
         | ProvidedProp _ -> true
 #endif
@@ -2596,7 +2596,7 @@ type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType opti
 let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     let formalMethTypars = minfo.FormalMethodTypars
     let fminst = generalizeTypars formalMethTypars
-    let vargtys = minfo.GetParamTypes(amap, m, fminst)
+    let vargTys = minfo.GetParamTypes(amap, m, fminst)
     let vrty = minfo.GetCompiledReturnTy(amap, m, fminst)
 
     // The formal method typars returned are completely formal - they don't take into account the instantiation
@@ -2607,7 +2607,7 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
         let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m
         mkTyparInst memberParentTypars parentTyArgs
 
-    CompiledSig(vargtys, vrty, formalMethTypars, fmtpinst)
+    CompiledSig(vargTys, vrty, formalMethTypars, fmtpinst)
 
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
 let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
@@ -2617,9 +2617,9 @@ let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo
     let fminst = generalizeTypars formalMethTypars
     let formalMethTypars2 = minfo2.FormalMethodTypars
     let fminst2 = generalizeTypars formalMethTypars2
-    let argtys = minfo.GetParamTypes(amap, m, fminst)
-    let argtys2 = minfo2.GetParamTypes(amap, m, fminst2)
-    (argtys, argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
+    let argTys = minfo.GetParamTypes(amap, m, fminst)
+    let argTys2 = minfo2.GetParamTypes(amap, m, fminst2)
+    (argTys, argTys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
         typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
 
 /// Used to hide/filter members from super classes based on signature
@@ -2631,9 +2631,9 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: M
 /// Used to hide/filter members from base classes based on signature
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =
     pinfo.PropertyName = pinfo2.PropertyName &&
-    let argtys = pinfo.GetParamTypes(amap, m)
-    let argtys2 = pinfo2.GetParamTypes(amap, m)
-    List.lengthsEqAndForall2 (typeEquivAux erasureFlag g) argtys argtys2
+    let argTys = pinfo.GetParamTypes(amap, m)
+    let argTys2 = pinfo2.GetParamTypes(amap, m)
+    List.lengthsEqAndForall2 (typeEquivAux erasureFlag g) argTys argTys2
 
 /// Used to hide/filter members from base classes based on signature
 let MethInfosEquivByNameAndSig erasureFlag ignoreFinal g amap m minfo minfo2 =

@@ -1036,7 +1036,7 @@ type DisplayEnv =
       showObsoleteMembers: bool
       showHiddenMembers: bool
       showTyparBinding: bool
-      showImperativeTyparAnnotations: bool
+      showInferenceTyparAnnotations: bool
       suppressInlineKeyword: bool
       suppressMutableKeyword: bool
       showMemberContainers: bool
@@ -1044,7 +1044,7 @@ type DisplayEnv =
       useColonForReturnType: bool
       showAttributes: bool
       showOverrides: bool
-      showConstraintTyparAnnotations: bool
+      showStaticallyResolvedTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       /// If set, signatures will be rendered with XML documentation comments for members if they exist
@@ -1108,7 +1108,7 @@ val trimPathByDisplayEnvList: DisplayEnv -> string list -> string list
 
 val prefixOfStaticReq: TyparStaticReq -> string
 
-val prefixOfRigidTypar: Typar -> string
+val prefixOfInferenceTypar: Typar -> string
 
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes =
@@ -1145,7 +1145,7 @@ val accFreeInSwitchCases: FreeVarOptions -> DecisionTreeCase list -> DecisionTre
 val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVars
 
 /// Get the free variables in a module definition.
-val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceExpr -> FreeVars
+val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
 
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
@@ -1260,7 +1260,7 @@ type SignatureHidingInfo =
 
 /// Compute the remapping information implied by a signature being inferred for a particular implementation
 val ComputeRemappingFromImplementationToSignature:
-    TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
+    TcGlobals -> ModuleOrNamespaceContents -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 
 /// Compute the remapping information implied by an explicit signature being given for an inferred signature
 val ComputeRemappingFromInferredSignatureToExplicitSignature:
@@ -1271,12 +1271,13 @@ val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> Signa
 
 /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
 val ComputeImplementationHidingInfoAtAssemblyBoundary:
-    ModuleOrNamespaceExpr -> SignatureHidingInfo -> SignatureHidingInfo
+    ModuleOrNamespaceContents -> SignatureHidingInfo -> SignatureHidingInfo
 
 val mkRepackageRemapping: SignatureRepackageInfo -> Remap
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
-val wrapModuleOrNamespaceExprInNamespace: Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
+val wrapModuleOrNamespaceContentsInNamespace:
+    Ident -> CompilationPath -> ModuleOrNamespaceContents -> ModuleOrNamespaceContents
 
 /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceTypeInNamespace:
@@ -2015,9 +2016,9 @@ val mkCallAdditionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
@@ -2041,7 +2042,7 @@ val mkCallAdditionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallSubtractionChecked: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked: TcGlobals -> range -> ty1: TType -> ty2: TType -> retTy: TType -> Expr -> Expr -> Expr
 
 val mkCallUnaryNegChecked: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2290,15 +2291,15 @@ val isSpanLikeTy: TcGlobals -> range -> TType -> bool
 
 val isSpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destSpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destSpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 val isReadOnlySpanTy: TcGlobals -> range -> TType -> bool
 
-val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType) voption
+val tryDestReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType) option
 
-val destReadOnlySpanTy: TcGlobals -> range -> TType -> struct (TyconRef * TType)
+val destReadOnlySpanTy: TcGlobals -> range -> TType -> (TyconRef * TType)
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
@@ -2381,6 +2382,7 @@ val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * V
 //-------------------------------------------------------------------------
 
 type ActivePatternElemRef with
+
     member Name: string
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
@@ -2393,7 +2395,7 @@ type PrettyNaming.ActivePatternInfo with
 
     member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType: g: TcGlobals -> m: range -> dty: TType -> rtys: TType list -> isStruct: bool -> TType
+    member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 
@@ -2503,7 +2505,7 @@ val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
 val (|InnerExprPat|): Expr -> Expr
 
-val allValsOfModDef: ModuleOrNamespaceExpr -> seq<Val>
+val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 

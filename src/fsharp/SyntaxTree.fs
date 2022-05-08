@@ -1578,8 +1578,8 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
-        withKeyword: range option *
-        range: range
+        range: range *
+        trivia: SynValSigTrivia
 
     member x.RangeOfId  = let (SynValSig(ident=SynIdent(id, _))) = x in id.idRange
 
@@ -1925,7 +1925,8 @@ type SynModuleOrNamespace =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
     member this.Range =
         match this with
@@ -1941,7 +1942,8 @@ type SynModuleOrNamespaceSig =
         xmlDoc: PreXmlDoc *
         attribs: SynAttributes *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
     member this.Range =
         match this with
@@ -1981,7 +1983,8 @@ type ParsedImplFileFragment =
         decls: SynModuleDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedSigFileFragment =
@@ -2000,7 +2003,8 @@ type ParsedSigFileFragment =
         decls: SynModuleSigDecl list *
         xmlDoc: PreXmlDoc *
         attributes: SynAttributes *
-        range: range
+        range: range *
+        trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedScriptInteraction =
@@ -2068,12 +2072,12 @@ type ParsedInput =
 
     member inp.FileName =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> filename
+        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=fileName))
+        | ParsedInput.SigFile (ParsedSigFileInput (fileName=fileName)) -> fileName
 
     member inp.Range =
         match inp with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
         | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> rangeN filename 0
+        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=fileName))
+        | ParsedInput.SigFile (ParsedSigFileInput (fileName=fileName)) -> rangeN fileName 0

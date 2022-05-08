@@ -282,7 +282,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                 | LegacyResolutionEnvironment.EditingOrCompilation true
                 | LegacyResolutionEnvironment.CompilationAndEvaluation -> ()
 
-                // Quick-resolve straight to filename first 
+                // Quick-resolve straight to file name first 
                 if allowRawFileName then 
                     yield "{RawFileName}"
                 yield! explicitIncludeDirs     // From -I, #I
@@ -356,17 +356,17 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                 // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
                 // assembly resolution.
                 let references = 
-                    [| for file,baggage as data in references -> 
+                    [| for fileName, baggage as data in references -> 
                             // However, MSBuild will not resolve 'relative' paths, even when e.g. implicitIncludeDir is part of the search.  As a result,
-                            // if we have an unrooted path+filename, we'll assume this is relative to the project directory and root it.
-                            if FileSystem.IsPathRootedShim(file) then
+                            // if we have an unrooted path + file name, we'll assume this is relative to the project directory and root it.
+                            if FileSystem.IsPathRootedShim(fileName) then
                                 data  // fine, e.g. "C:\Dir\foo.dll"
-                            elif not(file.Contains("\\") || file.Contains("/")) then
+                            elif not(fileName.Contains("\\") || fileName.Contains("/")) then
                                 data  // fine, e.g. "System.Transactions.dll"
                             else
                                 // We have a 'relative path', e.g. "bin/Debug/foo.exe" or "..\Yadda\bar.dll"
                                 // turn it into an absolute path based at implicitIncludeDir
-                                (Path.Combine(implicitIncludeDir, file), baggage) |]
+                                (Path.Combine(implicitIncludeDir, fileName), baggage) |]
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 

@@ -68,14 +68,13 @@ module public Structure =
     /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
     /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
-    type ScopeRange = {
-        Scope: Scope
-        Collapse: Collapse
-        /// HintSpan in BlockSpan
-        Range: range
-        /// TextSpan in BlockSpan
-        CollapseRange: range
-    }
+    type ScopeRange =
+        { Scope: Scope
+          Collapse: Collapse
+          /// HintSpan in BlockSpan
+          Range: range
+          /// TextSpan in BlockSpan
+          CollapseRange: range }
 
     /// Returns outlining ranges for given parsed input.
-    val getOutliningRanges : sourceLines: string [] -> parsedInput: ParsedInput -> seq<ScopeRange>
+    val getOutliningRanges: sourceLines: string [] -> parsedInput: ParsedInput -> seq<ScopeRange>

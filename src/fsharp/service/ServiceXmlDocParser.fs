@@ -95,7 +95,7 @@ module XmlDocParsing =
             | SynModuleDecl.Attributes _
             | SynModuleDecl.HashDirective _ -> []
 
-        and getXmlDocablesSynModuleOrNamespace (SynModuleOrNamespace(_, _,  _, synModuleDecls, _, _, _, _)) =
+        and getXmlDocablesSynModuleOrNamespace (SynModuleOrNamespace(decls = synModuleDecls)) =
             (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
 
         and getXmlDocablesSynTypeDefn (SynTypeDefn(typeInfo=SynComponentInfo(attributes=synAttributes; xmlDoc=preXmlDoc; range=compRange); typeRepr=synTypeDefnRepr; members=synMemberDefns; range=tRange)) =

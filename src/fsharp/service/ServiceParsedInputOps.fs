@@ -230,16 +230,16 @@ module ParsedInput =
             match expr with
             | SynExpr.LongIdent(longDotId = SynLongIdent([id], [], [Some _])) ->
                  defaultTraverse (SynExpr.Ident(id))
-            | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
+            | SynExpr.LongIdent (_, SynLongIdent(longIdent, _, _), _altNameRefCell, _range) -> 
                 let _, r = CheckLongIdent longIdent
                 Some r
-            | SynExpr.LongIdentSet (LongIdentWithDots(longIdent, _), synExpr, _range) -> 
+            | SynExpr.LongIdentSet (SynLongIdent(longIdent, _, _), synExpr, _range) -> 
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     let _, r = CheckLongIdent longIdent
                     Some r
-            | SynExpr.DotGet (synExpr, _dotm, LongIdentWithDots(longIdent, _), _range) -> 
+            | SynExpr.DotGet (synExpr, _dotm, SynLongIdent(longIdent, _, _), _range) -> 
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
@@ -256,7 +256,7 @@ module ParsedInput =
                     traverseSynExpr synExpr2
                 else
                     Some range
-            | SynExpr.DotSet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, _range) ->
+            | SynExpr.DotSet (synExpr, SynLongIdent(longIdent, _, _), synExpr2, _range) ->
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
@@ -272,7 +272,7 @@ module ParsedInput =
                         // ----     synExpr.Range has this value
                         // ------   we want this value
                         Some (unionRanges synExpr.Range r)
-            | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, synExpr3, _range) ->  
+            | SynExpr.DotNamedIndexedPropertySet (synExpr, SynLongIdent(longIdent, _, _), synExpr2, synExpr3, _range) ->  
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 elif SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr2.Range pos then
@@ -323,9 +323,9 @@ module ParsedInput =
                 match expr with
                 | SynExpr.Paren (e, _, _, _) when foundCandidate -> 
                     TryGetExpression foundCandidate e
-                | SynExpr.LongIdent (_isOptional, LongIdentWithDots(lid, _), _altNameRefCell, _m) -> 
+                | SynExpr.LongIdent (_isOptional, SynLongIdent(lid, _, _), _altNameRefCell, _m) -> 
                     getLidParts lid |> Some
-                | SynExpr.DotGet (leftPart, _, LongIdentWithDots(lid, _), _) when (rangeContainsPos (rangeOfLid lid) pos) || foundCandidate -> 
+                | SynExpr.DotGet (leftPart, _, SynLongIdent(lid, _, _), _) when (rangeContainsPos (rangeOfLid lid) pos) || foundCandidate -> 
                     // requested position is at the lid part of the DotGet
                     // process left part and append result to the result of processing lid
                     let leftPartResult = TryGetExpression true leftPart
@@ -385,7 +385,7 @@ module ParsedInput =
                             // the cursor location.
                             None
                     else
-                        let rec traverseLidOrElse (optExprIfLeftOfLongId : SynExpr option) (LongIdentWithDots(lid, dots) as lidwd) =
+                        let rec traverseLidOrElse (optExprIfLeftOfLongId : SynExpr option) (SynLongIdent(lid, dots, _) as lidwd) =
                             let resultIfLeftOfLongId =
                                 match optExprIfLeftOfLongId with
                                 | None -> None
@@ -478,7 +478,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, r)) =
+        and walkSynModuleOrNamespace isTopLevel (SynModuleOrNamespace(decls = decls; attribs = Attributes attrs; range = r)) =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
@@ -492,7 +492,8 @@ module ParsedInput =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkTypar typar)
             
-        and walkTypeConstraint = function
+        and walkTypeConstraint cx =
+            match cx with
             | SynTypeConstraint.WhereTyparDefaultsToType (t1, t2, _) -> walkTypar t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynTypeConstraint.WhereTyparIsValueType(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsReferenceType(t, _) -> walkTypar t
@@ -506,7 +507,8 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsEnum(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate(t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
 
-        and walkPatWithKind (kind: EntityKind option) = function
+        and walkPatWithKind (kind: EntityKind option) pat =
+            match pat with 
             | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
@@ -529,7 +531,8 @@ module ParsedInput =
 
         and walkPat = walkPatWithKind None
 
-        and walkBinding (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) =
+        and walkBinding bind =
+            let (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) = bind
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkPat pat)
             |> Option.orElseWith (fun () -> walkExpr e)
@@ -541,7 +544,8 @@ module ParsedInput =
         and walkInterfaceImpl (SynInterfaceImpl(bindings=bindings)) =
             List.tryPick walkBinding bindings
 
-        and walkType = function
+        and walkType ty =
+            match ty with
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
                 // at FSharp.Compiler.Syntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
@@ -564,10 +568,11 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e2)
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
 
-        and walkExprWithKind (parentKind: EntityKind option) = function
+        and walkExprWithKind (parentKind: EntityKind option) expr =
+            match expr with
             | SynExpr.LongIdent(_, SynLongIdent([ident], _, [ Some _]), _, _) ->
                 ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
-            | SynExpr.LongIdent (_, LongIdentWithDots(_, dotRanges), _, r) ->
+            | SynExpr.LongIdent (_, SynLongIdent(_, dotRanges, _), _, r) ->
                 match dotRanges with
                 | [] when isPosInRange r -> parentKind |> Option.orElseWith (fun () -> Some (EntityKind.FunctionOrValue false)) 
                 | firstDotRange :: _  ->
@@ -651,7 +656,8 @@ module ParsedInput =
 
         and walkExpr = walkExprWithKind None
 
-        and walkSimplePat = function
+        and walkSimplePat pat =
+            match pat with
             | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
             | SynSimplePat.Typed(pat, t, _) -> walkSimplePat pat |> Option.orElseWith (fun () -> walkType t)
@@ -663,7 +669,8 @@ module ParsedInput =
         and walkValSig (SynValSig(attributes=Attributes attrs; synType=t)) =
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
-        and walkMemberSig = function
+        and walkMemberSig membSig =
+            match membSig with
             | SynMemberSig.Inherit (t, _) -> walkType t
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.Interface(t, _) -> walkType t
@@ -673,7 +680,8 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> walkTypeDefnSigRepr repr)
                 |> Option.orElseWith (fun () -> List.tryPick walkMemberSig memberSigs)
 
-        and walkMember = function
+        and walkMember memb =
+            match memb with
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member(binding, _) -> walkBinding binding
             | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _, _) -> 
@@ -756,7 +764,7 @@ module ParsedInput =
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
         
-        let parseLid (LongIdentWithDots(lid, dots)) =            
+        let parseLid (SynLongIdent(lid, dots, _)) =            
             let rec collect plid (parts : Ident list) (dots : range list) = 
                 match parts, dots with
                 | [], _ -> Some (plid, None)
@@ -792,7 +800,7 @@ module ParsedInput =
         let (|Class|Interface|Struct|Unknown|Invalid|) synAttributes = 
             let (|SynAttr|_|) name (attr : SynAttribute) = 
                 match attr with
-                | {TypeName = LongIdentWithDots([x], _)} when x.idText = name -> Some ()
+                | {TypeName = SynLongIdent([x], _, _)} when x.idText = name -> Some ()
                 | _ -> None
             
             let rec getKind isClass isInterface isStruct = 
@@ -1308,7 +1316,7 @@ module ParsedInput =
             for ident in longIdent do
                 identsByEndPos[ident.idRange.End] <- longIdent
     
-        let addLongIdentWithDots (LongIdentWithDots (longIdent, lids) as value) =
+        let addLongIdentWithDots (SynLongIdent (longIdent, lids, _) as value) =
             match longIdent with
             | [] -> ()
             | [_] as idents -> identsByEndPos[value.Range.End] <- idents
@@ -1323,7 +1331,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
-        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, _)) =
+        and walkSynModuleOrNamespace (SynModuleOrNamespace(decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
             List.iter walkSynModuleDecl decls
     
@@ -1717,7 +1725,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
-        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, kind, decls, _, _, _, range)) =
+        and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(longId = ident; kind = kind; decls = decls; range = range)) =
             if range.EndLine >= currentLine then
                 let isModule = kind.IsModule
                 match isModule, parent, ident with
