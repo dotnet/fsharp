@@ -717,11 +717,11 @@
     <Compile Include="..\LowerStateMachines.fs">
       <Link>Optimize\LowerStateMachines.fs</Link>
     </Compile>
-    <Compile Include="..\autobox.fsi">
-      <Link>Optimize\autobox.fsi</Link>
+    <Compile Include="..\LowerLocalMutables.fsi">
+      <Link>Optimize\LowerLocalMutables.fsi</Link>
     </Compile>
-    <Compile Include="..\autobox.fs">
-      <Link>Optimize\autobox.fs</Link>
+    <Compile Include="..\LowerLocalMutables.fs">
+      <Link>Optimize\LowerLocalMutables.fs</Link>
     </Compile>
     <Compile Include="..\IlxGen.fsi">
       <Link>CodeGen\IlxGen.fsi</Link>

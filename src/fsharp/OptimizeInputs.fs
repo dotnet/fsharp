@@ -80,7 +80,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     optEnvFirstLoop, isIncrementalFragment, tcConfig.fsiMultiAssemblyEmit,
                     tcConfig.emitTailcalls, hidden, implFile)
 
-            let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile
+            let implFile = LowerLocalMutables.TransformImplFile tcGlobals importMap implFile
 
             // Only do this on the first pass!
             let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }

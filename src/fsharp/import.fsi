@@ -65,10 +65,10 @@ val internal CanImportILType: ImportMap -> range -> ILType -> bool
 
 #if !NO_TYPEPROVIDERS
 /// Import a provided type as an F# type.
-val internal ImportProvidedType: ImportMap -> range (* TType list -> *)  -> Tainted<ProvidedType> -> TType
+val internal ImportProvidedType: ImportMap -> range -> Tainted<ProvidedType> -> TType
 
 /// Import a provided type reference as an F# type TyconRef
-val internal ImportProvidedNamedType: ImportMap -> range (* TType list -> *)  -> Tainted<ProvidedType> -> TyconRef
+val internal ImportProvidedNamedType: ImportMap -> range -> Tainted<ProvidedType> -> TyconRef
 
 /// Import a provided type as an AbstractIL type
 val internal ImportProvidedTypeAsILType: ImportMap -> range -> Tainted<ProvidedType> -> ILType
