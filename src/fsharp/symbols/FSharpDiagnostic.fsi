@@ -67,7 +67,11 @@ type public FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromExceptionAndAdjustEof:
-        diag: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * lastPosInFile: (int * int) * suggestNames: bool ->
+        diag: PhasedDiagnostic *
+        severity: FSharpDiagnosticSeverity *
+        range *
+        lastPosInFile: (int * int) *
+        suggestNames: bool ->
             FSharpDiagnostic
 
     static member internal CreateFromException:

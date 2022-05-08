@@ -25,13 +25,13 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 /// This exception is an old-style way of reporting a diagnostic
-exception AssemblyNotResolved of string * range (*originalName*)
+exception AssemblyNotResolved of originalName: string * range: range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionWarning of string (*Message*)  * string * range (*MSBuild warning code*)
+exception MSBuildReferenceResolutionWarning of message: string * warningCode: string * range: range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionError of string (*Message*)  * string * range (*MSBuild warning code*)
+exception MSBuildReferenceResolutionError of message: string * warningCode: string * range: range
 
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool

@@ -202,11 +202,11 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
-    <Compile Include="..\block.fsi">
-      <Link>Utilities\block.fsi</Link>
+    <Compile Include="..\ImmutableArray.fsi">
+      <Link>Utilities\ImmutableArray.fsi</Link>
     </Compile>
-    <Compile Include="..\block.fs">
-      <Link>Utilities\block.fs</Link>
+    <Compile Include="..\ImmutableArray.fs">
+      <Link>Utilities\ImmutableArray.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>

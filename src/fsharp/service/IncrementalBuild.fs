@@ -4,6 +4,7 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Threading
@@ -727,25 +728,26 @@ module IncrementalBuilderHelpers =
 
     // Link all the assemblies together and produce the input typecheck accumulator
     let CombineImportedAssembliesTask (
-                                              assemblyName, 
-                                              tcConfig: TcConfig, 
-                                              tcConfigP, 
-                                              tcGlobals, 
-                                              frameworkTcImports, 
-                                              nonFrameworkResolutions, 
-                                              unresolvedReferences, 
-                                              dependencyProvider, 
-                                              loadClosureOpt: LoadClosure option, 
-                                              niceNameGen, 
-                                              basicDependencies,
-                                              keepAssemblyContents,
-                                              keepAllBackgroundResolutions,
-                                              keepAllBackgroundSymbolUses,
-                                              enableBackgroundItemKeyStoreAndSemanticClassification,
-                                              defaultPartialTypeChecking,
-                                              beforeFileChecked,
-                                              fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
+        assemblyName, 
+        tcConfig: TcConfig, 
+        tcConfigP, 
+        tcGlobals, 
+        frameworkTcImports, 
+        nonFrameworkResolutions, 
+        unresolvedReferences, 
+        dependencyProvider, 
+        loadClosureOpt: LoadClosure option, 
+        niceNameGen, 
+        basicDependencies,
+        keepAssemblyContents,
+        keepAllBackgroundResolutions,
+        keepAllBackgroundSymbolUses,
+        enableBackgroundItemKeyStoreAndSemanticClassification,
+        defaultPartialTypeChecking,
+        beforeFileChecked,
+        fileChecked,
+        importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
+
       node {
         let errorLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
@@ -838,14 +840,14 @@ module IncrementalBuilderHelpers =
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: block<BoundModel>) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: ImmutableArray<BoundModel>) =
       node {
         let errorLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         let! results =
             boundModels 
-            |> Block.map (fun boundModel -> node { 
+            |> ImmutableArray.map (fun boundModel -> node { 
                 if enablePartialTypeChecking then
                     let! tcInfo = boundModel.GetOrComputeTcInfo()
                     return tcInfo, None
@@ -853,7 +855,7 @@ module IncrementalBuilderHelpers =
                     let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
                     return tcInfo, tcInfoExtras.latestImplFile
             })
-            |> Block.map (fun work ->
+            |> ImmutableArray.map (fun work ->
                 node {
                     let! tcInfo, latestImplFile = work
                     return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
@@ -934,12 +936,12 @@ type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
         tcGlobals: TcGlobals
-        referencedAssemblies: block<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
+        referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
         outfile: string
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
-        fileNames: block<range * FSharpSource * (bool * bool)>
+        fileNames: ImmutableArray<range * FSharpSource * (bool * bool)>
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
@@ -975,12 +977,12 @@ type IncrementalBuilderInitialState =
             {
                 initialBoundModel = initialBoundModel
                 tcGlobals = tcGlobals
-                referencedAssemblies = nonFrameworkAssemblyInputs |> Block.ofSeq
+                referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
                 tcConfig = tcConfig
                 outfile = outfile
                 assemblyName = assemblyName
                 lexResourceManager = lexResourceManager
-                fileNames = sourceFiles |> Block.ofSeq
+                fileNames = sourceFiles |> ImmutableArray.ofSeq
                 enablePartialTypeChecking = enablePartialTypeChecking
                 beforeFileChecked = beforeFileChecked
                 fileChecked = fileChecked
@@ -1003,18 +1005,18 @@ type IncrementalBuilderState =
     {
         // stampedFileNames represent the real stamps of the files.
         // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
-        stampedFileNames: block<DateTime>
-        logicalStampedFileNames: block<DateTime>
-        stampedReferencedAssemblies: block<DateTime>
+        stampedFileNames: ImmutableArray<DateTime>
+        logicalStampedFileNames: ImmutableArray<DateTime>
+        stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: GraphNode<BoundModel>
-        boundModels: block<GraphNode<BoundModel>>
+        boundModels: ImmutableArray<GraphNode<BoundModel>>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime>
     }
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
 
-    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: blockbuilder<GraphNode<BoundModel>>) i =
+    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
         let fileInfo = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
@@ -1026,13 +1028,13 @@ module IncrementalBuilderStateHelpers =
             return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
         })
 
-    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: blockbuilder<GraphNode<BoundModel>>) =
+    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
                 boundModels.ToImmutable()
-                |> Block.map (fun x -> x.TryPeekValue().Value)
+                |> ImmutableArray.map (fun x -> x.TryPeekValue().Value)
 
             let! result = 
                 FinalizeTypeCheckTask 
@@ -1086,7 +1088,7 @@ module IncrementalBuilderStateHelpers =
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) state (cache: TimeStampCache) =
         let mutable i = 0
         (state, initialState.fileNames)
-        ||> Block.fold (fun state fileInfo ->
+        ||> ImmutableArray.fold (fun state fileInfo ->
             let newState = computeStampedFileName initialState state cache i fileInfo
             i <- i + 1
             newState
@@ -1097,7 +1099,7 @@ module IncrementalBuilderStateHelpers =
 
         let mutable referencesUpdated = false
         initialState.referencedAssemblies
-        |> Block.iteri (fun i asmInfo ->
+        |> ImmutableArray.iteri (fun i asmInfo ->
 
             let currentStamp = state.stampedReferencedAssemblies[i]
             let stamp = StampReferencedAssemblyTask cache asmInfo
@@ -1132,16 +1134,16 @@ type IncrementalBuilderState with
 
         let cache = TimeStampCache(defaultTimeStamp)
         let initialBoundModel = GraphNode(node { return initialBoundModel })
-        let boundModels = BlockBuilder.create fileNames.Length
+        let boundModels = ImmutableArrayBuilder.create fileNames.Length
 
         for slot = 0 to fileNames.Length - 1 do
             boundModels.Add(createBoundModelGraphNode initialState initialBoundModel boundModels slot)
 
         let state =
             {
-                stampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
-                logicalStampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
-                stampedReferencedAssemblies = Block.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
+                stampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
+                logicalStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
+                stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
                 initialBoundModel = initialBoundModel
                 boundModels = boundModels.ToImmutable()
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
@@ -1352,7 +1354,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                    String.Compare(fileName, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match fileNames |> Block.tryFindIndex CompareFileNames with
+        match fileNames |> ImmutableArray.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 

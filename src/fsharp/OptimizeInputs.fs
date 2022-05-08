@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// # FSComp.SR.opts
-
 module internal FSharp.Compiler.OptimizeInputs
 
 open System.IO
