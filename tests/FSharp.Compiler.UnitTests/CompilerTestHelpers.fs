@@ -5,5 +5,5 @@ module CompilerTestHelpers =
 
     let (|Warning|_|) (exn: System.Exception) =
         match exn with
-        | :? FSharp.Compiler.DiagnosticsLogger.Error as e -> let n,d = e.Data0 in Some (n,d)
+        | :? FSharp.Compiler.DiagnosticsLogger.SRDiagnostic as e -> Some (e.number, e.message)
         | _ -> None
