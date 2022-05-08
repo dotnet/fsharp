@@ -693,17 +693,17 @@
     <Compile Include="..\LowerCalls.fs">
       <Link>Optimize\LowerCalls.fs</Link>
     </Compile>
-    <Compile Include="..\LowerSequenceExpressions.fsi">
-      <Link>Optimize\LowerSequenceExpressions.fsi</Link>
+    <Compile Include="..\LowerSequences.fsi">
+      <Link>Optimize\LowerSequences.fsi</Link>
     </Compile>
-    <Compile Include="..\LowerSequenceExpressions.fs">
-      <Link>Optimize\LowerSequenceExpressions.fs</Link>
+    <Compile Include="..\LowerSequences.fs">
+      <Link>Optimize\LowerSequences.fs</Link>
     </Compile>
-    <Compile Include="..\LowerComputedCollectionExpressions.fsi">
-      <Link>Optimize\LowerComputedCollectionExpressions.fsi</Link>
+    <Compile Include="..\LowerComputedCollections.fsi">
+      <Link>Optimize\LowerComputedCollections.fsi</Link>
     </Compile>
-    <Compile Include="..\LowerComputedCollectionExpressions.fs">
-      <Link>Optimize\LowerComputedCollectionExpressions.fs</Link>
+    <Compile Include="..\LowerComputedCollections.fs">
+      <Link>Optimize\LowerComputedCollections.fs</Link>
     </Compile>
     <Compile Include="..\LowerStateMachines.fsi">
       <Link>Optimize\LowerStateMachines.fsi</Link>
