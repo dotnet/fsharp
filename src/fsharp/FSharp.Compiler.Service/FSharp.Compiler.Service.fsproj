@@ -246,6 +246,10 @@
     </Compile>
     <Compile Include="..\DiagnosticsLogger.fs">
       <Link>DiagnosticsLogging\DiagnosticsLogger.fs</Link>
+      <Link>ErrorLogging\DiagnosticsLogger.fsi</Link>
+    </Compile>
+    <Compile Include="..\DiagnosticsLogger.fs">
+      <Link>ErrorLogging\DiagnosticsLogger.fs</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fsi">
       <Link>DiagnosticsLogging\ErrorResolutionHints.fsi</Link>
@@ -551,6 +555,14 @@
     </Compile>
     <Compile Include="..\Checking\TypeHierarchy.fsi">
       <Link>Checking\TypeHierarchy.fsi</Link>
+    <Compile Include="..\TypeHierarchy.fsi">
+      <Link>Logic\TypeHierarchy.fsi</Link>
+    </Compile>
+    <Compile Include="..\TypeHierarchy.fs">
+      <Link>Logic\TypeHierarchy.fs</Link>
+    </Compile>
+    <Compile Include="..\infos.fsi">
+      <Link>Logic\infos.fsi</Link>
     </Compile>
     <Compile Include="..\Checking\TypeHierarchy.fs">
       <Link>Checking\TypeHierarchy.fs</Link>
@@ -698,6 +710,23 @@
     </Compile>
     <Compile Include="..\Optimize\LowerCalls.fs">
       <Link>Optimize\LowerCalls.fs</Link>
+    <Compile Include="..\LowerCalls.fsi">
+      <Link>Optimize\LowerCalls.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerCalls.fs">
+      <Link>Optimize\LowerCalls.fs</Link>
+    </Compile>
+    <Compile Include="..\LowerSequences.fsi">
+      <Link>Optimize\LowerSequences.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerSequences.fs">
+      <Link>Optimize\LowerSequences.fs</Link>
+    </Compile>
+    <Compile Include="..\LowerComputedCollections.fsi">
+      <Link>Optimize\LowerComputedCollections.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerComputedCollections.fs">
+      <Link>Optimize\LowerComputedCollections.fs</Link>
     </Compile>
     <Compile Include="..\Optimize\LowerSequences.fsi">
       <Link>Optimize\LowerSequences.fsi</Link>
@@ -721,6 +750,10 @@
       <Link>Optimize\LowerLocalMutables.fsi</Link>
     </Compile>
     <Compile Include="..\Optimize\LowerLocalMutables.fs">
+    <Compile Include="..\LowerLocalMutables.fsi">
+      <Link>Optimize\LowerLocalMutables.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerLocalMutables.fs">
       <Link>Optimize\LowerLocalMutables.fs</Link>
     </Compile>
     <Compile Include="..\CodeGen\IlxGen.fsi">
