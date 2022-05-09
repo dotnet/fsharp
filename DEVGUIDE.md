@@ -2,6 +2,10 @@
 
 This document details more advanced options for developing in this codebase. It is not quite necessary to follow it, but it is likely that you'll find something you'll need from here.
 
+## Documentation
+
+The compiler is documented in [docs](docs/index.md). This is essential reading.
+
 ## Recommended workflow
 
 We recommend the following overall workflow when developing for this repository:
