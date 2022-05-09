@@ -74,45 +74,6 @@ val OutputDiagnostic:
 val OutputDiagnosticContext:
     prefix: string -> fileLineFunction: (string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
 
-/// Part of LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticLocation =
-    { Range: range
-      File: string
-      TextRepresentation: string
-      IsEmpty: bool }
-
-/// Part of LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticCanonicalInformation =
-    { ErrorNumber: int
-      Subcategory: string
-      TextRepresentation: string }
-
-/// Part of LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticDetailedInfo =
-    { Location: FormattedDiagnosticLocation option
-      Canonical: FormattedDiagnosticCanonicalInformation
-      Message: string }
-
-/// Part of LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnostic =
-    | Short of FSharpDiagnosticSeverity * string
-    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
-
-/// Part of LegacyHostedCompilerForTesting
-val CollectFormattedDiagnostics:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
-    severity: FSharpDiagnosticSeverity *
-    PhasedDiagnostic *
-    suggestNames: bool ->
-        FormattedDiagnostic []
-
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
     checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * DiagnosticsLogger -> DiagnosticsLogger
@@ -127,3 +88,42 @@ val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FS
 
 /// Indicates if we should report a warning as an error
 val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
+
+/// Used internally and in LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type FormattedDiagnosticLocation =
+    { Range: range
+      File: string
+      TextRepresentation: string
+      IsEmpty: bool }
+
+/// Used internally and in LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type FormattedDiagnosticCanonicalInformation =
+    { ErrorNumber: int
+      Subcategory: string
+      TextRepresentation: string }
+
+/// Used internally and in LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type FormattedDiagnosticDetailedInfo =
+    { Location: FormattedDiagnosticLocation option
+      Canonical: FormattedDiagnosticCanonicalInformation
+      Message: string }
+
+/// Used internally and in LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type FormattedDiagnostic =
+    | Short of FSharpDiagnosticSeverity * string
+    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
+
+/// Used internally and in LegacyHostedCompilerForTesting
+val CollectFormattedDiagnostics:
+    implicitIncludeDir: string *
+    showFullPaths: bool *
+    flattenErrors: bool *
+    diagnosticStyle: DiagnosticStyle *
+    severity: FSharpDiagnosticSeverity *
+    PhasedDiagnostic *
+    suggestNames: bool ->
+        FormattedDiagnostic []

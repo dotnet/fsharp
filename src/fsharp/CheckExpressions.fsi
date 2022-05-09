@@ -107,7 +107,9 @@ type TcEnv =
       eIsControlFlow: bool }
 
     member DisplayEnv: DisplayEnv
+
     member NameEnv: NameResolutionEnv
+
     member AccessRights: AccessorDomain
 
 //-------------------------------------------------------------------------
@@ -116,50 +118,94 @@ type TcEnv =
 //-------------------------------------------------------------------------
 
 exception BakedInMemberConstraintName of string * range
+
 exception FunctionExpected of DisplayEnv * TType * range
+
 exception NotAFunction of DisplayEnv * TType * range * range
+
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+
 exception Recursion of DisplayEnv * Ident * TType * TType * range
+
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
+
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
+
 exception LetRecCheckedAtRuntime of range
+
 exception LetRecUnsound of DisplayEnv * ValRef list * range
+
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
+
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
+
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
+
 exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
+
 exception MissingFields of string list * range
+
 exception UnitTypeExpected of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
+
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+
 exception FunctionValueUnexpected of DisplayEnv * TType * range
+
 exception UnionPatternsBindDifferentNames of range
+
 exception VarBoundTwice of Ident
+
 exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
+
 exception ValNotMutable of DisplayEnv * ValRef * range
+
 exception ValNotLocal of DisplayEnv * ValRef * range
+
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
+
 exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
+
 exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
+
 exception CoercionTargetSealed of DisplayEnv * TType * range
+
 exception UpcastUnnecessary of range
+
 exception TypeTestUnnecessary of range
+
 exception SelfRefObjCtor of bool * range
+
 exception VirtualAugmentationOnNullValuedType of range
+
 exception NonVirtualAugmentationOnNullValuedType of range
+
 exception UseOfAddressOfOperator of range
+
 exception DeprecatedThreadStaticBindingWarning of range
+
 exception IntfImplInIntrinsicAugmentation of range
+
 exception IntfImplInExtrinsicAugmentation of range
+
 exception OverrideInIntrinsicAugmentation of range
+
 exception OverrideInExtrinsicAugmentation of range
+
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
+
 exception StandardOperatorRedefinitionWarning of string * range
-exception InvalidInternalsVisibleToAssemblyName of string (*fileName option*)  * string option (*badName*)
+
+exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
 val TcFieldInit: range -> ILFieldInit -> Const
 

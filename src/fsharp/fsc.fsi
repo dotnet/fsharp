@@ -25,6 +25,8 @@ type ConsoleLoggerProvider =
     inherit DiagnosticsLoggerProvider
 
 /// An error logger that reports errors up to some maximum, notifying the exiter when that maximum is reached
+///
+/// Used only in LegacyHostedCompilerForTesting
 [<AbstractClass>]
 type DiagnosticsLoggerUpToMaxErrors =
     inherit DiagnosticsLogger
@@ -42,7 +44,7 @@ type DiagnosticsLoggerUpToMaxErrors =
     override DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
-val mainCompile:
+val CompileFromCommandLineArguments:
     ctok: CompilationThreadToken *
     argv: string [] *
     legacyReferenceResolver: LegacyReferenceResolver *
@@ -56,7 +58,7 @@ val mainCompile:
         unit
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-val compileOfAst:
+val CompileFromSyntaxTrees:
     ctok: CompilationThreadToken *
     legacyReferenceResolver: LegacyReferenceResolver *
     reduceMemoryUsage: ReduceMemoryFlag *

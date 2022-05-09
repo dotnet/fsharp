@@ -101,10 +101,16 @@ type internal InProcCompiler(legacyReferenceResolver) =
             { new Exiter with
                  member _.Exit n = exitCode <- n; raise StopProcessing }
         try 
-            mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
+            CompileFromCommandLineArguments (
+                ctok, argv, legacyReferenceResolver,
+                false, ReduceMemoryFlag.Yes,
+                CopyFSharpCoreFlag.Yes, exiter,
+                loggerProvider.Provider, None, None
+            )
         with 
             | StopProcessing -> ()
-            | ReportedError _  | WrappedError(ReportedError _,_)  ->
+            | ReportedError _ 
+            | WrappedError(ReportedError _,_)  ->
                 exitCode <- 1
                 ()
 
@@ -126,7 +132,7 @@ type internal FscCompiler(legacyReferenceResolver) =
             EndLine = 0
         }
 
-    /// converts short and long issue types to the same CompilationIssue representation
+    /// Converts short and long issue types to the same CompilationIssue representation
     let convert issue = 
         match issue with
         | FormattedDiagnostic.Short(severity, text) -> 
@@ -174,7 +180,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         fun arg -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
-    member _.Compile(args: string array) =
+    member _.Compile(args: string[]) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =

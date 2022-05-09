@@ -956,13 +956,13 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     ReportTime tcConfig "Exiting"
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
-let mainCompile
+let CompileFromCommandLineArguments
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage,
         defaultCopyFSharpCore, exiter: Exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use disposables = new DisposablesTracker()
     let savedOut = Console.Out
-    use __ =
+    use _ =
         { new IDisposable with
             member _.Dispose() =
                 try
@@ -977,7 +977,7 @@ let mainCompile
     |> main6 dynamicAssemblyCreator
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-let compileOfAst
+let CompileFromSyntaxTrees
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target,
         targetDll, targetPdb, dependencies, noframework, exiter, loggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) =
 

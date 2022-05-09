@@ -375,7 +375,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
 // Bind elements of data definitions for exceptions and types (fields, etc.)
 //------------------------------------------------------------------------- 
 
-exception NotUpperCaseConstructor of range
+exception NotUpperCaseConstructor of range: range
 
 let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
     // type names '[]' etc. are used in fslib
@@ -679,7 +679,7 @@ let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target =
     | SynOpenDeclTarget.Type (synType, m) ->
         TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
         
-exception ParameterlessStructCtor of range
+exception ParameterlessStructCtor of range: range
 
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
     let id =

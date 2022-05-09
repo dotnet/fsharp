@@ -64,50 +64,94 @@ let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
 //-------------------------------------------------------------------------
 
 exception BakedInMemberConstraintName of string * range
+
 exception FunctionExpected of DisplayEnv * TType * range
+
 exception NotAFunction of DisplayEnv * TType * range * range
+
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+
 exception Recursion of DisplayEnv * Ident * TType * TType * range
+
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
+
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
+
 exception LetRecCheckedAtRuntime of range
+
 exception LetRecUnsound of DisplayEnv * ValRef list * range
+
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
+
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
+
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
+
 exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
+
 exception MissingFields of string list * range
+
 exception FunctionValueUnexpected of DisplayEnv * TType * range
+
 exception UnitTypeExpected of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
+
 exception UnionPatternsBindDifferentNames of range
+
 exception VarBoundTwice of Ident
+
 exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
+
 exception ValNotMutable of DisplayEnv * ValRef * range
+
 exception ValNotLocal of DisplayEnv * ValRef * range
+
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
+
 exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
+
 exception CoercionTargetSealed of DisplayEnv * TType * range
+
 exception UpcastUnnecessary of range
+
 exception TypeTestUnnecessary of range
+
 exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
+
 exception SelfRefObjCtor of bool * range
+
 exception VirtualAugmentationOnNullValuedType of range
+
 exception NonVirtualAugmentationOnNullValuedType of range
+
 exception UseOfAddressOfOperator of range
+
 exception DeprecatedThreadStaticBindingWarning of range
+
 exception IntfImplInIntrinsicAugmentation of range
+
 exception IntfImplInExtrinsicAugmentation of range
+
 exception OverrideInIntrinsicAugmentation of range
+
 exception OverrideInExtrinsicAugmentation of range
+
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
+
 exception StandardOperatorRedefinitionWarning of string * range
-exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
+
+exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
 /// Represents information about the initialization field used to check that object constructors
 /// have completed before fields are accessed.
