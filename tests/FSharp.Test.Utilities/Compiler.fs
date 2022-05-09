@@ -580,6 +580,8 @@ module rec Compiler =
         let lv =
           match csSource.LangVersion with
             | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+            | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+            | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
             | _ -> LanguageVersion.Default
 
         let cmpl =

@@ -130,6 +130,7 @@ type TestCompilation =
 type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
+    | Preview = 99
 
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
@@ -139,6 +140,7 @@ type CompilationUtil private () =
             match lv with
                 | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
                 | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+                | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
                 | _ -> LanguageVersion.Default
 
         let tf = defaultArg tf TargetFramework.NetStandard20
