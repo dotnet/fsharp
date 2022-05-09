@@ -684,7 +684,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Test>] //ref bug https://github.com/Microsoft/visualfsharp/issues/259
+    [<Test>] //ref bug https://github.com/dotnet/fsharp/issues/259
     member public this.``RenameFile.InFolder``() =
         this.MakeProjectAndDo(["file1.fs"; @"Folder1\file2.fs"; @"Folder1\nested1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
@@ -746,7 +746,7 @@ type Project() =
                 if File.Exists(absFilePath) then File.Delete(absFilePath)
             ))
     
-(* Disabled for now - see https://github.com/Microsoft/visualfsharp/pull/3071 - this is testing old project system features
+(* Disabled for now - see https://github.com/dotnet/fsharp/pull/3071 - this is testing old project system features
 
     [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =

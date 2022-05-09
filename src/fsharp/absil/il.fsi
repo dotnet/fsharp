@@ -753,7 +753,7 @@ type internal ILLocal =
       IsPinned: bool
       DebugInfo: (string * int * int) option }
 
-type internal ILLocals = list<ILLocal>
+type internal ILLocals = ILLocal list
 
 /// Defines an opened namespace, type relevant to a code location.
 ///

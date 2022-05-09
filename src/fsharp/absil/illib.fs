@@ -393,7 +393,7 @@ module List =
         loop [] l
 
     let order (eltOrder: IComparer<'T>) =
-        { new IComparer<list<'T>> with 
+        { new IComparer<'T list> with 
               member _.Compare(xs, ys) = 
                   let rec loop xs ys = 
                       match xs, ys with

@@ -443,7 +443,7 @@ module ReflectUtils =
     let isListType ty = 
         FSharpType.IsUnion ty && 
         (let cases = FSharpType.GetUnionCases ty 
-         cases.Length > 0 && equivHeadTypes typedefof<list<_>> cases[0].DeclaringType)
+         cases.Length > 0 && equivHeadTypes typedefof<_ list> cases[0].DeclaringType)
 
     [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
     type TupleType =

@@ -4,6 +4,8 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
+open System.Diagnostics
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
@@ -22,7 +24,7 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
@@ -55,14 +57,17 @@ module IncrementalBuilderEventTesting =
         let data = Array.create MAX None
         let mutable curIndex = 0
         let mutable numAdds = 0
+
         // called by the product, to note when a parse/typecheck happens for a file
         member _.Add(fileName:'T) =
             numAdds <- numAdds + 1
             data[curIndex] <- Some fileName
             curIndex <- (curIndex + 1) % MAX
+
         member _.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
-        member this.MostRecentList(n: int) : list<'T> =
+
+        member _.MostRecentList(n: int) : 'T list =
             if n < 0 || n > MAX then
                 raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
             let mutable remaining = n
@@ -109,7 +114,7 @@ module IncrementalBuildSyntaxTree =
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
-            let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
+            let errorLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
@@ -180,16 +185,16 @@ type TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
-        /// Accumulated errors, last file first
-        tcErrorsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
+        /// Accumulated diagnostics, last file first
+        tcDiagnosticsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
 
         sigNameOpt: (string * QualifiedNameOfFile) option
     }
 
-    member x.TcErrors =
-        Array.concat (List.rev x.tcErrorsRev)
+    member x.TcDiagnostics =
+        Array.concat (List.rev x.tcDiagnosticsRev)
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
@@ -358,7 +363,7 @@ type BoundModel private (tcConfig: TcConfig,
         else
             this
 
-    member this.Next(syntaxTree, tcInfo) =
+    member _.Next(syntaxTree, tcInfo) =
         BoundModel(
             tcConfig,
             tcGlobals,
@@ -374,10 +379,10 @@ type BoundModel private (tcConfig: TcConfig,
             Some syntaxTree,
             None)
 
-    member this.Finish(finalTcErrorsRev, finalTopAttribs) =
+    member _.Finish(finalTcDiagnosticsRev, finalTopAttribs) =
         node {
             let createFinish tcInfo =
-                { tcInfo  with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
+                { tcInfo  with tcDiagnosticsRev = finalTcDiagnosticsRev; topAttribs = finalTopAttribs }
 
             let! finishState =
                 node {
@@ -467,14 +472,14 @@ type BoundModel private (tcConfig: TcConfig,
                 | input, _sourceRange, fileName, parseErrors ->
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
-                    let capturingErrorLogger = CapturingErrorLogger("TypeCheck")
-                    let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.errorSeverityOptions, capturingErrorLogger)
+                    let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
+                    let errorLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
                     let prevModuleNamesDict = prevTcInfo.moduleNamesDict
                     let prevTcState = prevTcInfo.tcState
-                    let prevTcErrorsRev = prevTcInfo.tcErrorsRev
+                    let prevTcDiagnosticsRev = prevTcInfo.tcDiagnosticsRev
                     let prevTcDependencyFiles = prevTcInfo.tcDependencyFiles
                         
                     ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName, tcImports.DependencyProvider) |> ignore
@@ -498,7 +503,7 @@ type BoundModel private (tcConfig: TcConfig,
                     Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                     fileChecked.Trigger fileName
-                    let newErrors = Array.append parseErrors (capturingErrorLogger.Diagnostics |> List.toArray)
+                    let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
                     let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
                     let tcInfo =
@@ -507,7 +512,7 @@ type BoundModel private (tcConfig: TcConfig,
                             tcEnvAtEndOfFile = tcEnvAtEndOfFile
                             moduleNamesDict = moduleNamesDict
                             latestCcuSigForFile = Some ccuSigForFile
-                            tcErrorsRev = newErrors :: prevTcErrorsRev
+                            tcDiagnosticsRev = newErrors :: prevTcDiagnosticsRev
                             topAttribs = Some topAttribs
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
@@ -726,27 +731,28 @@ module IncrementalBuilderHelpers =
 
     // Link all the assemblies together and produce the input typecheck accumulator
     let CombineImportedAssembliesTask (
-                                              assemblyName, 
-                                              tcConfig: TcConfig, 
-                                              tcConfigP, 
-                                              tcGlobals, 
-                                              frameworkTcImports, 
-                                              nonFrameworkResolutions, 
-                                              unresolvedReferences, 
-                                              dependencyProvider, 
-                                              loadClosureOpt: LoadClosure option, 
-                                              niceNameGen, 
-                                              basicDependencies,
-                                              keepAssemblyContents,
-                                              keepAllBackgroundResolutions,
-                                              keepAllBackgroundSymbolUses,
-                                              enableBackgroundItemKeyStoreAndSemanticClassification,
-                                              defaultPartialTypeChecking,
-                                              beforeFileChecked,
-                                              fileChecked,
-                                              importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
+        assemblyName, 
+        tcConfig: TcConfig, 
+        tcConfigP, 
+        tcGlobals, 
+        frameworkTcImports, 
+        nonFrameworkResolutions, 
+        unresolvedReferences, 
+        dependencyProvider, 
+        loadClosureOpt: LoadClosure option, 
+        niceNameGen, 
+        basicDependencies,
+        keepAssemblyContents,
+        keepAllBackgroundResolutions,
+        keepAllBackgroundSymbolUses,
+        enableBackgroundItemKeyStoreAndSemanticClassification,
+        defaultPartialTypeChecking,
+        beforeFileChecked,
+        fileChecked,
+        importsInvalidatedByTypeProvider: Event<unit>) : NodeCode<BoundModel> =
+
       node {
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
+        let errorLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
         let! tcImports =
@@ -777,7 +783,7 @@ module IncrementalBuilderHelpers =
 #endif
                 return tcImports
             with exn ->
-                System.Diagnostics.Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+                Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
                 errorLogger.Warning exn
                 return frameworkTcImports
           }
@@ -798,7 +804,7 @@ module IncrementalBuilderHelpers =
               tcEnvAtEndOfFile=tcInitial
               topAttribs=None
               latestCcuSigForFile=None
-              tcErrorsRev = [ initialErrors ]
+              tcDiagnosticsRev = [ initialErrors ]
               moduleNamesDict = Map.empty
               tcDependencyFiles = basicDependencies
               sigNameOpt = None
@@ -837,14 +843,14 @@ module IncrementalBuilderHelpers =
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: block<BoundModel>) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: ImmutableArray<BoundModel>) =
       node {
-        let errorLogger = CompilationErrorLogger("FinalizeTypeCheckTask", tcConfig.errorSeverityOptions)
+        let errorLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         let! results =
             boundModels 
-            |> Block.map (fun boundModel -> node { 
+            |> ImmutableArray.map (fun boundModel -> node { 
                 if enablePartialTypeChecking then
                     let! tcInfo = boundModel.GetOrComputeTcInfo()
                     return tcInfo, None
@@ -852,7 +858,7 @@ module IncrementalBuilderHelpers =
                     let! tcInfo, tcInfoExtras = boundModel.GetOrComputeTcInfoWithExtras()
                     return tcInfo, tcInfoExtras.latestImplFile
             })
-            |> Block.map (fun work ->
+            |> ImmutableArray.map (fun work ->
                 node {
                     let! tcInfo, latestImplFile = work
                     return (tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
@@ -920,7 +926,7 @@ module IncrementalBuilderHelpers =
                 errorRecoveryNoRange exn
                 mkSimpleAssemblyRef assemblyName, ProjectAssemblyDataResult.Unavailable true, None
 
-        let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcErrorsRev
+        let diagnostics = errorLogger.GetDiagnostics() :: finalInfo.tcDiagnosticsRev
         let! finalBoundModelWithErrors = finalBoundModel.Finish(diagnostics, Some topAttrs)
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
@@ -933,12 +939,12 @@ type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
         tcGlobals: TcGlobals
-        referencedAssemblies: block<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
+        referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
         outfile: string
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
-        fileNames: block<range * FSharpSource * (bool * bool)>
+        fileNames: ImmutableArray<range * FSharpSource * (bool * bool)>
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
@@ -974,12 +980,12 @@ type IncrementalBuilderInitialState =
             {
                 initialBoundModel = initialBoundModel
                 tcGlobals = tcGlobals
-                referencedAssemblies = nonFrameworkAssemblyInputs |> Block.ofSeq
+                referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
                 tcConfig = tcConfig
                 outfile = outfile
                 assemblyName = assemblyName
                 lexResourceManager = lexResourceManager
-                fileNames = sourceFiles |> Block.ofSeq
+                fileNames = sourceFiles |> ImmutableArray.ofSeq
                 enablePartialTypeChecking = enablePartialTypeChecking
                 beforeFileChecked = beforeFileChecked
                 fileChecked = fileChecked
@@ -1002,18 +1008,18 @@ type IncrementalBuilderState =
     {
         // stampedFileNames represent the real stamps of the files.
         // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
-        stampedFileNames: block<DateTime>
-        logicalStampedFileNames: block<DateTime>
-        stampedReferencedAssemblies: block<DateTime>
+        stampedFileNames: ImmutableArray<DateTime>
+        logicalStampedFileNames: ImmutableArray<DateTime>
+        stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: GraphNode<BoundModel>
-        boundModels: block<GraphNode<BoundModel>>
+        boundModels: ImmutableArray<GraphNode<BoundModel>>
         finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime>
     }
 
 [<AutoOpen>]
 module IncrementalBuilderStateHelpers =
 
-    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: blockbuilder<GraphNode<BoundModel>>) i =
+    let createBoundModelGraphNode (initialState: IncrementalBuilderInitialState) initialBoundModel (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) i =
         let fileInfo = initialState.fileNames[i]
         let prevBoundModelGraphNode =
             match i with
@@ -1025,13 +1031,13 @@ module IncrementalBuilderStateHelpers =
             return! TypeCheckTask initialState.enablePartialTypeChecking prevBoundModel syntaxTree
         })
 
-    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: blockbuilder<GraphNode<BoundModel>>) =
+    let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
                 boundModels.ToImmutable()
-                |> Block.map (fun x -> x.TryPeekValue().Value)
+                |> ImmutableArray.map (fun x -> x.TryPeekValue().Value)
 
             let! result = 
                 FinalizeTypeCheckTask 
@@ -1085,7 +1091,7 @@ module IncrementalBuilderStateHelpers =
     and computeStampedFileNames (initialState: IncrementalBuilderInitialState) state (cache: TimeStampCache) =
         let mutable i = 0
         (state, initialState.fileNames)
-        ||> Block.fold (fun state fileInfo ->
+        ||> ImmutableArray.fold (fun state fileInfo ->
             let newState = computeStampedFileName initialState state cache i fileInfo
             i <- i + 1
             newState
@@ -1096,7 +1102,7 @@ module IncrementalBuilderStateHelpers =
 
         let mutable referencesUpdated = false
         initialState.referencedAssemblies
-        |> Block.iteri (fun i asmInfo ->
+        |> ImmutableArray.iteri (fun i asmInfo ->
 
             let currentStamp = state.stampedReferencedAssemblies[i]
             let stamp = StampReferencedAssemblyTask cache asmInfo
@@ -1131,16 +1137,16 @@ type IncrementalBuilderState with
 
         let cache = TimeStampCache(defaultTimeStamp)
         let initialBoundModel = GraphNode(node.Return initialBoundModel)
-        let boundModels = BlockBuilder.create fileNames.Length
+        let boundModels = ImmutableArrayBuilder.create fileNames.Length
 
         for slot = 0 to fileNames.Length - 1 do
             boundModels.Add(createBoundModelGraphNode initialState initialBoundModel boundModels slot)
 
         let state =
             {
-                stampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
-                logicalStampedFileNames = Block.init fileNames.Length (fun _ -> DateTime.MinValue)
-                stampedReferencedAssemblies = Block.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
+                stampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
+                logicalStampedFileNames = ImmutableArray.init fileNames.Length (fun _ -> DateTime.MinValue)
+                stampedReferencedAssemblies = ImmutableArray.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
                 initialBoundModel = initialBoundModel
                 boundModels = boundModels.ToImmutable()
                 finalizedBoundModel = createFinalizeBoundModelGraphNode initialState boundModels
@@ -1351,19 +1357,19 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                    String.Compare(fileName, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match fileNames |> Block.tryFindIndex CompareFileNames with
+        match fileNames |> ImmutableArray.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
         | None -> None
 
-    member this.GetSlotOfFileName(fileName: string) =
-        match this.TryGetSlotOfFileName(fileName) with
+    member builder.GetSlotOfFileName(fileName: string) =
+        match builder.TryGetSlotOfFileName(fileName) with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" fileName)
 
     member _.GetSlotsCount () = fileNames.Length
 
-    member this.ContainsFile(fileName: string) =
-        (this.TryGetSlotOfFileName fileName).IsSome
+    member builder.ContainsFile(fileName: string) =
+        (builder.TryGetSlotOfFileName fileName).IsSome
 
     member builder.GetParseResultsForFile fileName =
         let slotOfFile = builder.GetSlotOfFileName fileName
@@ -1401,8 +1407,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
       node {
 
-        // Trap and report warnings and errors from creation.
-        let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
+        // Trap and report diagnostics from creation.
+        let delayedLogger = CapturingDiagnosticsLogger("IncrementalBuilderCreation")
         use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
 
         let! builderOpt =
@@ -1513,8 +1519,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
-            let errorOptions = tcConfig.errorSeverityOptions
-            let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
+            let errorLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
             use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
             // Get the names and time stamps of all the non-framework referenced assemblies, which will act
@@ -1524,7 +1529,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let nonFrameworkAssemblyInputs =
                 // Note we are not calling errorLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.
-                let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
+                let errorLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
@@ -1535,10 +1540,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) -> cache.GetProjectReferenceTimeStamp pr) ]
 
-            //
-            //
-            //
-            //
             // Start importing
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
@@ -1639,13 +1640,14 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let diagnostics =
             match builderOpt with
             | Some builder ->
-                let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
-                let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
+                let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
+                let errorLogger = CompilationDiagnosticLogger("IncrementalBuilderCreation", diagnosticsOptions)
                 delayedLogger.CommitDelayedDiagnostics errorLogger
                 errorLogger.GetDiagnostics()
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, severity) -> FSharpDiagnostic.CreateFromException(d, severity, range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (diag, severity) ->
+                FSharpDiagnostic.CreateFromException(diag, severity, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }

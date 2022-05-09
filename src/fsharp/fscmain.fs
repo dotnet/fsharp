@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
@@ -73,7 +73,7 @@ let main(argv) =
         // has been reached (e.g. type checking failed, so don't proceed to optimization).
         let quitProcessExiter = 
             { new Exiter with 
-                member x.Exit(n) =                    
+                member _.Exit(n) =                    
                     try 
                       exit n
                     with _ -> 
@@ -95,7 +95,7 @@ let main(argv) =
         // thus we can use file-locking memory mapped files.
         //
         // This is also one of only two places where CopyFSharpCoreFlag.Yes is set.  The other is in LegacyHostedCompilerForTesting.
-        mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.Yes, quitProcessExiter, ConsoleLoggerProvider(), None, None)
+        CompileFromCommandLineArguments (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.Yes, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
     with e -> 

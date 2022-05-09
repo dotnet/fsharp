@@ -6,7 +6,7 @@ open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Text
 
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
@@ -32,7 +32,7 @@ type LexResourceManager =
 type LexArgs =
     { conditionalDefines: string list
       resourceManager: LexResourceManager
-      errorLogger: ErrorLogger
+      errorLogger: DiagnosticsLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
@@ -51,7 +51,7 @@ val mkLexargs:
     lightStatus: IndentationAwareSyntaxStatus *
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
-    errorLogger: ErrorLogger *
+    errorLogger: DiagnosticsLogger *
     pathMap: PathMap ->
         LexArgs
 

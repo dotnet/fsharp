@@ -16,15 +16,16 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.TypeHierarchy
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -75,7 +76,7 @@ type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceTyp
 [<AutoOpen>]
 module Impl = 
     let protect f = 
-       ErrorLogger.protectAssemblyExplorationF  
+       DiagnosticsLogger.protectAssemblyExplorationF  
          (fun (asmName, path) -> invalidOp (sprintf "The entity or value '%s' does not exist or is in an unresolved assembly. You may need to add a reference to assembly '%s'" path asmName))
          f
 
@@ -546,7 +547,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         entity.IsEnumTycon
     
     member _.IsFSharpExceptionDeclaration = 
-        isResolvedAndFSharp() && entity.IsExceptionDecl
+        isResolvedAndFSharp() && entity.IsFSharpException
 
     member _.IsUnresolved = 
         isUnresolved()
@@ -586,7 +587,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member _.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         let ty = generalizedTyconRef cenv.g entity
-        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+        DiagnosticsLogger.protectAssemblyExploration [] (fun () -> 
             [ for ity in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 ty do 
                  yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
@@ -594,7 +595,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member _.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         let ty = generalizedTyconRef cenv.g entity
-        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+        DiagnosticsLogger.protectAssemblyExploration [] (fun () -> 
             [ for ity in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes ty do 
                  yield FSharpType(cenv, ity) ])
         |> makeReadOnlyCollection
@@ -602,13 +603,13 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member _.IsAttributeType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef cenv.g entity
-        ErrorLogger.protectAssemblyExploration false <| fun () -> 
+        DiagnosticsLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
     member _.IsDisposableType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef cenv.g entity
-        ErrorLogger.protectAssemblyExploration false <| fun () -> 
+        DiagnosticsLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
     member _.BaseType = 
@@ -2322,7 +2323,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 type FSharpType(cenv, ty:TType) =
 
     let isUnresolved() = 
-       ErrorLogger.protectAssemblyExploration true <| fun () -> 
+       DiagnosticsLogger.protectAssemblyExploration true <| fun () -> 
         match stripTyparEqns ty with 
         | TType_app (tcref, _, _) -> FSharpEntity(cenv, tcref).IsUnresolved
         | TType_measure (Measure.Con tcref) ->  FSharpEntity(cenv, tcref).IsUnresolved

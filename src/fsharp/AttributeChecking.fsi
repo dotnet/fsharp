@@ -7,7 +7,7 @@ module internal FSharp.Compiler.AttributeChecking
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text

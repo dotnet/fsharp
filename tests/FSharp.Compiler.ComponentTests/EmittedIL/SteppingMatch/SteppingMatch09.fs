@@ -10,7 +10,7 @@ let public funcA n =
         | _ ->
                    Some(   22   )  // debug range should cover all of "Some(   22   )"
 
-// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+// Test case from https://github.com/dotnet/fsharp/issues/105
 let OuterWithGenericInner list =
   let GenericInner (list: 'T list) = 
      match list with 
@@ -19,7 +19,7 @@ let OuterWithGenericInner list =
 
   GenericInner list
 
-// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+// Test case from https://github.com/dotnet/fsharp/issues/105
 let OuterWithNonGenericInner list =
   let NonGenericInner (list: int list) = 
      match list with 
@@ -28,7 +28,7 @@ let OuterWithNonGenericInner list =
 
   NonGenericInner list
 
-// Test case from https://github.com/Microsoft/visualfsharp/issues/105
+// Test case from https://github.com/dotnet/fsharp/issues/105
 let OuterWithNonGenericInnerWithCapture x list =
   let NonGenericInnerWithCapture (list: int list) = 
      match list with 

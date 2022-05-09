@@ -17,7 +17,7 @@ module CompilerDiagnostics =
         | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot()
         | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
 
-    let GetSuggestedNames (suggestionsF: FSharp.Compiler.ErrorLogger.Suggestions) (unresolvedIdentifier: string) =
+    let GetSuggestedNames (suggestionsF: FSharp.Compiler.DiagnosticsLogger.Suggestions) (unresolvedIdentifier: string) =
         let buffer = SuggestionBuffer(unresolvedIdentifier)
         if buffer.Disabled then
             Seq.empty

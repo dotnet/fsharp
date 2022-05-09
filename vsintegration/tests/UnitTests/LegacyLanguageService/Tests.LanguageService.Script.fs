@@ -24,7 +24,7 @@ type UsingMSBuild() as this =
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
-    let createSingleFileFsxFromLines (code : list<string>) = 
+    let createSingleFileFsxFromLines (code : string list) = 
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
@@ -582,7 +582,7 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -619,7 +619,7 @@ type UsingMSBuild() as this =
         AssertNoSquiggle(ans)
 
     [<Test; Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath2``() = 
         use _guard = this.UsingNewVS()  
         let solution = this.CreateSolution()

@@ -508,10 +508,10 @@ type References() =
             AssertContains contents newPropVal
         )
 
-    // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+    // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
     // On DEV 15 Preview 4 the VS IDE Test fails with :
     //     System.InvalidOperationException : Operation is not valid due to the current state of the object.
-    // [<Test>]     // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+    // [<Test>]     // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
     member public this.``AddReference.COM`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))

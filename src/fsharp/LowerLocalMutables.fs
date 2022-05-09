@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AutoBox 
+module internal FSharp.Compiler.LowerLocalMutables 
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -21,7 +21,7 @@ type cenv =
     { g: TcGlobals
       amap: Import.ImportMap }
 
-    override x.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =

@@ -59,7 +59,7 @@ module internal Utils =
     let guard(f) =
         try f()
         with e ->
-             FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace))
+             FSharp.Compiler.DiagnosticsLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace))
 
     let rec previousWordFromIdx (line: string) (idx, isInWord) =
         if idx < 0 then 0 else

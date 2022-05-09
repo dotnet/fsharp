@@ -72,11 +72,11 @@ type OptionBuilderUsingInlineIfLambdaBase() =
         (fun () ->
             ValueSome value)
 
-    member inline this.ReturnFrom (source: option<'T>) : OptionCode<'T> =
+    member inline _.ReturnFrom (source: 'T option) : OptionCode<'T> =
         (fun () ->
             match source with Some x -> ValueOption.Some x | None -> ValueOption.None)
 
-    member inline this.ReturnFrom (source: voption<'T>) : OptionCode<'T> =
+    member inline _.ReturnFrom (source: voption<'T>) : OptionCode<'T> =
         (fun () -> source)
 
 type OptionBuilderUsingInlineIfLambda() =

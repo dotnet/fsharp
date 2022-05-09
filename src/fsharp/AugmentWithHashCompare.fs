@@ -5,8 +5,7 @@ module internal FSharp.Compiler.AugmentWithHashCompare
  
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Xml
@@ -14,6 +13,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo", g.mk_IComparable_ty, [], [], [[TSlotParam(Some("obj"), g.obj_ty, false, false, false, [])]], Some g.int_ty)
@@ -175,7 +175,7 @@ let mkEqualsTestConjuncts g m exprs =
         List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
-    if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
+    if tcref.Deref.IsFSharpException then [], g.exn_ty 
     else generalizeTyconRef g tcref
 
 // check for nulls
@@ -679,7 +679,7 @@ let isTrueFSharpStructTycon _g (tycon: Tycon) =
 let canBeAugmentedWithEquals g (tycon: Tycon) = 
     tycon.IsUnionTycon ||
     tycon.IsRecordTycon ||
-    (tycon.IsExceptionDecl && isNominalExnc tycon) ||
+    (tycon.IsFSharpException && isNominalExnc tycon) ||
     isTrueFSharpStructTycon g tycon
 
 let canBeAugmentedWithCompare g (tycon: Tycon) = 
@@ -918,7 +918,7 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
     let tps = tcref.Typars m
 
     let objEqualsVal = mkValSpec g tcref ty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g ty)) unaryArg
-    let nocEqualsVal = mkValSpec g tcref ty vis (if tcref.Deref.IsExceptionDecl then None else Some(mkGenericIEquatableEqualsSlotSig g ty)) "Equals" (tps +-> (mkEqualsTy g ty)) unaryArg
+    let nocEqualsVal = mkValSpec g tcref ty vis (if tcref.Deref.IsFSharpException then None else Some(mkGenericIEquatableEqualsSlotSig g ty)) "Equals" (tps +-> (mkEqualsTy g ty)) unaryArg
     objEqualsVal, nocEqualsVal
     
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
@@ -1032,7 +1032,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
              (mkCompGenBind withcEqualsVal.Deref withcEqualsExpr)] 
     if tycon.IsUnionTycon then mkStructuralEquatable mkUnionHashWithComparer mkUnionEqualityWithComparer
     elif (tycon.IsRecordTycon || tycon.IsStructOrEnumTycon) then mkStructuralEquatable mkRecdHashWithComparer mkRecdEqualityWithComparer
-    elif tycon.IsExceptionDecl then mkStructuralEquatable mkExnHashWithComparer mkExnEqualityWithComparer
+    elif tycon.IsFSharpException then mkStructuralEquatable mkExnHashWithComparer mkExnEqualityWithComparer
     else []
 
 let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) = 
@@ -1066,7 +1066,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
 
           [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr
             mkCompGenBind objEqualsVal.Deref objEqualsExpr   ] 
-    if tycon.IsExceptionDecl then mkEquals mkExnEquality 
+    if tycon.IsFSharpException then mkEquals mkExnEquality 
     elif tycon.IsUnionTycon then mkEquals mkUnionEquality 
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 
     else []

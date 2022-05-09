@@ -7723,7 +7723,7 @@ namespace ProviderImplementation.ProvidedTypes
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes,
                 // which fortunately also correspond to element types. We just use the design-time types instead.
                 // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
+                //     https://github.com/dotnet/fsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
                 // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 | USome "System", "Void"->  typeof<Void>
@@ -8984,7 +8984,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                 let systemRuntimeContainsTypeObj = config.GetField("systemRuntimeContainsType")
 
-                // Account for https://github.com/Microsoft/visualfsharp/pull/591
+                // Account for https://github.com/dotnet/fsharp/pull/591
                 let systemRuntimeContainsTypeObj2 =
                     if systemRuntimeContainsTypeObj.HasField("systemRuntimeContainsTypeRef") then
                         systemRuntimeContainsTypeObj.GetField("systemRuntimeContainsTypeRef").GetProperty("Value")

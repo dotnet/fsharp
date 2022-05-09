@@ -16,7 +16,7 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ParseAndCheckInputs
@@ -117,7 +117,7 @@ module ScriptPreprocessClosure =
             tcConfig: TcConfig,
             codeContext,
             lexResourceManager: Lexhelp.LexResourceManager,
-            errorLogger: ErrorLogger
+            errorLogger: DiagnosticsLogger
         ) =
 
         // fsc.exe -- COMPILED\!INTERACTIVE
@@ -185,8 +185,8 @@ module ScriptPreprocessClosure =
 
             match basicReferences with
             | None ->
-                let errorLogger = CapturingErrorLogger("ScriptDefaultReferences")
-                use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                let errorLogger = CapturingDiagnosticsLogger("ScriptDefaultReferences")
+                use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                 let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences useFsiAuxLib
 
                 // If the user requested .NET Core scripting but something went wrong and we reverted to
@@ -357,13 +357,13 @@ module ScriptPreprocessClosure =
                     //printfn "visiting %s" fileName
                     if IsScript fileName || parseRequired then
                         let parseResult, parseDiagnostics =
-                            let errorLogger = CapturingErrorLogger("FindClosureParse")
-                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                            let errorLogger = CapturingDiagnosticsLogger("FindClosureParse")
+                            use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                             let result = ParseScriptClosureInput (fileName, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger)
                             result, errorLogger.Diagnostics
 
-                        let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
-                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let errorLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
+                        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                         let pathOfMetaCommandSource = Path.GetDirectoryName fileName
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
@@ -429,9 +429,9 @@ module ScriptPreprocessClosure =
 
         // Resolve all references.
         let references, unresolvedReferences, resolutionDiagnostics =
-            let errorLogger = CapturingErrorLogger("GetLoadClosure")
+            let errorLogger = CapturingDiagnosticsLogger("GetLoadClosure")
 
-            use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+            use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
             let references, unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
             let references = references |> List.map (fun ar -> ar.resolvedPath, ar)
             references, unresolvedReferences, errorLogger.Diagnostics

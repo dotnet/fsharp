@@ -218,7 +218,7 @@ module NavigationImpl =
                 | _ -> [] 
                   
         // Returns class-members for the right dropdown                  
-        and processMembers members enclosingEntityKind : range * list<NavigationItem * int> = 
+        and processMembers members enclosingEntityKind = 
             let members = 
                 members 
                 |> List.groupBy (fun x -> x.Range)
@@ -389,7 +389,7 @@ module NavigationImpl =
                 //| TyconCore_repr_hidden of range
                 | _ -> [] 
                   
-        and processSigMembers (members: SynMemberSig list): list<NavigationItem * int> = 
+        and processSigMembers (members: SynMemberSig list) = 
             [ for memb in members do
                  match memb with
                  | SynMemberSig.Member(SynValSig.SynValSig(ident=SynIdent(id,_); accessibility=access; range=m), _, _) ->
@@ -399,37 +399,40 @@ module NavigationImpl =
                  | _ -> () ]
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
-        let processNestedSigDeclarations decls = decls |> List.collect (function
-            | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=SynIdent(id,_); accessibility=access; range=m), _) ->
-                [ createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Module, false, access) ]
-            | _ -> [] )        
+        let processNestedSigDeclarations decls =
+            decls |> List.collect (fun decl ->
+                match decl with
+                | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=SynIdent(id,_); accessibility=access; range=m), _) ->
+                    [ createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Module, false, access) ]
+                | _ -> [] )        
 
         // Process declarations nested in a module that should be displayed in the left dropdown
         // (such as type declarations, nested modules etc.)                            
         let rec processNavigationTopLevelSigDeclarations(baseName, decls) = 
-            decls 
-            |> List.collect (function
-            | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
-                [ createDecl(baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, rangeOfLid lid, [], NavigationEntityKind.Module, false, None) ]
+            decls |> List.collect (fun decl ->
+                match decl with
+                | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
+                    [ createDecl(baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, rangeOfLid lid, [], NavigationEntityKind.Module, false, None) ]
                 
-            | SynModuleSigDecl.NestedModule(moduleInfo=SynComponentInfo(longId=lid; accessibility=access); moduleDecls=decls; range=m) ->                
-                // Find let bindings (for the right dropdown)
-                let nested = processNestedSigDeclarations(decls)
-                let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
+                | SynModuleSigDecl.NestedModule(moduleInfo=SynComponentInfo(longId=lid; accessibility=access); moduleDecls=decls; range=m) ->                
+                    // Find let bindings (for the right dropdown)
+                    let nested = processNestedSigDeclarations(decls)
+                    let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
                 
-                // Get nested modules and types (for the left dropdown)
-                let other = processNavigationTopLevelSigDeclarations(newBaseName, decls)
-                createDeclLid(baseName, lid, NavigationItemKind.Module, FSharpGlyph.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, NavigationEntityKind.Module, false, access) :: other
+                    // Get nested modules and types (for the left dropdown)
+                    let other = processNavigationTopLevelSigDeclarations(newBaseName, decls)
+                    createDeclLid(baseName, lid, NavigationItemKind.Module, FSharpGlyph.Module, m, unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid lid) other), nested, NavigationEntityKind.Module, false, access) :: other
                   
-            | SynModuleSigDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
-            | SynModuleSigDecl.Exception (defn,_) -> processExnSig baseName defn
-            | _ -> [])
+                | SynModuleSigDecl.Types(tydefs, _) -> tydefs |> List.collect (processTycon baseName)                                    
+                | SynModuleSigDecl.Exception (defn,_) -> processExnSig baseName defn
+                | _ -> [])
                   
         // Collect all the items  
         let items = 
             // Show base name for this module only if it's not the root one
             let singleTopLevel = (modules.Length = 1)
-            modules |> List.collect (fun (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m, _)) ->
+            modules |> List.collect (fun modulSig ->
+                let (SynModuleOrNamespaceSig(id, _isRec, kind, decls, _, _, access, m, _)) = modulSig
                 let baseName = if (not singleTopLevel) then textOfLid id else ""
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)

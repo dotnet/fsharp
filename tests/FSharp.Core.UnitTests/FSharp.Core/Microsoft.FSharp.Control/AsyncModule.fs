@@ -580,7 +580,7 @@ type AsyncModule() =
 
 
 #if IGNORED
-    [<Test; Ignore("See https://github.com/Microsoft/visualfsharp/issues/4887")>]
+    [<Test; Ignore("See https://github.com/dotnet/fsharp/issues/4887")>]
     member _.``SleepContinuations``() = 
         let okCount = ref 0
         let errCount = ref 0

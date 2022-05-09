@@ -377,7 +377,7 @@ module Patterns =
     let ES ts = List.map E ts
 
     let (|E|) (e: Expr) = e.Tree
-    let (|ES|) (es: list<Expr>) = es |> List.map (fun e -> e.Tree)
+    let (|ES|) (es: Expr list) = es |> List.map (fun e -> e.Tree)
     let (|FrontAndBack|_|) es =
         let rec loop acc xs = match xs with [] -> None | [h] -> Some (List.rev acc, h) | h :: t -> loop (h :: acc) t
         loop [] es
@@ -742,7 +742,7 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =
+    let checkArgs (paramInfos: ParameterInfo[]) (args: Expr list) =
         if (paramInfos.Length <> args.Length) then invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
         List.iter2
             ( fun (p:ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
@@ -837,7 +837,7 @@ module Patterns =
         mkFE1 (TupleGetOp (ty, n)) x
 
     // Records
-    let mkNewRecord (ty, args:list<Expr>) =
+    let mkNewRecord (ty, args: Expr list) =
         let mems = FSharpType.GetRecordFields(ty, publicOrPrivateBindingFlags)
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QincompatibleRecordLength))
         List.iter2 (fun (minfo: PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
@@ -845,7 +845,7 @@ module Patterns =
 
 
     // Discriminated unions
-    let mkNewUnionCase (unionCase:UnionCaseInfo, args:list<Expr>) =
+    let mkNewUnionCase (unionCase:UnionCaseInfo, args: Expr list) =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then raise (new ArgumentNullException())
         let sargs = unionCase.GetFields()
         if (args.Length <> sargs.Length) then invalidArg  "args" (SR.GetString(SR.QunionNeedsDiffNumArgs))
@@ -897,7 +897,7 @@ module Patterns =
             mkFE2 (InstanceFieldSetOp finfo) (obj, value)
         | true -> invalidArg  "finfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkCtorCall (ci:ConstructorInfo, args:list<Expr>) =
+    let mkCtorCall (ci:ConstructorInfo, args: Expr list) =
         if Unchecked.defaultof<ConstructorInfo> = ci then raise (new ArgumentNullException())
         checkArgs (ci.GetParameters()) args
         mkFEN (NewObjectOp ci) args
@@ -905,7 +905,7 @@ module Patterns =
     let mkDefaultValue (ty: Type) =
         mkFE0 (DefaultValueOp ty)
 
-    let mkStaticPropGet (pinfo: PropertyInfo, args:list<Expr>) =
+    let mkStaticPropGet (pinfo: PropertyInfo, args: Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -913,7 +913,7 @@ module Patterns =
         | true -> mkFEN (StaticPropGetOp  pinfo) args
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropGet (obj, pinfo: PropertyInfo, args:list<Expr>) =
+    let mkInstancePropGet (obj, pinfo: PropertyInfo, args: Expr list) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -923,7 +923,7 @@ module Patterns =
             mkFEN (InstancePropGetOp pinfo) (obj :: args)
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticPropSet (pinfo: PropertyInfo, args:list<Expr>, value: Expr) =
+    let mkStaticPropSet (pinfo: PropertyInfo, args: Expr list, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -931,7 +931,7 @@ module Patterns =
         | true -> mkFEN (StaticPropSetOp pinfo) (args@[value])
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropSet (obj, pinfo: PropertyInfo, args:list<Expr>, value: Expr) =
+    let mkInstancePropSet (obj, pinfo: PropertyInfo, args: Expr list, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -941,7 +941,7 @@ module Patterns =
             mkFEN (InstancePropSetOp pinfo) (obj :: (args@[value]))
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkInstanceMethodCall (obj, minfo:MethodInfo, args:list<Expr>) =
+    let mkInstanceMethodCall (obj, minfo:MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
@@ -959,7 +959,7 @@ module Patterns =
             mkFEN (InstanceMethodCallWOp (minfo, minfoW, nWitnesses)) (obj::args)
         | true -> invalidArg  "minfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticMethodCall (minfo:MethodInfo, args:list<Expr>) =
+    let mkStaticMethodCall (minfo:MethodInfo, args: Expr list) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
@@ -1002,7 +1002,7 @@ module Patterns =
         | [x] -> mkApplication (f, x)
         | _ -> mkApplication (f, mkNewTuple args)
 
-    let mkApplications(f: Expr, es:list<list<Expr>>) = mkLLinear mkTupledApplication (f, es)
+    let mkApplications(f: Expr, es: Expr list list) = mkLLinear mkTupledApplication (f, es)
 
     let mkIteratedLambdas(vs, b) = mkRLinear  mkLambda (vs, b)
 

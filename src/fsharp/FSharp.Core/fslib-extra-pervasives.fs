@@ -328,9 +328,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let mutable filePath : string = null
         let mutable line : int = 0
         let mutable column : int = 0
-        member this.FilePath with get() = filePath and set v = filePath <- v
-        member this.Line with get() = line and set v = line <- v
-        member this.Column with get() = column and set v = column <- v
+        member _.FilePath with get() = filePath and set v = filePath <- v
+        member _.Line with get() = line and set v = line <- v
+        member _.Column with get() = column and set v = column <- v
 
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
     type TypeProviderEditorHideMethodsAttribute() = 
@@ -349,14 +349,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let mutable isInvalidationSupported : bool   = false 
         let mutable useResolutionFolderAtRuntime : bool = false
         let mutable systemRuntimeAssemblyVersion : System.Version = null
-        member this.ResolutionFolder         with get() = resolutionFolder        and set v = resolutionFolder <- v
-        member this.RuntimeAssembly          with get() = runtimeAssembly         and set v = runtimeAssembly <- v
-        member this.ReferencedAssemblies     with get() = referencedAssemblies    and set v = referencedAssemblies <- v
-        member this.TemporaryFolder          with get() = temporaryFolder         and set v = temporaryFolder <- v
-        member this.IsInvalidationSupported  with get() = isInvalidationSupported and set v = isInvalidationSupported <- v
-        member this.IsHostedExecution with get() = useResolutionFolderAtRuntime and set v = useResolutionFolderAtRuntime <- v
-        member this.SystemRuntimeAssemblyVersion  with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
-        member this.SystemRuntimeContainsType (typeName : string) = systemRuntimeContainsType typeName
+        member _.ResolutionFolder         with get() = resolutionFolder        and set v = resolutionFolder <- v
+        member _.RuntimeAssembly          with get() = runtimeAssembly         and set v = runtimeAssembly <- v
+        member _.ReferencedAssemblies     with get() = referencedAssemblies    and set v = referencedAssemblies <- v
+        member _.TemporaryFolder          with get() = temporaryFolder         and set v = temporaryFolder <- v
+        member _.IsInvalidationSupported  with get() = isInvalidationSupported and set v = isInvalidationSupported <- v
+        member _.IsHostedExecution with get() = useResolutionFolderAtRuntime and set v = useResolutionFolderAtRuntime <- v
+        member _.SystemRuntimeAssemblyVersion  with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
+        member _.SystemRuntimeContainsType (typeName : string) = systemRuntimeContainsType typeName
 
     type IProvidedNamespace =
         abstract NamespaceName : string

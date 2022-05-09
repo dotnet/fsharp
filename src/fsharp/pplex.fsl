@@ -6,7 +6,7 @@ module internal FSharp.Compiler.PPLexer
 
 open System
 
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax

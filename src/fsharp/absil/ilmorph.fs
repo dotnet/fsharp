@@ -25,7 +25,7 @@ let code_instr2instrs f (code: ILCode) =
     let mutable nw = 0
     for instr in instrs do 
         adjust[old] <- nw
-        let instrs : list<_> = f instr
+        let instrs : _ list = f instr
         for instr2 in instrs do
             codebuf.Add instr2
             nw <- nw + 1

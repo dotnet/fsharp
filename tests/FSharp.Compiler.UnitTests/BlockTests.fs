@@ -5,15 +5,15 @@ open Xunit
 open FSharp.Test
 open Internal.Utilities.Library
 
-module BlockTests =
+module ImmutableArrayTests =
 
     [<Fact>]
     let ``Iter should work correctly``() =
-        let b = Block.init 5 id
+        let b = ImmutableArray.init 5 id
 
         let results = ResizeArray()
         b
-        |> Block.iter (fun x ->
+        |> ImmutableArray.iter (fun x ->
             results.Add(x)
         )
 
@@ -30,9 +30,9 @@ module BlockTests =
 
     [<Fact>]
     let ``Map should work correctly``() =
-        let b = Block.init 5 id
+        let b = ImmutableArray.init 5 id
 
-        let b2 = b |> Block.map (fun x -> x + 1)
+        let b2 = b |> ImmutableArray.map (fun x -> x + 1)
 
         Assert.Equal(
             [
@@ -47,11 +47,11 @@ module BlockTests =
 
     [<Fact>]
     let ``Fold should work correctly``() =
-        let b = Block.init 5 id
+        let b = ImmutableArray.init 5 id
 
         let result =
             (0, b)
-            ||> Block.fold (fun state n ->
+            ||> ImmutableArray.fold (fun state n ->
                 state + n
             )
 

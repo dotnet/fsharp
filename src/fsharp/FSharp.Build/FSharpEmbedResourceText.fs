@@ -452,28 +452,28 @@ open Printf
             None
 
     [<Required>]
-    member this.EmbeddedText
+    member _.EmbeddedText
         with get() = _embeddedText
          and set(value) = _embeddedText <- value
 
     [<Required>]
-    member this.IntermediateOutputPath
+    member _.IntermediateOutputPath
         with get() = _outputPath
          and set(value) = _outputPath <- value
 
     [<Output>]
-    member this.GeneratedSource
+    member _.GeneratedSource
         with get() = _generatedSource
 
     [<Output>]
-    member this.GeneratedResx
+    member _.GeneratedResx
         with get() = _generatedResx
 
     interface ITask with
-        member this.BuildEngine
+        member _.BuildEngine
             with get() = _buildEngine
              and set(value) = _buildEngine <- value
-        member this.HostObject
+        member _.HostObject
             with get() = _hostObject
              and set(value) = _hostObject <- value
         member this.Execute() =

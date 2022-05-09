@@ -1604,7 +1604,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
                     projNode.UpdateMSBuildState()
 
-            // The following event sequences are observed in Visual Studio 2017, see https://github.com/Microsoft/visualfsharp/pull/3025#pullrequestreview-38005713
+            // The following event sequences are observed in Visual Studio 2017, see https://github.com/dotnet/fsharp/pull/3025#pullrequestreview-38005713
             //
             // Loading tests\projects\misc\TestProjectChanges.sln:
             //

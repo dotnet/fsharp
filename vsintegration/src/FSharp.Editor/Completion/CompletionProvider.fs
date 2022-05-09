@@ -33,7 +33,7 @@ type internal FSharpCompletionProvider
     inherit FSharpCompletionProviderBase()
 
     // Save the backing data in a cache, we need to save for at least the length of the completion session
-    // See https://github.com/Microsoft/visualfsharp/issues/4714
+    // See https://github.com/dotnet/fsharp/issues/4714
     static let mutable declarationItems: DeclarationListItem[] = [||]
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
