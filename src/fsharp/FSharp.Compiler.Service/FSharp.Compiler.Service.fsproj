@@ -723,7 +723,7 @@
     <Compile Include="..\Optimize\LowerLocalMutables.fs">
       <Link>Optimize\LowerLocalMutables.fs</Link>
     </Compile>
-    <Compile Include="..\codegen\IlxGen.fsi">
+    <Compile Include="..\CodeGen\IlxGen.fsi">
       <Link>CodeGen\IlxGen.fsi</Link>
     </Compile>
     <Compile Include="..\CodeGen\IlxGen.fs">
