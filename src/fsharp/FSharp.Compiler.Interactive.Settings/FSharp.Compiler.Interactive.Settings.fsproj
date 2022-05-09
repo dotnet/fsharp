@@ -17,9 +17,9 @@
 
   <ItemGroup>
     <EmbeddedText Include="..\FSInteractiveSettings.txt" />
-    <Compile Include="..\fsiattrs.fs" />
-    <Compile Include="..\fsiaux.fsi" />
-    <Compile Include="..\fsiaux.fs" />
+    <Compile Include="fsiattrs.fs" />
+    <Compile Include="fsiaux.fsi" />
+    <Compile Include="fsiaux.fs" />
   </ItemGroup>
 
   <ItemGroup>
