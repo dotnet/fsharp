@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />

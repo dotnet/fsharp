@@ -8,7 +8,7 @@ FsLex and FsYacc are themselves built using earlier versions of FsLex and FsYacc
 **If you would like to improve, modify, extend, test or document these
 tools, generally please do so in that repository.  There are some exceptions, see below.**
 
-The `src\buildtools\fslex` and `src\buildtools\fsyacc` directories are an _exact_ copy of  `packages\FsLexYacc.XYZ\src\fslex` and `packages\FsLexYacc.XYZ\src\fsyacc`.  We should really verify this as part of our build.
+The `buildtools\fslex` and `buildtools\fsyacc` directories are an _exact_ copy of  `packages\FsLexYacc.XYZ\src\fslex` and `packages\FsLexYacc.XYZ\src\fsyacc`.  We should really verify this as part of our build.
 This copy is done because we needed to have a build-from-source story.
 In build-from-source, the only tool we can assume is an install of the .NET SDK.
 That means we have to build up FsLex and FsYacc from scratch, _including_ their own generated fslexlex.fs, fslexpars.fs and so on.

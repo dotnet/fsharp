@@ -60,7 +60,7 @@
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj">
       <Project>{A59DB8AE-8044-41A5-848A-800A7FF31C93}</Project>
       <Name>FSharp.Compiler.Service</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>

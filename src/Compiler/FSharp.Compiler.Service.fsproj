@@ -25,6 +25,7 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -93,7 +94,7 @@
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
-    <EmbeddedText Include="fsi\FSIstrings.txt">
+    <EmbeddedText Include="InteractiveSession\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
@@ -990,10 +991,10 @@
     <Compile Include="Service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    <Compile Include="fsi\fsi.fsi">
+    <Compile Include="InteractiveSession\fsi.fsi">
       <Link>InteractiveSession/fsi.fsi</Link>
     </Compile>
-    <Compile Include="fsi\fsi.fs">
+    <Compile Include="InteractiveSession\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
