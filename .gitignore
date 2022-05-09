@@ -25,13 +25,6 @@ scripts/*.patch
 /src/Compiler/StandardOutput.txt
 /src/Compiler/StandardError.txt
 /src/*.log
-/src/FSharp.LanguageService.Compiler/illex.*
-/src/FSharp.LanguageService.Compiler/ilpars.*
-/src/FSharp.LanguageService.Compiler/lex.*
-/src/FSharp.LanguageService.Compiler/pars.*
-/src/FSharp.LanguageService.Compiler/pplex.fs
-/src/FSharp.LanguageService.Compiler/pppars.fs
-/src/FSharp.LanguageService.Compiler/pppars.fsi
 /src/*/Properties/launchSettings.json
 /vsintegration/src/unittests/Unittests.fsi
 /tests/*FSharp_Failures.env
