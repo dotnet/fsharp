@@ -587,36 +587,54 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
     CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
-let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders) =
-    let forwarders: IImmutableDictionary<string array * string, Lazy<EntityRef>> =
-        ImmutableDictionary.Create<string array * string, Lazy<EntityRef>>(HashIdentity.Structural)
-
+let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders): CcuTypeForwarderTable =            
     let rec visit
-        (forwarders: IImmutableDictionary<_,_>)
         (exportedType: ILExportedTypeOrForwarder)
         (nets: ILNestedExportedTypes)
         (enc: string list) =
-        (forwarders, nets.AsList())
-        ||> List.fold (fun forwarders net ->
+        nets.AsList()
+        |> List.collect (fun net ->
             let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, enc, net.Name))
-            visit
-                (forwarders.Add((Array.ofList enc, exportedType.Name), tcref))
-                exportedType
-                net.Nested
-                (enc @ [ net.Name ]))
+            [ yield (enc, exportedType.Name, tcref)
+              yield! visit exportedType net.Nested [yield! enc; yield net.Name] ])
 
-    // Note 'td' may be in another module or another assembly!
-    // Note: it is very important that we call auxModLoader lazily
-    (forwarders, exportedTypes.AsList())
-    ||> List.fold (fun forwarders exportedType ->
-        let ns, n = splitILTypeName exportedType.Name
-        let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
-        visit
-            (forwarders.Add((Array.ofList ns, n), tcref))
-            exportedType
-            exportedType.Nested
-            (ns @ [ n ]))
+    let rec mkTree (currentNodeKey:string) (entries: (string list * string * Lazy<EntityRef>) list) : CcuTypeForwarderTree<string,Lazy<EntityRef>> =
+        let childNodes =
+            let leaves, entriesForSubNodes =
+                List.partition (fun (path: string list,_,_) -> path.IsEmpty) entries
 
+            let leaves =
+                leaves
+                |> List.map (fun (_, item, value) -> CcuTypeForwarderTree.Node(item, Some value, []))
+            
+            let subNodes =
+                entriesForSubNodes
+                |> List.groupBy (fun (path, _, _) -> List.head path)
+                |> List.map (fun (nodeKey, group) ->
+                    let entries =
+                        group
+                        |> List.map (fun (path, item, value) -> List.tail path, item, value)
+                    mkTree nodeKey entries)
+
+            [ yield! leaves; yield! subNodes ]
+
+        CcuTypeForwarderTree.Node(currentNodeKey, None, childNodes)
+
+    match exportedTypes.AsList() with
+    | [] -> CcuTypeForwarderTable([])
+    | rootTypes ->
+        rootTypes
+        |> List.collect (fun exportedType ->
+            let ns, n = splitILTypeName exportedType.Name
+            let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
+            [ yield (ns, n, tcref)
+              yield! visit exportedType exportedType.Nested [yield! ns; yield n] ]
+        )
+        |> fun allEntries ->
+            match mkTree "root" allEntries with
+            | CcuTypeForwarderTree.Node(_, _, nodes) ->
+                CcuTypeForwarderTable(nodes)
+        
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
@@ -628,7 +646,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let mty = ImportILAssemblyTypeDefs(amap, m, auxModuleLoader, aref, ilModule)
     let forwarders = 
         match ilModule.Manifest with 
-        | None -> ImmutableDictionary.Empty :> IImmutableDictionary<_,_>
+        | None -> CcuTypeForwarderTable.Empty
         | Some manifest -> ImportILAssemblyTypeForwarders(amap, m, manifest.ExportedTypes)
 
     let ccuData: CcuData = 

@@ -5,7 +5,6 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.Diagnostics
 open System.Reflection
 
@@ -5292,8 +5291,39 @@ type CcuData =
 
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
+type CcuTypeForwarderTree<'TKey, 'TValue> =
+    | Node of key: 'TKey * value: 'TValue option * children: CcuTypeForwarderTree<'TKey, 'TValue> list
+
 /// Represents a table of .NET CLI type forwarders for an assembly
-type CcuTypeForwarderTable = IImmutableDictionary<string[] * string, Lazy<EntityRef>>
+type CcuTypeForwarderTable =
+    | CcuTypeForwarderTable of rootNodes: CcuTypeForwarderTree<string, Lazy<EntityRef>> list
+
+    static member Empty : CcuTypeForwarderTable = CcuTypeForwarderTable(List.empty)   
+    member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
+        let rec findInTree remainingPath (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>) =
+            if Array.isEmpty remainingPath then
+                match tree with
+                | CcuTypeForwarderTree.Node(key, Some value, _) when key = item -> Some value
+                | CcuTypeForwarderTree.Node(_, _, nodes) ->
+                    List.choose (findInTree remainingPath) nodes
+                    |> List.tryHead
+            else
+                match tree with
+                | CcuTypeForwarderTree.Node(_, _, nodes) ->
+                    nodes
+                    |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = remainingPath[0])
+                    |> Option.bind (findInTree remainingPath[1..])
+                    
+        let (CcuTypeForwarderTable(rootNodes)) = this
+        if Array.isEmpty path then
+            rootNodes
+            |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = item)
+            |> Option.bind (fun (CcuTypeForwarderTree.Node(_, value, _)) -> value)
+        else
+            rootNodes
+            |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = path[0])
+            |> Option.bind (findInTree path[1..])
+
 
 type CcuReference = string // ILAssemblyRef
 
@@ -5382,7 +5412,7 @@ type CcuThunk =
     member ccu.Contents = ccu.Deref.Contents
 
     /// The table of type forwarders for this assembly
-    member ccu.TypeForwarders: IImmutableDictionary<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
+    member ccu.TypeForwarders: CcuTypeForwarderTable = ccu.Deref.TypeForwarders
 
     /// The table of modules and namespaces at the "root" of the assembly
     member ccu.RootModulesAndNamespaces = ccu.Contents.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions
@@ -5419,10 +5449,8 @@ type CcuThunk =
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath: string[], item: string) : EntityRef option = 
         ccu.EnsureDerefable nlpath
-        let key = nlpath, item
-        match ccu.TypeForwarders.TryGetValue key with
-        | true, entity -> Some(entity.Force())
-        | _ -> None
+        ccu.TypeForwarders.TryGetValue nlpath item
+        |> Option.map (fun entity -> entity.Force())
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member ccu.MemberSignatureEquality(ty1: TType, ty2: TType) = 

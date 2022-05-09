@@ -6,7 +6,6 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 open System
 open System.IO
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -810,7 +809,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
           ILScopeRef=ILScopeRef.Local
           Contents=ccuContents
           MemberSignatureEquality= typeEquivAux EraseAll tcGlobals
-          TypeForwarders= ImmutableDictionary.Empty
+          TypeForwarders= CcuTypeForwarderTable.Empty
           XmlDocumentationInfo = None }
 
     let ccu = CcuThunk.Create(ccuName, ccuData)
