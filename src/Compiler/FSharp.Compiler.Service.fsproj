@@ -967,10 +967,10 @@
     <Compile Include="Service\FSharpCheckerResults.fs">
       <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
-    <Compile Include="Service\Service.fsi">
+    <Compile Include="Service\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
-    <Compile Include="Service\Service.fs">
+    <Compile Include="Service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
     <Compile Include="Service\ServiceInterfaceStubGenerator.fsi">
