@@ -102,7 +102,7 @@ These and transformations used to build the following:
 
 * _The F# Compiler Service API_, see the [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Symbols) and [Service API](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Service)
 
-* _The F# Interactive Shell_, see [fsi.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/InteractiveSession/fsi.fs).
+* _The F# Interactive Shell_, see [fsi.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Interactive/fsi.fs).
 
 * _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/fsc.fs) and [fscmain.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/fscmain.fs).
 

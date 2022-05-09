@@ -94,7 +94,7 @@
     <EmbeddedText Include="FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
-    <EmbeddedText Include="InteractiveSession\FSIstrings.txt">
+    <EmbeddedText Include="Interactive\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
     <EmbeddedResource Include="FSStrings.resx">
@@ -991,11 +991,11 @@
     <Compile Include="Service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    <Compile Include="InteractiveSession\fsi.fsi">
-      <Link>InteractiveSession/fsi.fsi</Link>
+    <Compile Include="Interactive\fsi.fsi">
+      <Link>Interactive/fsi.fsi</Link>
     </Compile>
-    <Compile Include="InteractiveSession\fsi.fs">
-      <Link>InteractiveSession/fsi.fs</Link>
+    <Compile Include="Interactive\fsi.fs">
+      <Link>Interactive/fsi.fs</Link>
     </Compile>
 
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
