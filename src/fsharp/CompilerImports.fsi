@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -25,13 +25,13 @@ open FSharp.Compiler.TypeProviders
 #endif
 
 /// This exception is an old-style way of reporting a diagnostic
-exception AssemblyNotResolved of string * range (*originalName*)
+exception AssemblyNotResolved of originalName: string * range: range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionWarning of string (*Message*)  * string * range (*MSBuild warning code*)
+exception MSBuildReferenceResolutionWarning of message: string * warningCode: string * range: range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionError of string (*Message*)  * string * range (*MSBuild warning code*)
+exception MSBuildReferenceResolutionError of message: string * warningCode: string * range: range
 
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
@@ -156,7 +156,7 @@ type TcImports =
 
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
 
-    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
+    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> ImportedBinary option
 
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 

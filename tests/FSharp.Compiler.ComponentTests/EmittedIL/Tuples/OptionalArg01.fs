@@ -1,7 +1,7 @@
 // #NoMono #NoMT #CodeGen #EmittedIL #Tuples   
 type A() = class end
 
-// A code+optimization pattern, see https://github.com/Microsoft/visualfsharp/issues/6532
+// A code+optimization pattern, see https://github.com/dotnet/fsharp/issues/6532
 type C() = 
     static member inline F (?x1: A, ?x2: A) = 
         let count = 0

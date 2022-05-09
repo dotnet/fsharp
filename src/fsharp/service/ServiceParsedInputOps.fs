@@ -355,7 +355,7 @@ module ParsedInput =
         let pick x = SyntaxTraversal.pick pos x
         let walker = 
             { new SyntaxVisitorBase<_>() with
-                member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                     let pick = pick expr.Range
                     let traverseSynExpr, defaultTraverse, expr = traverseSynExpr, defaultTraverse, expr  // for debugging: debugger does not get object expression params as local vars
                     if not(rangeContainsPos expr.Range pos) then 
@@ -1610,7 +1610,7 @@ module ParsedInput =
         // We ignore all diagnostics during this operation
         //
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-        use _ignoreAllDiagnostics = new ErrorScope()  
+        use _ignoreAllDiagnostics = new DiagnosticsScope()  
 
         let mutable result = None
         let mutable ns = None
@@ -1742,7 +1742,7 @@ module ParsedInput =
             // We ignore all diagnostics during this operation
             //
             // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
-            use _ignoreAllDiagnostics = new ErrorScope()  
+            use _ignoreAllDiagnostics = new DiagnosticsScope()  
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 

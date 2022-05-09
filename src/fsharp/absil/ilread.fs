@@ -22,7 +22,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Support
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open System.Reflection
