@@ -76,7 +76,7 @@ val OutputDiagnosticContext:
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DiagnosticLocation =
+type FormattedDiagnosticLocation =
     { Range: range
       File: string
       TextRepresentation: string
@@ -84,26 +84,26 @@ type DiagnosticLocation =
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DiagnosticCanonicalInformation =
+type FormattedDiagnosticCanonicalInformation =
     { ErrorNumber: int
       Subcategory: string
       TextRepresentation: string }
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type DiagnosticDetailedInfo =
-    { Location: DiagnosticLocation option
-      Canonical: DiagnosticCanonicalInformation
+type FormattedDiagnosticDetailedInfo =
+    { Location: FormattedDiagnosticLocation option
+      Canonical: FormattedDiagnosticCanonicalInformation
       Message: string }
 
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
-type Diagnostic =
+type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
-    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
+    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic:
+val CollectFormattedDiagnostics:
     implicitIncludeDir: string *
     showFullPaths: bool *
     flattenErrors: bool *
@@ -111,7 +111,7 @@ val CollectDiagnostic:
     severity: FSharpDiagnosticSeverity *
     PhasedDiagnostic *
     suggestNames: bool ->
-        seq<Diagnostic>
+        FormattedDiagnostic []
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:

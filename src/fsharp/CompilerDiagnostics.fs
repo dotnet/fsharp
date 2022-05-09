@@ -1740,32 +1740,32 @@ let SanitizeFileName fileName implicitIncludeDir =
         fileName
 
 [<RequireQualifiedAccess>]
-type DiagnosticLocation =
+type FormattedDiagnosticLocation =
     { Range: range
       File: string
       TextRepresentation: string
       IsEmpty: bool }
 
 [<RequireQualifiedAccess>]
-type DiagnosticCanonicalInformation =
+type FormattedDiagnosticCanonicalInformation =
     { ErrorNumber: int
       Subcategory: string
       TextRepresentation: string }
 
 [<RequireQualifiedAccess>]
-type DiagnosticDetailedInfo =
-    { Location: DiagnosticLocation option
-      Canonical: DiagnosticCanonicalInformation
+type FormattedDiagnosticDetailedInfo =
+    { Location: FormattedDiagnosticLocation option
+      Canonical: FormattedDiagnosticCanonicalInformation
       Message: string }
 
 [<RequireQualifiedAccess>]
-type Diagnostic =
+type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
-    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
+    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity: FSharpDiagnosticSeverity, diag: PhasedDiagnostic, suggestNames: bool) =
-    let outputWhere (showFullPaths, diagnosticStyle) m: DiagnosticLocation =
+let CollectFormattedDiagnostics (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity: FSharpDiagnosticSeverity, diag: PhasedDiagnostic, suggestNames: bool) =
+    let outputWhere (showFullPaths, diagnosticStyle) m: FormattedDiagnosticLocation =
         if equals m rangeStartup || equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
@@ -1812,10 +1812,10 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnos
     match diag.Exception with
     | ReportedError _ ->
         assert ("" = "Unexpected ReportedError") //  this should never happen
-        Seq.empty
+        [| |]
     | StopProcessing ->
         assert ("" = "Unexpected StopProcessing") // this should never happen
-        Seq.empty
+        [| |]
     | _ ->
         let errors = ResizeArray()
         let report diag =
@@ -1824,7 +1824,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnos
                 | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(subcategory, errorNumber) : DiagnosticCanonicalInformation =
+            let OutputCanonicalInformation(subcategory, errorNumber) : FormattedDiagnosticCanonicalInformation =
                 let message =
                     match severity with
                     | FSharpDiagnosticSeverity.Error -> "error"
@@ -1846,9 +1846,9 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnos
                 OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
 
-            let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
+            let entry: FormattedDiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
 
-            errors.Add (Diagnostic.Long(severity, entry))
+            errors.Add (FormattedDiagnostic.Long(severity, entry))
 
             let OutputRelatedError(diag: PhasedDiagnostic) =
                 match diagnosticStyle with
@@ -1861,13 +1861,13 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnos
                         OutputPhasedDiagnostic os diag flattenErrors suggestNames
                         os.ToString()
 
-                    let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
-                    errors.Add( Diagnostic.Long (severity, entry) )
+                    let entry: FormattedDiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
+                    errors.Add (FormattedDiagnostic.Long (severity, entry) )
 
                 | _ ->
                     let os = StringBuilder()
                     OutputPhasedDiagnostic os diag flattenErrors suggestNames
-                    errors.Add( Diagnostic.Short(severity, os.ToString()) )
+                    errors.Add (FormattedDiagnostic.Short(severity, os.ToString()) )
 
             relatedErrors |> List.iter OutputRelatedError
 
@@ -1881,20 +1881,20 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnos
 #endif
         | x -> report x
 
-        errors:> seq<_>
+        errors.ToArray()
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
 let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diag: PhasedDiagnostic) =
 
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity, diag, true)
+    let errors = CollectFormattedDiagnostics (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity, diag, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
-        | Diagnostic.Short(_, txt) ->
+        | FormattedDiagnostic.Short(_, txt) ->
             os.AppendString txt |> ignore
-        | Diagnostic.Long(_, details) ->
+        | FormattedDiagnostic.Long(_, details) ->
             match details.Location with
             | Some l when not l.IsEmpty -> os.AppendString l.TextRepresentation
             | _ -> ()

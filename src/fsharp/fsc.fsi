@@ -6,7 +6,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
@@ -23,6 +23,23 @@ type DiagnosticsLoggerProvider =
 type ConsoleLoggerProvider =
     new: unit -> ConsoleLoggerProvider
     inherit DiagnosticsLoggerProvider
+
+
+/// An error logger that reports errors up to some maximum, notifying the exiter when that maximum is reached
+[<AbstractClass>]
+type DiagnosticsLoggerUpToMaxErrors =
+    inherit DiagnosticsLogger
+    new: tcConfigB: TcConfigBuilder * exiter: Exiter * nameForDebugging: string -> DiagnosticsLoggerUpToMaxErrors
+
+    /// Called when an error or warning occurs
+    abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+
+    /// Called when 'too many errors' has occurred
+    abstract HandleTooManyErrors: text: string -> unit
+
+    override ErrorCount : int
+
+    override DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val mainCompile:
@@ -55,10 +72,3 @@ val compileOfAst:
     tcImportsCapture: (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
         unit
-
-/// Part of LegacyHostedCompilerForTesting
-type InProcDiagnosticsLoggerProvider =
-    new: unit -> InProcDiagnosticsLoggerProvider
-    member Provider: DiagnosticsLoggerProvider
-    member CapturedWarnings: Diagnostic []
-    member CapturedErrors: Diagnostic []

@@ -73,29 +73,29 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
 
-    override x.ErrorCount = errors
+    override _.ErrorCount = errors
 
-    override x.DiagnosticSink(err, severity) =
-      if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (err, severity) then
+    override x.DiagnosticSink(phasedError, severity) =
+      if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (phasedError, severity) then
         if errors >= tcConfigB.maxErrors then
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Error)
+        x.HandleIssue(tcConfigB, phasedError, FSharpDiagnosticSeverity.Error)
 
         errors <- errors + 1
 
-        match err.Exception, tcConfigB.simulateException with
+        match phasedError.Exception, tcConfigB.simulateException with
         | InternalError (msg, _), None
-        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (err.Exception.ToString()))
-        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
+        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (phasedError.Exception.ToString()))
+        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (phasedError.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (err, severity) then
-          x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Warning)
+      elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (phasedError, severity) then
+          x.HandleIssue(tcConfigB, phasedError, FSharpDiagnosticSeverity.Warning)
 
-      elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (err, severity) then
-          x.HandleIssue(tcConfigB, err, severity)
+      elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (phasedError, severity) then
+          x.HandleIssue(tcConfigB, phasedError, severity)
 
 
 /// Create an error logger that counts and prints errors
@@ -128,41 +128,6 @@ and [<AbstractClass>]
 
     abstract CreateDiagnosticsLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> DiagnosticsLogger
 
-
-/// Part of LegacyHostedCompilerForTesting
-///
-/// Yet another DiagnosticsLogger implementation, capturing the messages but only up to the maxerrors maximum
-type InProcDiagnosticsLoggerProvider() =
-    let errors = ResizeArray()
-    let warnings = ResizeArray()
-
-    member _.Provider =
-        { new DiagnosticsLoggerProvider() with
-
-            member _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
-
-                { new DiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
-
-                    member _.HandleTooManyErrors text =
-                        warnings.Add(Diagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
-
-                    member _.HandleIssue(tcConfigBuilder, err, severity) =
-                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let diagnostics =
-                            CollectDiagnostic
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.diagnosticStyle, severity, err, true)
-                        match severity with
-                        | FSharpDiagnosticSeverity.Error ->
-                           errors.AddRange(diagnostics)
-                        | FSharpDiagnosticSeverity.Warning ->
-                            warnings.AddRange(diagnostics)
-                        | _ -> ()}
-                :> DiagnosticsLogger }
-
-    member _.CapturedErrors = errors.ToArray()
-
-    member _.CapturedWarnings = warnings.ToArray()
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() =
