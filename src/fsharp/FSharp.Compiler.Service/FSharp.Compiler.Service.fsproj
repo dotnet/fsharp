@@ -1006,7 +1006,7 @@
 
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\Misc\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>misc/LegacyHostedCompilerForTesting.fs</Link>
+      <Link>Legacy/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
 
