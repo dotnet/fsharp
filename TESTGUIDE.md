@@ -256,7 +256,6 @@ Some tests are known to fail on these older branches when run using one of the `
 
 * Adding the `-norestore` flag to the commandline speeds up the build part a little bit.
 * When using the `-ci` flag (mandatory for some testsets), adding the `-nobl` flag prevents creating the binary log files.
-* NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster. Make sure you run `src\update.cmd` with the `-ngen` flag before running tests.
 
 Some tests run in parallel by default, or use a hosted compiler to speed things up:
 

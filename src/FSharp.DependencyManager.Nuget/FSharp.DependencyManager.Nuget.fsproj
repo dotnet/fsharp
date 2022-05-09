@@ -20,13 +20,13 @@
 
   <ItemGroup>
     <EmbeddedText Include="FSDependencyManager.txt" />
-    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Facilities\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fsi" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.ProjectFile.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Utilities.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fsi" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fs" />
+    <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocationUtils.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocationUtils.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.ProjectFile.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Utilities.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fs" />
   </ItemGroup>
 
   <ItemGroup>

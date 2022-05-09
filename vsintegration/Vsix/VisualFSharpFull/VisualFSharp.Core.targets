@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj">
       <Project>{702A7979-BCF9-4C41-853E-3ADFC9897890}</Project>
       <Name>FSharp.Build</Name>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
@@ -36,7 +36,7 @@
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
       <Name>FSharp.Compiler.Interactive.Settings</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
@@ -48,7 +48,7 @@
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
       <Project>{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}</Project>
       <Name>FSharp.Compiler.Server.Shared</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
@@ -60,7 +60,7 @@
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
       <Project>{A59DB8AE-8044-41A5-848A-800A7FF31C93}</Project>
       <Name>FSharp.Compiler.Service</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
@@ -72,7 +72,7 @@
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
@@ -84,22 +84,22 @@
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fsiAnyCpu\fsiAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsharp\fsi\fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsi\fsi.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsharp\fscAnyCpu\fscAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fscAnyCpu\fscAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsharp\fsc\fsc.fsproj">
+    <ProjectReference Include="..\..\..\src\fsc\fsc.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>

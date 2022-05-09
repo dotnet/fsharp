@@ -101,8 +101,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.Base\FSharp.ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.PropertyPages\FSharp.ProjectSystem.PropertyPages.vbproj" />

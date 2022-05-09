@@ -122,9 +122,7 @@ Running any of the above will build the latest changes and run tests against the
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
 ```shell
-pushd src\fsharp\FSharp.Compiler.Service
-msbuild FSharp.Compiler.Service.fsproj /t:UpdateXlf
-popd
+dotnet build src\Compiler /t:UpdateXlf
 ```
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
@@ -251,13 +249,13 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     ```shell
     cd FcsBench
     dotnet add package BenchmarkDotNet
-    dotnet add reference ..\..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj
+    dotnet add reference ..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj
     ```
 
 4. Additionally, if you want to test changes to the FSharp.Core
 
      ```shell
-     dotnet add reference ..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj
+     dotnet add reference ..\..\..\src\FSharp.Core\FSharp.Core.fsproj
      ```
 
     > as well as the following property have to be added to `FcsBench.fsproj`:
@@ -304,7 +302,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
               match sourceOpt with
               | None ->
-                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\fsharp\CheckExpressions.fs"""))
+                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\CheckExpressions.fs"""))
               | _ -> ()
 
 

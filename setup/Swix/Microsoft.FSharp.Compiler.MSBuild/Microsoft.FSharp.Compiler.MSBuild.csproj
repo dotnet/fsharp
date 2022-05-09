@@ -5,16 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fscAnyCpu\fscAnyCpu.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fsc.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fscAnyCpu\fscAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsi.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsiAnyCpu\fsiAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
 
   <!--
