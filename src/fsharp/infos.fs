@@ -139,7 +139,7 @@ let private GetInstantiationForMemberVal g isCSharpExt (ty, vref, methTyArgs: Ty
     let memberParentTypars, memberMethodTypars, _retTy, parentTyArgs = AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref)
     /// In some recursive inference cases involving constraints this may need to be
     /// fixed up - we allow uniform generic recursion but nothing else.
-    /// See https://github.com/Microsoft/visualfsharp/issues/3038#issuecomment-309429410
+    /// See https://github.com/dotnet/fsharp/issues/3038#issuecomment-309429410
     let methTyArgsFixedUp =
         if methTyArgs.Length < memberMethodTypars.Length then
             methTyArgs @ (List.skip methTyArgs.Length memberMethodTypars |> generalizeTypars)
@@ -1926,7 +1926,7 @@ type PropInfo =
         match pi with
         | ILProp ilpinfo -> hash ilpinfo.RawMetadata.Name
         | FSProp(_, _, vrefOpt1, vrefOpt2) ->
-            // Hash on option<string>*option<string>
+            // Hash on string option * string option
             let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vr -> vr.LogicalName)))
             hash vth
 #if !NO_TYPEPROVIDERS

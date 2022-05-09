@@ -2505,7 +2505,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
     match attempt4 with
     | Some res -> res
     | None ->
-        // https://github.com/Microsoft/visualfsharp/issues/2561
+        // https://github.com/dotnet/fsharp/issues/2561
         // still identical, we better (try to) show assembly qualified name to disambiguate
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }

@@ -8620,9 +8620,11 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
 
                 let SEEN_NAMED_ARGUMENT = -1
 
-                // dealing with named arguments is a bit tricky since prior to these changes we have an ambiguous situation:
-                // regular notation for named parameters Some(Value = 5) can mean either 1) create option<bool> with value - result of equality operation or 2) create option<int> using named arg syntax.
-                // so far we've used 1) so we cannot immediately switch to 2) since it will be a definite breaking change.
+                // Dealing with named arguments is a bit tricky since prior to these changes we have an ambiguous situation:
+                // regular notation for named parameters Some(Value = 5) can mean either
+                //   1) create "bool option" with value - result of equality operation or
+                //   2) create "int option" using named arg syntax.
+                // So far we've used 1) so we cannot immediately switch to 2) since it will be a definite breaking change.
 
                 for _, id, arg in namedCallerArgs do
                     match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with

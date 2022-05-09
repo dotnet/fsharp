@@ -67,10 +67,10 @@ let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _
 let StopProcessing<'T> = StopProcessingExn None
 
 // int is e.g. 191 in FS0191
-exception SRDiagnostic of number: int * message: string * range: range with
+exception DiagnosticWithText of number: int * message: string * range: range with
     override this.Message =
         match this :> exn with
-        | SRDiagnostic(_, msg, _) -> msg
+        | DiagnosticWithText(_, msg, _) -> msg
         | _ -> "impossible"
 
 exception InternalError of message: string * range: range with 
@@ -101,17 +101,25 @@ exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string 
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
-exception SRDiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with   // int is e.g. 191 in FS0191 
+exception DiagnosticWithSuggestions of number: int * message: string * range: range * identifier: string * suggestions: Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
-        | SRDiagnosticWithSuggestions(_, msg, _, _, _) -> msg
+        | DiagnosticWithSuggestions(_, msg, _, _, _) -> msg
         | _ -> "impossible"
 
-/// The F# compiler code currently uses 'Error(...)' to create an SRDiagnostic as an exception even if it's a warning
-let Error ((n, text), m) = SRDiagnostic (n, text, m)
+/// The F# compiler code currently uses 'Error(...)' in many places to create
+/// an DiagnosticWithText as an exception even if it's a warning.
+///
+/// We will eventually rename this to remove this use of "Error"
+let Error ((n, text), m) =
+    DiagnosticWithText (n, text, m)
 
-/// The F# compiler code currently uses 'ErrorWithSuggestions(...)' to create an SRDiagnostic as an exception even if it's a warning
-let ErrorWithSuggestions ((n, message), m, id, suggestions) = SRDiagnosticWithSuggestions (n, message, m, id, suggestions)
+/// The F# compiler code currently uses 'ErrorWithSuggestions(...)' in many places to create
+/// an DiagnosticWithText as an exception even if it's a warning.
+///
+/// We will eventually rename this to remove this use of "Error"
+let ErrorWithSuggestions ((n, message), m, id, suggestions) =
+    DiagnosticWithSuggestions (n, message, m, id, suggestions)
 
 let inline protectAssemblyExploration dflt f = 
     try 
@@ -174,32 +182,44 @@ type BuildPhase =
 module BuildPhaseSubcategory =
     [<Literal>] 
     let DefaultPhase = ""
+
     [<Literal>] 
     let Compile = "compile"
+
     [<Literal>] 
     let Parameter = "parameter"
+
     [<Literal>] 
     let Parse = "parse"
+
     [<Literal>] 
     let TypeCheck = "typecheck"
+
     [<Literal>] 
     let CodeGen = "codegen"
+
     [<Literal>] 
     let Optimize = "optimize"
+
     [<Literal>] 
     let IlxGen = "ilxgen"
+
     [<Literal>] 
     let IlGen = "ilgen"        
+
     [<Literal>] 
     let Output = "output"        
+
     [<Literal>] 
     let Interactive = "interactive"        
+
     [<Literal>] 
     let Internal = "internal"          // Compiler ICE
 
 [<DebuggerDisplay("{DebugDisplay()}")>]
 type PhasedDiagnostic = 
-    { Exception:exn; Phase:BuildPhase }
+    { Exception:exn
+      Phase:BuildPhase }
 
     /// Construct a phased error
     static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =

@@ -156,7 +156,7 @@ type TcImports =
 
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
 
-    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
+    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> ImportedBinary option
 
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 

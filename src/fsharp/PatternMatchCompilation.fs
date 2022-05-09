@@ -430,9 +430,9 @@ type Implication =
 ///
 /// Example:
 ///     match x with 
-///     | :? option<int> -> ...
+///     | :? (int option) -> ...
 ///     | null -> ...
-/// Nothing can be learned.  If ':? option<int>' succeeds, 'null' may still have to be run.
+/// Nothing can be learned.  If ':? (int option)' succeeds, 'null' may still have to be run.
 let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
     if TypeNullIsTrueValue g tgtTy1 then
         Implication.Nothing
@@ -443,9 +443,9 @@ let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
 ///
 /// Example:
 ///     match x with 
-///     | :? option<int> -> ...
+///     | :? (int option) -> ...
 ///     | null -> ...
-/// If ':? option<int>' fails then 'null' will fail
+/// If ':? (int option)' fails then 'null' will fail
 let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
     if TypeNullIsTrueValue g tgtTy1 then
         Implication.Fails
@@ -463,8 +463,8 @@ let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
 /// Example:
 ///     match x with 
 ///     | null -> ...
-///     | :? option<int> -> ...
-/// For any inputs where 'null' succeeds, ':? option<int>' will succeed
+///     | :? (int option) -> ...
+/// For any inputs where 'null' succeeds, ':? (int option)' will succeed
 let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
     if TypeNullIsTrueValue g tgtTy2 then
         Implication.Succeeds
@@ -518,8 +518,8 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     //
     // This doesn't apply to types with null as true value:
     //     match x with 
-    //     | :? option<int> -> ...
-    //     | :? option<string> -> ...
+    //     | :? (int option) -> ...
+    //     | :? (string option) -> ...
     //
     // Here on 'null' input the first pattern succeeds, and the second pattern will also succeed
     elif isSealedTy g tgtTy1 &&

@@ -355,7 +355,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
-///    'a = list<'a>
+///    'a = 'a list
 let rec occursCheck g un ty = 
     match stripTyEqns g ty with 
     | TType_ucase(_, l)
@@ -976,7 +976,7 @@ let CheckWarnIfRigid (csenv: ConstraintSolverEnv) ty1 (r: Typar) ty =
 let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 r ty = trackErrors {
     // The types may still be equivalent due to abbreviations, which we are trying not to eliminate 
     if typeEquiv csenv.g ty1 ty then () else
-    // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/Microsoft/visualfsharp/issues/1170
+    // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/dotnet/fsharp/issues/1170
     if occursCheck csenv.g r ty then return! ErrorD (ConstraintSolverInfiniteTypes(csenv.DisplayEnv, csenv.eContextInfo, ty1, ty, csenv.m, m2)) else
     // Note: warn _and_ continue! 
     do! CheckWarnIfRigid csenv ty1 r ty
@@ -1903,7 +1903,7 @@ and GetSupportOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _,
 and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
     tys |> List.forall (isAnyParTy csenv.g >> not)
 
-// This may be relevant to future bug fixes, see https://github.com/Microsoft/visualfsharp/issues/3814
+// This may be relevant to future bug fixes, see https://github.com/dotnet/fsharp/issues/3814
 // /// Check if some part of the support is solved.  
 // and SupportOfMemberConstraintIsPartiallySolved (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
 //     tys |> List.exists (isAnyParTy csenv.g >> not)

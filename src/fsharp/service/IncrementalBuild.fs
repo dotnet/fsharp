@@ -67,7 +67,7 @@ module IncrementalBuilderEventTesting =
         member _.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
 
-        member _.MostRecentList(n: int) : list<'T> =
+        member _.MostRecentList(n: int) : 'T list =
             if n < 0 || n > MAX then
                 raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
             let mutable remaining = n

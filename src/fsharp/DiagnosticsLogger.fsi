@@ -42,7 +42,7 @@ val (|StopProcessing|_|): exn: exn -> unit option
 val StopProcessing<'T> : exn
 
 /// Represents a diagnostic exeption whose text comes via SR.*
-exception SRDiagnostic of number: int * message: string * range: range
+exception DiagnosticWithText of number: int * message: string * range: range
 
 /// Creates a diagnostic exeption whose text comes via SR.*
 val Error: (int * string) * range -> exn
@@ -67,14 +67,14 @@ exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string
 
 exception UnresolvedPathReference of assemblyName: string * path: string * range: range
 
-exception SRDiagnosticWithSuggestions of
+exception DiagnosticWithSuggestions of
     number: int *
     message: string *
     range: range *
     identifier: string *
     suggestions: Suggestions
 
-/// Creates a SRDiagnosticWithSuggestions whose text comes via SR.*
+/// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
 
 val inline protectAssemblyExploration: dflt: 'a -> f: (unit -> 'a) -> 'a

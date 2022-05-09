@@ -125,8 +125,8 @@ let GetRangeOfDiagnostic(diag: PhasedDiagnostic) =
       | NotUpperCaseConstructor m
       | RecursiveUseCheckedAtRuntime (_, _, m)
       | LetRecEvaluatedOutOfOrder (_, _, _, m)
-      | SRDiagnostic (_, _, m)
-      | SRDiagnosticWithSuggestions (_, _, m, _, _)
+      | DiagnosticWithText (_, _, m)
+      | DiagnosticWithSuggestions (_, _, m, _, _)
       | SyntaxError (_, m)
       | InternalError (_, m)
       | InterfaceNotRevealed(_, _, m)
@@ -340,8 +340,8 @@ let GetDiagnosticNumber(diag: PhasedDiagnostic) =
 
       | WrappedError(e, _) -> GetFromException e
 
-      | SRDiagnostic (n, _, _) -> n
-      | SRDiagnosticWithSuggestions (n, _, _, _, _) -> n
+      | DiagnosticWithText (n, _, _) -> n
+      | DiagnosticWithSuggestions (n, _, _, _, _) -> n
       | Failure _ -> 192
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
@@ -358,8 +358,8 @@ let GetWarningLevel diag =
     | LetRecEvaluatedOutOfOrder _
     | DefensiveCopyWarning _  -> 5
 
-    | SRDiagnostic(n, _, _)
-    | SRDiagnosticWithSuggestions(n, _, _, _, _) ->
+    | DiagnosticWithText(n, _, _)
+    | DiagnosticWithSuggestions(n, _, _, _, _) ->
         // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
         // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
         // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
@@ -1356,7 +1356,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
           | None ->
               os.AppendString(OverrideDoesntOverride1E().Format sig1)
           | Some minfoVirt ->
-              // https://github.com/Microsoft/visualfsharp/issues/35
+              // https://github.com/dotnet/fsharp/issues/35
               // Improve error message when attempting to override generic return type with unit:
               // we need to check if unit was used as a type argument
               let hasUnitTType_app (types: TType list) =
@@ -1480,9 +1480,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
               os.AppendString(NonUniqueInferredAbstractSlot3E().Format ty1 ty2)
           os.AppendString(NonUniqueInferredAbstractSlot4E().Format)
 
-      | SRDiagnostic (_, s, _) -> os.AppendString s
+      | DiagnosticWithText (_, s, _) -> os.AppendString s
 
-      | SRDiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
+      | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
           os.AppendString(DecompileOpName s)
           suggestNames suggestionF idText
 

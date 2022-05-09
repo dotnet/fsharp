@@ -1616,7 +1616,7 @@ let rec p_normalized_measure unt st =
 // numerator and denominator) is used only when absolutely necessary, maintaining
 // compatibility of formats with versions prior to F# 4.0.
 //
-// See https://github.com/Microsoft/visualfsharp/issues/69
+// See https://github.com/dotnet/fsharp/issues/69
 let p_measure_expr unt st = p_normalized_measure (normalizeMeasure st.oglobals unt) st
 
 let u_rational st =

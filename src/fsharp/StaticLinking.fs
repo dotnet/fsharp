@@ -197,9 +197,9 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
 type Node =
     { name: string
       data: ILModuleDef
-      ccu: option<CcuThunk>
+      ccu: CcuThunk option
       refs: ILReferences
-      mutable edges: list<Node>
+      mutable edges: Node list
       mutable visited: bool }
 
 // Find all IL modules that are to be statically linked given the static linking roots.

@@ -4062,7 +4062,7 @@ type TType =
     | TType_measure of measure: Measure
 
     /// For now, used only as a discriminant in error message.
-    /// See https://github.com/Microsoft/visualfsharp/issues/2561
+    /// See https://github.com/dotnet/fsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
         | TType_forall (_tps, ty) -> ty.GetAssemblyName()

@@ -2743,7 +2743,7 @@ type FsiInteractionProcessor
     ///
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
-    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult:option<FsiInteractionStepStatus>, cancellationToken: CancellationToken)  =
+    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
         cancellationToken.ThrowIfCancellationRequested()
         let action,nextAction,istate =
             match action with
@@ -2806,7 +2806,7 @@ type FsiInteractionProcessor
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
     /// independently
-    let executeParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult:option<FsiInteractionStepStatus>, cancellationToken: CancellationToken)  =
+    let executeParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
         let istate, completed = execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, lastResult, cancellationToken)
         match completed with
         | Completed _  ->

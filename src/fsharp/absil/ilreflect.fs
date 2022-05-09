@@ -718,7 +718,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
 
             // we should reject methods which don't satisfy parameter types by also checking
             // type parameters which can be contravariant for delegates for example
-            // see https://github.com/Microsoft/visualfsharp/issues/2411
+            // see https://github.com/dotnet/fsharp/issues/2411
             // without this check, subsequent call to convTypes would fail because it
             // constructs generic type without checking constraints
             if not (satisfiesAllParameters mrefParameterTypes haveArgTs) then false else

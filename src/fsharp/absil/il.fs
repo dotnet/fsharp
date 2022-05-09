@@ -1269,7 +1269,7 @@ type ILLocal =
       IsPinned: bool
       DebugInfo: (string * int * int) option }
 
-type ILLocals = list<ILLocal>
+type ILLocals = ILLocal list
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILDebugImport =
@@ -1547,7 +1547,7 @@ type ILParameter =
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
-type ILParameters = list<ILParameter>
+type ILParameters = ILParameter list
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILReturn =
@@ -3892,7 +3892,7 @@ let getCustomAttrData cattr =
 //      as a compressed int to indicate the size followed by an array of UTF8 characters.)
 // - A set of properties, encoded as the named arguments to a custom attribute would be (as
 //      in §23.3, beginning with NumNamed).
-let mkPermissionSet (action, attributes: list<ILTypeRef * (string * ILType * ILAttribElem) list>) =
+let mkPermissionSet (action, attributes: (ILTypeRef * (string * ILType * ILAttribElem) list) list) =
     let bytes =
         [| yield (byte '.')
            yield! z_unsigned_int attributes.Length

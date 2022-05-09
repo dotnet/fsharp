@@ -695,7 +695,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             match source with
             | :? ('T[]) as a -> a.Length = 0
-            | :? list<'T> as a -> a.IsEmpty
+            | :? ('T list) as a -> a.IsEmpty
             | :? ICollection<'T> as a -> a.Count = 0
             | _ ->
                 use ie = source.GetEnumerator()

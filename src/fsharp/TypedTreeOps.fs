@@ -6217,7 +6217,7 @@ let isRecdOrUnionOrStructTyconRefDefinitelyMutable (tcref: TyconRef) =
         tycon.UnionCasesArray |> Array.exists isUnionCaseDefinitelyMutable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
         // Note: This only looks at the F# fields, causing oddities.
-        // See https://github.com/Microsoft/visualfsharp/pull/4576
+        // See https://github.com/dotnet/fsharp/pull/4576
         tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldDefinitelyMutable
     else
         false
