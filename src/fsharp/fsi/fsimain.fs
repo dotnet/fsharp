@@ -123,11 +123,11 @@ let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) =
 #if FSI_SERVER
     let server =
         {new Server.Shared.FSharpInteractiveServer() with
-           member this.Interrupt() = 
+           member _.Interrupt() = 
             //printf "FSI-SERVER: received CTRL-C request...\n"
             try 
                 fsiSession.Interrupt()
-            with e -> 
+            with _ -> 
                 // Final sanity check! - catch all exns - but not expected 
                 assert false
                 ()    
@@ -298,8 +298,8 @@ let evaluateSession(argv: string[]) =
         fsiSession.Run() 
         0
     with 
-    | FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
-    | FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
+    | FSharp.Compiler.DiagnosticsLogger.StopProcessingExn _ -> 1
+    | FSharp.Compiler.DiagnosticsLogger.ReportedError _ -> 1
     | e -> eprintf "Exception by fsi.exe:\n%+A\n" e; 1
 
 // Mark the main thread as STAThread since it is a GUI thread

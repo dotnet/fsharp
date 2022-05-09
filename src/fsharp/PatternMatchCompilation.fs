@@ -10,7 +10,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Syntax
@@ -55,21 +55,21 @@ type Pattern =
 
     member this.Range =
         match this with
-        |   TPat_const(_, m) -> m
-        |   TPat_wild m -> m
-        |   TPat_as(_, _, m) -> m
-        |   TPat_disjs(_, m) -> m
-        |   TPat_conjs(_, m) -> m
-        |   TPat_query(_, _, m) -> m
-        |   TPat_unioncase(_, _, _, m) -> m
-        |   TPat_exnconstr(_, _, m) -> m
-        |   TPat_tuple(_, _, _, m) -> m
-        |   TPat_array(_, _, m) -> m
-        |   TPat_recd(_, _, _, m) -> m
-        |   TPat_range(_, _, m) -> m
-        |   TPat_null m -> m
-        |   TPat_isinst(_, _, _, m) -> m
-        |   TPat_error m -> m
+        | TPat_const(_, m) -> m
+        | TPat_wild m -> m
+        | TPat_as(_, _, m) -> m
+        | TPat_disjs(_, m) -> m
+        | TPat_conjs(_, m) -> m
+        | TPat_query(_, _, m) -> m
+        | TPat_unioncase(_, _, _, m) -> m
+        | TPat_exnconstr(_, _, m) -> m
+        | TPat_tuple(_, _, _, m) -> m
+        | TPat_array(_, _, m) -> m
+        | TPat_recd(_, _, _, m) -> m
+        | TPat_range(_, _, m) -> m
+        | TPat_null m -> m
+        | TPat_isinst(_, _, _, m) -> m
+        | TPat_error m -> m
 
 and PatternValBinding = PBind of Val * TypeScheme
 
@@ -430,9 +430,9 @@ type Implication =
 ///
 /// Example:
 ///     match x with 
-///     | :? option<int> -> ...
+///     | :? (int option) -> ...
 ///     | null -> ...
-/// Nothing can be learned.  If ':? option<int>' succeeds, 'null' may still have to be run.
+/// Nothing can be learned.  If ':? (int option)' succeeds, 'null' may still have to be run.
 let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
     if TypeNullIsTrueValue g tgtTy1 then
         Implication.Nothing
@@ -443,9 +443,9 @@ let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
 ///
 /// Example:
 ///     match x with 
-///     | :? option<int> -> ...
+///     | :? (int option) -> ...
 ///     | null -> ...
-/// If ':? option<int>' fails then 'null' will fail
+/// If ':? (int option)' fails then 'null' will fail
 let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
     if TypeNullIsTrueValue g tgtTy1 then
         Implication.Fails
@@ -463,8 +463,8 @@ let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
 /// Example:
 ///     match x with 
 ///     | null -> ...
-///     | :? option<int> -> ...
-/// For any inputs where 'null' succeeds, ':? option<int>' will succeed
+///     | :? (int option) -> ...
+/// For any inputs where 'null' succeeds, ':? (int option)' will succeed
 let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
     if TypeNullIsTrueValue g tgtTy2 then
         Implication.Succeeds
@@ -518,8 +518,8 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     //
     // This doesn't apply to types with null as true value:
     //     match x with 
-    //     | :? option<int> -> ...
-    //     | :? option<string> -> ...
+    //     | :? (int option) -> ...
+    //     | :? (string option) -> ...
     //
     // Here on 'null' input the first pattern succeeds, and the second pattern will also succeed
     elif isSealedTy g tgtTy1 &&
@@ -859,7 +859,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     compactify (Some (h :: prev :: moreprev)) t
                 | Const.Char cprev, Const.Char cnext when (int32 cprev + 1 = int32 cnext) ->
                     compactify (Some (h :: prev :: moreprev)) t
-                |       _ ->  (List.rev (prev :: moreprev)) :: compactify None edges
+                | _ ->  (List.rev (prev :: moreprev)) :: compactify None edges
 
             | _ -> failwith "internal error: compactify"
         let edgeGroups = compactify None edges'

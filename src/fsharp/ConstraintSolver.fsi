@@ -4,7 +4,7 @@
 module internal FSharp.Compiler.ConstraintSolver
 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader

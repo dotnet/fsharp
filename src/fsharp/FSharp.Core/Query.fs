@@ -45,8 +45,8 @@ module ForwardDeclarations =
     let mutable Query =
         {
             new IQueryMethods with
-                member this.Execute(_) = failwith "IQueryMethods.Execute should never be called"
-                member this.EliminateNestedQueries(_) = failwith "IQueryMethods.EliminateNestedQueries should never be called"
+                member _.Execute(_) = failwith "IQueryMethods.Execute should never be called"
+                member _.EliminateNestedQueries(_) = failwith "IQueryMethods.EliminateNestedQueries should never be called"
         }
 
 type QueryBuilder() =
@@ -1925,8 +1925,8 @@ module Query =
     do ForwardDeclarations.Query <-
         {
             new ForwardDeclarations.IQueryMethods with
-                member this.Execute q = QueryExecute q
-                member this.EliminateNestedQueries e = EliminateNestedQueries e
+                member _.Execute q = QueryExecute q
+                member _.EliminateNestedQueries e = EliminateNestedQueries e
         }
 
 

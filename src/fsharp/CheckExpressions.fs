@@ -18,7 +18,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
@@ -38,6 +38,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
@@ -63,50 +64,94 @@ let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
 //-------------------------------------------------------------------------
 
 exception BakedInMemberConstraintName of string * range
+
 exception FunctionExpected of DisplayEnv * TType * range
+
 exception NotAFunction of DisplayEnv * TType * range * range
+
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
+
 exception Recursion of DisplayEnv * Ident * TType * TType * range
+
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
+
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
+
 exception LetRecCheckedAtRuntime of range
+
 exception LetRecUnsound of DisplayEnv * ValRef list * range
+
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
+
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
+
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
+
 exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
+
 exception MissingFields of string list * range
+
 exception FunctionValueUnexpected of DisplayEnv * TType * range
+
 exception UnitTypeExpected of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+
 exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
+
 exception UnionPatternsBindDifferentNames of range
+
 exception VarBoundTwice of Ident
+
 exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
+
 exception ValNotMutable of DisplayEnv * ValRef * range
+
 exception ValNotLocal of DisplayEnv * ValRef * range
+
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
+
 exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
+
 exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
+
 exception CoercionTargetSealed of DisplayEnv * TType * range
+
 exception UpcastUnnecessary of range
+
 exception TypeTestUnnecessary of range
+
 exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
+
 exception SelfRefObjCtor of bool * range
+
 exception VirtualAugmentationOnNullValuedType of range
+
 exception NonVirtualAugmentationOnNullValuedType of range
+
 exception UseOfAddressOfOperator of range
+
 exception DeprecatedThreadStaticBindingWarning of range
+
 exception IntfImplInIntrinsicAugmentation of range
+
 exception IntfImplInExtrinsicAugmentation of range
+
 exception OverrideInIntrinsicAugmentation of range
+
 exception OverrideInExtrinsicAugmentation of range
+
 exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
+
 exception StandardOperatorRedefinitionWarning of string * range
-exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
+
+exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: string option
 
 /// Represents information about the initialization field used to check that object constructors
 /// have completed before fields are accessed.
@@ -1818,19 +1863,19 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
             let values, vspecMap =
                 let sink =
                     { new ITypecheckResultsSink with
-                        member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
+                        member _.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
 
-                        member this.NotifyNameResolution(pos, item, itemTyparInst, occurence, nenv, ad, m, replacing) =
+                        member _.NotifyNameResolution(pos, item, itemTyparInst, occurence, nenv, ad, m, replacing) =
                             notifyNameResolution (pos, item, item, itemTyparInst, occurence, nenv, ad, m, replacing)
 
-                        member this.NotifyMethodGroupNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) =
+                        member _.NotifyMethodGroupNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) =
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
-                        member this.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
-                        member this.NotifyFormatSpecifierLocation(_, _) = ()
-                        member this.NotifyOpenDeclaration _ = ()
-                        member this.CurrentSourceText = None
-                        member this.FormatStringCheckContext = None }
+                        member _.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member _.NotifyFormatSpecifierLocation(_, _) = ()
+                        member _.NotifyOpenDeclaration _ = ()
+                        member _.CurrentSourceText = None
+                        member _.FormatStringCheckContext = None }
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
                 MakeAndPublishSimpleVals cenv env names
@@ -8619,9 +8664,11 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
 
                 let SEEN_NAMED_ARGUMENT = -1
 
-                // dealing with named arguments is a bit tricky since prior to these changes we have an ambiguous situation:
-                // regular notation for named parameters Some(Value = 5) can mean either 1) create option<bool> with value - result of equality operation or 2) create option<int> using named arg syntax.
-                // so far we've used 1) so we cannot immediately switch to 2) since it will be a definite breaking change.
+                // Dealing with named arguments is a bit tricky since prior to these changes we have an ambiguous situation:
+                // regular notation for named parameters Some(Value = 5) can mean either
+                //   1) create "bool option" with value - result of equality operation or
+                //   2) create "int option" using named arg syntax.
+                // So far we've used 1) so we cannot immediately switch to 2) since it will be a definite breaking change.
 
                 for _, id, arg in namedCallerArgs do
                     match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
@@ -11339,7 +11386,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
         CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
 
-        if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsExceptionDecl then
+        if memberFlags.MemberKind = SynMemberKind.Constructor && tcref.Deref.IsFSharpException then
             error(Error(FSComp.SR.tcConstructorsDisallowedInExceptionAugmentation(), id.idRange))
 
         let isExtrinsic = (declKind = ExtrinsicExtensionBinding)

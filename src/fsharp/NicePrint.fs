@@ -12,8 +12,9 @@ open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
@@ -23,11 +24,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
-open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.Xml
 
 open FSharp.Core.Printf
 
@@ -2063,7 +2064,7 @@ module TastDefinitionPrinting =
     let layoutTyconDefns denv infoReader ad m (tycons: Tycon list) =
         match tycons with 
         | [] -> emptyL
-        | [h] when h.IsExceptionDecl -> layoutExnDefn denv infoReader (mkLocalEntityRef h)
+        | [h] when h.IsFSharpException -> layoutExnDefn denv infoReader (mkLocalEntityRef h)
         | h :: t -> 
             let x = layoutTyconDefn denv infoReader ad m false WordL.keywordType (mkLocalEntityRef h)
             let xs = List.map (mkLocalEntityRef >> layoutTyconDefn denv infoReader ad m false (wordL (tagKeyword "and"))) t
@@ -2174,7 +2175,7 @@ module TastDefinitionPrinting =
         if eref.IsModuleOrNamespace then
             layoutModuleOrNamespace denv infoReader ad m false eref.Deref
             |> layoutXmlDocOfEntity denv infoReader eref
-        elif eref.IsExceptionDecl then
+        elif eref.IsFSharpException then
             layoutExnDefn denv infoReader eref
         else
             layoutTyconDefn denv infoReader ad m true WordL.keywordType eref
@@ -2504,7 +2505,7 @@ let minimalStringsOfTwoTypes denv t1 t2=
     match attempt4 with
     | Some res -> res
     | None ->
-        // https://github.com/Microsoft/visualfsharp/issues/2561
+        // https://github.com/dotnet/fsharp/issues/2561
         // still identical, we better (try to) show assembly qualified name to disambiguate
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }

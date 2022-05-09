@@ -42,7 +42,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] projection:'T->'SafeKey) ([<InlineIfLambda>] getKey:'SafeKey->'Key) (list:'T list) =            
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) ([<InlineIfLambda>] projection: 'T->'SafeKey) ([<InlineIfLambda>] getKey:'SafeKey->'Key) (list: 'T list) =            
             let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
@@ -56,13 +56,13 @@ namespace Microsoft.FSharp.Collections
             Microsoft.FSharp.Primitives.Basics.List.countBy dict getKey
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let countByValueType (projection:'T->'Key) (list:'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
+        let countByValueType (projection: 'T->'Key) (list: 'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (projection:'T->'Key) (list:'T list) = countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) list
+        let countByRefType   (projection: 'T->'Key) (list: 'T list) = countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) list
 
         [<CompiledName("CountBy")>]
-        let countBy (projection:'T->'Key) (list:'T list) =
+        let countBy (projection: 'T->'Key) (list: 'T list) =
             match list with
             | [] -> []
             | _ ->
@@ -84,7 +84,7 @@ namespace Microsoft.FSharp.Collections
             Microsoft.FSharp.Primitives.Basics.List.mapFold mapping state list
 
         [<CompiledName("MapFoldBack")>]
-        let mapFoldBack<'T, 'State, 'Result> (mapping:'T -> 'State -> 'Result * 'State) list state =
+        let mapFoldBack<'T, 'State, 'Result> (mapping: 'T -> 'State -> 'Result * 'State) list state =
             match list with
             | [] -> [], state
             | [h] -> let h', s' = mapping h state in [h'], s'
@@ -99,19 +99,19 @@ namespace Microsoft.FSharp.Collections
                 loop ([], state) (rev list)
 
         [<CompiledName("Iterate")>]
-        let inline iter ([<InlineIfLambda>] action) (list:'T list) = for x in list do action x
+        let inline iter ([<InlineIfLambda>] action) (list: 'T list) = for x in list do action x
 
         [<CompiledName("Distinct")>]
-        let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
+        let distinct (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
 
         [<CompiledName("DistinctBy")>]
-        let distinctBy projection (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctByWithComparer HashIdentity.Structural<_> projection list
+        let distinctBy projection (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctByWithComparer HashIdentity.Structural<_> projection list
 
         [<CompiledName("OfArray")>]
-        let ofArray (array:'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array
+        let ofArray (array: 'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array
 
         [<CompiledName("ToArray")>]
-        let toArray (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.toArray list
+        let toArray (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.toArray list
 
         [<CompiledName("Empty")>]
         let empty<'T> = ([ ] : 'T list)
@@ -154,7 +154,7 @@ namespace Microsoft.FSharp.Collections
         let choose chooser list = Microsoft.FSharp.Primitives.Basics.List.choose chooser list
 
         [<CompiledName("SplitAt")>]
-        let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
+        let splitAt index (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
 
         [<CompiledName("Take")>]
         let take count (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list
@@ -233,14 +233,14 @@ namespace Microsoft.FSharp.Collections
             | h :: t -> fold reduction h t
 
         [<CompiledName("Scan")>]
-        let scan<'T, 'State> folder (state:'State) (list:'T list) =
+        let scan<'T, 'State> folder (state:'State) (list: 'T list) =
             Microsoft.FSharp.Primitives.Basics.List.scan folder state list
 
         [<CompiledName("Singleton")>]
         let inline singleton value = [value]
 
         [<CompiledName("Fold2")>]
-        let fold2<'T1, 'T2, 'State> folder (state:'State) (list1:list<'T1>) (list2:list<'T2>) =
+        let fold2<'T1, 'T2, 'State> folder (state:'State) (list1:'T1 list) (list2:'T2 list) =
             let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(folder)
             let rec loop acc list1 list2 =
                 match list1, list2 with
@@ -258,7 +258,7 @@ namespace Microsoft.FSharp.Collections
 
         // this version doesn't causes stack overflow - it uses a private stack
         [<CompiledName("FoldBack")>]
-        let foldBack<'T, 'State> folder (list:'T list) (state:'State) =
+        let foldBack<'T, 'State> folder (list: 'T list) (state:'State) =
             let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(folder)
             match list with
             | [] -> state
@@ -283,7 +283,7 @@ namespace Microsoft.FSharp.Collections
                 let arrn = arr.Length
                 foldArraySubRight f arr 0 (arrn - 2) arr.[arrn - 1]
 
-        let scanArraySubRight<'T, 'State> (f:OptimizedClosures.FSharpFunc<'T, 'State, 'State>) (arr:_[]) start fin initState =
+        let scanArraySubRight<'T, 'State> (f:OptimizedClosures.FSharpFunc<'T, 'State, 'State>) (arr: _[]) start fin initState =
             let mutable state = initState
             let mutable res = [state]
             for i = fin downto start do
@@ -292,7 +292,7 @@ namespace Microsoft.FSharp.Collections
             res
 
         [<CompiledName("ScanBack")>]
-        let scanBack<'T, 'State> folder (list:'T list) (state:'State) =
+        let scanBack<'T, 'State> folder (list: 'T list) (state:'State) =
             match list with
             | [] -> [state]
             | [h] ->
@@ -428,17 +428,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where predicate list = Microsoft.FSharp.Primitives.Basics.List.filter predicate list
 
-        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf: 'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
             Microsoft.FSharp.Primitives.Basics.List.groupBy comparer keyf getKey list
 
         // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
+        let groupByValueType (keyf: 'T->'Key) (list: 'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (list:'T list) = groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) list
+        let groupByRefType   (keyf: 'T->'Key) (list: 'T list) = groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) list
 
         [<CompiledName("GroupBy")>]
-        let groupBy (projection:'T->'Key) (list:'T list) =
+        let groupBy (projection: 'T->'Key) (list: 'T list) =
             match list with
             | [] -> []
             | _ ->
@@ -548,13 +548,19 @@ namespace Microsoft.FSharp.Collections
             loop 0 list
 
         [<CompiledName("FindIndexBack")>]
-        let findIndexBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.findIndexBack predicate
+        let findIndexBack predicate list =
+            list
+            |> toArray
+            |> Microsoft.FSharp.Primitives.Basics.Array.findIndexBack predicate
 
         [<CompiledName("TryFindIndexBack")>]
-        let tryFindIndexBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack predicate
+        let tryFindIndexBack predicate list =
+            list
+            |> toArray
+            |> Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack predicate
 
         [<CompiledName("Sum")>]
-        let inline sum (list:list<'T>) =
+        let inline sum (list: 'T list) =
             match list with
             | [] -> LanguagePrimitives.GenericZero<'T>
             | t ->
@@ -564,7 +570,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy ([<InlineIfLambda>] projection: 'T -> 'U) (list:list<'T>) =
+        let inline sumBy ([<InlineIfLambda>] projection: 'T -> 'U) (list: 'T list) =
             match list with
             | [] -> LanguagePrimitives.GenericZero<'U>
             | t ->
@@ -574,7 +580,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Max")>]
-        let inline max (list:list<_>) =
+        let inline max (list: _ list) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -585,7 +591,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy projection (list:list<_>) =
+        let inline maxBy projection (list: _ list) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -599,7 +605,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Min")>]
-        let inline min (list:list<_>) =
+        let inline min (list: _ list) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -610,7 +616,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("MinBy")>]
-        let inline minBy projection (list:list<_>) =
+        let inline minBy projection (list: _ list) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -624,7 +630,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Average")>]
-        let inline average (list:list<'T>) =
+        let inline average (list: 'T list) =
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
@@ -636,7 +642,7 @@ namespace Microsoft.FSharp.Collections
                 LanguagePrimitives.DivideByInt sum count
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy ([<InlineIfLambda>] projection: 'T -> 'U) (list:list<'T>) =
+        let inline averageBy ([<InlineIfLambda>] projection: 'T -> 'U) (list: 'T list) =
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
@@ -654,7 +660,7 @@ namespace Microsoft.FSharp.Collections
         let allPairs list1 list2 = Microsoft.FSharp.Primitives.Basics.List.allPairs list1 list2
 
         [<CompiledName("CompareWith")>]
-        let inline compareWith ([<InlineIfLambda>] comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
+        let inline compareWith ([<InlineIfLambda>] comparer: 'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
             let rec loop list1 list2 =
                  match list1, list2 with
                  | head1 :: tail1, head2 :: tail2 ->
@@ -670,14 +676,14 @@ namespace Microsoft.FSharp.Collections
         let permute indexMap list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.permute indexMap |> ofArray
 
         [<CompiledName("ExactlyOne")>]
-        let exactlyOne (list: list<_>) =
+        let exactlyOne (list: _ list) =
             match list with
             | [x] -> x
             | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("TryExactlyOne")>]
-        let tryExactlyOne (list: list<_>) =
+        let tryExactlyOne (list: _ list) =
             match list with
             | [x] -> Some x
             | _   -> None

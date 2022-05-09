@@ -3,7 +3,7 @@
 module FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
