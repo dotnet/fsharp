@@ -1,4 +1,8 @@
-﻿open System
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+module FSharp.Tests.Core
+
+open System
 open System.IO
 open System.Reflection
 open System.Reflection.PortableExecutable
