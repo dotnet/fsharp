@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\fscmain.fs">
+    <Compile Include="..\fsc\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">
