@@ -20,9 +20,9 @@
 
   <ItemGroup>
     <EmbeddedText Include="FSDependencyManager.txt" />
-    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Utilities\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Utilities\CompilerLocationUtils.fsi" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Utilities\CompilerLocationUtils.fs" />
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Facilities\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.ProjectFile.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Utilities.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fsi" />

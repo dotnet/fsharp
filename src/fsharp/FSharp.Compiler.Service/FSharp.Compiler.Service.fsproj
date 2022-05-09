@@ -106,10 +106,10 @@
     <Compile Include="..\Utilities\sformat.fs">
       <Link>Utilities\sformat.fs</Link>
     </Compile>
-    <Compile Include="..\sr.fsi">
+    <Compile Include="..\Utilities\sr.fsi">
       <Link>Utilities\sr.fsi</Link>
     </Compile>
-    <Compile Include="..\sr.fs">
+    <Compile Include="..\Utilities\sr.fs">
       <Link>Utilities\sr.fs</Link>
     </Compile>
     <Compile Include="..\Utilities\ResizeArray.fsi">
@@ -217,53 +217,72 @@
     <Compile Include="..\Utilities\range.fs">
       <Link>Utilities\range.fs</Link>
     </Compile>
-    <Compile Include="..\Logger.fsi">
+    <EmbeddedText Include="..\Facilities\UtilsStrings.txt" />
+    <Compile Include="..\Facilities\Logger.fsi">
       <Link>Facilities\Logger.fsi</Link>
     </Compile>
-    <Compile Include="..\Logger.fs">
+    <Compile Include="..\Facilities\Logger.fs">
       <Link>Facilities\Logger.fs</Link>
     </Compile>
-    <Compile Include="..\LanguageFeatures.fsi">
+    <Compile Include="..\Facilities\LanguageFeatures.fsi">
       <Link>Facilities\LanguageFeatures.fsi</Link>
     </Compile>
-    <Compile Include="..\LanguageFeatures.fs">
+    <Compile Include="..\Facilities\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="..\Diagnostics.fsi">
+    <Compile Include="..\Facilities\Diagnostics.fsi">
       <Link>Facilities\Diagnostics.fsi</Link>
     </Compile>
-    <Compile Include="..\Diagnostics.fs">
+    <Compile Include="..\Facilities\Diagnostics.fs">
       <Link>Facilities\Diagnostics.fs</Link>
     </Compile>
-    <Compile Include="..\TextLayoutRender.fsi">
+    <Compile Include="..\Facilities\TextLayoutRender.fsi">
       <Link>Facilities\TextLayoutRender.fsi</Link>
     </Compile>
-    <Compile Include="..\TextLayoutRender.fs">
+    <Compile Include="..\Facilities\TextLayoutRender.fs">
       <Link>Facilities\TextLayoutRender.fs</Link>
     </Compile>
-    <Compile Include="..\DiagnosticsLogger.fsi">
+    <Compile Include="..\Facilities\DiagnosticsLogger.fsi">
       <Link>Facilities\DiagnosticsLogger.fsi</Link>
     </Compile>
-    <Compile Include="..\DiagnosticsLogger.fs">
+    <Compile Include="..\Facilities\DiagnosticsLogger.fs">
       <Link>Facilities\DiagnosticsLogger.fs</Link>
     </Compile>
-    <Compile Include="..\ErrorResolutionHints.fsi">
+    <Compile Include="..\Facilities\ErrorResolutionHints.fsi">
       <Link>Facilities\ErrorResolutionHints.fsi</Link>
     </Compile>
-    <Compile Include="..\ErrorResolutionHints.fs">
+    <Compile Include="..\Facilities\ErrorResolutionHints.fs">
       <Link>Facilities\ErrorResolutionHints.fs</Link>
     </Compile>
-    <Compile Include="..\Utilities\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    <Compile Include="..\Facilities\prim-lexing.fsi">
+      <Link>Facilities\prim-lexing.fsi</Link>
     </Compile>
-    <Compile Include="..\Utilities\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    <Compile Include="..\Facilities\prim-lexing.fs">
+      <Link>Facilities\prim-lexing.fs</Link>
     </Compile>
-    <Compile Include="..\Utilities\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    <Compile Include="..\Facilities\prim-parsing.fsi">
+      <Link>Facilities\prim-parsing.fsi</Link>
     </Compile>
-    <Compile Include="..\Utilities\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
+    <Compile Include="..\Facilities\prim-parsing.fs">
+      <Link>Facilities\prim-parsing.fs</Link>
+    </Compile>
+    <Compile Include="..\Facilities\ReferenceResolver.fsi">
+      <Link>Facilities\ReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\Facilities\ReferenceResolver.fs">
+      <Link>Facilities\ReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\Facilities\SimulatedMSBuildReferenceResolver.fsi">
+      <Link>Facilities/SimulatedMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\Facilities\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Facilities/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\Facilities\CompilerLocationUtils.fsi">
+      <Link>Facilities\CompilerLocationUtils.fsi</Link>
+    </Compile>
+    <Compile Include="..\Facilities\CompilerLocationUtils.fs">
+      <Link>Facilities\CompilerLocationUtils.fs</Link>
     </Compile>
     <FsLex Include="..\AbstractIL\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -363,35 +382,16 @@
     <Compile Include="..\AbstractIL\ilreflect.fs">
       <Link>AbstractIL\ilreflect.fs</Link>
     </Compile>
-    <Compile Include="..\ReferenceResolver.fsi">
-      <Link>ReferenceResolution\ReferenceResolver.fsi</Link>
-    </Compile>
-    <Compile Include="..\ReferenceResolver.fs">
-      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
-    </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fsi">
-      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fsi</Link>
-    </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
-      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
-    <EmbeddedText Include="..\Utilities\UtilsStrings.txt" />
-    <Compile Include="..\Utilities\CompilerLocationUtils.fsi">
-      <Link>CompilerLocation\CompilerLocationUtils.fsi</Link>
-    </Compile>
-    <Compile Include="..\Utilities\CompilerLocationUtils.fs">
-      <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
-    </Compile>
-    <Compile Include="..\PrettyNaming.fsi">
+    <Compile Include="..\SyntaxTree\PrettyNaming.fsi">
       <Link>PrettyNaming\PrettyNaming.fsi</Link>
     </Compile>
-    <Compile Include="..\PrettyNaming.fs">
+    <Compile Include="..\SyntaxTree\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
     </Compile>
-    <Compile Include="..\ilx\EraseClosures.fsi">
+    <Compile Include="..\CodeGen\EraseClosures.fsi">
       <Link>ILXErase\EraseClosures.fsi</Link>
     </Compile>
-    <Compile Include="..\ilx\EraseClosures.fs">
+    <Compile Include="..\CodeGen\EraseClosures.fs">
       <Link>ILXErase\EraseClosures.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">

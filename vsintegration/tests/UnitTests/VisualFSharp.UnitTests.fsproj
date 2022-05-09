@@ -23,8 +23,8 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs">
       <Link>Internal.Utilities.Collections.fs</Link>
     </Compile>
-    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\utils\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\utils\CompilerLocationUtils.fs">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Facilities\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fs">
       <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="TestLib.Utils.fs" />

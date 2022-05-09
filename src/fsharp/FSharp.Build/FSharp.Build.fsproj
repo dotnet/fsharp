@@ -18,8 +18,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
-    <EmbeddedText Include="..\Utilities\UtilsStrings.txt" />
-    <Compile Include="..\Utilities\CompilerLocationUtils.fs" />
+    <EmbeddedText Include="..\Facilities\UtilsStrings.txt" />
+    <Compile Include="..\Facilities\CompilerLocationUtils.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />

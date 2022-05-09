@@ -21,8 +21,8 @@
     <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharp.VS.FSI.Attributes.fs" />
-    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\utils\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\utils\CompilerLocationUtils.fs">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Facilities\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Facilities\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="sessions.fs" />
