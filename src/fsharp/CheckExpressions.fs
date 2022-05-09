@@ -11279,6 +11279,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         envinner: TcEnv,
         tpenv,
         declKind,
+        synTyparDecls,
         newslotsOK,
         overridesOK,
         tcrefContainerInfo,
@@ -11286,7 +11287,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl
         id: Ident,
         vis2,
         declaredTypars,
-        memberFlagsOpt,
+        memberFlagsOpt: SynMemberFlags option,
         thisIdOpt,
         bindingAttribs,
         valSynInfo,
@@ -11302,7 +11303,37 @@ and AnalyzeRecursiveStaticMemberOrValDecl
     // name for the member and the information about which type it is augmenting
 
     match tcrefContainerInfo, memberFlagsOpt with
+    | Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, _, _, declaredTyconTypars)), Some memberFlags 
+        when memberFlags.MemberKind = SynMemberKind.Member &&
+             memberFlags.IsInstance = false &&
+             memberFlags.IsOverrideOrExplicitImpl = true  ->
+        
+           CheckMemberFlags optIntfSlotTy newslotsOK overridesOK memberFlags id.idRange
+           CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+
+           let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
+           let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
+           let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
+           let envinner = MakeInnerEnvForTyconRef envinner tcref isExtrinsic
+
+
+           let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
+
+           let domainTy = NewInferenceType g
+           
+           let optInferredImplSlotTys, declaredTypars =
+               ApplyAbstractSlotInference cenv envinner (domainTy, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, objTy, optIntfSlotTy, valSynInfo, memberFlags, bindingAttribs)
+
+           let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
+           
+           let memberInfo =
+               let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
+               MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, bindingAttribs, optInferredImplSlotTys, memberFlags, valSynInfo, id, false)
+
+           envinner, tpenv, id, None, Some memberInfo, vis, vis2, None, enclosingDeclaredTypars, None, explicitTyparInfo, bindingRhs, declaredTypars
+
     | Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, baseValOpt, _safeInitInfo, declaredTyconTypars)), Some memberFlags ->
+    
         assert (Option.isNone optIntfSlotTy)
 
         CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
@@ -11488,7 +11519,7 @@ and AnalyzeRecursiveDecl
 
         | SynPat.Named (SynIdent(id,_), _, vis2, _) ->
             AnalyzeRecursiveStaticMemberOrValDecl
-                (cenv, envinner, tpenv, declKind,
+                (cenv, envinner, tpenv, declKind, synTyparDecls,
                  newslotsOK, overridesOK, tcrefContainerInfo,
                  vis1, id, vis2, declaredTypars,
                  memberFlagsOpt, thisIdOpt, bindingAttribs,

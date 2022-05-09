@@ -300,6 +300,8 @@ val AbstractMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> Syn
 
 val StaticMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
 
+val ImplementStaticMemberFlags: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+
 val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
 
 val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia

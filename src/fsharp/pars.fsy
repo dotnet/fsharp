@@ -2325,28 +2325,32 @@ objectImplementationMembers:
 
 /* One member in an object expression or interface implementation */
 objectImplementationMember: 
-  | opt_attributes memberOrOverride memberCore opt_ODECLEND
+  | opt_attributes staticMemberOrMemberOrOverride memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       $3 None (OverrideMemberFlags $2) $1 rangeStart }
+       $3 None $2 $1 rangeStart }
 
-  | opt_attributes memberOrOverride autoPropsDefnDecl opt_ODECLEND
+  | opt_attributes staticMemberOrMemberOrOverride autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       $3 $1 false (OverrideMemberFlags $2) rangeStart }
+       $3 $1 false $2 rangeStart }
 
-  | opt_attributes memberOrOverride error 
+  | opt_attributes staticMemberOrMemberOrOverride error 
       { [] } 
 
   | opt_attributes error memberCore opt_ODECLEND 
       { [] }
 
 
-memberOrOverride: 
+staticMemberOrMemberOrOverride:
+  | STATIC MEMBER
+      { let mStatic = rhs parseState 1
+        let mMember = rhs parseState 2
+        ImplementStaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
   | MEMBER 
       { let mMember = rhs parseState 1
-        MemberSynMemberFlagsTrivia mMember } 
+        OverrideMemberFlags(MemberSynMemberFlagsTrivia mMember) }
   | OVERRIDE 
       { let mOverride = rhs parseState 1
-        OverrideSynMemberFlagsTrivia mOverride }
+        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
 
 
 /* The core of the right-hand-side of a simple type definition */

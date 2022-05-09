@@ -698,6 +698,14 @@ let StaticMemberFlags trivia k : SynMemberFlags =
       IsFinal=false
       Trivia=trivia }
 
+let ImplementStaticMemberFlags trivia k : SynMemberFlags =
+    { MemberKind=k
+      IsInstance=false
+      IsDispatchSlot=false
+      IsOverrideOrExplicitImpl=true
+      IsFinal=false
+      Trivia=trivia }
+      
 let MemberSynMemberFlagsTrivia (mMember: range) : SynMemberFlagsTrivia =
     { MemberRange = Some mMember
       OverrideRange = None

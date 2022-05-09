@@ -68,4 +68,43 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
-    // TODO: test operators, test implementing statics.
+    
+    #if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can implement static methods declared in interfaces from C#`` () =
+
+        let csharpLib = csharpBaseClass 
+
+        let fsharpSource =
+            """
+open System
+open StaticsInInterfaces
+
+type MyRepeatSequence() =
+    interface IGetNext<MyRepeatSequence> with
+        static member Next(other: MyRepeatSequence) : MyRepeatSequence = other 
+
+[<EntryPoint>]
+let main _ =
+
+    let mutable str = MyRepeatSequence ()
+    let res = [ for i in 0..10 do
+                    yield string(str)
+                    str <- MyRepeatSequence.Next(str) ]
+
+    if res <> ["A"; "AA"; "AAA"; "AAAA"; "AAAAA"; "AAAAAA"; "AAAAAAA"; "AAAAAAAA"; "AAAAAAAAA"; "AAAAAAAAAA"; "AAAAAAAAAAA"] then
+        failwith $"Unexpected result: %A{res}"
+
+    if string(str) <> "AAAAAAAAAAAA" then
+        failwith $"Unexpected result %s{string(str)}"
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compileAndRun
+        |> shouldSucceed
