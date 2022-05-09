@@ -4454,3 +4454,30 @@ type A() =
             assertRange (5, 5) (5, 6) rpr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
+
+module Measures =
+    [<Test>]
+    let ``SynMeasure.Paren has correct range`` () =
+        let parseResults = 
+            getParseResults
+                """
+40u<hr / (staff weeks)>
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Expr(
+                expr = SynExpr.Const(SynConst.Measure(SynConst.UInt32 _, _, SynMeasure.Divide(
+                            SynMeasure.Seq([ SynMeasure.Named([ hrIdent ], _) ], _),
+                            SynMeasure.Seq([ SynMeasure.Paren(SynMeasure.Seq([
+                                SynMeasure.Named([ staffIdent ], _)
+                                SynMeasure.Named([ weeksIdent ], _)
+                            ], _) , mParen) ], _),
+                            _)
+                    ), _))
+        ]) ])) ->
+            Assert.AreEqual("hr", hrIdent.idText)
+            Assert.AreEqual("staff", staffIdent.idText)
+            Assert.AreEqual("weeks", weeksIdent.idText)
+            assertRange (2, 9) (2, 22) mParen
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

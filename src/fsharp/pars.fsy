@@ -5528,7 +5528,8 @@ measureTypeAtom:
      { SynMeasure.Var($1, lhs parseState) }
 
   | LPAREN measureTypeExpr rparen
-     { $2 }
+     { let mParen = rhs2 parseState 1 3
+       SynMeasure.Paren($2, mParen) }
 
 measureTypePower:
   | measureTypeAtom 

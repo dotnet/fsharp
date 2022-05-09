@@ -8,4 +8,9 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
 
 /// Find all unsolved inference variables after type inference for an entire file
-val UnsolvedTyparsOfModuleDef: g: TcGlobals -> amap: ImportMap -> denv: DisplayEnv -> mdef : ModuleOrNamespaceExpr * extraAttribs: Attrib list -> Typar list
+val UnsolvedTyparsOfModuleDef:
+    g: TcGlobals ->
+    amap: ImportMap ->
+    denv: DisplayEnv ->
+    mdef: ModuleOrNamespaceExpr * extraAttribs: Attrib list ->
+        Typar list
