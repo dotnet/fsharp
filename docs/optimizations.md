@@ -6,7 +6,7 @@ index: 400
 ---
 # Code Optimizations
 
-Code optimizations are performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fs), [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/DetupleArgs.fs), [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs) and [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerCallsAndSeqs.fs).
+Code optimizations are in [`Compiler/Optimize/*`](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Optimize).
 
 Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fs) are:
 

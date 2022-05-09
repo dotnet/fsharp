@@ -80,7 +80,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-8
 		docs\memory-usage.md = docs\memory-usage.md
 		docs\optimizations.md = docs\optimizations.md
 		docs\overview.md = docs\overview.md
-		docs\public-fcs-api.md = docs\public-fcs-api.md
+		docs\fsi-emit.md = docs\fsi-emit.md
+		docs\debug-emit.md = docs\debug-emit.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78}"

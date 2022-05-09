@@ -33,10 +33,10 @@ let internalError str = dprintf "Error: %s\n" str;raise (Failure str)
 module Zmap =
     let force k   mp (str, soK) =
         try Zmap.find k mp
-        with e ->
+        with exn ->
             dprintf "Zmap.force: %s %s\n" str (soK k)
-            PreserveStackTrace e
-            raise e
+            PreserveStackTrace exn
+            raise exn
 
 //-------------------------------------------------------------------------
 // misc
@@ -114,8 +114,6 @@ let mkLocalNameTypeArity compgen m name ty topValInfo =
 //         - if calls are allowed, they must be effect free (since eval point is moving).
 //-------------------------------------------------------------------------
 
-
-
 //-------------------------------------------------------------------------
 // OVERVIEW
 // Overview of passes (over term) and steps (not over term):
@@ -128,10 +126,7 @@ let mkLocalNameTypeArity compgen m name ty topValInfo =
 //           Depends on closure and env packing, so must follow pass2 (and step 3).
 //   pass5 - copyExpr call to topexpr to ensure all bound ids are unique.
 //           For complexity reasons, better to re-recurse over expr once.
-//   pass6 - sanity check, confirm that all TLR marked bindings meet DEFN.
-//
 //-------------------------------------------------------------------------
-
 
 //-------------------------------------------------------------------------
 // pass1: GetValsBoundUnderMustInline (see comment further below)
@@ -238,8 +233,6 @@ module Pass1_DetermineTLRAndArities =
        if verboseTLR then DumpArity arityM
 #endif
        tlrS, topValS, arityM
-
-
 
 (* NOTES:
    For constants,
@@ -363,9 +356,6 @@ type ReqdItemsForDefn =
     override env.ToString() =
         (showL (commaListL (List.map typarL (Zset.elements env.reqdTypars)))) + "--" +
         (String.concat ", " (List.map string (Zset.elements env.reqdItems)))
-
-(*--debug-stuff--*)
-
 
 //-------------------------------------------------------------------------
 // pass2: collector - state
@@ -570,7 +560,6 @@ module Pass2_DetermineReqdItems =
 
          | _ -> 
              noInterceptF z expr
-        
 
     /// Initially, reqdTypars(fclass) = freetps(bodies).
     /// For each direct call to a gv, a generator for fclass,
@@ -679,7 +668,6 @@ type PackedReqdItems =
         ep_unpack: Bindings
     }
 
-
 //-------------------------------------------------------------------------
 // step3: FlatEnvPacks
 //-------------------------------------------------------------------------
@@ -749,7 +737,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //        a <- 999
        //        temp
 
-
        let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Range v.Type))
        // Remove values which have been labelled TLR, no need to close over these
        let vals = vals |> List.filter (Zset.memberOf topValS >> not)
@@ -804,7 +791,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
    let envPacks = Zmap.ofList fclassOrder envPacks
    envPacks
 
-
 //-------------------------------------------------------------------------
 // step3: chooseEnvPacks
 //-------------------------------------------------------------------------
@@ -836,7 +822,6 @@ let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
     if verboseTLR then DumpEnvPackM g envPackM
 #endif
     envPackM
-
 
 //-------------------------------------------------------------------------
 // step3: CreateNewValuesForTLR
@@ -877,12 +862,12 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
     let fHatM = Zmap.ofList valOrder ffHats
     fHatM
 
-
 //-------------------------------------------------------------------------
 // pass4: rewrite - penv
 //-------------------------------------------------------------------------
 
 module Pass4_RewriteAssembly =
+
     [<NoEquality; NoComparison>]
     type RewriteContext =
        { ccu: CcuThunk
@@ -897,7 +882,6 @@ module Pass4_RewriteAssembly =
          /// The mapping from 'f' values to 'fHat' values
          fHatM: Zmap<Val, Val>
        }
-
 
     //-------------------------------------------------------------------------
     // pass4: rwstate (z state)
@@ -1066,23 +1050,22 @@ module Pass4_RewriteAssembly =
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)
         let fclass = BindingGroupSharingSameReqdItems tlrBs
+
         // Trans each TLR f binding into fHat and f rebind
         let newTlrBinds, tlrRebinds = TransTLRBindings penv tlrBs
         let aenvBinds = GetAEnvBindings penv fclass
-        // lower nonTlrBs if they are GTL
-        // QUERY: we repeat this logic in LowerCallsAndSeqs.  Do we really need to do this here?
-        // QUERY: yes and no - if we don't, we have an unrealizable term, and many decisions must
-        // QUERY: correlate with LowerCallsAndSeqs.
 
+        // Lower nonTlrBs if they are GTL
         nonTlrBs |> List.iter (forceTopBindToHaveArity penv)
         tlrRebinds |> List.iter (forceTopBindToHaveArity penv)
-        // assemble into replacement bindings
+
+        // Assemble into replacement bindings
         let bindAs, rebinds =
             match xisRec with
-            | IsRec  -> newTlrBinds @ tlrRebinds @ nonTlrBs @ aenvBinds, []    (* note: aenv last, order matters in letrec! *)
-            | NotRec -> aenvBinds @ newTlrBinds, tlrRebinds @ nonTlrBs (* note: aenv go first, they may be used *)
-        bindAs, rebinds
+            | IsRec  -> newTlrBinds @ tlrRebinds @ nonTlrBs @ aenvBinds, []  // note: aenv last, order matters in letrec!
+            | NotRec -> aenvBinds @ newTlrBinds, tlrRebinds @ nonTlrBs // note: aenv go first, they may be used
 
+        bindAs, rebinds
 
     //-------------------------------------------------------------------------
     // pass4: TransApp (translate)
@@ -1421,17 +1404,8 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
       let expr = RecreateUniqueBounds g expr
       if verboseTLR then dprintf "TLR-done------\n"
 
-      // Summary:
-      //   GTL = genuine top-level
-      //   TLR = TopLevelRep = identified by this pass
-      //   Note, some GTL are skipped until sort out the initial env...
-      // if verboseTLR then dprintf "note: tlr = %d inner-TLR + %d GenuineTopLevel-TLR + %d GenuineTopLevel skipped TLR (public)\n"
-      //  (lengthS (Zset.diff  tlrS topValS))
-      //  (lengthS (Zset.inter topValS tlrS))
-      //  (lengthS (Zset.diff  topValS tlrS))
-
-      // DONE
       expr
+
    with AbortTLR m ->
        warning(Error(FSComp.SR.tlrLambdaLiftingOptimizationsNotApplied(), m))
        expr

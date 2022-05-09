@@ -237,6 +237,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 ### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
 
 1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
+
 2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
 
       ```shell
@@ -302,7 +303,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
               match sourceOpt with
               | None ->
-                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\CheckExpressions.fs"""))
+                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\Compiler\Checking\CheckExpressions.fs"""))
               | _ -> ()
 
 

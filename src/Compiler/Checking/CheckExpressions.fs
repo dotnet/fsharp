@@ -6559,7 +6559,7 @@ and TcExprILAssembly cenv overallTy env tpenv (s, tyargs, args, rtys, m) =
 // Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
 // Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
 //
-// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
+// NOTE: we could eliminate these more efficiently in LowerComputedCollections.fs, since
 //    [| 1..4 |]
 // becomes [| for i in (..) 1 4 do yield i |]
 // instead of generating the array directly from the ranges

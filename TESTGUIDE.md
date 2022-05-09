@@ -14,31 +14,38 @@ Where this guide mentions the command `build` it means either `build.cmd` in the
 
 ## Quick start: Running Tests
 
-Tests are grouped as noted below. Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
-
-To run tests, from a command prompt, use variations such as the following, depending on which test suite and build configuration you want.
-
-### Tests runnable in any configuration
-
-The following testsets can be run in Release or Debug mode, with or without the `-ci` argument.
-
-Run the tests in Release mode:
+To run the tests in Release mode:
 
 ```shell
 build -testCompiler -c Release
+build -testCompilerService -c Release
+build -testCompilerComponentTests -c Release
+build -testCambridge -c Release -ci -nobl
+build -testFSharpQA -c Release -ci -nobl
 build -testFSharpCore -c Release
 build -testScripting -c Release
-build -testVS -c Release
+build -testVs -c Release
+build -testAll -c Release
 ```
 
-Run the tests in Debug mode, add `-c Debug` or leave it out:
+### Tests grouping summary
 
-```shell
-build -testCompiler -c Debug
-build -testFSharpCore -c Debug
-build -testScripting -c Debug
-build -testVS -c Debug
-```
+| Group name | OS | Description |
+|------------|----|-------------|
+| testDesktop  | Windows | Runs all net472 tests in 32 bit processes, this includes tests from other groups |
+| testCoreClr  | Linux/Mac/Windows | Runs all .NetStandard and .NETCore tests in 64 bit processes, this includes tests from other groups |
+| testFSharpCore | Windows | Runs all test for FSharp.Core.dll |
+| testCambridge | Windows | Runs the Cambridge suite tests |
+| testFSharpQA  | Windows | Runs the FSharpQA tests, requires Perl |
+| testVS        | Windows + VS | Runs all VS integration tests |
+| testCompiler  | Windows | Runs a few quick compiler tests |
+| testScripting | Windows | Runs scripting fsx and fsi commandline tests |
+| test          | Windows | Same as testDesktop |
+| testAll       | Windows | Runs all above tests |
+
+Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
+
+To run tests, from a command prompt, use variations such as the following, depending on which test suite and build configuration you want.
 
 ### Tests that can be run on Linux and MacOS
 
@@ -55,36 +62,12 @@ build -testDesktop -c Release
 build -testCoreClr -c Release
 ```
 
-### Tests that can only run with `-ci`
-
-The following tests **must** be run in Release mode and **must** have  the CI argument like `-ci -bl` or `-ci -nobl`:
-
-```shell
-build -testCambridge -c Release -ci -nobl
-build -testFSharpQA -c Release -ci -nobl
-```
-
 ### Tests that open other windows
 
 The following testsets open other windows and may interfere with you using your workstation, or change focus while you're doing something else:
 
 * FSharpQA
 * Cambridge
-
-### Tests grouping summary
-
-| Group name | OS | Description |
-|------------|----|-------------|
-| testDesktop  | Windows | Runs all net472 tests in 32 bit processes, this includes tests from other groups |
-| testCoreClr  | Linux/Mac/Windows | Runs all .NetStandard and .NETCore tests in 64 bit processes, this includes tests from other groups |
-| testFSharpCore | Windows | Runs all test for FSharp.Core.dll |
-| testCambridge | Windows | Runs the Cambridge suite tests |
-| testFSharpQA  | Windows | Runs the FSharpQA tests, requires Perl |
-| testVS        | Windows + VS | Runs all VS integration tests |
-| testCompiler  | Windows | Runs a few quick compiler tests |
-| testScripting | Windows | Runs scripting fsx and fsi commandline tests |
-| test          | Windows | Same as testDesktop |
-| testAll       | Windows | Runs all above tests |
 
 ### Running tests online in CI
 
@@ -109,7 +92,7 @@ The prerequisites are the same as for building the `FSharp.sln`, plus, at a mini
   * Between switching git branches
   * When merging with latest `main` upstream branch.
 
-## Test Suites
+## More Details
 
 The F# tests are split as follows:
 
@@ -125,8 +108,6 @@ The F# tests are split as follows:
 
 * [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
   This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
-
-## More Details
 
 ### FSharp Suite
 

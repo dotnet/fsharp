@@ -286,10 +286,10 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                             agent <- newAgent
                                             mbp.Start()
                                             GraphNodeAction<'T>.GetValueByAgent
-                                        with
-                                        | ex ->
+                                        with exn ->
                                             agent <- Unchecked.defaultof<_>
-                                            raise ex
+                                            PreserveStackTrace exn
+                                            raise exn
                                     | _ -> 
                                         GraphNodeAction<'T>.GetValueByAgent
 
