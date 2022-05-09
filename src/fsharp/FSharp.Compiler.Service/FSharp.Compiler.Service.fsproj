@@ -100,17 +100,122 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
-    <Compile Include="..\utils\sformat.fsi">
-      <Link>ErrorText\sformat.fsi</Link>
+    <Compile Include="..\Utilities\sformat.fsi">
+      <Link>Utilities\sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\utils\sformat.fs">
-      <Link>ErrorText\sformat.fs</Link>
+    <Compile Include="..\Utilities\sformat.fs">
+      <Link>Utilities\sformat.fs</Link>
     </Compile>
     <Compile Include="..\sr.fsi">
-      <Link>ErrorText\sr.fsi</Link>
+      <Link>Utilities\sr.fsi</Link>
     </Compile>
     <Compile Include="..\sr.fs">
-      <Link>ErrorText\sr.fs</Link>
+      <Link>Utilities\sr.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ResizeArray.fsi">
+      <Link>Utilities\ResizeArray.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ResizeArray.fs">
+      <Link>Utilities\ResizeArray.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\HashMultiMap.fsi">
+      <Link>Utilities\HashMultiMap.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\HashMultiMap.fs">
+      <Link>Utilities\HashMultiMap.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\EditDistance.fsi">
+      <Link>Utilities\EditDistance.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\EditDistance.fs">
+      <Link>Utilities\EditDistance.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\TaggedCollections.fsi">
+      <Link>Utilities\TaggedCollections.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\TaggedCollections.fs">
+      <Link>Utilities\TaggedCollections.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\illib.fs">
+      <Link>Utilities\illib.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\FileSystem.fsi">
+      <Link>Utilities\FileSystem.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\FileSystem.fs">
+      <Link>Utilities\FileSystem.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\zmap.fsi">
+      <Link>Utilities\zmap.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\zmap.fs">
+      <Link>Utilities\zmap.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\zset.fsi">
+      <Link>Utilities\zset.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\zset.fs">
+      <Link>Utilities\zset.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\XmlAdapters.fsi">
+      <Link>Utilities\XmlAdapters.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\InternalCollections.fsi">
+      <Link>Utilities\InternalCollections.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\InternalCollections.fs">
+      <Link>Utilities\InternalCollections.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\QueueList.fsi">
+      <Link>Utilities\QueueList.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\QueueList.fs">
+      <Link>Utilities\QueueList.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\lib.fsi">
+      <Link>Utilities\lib.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\lib.fs">
+      <Link>Utilities\lib.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ImmutableArray.fsi">
+      <Link>Utilities\ImmutableArray.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\ImmutableArray.fs">
+      <Link>Utilities\ImmutableArray.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\rational.fsi">
+      <Link>Utilities\rational.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\rational.fs">
+      <Link>Utilities\rational.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\PathMap.fsi">
+      <Link>Utilities\PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\PathMap.fs">
+      <Link>Utilities\PathMap.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\RidHelpers.fs">
+      <Link>Utilities\RidHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\Utilities\range.fsi">
+      <Link>Utilities\range.fsi</Link>
+    </Compile>
+    <Compile Include="..\Utilities\range.fs">
+      <Link>Utilities\range.fs</Link>
     </Compile>
     <Compile Include="..\Logger.fsi">
       <Link>Facilities\Logger.fsi</Link>
@@ -124,149 +229,40 @@
     <Compile Include="..\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="..\utils\ResizeArray.fsi">
-      <Link>Utilities\ResizeArray.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\ResizeArray.fs">
-      <Link>Utilities\ResizeArray.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\HashMultiMap.fsi">
-      <Link>Utilities\HashMultiMap.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\HashMultiMap.fs">
-      <Link>Utilities\HashMultiMap.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\EditDistance.fsi">
-      <Link>Utilities\EditDistance.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\EditDistance.fs">
-      <Link>Utilities\EditDistance.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\TaggedCollections.fsi">
-      <Link>Utilities\TaggedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\TaggedCollections.fs">
-      <Link>Utilities\TaggedCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\illib.fsi">
-      <Link>Utilities\illib.fsi</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\illib.fs">
-      <Link>Utilities\illib.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\FileSystem.fsi">
-      <Link>Utilities\FileSystem.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\FileSystem.fs">
-      <Link>Utilities\FileSystem.fs</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\ildiag.fsi">
-      <Link>Utilities\ildiag.fsi</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\ildiag.fs">
-      <Link>Utilities\ildiag.fs</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\zmap.fsi">
-      <Link>Utilities\zmap.fsi</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\zmap.fs">
-      <Link>Utilities\zmap.fs</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\zset.fsi">
-      <Link>Utilities\zset.fsi</Link>
-    </Compile>
-    <Compile Include="..\AbstractIL\zset.fs">
-      <Link>Utilities\zset.fs</Link>
-    </Compile>
-    <Compile Include="..\XmlAdapters.fsi">
-      <Link>Utilities\XmlAdapters.fsi</Link>
-    </Compile>
-    <Compile Include="..\XmlAdapters.fs">
-      <Link>Utilities\XmlAdapters.fs</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fsi">
-      <Link>Utilities\InternalCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fs">
-      <Link>Utilities\InternalCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\QueueList.fsi">
-      <Link>Utilities\QueueList.fsi</Link>
-    </Compile>
-    <Compile Include="..\QueueList.fs">
-      <Link>Utilities\QueueList.fs</Link>
-    </Compile>
-    <Compile Include="..\lib.fsi">
-      <Link>Utilities\lib.fsi</Link>
-    </Compile>
-    <Compile Include="..\lib.fs">
-      <Link>Utilities\lib.fs</Link>
-    </Compile>
-    <Compile Include="..\ImmutableArray.fsi">
-      <Link>Utilities\ImmutableArray.fsi</Link>
-    </Compile>
-    <Compile Include="..\ImmutableArray.fs">
-      <Link>Utilities\ImmutableArray.fs</Link>
-    </Compile>
-    <Compile Include="..\rational.fsi">
-      <Link>Utilities\rational.fsi</Link>
-    </Compile>
-    <Compile Include="..\rational.fs">
-      <Link>Utilities\rational.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\PathMap.fsi">
-      <Link>Utilities\PathMap.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\PathMap.fs">
-      <Link>Utilities\PathMap.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\RidHelpers.fs">
-      <Link>Utilities\RidHelpers.fs</Link>
-    </Compile>
-    <Compile Include="..\range.fsi">
-      <Link>Utilities\range.fsi</Link>
-    </Compile>
-    <Compile Include="..\range.fs">
-      <Link>Utilities\range.fs</Link>
-    </Compile>
     <Compile Include="..\Diagnostics.fsi">
-      <Link>DiagnosticsLogging\Diagnostics.fsi</Link>
+      <Link>Facilities\Diagnostics.fsi</Link>
     </Compile>
     <Compile Include="..\Diagnostics.fs">
-      <Link>DiagnosticsLogging\Diagnostics.fs</Link>
+      <Link>Facilities\Diagnostics.fs</Link>
     </Compile>
     <Compile Include="..\TextLayoutRender.fsi">
-      <Link>DiagnosticsLogging\TextLayoutRender.fsi</Link>
+      <Link>Facilities\TextLayoutRender.fsi</Link>
     </Compile>
     <Compile Include="..\TextLayoutRender.fs">
-      <Link>DiagnosticsLogging\TextLayoutRender.fs</Link>
+      <Link>Facilities\TextLayoutRender.fs</Link>
     </Compile>
     <Compile Include="..\DiagnosticsLogger.fsi">
-      <Link>DiagnosticsLogging\DiagnosticsLogger.fsi</Link>
+      <Link>Facilities\DiagnosticsLogger.fsi</Link>
     </Compile>
     <Compile Include="..\DiagnosticsLogger.fs">
-      <Link>DiagnosticsLogging\DiagnosticsLogger.fs</Link>
-      <Link>ErrorLogging\DiagnosticsLogger.fsi</Link>
-    </Compile>
-    <Compile Include="..\DiagnosticsLogger.fs">
-      <Link>ErrorLogging\DiagnosticsLogger.fs</Link>
+      <Link>Facilities\DiagnosticsLogger.fs</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fsi">
-      <Link>DiagnosticsLogging\ErrorResolutionHints.fsi</Link>
+      <Link>Facilities\ErrorResolutionHints.fsi</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
-      <Link>DiagnosticsLogging\ErrorResolutionHints.fs</Link>
+      <Link>Facilities\ErrorResolutionHints.fs</Link>
     </Compile>
-    <Compile Include="..\utils\prim-lexing.fsi">
+    <Compile Include="..\Utilities\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
     </Compile>
-    <Compile Include="..\utils\prim-lexing.fs">
+    <Compile Include="..\Utilities\prim-lexing.fs">
       <Link>LexYaccRuntime\prim-lexing.fs</Link>
     </Compile>
-    <Compile Include="..\utils\prim-parsing.fsi">
+    <Compile Include="..\Utilities\prim-parsing.fsi">
       <Link>LexYaccRuntime\prim-parsing.fsi</Link>
     </Compile>
-    <Compile Include="..\utils\prim-parsing.fs">
+    <Compile Include="..\Utilities\prim-parsing.fs">
       <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
     <FsLex Include="..\AbstractIL\illex.fsl">
@@ -373,24 +369,17 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
-    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
-    <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
-      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
-    </Compile>
-    <Compile Include="..\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fsi">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fsi</Link>
     </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
-    <EmbeddedText Include="..\utils\UtilsStrings.txt" />
-    <Compile Include="..\utils\CompilerLocationUtils.fsi">
+    <EmbeddedText Include="..\Utilities\UtilsStrings.txt" />
+    <Compile Include="..\Utilities\CompilerLocationUtils.fsi">
       <Link>CompilerLocation\CompilerLocationUtils.fsi</Link>
     </Compile>
-    <Compile Include="..\utils\CompilerLocationUtils.fs">
+    <Compile Include="..\Utilities\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="..\PrettyNaming.fsi">
@@ -404,12 +393,6 @@
     </Compile>
     <Compile Include="..\ilx\EraseClosures.fs">
       <Link>ILXErase\EraseClosures.fs</Link>
-    </Compile>
-    <Compile Include="..\ilx\EraseUnions.fsi">
-      <Link>ILXErase\EraseUnions.fsi</Link>
-    </Compile>
-    <Compile Include="..\ilx\EraseUnions.fs">
-      <Link>ILXErase\EraseUnions.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -555,14 +538,6 @@
     </Compile>
     <Compile Include="..\Checking\TypeHierarchy.fsi">
       <Link>Checking\TypeHierarchy.fsi</Link>
-    <Compile Include="..\TypeHierarchy.fsi">
-      <Link>Logic\TypeHierarchy.fsi</Link>
-    </Compile>
-    <Compile Include="..\TypeHierarchy.fs">
-      <Link>Logic\TypeHierarchy.fs</Link>
-    </Compile>
-    <Compile Include="..\infos.fsi">
-      <Link>Logic\infos.fsi</Link>
     </Compile>
     <Compile Include="..\Checking\TypeHierarchy.fs">
       <Link>Checking\TypeHierarchy.fs</Link>
@@ -710,23 +685,6 @@
     </Compile>
     <Compile Include="..\Optimize\LowerCalls.fs">
       <Link>Optimize\LowerCalls.fs</Link>
-    <Compile Include="..\LowerCalls.fsi">
-      <Link>Optimize\LowerCalls.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerCalls.fs">
-      <Link>Optimize\LowerCalls.fs</Link>
-    </Compile>
-    <Compile Include="..\LowerSequences.fsi">
-      <Link>Optimize\LowerSequences.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerSequences.fs">
-      <Link>Optimize\LowerSequences.fs</Link>
-    </Compile>
-    <Compile Include="..\LowerComputedCollections.fsi">
-      <Link>Optimize\LowerComputedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerComputedCollections.fs">
-      <Link>Optimize\LowerComputedCollections.fs</Link>
     </Compile>
     <Compile Include="..\Optimize\LowerSequences.fsi">
       <Link>Optimize\LowerSequences.fsi</Link>
@@ -750,11 +708,13 @@
       <Link>Optimize\LowerLocalMutables.fsi</Link>
     </Compile>
     <Compile Include="..\Optimize\LowerLocalMutables.fs">
-    <Compile Include="..\LowerLocalMutables.fsi">
-      <Link>Optimize\LowerLocalMutables.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerLocalMutables.fs">
       <Link>Optimize\LowerLocalMutables.fs</Link>
+    </Compile>
+    <Compile Include="..\CodeGen\EraseUnions.fsi">
+      <Link>CodeGen\EraseUnions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CodeGen\EraseUnions.fs">
+      <Link>CodeGen\EraseUnions.fs</Link>
     </Compile>
     <Compile Include="..\CodeGen\IlxGen.fsi">
       <Link>CodeGen\IlxGen.fsi</Link>
@@ -1037,8 +997,15 @@
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
+    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
+    <Compile Include="..\Legacy\LegacyMSBuildReferenceResolver.fsi">
+      <Link>Legacy/LegacyMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\Legacy\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Legacy/LegacyMSBuildReferenceResolver.fs</Link>
+    </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\Misc\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
+    <Compile Include="..\Legacy\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Legacy/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>

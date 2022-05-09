@@ -843,8 +843,11 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
       | Some res -> res
 
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
+
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
+
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
+
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries =
@@ -1643,9 +1646,15 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 
+  member _.AddPropertyGeneratedAttrs mdef = addPropertyGeneratedAttrs mdef
+
   member _.AddFieldGeneratedAttrs mdef = addFieldGeneratedAttrs mdef
 
+  member _.AddPropertyNeverAttrs mdef = addPropertyNeverAttrs mdef
+
   member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
+
+  member _.MkDebuggerTypeProxyAttribute ty = mkDebuggerTypeProxyAttribute ty
 
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
@@ -1759,9 +1768,6 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
         Some (info, tyargs, argExprs)
     | _ ->
         None
-
-  member _.EraseClassUnionDef cud =
-     EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg cud
 
 #if DEBUG
 // This global is only used during debug output

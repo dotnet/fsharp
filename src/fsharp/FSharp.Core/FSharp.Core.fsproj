@@ -154,10 +154,10 @@
     <Compile Include="math\z.fs">
       <Link>Numerics/z.fs</Link>
     </Compile>
-    <Compile Include="..\utils\sformat.fsi">
+    <Compile Include="..\Utilities\sformat.fsi">
       <Link>Printf/sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\utils\sformat.fs">
+    <Compile Include="..\Utilities\sformat.fs">
       <Link>Printf/sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi">
