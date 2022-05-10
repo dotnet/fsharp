@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.LowerLocalMutables
+module internal FSharp.Compiler.AutoBox
 
 open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals

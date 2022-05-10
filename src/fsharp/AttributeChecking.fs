@@ -9,14 +9,12 @@ open System.Collections.Generic
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler 
-open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Import
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypeHierarchy
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -89,7 +87,7 @@ type AttribInfo =
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
-             let ty = RescopeAndImportILType scoref amap m [] a.Method.DeclaringType
+             let ty = ImportILType scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
 
     member x.ConstructorArguments = 
@@ -103,7 +101,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
               [ for argTy, arg in Seq.zip cattr.Method.FormalArgTypes parms ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy
+                    let ty = ImportILType scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     ty, obj ]
 
@@ -118,7 +116,7 @@ type AttribInfo =
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
               [ for nm, argTy, isProp, arg in namedArgs ->
-                    let ty = RescopeAndImportILType scoref amap m [] argTy
+                    let ty = ImportILType scoref amap m [] argTy
                     let obj = evalILAttribElem arg
                     let isField = not isProp 
                     ty, nm, isField, obj ]

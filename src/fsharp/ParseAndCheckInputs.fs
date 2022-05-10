@@ -20,7 +20,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -266,7 +266,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
         let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules, trivia))
         inputT, moduleNamesDictT
 
-let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: DiagnosticsLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, fileName, isLastCompiland) =
+let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, fileName, isLastCompiland) =
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
@@ -275,8 +275,8 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: D
 
     // Delay sending errors and warnings until after the file is parsed. This gives us a chance to scrape the
     // #nowarn declarations for the file
-    let delayLogger = CapturingDiagnosticsLogger("Parsing")
-    use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> delayLogger)
+    let delayLogger = CapturingErrorLogger("Parsing")
+    use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayLogger)
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
     let mutable scopedPragmas = []
@@ -308,8 +308,8 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: D
         input
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
-        let filteringDiagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, errorLogger)
-        delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
+        let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, errorLogger)
+        delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
 type Tokenizer = unit -> Parser.token
 
@@ -412,7 +412,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     TestInteractionParserAndExit (tokenizer, lexbuf)
 
                 // Parse the input
-                let res = ParseInput((fun _ -> tokenizer ()), tcConfig.diagnosticsOptions, errorLogger, lexbuf, None, fileName, isLastCompiland)
+                let res = ParseInput((fun _ -> tokenizer ()), tcConfig.errorSeverityOptions, errorLogger, lexbuf, None, fileName, isLastCompiland)
 
                 // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then
@@ -488,7 +488,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
         EmptyParsedInput(fileName, isLastCompiland)
 
 /// Parse multiple input files from disk
-let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorLogger: DiagnosticsLogger, exiter: Exiter, createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger, retryLocked) =
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: Exiter -> CapturingErrorLogger, retryLocked) =
     try
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
@@ -497,14 +497,14 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorL
             let mutable exitCode = 0
             let delayedExiter =
                 { new Exiter with
-                    member _.Exit n = exitCode <- n; raise StopProcessing }
+                        member this.Exit n = exitCode <- n; raise StopProcessing }
 
             // Check input files and create delayed error loggers before we try to parallel parse.
-            let delayedDiagnosticsLoggers =
+            let delayedErrorLoggers =
                 sourceFiles
                 |> Array.map (fun (fileName, _) ->
                     checkInputFile tcConfig fileName
-                    createDiagnosticsLogger(delayedExiter)
+                    createErrorLogger(delayedExiter)
                 )
 
             let results =
@@ -512,16 +512,16 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorL
                     try
                         sourceFiles
                         |> ArrayParallel.mapi (fun i (fileName, isLastCompiland) ->
-                            let delayedDiagnosticsLogger = delayedDiagnosticsLoggers[i]
+                            let delayedErrorLogger = delayedErrorLoggers[i]
 
                             let directoryName = Path.GetDirectoryName fileName
-                            let input = parseInputFileAux(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayedDiagnosticsLogger, retryLocked)
+                            let input = parseInputFileAux(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayedErrorLogger, retryLocked)
                             (input, directoryName)
                         )
                     finally
-                        delayedDiagnosticsLoggers
-                        |> Array.iter (fun delayedDiagnosticsLogger ->
-                            delayedDiagnosticsLogger.CommitDelayedDiagnostics errorLogger
+                        delayedErrorLoggers
+                        |> Array.iter (fun delayedErrorLogger ->
+                            delayedErrorLogger.CommitDelayedDiagnostics errorLogger
                         )
                 with
                 | StopProcessing ->
@@ -968,7 +968,7 @@ let CheckOneInput
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig:TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
     // 'use' ensures that the warning handler is restored at the end
-    use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun oldLogger -> GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, tcConfig.diagnosticsOptions, oldLogger) )
+    use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, tcConfig.errorSeverityOptions, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     RequireCompilationThread ctok

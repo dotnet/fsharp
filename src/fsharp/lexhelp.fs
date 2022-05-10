@@ -10,7 +10,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler.IO
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.UnicodeLexing
@@ -52,7 +52,7 @@ type LexArgs =
     {
       conditionalDefines: string list
       resourceManager: LexResourceManager
-      errorLogger: DiagnosticsLogger
+      errorLogger: ErrorLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack

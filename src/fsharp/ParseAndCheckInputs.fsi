@@ -12,7 +12,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -35,7 +35,7 @@ val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedIn
 val ParseInput:
     lexer: (Lexbuf -> Parser.token) *
     diagnosticOptions: FSharpDiagnosticOptions *
-    errorLogger: DiagnosticsLogger *
+    errorLogger: ErrorLogger *
     lexbuf: Lexbuf *
     defaultNamespace: string option *
     fileName: string *
@@ -62,7 +62,7 @@ val ParseOneInputStream:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    errorLogger: ErrorLogger *
     retryLocked: bool *
     stream: Stream ->
         ParsedInput
@@ -73,7 +73,7 @@ val ParseOneInputSourceText:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    errorLogger: ErrorLogger *
     sourceText: ISourceText ->
         ParsedInput
 
@@ -83,7 +83,7 @@ val ParseOneInputFile:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    errorLogger: ErrorLogger *
     retryLocked: bool ->
         ParsedInput
 
@@ -93,7 +93,7 @@ val ParseOneInputLexbuf:
     lexbuf: Lexbuf *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger ->
+    errorLogger: ErrorLogger ->
         ParsedInput
 
 val EmptyParsedInput: fileName: string * isLastCompiland: (bool * bool) -> ParsedInput
@@ -103,9 +103,9 @@ val ParseInputFiles:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
-    errorLogger: DiagnosticsLogger *
+    errorLogger: ErrorLogger *
     exiter: Exiter *
-    createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
+    createErrorLogger: (Exiter -> CapturingErrorLogger) *
     retryLocked: bool ->
         (ParsedInput * string) list
 

@@ -10,16 +10,15 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.InfoReader
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders

@@ -1318,7 +1318,7 @@ module CoreTests =
         exec cfg ("." ++ "main.exe") ""
 
 
-    // Repro for https://github.com/dotnet/fsharp/issues/1298
+    // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
     [<Test>]
     let fileorder () =
         let cfg = testConfig "core/fileorder"
@@ -1345,7 +1345,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test2.exe") ""
 
-    // Repro for https://github.com/dotnet/fsharp/issues/2679
+    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
     [<Test>]
     let ``add files with same name from different folders`` () =
         let cfg = testConfig "core/samename"
@@ -1390,7 +1390,7 @@ module CoreTests =
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
-        // see https://github.com/dotnet/fsharp/issues/3139
+        // see https://github.com/Microsoft/visualfsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
         let stderrPath = "out.stderr.txt" |> getfullpath cfg
@@ -1593,7 +1593,7 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
-//BUGBUG: https://github.com/dotnet/fsharp/issues/6601
+//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
 //    [<Test>]
 //    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
 
@@ -2105,7 +2105,7 @@ module VersionTests =
 [<NonParallelizable>]
 module ToolsTests =
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let bundle () =
         let cfg = testConfig "tools/bundle"
@@ -2265,7 +2265,7 @@ module RegressionTests =
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``655`` () =
         let cfg = testConfig "regression/655"
@@ -2284,7 +2284,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test >]
     let ``656`` () =
         let cfg = testConfig "regression/656"
@@ -2318,7 +2318,7 @@ module RegressionTests =
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () =
         let cfg = testConfig "regression/struct-measure-bug-1"

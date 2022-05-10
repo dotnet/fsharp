@@ -1552,7 +1552,7 @@ module ComparersRegression =
 
     exception ValidationException of lhs:obj * rhs:obj * expected:obj * received:obj
 
-    let make_result_set<'a,'b when 'b : equality> (f: IOperation<'a>) (items: 'a[]) (validation_set: int[] option)=
+    let make_result_set<'a,'b when 'b : equality> (f:IOperation<'a>) (items:array<'a>) (validation_set:option<array<int>>)=
         let results = Array.zeroCreate (items.Length*items.Length)
         for i = 0 to items.Length-1 do
             for j = 0 to items.Length-1 do

@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// # FSComp.SR.opts
+
 module internal FSharp.Compiler.OptimizeInputs
 
 open System.IO
@@ -78,7 +80,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     optEnvFirstLoop, isIncrementalFragment, tcConfig.fsiMultiAssemblyEmit,
                     tcConfig.emitTailcalls, hidden, implFile)
 
-            let implFile = LowerLocalMutables.TransformImplFile tcGlobals importMap implFile
+            let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile
 
             // Only do this on the first pass!
             let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }
@@ -116,7 +118,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                 else implFile
 
             let implFile =
-                LowerCalls.LowerImplFile tcGlobals implFile
+                LowerCallsAndSeqs.LowerImplFile tcGlobals implFile
 
             let implFile, optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then

@@ -266,7 +266,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ (fun (x, y) z -> x + y + z) (1,2) 3 @&gt;</c>.
     /// </example>
-    static member Applications: functionExpr: Expr * arguments: Expr list list -> Expr
+    static member Applications: functionExpr: Expr * arguments: list<list<Expr>> -> Expr
 
     /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
     ///
@@ -292,7 +292,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.WriteLine("Hello World") @&gt;</c>.
     /// </example>
-    static member Call: methodInfo: MethodInfo * arguments: Expr list -> Expr
+    static member Call: methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
     ///
@@ -319,7 +319,7 @@ type Expr =
     /// </code>
     /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.Out.WriteLine("Hello World") @&gt;</c>.
     /// </example>
-    static member Call: obj: Expr * methodInfo: MethodInfo * arguments: Expr list -> Expr
+    static member Call: obj: Expr * methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an static method or module-bound function, potentially passing additional witness arguments</summary>
     ///
@@ -1253,7 +1253,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     static member Deserialize:
-        qualifyingType: Type * spliceTypes: Type list * spliceExprs: Expr list * bytes: byte [] -> Expr
+        qualifyingType: System.Type * spliceTypes: list<System.Type> * spliceExprs: list<Expr> * bytes: byte [] -> Expr
 
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
     /// quotations are used. </summary>
@@ -2248,7 +2248,7 @@ module ExprShape =
     ///
     /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
-    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, (Var * Expr), (obj * Expr list)>
+    val (|ShapeVar|ShapeLambda|ShapeCombination|): input: Expr -> Choice<Var, (Var * Expr), (obj * list<Expr>)>
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
     /// returned by the <c>ShapeCombination</c> case of the active pattern in this module.</summary>
@@ -2259,4 +2259,4 @@ module ExprShape =
     /// <returns>The rebuilt expression.</returns>
     ///
     /// <example-tbd></example-tbd>
-    val RebuildShapeCombination: shape: obj * arguments: Expr list -> Expr
+    val RebuildShapeCombination: shape: obj * arguments: list<Expr> -> Expr

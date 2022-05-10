@@ -338,7 +338,7 @@ type AsyncType() =
 
 #if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member _.CancellationPropagatesToImmediateTask () =
         let a = async {
                 while true do ()
@@ -355,7 +355,7 @@ type AsyncType() =
 
 #if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member _.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false

@@ -9,7 +9,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -2609,33 +2609,3 @@ val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option
 
 /// Determine if a value is a method implementing an interface dispatch slot using a private method impl
 val ComputeUseMethodImpl: g: TcGlobals -> v: Val -> bool
-
-/// Detect the de-sugared form of a 'yield x' within a 'seq { ... }'
-val (|SeqYield|_|): TcGlobals -> Expr -> (Expr * range) option
-
-/// Detect the de-sugared form of a 'expr; expr' within a 'seq { ... }'
-val (|SeqAppend|_|): TcGlobals -> Expr -> (Expr * Expr * range) option
-
-/// Detect the de-sugared form of a 'while gd do expr' within a 'seq { ... }'
-val (|SeqWhile|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtWhile * range) option
-
-/// Detect the de-sugared form of a 'try .. finally .. ' within a 'seq { ... }'
-val (|SeqTryFinally|_|): TcGlobals -> Expr -> (Expr * Expr * DebugPointAtTry * DebugPointAtFinally * range) option
-
-/// Detect the de-sugared form of a 'use x = ..' within a 'seq { ... }'
-val (|SeqUsing|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * DebugPointAtBinding * range) option
-
-/// Detect the de-sugared form of a 'for x in collection do ..' within a 'seq { ... }'
-val (|SeqForEach|_|): TcGlobals -> Expr -> (Expr * Val * Expr * TType * range * range * DebugPointAtInOrTo) option
-
-/// Detect the outer 'Seq.delay' added for a construct 'seq { ... }'
-val (|SeqDelay|_|): TcGlobals -> Expr -> (Expr * TType) option
-
-/// Detect a 'Seq.empty' implicit in the implied 'else' branch of an 'if .. then' in a seq { ... }
-val (|SeqEmpty|_|): TcGlobals -> Expr -> range option
-
-/// Detect a 'seq { ... }' expression
-val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
-
-/// Indicates if an F# type is the type associated with an F# exception declaration
-val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool

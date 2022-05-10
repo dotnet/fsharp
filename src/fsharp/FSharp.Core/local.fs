@@ -531,7 +531,7 @@ module internal List =
 
     let inline ofSeq (e : IEnumerable<'T>) =
         match e with
-        | :? ('T list) as l -> l
+        | :? list<'T> as l -> l
         | :? ('T[]) as arr -> ofArray arr
         | _ ->
             use ie = e.GetEnumerator()

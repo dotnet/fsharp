@@ -6,7 +6,7 @@ open FSharp.Compiler
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
 open FSharp.Compiler.Syntax
@@ -14,7 +14,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 [<AutoOpen>]

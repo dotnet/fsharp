@@ -14,7 +14,7 @@ open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.IO
 

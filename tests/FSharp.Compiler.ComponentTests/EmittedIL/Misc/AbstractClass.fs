@@ -1,4 +1,4 @@
-// regression test for https://github.com/dotnet/fsharp/issues/420
+// regression test for https://github.com/Microsoft/visualfsharp/issues/420
 
 [<AbstractClass>]
 type X public (i : int) =

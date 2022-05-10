@@ -165,7 +165,7 @@ module SyntaxTraversal =
     let dive node range project =
         range,(fun() -> project node)
 
-    let pick pos (outerRange:range) (debugObj:obj) (diveResults: (range * _) list) =
+    let pick pos (outerRange:range) (debugObj:obj) (diveResults:list<range*_>) =
         match diveResults with
         | [] -> None
         | _ ->

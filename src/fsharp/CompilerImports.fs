@@ -23,7 +23,7 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -172,11 +172,11 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
     else
         [ ]
 
-exception AssemblyNotResolved of originalName: string * range: range
+exception AssemblyNotResolved of (*originalName*) string * range
 
-exception MSBuildReferenceResolutionWarning of message: string * warningCode: string * range: range
+exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
 
-exception MSBuildReferenceResolutionError of message: string * warningCode: string * range: range
+exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
 
 let OpenILBinary(fileName, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
     let opts: ILReaderOptions =
@@ -1327,7 +1327,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 runtimeAssemblyAttributes: ILAttribute list,
                 entityToInjectInto, invalidateCcu: Event<_>, m) =
 
-        let startingErrorCount = CompileThreadStatic.DiagnosticsLogger.ErrorCount
+        let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
@@ -1454,7 +1454,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     with e ->
                         errorRecovery e m
 
-                if startingErrorCount<CompileThreadStatic.DiagnosticsLogger.ErrorCount then
+                if startingErrorCount<CompileThreadStatic.ErrorLogger.ErrorCount then
                     error(Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting(), m))
 
             providers

@@ -456,7 +456,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
     
     /// Get declared items and the selected item at the specified location
     member _.GetNavigationItemsImpl() =
-       DiagnosticsScope.Protect range0 
+       ErrorScope.Protect range0 
             (fun () -> 
                 match input with
                 | ParsedInput.ImplFile _ as p ->
@@ -808,7 +808,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> walkImplFile modules 
             | _ -> []
  
-        DiagnosticsScope.Protect range0 
+        ErrorScope.Protect range0 
             (fun () -> 
                 let locations = findBreakPoints()
                 

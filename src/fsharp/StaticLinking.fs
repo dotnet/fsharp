@@ -13,7 +13,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Text.Range
@@ -197,9 +197,9 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
 type Node =
     { name: string
       data: ILModuleDef
-      ccu: CcuThunk option
+      ccu: option<CcuThunk>
       refs: ILReferences
-      mutable edges: Node list
+      mutable edges: list<Node>
       mutable visited: bool }
 
 // Find all IL modules that are to be statically linked given the static linking roots.

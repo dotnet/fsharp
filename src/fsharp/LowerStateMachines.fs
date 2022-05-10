@@ -2,19 +2,23 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
-let LowerStateMachineStackGuardDepth = StackGuard.GetDepthOption "LowerStateMachines"
+let LowerStateMachineStackGuardDepth = GetEnvInteger "FSHARP_LowerStateMachine" 50
+
+let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
 type StateMachineConversionFirstPhaseResult =
    {
@@ -121,11 +125,13 @@ type env =
     { 
       ResumableCodeDefns: ValMap<Expr>
       TemplateStructTy: TType option
+      //MachineAddrExpr: Expr option 
     }
 
     static member Empty = 
         { ResumableCodeDefns = ValMap.Empty
           TemplateStructTy = None
+          //MachineAddrExpr = None 
         }
 
 /// Detect prefix of expanded, optimized state machine expressions 

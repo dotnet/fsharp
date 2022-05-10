@@ -12,7 +12,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
@@ -57,14 +57,13 @@ type internal TcInfo =
       latestCcuSigForFile: ModuleOrNamespaceType option
 
       /// Accumulated errors, last file first
-      tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] list
+      tcErrorsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] list
 
       tcDependencyFiles: string list
 
       sigNameOpt: (string * QualifiedNameOfFile) option }
 
-    /// Accumulated diagnostics
-    member TcDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) []
+    member TcErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity) []
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]

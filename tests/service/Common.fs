@@ -235,16 +235,16 @@ let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 /// Extract range info  and convert to zero-based line  - please don't use this one any more
 let tupsZ (m: range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
 
-let attribsOfSymbolUse (symbolUse: FSharpSymbolUse) =
-    [ if symbolUse.IsFromDefinition then yield "defn"
-      if symbolUse.IsFromType then yield "type"
-      if symbolUse.IsFromAttribute then yield "attribute"
-      if symbolUse.IsFromDispatchSlotImplementation then yield "override"
-      if symbolUse.IsFromPattern then yield "pattern"
-      if symbolUse.IsFromComputationExpression then yield "compexpr" ]
+let attribsOfSymbolUse (s:FSharpSymbolUse) =
+    [ if s.IsFromDefinition then yield "defn"
+      if s.IsFromType then yield "type"
+      if s.IsFromAttribute then yield "attribute"
+      if s.IsFromDispatchSlotImplementation then yield "override"
+      if s.IsFromPattern then yield "pattern"
+      if s.IsFromComputationExpression then yield "compexpr" ]
 
-let attribsOfSymbol (symbol: FSharpSymbol) =
-    [ match symbol with
+let attribsOfSymbol (s:FSharpSymbol) =
+    [ match s with
         | :? FSharpField as v ->
             yield "field"
             if v.IsCompilerGenerated then yield "compgen"
@@ -310,26 +310,26 @@ let attribsOfSymbol (symbol: FSharpSymbol) =
         | _ -> () ]
 
 let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
-    [ for entity in entities do
-          yield (entity :> FSharpSymbol)
-          for gp in entity.GenericParameters do
+    [ for e in entities do
+          yield (e :> FSharpSymbol)
+          for gp in e.GenericParameters do
             if compGen || not gp.IsCompilerGenerated then
              yield (gp :> FSharpSymbol)
-          for x in entity.MembersFunctionsAndValues do
+          for x in e.MembersFunctionsAndValues do
              if compGen || not x.IsCompilerGenerated then
                yield (x :> FSharpSymbol)
              for gp in x.GenericParameters do
               if compGen || not gp.IsCompilerGenerated then
                yield (gp :> FSharpSymbol)
-          for x in entity.UnionCases do
+          for x in e.UnionCases do
              yield (x :> FSharpSymbol)
              for f in x.Fields do
                  if compGen || not f.IsCompilerGenerated then
                      yield (f :> FSharpSymbol)
-          for x in entity.FSharpFields do
+          for x in e.FSharpFields do
              if compGen || not x.IsCompilerGenerated then
                  yield (x :> FSharpSymbol)
-          yield! allSymbolsInEntities compGen entity.NestedEntities ]
+          yield! allSymbolsInEntities compGen e.NestedEntities ]
 
 
 let getParseResults (source: string) =
@@ -351,8 +351,8 @@ let getParseAndCheckResults50 (source: string) =
     parseAndCheckScript50("Test.fsx", source)
 
 
-let inline dumpDiagnostics (results: FSharpCheckFileResults) =
-    results.Diagnostics
+let inline dumpErrors results =
+    (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')

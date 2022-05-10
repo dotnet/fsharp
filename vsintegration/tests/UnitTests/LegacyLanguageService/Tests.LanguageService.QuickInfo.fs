@@ -54,7 +54,7 @@ type UsingMSBuild() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
         gpatcc.AssertExactly(0,0)
 
-    member public this.CheckTooltip(code : string,marker,atStart, f, ?addtlRefAssy : string list) =
+    member public this.CheckTooltip(code : string,marker,atStart, f, ?addtlRefAssy : list<string>) =
         let (_, _, file) = this.CreateSingleFileProject(code, ?references = addtlRefAssy)
 
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -67,14 +67,14 @@ type UsingMSBuild() =
         f (tooltip, pos)
         gpatcc.AssertExactly(0,0)
                          
-    member public this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,atStart, ?addtlRefAssy : string list) =
+    member public this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,atStart, ?addtlRefAssy : list<string>) =
         let check ((tooltip, _), _) = AssertContains(tooltip, expected)
         this.CheckTooltip(code, marker, atStart, check, ?addtlRefAssy=addtlRefAssy )
 
-    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : string list) =
+    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : list<string>) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,false,?addtlRefAssy=addtlRefAssy)
 
-    member public this.AssertQuickInfoContainsAtStartOfMarker(code, marker, expected, ?addtlRefAssy : string list) =
+    member public this.AssertQuickInfoContainsAtStartOfMarker(code, marker, expected, ?addtlRefAssy : list<string>) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,true,?addtlRefAssy=addtlRefAssy)
         
     member public this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker (code : string) marker notexpected =
@@ -1684,7 +1684,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
     /// Complete a member completion and confirm that its data tip contains the fragments
     /// in rhsContainsOrder
-    member public this.AssertMemberDataTipContainsInOrder(code : string list,marker,completionName,rhsContainsOrder) =
+    member public this.AssertMemberDataTipContainsInOrder(code : list<string>,marker,completionName,rhsContainsOrder) =
         let code = code |> Seq.collect (fun s -> s.Split [|'\r'; '\n'|]) |> List.ofSeq
         let (_, project, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) (* why needed? *)       

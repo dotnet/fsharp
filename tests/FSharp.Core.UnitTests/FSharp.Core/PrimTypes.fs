@@ -911,7 +911,7 @@ open NonStructuralComparison
 type NonStructuralComparisonTests() =
 
     [<Fact>]
-    member _.CompareFloat32() = // https://github.com/dotnet/fsharp/pull/4493
+    member _.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
 
         let x = 32 |> float32
         let y = 32 |> float32

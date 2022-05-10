@@ -238,7 +238,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
         member _.HelpMessages = instance |> helpMessagesProperty
 
         /// Resolve the dependencies for the given arguments
-        member _.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid, timeout): IResolveDependenciesResult =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid, timeout): IResolveDependenciesResult =
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)

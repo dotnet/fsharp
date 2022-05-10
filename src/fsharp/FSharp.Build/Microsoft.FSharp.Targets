@@ -288,8 +288,8 @@ this file.
              correct list of resources based on the build system being used.
              This could be a bit simpler, but xbuild doesn't seem to support msbuild 4.0 'item functions'
              like Distinct().
-             Reference: https://github.com/dotnet/fsharp/pull/2595
-                        https://github.com/dotnet/fsharp/pull/2605
+             Reference: https://github.com/Microsoft/visualfsharp/pull/2595
+                        https://github.com/Microsoft/visualfsharp/pull/2605
         -->
         <ItemGroup>
             <ActualEmbeddedResources

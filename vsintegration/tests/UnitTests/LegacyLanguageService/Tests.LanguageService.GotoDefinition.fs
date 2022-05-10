@@ -22,7 +22,7 @@ type UsingMSBuild()  =
     inherit LanguageServiceBaseTests()
 
     //GoToDefinitionSuccess Helper Function
-    member private this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents : string, marker : string,  definitionCode : string,?addtlRefAssy : string list) =
+    member private this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents : string, marker : string,  definitionCode : string,?addtlRefAssy : list<string>) =
         let (sln, proj, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         MoveCursorToStartOfMarker (file, marker)
@@ -44,7 +44,7 @@ type UsingMSBuild()  =
         Assert.AreEqual(pos, actualPos, "pos")
                     
     //GoToDefinitionFail Helper Function
-    member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : string list) =
+    member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : list<string>) =
         
         this.VerifyGoToDefnFailAtStartOfMarker(
             fileContents = fileContents,
@@ -55,7 +55,7 @@ type UsingMSBuild()  =
 
 
     //GoToDefinitionFail Helper Function
-    member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string, f : OpenFile * GotoDefnResult -> unit, ?addtlRefAssy : string list) =
+    member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string, f : OpenFile * GotoDefnResult -> unit, ?addtlRefAssy : list<string>) =
         let (sln, proj, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         MoveCursorToStartOfMarker (file, marker)
@@ -67,7 +67,7 @@ type UsingMSBuild()  =
     //The verification result should be:
     //  Fail at automation lab
     //  Succeed on dev machine with enlistment installed.
-    member private this.VerifyGoToDefnNoErrorDialogAtStartOfMarker(fileContents : string,  marker :string, definitionCode : string, ?addtlRefAssy : string list) =
+    member private this.VerifyGoToDefnNoErrorDialogAtStartOfMarker(fileContents : string,  marker :string, definitionCode : string, ?addtlRefAssy : list<string>) =
         let (sln, proj, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         MoveCursorToStartOfMarker (file, marker)

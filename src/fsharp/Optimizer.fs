@@ -13,7 +13,8 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -28,7 +29,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypedTreePickle
-open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -379,12 +379,12 @@ type OptimizationSettings =
 
     /// Determines if we should eliminate for-loops around an expr if it has no effect 
     ///
-    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/dotnet/fsharp/pull/376
+    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
     member x.EliminateForLoop = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate try/with or try/finally around an expr if it has no effect 
     ///
-    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/dotnet/fsharp/pull/376
+    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
     member _.EliminateTryWithAndTryFinally = false 
 
     /// Determines if we should eliminate first part of sequential expression if it has no effect 
@@ -1110,7 +1110,7 @@ let OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let OptimizeList f l = l |> List.map f |> List.unzip 
 
-let NoExprs : Expr list * Summary<ExprValueInfo> list = [], []
+let NoExprs : Expr list * list<Summary<ExprValueInfo>> = [], []
 
 /// Common ways of building new value infos
 let CombineValueInfos einfos res = 
@@ -1386,7 +1386,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 //        | SingleUnion of int
 //        member x.Next = let (SingleUnion i) = x in SingleUnion (i+1)
 //
-// See https://github.com/dotnet/fsharp/issues/5136
+// See https://github.com/Microsoft/visualfsharp/issues/5136
 //
 //
 // note: allocating an object with observable identity (i.e. a name) 
@@ -1643,7 +1643,7 @@ let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, oute
 and RewriteBoolLogicCase data (TCase(test, tree)) =
     TCase(test, RewriteBoolLogicTree data tree)
 
-/// Repeatedly combine switch-over-match decision trees, see https://github.com/dotnet/fsharp/issues/635.
+/// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
 /// The outer decision tree is doing a switch over a boolean result, the inner match is producing only
 /// constant boolean results in its targets.  
 let rec CombineBoolLogic expr = 

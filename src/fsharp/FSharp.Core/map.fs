@@ -453,8 +453,8 @@ module MapTree =
 
     let ofSeq comparer (c : seq<'Key * 'T>) =
         match c with 
-        | :? (('Key * 'T)[]) as xs -> ofArray comparer xs
-        | :? (('Key * 'T) list) as xs -> ofList comparer xs
+        | :? array<'Key * 'T> as xs -> ofArray comparer xs
+        | :? list<'Key * 'T> as xs -> ofList comparer xs
         | _ -> 
             use ie = c.GetEnumerator()
             mkFromEnumerator comparer empty ie 

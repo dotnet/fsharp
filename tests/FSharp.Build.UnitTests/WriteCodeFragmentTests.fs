@@ -18,24 +18,26 @@ type WriteCodeFragmentFSharpTests() =
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
     [<Test>]
-    member _.``No parameters``() =
+    member this.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
     [<Test>]
-    member _.``Skipped and out of order positional parameters``() =
+    member this.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
     [<Test>]
-    member _.``Named parameters``() =
+    member this.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Named and positional parameters``() =
+    member this.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Escaped string parameters``() =
+    member this.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
+        //                                     this should look like: SomeAttribute("\"uno\"")
+
 
 [<TestFixture>]
 type WriteCodeFragmentCSharpTests() =
@@ -48,23 +50,23 @@ type WriteCodeFragmentCSharpTests() =
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
     [<Test>]
-    member _.``No parameters``() =
+    member this.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
     [<Test>]
-    member _.``Skipped and out of order positional parameters``() =
+    member this.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
     [<Test>]
-    member _.``Named parameters``() =
+    member this.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Named and positional parameters``() =
+    member this.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Escaped string parameters``() =
+    member this.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")
 
@@ -80,23 +82,23 @@ type WriteCodeFragmentVisualBasicTests() =
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
     [<Test>]
-    member _.``No parameters``() =
+    member this.``No parameters``() =
         verifyAttribute "SomeAttribute" [] "SomeAttribute()"
 
     [<Test>]
-    member _.``Skipped and out of order positional parameters``() =
+    member this.``Skipped and out of order positional parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter3", "3"); ("_Parameter5", "5"); ("_Parameter2", "2")] "SomeAttribute(null, \"2\", \"3\", null, \"5\")"
 
     [<Test>]
-    member _.``Named parameters``() =
+    member this.``Named parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("Two", "2")] "SomeAttribute(One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Named and positional parameters``() =
+    member this.``Named and positional parameters``() =
         verifyAttribute "SomeAttribute" [("One", "1"); ("_Parameter2", "2.2"); ("Two", "2")] "SomeAttribute(null, \"2.2\", One = \"1\", Two = \"2\")"
 
     [<Test>]
-    member _.``Escaped string parameters``() =
+    member this.``Escaped string parameters``() =
         verifyAttribute "SomeAttribute" [("_Parameter1", "\"uno\"")] "SomeAttribute(\"\\\"uno\\\"\")"
         //                                     this should look like: SomeAttribute("\"uno\"")
 

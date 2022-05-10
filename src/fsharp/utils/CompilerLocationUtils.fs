@@ -248,7 +248,7 @@ module internal FSharpEnvironment =
     // Specify the tooling-compatible fragments of a path such as:
     //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
     //     tools/fsharp41/net461/MyProvider.DesignTime.dll
-    // See https://github.com/dotnet/fsharp/issues/3736
+    // See https://github.com/Microsoft/visualfsharp/issues/3736
 
     // Represents the F#-compiler <-> type provider protocol.
     // When the API or protocol updates, add a new version moniker to the front of the list here.

@@ -9,7 +9,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming

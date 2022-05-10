@@ -65,10 +65,10 @@ val internal CanImportILType: ImportMap -> range -> ILType -> bool
 
 #if !NO_TYPEPROVIDERS
 /// Import a provided type as an F# type.
-val internal ImportProvidedType: ImportMap -> range -> Tainted<ProvidedType> -> TType
+val internal ImportProvidedType: ImportMap -> range (* TType list -> *)  -> Tainted<ProvidedType> -> TType
 
 /// Import a provided type reference as an F# type TyconRef
-val internal ImportProvidedNamedType: ImportMap -> range -> Tainted<ProvidedType> -> TyconRef
+val internal ImportProvidedNamedType: ImportMap -> range (* TType list -> *)  -> Tainted<ProvidedType> -> TyconRef
 
 /// Import a provided type as an AbstractIL type
 val internal ImportProvidedTypeAsILType: ImportMap -> range -> Tainted<ProvidedType> -> ILType
@@ -97,10 +97,3 @@ val internal ImportILAssembly:
 /// Import the type forwarder table for an IL assembly
 val internal ImportILAssemblyTypeForwarders:
     (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<string array * string, Lazy<EntityRef>>
-
-/// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
-/// being compiled. importInst gives the context for interpreting type variables.
-val RescopeAndImportILType:
-    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilty: ILType -> TType
-
-val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilty: ILType -> bool

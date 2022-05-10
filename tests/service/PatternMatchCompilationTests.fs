@@ -14,7 +14,7 @@ match () with
 | x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(3,2--3,4): This expression was expected to have type 'unit' but here has type 'string'"
     ]
 
@@ -27,7 +27,7 @@ let ``Wrong type 02 - Binding`` () =
 let ("": unit), (x: int) = let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(2,5--2,7): This expression was expected to have type 'unit' but here has type 'string'"
         "(2,41--2,43): This expression was expected to have type 'unit * int' but here has type 'unit'"
         "(2,4--2,24): Incomplete pattern matches on this expression."
@@ -44,7 +44,7 @@ match () with
 | [<CompiledName("Foo")>] x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"; "CompiledNameAttribute"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(3,2--3,25): Attributes are not allowed within patterns"
         "(3,4--3,16): This attribute is not valid for use on this language element"
     ]
@@ -60,7 +60,7 @@ match () with
 | ?x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(3,2--3,4): Optional arguments are only permitted on type members"
     ]
 
@@ -75,7 +75,7 @@ match 1, 2 with
 | null -> let y = () in ()
 """
     assertHasSymbolUsages ["y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(3,2--3,6): The type '(int * int)' does not have 'null' as a proper value"
         "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
     ]
@@ -95,7 +95,7 @@ match A with
 | B (x, _) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,2--7,10): This union case expects 3 arguments in tupled form"        
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -115,7 +115,7 @@ match A with
 | B (_, _, x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'"
         "(6,6--6,7): Incomplete pattern matches on this expression."
     ]
@@ -135,7 +135,7 @@ match A with
 | B (_, _, x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,11--7,12): This constructor is applied to 3 argument(s) but expects 2"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -154,7 +154,7 @@ match A with
 | A x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,2--7,5): This union case does not take arguments"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'B (_)' may indicate a case not covered by the pattern(s)."
     ]
@@ -173,7 +173,7 @@ match A with
 | B x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -192,7 +192,7 @@ match A with
 | B (name = x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,5--7,9): The union case 'B' does not have a field named 'name'."
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -212,7 +212,7 @@ match A with
 | B (field = x; field = z) -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,16--7,21): Union case/exception field 'field' cannot be used more than once."
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -232,7 +232,7 @@ match A with
 | B x z -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,2--7,7): This union case expects 2 arguments in tupled form"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -246,7 +246,7 @@ match None with
 | Some (x, z) -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
     ]
 
 
@@ -262,7 +262,7 @@ match 1 with
 | Foo (field = x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,2--5,17): Foo is an active pattern and cannot be treated as a discriminated union case with named fields."
     ]
 
@@ -279,7 +279,7 @@ match 1 with
 | Foo x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,2--5,7): This literal pattern does not take arguments"
         "(4,6--4,7): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
     ]
@@ -297,7 +297,7 @@ match TraceLevel.Off with
 | TraceLevel.Off x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,2--5,18): This literal pattern does not take arguments"
         "(4,6--4,20): Incomplete pattern matches on this expression. For example, the value 'TraceLevel.Error' may indicate a case not covered by the pattern(s)."
     ]
@@ -319,7 +319,7 @@ let dowork () =
     f (Case 1)
     0 // return an integer exit code"""
     assertHasSymbolUsages ["DU"; "dowork"; "du"; "f"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(6,6--6,10): This constructor is applied to 0 argument(s) but expects 1"
     ]
     
@@ -330,7 +330,7 @@ match 1 with
 | x | x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual []
 
 
 [<Test>]
@@ -343,7 +343,7 @@ match 1 with
 | x | z -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(3,2--3,7): The two sides of this 'or' pattern bind different sets of variables"
     ]
 
@@ -362,7 +362,7 @@ match A with
 | B (x, y) | B (a, x) -> let z = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,2--7,21): The two sides of this 'or' pattern bind different sets of variables"
         "(7,19--7,20): This expression was expected to have type 'int' but here has type 'string'"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
@@ -381,7 +381,7 @@ match 3 with
 | a as b -> let c = a + b in ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "w"; "x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual []
     
     
 [<Test>]
@@ -399,7 +399,7 @@ match box 1 with
 | :? int8 as Id i as j -> let x = i + 5y + j in () // Only the first "as" will have the derived type
 """
     assertHasSymbolUsages (List.map string ['a'..'j']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,34--5,35): The type 'obj' does not support the operator '+'"
         "(5,32--5,33): The type 'obj' does not support the operator '+'"
         "(7,45--7,46): The type 'obj' does not match the type 'uint64'"
@@ -423,7 +423,7 @@ match Unchecked.defaultof<System.ValueType> with
 | _ -> ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,21--5,27): Type constraint mismatch. The type 'int' is not compatible with type 'System.Enum' "
     ]
 
@@ -439,7 +439,7 @@ match Unchecked.defaultof<System.ValueType> with
 | g -> ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(4,2--4,85): This rule will never be matched"
     ]
 
@@ -456,7 +456,7 @@ match Unchecked.defaultof<int> with
 | :? _ as z -> let _ = z in ()
 """
     assertHasSymbolUsages ["a"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(2,6--2,30): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(6,2--6,6): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
     ]
@@ -477,7 +477,7 @@ match Unchecked.defaultof<bool> with
 | k & l as (m as (false as n)) as (o as _) -> if k || l || m || n || o then ()
 """
     assertHasSymbolUsages (List.map string ['a'..'o']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual []
 
 [<Test>]
 let ``As 07 - syntactical precedence matrix testing right - total patterns`` () =
@@ -556,7 +556,7 @@ Some v |> eq<struct(int * int)>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual []
     
 [<Test>]
 #if !NETCOREAPP
@@ -601,7 +601,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(8,4--8,18): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
         "(9,4--9,14): Incomplete pattern matches on this expression."
         "(10,4--10,18): Incomplete pattern matches on this expression."
@@ -643,7 +643,7 @@ let v as struct w = 15
 let x as () = y
 let z as
 """
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(10,9--10,10): Unexpected symbol ',' in binding"
         "(11,9--11,10): Unexpected symbol ':' in binding"
         "(12,9--12,11): Unexpected symbol '::' in binding"
@@ -692,7 +692,7 @@ Some x |> eq<struct(int * int)>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual []
     
 [<Test>]
 #if !NETCOREAPP
@@ -737,7 +737,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(8,4--8,20): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
         "(9,4--9,14): Incomplete pattern matches on this expression."
         "(10,4--10,18): Incomplete pattern matches on this expression."
@@ -779,7 +779,7 @@ let v struct as w = 15
 let () as x = y
 let z as =
 """
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
@@ -854,7 +854,7 @@ Some x |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(11,25--11,26): This expression was expected to have type 'int' but here has type 'obj'"
         "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
@@ -930,7 +930,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (set ['a' .. 'y'] |> Set.remove 'n' |> Set.map string |> Set.toList) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(21,2--21,8): This type test or downcast will always hold"
         "(34,6--34,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
         "(32,6--32,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
@@ -973,7 +973,7 @@ let :? v as struct w = 15
 let :? x as () = y
 let :? z as
 """
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(10,12--10,13): Unexpected symbol ',' in binding"
         "(11,12--11,13): Unexpected symbol ':' in binding"
         "(12,12--12,14): Unexpected symbol '::' in binding"
@@ -1046,7 +1046,7 @@ match box {{ aaa = 9 }} with
 Some "" |> eq<int> // No more type checks after the above line?
 """
     assertHasSymbolUsages (Set.toList validSet) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(27,2--27,14): This expression was expected to have type 'obj' but here has type 'struct ('a * 'b)'"
         "(52,2--52,13): This expression was expected to have type 'obj' but here has type 'AAA'"
         "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
@@ -1131,7 +1131,7 @@ match box [|11|] with
 Some "" |> eq<int>
 """
     assertHasSymbolUsages (set ['a'..'y'] - set [ 'm'..'r' ] |> Set.map string |> Set.toList) checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(19,2--19,4): This expression was expected to have type 'obj' but here has type 'int'"
         "(21,2--21,7): This expression was expected to have type 'obj' but here has type 'bool'"
         "(23,2--23,6): This expression was expected to have type 'obj' but here has type 'bool'"
@@ -1180,7 +1180,7 @@ let v [ as :? w = 15
 let () as :? x = y
 let as :? z =
 """
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
@@ -1234,7 +1234,7 @@ let ?w as x = 7
 let y as ?z = 8
 ()
 """
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(7,9--7,11): Unexpected symbol '[<' in binding"
         "(4,4--4,12): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
         "(4,4--4,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
@@ -1266,6 +1266,6 @@ let f : obj -> _ =
 ()
 """
     assertHasSymbolUsages ["i"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
+    dumpErrors checkResults |> shouldEqual [
         "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 6.0 or greater."
     ]

@@ -865,7 +865,7 @@ namespace Microsoft.FSharp.Control
             let mutable result = None
 
             // The continuations for the result
-            let mutable savedConts: SuspendedAsync<'T> list = []
+            let mutable savedConts: list<SuspendedAsync<'T>> = []
 
             // The WaitHandle event for the result. Only created if needed, and set to null when disposed.
             let mutable resEvent = null

@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
@@ -256,7 +256,7 @@ type TcConfigBuilder =
 
       mutable embedResources: string list
 
-      mutable diagnosticsOptions: FSharpDiagnosticOptions
+      mutable errorSeverityOptions: FSharpDiagnosticOptions
 
       mutable mlCompatibility: bool
 
@@ -366,7 +366,7 @@ type TcConfigBuilder =
 
       mutable showFullPaths: bool
 
-      mutable diagnosticStyle: DiagnosticStyle
+      mutable errorStyle: ErrorStyle
 
       mutable utf8output: bool
 
@@ -566,7 +566,7 @@ type TcConfig =
 
     member embedResources: string list
 
-    member diagnosticsOptions: FSharpDiagnosticOptions
+    member errorSeverityOptions: FSharpDiagnosticOptions
 
     member mlCompatibility: bool
 
@@ -674,7 +674,7 @@ type TcConfig =
 
     member showFullPaths: bool
 
-    member diagnosticStyle: DiagnosticStyle
+    member errorStyle: ErrorStyle
 
     member utf8output: bool
 

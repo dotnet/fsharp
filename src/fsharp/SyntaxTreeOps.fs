@@ -3,7 +3,7 @@
 module FSharp.Compiler.SyntaxTreeOps
 
 open Internal.Utilities.Library
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming

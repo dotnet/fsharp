@@ -12,7 +12,6 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
-open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypedTree
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.

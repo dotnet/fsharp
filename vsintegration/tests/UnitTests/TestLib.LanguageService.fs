@@ -32,21 +32,21 @@ type internal SourceFileKind = FS | FSI | FSX
 type internal ISingleFileTestRunner = 
     abstract CreateSingleFileProject :
         content : string * 
-        ?references : string list * 
-        ?defines : string list * 
+        ?references : list<string> * 
+        ?defines : list<string> * 
         ?fileKind : SourceFileKind *
-        ?disabledWarnings : string list * 
+        ?disabledWarnings : list<string> * 
         ?fileName : string -> (OpenSolution * OpenProject * OpenFile)
     abstract CreateSingleFileProject :
-        content : string list * 
-        ?references : string list * 
-        ?defines : string list * 
+        content : list<string> * 
+        ?references : list<string> * 
+        ?defines : list<string> * 
         ?fileKind : SourceFileKind *
-        ?disabledWarnings : string list* 
+        ?disabledWarnings : list<string>* 
         ? fileName : string -> (OpenSolution * OpenProject * OpenFile)
 
 type internal Helper =
-    static member TrimOutExtraMscorlibs (libList:string list) =
+    static member TrimOutExtraMscorlibs (libList:list<string>) =
         // There may be multiple copies of mscorlib referenced; but we're only allowed to use one.  Pick the highest one.
         let allExceptMscorlib = libList |> List.filter (fun s -> not(s.Contains("mscorlib")))
         let mscorlibs = libList |> List.filter (fun s -> s.Contains("mscorlib"))
@@ -78,7 +78,7 @@ type internal Helper =
         Impl SourceFileKind.FS
         Impl SourceFileKind.FSX
 
-    static member AssertMemberDataTipContainsInOrder(sftr : ISingleFileTestRunner, code : string list,marker,completionName,rhsContainsOrder) =
+    static member AssertMemberDataTipContainsInOrder(sftr : ISingleFileTestRunner, code : list<string>,marker,completionName,rhsContainsOrder) =
         let (_solution, project, file) = sftr.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(file.VS) (* why needed? *)       
         MoveCursorToEndOfMarker(file,marker)
@@ -193,7 +193,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
             | Some(aat) -> aat :: (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
             | _ -> (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
         this.AssertExactly(p.Length, t.Length, p, t, expectCreate)
-    member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : string list, expectedTypeCheckedFiles : string list, expectCreate : bool) =
+    member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : list<string>, expectedTypeCheckedFiles : list<string>, expectCreate : bool) =
         let note,ok = 
             if expectCreate then
                 if this.SawIBCreated() then ("The incremental builder was created, as expected",true) else ("The incremental builder was NOT deleted and recreated, even though we expected it to be",false)
@@ -254,41 +254,46 @@ type LanguageServiceBaseTests() =
     let mutable defaultVS : VisualStudio = Unchecked.defaultof<_>
     let mutable currentVS : VisualStudio = Unchecked.defaultof<_>
 
-    // VsOps is internal, but this type needs to be public
+    (* VsOps is internal, but this type needs to be public *)
     let mutable ops = BuiltMSBuildTestFlavour()
     let testStopwatch = new Stopwatch()
 
-    // Timings ----------------------------------------------------------------------------- 
+    (* Timings ----------------------------------------------------------------------------- *)
     let stopWatch = new Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
+    let time1 op a message = 
+        ResetStopWatch()
+        let result = op a
+        printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
+        result                         
                
-    member internal _.VsOpts
+    member internal this.VsOpts
         with set op = ops <- op
     
     member internal this.TestRunner : ISingleFileTestRunner = SingleFileTestRunner(this) :> _
 
-    member internal _.VS = currentVS
+    member internal this.VS = currentVS
 
     member internal this.CreateSingleFileProject
         (
             content : string, 
-            ?references : string list, 
-            ?defines : string list, 
+            ?references : list<string>, 
+            ?defines : list<string>, 
             ?fileKind : SourceFileKind, 
-            ?disabledWarnings : string list,
+            ?disabledWarnings : list<string>,
             ?fileName : string,
             ?otherFlags: string
         ) = 
         let content = content.Split( [|"\r\n"|], StringSplitOptions.None) |> List.ofArray
         this.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName, ?otherFlags = otherFlags)
 
-    member internal _.CreateSingleFileProject
+    member internal this.CreateSingleFileProject
         (
-            content : string list, 
-            ?references : string list, 
-            ?defines : string list, 
+            content : list<string>, 
+            ?references : list<string>, 
+            ?defines : list<string>, 
             ?fileKind : SourceFileKind, 
-            ?disabledWarnings : string list,
+            ?disabledWarnings : list<string>,
             ?fileName : string,
             ?otherFlags: string
         ) = 
@@ -348,12 +353,12 @@ type LanguageServiceBaseTests() =
 
             defaultSolution, proj, file
     
-    member internal _.CreateSolution() = 
+    member internal this.CreateSolution() = 
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
         GlobalFunctions.CreateSolution(currentVS)
 
-    member internal _.CloseSolution(sln : OpenSolution) = 
+    member internal this.CloseSolution(sln : OpenSolution) = 
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
         if (box sln.VS <> box currentVS) then
@@ -361,7 +366,7 @@ type LanguageServiceBaseTests() =
 
         GlobalFunctions.CloseSolution(sln)
 
-    member internal _.AddAssemblyReference(proj, ref) = 
+    member internal this.AddAssemblyReference(proj, ref) = 
         if (box currentVS = box defaultVS) then
             failwith "You are trying to modify default instance of VS. The only operation that is permitted on default instance is CreateSingleFileProject, perhaps you forgot to add line 'use _guard = this.WithNewVS()' at the beginning of the test?"
 
@@ -461,21 +466,21 @@ and internal SingleFileTestRunner(owner : LanguageServiceBaseTests) =
         member sftr.CreateSingleFileProject
             (
                 content : string, 
-                ?references : string list, 
-                ?defines : string list, 
+                ?references : list<string>, 
+                ?defines : list<string>, 
                 ?fileKind : SourceFileKind, 
-                ?disabledWarnings : string list,
+                ?disabledWarnings : list<string>,
                 ?fileName : string
             ) = 
             owner.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName)
 
         member sftr.CreateSingleFileProject
             (
-                content : string list, 
-                ?references : string list, 
-                ?defines : string list, 
+                content : list<string>, 
+                ?references : list<string>, 
+                ?defines : list<string>, 
                 ?fileKind : SourceFileKind, 
-                ?disabledWarnings : string list,
+                ?disabledWarnings : list<string>,
                 ?fileName : string
             ) = 
             owner.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName)

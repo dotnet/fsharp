@@ -10,54 +10,19 @@ open System.IO
 open System.Text.RegularExpressions
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open Internal.Utilities.Library 
 
-/// Part of LegacyHostedCompilerForTesting
-///
-/// Yet another DiagnosticsLogger implementation, capturing the messages but only up to the maxerrors maximum
-type internal InProcDiagnosticsLoggerProvider() =
-    let errors = ResizeArray()
-    let warnings = ResizeArray()
-
-    member _.Provider =
-        { new DiagnosticsLoggerProvider() with
-
-            member _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
-
-                { new DiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerDiagnosticsLoggerUpToMaxErrors") with
-
-                    member _.HandleTooManyErrors text =
-                        warnings.Add(FormattedDiagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
-
-                    member _.HandleIssue(tcConfigBuilder, err, severity) =
-                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let diagnostics =
-                            CollectFormattedDiagnostics
-                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
-                                 tcConfigBuilder.flatErrors, tcConfigBuilder.diagnosticStyle, severity, err, true)
-                        match severity with
-                        | FSharpDiagnosticSeverity.Error ->
-                           errors.AddRange(diagnostics)
-                        | FSharpDiagnosticSeverity.Warning ->
-                            warnings.AddRange(diagnostics)
-                        | _ -> ()}
-                :> DiagnosticsLogger }
-
-    member _.CapturedErrors = errors.ToArray()
-
-    member _.CapturedWarnings = warnings.ToArray()
-
 /// build issue location
 type internal Location =
     {
-        StartLine: int
-        StartColumn: int
-        EndLine: int
-        EndColumn: int
+        StartLine : int
+        StartColumn : int
+        EndLine : int
+        EndColumn : int
     }
 
 type internal CompilationIssueType = Warning | Error
@@ -65,19 +30,19 @@ type internal CompilationIssueType = Warning | Error
 /// build issue details
 type internal CompilationIssue = 
     { 
-        Location: Location
-        Subcategory: string
-        Code: string
-        File: string
-        Text: string 
-        Type: CompilationIssueType
+        Location : Location
+        Subcategory : string
+        Code : string
+        File : string
+        Text : string 
+        Type : CompilationIssueType
     }
 
 /// combined warning and error details
 type internal FailureDetails = 
     {
-        Warnings: CompilationIssue list
-        Errors: CompilationIssue list
+        Warnings : CompilationIssue list
+        Errors : CompilationIssue list
     }
 
 type internal CompilationResult = 
@@ -86,38 +51,29 @@ type internal CompilationResult =
 
 [<RequireQualifiedAccess>]
 type internal CompilationOutput = 
-    { Errors: FormattedDiagnostic[]
-      Warnings: FormattedDiagnostic[]  }
+    { Errors : Diagnostic[]
+      Warnings : Diagnostic[]  }
 
 type internal InProcCompiler(legacyReferenceResolver) = 
-    member _.Compile(argv) = 
+    member this.Compile(argv) = 
 
         // Explanation: Compilation happens on whichever thread calls this function.
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
-        let loggerProvider = InProcDiagnosticsLoggerProvider()
+        let loggerProvider = InProcErrorLoggerProvider()
         let mutable exitCode = 0
         let exiter = 
             { new Exiter with
-                 member _.Exit n = exitCode <- n; raise StopProcessing }
+                 member this.Exit n = exitCode <- n; raise StopProcessing }
         try 
-            CompileFromCommandLineArguments (
-                ctok, argv, legacyReferenceResolver,
-                false, ReduceMemoryFlag.Yes,
-                CopyFSharpCoreFlag.Yes, exiter,
-                loggerProvider.Provider, None, None
-            )
+            mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
-            | ReportedError _ 
-            | WrappedError(ReportedError _,_)  ->
+            | ReportedError _  | WrappedError(ReportedError _,_)  ->
                 exitCode <- 1
                 ()
 
-        let output: CompilationOutput =
-            { Warnings = loggerProvider.CapturedWarnings
-              Errors = loggerProvider.CapturedErrors }
-
+        let output : CompilationOutput = { Warnings = loggerProvider.CapturedWarnings; Errors = loggerProvider.CapturedErrors }
         exitCode = 0, output
 
 /// in-proc version of fsc.exe
@@ -132,10 +88,10 @@ type internal FscCompiler(legacyReferenceResolver) =
             EndLine = 0
         }
 
-    /// Converts short and long issue types to the same CompilationIssue representation
-    let convert issue = 
+    /// converts short and long issue types to the same CompilationIssue representation
+    let convert issue : CompilationIssue = 
         match issue with
-        | FormattedDiagnostic.Short(severity, text) -> 
+        | Diagnostic.Short(severity, text) -> 
             {
                 Location = emptyLocation
                 Code = ""
@@ -144,7 +100,7 @@ type internal FscCompiler(legacyReferenceResolver) =
                 Text = text
                 Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
             }
-        | FormattedDiagnostic.Long(severity, details) ->
+        | Diagnostic.Long(severity, details) ->
             let loc, file = 
                 match details.Location with
                 | Some l when not l.IsEmpty -> 
@@ -180,7 +136,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         fun arg -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
-    member _.Compile(args: string[]) =
+    member this.Compile(args : string array) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =
@@ -221,8 +177,8 @@ module internal CompilerHelpers =
 
     /// splits a provided command line string into argv array
     /// currently handles quotes, but not escaped quotes
-    let parseCommandLine (commandLine: string) =
-        let folder (inQuote: bool, currArg: string, argLst: string list) ch =
+    let parseCommandLine (commandLine : string) =
+        let folder (inQuote : bool, currArg : string, argLst : string list) ch =
             match (ch, inQuote) with
             | '"', _ ->
                 (not inQuote, currArg, argLst)

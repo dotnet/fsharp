@@ -26,7 +26,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.EditorServices.DeclarationListHelpers
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
@@ -1115,7 +1115,7 @@ type internal TypeCheckInfo
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
-        DiagnosticsScope.Protect
+        ErrorScope.Protect
             range0
             (fun () ->
                 /// Find items in the best naming environment.
@@ -1132,7 +1132,7 @@ type internal TypeCheckInfo
     /// Get the auto-complete items at a location
     member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1159,7 +1159,7 @@ type internal TypeCheckInfo
     /// Get the symbols for auto-complete items at a location
     member _.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1282,7 +1282,7 @@ type internal TypeCheckInfo
                             let tip = LayoutRender.toArray tip
                             ToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             dataTipOfReferences
             (fun err ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
@@ -1302,7 +1302,7 @@ type internal TypeCheckInfo
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
         let Compute() =
-            DiagnosticsScope.Protect range0
+            ErrorScope.Protect range0
                 (fun () ->
                     let declItemsOpt =
                         GetDeclItemsForNamesAtPosition(None, Some names, None, None,
@@ -1328,7 +1328,7 @@ type internal TypeCheckInfo
              res
 
     member _.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1366,7 +1366,7 @@ type internal TypeCheckInfo
                 None)
 
     member _.GetMethods (line, lineStr, colAtEndOfNames, namesOpt) =
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1390,7 +1390,7 @@ type internal TypeCheckInfo
                 MethodGroup(msg,[| |]))
 
     member _.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None,
@@ -1410,7 +1410,7 @@ type internal TypeCheckInfo
                 None)
 
     member _.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1519,7 +1519,7 @@ type internal TypeCheckInfo
                 FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown msg))
 
     member _.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
-        DiagnosticsScope.Protect range0
+        ErrorScope.Protect range0
             (fun () ->
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
@@ -1605,7 +1605,7 @@ type FSharpParsingOptions =
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
           ConditionalDefines = tcConfig.conditionalDefines
-          ErrorSeverityOptions = tcConfig.diagnosticsOptions
+          ErrorSeverityOptions = tcConfig.errorSeverityOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
           IndentationAwareSyntax = tcConfig.indentationAwareSyntax
@@ -1616,7 +1616,7 @@ type FSharpParsingOptions =
         {
           SourceFiles = sourceFiles
           ConditionalDefines = tcConfigB.conditionalDefines
-          ErrorSeverityOptions = tcConfigB.diagnosticsOptions
+          ErrorSeverityOptions = tcConfigB.errorSeverityOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
           IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
@@ -1627,8 +1627,8 @@ type FSharpParsingOptions =
 module internal ParseAndCheckFile =
 
     /// Error handler for parsing & type checking while processing a single file
-    type ErrorHandler(reportErrors, mainInputFileName, diagnosticsOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
-        let mutable options = diagnosticsOptions
+    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
+        let mutable options = errorSeverityOptions
         let errorsAndWarningsCollector = ResizeArray<_>()
         let mutable errorCount = 0
 
@@ -1659,12 +1659,12 @@ module internal ParseAndCheckFile =
                 | e -> report e
 
         let errorLogger =
-            { new DiagnosticsLogger("ErrorHandler") with
+            { new ErrorLogger("ErrorHandler") with
                 member x.DiagnosticSink (exn, severity) = diagnosticSink severity exn
                 member x.ErrorCount = errorCount }
 
         // Public members
-        member _.DiagnosticsLogger = errorLogger
+        member _.ErrorLogger = errorLogger
 
         member _.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
 
@@ -1693,7 +1693,7 @@ module internal ParseAndCheckFile =
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty)
+        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
@@ -1703,15 +1703,15 @@ module internal ParseAndCheckFile =
         UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
-        let delayedLogger = CapturingDiagnosticsLogger("matchBraces")
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        let delayedLogger = CapturingErrorLogger("matchBraces")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
 
-        // Make sure there is an DiagnosticsLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
-        let delayedLogger = CapturingDiagnosticsLogger("matchBraces")
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        // Make sure there is an ErrorLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
+        let delayedLogger = CapturingErrorLogger("matchBraces")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let matchingBraces = ResizeArray<_>()
@@ -1788,7 +1788,7 @@ module internal ParseAndCheckFile =
     let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
         let errHandler = ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
-        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.DiagnosticsLogger)
+        use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
@@ -1801,9 +1801,9 @@ module internal ParseAndCheckFile =
                 let isExe = options.IsExe
 
                 try
-                    ParseInput(lexfun, options.ErrorSeverityOptions, errHandler.DiagnosticsLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
+                    ParseInput(lexfun, options.ErrorSeverityOptions, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
-                    errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
+                    errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
@@ -1903,16 +1903,16 @@ module internal ParseAndCheckFile =
         let parsedMainInput = parseResults.ParseTree
 
         // Initialize the error handler
-        let errHandler = ErrorHandler(true, mainInputFileName, tcConfig.diagnosticsOptions, sourceText, suggestNamesForErrors)
+        let errHandler = ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, sourceText, suggestNamesForErrors)
 
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.DiagnosticsLogger)
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
         // Apply nowarns to tcConfig (may generate errors, so ensure errorLogger is installed)
         let tcConfig = ApplyNoWarnsToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName)
 
         // update the error handler with the modified tcConfig
-        errHandler.ErrorSeverityOptions <- tcConfig.diagnosticsOptions
+        errHandler.ErrorSeverityOptions <- tcConfig.errorSeverityOptions
 
         // Play background errors and warnings for this file.
         do for err, severity in backgroundDiagnostics do
@@ -1939,7 +1939,7 @@ module internal ParseAndCheckFile =
                     // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                     // for the client to claim the result as obsolete and have the typecheck abort.
 
-                    use _unwind = new CompilationGlobalsScope (errHandler.DiagnosticsLogger, BuildPhase.TypeCheck)
+                    use _unwind = new CompilationGlobalsScope (errHandler.ErrorLogger, BuildPhase.TypeCheck)
                     let! result =
                         CheckOneInputAndFinish(checkForErrors, tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
 

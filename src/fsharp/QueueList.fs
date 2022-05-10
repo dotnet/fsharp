@@ -68,7 +68,7 @@ module internal QueueList =
 
     let forall f (x:QueueList<_>) = Seq.forall f x
 
-    let ofList (x:_ list) = QueueList(x)
+    let ofList (x:list<_>) = QueueList(x)
 
     let toList (x:QueueList<_>) = Seq.toList x
 

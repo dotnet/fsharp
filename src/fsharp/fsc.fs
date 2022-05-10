@@ -39,7 +39,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
@@ -62,8 +62,8 @@ open FSharp.Compiler.BuildGraph
 
 /// An error logger that reports errors up to some maximum, notifying the exiter when that maximum is reached
 [<AbstractClass>]
-type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameForDebugging) =
-    inherit DiagnosticsLogger(nameForDebugging)
+type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameForDebugging) =
+    inherit ErrorLogger(nameForDebugging)
 
     let mutable errors = 0
 
@@ -73,76 +73,110 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
 
-    override _.ErrorCount = errors
+    override x.ErrorCount = errors
 
-    override x.DiagnosticSink(phasedError, severity) =
-      if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (phasedError, severity) then
+    override x.DiagnosticSink(err, severity) =
+      if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
         if errors >= tcConfigB.maxErrors then
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
 
-        x.HandleIssue(tcConfigB, phasedError, FSharpDiagnosticSeverity.Error)
+        x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Error)
 
         errors <- errors + 1
 
-        match phasedError.Exception, tcConfigB.simulateException with
+        match err.Exception, tcConfigB.simulateException with
         | InternalError (msg, _), None
-        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (phasedError.Exception.ToString()))
-        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (phasedError.Exception.ToString()))
+        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (err.Exception.ToString()))
+        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (phasedError, severity) then
-          x.HandleIssue(tcConfigB, phasedError, FSharpDiagnosticSeverity.Warning)
+      elif ReportDiagnosticAsWarning tcConfigB.errorSeverityOptions (err, severity) then
+          x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Warning)
 
-      elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (phasedError, severity) then
-          x.HandleIssue(tcConfigB, phasedError, severity)
+      elif ReportDiagnosticAsInfo tcConfigB.errorSeverityOptions (err, severity) then
+          x.HandleIssue(tcConfigB, err, severity)
 
 
 /// Create an error logger that counts and prints errors
-let ConsoleDiagnosticsLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter) =
-    { new DiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleDiagnosticsLoggerUpToMaxErrors") with
+let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter) =
+    { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
 
             member _.HandleTooManyErrors(text : string) =
                 DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () -> Printf.eprintfn "%s" text)
 
             member _.HandleIssue(tcConfigB, err, severity) =
                 DoWithDiagnosticColor severity (fun () ->
-                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.diagnosticStyle, severity)
+                    let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, severity)
                     writeViaBuffer stderr diag err
                     stderr.WriteLine())
-    } :> DiagnosticsLogger
+    } :> ErrorLogger
 
 /// This error logger delays the messages it receives. At the end, call ForwardDelayedDiagnostics
 /// to send the held messages.
-type DelayAndForwardDiagnosticsLogger(exiter: Exiter, errorLoggerProvider: DiagnosticsLoggerProvider) =
-    inherit CapturingDiagnosticsLogger("DelayAndForwardDiagnosticsLogger")
+type DelayAndForwardErrorLogger(exiter: Exiter, errorLoggerProvider: ErrorLoggerProvider) =
+    inherit CapturingErrorLogger("DelayAndForwardErrorLogger")
 
     member x.ForwardDelayedDiagnostics(tcConfigB: TcConfigBuilder) =
-        let errorLogger =  errorLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+        let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
         x.CommitDelayedDiagnostics errorLogger
 
 and [<AbstractClass>]
-    DiagnosticsLoggerProvider() =
+    ErrorLoggerProvider() =
 
-    member this.CreateDelayAndForwardLogger exiter = DelayAndForwardDiagnosticsLogger(exiter, this)
+    member this.CreateDelayAndForwardLogger exiter = DelayAndForwardErrorLogger(exiter, this)
 
-    abstract CreateDiagnosticsLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> DiagnosticsLogger
+    abstract CreateErrorLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
 
-/// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
+/// Part of LegacyHostedCompilerForTesting
+///
+/// Yet another ErrorLogger implementation, capturing the messages but only up to the maxerrors maximum
+type InProcErrorLoggerProvider() =
+    let errors = ResizeArray()
+    let warnings = ResizeArray()
+
+    member _.Provider =
+        { new ErrorLoggerProvider() with
+
+            member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
+
+                { new ErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter, "InProcCompilerErrorLoggerUpToMaxErrors") with
+
+                    member this.HandleTooManyErrors text =
+                        warnings.Add(Diagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
+
+                    member this.HandleIssue(tcConfigBuilder, err, severity) =
+                        // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
+                        let diagnostics =
+                            CollectDiagnostic
+                                (tcConfigBuilder.implicitIncludeDir, tcConfigBuilder.showFullPaths,
+                                 tcConfigBuilder.flatErrors, tcConfigBuilder.errorStyle, severity, err, true)
+                        match severity with
+                        | FSharpDiagnosticSeverity.Error ->
+                           errors.AddRange(diagnostics)
+                        | FSharpDiagnosticSeverity.Warning ->
+                            warnings.AddRange(diagnostics)
+                        | _ -> ()}
+                :> ErrorLogger }
+
+    member _.CapturedErrors = errors.ToArray()
+
+    member _.CapturedWarnings = warnings.ToArray()
+
+/// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() =
 
-    inherit DiagnosticsLoggerProvider()
+    inherit ErrorLoggerProvider()
 
-    override _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
-        ConsoleDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter)
+    override this.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter)
 
 /// Notify the exiter if any error has occurred
-let AbortOnError (errorLogger: DiagnosticsLogger, exiter : Exiter) =
+let AbortOnError (errorLogger: ErrorLogger, exiter : Exiter) =
     if errorLogger.ErrorCount > 0 then
         exiter.Exit 1
 
-let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: DiagnosticsLogger, assemblyName, niceNameGen, tcEnv0, openDecls0, inputs, exiter: Exiter) =
+let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, openDecls0, inputs, exiter: Exiter) =
     try
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), rangeStartup))
         let ccuName = assemblyName
@@ -382,7 +416,7 @@ type Args<'T> = Args  of 'T
 ///   - Check the inputs
 let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
           reduceMemoryUsage: ReduceMemoryFlag, defaultCopyFSharpCore: CopyFSharpCoreFlag,
-          exiter: Exiter, errorLoggerProvider: DiagnosticsLoggerProvider, disposables: DisposablesTracker) =
+          exiter: Exiter, errorLoggerProvider: ErrorLoggerProvider, disposables: DisposablesTracker) =
 
     // See Bug 735819
     let lcidFromCodePage =
@@ -420,7 +454,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
 
-    let _unwindEL_1 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
 
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -469,10 +503,10 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1
 
-    let errorLogger =  errorLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+    let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+    let _unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics errorLogger
@@ -498,9 +532,9 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     ReportTime tcConfig "Parse inputs"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-    let createDiagnosticsLogger = (fun exiter -> errorLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
+    let createErrorLogger = (fun exiter -> errorLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingErrorLogger)
 
-    let inputs = ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, errorLogger, exiter, createDiagnosticsLogger, (*retryLocked*)false)
+    let inputs = ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, errorLogger, exiter, createErrorLogger, (*retryLocked*)false)
 
     let inputs, _ =
         (Map.empty, inputs) ||> List.mapFold (fun state (input, x) ->
@@ -566,7 +600,7 @@ let main1OfAst
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target,
         outfile, pdbFile, dllReferences,
         noframework, exiter: Exiter,
-        errorLoggerProvider: DiagnosticsLoggerProvider,
+        errorLoggerProvider: ErrorLoggerProvider,
         disposables: DisposablesTracker,
         inputs: ParsedInput list) =
 
@@ -612,7 +646,7 @@ let main1OfAst
 
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
-    let _unwindEL_1 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
 
@@ -628,10 +662,10 @@ let main1OfAst
             exiter.Exit 1
 
     let dependencyProvider = new DependencyProvider()
-    let errorLogger =  errorLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+    let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+    let _unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics errorLogger
@@ -697,9 +731,9 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     let oldLogger = errorLogger
     let errorLogger =
         let scopedPragmas = [ for TImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
-        GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+        GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.errorSeverityOptions, oldLogger)
 
-    let _unwindEL_3 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> errorLogger)
+    let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =
@@ -736,7 +770,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 ///   - optimize
 ///   - encode optimization data
 let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals,
-                 errorLogger: DiagnosticsLogger, generatedCcu: CcuThunk, outfile, typedImplFiles,
+                 errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles,
                  topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) =
 
     // Encode the signature data
@@ -835,7 +869,7 @@ let main4
 
 /// Fifth phase of compilation.
 ///   -  static linking
-let main5(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: DiagnosticsLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) =
+let main5(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -854,7 +888,7 @@ let main5(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: DiagnosticsLo
 /// Sixth phase of compilation.
 ///   -  write the binaries
 let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, tcGlobals: TcGlobals,
-                                        errorLogger: DiagnosticsLogger, ilxMainModule, outfile, pdbfile,
+                                        errorLogger: ErrorLogger, ilxMainModule, outfile, pdbfile,
                                         signingInfo, exiter: Exiter)) =
 
     ReportTime tcConfig "Write .NET Binary"
@@ -956,13 +990,13 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     ReportTime tcConfig "Exiting"
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
-let CompileFromCommandLineArguments
+let mainCompile
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage,
         defaultCopyFSharpCore, exiter: Exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use disposables = new DisposablesTracker()
     let savedOut = Console.Out
-    use _ =
+    use __ =
         { new IDisposable with
             member _.Dispose() =
                 try
@@ -977,7 +1011,7 @@ let CompileFromCommandLineArguments
     |> main6 dynamicAssemblyCreator
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-let CompileFromSyntaxTrees
+let compileOfAst
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target,
         targetDll, targetPdb, dependencies, noframework, exiter, loggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) =
 

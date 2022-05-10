@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 

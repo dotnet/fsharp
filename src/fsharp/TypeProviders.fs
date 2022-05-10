@@ -16,7 +16,7 @@ open Internal.Utilities.FSharpEnvironment
 open FSharp.Core.CompilerServices
 open FSharp.Quotations
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range

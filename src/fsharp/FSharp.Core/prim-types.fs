@@ -3625,7 +3625,7 @@ namespace Microsoft.FSharp.Collections
     //-------------------------------------------------------------------------
 
     and
-       ListDebugView<'T>(l: 'T list) =
+       ListDebugView<'T>(l:list<'T>) =
 
            let ListDebugViewMaxLength = 50                          // default displayed Max Length
            let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
@@ -5395,7 +5395,7 @@ namespace Microsoft.FSharp.Core
                     member _.GetEnumerator () = variableStepRangeEnumerator ()
 
                   interface IEnumerable with
-                    member _.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
+                    member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
 
             let inline simpleIntegralRange minValue maxValue n step m =
                 if step <> LanguagePrimitives.GenericOne || n > m || n = minValue || m = maxValue then 

@@ -72,7 +72,7 @@ type MailboxProcessorType() =
         use mre1 = new ManualResetEventSlim(false)
         use mre2 = new ManualResetEventSlim(false)
     
-        // https://github.com/dotnet/fsharp/issues/3337
+        // https://github.com/Microsoft/visualfsharp/issues/3337
         let cts = new CancellationTokenSource ()
     
         let addMsg msg =
@@ -114,7 +114,7 @@ type MailboxProcessorType() =
         use mre1 = new ManualResetEventSlim(false)
         use mre2 = new ManualResetEventSlim(false)
     
-        // https://github.com/dotnet/fsharp/issues/3337
+        // https://github.com/Microsoft/visualfsharp/issues/3337
         let cts = new CancellationTokenSource ()
     
         let addMsg msg =
@@ -156,7 +156,7 @@ type MailboxProcessorType() =
         use mre1 = new ManualResetEventSlim(false)
         use mre2 = new ManualResetEventSlim(false)
 
-        // https://github.com/dotnet/fsharp/issues/3337
+        // https://github.com/Microsoft/visualfsharp/issues/3337
         let cts = new CancellationTokenSource ()
 
         let addMsg msg =

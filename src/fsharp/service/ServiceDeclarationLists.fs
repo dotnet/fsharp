@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
@@ -222,7 +222,7 @@ module DeclarationListHelpers =
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
 
-        | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
+        | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
             let id = rfinfo.RecdField.Id
             let layout =
@@ -459,7 +459,7 @@ module DeclarationListHelpers =
 
     /// Format the structured version of a tooltip for an item
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
-        DiagnosticsScope.Protect m 
+        ErrorScope.Protect m 
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
@@ -857,7 +857,7 @@ module internal DescriptionListsImpl =
             | Item.Types _  -> FSharpGlyph.Class
             | Item.UnqualifiedType (tcref :: _) -> 
                 if tcref.IsEnumTycon || tcref.IsILEnumTycon then FSharpGlyph.Enum
-                elif tcref.IsFSharpException then FSharpGlyph.Exception
+                elif tcref.IsExceptionDecl then FSharpGlyph.Exception
                 elif tcref.IsFSharpDelegateTycon then FSharpGlyph.Delegate
                 elif tcref.IsFSharpInterfaceTycon then FSharpGlyph.Interface
                 elif tcref.IsFSharpStructOrEnumTycon then FSharpGlyph.Struct
@@ -1183,7 +1183,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                 let methods = 
                     flatItems |> Array.ofList |> Array.map (fun flatItem -> 
                         let prettyParams, prettyRetTyL = 
-                            DiagnosticsScope.Protect m 
+                            ErrorScope.Protect m 
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             

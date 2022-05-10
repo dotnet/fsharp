@@ -12,7 +12,7 @@ let testNoOverflow op overflowArg =
         | :? OverflowException -> failwith "Failed: 1"
 
 type T(x : float) =
-    member _.Data = x
+    member this.Data = x
     static member op_Explicit (x : T) = byte x.Data
     static member op_Explicit (x : T) = char x.Data
     static member op_Explicit (x : T) = int16 x.Data

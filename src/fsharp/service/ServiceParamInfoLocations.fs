@@ -34,22 +34,14 @@ type ParameterLocations
             // (compare to    f(   or   f(42,   where the parser injects a fake "AbrExpr" to represent the missing argument)
             assert(tupleEndLocations.Length = namedParamNames.Length + 1)
             [| yield! namedParamNames; yield None |]  // None is representation of a non-named param
-    
-    member _.LongId = longId
-
-    member _.LongIdStartLocation = longIdRange.Start
-
-    member _.LongIdEndLocation = longIdRange.End
-
-    member _.OpenParenLocation = openParenLocation
-
-    member _.TupleEndLocations = tupleEndLocations
-
-    member _.IsThereACloseParen = isThereACloseParen
-
-    member _.NamedParamNames = namedParamNames
-
-    member _.ArgumentLocations = argRanges |> Array.ofList
+    member this.LongId = longId
+    member this.LongIdStartLocation = longIdRange.Start
+    member this.LongIdEndLocation = longIdRange.End
+    member this.OpenParenLocation = openParenLocation
+    member this.TupleEndLocations = tupleEndLocations
+    member this.IsThereACloseParen = isThereACloseParen
+    member this.NamedParamNames = namedParamNames
+    member this.ArgumentLocations = argRanges |> Array.ofList
 
 [<AutoOpen>]
 module internal ParameterLocationsImpl =
@@ -191,7 +183,7 @@ module internal ParameterLocationsImpl =
 
     let traverseInput(pos, parseTree) =
         SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with
-        member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+        member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debug locals
             match expr with
 
@@ -266,12 +258,12 @@ module internal ParameterLocationsImpl =
 
             | _ -> defaultTraverse expr
 
-        member _.VisitTypeAbbrev(_path, tyAbbrevRhs, _m) = 
+        member this.VisitTypeAbbrev(_path, tyAbbrevRhs, _m) = 
             match tyAbbrevRhs with
             | StaticParameters pos loc -> Some loc
             | _ -> None
 
-        member _.VisitImplicitInherit(_path, defaultTraverse, ty, expr, m) =
+        member this.VisitImplicitInherit(_path, defaultTraverse, ty, expr, m) =
             match defaultTraverse expr with
             | Some _ as r -> r
             | None ->

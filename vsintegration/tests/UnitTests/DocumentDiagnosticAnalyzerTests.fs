@@ -392,7 +392,7 @@ let g (t : T) = t.Count()
             
     [<Test>]
     member public this.DocumentDiagnosticsDontReportProjectErrors_Bug1596() =
-        // https://github.com/dotnet/fsharp/issues/1596
+        // https://github.com/Microsoft/visualfsharp/issues/1596
         this.VerifyNoErrors(
             fileContents = """
 let x = 3

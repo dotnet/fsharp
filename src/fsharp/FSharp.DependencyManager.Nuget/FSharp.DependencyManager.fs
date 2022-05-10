@@ -269,7 +269,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member _.ResolveDependencies(scriptDirectory: string, scriptName: string, scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int) : obj =
+    member this.ResolveDependencies(scriptDirectory: string, scriptName: string, scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int) : obj =
         ignore scriptName
         let poundRprefix  =
             match scriptExt with

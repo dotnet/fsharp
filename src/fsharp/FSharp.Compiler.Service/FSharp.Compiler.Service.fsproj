@@ -202,11 +202,11 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
-    <Compile Include="..\ImmutableArray.fsi">
-      <Link>Utilities\ImmutableArray.fsi</Link>
+    <Compile Include="..\block.fsi">
+      <Link>Utilities\block.fsi</Link>
     </Compile>
-    <Compile Include="..\ImmutableArray.fs">
-      <Link>Utilities\ImmutableArray.fs</Link>
+    <Compile Include="..\block.fs">
+      <Link>Utilities\block.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
@@ -241,11 +241,11 @@
     <Compile Include="..\TextLayoutRender.fs">
       <Link>ErrorLogging\TextLayoutRender.fs</Link>
     </Compile>
-    <Compile Include="..\DiagnosticsLogger.fsi">
-      <Link>ErrorLogging\DiagnosticsLogger.fsi</Link>
+    <Compile Include="..\ErrorLogger.fsi">
+      <Link>ErrorLogging\ErrorLogger.fsi</Link>
     </Compile>
-    <Compile Include="..\DiagnosticsLogger.fs">
-      <Link>ErrorLogging\DiagnosticsLogger.fs</Link>
+    <Compile Include="..\ErrorLogger.fs">
+      <Link>ErrorLogging\ErrorLogger.fs</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fsi">
       <Link>ErrorLogging\ErrorResolutionHints.fsi</Link>
@@ -549,12 +549,6 @@
     <Compile Include="..\import.fs">
       <Link>Logic\import.fs</Link>
     </Compile>
-    <Compile Include="..\TypeHierarchy.fsi">
-      <Link>Logic\TypeHierarchy.fsi</Link>
-    </Compile>
-    <Compile Include="..\TypeHierarchy.fs">
-      <Link>Logic\TypeHierarchy.fs</Link>
-    </Compile>
     <Compile Include="..\infos.fsi">
       <Link>Logic\infos.fsi</Link>
     </Compile>
@@ -693,23 +687,11 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
-    <Compile Include="..\LowerCalls.fsi">
-      <Link>Optimize\LowerCalls.fsi</Link>
+    <Compile Include="..\LowerCallsAndSeqs.fsi">
+      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
     </Compile>
-    <Compile Include="..\LowerCalls.fs">
-      <Link>Optimize\LowerCalls.fs</Link>
-    </Compile>
-    <Compile Include="..\LowerSequences.fsi">
-      <Link>Optimize\LowerSequences.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerSequences.fs">
-      <Link>Optimize\LowerSequences.fs</Link>
-    </Compile>
-    <Compile Include="..\LowerComputedCollections.fsi">
-      <Link>Optimize\LowerComputedCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\LowerComputedCollections.fs">
-      <Link>Optimize\LowerComputedCollections.fs</Link>
+    <Compile Include="..\LowerCallsAndSeqs.fs">
+      <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>
     <Compile Include="..\LowerStateMachines.fsi">
       <Link>Optimize\LowerStateMachines.fsi</Link>
@@ -717,11 +699,11 @@
     <Compile Include="..\LowerStateMachines.fs">
       <Link>Optimize\LowerStateMachines.fs</Link>
     </Compile>
-    <Compile Include="..\LowerLocalMutables.fsi">
-      <Link>Optimize\LowerLocalMutables.fsi</Link>
+    <Compile Include="..\autobox.fsi">
+      <Link>Optimize\autobox.fsi</Link>
     </Compile>
-    <Compile Include="..\LowerLocalMutables.fs">
-      <Link>Optimize\LowerLocalMutables.fs</Link>
+    <Compile Include="..\autobox.fs">
+      <Link>Optimize\autobox.fs</Link>
     </Compile>
     <Compile Include="..\IlxGen.fsi">
       <Link>CodeGen\IlxGen.fsi</Link>
@@ -830,12 +812,6 @@
     </Compile>
 
     <!-- the symbol API. -->
-    <Compile Include="..\symbols\FSharpDiagnostic.fsi">
-      <Link>Symbols/FSharpDiagnostic.fsi</Link>
-    </Compile>
-    <Compile Include="..\symbols\FSharpDiagnostic.fs">
-      <Link>Symbols/FSharpDiagnostic.fs</Link>
-    </Compile>
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>

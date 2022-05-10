@@ -59,7 +59,7 @@ type UsingMSBuild()  =
                                 (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
                                            paramDisplay.Contains(expectedParamName))))
 
-    member private this.GetMethodListForAMethodTip(fileContents : string, marker : string, ?addtlRefAssy : string list) = 
+    member private this.GetMethodListForAMethodTip(fileContents : string, marker : string, ?addtlRefAssy : list<string>) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         MoveCursorToStartOfMarker(file, marker)
@@ -67,22 +67,22 @@ type UsingMSBuild()  =
         GetParameterInfoAtCursor(file)
 
      //Verify all the overload method parameterInfo 
-    member private this.VerifyParameterInfoAtStartOfMarker(fileContents : string, marker : string, expectedParamNamesSet:string list list, ?addtlRefAssy :string list) =
+    member private this.VerifyParameterInfoAtStartOfMarker(fileContents : string, marker : string, expectedParamNamesSet:string list list, ?addtlRefAssy :list<string>) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertMethodGroup(methodstr,expectedParamNamesSet)
 
    //Verify No parameterInfo at the marker     
-    member private this.VerifyNoParameterInfoAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : string list) =
+    member private this.VerifyNoParameterInfoAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertEmptyMethodGroup(methodstr)
 
     //Verify one method parameterInfo if contained in parameterInfo list
-    member private this.VerifyParameterInfoContainedAtStartOfMarker(fileContents : string, marker : string, expectedParamNames:string list, ?addtlRefAssy : string list) =
+    member private this.VerifyParameterInfoContainedAtStartOfMarker(fileContents : string, marker : string, expectedParamNames:string list, ?addtlRefAssy : list<string>) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         AssertMethodGroupContain(methodstr,expectedParamNames)
 
     //Verify the parameterInfo of one of the list order
-    member private this.VerifyParameterInfoOverloadMethodIndex(fileContents : string, marker : string, index : int, expectedParams:string list, ?addtlRefAssy : string list) = 
+    member private this.VerifyParameterInfoOverloadMethodIndex(fileContents : string, marker : string, index : int, expectedParams:string list, ?addtlRefAssy : list<string>) = 
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         Assert.IsTrue(methodstr.IsSome, "Expected a method group")
         let methodstr = methodstr.Value
@@ -102,7 +102,7 @@ type UsingMSBuild()  =
         Assert.IsTrue (methodstr.GetCount() > 0)
 
     //Verify return content after the colon
-    member private this.VerifyFirstParameterInfoColonContent(fileContents : string, marker : string, expectedStr : string, ?addtlRefAssy : string list) =
+    member private this.VerifyFirstParameterInfoColonContent(fileContents : string, marker : string, expectedStr : string, ?addtlRefAssy : list<string>) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker,?addtlRefAssy=addtlRefAssy)
         Assert.IsTrue(methodstr.IsSome, "Expected a method group")
         let methodstr = methodstr.Value
@@ -253,7 +253,7 @@ type UsingMSBuild()  =
         this.VerifyHasParameterInfo(fileContent, "(*Mark*)")
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.DotNet.StaticMethod``() =
         let code = 
                                     ["#light"
@@ -426,7 +426,7 @@ type UsingMSBuild()  =
         
               
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.InMatchClause``() =
         let v461 = Version(4,6,1)
         let fileContent = """
@@ -604,7 +604,7 @@ type UsingMSBuild()  =
     
     // Test PI does not pop up after non-parameterized properties and after values
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Locations.EndOfFile`` () = 
         this.TestSystematicParameterInfo("System.Console.ReadLine(", [ [] ])
         
@@ -640,59 +640,50 @@ type UsingMSBuild()  =
     
     [<Test>]
     member public this.``Single.Generics.Typeof``() =
+        let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("typeof<int>(", [])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.MathAbs``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Math.Abs(", sevenTimes ["value"])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ExchangeInt``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<int>(", sevenTimes ["location1"; "value"])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.Exchange``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange(", sevenTimes ["location1"; "value"])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ExchangeUnder``() =
         let sevenTimes l = [ l; l; l; l; l; l; l ]
         this.TestGenericParameterInfo("Interlocked.Exchange<_> (", sevenTimes ["location1"; "value"])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.Dictionary``() =
         this.TestGenericParameterInfo("System.Collections.Generic.Dictionary<_, option<int>>(", [ []; ["capacity"]; ["comparer"]; ["capacity"; "comparer"]; ["dictionary"]; ["dictionary"; "comparer"] ])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.List``() =
         this.TestGenericParameterInfo("new System.Collections.Generic.List< _ > ( ", [ []; ["capacity"]; ["collection"] ])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.ListInt``() =
         this.TestGenericParameterInfo("System.Collections.Generic.List<int>(", [ []; ["capacity"]; ["collection"] ])
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandler``() =
         this.TestGenericParameterInfo("new System.EventHandler( ", [ [""] ]) // function arg doesn't have a name
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandlerEventArgs``() =
         this.TestGenericParameterInfo("System.EventHandler<EventArgs>(", [ [""] ]) // function arg doesn't have a name
-
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Generics.EventHandlerEventArgsNew``() =
         this.TestGenericParameterInfo("new System.EventHandler<EventArgs> ( ", [ [""] ]) // function arg doesn't have a name
 
@@ -706,7 +697,7 @@ type UsingMSBuild()  =
             failwith "bad unit test: did not find '$' in input to mark cursor location!"
         idx, lines
         
-    member public this.TestParameterInfoNegative (testLine, ?addtlRefAssy : string list) =
+    member public this.TestParameterInfoNegative (testLine, ?addtlRefAssy : list<string>) =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
 
         let code = 
@@ -721,7 +712,7 @@ type UsingMSBuild()  =
         Assert.IsTrue(info.IsNone, "expected no parameter info")
         gpatcc.AssertExactly(0,0)
         
-    member public this.TestParameterInfoLocation (testLine, expectedPos, ?addtlRefAssy : string list) =
+    member public this.TestParameterInfoLocation (testLine, expectedPos, ?addtlRefAssy : list<string>) =
         let cursorPrefix, testLines = this.ExtractLineInfo testLine
         let code =
                       [ "#light"
@@ -765,7 +756,7 @@ type UsingMSBuild()  =
         this.TestParameterInfoLocation("let a = Interlocked.Exchange($", 8)
         
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Single.Locations.WithGenericArgs``() =
         this.TestParameterInfoLocation("Interlocked.Exchange<int>($", 0)
         
@@ -788,7 +779,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     //This test verifies that ParamInfo location on a provided type with namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithNamespace`` () =
         this.TestParameterInfoLocation("type boo = N1.T<$",11,
@@ -797,7 +788,7 @@ type UsingMSBuild()  =
     [<Test>]
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.StaticParameters")>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithOutNamespace`` () =
         this.TestParameterInfoLocation("open N1 \n"+"type boo = T<$",
@@ -890,7 +881,7 @@ type UsingMSBuild()  =
             ("// System.Console.WriteLine($)")
   
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``Regression.LocationOfParams.AfterQuicklyTyping.Bug91373``() =        
         let code = [ "let f x = x   "
                      "let f1 y = y  "
@@ -915,7 +906,7 @@ type UsingMSBuild()  =
         AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetParameterLocations())
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
         let code = [ "type Foo() = class end" ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -1081,7 +1072,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         ()
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Regression.LocationOfParams.Bug91479``() =        
         this.TestParameterInfoLocationOfParams("""let z = fun x -> x + ^System.Int16.Parse^(^$ """, markAtEOF=true)
 
@@ -1207,7 +1198,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^l.Aggregate^(^$^) // was once a bug""")
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case1``() =        
         // when only one 'statement' after the mismatched parens after a comma, the comma swallows it and it becomes a badly-indented
         // continuation of the expression from the previous line
@@ -1219,7 +1210,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             c.M(1,2,3,4)""", markAtEOF=true)
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.BY_DESIGN.WayThatMismatchedParensFailOver.Case2``() =        
         // when multiple 'statements' after the mismatched parens after a comma, the parser sees a single argument to the method that
         // is a statement sequence, e.g. a bunch of discarded expressions.  That is, 
@@ -1253,7 +1244,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             ^System.Console.WriteLine^(^ $(42,43) ^) // oops""")
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.Tuples.Bug123219``() =
         this.TestParameterInfoLocationOfParams("""
             type Expr = | Num of int
@@ -1394,7 +1385,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix0``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ $ """, // missing all params, just have <
@@ -1402,7 +1393,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ 42 """, // missing >
@@ -1410,7 +1401,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix1Named``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored=42 """, // missing >
@@ -1418,7 +1409,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ """, // missing last param
@@ -1426,7 +1417,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named1``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored= """, // missing last param after name with equals
@@ -1434,7 +1425,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``LocationOfParams.TypeProviders.Prefix2Named2``() =        
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             type U = ^N1.T^<^ "fo$o",^ ParamIgnored """, // missing last param after name sans equals
@@ -1498,7 +1489,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``LocationOfParams.TypeProviders.StaticParametersAtConstructorCallSite``() =
         this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
             let x = new ^N1.T^<^ "fo$o",^ 42 ^>()""", 
@@ -1636,7 +1627,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.DotNet.StaticMethod.WithinLambda``() =
         let fileContents = """let z = fun x -> x + System.Int16.Parse("",(*Mark*)"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"System.Globalization.NumberStyles"])
@@ -1655,7 +1646,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     (* Common functions for multi-parameterinfo tests -------------------------------------------------- *)
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.DotNet.Constructor``() = 
         let fileContents = "let _ = new System.DateTime(2010,12,(*Mark*)"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["int";"int";"int"])
@@ -1751,7 +1742,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int list"]])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.Function.WithOptionType``() = 
         let fileContents = """
             let foo( a : int option, b : string ref) = 0
@@ -1768,7 +1759,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         this.VerifyParameterInfoAtStartOfMarker(fileContents,"(*Mark*)",[["int option";"float option"]])
 
     [<Test>]
-    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``Multi.Function.WithRefType``() = 
         let fileContents = """
             let foo( a : int ref, b : string ref) = 0

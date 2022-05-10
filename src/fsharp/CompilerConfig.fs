@@ -16,7 +16,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
@@ -368,7 +368,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
       mutable embedResources: string list
-      mutable diagnosticsOptions: FSharpDiagnosticOptions
+      mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
@@ -430,7 +430,7 @@ type TcConfigBuilder =
       mutable legacyReferenceResolver: LegacyReferenceResolver
 
       mutable showFullPaths: bool
-      mutable diagnosticStyle: DiagnosticStyle
+      mutable errorStyle: ErrorStyle
       mutable utf8output: bool
       mutable flatErrors: bool
 
@@ -579,7 +579,7 @@ type TcConfigBuilder =
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
-          diagnosticsOptions = FSharpDiagnosticOptions.Default
+          errorSeverityOptions = FSharpDiagnosticOptions.Default
           embedResources = []
           inputCodePage = None
           subsystemVersion = 4, 0 // per spec for 357994
@@ -646,7 +646,7 @@ type TcConfigBuilder =
           includewin32manifest = true
           linkResources = []
           showFullPaths = false
-          diagnosticStyle = DiagnosticStyle.Default
+          errorStyle = ErrorStyle.DefaultErrors
 
           utf8output = false
           flatErrors = false
@@ -770,8 +770,8 @@ type TcConfigBuilder =
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- true
-            tcConfigB.diagnosticsOptions <-
-                { tcConfigB.diagnosticsOptions with WarnOff = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOff }
+            tcConfigB.errorSeverityOptions <-
+                { tcConfigB.errorSeverityOptions with WarnOff = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOff }
 
     member tcConfigB.TurnWarningOn(m, s: string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -780,8 +780,8 @@ type TcConfigBuilder =
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- false
-            tcConfigB.diagnosticsOptions <-
-                { tcConfigB.diagnosticsOptions with WarnOn = ListSet.insert (=) n tcConfigB.diagnosticsOptions.WarnOn }
+            tcConfigB.errorSeverityOptions <-
+                { tcConfigB.errorSeverityOptions with WarnOn = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOn }
 
     member tcConfigB.AddIncludePath (m, path, pathIncludedFrom) =
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
@@ -1062,7 +1062,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.useHighEntropyVA = data.useHighEntropyVA
     member _.inputCodePage = data.inputCodePage
     member _.embedResources = data.embedResources
-    member _.diagnosticsOptions = data.diagnosticsOptions
+    member _.errorSeverityOptions = data.errorSeverityOptions
     member _.mlCompatibility = data.mlCompatibility
     member _.checkOverflow = data.checkOverflow
     member _.showReferenceResolutions = data.showReferenceResolutions
@@ -1118,7 +1118,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.includewin32manifest = data.includewin32manifest
     member _.linkResources = data.linkResources
     member _.showFullPaths = data.showFullPaths
-    member _.diagnosticStyle = data.diagnosticStyle
+    member _.errorStyle = data.errorStyle
     member _.utf8output = data.utf8output
     member _.flatErrors = data.flatErrors
     member _.maxErrors = data.maxErrors

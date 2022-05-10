@@ -19,7 +19,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 
 open Internal.Utilities
 
@@ -613,15 +613,15 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         | false, _ -> None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch ->
-            tcConfigB.diagnosticsOptions <-
-                { tcConfigB.diagnosticsOptions with
+            tcConfigB.errorSeverityOptions <-
+                { tcConfigB.errorSeverityOptions with
                     GlobalWarnAsError = switch <> OptionSwitch.Off }), None, Some (FSComp.SR.optsWarnaserrorPM()))
 
         CompilerOption("warnaserror", tagWarnList, OptionStringListSwitch (fun n switch ->
             match trimFStoInt n with
             | Some n ->
-                let options = tcConfigB.diagnosticsOptions
-                tcConfigB.diagnosticsOptions <-
+                let options = tcConfigB.errorSeverityOptions
+                tcConfigB.errorSeverityOptions <-
                     if switch = OptionSwitch.Off then
                         { options with
                             WarnAsError = ListSet.remove (=) n options.WarnAsError
@@ -633,8 +633,8 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             | None -> ()), None, Some (FSComp.SR.optsWarnaserror()))
 
         CompilerOption("warn", tagInt, OptionInt (fun n ->
-                 tcConfigB.diagnosticsOptions <-
-                     { tcConfigB.diagnosticsOptions with
+                 tcConfigB.errorSeverityOptions <-
+                     { tcConfigB.errorSeverityOptions with
                          WarnLevel = if (n >= 0 && n <= 5) then n else error(Error (FSComp.SR.optsInvalidWarningLevel n, rangeCmdArgs)) }
             ), None, Some (FSComp.SR.optsWarn()))
 
@@ -1057,7 +1057,7 @@ let testFlag tcConfigB =
              OptionString (fun s ->
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
-                | "ErrorRanges"      -> tcConfigB.diagnosticStyle <- DiagnosticStyle.Test
+                | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                 | "Tracking"         -> tracking <- true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }
@@ -1077,12 +1077,12 @@ let testFlag tcConfigB =
 
 // Not shown in fsc.exe help, no warning on use, motivation is for use from tooling.
 let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
-  [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.diagnosticStyle <- DiagnosticStyle.VisualStudio), None, None)
+  [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
     CompilerOption("validate-type-providers", tagNone, OptionUnit id, None, None)  // preserved for compatibility's sake, no longer has any effect
     CompilerOption("LCID", tagInt, OptionInt ignore, None, None)
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None)
     CompilerOption("sqmsessionguid", tagNone, OptionString ignore, None, None)
-    CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.diagnosticStyle <- DiagnosticStyle.Gcc), None, None)
+    CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None)
     CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some s), None, None)
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None)
     CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None)
@@ -1314,7 +1314,7 @@ let mlKeywordsFlag =
 let gnuStyleErrorsFlag tcConfigB =
     CompilerOption
         ("gnu-style-errors", tagNone,
-         OptionUnit (fun () -> tcConfigB.diagnosticStyle <- DiagnosticStyle.Emacs),
+         OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.EmacsErrors),
          Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
 
 let deprecatedFlagsBoth tcConfigB =

@@ -184,11 +184,11 @@ module WorkspaceTests =
 
         interface IFSharpWorkspaceProjectContext with
 
-            member _.Dispose(): unit = ()
+            member this.Dispose(): unit = ()
 
-            member _.FilePath: string = mainProj.FilePath
+            member this.FilePath: string = mainProj.FilePath
 
-            member _.HasProjectReference(filePath: string): bool = 
+            member this.HasProjectReference(filePath: string): bool = 
                 mainProj.ProjectReferences
                 |> Seq.exists (fun x ->
                     let projRef = mainProj.Solution.GetProject(x.ProjectId)
@@ -198,11 +198,11 @@ module WorkspaceTests =
                         false
                 )
 
-            member _.Id: ProjectId = mainProj.Id
+            member this.Id: ProjectId = mainProj.Id
 
-            member _.ProjectReferenceCount: int = mainProj.ProjectReferences.Count()
+            member this.ProjectReferenceCount: int = mainProj.ProjectReferences.Count()
 
-            member _.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit = 
+            member this.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit = 
                 let currentProj = mainProj
                 let mutable solution = currentProj.Solution
 
@@ -224,9 +224,9 @@ module WorkspaceTests =
 
                 mainProj <- solution.GetProject(currentProj.Id)
 
-            member _.MetadataReferenceCount: int = mainProj.MetadataReferences.Count
+            member this.MetadataReferenceCount: int = mainProj.MetadataReferences.Count
 
-            member _.HasMetadataReference(referencePath: string): bool =
+            member this.HasMetadataReference(referencePath: string): bool =
                 mainProj.MetadataReferences
                 |> Seq.exists (fun x -> 
                     match x with
@@ -235,7 +235,7 @@ module WorkspaceTests =
                     | _ ->
                         false)
 
-            member _.SetMetadataReferences(referencePaths: string seq): unit =
+            member this.SetMetadataReferences(referencePaths: string seq): unit =
                 let currentProj = mainProj
                 let mutable solution = currentProj.Solution
 
@@ -263,7 +263,7 @@ module WorkspaceTests =
     type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
                 
         interface IFSharpWorkspaceProjectContextFactory with
-            member _.CreateProjectContext(filePath: string): IFSharpWorkspaceProjectContext =
+            member this.CreateProjectContext(filePath: string): IFSharpWorkspaceProjectContext =
                 match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
                 | Some docId ->
                     let doc = miscFilesWorkspace.CurrentSolution.GetDocument(docId)

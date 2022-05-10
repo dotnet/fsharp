@@ -20,10 +20,11 @@ open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
+open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.LowerStateMachines
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -37,7 +38,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
@@ -2368,13 +2368,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
     //ProcessDebugPointForExpr cenv cgbuf expr
 
-    match (if compileSequenceExpressions then LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr else None) with
+    match (if compileSequenceExpressions then LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr else None) with
     | Some altExpr ->
         GenExpr cenv cgbuf eenv altExpr sequel
         true
     | None ->
 
-    match (if compileSequenceExpressions then LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr else None) with
+    match (if compileSequenceExpressions then ConvertSequenceExprToObject g cenv.amap expr else None) with
     | Some info ->
         GenSequenceExpr cenv cgbuf eenv info sequel
         true
@@ -7442,7 +7442,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
         for tc in tycons do
-            if tc.IsFSharpException then
+            if tc.IsExceptionDecl then
                 GenExnDef cenv cgbuf.mgbuf eenvinner m tc
             else
                 GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc

@@ -10,7 +10,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -26,7 +26,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS

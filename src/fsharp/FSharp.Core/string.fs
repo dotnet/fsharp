@@ -32,10 +32,10 @@ namespace Microsoft.FSharp.Core
                 | _ -> String.Join(sep, strings, 0, strings.Length)
 
             match strings with
-            | :? (string[]) as arr -> 
+            | :? array<string> as arr -> 
                 concatArray sep arr
 
-            | :? (string list) as lst -> 
+            | :? list<string> as lst -> 
                 lst 
                 |> List.toArray 
                 |> concatArray sep

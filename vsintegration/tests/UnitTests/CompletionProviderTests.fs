@@ -457,7 +457,7 @@ let _ = new A(Setta)
     let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test;Ignore("https://github.com/dotnet/fsharp/issues/3954")>]
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
 let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
     let fileContents = """
 module M =

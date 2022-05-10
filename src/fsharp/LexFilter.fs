@@ -9,7 +9,7 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers

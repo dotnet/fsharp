@@ -93,32 +93,30 @@ module internal {1} =
             None
 
     [<Required>]
-    member _.EmbeddedResource
+    member this.EmbeddedResource
         with get() = _embeddedText
          and set(value) = _embeddedText <- value
 
     [<Required>]
-    member _.IntermediateOutputPath
+    member this.IntermediateOutputPath
         with get() = _outputPath
          and set(value) = _outputPath <- value
 
-    member _.TargetFramework
+    member this.TargetFramework
         with get() = _targetFramework
          and set(value) = _targetFramework <- value
 
     [<Output>]
-    member _.GeneratedSource
+    member this.GeneratedSource
         with get() = _generatedSource
 
     interface ITask with
-        member _.BuildEngine
+        member this.BuildEngine
             with get() = _buildEngine
              and set(value) = _buildEngine <- value
-
-        member _.HostObject
+        member this.HostObject
             with get() = _hostObject
              and set(value) = _hostObject <- value
-
         member this.Execute() =
             let getBooleanMetadata (metadataName:string) (defaultValue:bool) (item:ITaskItem) =
                 match item.GetMetadata(metadataName) with

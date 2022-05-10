@@ -107,7 +107,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
                     let errNum,_ = FSComp.SR.etProviderError("", "")
                     raise <| TypeProviderError((errNum, e.Message), this.TypeProviderDesignation, range)
 
-    member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
+    member this.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
     member this.PApply(f,range: range) = 
         let u = this.Protect f range
@@ -148,13 +148,13 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
 
     /// Access the target object directly. Use with extreme caution.
-    member _.AccessObjectDirectly = value
+    member this.AccessObjectDirectly = value
 
     static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
         [for tp,nm in providerSpecs do
              yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
 
-    member _.OfType<'U> () =
+    member this.OfType<'U> () =
         match box value with
         | :? 'U as u -> Some (Tainted(context,u))
         | _ -> None

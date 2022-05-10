@@ -247,7 +247,7 @@ module AssemblyContent =
         // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
         // on-demand.  However a more compete review may be warranted.
 
-        use _ignoreAllDiagnostics = new DiagnosticsScope()  
+        use _ignoreAllDiagnostics = new ErrorScope()  
 
         signature.TryGetEntities()
         |> Seq.collect (traverseEntity contentType Parent.Empty)
@@ -265,7 +265,7 @@ module AssemblyContent =
         // concurrently with other threads.  On an initial review this is not a problem since type provider computations
         // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
         // on-demand.  However a more compete review may be warranted.
-        use _ignoreAllDiagnostics = new DiagnosticsScope()  
+        use _ignoreAllDiagnostics = new ErrorScope()  
 
 #if !NO_TYPEPROVIDERS 
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with

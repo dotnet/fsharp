@@ -5,7 +5,7 @@ module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -64,7 +64,7 @@ val OutputDiagnostic:
     implicitIncludeDir: string *
     showFullPaths: bool *
     flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
+    errorStyle: ErrorStyle *
     severity: FSharpDiagnosticSeverity ->
         StringBuilder ->
         PhasedDiagnostic ->
@@ -74,9 +74,48 @@ val OutputDiagnostic:
 val OutputDiagnosticContext:
     prefix: string -> fileLineFunction: (string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
 
+/// Part of LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type DiagnosticLocation =
+    { Range: range
+      File: string
+      TextRepresentation: string
+      IsEmpty: bool }
+
+/// Part of LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type DiagnosticCanonicalInformation =
+    { ErrorNumber: int
+      Subcategory: string
+      TextRepresentation: string }
+
+/// Part of LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type DiagnosticDetailedInfo =
+    { Location: DiagnosticLocation option
+      Canonical: DiagnosticCanonicalInformation
+      Message: string }
+
+/// Part of LegacyHostedCompilerForTesting
+[<RequireQualifiedAccess>]
+type Diagnostic =
+    | Short of FSharpDiagnosticSeverity * string
+    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
+
+/// Part of LegacyHostedCompilerForTesting
+val CollectDiagnostic:
+    implicitIncludeDir: string *
+    showFullPaths: bool *
+    flattenErrors: bool *
+    errorStyle: ErrorStyle *
+    severity: FSharpDiagnosticSeverity *
+    PhasedDiagnostic *
+    suggestNames: bool ->
+        seq<Diagnostic>
+
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
-val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * DiagnosticsLogger -> DiagnosticsLogger
+val GetErrorLoggerFilteringByScopedPragmas:
+    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * ErrorLogger -> ErrorLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
@@ -88,42 +127,3 @@ val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FS
 
 /// Indicates if we should report a warning as an error
 val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-/// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticLocation =
-    { Range: range
-      File: string
-      TextRepresentation: string
-      IsEmpty: bool }
-
-/// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticCanonicalInformation =
-    { ErrorNumber: int
-      Subcategory: string
-      TextRepresentation: string }
-
-/// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnosticDetailedInfo =
-    { Location: FormattedDiagnosticLocation option
-      Canonical: FormattedDiagnosticCanonicalInformation
-      Message: string }
-
-/// Used internally and in LegacyHostedCompilerForTesting
-[<RequireQualifiedAccess>]
-type FormattedDiagnostic =
-    | Short of FSharpDiagnosticSeverity * string
-    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
-
-/// Used internally and in LegacyHostedCompilerForTesting
-val CollectFormattedDiagnostics:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
-    severity: FSharpDiagnosticSeverity *
-    PhasedDiagnostic *
-    suggestNames: bool ->
-        FormattedDiagnostic []
