@@ -641,7 +641,7 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(withKeyword=Some mWith))])) ]
+                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith }))])) ]
             )
         ]) ])) ->
             assertRange (3, 30) (3, 34) mWith
@@ -1352,6 +1352,47 @@ let s : string = "s"
             assertRange (2, 0) (5, 20) r
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Module should contain module keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+/// this file contains patches to the F# Compiler Service that have not yet made it into
+/// published nuget packages.  We source-copy them here to have a consistent location for our to-be-removed extensions
+
+module FsAutoComplete.FCSPatches
+
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FsAutoComplete.UntypedAstUtils
+open FSharp.Compiler.CodeAnalysis
+
+module internal SynExprAppLocationsImpl =
+    let a = 42
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; trivia = { ModuleKeyword = Some mModule; NamespaceKeyword = None }) ])) ->
+            assertRange (5, 0) (5, 6) mModule
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Namespace should contain namespace keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+namespace Foo
+module Bar =
+    let a = 42
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; trivia = { ModuleKeyword = None; NamespaceKeyword = Some mNamespace }) ])) ->
+            assertRange (2, 0) (2, 9) mNamespace
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynConsts =
     [<Test>]
     let ``Measure contains the range of the constant`` () =
@@ -1421,6 +1462,38 @@ val s : string
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
             assertRange (2, 1) (5, 14) r
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Module should contain module keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module Bar
+
+val a: int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.NamedModule; trivia = { ModuleKeyword = Some mModule; NamespaceKeyword = None }) ])) ->
+            assertRange (2, 0) (2, 6) mModule
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``Namespace should contain namespace keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace Foo
+module Bar =
+    val a: int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [
+            SynModuleOrNamespaceSig(kind = SynModuleOrNamespaceKind.DeclaredNamespace; trivia = { ModuleKeyword = None; NamespaceKeyword = Some mNamespace }) ])) ->
+            assertRange (2, 0) (2, 9) mNamespace
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SignatureTypes =
@@ -1727,7 +1800,7 @@ type Foo =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(
-                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(withKeyword=Some mWithKeyword))])) ]
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(trivia = { WithKeyword = Some mWithKeyword }))])) ]
             )
         ]) ])) ->
             assertRange (5, 30) (5, 34) mWithKeyword
@@ -1781,6 +1854,26 @@ open Foo
             assertRange (4, 0) (4, 43) mSynExceptionDefnRepr
             assertRange (4, 0) (5, 30) mSynExceptionSig
             assertRange (4, 0) (5, 30) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Val keyword is present in SynValSig`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module Meh
+
+[<Foo>]
+// meh
+val a : int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Val(valSig = SynValSig(trivia = { ValKeyword = Some mVal }))
+            ] ) ])) ->
+            assertRange (6, 0) (6, 3) mVal
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =
@@ -4454,3 +4547,30 @@ type A() =
             assertRange (5, 5) (5, 6) rpr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
+
+module Measures =
+    [<Test>]
+    let ``SynMeasure.Paren has correct range`` () =
+        let parseResults = 
+            getParseResults
+                """
+40u<hr / (staff weeks)>
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Expr(
+                expr = SynExpr.Const(SynConst.Measure(SynConst.UInt32 _, _, SynMeasure.Divide(
+                            SynMeasure.Seq([ SynMeasure.Named([ hrIdent ], _) ], _),
+                            SynMeasure.Seq([ SynMeasure.Paren(SynMeasure.Seq([
+                                SynMeasure.Named([ staffIdent ], _)
+                                SynMeasure.Named([ weeksIdent ], _)
+                            ], _) , mParen) ], _),
+                            _)
+                    ), _))
+        ]) ])) ->
+            Assert.AreEqual("hr", hrIdent.idText)
+            Assert.AreEqual("staff", staffIdent.idText)
+            Assert.AreEqual("weeks", weeksIdent.idText)
+            assertRange (2, 9) (2, 22) mParen
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
