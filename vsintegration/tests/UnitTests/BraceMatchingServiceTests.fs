@@ -162,7 +162,7 @@ type BraceMatchingServiceTests()  =
         
     [<Test>]
     member this.BraceMatchingAtEndOfLine_Bug1597() = 
-        // https://github.com/Microsoft/visualfsharp/issues/1597
+        // https://github.com/dotnet/fsharp/issues/1597
         let code = """
 [<EntryPoint>]
 let main argv = 

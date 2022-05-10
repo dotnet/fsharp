@@ -94,7 +94,7 @@ type UsingMSBuild() as this =
                 (errorTexts.ToString())
 
     //Verify the warning list Count
-    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -102,7 +102,7 @@ type UsingMSBuild() as this =
         Assert.AreEqual(expectedNum,warnList.Length)
 
     //verify no the error list 
-    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -113,7 +113,7 @@ type UsingMSBuild() as this =
         Assert.IsTrue(errorList.IsEmpty)
     
     //Verify the error list containd the expected string
-    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : list<string>) =
+    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -571,7 +571,7 @@ but here has type
         Assert.IsTrue(errorList.IsEmpty)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``UnicodeCharacters``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

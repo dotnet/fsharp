@@ -34,7 +34,7 @@
     <Compile Include="seq2.fs" />
 -->	
 	<ProjectReference Include="..\TaskPerfCSharp\TaskPerfCSharp.csproj" />
-    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
      <!-- this must be manually enabled because CI fails because some post-build checks don't like the DLL-->
 	  <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />  -->
