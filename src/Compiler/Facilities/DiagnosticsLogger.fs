@@ -223,9 +223,8 @@ type PhasedDiagnostic =
 
     /// Construct a phased error
     static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =
-        // FUTURE: reenable this assert, which has historically triggered in some compiler service scenarios
-        // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
-        {Exception = exn; Phase=phase}
+        { Exception = exn
+          Phase=phase}
 
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -277,18 +276,9 @@ type PhasedDiagnostic =
     /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
     /// the language service knows about.                
     member pe.IsPhaseInCompile() = 
-        let isPhaseInCompile = 
-            match pe.Phase with
-            | BuildPhase.Compile | BuildPhase.Parameter | BuildPhase.Parse | BuildPhase.TypeCheck -> true
-            | _ -> false
-        // Sanity check ensures that Phase matches Subcategory            
-#if DEBUG
-        if isPhaseInCompile then 
-            Debug.Assert(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory()), "Subcategory did not match isPhaseInCompile=true")
-        else
-            Debug.Assert(not(PhasedDiagnostic.IsSubcategoryOfCompile(pe.Subcategory())), "Subcategory did not match isPhaseInCompile=false")
-#endif            
-        isPhaseInCompile
+        match pe.Phase with
+        | BuildPhase.Compile | BuildPhase.Parameter | BuildPhase.Parse | BuildPhase.TypeCheck -> true
+        | _ -> false
 
 [<AbstractClass>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
@@ -297,20 +287,20 @@ type DiagnosticsLogger(nameForDebugging:string) =
 
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
-    abstract DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     member _.DebugDisplay() = sprintf "DiagnosticsLogger(%s)" nameForDebugging
 
-let DiscardErrorsLogger = 
+let DiscardErrorsLogger =
     { new DiagnosticsLogger("DiscardErrorsLogger") with 
-        member _.DiagnosticSink(phasedError, severity) = ()
+        member _.DiagnosticSink(diagnostic, severity) = ()
         member _.ErrorCount = 0
     }
 
 let AssertFalseDiagnosticsLogger =
     { new DiagnosticsLogger("AssertFalseDiagnosticsLogger") with 
         // TODO: reenable these asserts in the compiler service
-        member _.DiagnosticSink(phasedError, severity) = (* assert false; *) ()
+        member _.DiagnosticSink(diagnostic, severity) = (* assert false; *) ()
         member _.ErrorCount = (* assert false; *) 0 
     }
 
@@ -319,42 +309,42 @@ type CapturingDiagnosticsLogger(nm) =
     let mutable errorCount = 0 
     let diagnostics = ResizeArray()
 
-    override _.DiagnosticSink(phasedError, severity) = 
+    override _.DiagnosticSink(diagnostic, severity) = 
         if severity = FSharpDiagnosticSeverity.Error then errorCount <- errorCount + 1
-        diagnostics.Add (phasedError, severity) 
+        diagnostics.Add (diagnostic, severity) 
 
     override _.ErrorCount = errorCount
 
     member _.Diagnostics = diagnostics |> Seq.toList
 
-    member _.CommitDelayedDiagnostics(errorLogger:DiagnosticsLogger) = 
+    member _.CommitDelayedDiagnostics(diagnosticsLogger:DiagnosticsLogger) = 
         // Eagerly grab all the errors and warnings from the mutable collection
         let errors = diagnostics.ToArray()
-        errors |> Array.iter errorLogger.DiagnosticSink
+        errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 /// Type holds thread-static globals for use by the compile.
-type internal CompileThreadStatic =
+type internal DiagnosticsThreadStatics =
     [<ThreadStatic;DefaultValue>]
     static val mutable private buildPhase: BuildPhase
     
     [<ThreadStatic;DefaultValue>]
-    static val mutable private errorLogger: DiagnosticsLogger
+    static val mutable private diagnosticsLogger: DiagnosticsLogger
 
-    static member BuildPhaseUnchecked = CompileThreadStatic.buildPhase
+    static member BuildPhaseUnchecked = DiagnosticsThreadStatics.buildPhase
 
     static member BuildPhase
         with get() = 
-            match box CompileThreadStatic.buildPhase with
+            match box DiagnosticsThreadStatics.buildPhase with
             | Null -> BuildPhase.DefaultPhase
-            | _ -> CompileThreadStatic.buildPhase
-        and set v = CompileThreadStatic.buildPhase <- v
+            | _ -> DiagnosticsThreadStatics.buildPhase
+        and set v = DiagnosticsThreadStatics.buildPhase <- v
             
     static member DiagnosticsLogger
         with get() = 
-            match box CompileThreadStatic.errorLogger with
+            match box DiagnosticsThreadStatics.diagnosticsLogger with
             | Null -> AssertFalseDiagnosticsLogger
-            | _ -> CompileThreadStatic.errorLogger
-        and set v = CompileThreadStatic.errorLogger <- v
+            | _ -> DiagnosticsThreadStatics.diagnosticsLogger
+        and set v = DiagnosticsThreadStatics.diagnosticsLogger <- v
 
 
 [<AutoOpen>]
@@ -407,7 +397,7 @@ module DiagnosticsLoggerExtensions =
             | ReportedError _ -> 
                 PreserveStackTrace exn
                 raise exn 
-            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), severity)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, DiagnosticsThreadStatics.BuildPhase), severity)
 
         member x.ErrorR exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Error)
@@ -418,19 +408,19 @@ module DiagnosticsLoggerExtensions =
         member x.InformationalWarning exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Info)
 
-        member x.Error   exn = 
+        member x.Error exn = 
             x.ErrorR exn
             raise (ReportedError (Some exn))
 
-        member x.SimulateError  (ph: PhasedDiagnostic) =
-            x.DiagnosticSink (ph, FSharpDiagnosticSeverity.Error)
-            raise (ReportedError (Some ph.Exception))
+        member x.SimulateError diagnostic =
+            x.DiagnosticSink (diagnostic, FSharpDiagnosticSeverity.Error)
+            raise (ReportedError (Some diagnostic.Exception))
 
         member x.ErrorRecovery (exn: exn) (m: range) =
             // Never throws ReportedError.
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
-            (* Don't send ThreadAbortException down the error channel *)
+            // Don't send ThreadAbortException down the error channel
             | :? System.Threading.ThreadAbortException | WrappedError(:? System.Threading.ThreadAbortException, _) ->  ()
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
@@ -462,31 +452,31 @@ module DiagnosticsLoggerExtensions =
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
-    let oldBuildPhase = CompileThreadStatic.BuildPhaseUnchecked
-    CompileThreadStatic.BuildPhase <- phase
+    let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
+    DiagnosticsThreadStatics.BuildPhase <- phase
     { new IDisposable with 
-         member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase }
+         member x.Dispose() = DiagnosticsThreadStatics.BuildPhase <- oldBuildPhase }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushDiagnosticsLoggerPhaseUntilUnwind(errorLoggerTransformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldDiagnosticsLogger = CompileThreadStatic.DiagnosticsLogger
-    CompileThreadStatic.DiagnosticsLogger <- errorLoggerTransformer oldDiagnosticsLogger
+let PushDiagnosticsLoggerPhaseUntilUnwind(diagnosticsLoggerTransformer: DiagnosticsLogger -> #DiagnosticsLogger) =
+    let oldDiagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLoggerTransformer oldDiagnosticsLogger
     { new IDisposable with 
          member _.Dispose() =
-            CompileThreadStatic.DiagnosticsLogger <- oldDiagnosticsLogger }
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldDiagnosticsLogger }
 
-let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
+let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = DiagnosticsThreadStatics.BuildPhase <- phase
 
-let SetThreadDiagnosticsLoggerNoUnwind errorLogger     = CompileThreadStatic.DiagnosticsLogger <- errorLogger
+let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger     = DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
 /// This represents the thread-local state established as each task function runs as part of the build.
 ///
 /// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger: DiagnosticsLogger, buildPhase: BuildPhase) = 
-    let unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> errorLogger)
+type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) = 
+    let unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
     let unwindBP = PushThreadBuildPhaseUntilUnwind buildPhase
 
-    member _.DiagnosticsLogger = errorLogger
+    member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
 
     // Return the disposable object that cleans up
@@ -498,31 +488,32 @@ type CompilationGlobalsScope(errorLogger: DiagnosticsLogger, buildPhase: BuildPh
 // Global functions are still used by parser and TAST ops.
 
 /// Raises an exception with error recovery and returns unit.
-let errorR exn = CompileThreadStatic.DiagnosticsLogger.ErrorR exn
+let errorR exn = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
-let warning exn = CompileThreadStatic.DiagnosticsLogger.Warning exn
+let warning exn = DiagnosticsThreadStatics.DiagnosticsLogger.Warning exn
 
 /// Raises a warning with error recovery and returns unit.
-let informationalWarning exn = CompileThreadStatic.DiagnosticsLogger.InformationalWarning exn
+let informationalWarning exn = DiagnosticsThreadStatics.DiagnosticsLogger.InformationalWarning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
-let error exn = CompileThreadStatic.DiagnosticsLogger.Error exn
+let error exn = DiagnosticsThreadStatics.DiagnosticsLogger.Error exn
 
 /// Simulates an error. For test purposes only.
-let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.DiagnosticsLogger.SimulateError p
+let simulateError (diagnostic : PhasedDiagnostic) =
+    DiagnosticsThreadStatics.DiagnosticsLogger.SimulateError diagnostic
 
-let diagnosticSink (phasedError, severity) = CompileThreadStatic.DiagnosticsLogger.DiagnosticSink (phasedError, severity)
+let diagnosticSink (diagnostic, severity) = DiagnosticsThreadStatics.DiagnosticsLogger.DiagnosticSink (diagnostic, severity)
 
-let errorSink pe = diagnosticSink (pe, FSharpDiagnosticSeverity.Error)
+let errorSink diagnostic = diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Error)
 
-let warnSink pe = diagnosticSink (pe, FSharpDiagnosticSeverity.Warning)
+let warnSink diagnostic = diagnosticSink (diagnostic, FSharpDiagnosticSeverity.Warning)
 
-let errorRecovery exn m = CompileThreadStatic.DiagnosticsLogger.ErrorRecovery exn m
+let errorRecovery exn m = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecovery exn m
 
-let stopProcessingRecovery exn m = CompileThreadStatic.DiagnosticsLogger.StopProcessingRecovery exn m
+let stopProcessingRecovery exn m = DiagnosticsThreadStatics.DiagnosticsLogger.StopProcessingRecovery exn m
 
-let errorRecoveryNoRange exn = CompileThreadStatic.DiagnosticsLogger.ErrorRecoveryNoRange exn
+let errorRecoveryNoRange exn = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecoveryNoRange exn
 
 let report f = 
     f() 
@@ -540,16 +531,16 @@ let mlCompatWarning s m = warning(UserCompilerMessage(FSComp.SR.mlCompatMessage 
 let mlCompatError s m = errorR(UserCompilerMessage(FSComp.SR.mlCompatError s, 62, m))
 
 let suppressErrorReporting f =
-    let errorLogger = CompileThreadStatic.DiagnosticsLogger
+    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
     try
-        let errorLogger = 
+        let diagnosticsLogger = 
             { new DiagnosticsLogger("suppressErrorReporting") with 
                 member _.DiagnosticSink(_phasedError, _isError) = ()
                 member _.ErrorCount = 0 }
-        SetThreadDiagnosticsLoggerNoUnwind errorLogger
+        SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
         f()
     finally
-        SetThreadDiagnosticsLoggerNoUnwind errorLogger
+        SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
 let conditionallySuppressErrorReporting cond f = if cond then suppressErrorReporting f else f()
 
@@ -559,8 +550,8 @@ let conditionallySuppressErrorReporting cond f = if cond then suppressErrorRepor
 /// The result type of a computational modality to colelct warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> = 
-    | OkResult of warnings: exn list * 'T
-    | ErrorResult of warnings: exn list * exn
+    | OkResult of warnings: exn list * result: 'T
+    | ErrorResult of warnings: exn list * error: exn
     
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -742,12 +733,12 @@ type StackGuard(maxDepth: int) =
         depth <- depth + 1
         try
             if depth % maxDepth = 0 then 
-                let errorLogger = CompileThreadStatic.DiagnosticsLogger
-                let buildPhase = CompileThreadStatic.BuildPhase
+                let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+                let buildPhase = DiagnosticsThreadStatics.BuildPhase
                 async { 
                     do! Async.SwitchToNewThread()
                     Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
-                    use _scope = new CompilationGlobalsScope(errorLogger, buildPhase)
+                    use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     return f()
                 } |> Async.RunImmediate
             else

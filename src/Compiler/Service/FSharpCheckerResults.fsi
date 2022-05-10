@@ -181,7 +181,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInst * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions
@@ -201,11 +201,11 @@ type public FSharpProjectContext =
 type public FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalDefines: string list
-      ErrorSeverityOptions: FSharpDiagnosticOptions
+      DiagnosticOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
       IndentationAwareSyntax: bool option
-      CompilingFsLib: bool
+      CompilingFSharpCore: bool
       IsExe: bool }
 
     static member Default: FSharpParsingOptions

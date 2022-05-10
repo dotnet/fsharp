@@ -93,17 +93,17 @@ type ValMap<'T>(imap: StampMap<'T>) =
 // renamings
 //--------------------------------------------------------------------------
 
-type TyparInst = (Typar * TType) list
+type TyparInstantiation = (Typar * TType) list
 
 type TyconRefRemap = TyconRefMap<TyconRef>
 type ValRemap = ValMap<ValRef>
 
 let emptyTyconRefRemap: TyconRefRemap = TyconRefMap<_>.Empty
-let emptyTyparInst = ([]: TyparInst)
+let emptyTyparInst = ([]: TyparInstantiation)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst: TyparInst
+    { tpinst: TyparInstantiation
 
       /// Values to remap
       valRemap: ValRemap
@@ -167,7 +167,7 @@ let remapUnionCaseRef tcmap (UnionCaseRef(tcref, nm)) = UnionCaseRef(remapTyconR
 let remapRecdFieldRef tcmap (RecdFieldRef(tcref, nm)) = RecdFieldRef(remapTyconRef tcmap tcref, nm)
 
 let mkTyparInst (typars: Typars) tyargs =
-    (List.zip typars tyargs: TyparInst)
+    (List.zip typars tyargs: TyparInstantiation)
 
 let generalizeTypar tp = mkTyparTy tp
 let generalizeTypars tps = List.map generalizeTypar tps
@@ -2806,8 +2806,8 @@ module PrettyTypes =
     let foldTypars f z (x: Typars) = List.fold (foldTypar f) z x
     let mapTypars g f (x: Typars) : Typars = List.map (mapTypar g f) x
 
-    let foldTyparInst f z (x: TyparInst) = List.fold (foldPair (foldTypar f, f)) z x
-    let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair (mapTypar g f, f)) x
+    let foldTyparInst f z (x: TyparInstantiation) = List.fold (foldPair (foldTypar f, f)) z x
+    let mapTyparInst g f (x: TyparInstantiation) : TyparInstantiation = List.map (mapPair (mapTypar g f, f)) x
 
     let PrettifyInstAndTyparsAndType g x = 
         PrettifyThings g 
@@ -2815,13 +2815,13 @@ module PrettyTypes =
             (fun f-> mapTriple (mapTyparInst g f, mapTypars g f, f)) 
             x
 
-    let PrettifyInstAndUncurriedSig g (x: TyparInst * UncurriedArgInfos * TType) = 
+    let PrettifyInstAndUncurriedSig g (x: TyparInstantiation * UncurriedArgInfos * TType) = 
         PrettifyThings g 
             (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
             (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2 f), f))
             x
 
-    let PrettifyInstAndCurriedSig g (x: TyparInst * TTypes * CurriedArgInfos * TType) = 
+    let PrettifyInstAndCurriedSig g (x: TyparInstantiation * TTypes * CurriedArgInfos * TType) = 
         PrettifyThings g 
             (fun f -> foldQuadruple (foldTyparInst f, List.fold f, List.fold (List.fold (fold1Of2 f)), f)) 
             (fun f -> mapQuadruple (mapTyparInst g f, List.map f, List.mapSquared (map1Of2 f), f))

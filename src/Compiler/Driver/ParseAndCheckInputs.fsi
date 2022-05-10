@@ -35,7 +35,7 @@ val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedIn
 val ParseInput:
     lexer: (Lexbuf -> Parser.token) *
     diagnosticOptions: FSharpDiagnosticOptions *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     lexbuf: Lexbuf *
     defaultNamespace: string option *
     fileName: string *
@@ -62,7 +62,7 @@ val ParseOneInputStream:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     retryLocked: bool *
     stream: Stream ->
         ParsedInput
@@ -73,7 +73,7 @@ val ParseOneInputSourceText:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     sourceText: ISourceText ->
         ParsedInput
 
@@ -83,7 +83,7 @@ val ParseOneInputFile:
     lexResourceManager: Lexhelp.LexResourceManager *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     retryLocked: bool ->
         ParsedInput
 
@@ -93,7 +93,7 @@ val ParseOneInputLexbuf:
     lexbuf: Lexbuf *
     fileName: string *
     isLastCompiland: (bool * bool) *
-    errorLogger: DiagnosticsLogger ->
+    diagnosticsLogger: DiagnosticsLogger ->
         ParsedInput
 
 val EmptyParsedInput: fileName: string * isLastCompiland: (bool * bool) -> ParsedInput
@@ -103,7 +103,7 @@ val ParseInputFiles:
     tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     exiter: Exiter *
     createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
     retryLocked: bool ->

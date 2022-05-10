@@ -2391,7 +2391,7 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d = InfoMemberPrinting.prettyL
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
-    bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
 
 /// Convert MethInfos to lines separated by newline including a newline as the first character
 let multiLineStringOfMethInfos infoReader m denv minfos =
@@ -2401,7 +2401,7 @@ let multiLineStringOfMethInfos infoReader m denv minfos =
      |> String.concat ""
 
 /// Convert a ParamData to a string
-let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
+let stringOfParamData denv paramData = buildString (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 
@@ -2518,14 +2518,14 @@ let minimalStringsOfTwoTypes denv t1 t2=
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader v1 v2= 
     let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
-    let min1 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v1)
-    let min2 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v2) 
+    let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v1)
+    let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v2) 
     if min1 <> min2 then 
         (min1, min2) 
     else
         let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
-        let max1 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v1)
-        let max2 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v2) 
+        let max1 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v1)
+        let max2 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v2) 
         max1, max2
     
 let minimalStringOfType denv ty = 

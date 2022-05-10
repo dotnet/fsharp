@@ -496,9 +496,9 @@ type PublicPath =
 type CompilationPath = 
     | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
 
-    member x.ILScopeRef = (let (CompPath(scoref, _)) = x in scoref)
+    member x.ILScopeRef = let (CompPath(scoref, _)) = x in scoref
 
-    member x.AccessPath = (let (CompPath(_, p)) = x in p)
+    member x.AccessPath = let (CompPath(_, p)) = x in p
 
     member x.MangledPath = List.map fst x.AccessPath
 
@@ -508,7 +508,8 @@ type CompilationPath =
         let a, _ = List.frontAndBack x.AccessPath
         CompPath(x.ILScopeRef, a)
 
-    member x.NestedCompPath n modKind = CompPath(x.ILScopeRef, x.AccessPath@[(n, modKind)])
+    member x.NestedCompPath n modulKind =
+        CompPath(x.ILScopeRef, x.AccessPath@[(n, modulKind)])
 
     member x.DemangledPath = 
         x.AccessPath |> List.map (fun (nm, k) -> CompilationPath.DemangleEntityName nm k)

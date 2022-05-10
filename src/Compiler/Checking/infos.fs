@@ -2196,7 +2196,7 @@ let stripByrefTy g ty =
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
-type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInst
+type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInstantiation
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.

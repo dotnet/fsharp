@@ -1089,9 +1089,9 @@ let internal SetCurrentUICultureForThread (lcid : int option) =
 // Reporting - warnings, errors
 //----------------------------------------------------------------------------
 
-let internal InstallErrorLoggingOnThisThread errorLogger =
+let internal InstallErrorLoggingOnThisThread diagnosticsLogger =
     if progress then dprintfn "Installing logger on id=%d name=%s" Thread.CurrentThread.ManagedThreadId Thread.CurrentThread.Name
-    SetThreadDiagnosticsLoggerNoUnwind(errorLogger)
+    SetThreadDiagnosticsLoggerNoUnwind(diagnosticsLogger)
     SetThreadBuildPhaseNoUnwind(BuildPhase.Interactive)
 
 /// Set the input/output encoding. The use of a thread is due to a known bug on
@@ -1496,7 +1496,7 @@ type internal FsiDynamicCompiler(
         execs
 
     // Emit the codegen results using the assembly writer
-    let ProcessCodegenResults (ctok, errorLogger: DiagnosticsLogger, istate, optEnv, tcState: TcState, tcConfig, prefixPath, showTypes: bool, isIncrementalFragment, fragName, declaredImpls, ilxGenerator: IlxAssemblyGenerator, codegenResults, m) =
+    let ProcessCodegenResults (ctok, diagnosticsLogger: DiagnosticsLogger, istate, optEnv, tcState: TcState, tcConfig, prefixPath, showTypes: bool, isIncrementalFragment, fragName, declaredImpls, ilxGenerator: IlxAssemblyGenerator, codegenResults, m) =
         let emEnv = istate.emEnv
 
         // Each input is like a small separately compiled extension to a single source file.
@@ -1506,16 +1506,16 @@ type internal FsiDynamicCompiler(
         ilxGenerator.AddIncrementalLocalAssemblyFragment (isIncrementalFragment, fragName, declaredImpls)
 
         ReportTime tcConfig "TAST -> ILX"
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         ReportTime tcConfig "Linking"
         let ilxMainModule = CreateModuleFragment (tcConfigB, dynamicCcuName, codegenResults)
 
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         ReportTime tcConfig "Assembly refs Normalised"
         let ilxMainModule = Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
 #if DEBUG
         if fsiOptions.ShowILCode then
@@ -1544,7 +1544,7 @@ type internal FsiDynamicCompiler(
 
                 MultipleInMemoryAssemblies emEnv, execs
 
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         // Explicitly register the resources with the QuotationPickler module
         match emEnv with
@@ -1575,17 +1575,17 @@ type internal FsiDynamicCompiler(
           execs |> List.iter (fun exec ->
             match exec() with
             | Some err ->
-                match errorLogger with
-                | :? DiagnosticsLoggerThatStopsOnFirstError as errorLogger ->
+                match diagnosticsLogger with
+                | :? DiagnosticsLoggerThatStopsOnFirstError as diagnosticsLogger ->
                     fprintfn fsiConsoleOutput.Error "%s" (err.ToString())
-                    errorLogger.SetError()
-                    errorLogger.AbortOnError(fsiConsoleOutput)
+                    diagnosticsLogger.SetError()
+                    diagnosticsLogger.AbortOnError(fsiConsoleOutput)
                 | _ ->
                     raise (StopProcessingExn (Some err))
 
             | None -> ())) 
 
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         // Echo the decls (reach inside wrapping)
         // This code occurs AFTER the execution of the declarations.
@@ -1621,7 +1621,7 @@ type internal FsiDynamicCompiler(
         // Return the new state and the environment at the end of the last input, ready for further inputs.
         (istate,declaredImpls)
 
-    let ProcessTypedImpl (errorLogger: DiagnosticsLogger, optEnv, tcState: TcState, tcConfig: TcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator: IlxAssemblyGenerator) =
+    let ProcessTypedImpl (diagnosticsLogger: DiagnosticsLogger, optEnv, tcState: TcState, tcConfig: TcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator: IlxAssemblyGenerator) =
         #if DEBUG
         // Logging/debugging
         if tcConfig.printAst then
@@ -1630,20 +1630,20 @@ type internal FsiDynamicCompiler(
                 fprintfn fsiConsoleOutput.Out "%+A" input
 #endif
 
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         let importMap = tcImports.GetImportMap()
 
         // optimize: note we collect the incremental optimization environment
         let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         let fragName = textOfLid prefixPath
         let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
-        errorLogger.AbortOnError(fsiConsoleOutput)
+        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
-    let ProcessInputs (ctok, errorLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
+    let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
         let ilxGenerator = istate.ilxGenerator
@@ -1652,11 +1652,11 @@ type internal FsiDynamicCompiler(
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> CheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+            lock tcLockObject (fun _ -> CheckClosedInputSet(ctok, diagnosticsLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
 
-        let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
+        let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
-        let newState, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
+        let newState, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
@@ -1791,17 +1791,17 @@ type internal FsiDynamicCompiler(
     member _.FindDynamicAssembly(simpleAssemName) =
         dynamicAssemblies |> ResizeArray.tryFind (fun asm -> asm.GetName().Name = simpleAssemName)
 
-    member _.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs, m) =
+    member _.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m) =
         let i = nextFragmentId()
         let prefix = mkFragmentPath m i
         // Ensure the path includes the qualifying name
         let inputs = inputs |> List.map (PrependPathToInput prefix)
         let isIncrementalFragment = false
-        let istate,_,_ = ProcessInputs (ctok, errorLogger, istate, inputs, true, isIncrementalFragment, false, prefix, m)
+        let istate,_,_ = ProcessInputs (ctok, diagnosticsLogger, istate, inputs, true, isIncrementalFragment, false, prefix, m)
         istate
 
     /// Evaluate the given definitions and produce a new interactive state.
-    member _.EvalParsedDefinitions (ctok, errorLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
+    member _.EvalParsedDefinitions (ctok, diagnosticsLogger: DiagnosticsLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
         let fileName = stdinMockFileName
         let i = nextFragmentId()
         let m = match defs with [] -> rangeStdin0 | _ -> List.reduce unionRanges [for d in defs -> d.Range] 
@@ -1812,13 +1812,13 @@ type internal FsiDynamicCompiler(
         let isExe = false
         let input = ParsedInput.ImplFile (ParsedImplFileInput (fileName,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
         let isIncrementalFragment = true
-        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
+        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, diagnosticsLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
         processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
-    member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: DiagnosticsLogger, istate, expr: SynExpr) =
+    member fsiDynamicCompiler.EvalParsedExpression (ctok, diagnosticsLogger: DiagnosticsLogger, istate, expr: SynExpr) =
         let tcConfig = TcConfig.Create (tcConfigB, validate=false)
         let itName = "it"
 
@@ -1826,7 +1826,7 @@ type internal FsiDynamicCompiler(
         let defs = fsiDynamicCompiler.BuildItBinding expr
 
         // Evaluate the overall definitions.
-        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, false, true, defs) |> fst
+        let istate = fsiDynamicCompiler.EvalParsedDefinitions (ctok, diagnosticsLogger, istate, false, true, defs) |> fst
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with
         | Item.Value vref ->
@@ -1890,7 +1890,7 @@ type internal FsiDynamicCompiler(
         tcConfigB.packageManagerLines <- PackageManagerLine.AddLineWithKey packageManager.Key lt path m tcConfigB.packageManagerLines
         needsPackageResolution <- true
 
-    member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger) =
+    member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, diagnosticsLogger) =
         if not needsPackageResolution then istate else
         needsPackageResolution <- false
 
@@ -1935,7 +1935,7 @@ type internal FsiDynamicCompiler(
 
                             let scripts = result.SourceFiles |> Seq.toList
                             if not (isNil scripts) then
-                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
+                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, diagnosticsLogger)
                             else istate
                         else
                             // Send outputs via diagnostics
@@ -1986,7 +1986,7 @@ type internal FsiDynamicCompiler(
                     (fun _ _ -> ()))
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
 
-    member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, errorLogger: DiagnosticsLogger) =
+    member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         match sourceFiles with
         | [] -> istate
@@ -2026,14 +2026,14 @@ type internal FsiDynamicCompiler(
                     input.MetaCommandDiagnostics |> List.iter diagnosticSink
                     let parsedInput =
                         match input.SyntaxTree with
-                        | None -> ParseOneInputFile(tcConfig, lexResourceManager, input.FileName, (true, false), errorLogger, (*retryLocked*)false)
+                        | None -> ParseOneInputFile(tcConfig, lexResourceManager, input.FileName, (true, false), diagnosticsLogger, (*retryLocked*)false)
                         | Some parseTree -> parseTree
                     input.FileName, parsedInput)
                 |> List.unzip
 
-            errorLogger.AbortOnError(fsiConsoleOutput);
+            diagnosticsLogger.AbortOnError(fsiConsoleOutput);
             let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
-            fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs, m)
+            fsiDynamicCompiler.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
         let cenv = SymbolEnv(istate.tcGlobals, istate.tcState.Ccu, Some istate.tcState.CcuSig, istate.tcImports)
@@ -2058,7 +2058,7 @@ type internal FsiDynamicCompiler(
         | _ ->
             None
 
-    member _.AddBoundValue (ctok, errorLogger: DiagnosticsLogger, istate, name: string, value: obj) =
+    member _.AddBoundValue (ctok, diagnosticsLogger: DiagnosticsLogger, istate, name: string, value: obj) =
         try
             match value with
             | null -> nullArg "value"
@@ -2101,8 +2101,8 @@ type internal FsiDynamicCompiler(
             let isIncrementalFragment = true
             let showTypes = false
             let declaredImpls = [impl]
-            let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
-            let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
+            let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
+            let istate, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
             let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
 
             // Force set the val with the given value obj.
@@ -2439,9 +2439,9 @@ type FsiStdinLexerProvider
     ) =
 
     // #light is the default for FSI
-    let lightStatus =
+    let indentationSyntaxStatus =
         let initialIndentationAwareSyntaxStatus = (tcConfigB.indentationAwareSyntax <> Some false)
-        IndentationAwareSyntaxStatus (initialIndentationAwareSyntaxStatus, false (* no warnings *))
+        IndentationAwareSyntaxStatus (initialIndentationAwareSyntaxStatus, warn=false)
 
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
         UnicodeLexing.FunctionAsLexbuf
@@ -2450,40 +2450,44 @@ type FsiStdinLexerProvider
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
             match inputOption with
-            |  Some(null) | None ->
+            |  Some null | None ->
                  if progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-            | Some (input:string) ->
+            | Some (input: string) ->
                 let input  = input + "\n"
-                let ninput = input.Length
-                if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
-                let ntrimmed = min len ninput
-                for i = 0 to ntrimmed-1 do
+
+                if input.Length > len then
+                    fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
+
+                let numTrimmed = min len input.Length
+
+                for i = 0 to numTrimmed-1 do
                     buf[i+start] <- input[i]
-                ntrimmed
+
+                numTrimmed
           ))
 
     //----------------------------------------------------------------------------
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-    let removeZeroCharsFromString (str:string) = (* bug:/4466 *)
-        if str<>null && str.Contains("\000") then
+    let removeZeroCharsFromString (str:string) =
+        if str <> null && str.Contains("\000") then
           String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
         else
           str
 
-    let CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger) =
+    let CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger) =
 
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
         let defines = tcConfigB.conditionalDefines
-        let lexargs = mkLexargs (defines, lightStatus, lexResourceManager, [], errorLogger, PathMap.empty)
-        let tokenizer = LexFilter.LexFilter(lightStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
+        let lexargs = mkLexargs (defines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty)
+        let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
     // Create a new lexer to read stdin
-    member _.CreateStdinLexer errorLogger =
+    member _.CreateStdinLexer diagnosticsLogger =
         let lexbuf =
             match fsiConsoleInput.TryGetConsole() with
             | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
@@ -2495,21 +2499,22 @@ type FsiStdinLexerProvider
                 LexbufFromLineReader fsiStdinSyphon (fun () -> fsiConsoleInput.In.ReadLine() |> removeZeroCharsFromString)
 
         fsiStdinSyphon.Reset()
-        CreateLexerForLexBuffer (stdinMockFileName, lexbuf, errorLogger)
+        CreateLexerForLexBuffer (stdinMockFileName, lexbuf, diagnosticsLogger)
 
     // Create a new lexer to read an "included" script file
-    member _.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
+    member _.CreateIncludedScriptLexer (sourceFileName, reader, diagnosticsLogger) =
         let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, tcConfigB.langVersion, reader)
-        CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
+        CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger)
 
     // Create a new lexer to read a string
-    member _.CreateStringLexer (sourceFileName, source, errorLogger) =
+    member _.CreateStringLexer (sourceFileName, source, diagnosticsLogger) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, source)
-        CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
+        CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger)
 
     member _.ConsoleInput = fsiConsoleInput
 
-    member _.CreateBufferLexer (sourceFileName, lexbuf, errorLogger) = CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
+    member _.CreateBufferLexer (sourceFileName, lexbuf, diagnosticsLogger) =
+        CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger)
 
 
 //----------------------------------------------------------------------------
@@ -2537,7 +2542,7 @@ type FsiInteractionProcessor
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
 
-    let runCodeOnEventLoop errorLogger f istate =
+    let runCodeOnEventLoop diagnosticsLogger f istate =
         try
             fsi.EventLoopInvoke (fun () ->
 
@@ -2546,17 +2551,17 @@ type FsiInteractionProcessor
                 let ctok = AssumeCompilationThreadWithoutEvidence()
 
                 // FSI error logging on switched to thread
-                InstallErrorLoggingOnThisThread errorLogger
+                InstallErrorLoggingOnThisThread diagnosticsLogger
                 use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
                 f ctok istate)
         with _ ->
             (istate,Completed None)
 
-    let InteractiveCatch (errorLogger: DiagnosticsLogger) (f:_ -> _ * FsiInteractionStepStatus)  istate =
+    let InteractiveCatch (diagnosticsLogger: DiagnosticsLogger) (f:_ -> _ * FsiInteractionStepStatus)  istate =
         try
             // reset error count
-            match errorLogger with
-            | :? DiagnosticsLoggerThatStopsOnFirstError as errorLogger ->  errorLogger.ResetErrorCount()
+            match diagnosticsLogger with
+            | :? DiagnosticsLoggerThatStopsOnFirstError as diagnosticsLogger ->  diagnosticsLogger.ResetErrorCount()
             | _ -> ()
 
             f istate
@@ -2603,7 +2608,7 @@ type FsiInteractionProcessor
             None
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
-    let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedScriptInteraction, errorLogger: DiagnosticsLogger) =
+    let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedScriptInteraction, diagnosticsLogger: DiagnosticsLogger) =
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
@@ -2646,23 +2651,23 @@ type FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed None
 
-        istate |> InteractiveCatch errorLogger (fun istate ->
+        istate |> InteractiveCatch diagnosticsLogger (fun istate ->
             match action with
             | ParsedScriptInteraction.Definitions ([], _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
                 istate,Completed None
 
             | ParsedScriptInteraction.Definitions ([SynModuleDecl.Expr(expr, _)], _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
-                fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
 
             | ParsedScriptInteraction.Definitions (defs,_) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, diagnosticsLogger, istate, true, false, defs)
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m), _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
-                fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
+                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger),Completed None
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
@@ -2743,7 +2748,7 @@ type FsiInteractionProcessor
     ///
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
-    let rec execParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
+    let rec execParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
         cancellationToken.ThrowIfCancellationRequested()
         let action,nextAction,istate =
             match action with
@@ -2796,9 +2801,9 @@ type FsiInteractionProcessor
           | None, Some prev -> assert nextAction.IsNone; istate, prev
           | None,_ -> assert nextAction.IsNone; istate, Completed None
           | Some action, _ ->
-              let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, errorLogger)
+              let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, diagnosticsLogger)
               match cont with
-                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont, cancellationToken)
+                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, diagnosticsLogger, Some cont, cancellationToken)
                 | CompletedWithReportedError e -> istate,CompletedWithReportedError e             (* drop nextAction on error *)
                 | CompletedWithAlreadyReportedError -> istate,CompletedWithAlreadyReportedError   (* drop nextAction on error *)
                 | EndOfFile                    -> istate,defaultArg lastResult (Completed None)   (* drop nextAction on EOF *)
@@ -2806,11 +2811,11 @@ type FsiInteractionProcessor
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
     /// independently
-    let executeParsedInteractions (ctok, tcConfig, istate, action, errorLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
-        let istate, completed = execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, lastResult, cancellationToken)
+    let executeParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
+        let istate, completed = execParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger, lastResult, cancellationToken)
         match completed with
         | Completed _  ->
-            let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
+            let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
             istate, completed
         | _ -> istate, completed
 
@@ -2836,18 +2841,18 @@ type FsiInteractionProcessor
            stopProcessingRecovery e range0;
            istate, CompletedWithReportedError e
 
-    let mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken =
+    let mainThreadProcessParsedInteractions ctok diagnosticsLogger (action, istate) cancellationToken =
       istate |> mainThreadProcessAction ctok (fun ctok tcConfig istate ->
-        executeParsedInteractions (ctok, tcConfig, istate, action, errorLogger, None, cancellationToken))
+        executeParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger, None, cancellationToken))
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
             Parser.typedSequentialExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
-    let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) =
-      istate |> InteractiveCatch errorLogger (fun istate ->
+    let mainThreadProcessParsedExpression ctok diagnosticsLogger (expr, istate) =
+      istate |> InteractiveCatch diagnosticsLogger (fun istate ->
         istate |> mainThreadProcessAction ctok (fun ctok _tcConfig istate ->
-          fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)  ))
+          fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)  ))
 
     let commitResult (istate, result) =
         match result with
@@ -2872,7 +2877,7 @@ type FsiInteractionProcessor
     /// During processing of startup scripts, this runs on the main thread.
     ///
     /// This is blocking: it reads until one chunk of input have been received, unless IsPastEndOfStream is true
-    member _.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, errorLogger, ?cancellationToken: CancellationToken) =
+    member _.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, diagnosticsLogger, ?cancellationToken: CancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         if tokenizer.LexBuffer.IsPastEndOfStream then
             let stepStatus =
@@ -2886,7 +2891,7 @@ type FsiInteractionProcessor
         else
 
             fsiConsolePrompt.Print();
-            istate |> InteractiveCatch errorLogger (fun istate ->
+            istate |> InteractiveCatch diagnosticsLogger (fun istate ->
                 if progress then fprintfn fsiConsoleOutput.Out "entering ParseInteraction...";
 
                 // Parse the interaction. When FSI.EXE is waiting for input from the console the
@@ -2897,7 +2902,7 @@ type FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch
                 // over to the run-thread (e.g. the GUI thread)
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok errorLogger (action, istate) cancellationToken)
+                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok diagnosticsLogger (action, istate) cancellationToken)
 
                 if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res;
                 res)
@@ -2905,7 +2910,7 @@ type FsiInteractionProcessor
     member _.CurrentState = currState
 
     /// Perform an "include" on a script file (i.e. a script file specified on the command line)
-    member processor.EvalIncludedScript (ctok, istate, sourceFile, m, errorLogger) =
+    member processor.EvalIncludedScript (ctok, istate, sourceFile, m, diagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB, validate=false)
         // Resolve the file name to an absolute file name
         let sourceFile = tcConfig.ResolveSourceFile(m, sourceFile, tcConfig.implicitIncludeDir)
@@ -2918,9 +2923,9 @@ type FsiInteractionProcessor
                 use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
                 use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
 
-                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
+                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, diagnosticsLogger)
                 let rec run istate =
-                    let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, errorLogger)
+                    let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
                     match cont with Completed _ -> run istate | _ -> istate,cont
 
                 let istate,cont = run istate
@@ -2935,21 +2940,21 @@ type FsiInteractionProcessor
 
 
     /// Load the source files, one by one. Called on the main thread.
-    member processor.EvalIncludedScripts (ctok, istate, sourceFiles, errorLogger) =
+    member processor.EvalIncludedScripts (ctok, istate, sourceFiles, diagnosticsLogger) =
       match sourceFiles with
         | [] -> istate
         | sourceFile :: moreSourceFiles ->
             // Catch errors on a per-file basis, so results/bindings from pre-error files can be kept.
-            let istate,cont = InteractiveCatch errorLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin0, errorLogger)) istate
+            let istate,cont = InteractiveCatch diagnosticsLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin0, diagnosticsLogger)) istate
             match cont with
-              | Completed _                -> processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, errorLogger)
+              | Completed _                -> processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, diagnosticsLogger)
               | CompletedWithAlreadyReportedError -> istate // do not process any more files
               | CompletedWithReportedError _ -> istate // do not process any more files
               | CtrlC                      -> istate // do not process any more files
               | EndOfFile                  -> assert false; istate // This is unexpected. EndOfFile is replaced by Completed in the called function
 
 
-    member processor.LoadInitialFiles (ctok, errorLogger) =
+    member processor.LoadInitialFiles (ctok, diagnosticsLogger) =
         /// Consume initial source files in chunks of scripts or non-scripts
         let rec consume istate sourceFiles =
             match sourceFiles with
@@ -2959,9 +2964,9 @@ type FsiInteractionProcessor
                 let sourceFiles = List.map fst sourceFiles
                 let istate =
                     if isScript1 then
-                        processor.EvalIncludedScripts (ctok, istate, sourceFiles, errorLogger)
+                        processor.EvalIncludedScripts (ctok, istate, sourceFiles, diagnosticsLogger)
                     else
-                        istate |> InteractiveCatch errorLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin0, sourceFiles, lexResourceManager, errorLogger), Completed None) |> fst
+                        istate |> InteractiveCatch diagnosticsLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin0, sourceFiles, lexResourceManager, diagnosticsLogger), Completed None) |> fst
                 consume istate rest
 
         setCurrState (consume currState fsiOptions.SourceFiles)
@@ -2971,46 +2976,46 @@ type FsiInteractionProcessor
 
     /// Send a dummy interaction through F# Interactive, to ensure all the most common code generation paths are
     /// JIT'ed and ready for use.
-    member _.LoadDummyInteraction(ctok, errorLogger) =
-        setCurrState (currState |> InteractiveCatch errorLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, []) |> fst, Completed None) |> fst)
+    member _.LoadDummyInteraction(ctok, diagnosticsLogger) =
+        setCurrState (currState |> InteractiveCatch diagnosticsLogger (fun istate ->  fsiDynamicCompiler.EvalParsedDefinitions (ctok, diagnosticsLogger, istate, true, false, []) |> fst, Completed None) |> fst)
 
-    member _.EvalInteraction(ctok, sourceText, scriptFileName, errorLogger, ?cancellationToken) =
+    member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> errorLogger)
+        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
-        let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
+        let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
         currState
-        |> InteractiveCatch errorLogger (fun istate ->
+        |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-            mainThreadProcessParsedInteractions ctok errorLogger (expr, istate) cancellationToken)
+            mainThreadProcessParsedInteractions ctok diagnosticsLogger (expr, istate) cancellationToken)
         |> commitResult
 
-    member this.EvalScript (ctok, scriptPath, errorLogger) =
+    member this.EvalScript (ctok, scriptPath, diagnosticsLogger) =
         // Todo: this runs the script as expected but errors are displayed one line to far in debugger
         let sourceText = sprintf "#load @\"%s\" " scriptPath
-        this.EvalInteraction (ctok, sourceText, scriptPath, errorLogger)
+        this.EvalInteraction (ctok, sourceText, scriptPath, diagnosticsLogger)
 
-    member _.EvalExpression (ctok, sourceText, scriptFileName, errorLogger) =
+    member _.EvalExpression (ctok, sourceText, scriptFileName, diagnosticsLogger) =
         use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> errorLogger)
+        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
-        let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
+        let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
         currState
-        |> InteractiveCatch errorLogger (fun istate ->
+        |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = parseExpression tokenizer
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
             let exprWithSeq = SynExpr.Sequential (DebugPointAtSequential.SuppressExpr, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
-            mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
+            mainThreadProcessParsedExpression ctok diagnosticsLogger (exprWithSeq, istate))
         |> commitResult
 
-    member _.AddBoundValue(ctok, errorLogger, name, value: obj) =
+    member _.AddBoundValue(ctok, diagnosticsLogger, name, value: obj) =
         currState
-        |> InteractiveCatch errorLogger (fun istate ->
-            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value))
+        |> InteractiveCatch diagnosticsLogger (fun istate ->
+            fsiDynamicCompiler.AddBoundValue(ctok, diagnosticsLogger, istate, name, value))
         |> commitResult
 
     member _.PartialAssemblySignatureUpdated = event.Publish
@@ -3023,17 +3028,17 @@ type FsiInteractionProcessor
     // mainForm.Invoke to pipe a message back through the form's main event loop. (The message
     // is a delegate to execute on the main Thread)
     //
-    member processor.StartStdinReadAndProcessThread errorLogger =
+    member processor.StartStdinReadAndProcessThread diagnosticsLogger =
 
       if progress then fprintfn fsiConsoleOutput.Out "creating stdinReaderThread";
 
       let stdinReaderThread =
         Thread(ThreadStart(fun () ->
-            InstallErrorLoggingOnThisThread errorLogger // FSI error logging on stdinReaderThread, e.g. parse errors.
+            InstallErrorLoggingOnThisThread diagnosticsLogger // FSI error logging on stdinReaderThread, e.g. parse errors.
             use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
             try
                 try
-                  let initialTokenizer = fsiStdinLexerProvider.CreateStdinLexer(errorLogger)
+                  let initialTokenizer = fsiStdinLexerProvider.CreateStdinLexer(diagnosticsLogger)
                   if progress then fprintfn fsiConsoleOutput.Out "READER: stdin thread started...";
 
                   // Delay until we've peeked the input or read the entire first line
@@ -3041,19 +3046,19 @@ type FsiInteractionProcessor
 
                   if progress then fprintfn fsiConsoleOutput.Out "READER: stdin thread got first line...";
 
-                  let runCodeOnMainThread = runCodeOnEventLoop errorLogger
+                  let runCodeOnMainThread = runCodeOnEventLoop diagnosticsLogger
 
                   // Keep going until EndOfFile on the inReader or console
                   let rec loop currTokenizer =
 
                       let istateNew,contNew =
-                          processor.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, currState, currTokenizer, errorLogger)
+                          processor.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, currState, currTokenizer, diagnosticsLogger)
 
                       setCurrState istateNew
 
                       match contNew with
                       | EndOfFile -> ()
-                      | CtrlC -> loop (fsiStdinLexerProvider.CreateStdinLexer(errorLogger))   // After each interrupt, restart to a brand new tokenizer
+                      | CtrlC -> loop (fsiStdinLexerProvider.CreateStdinLexer(diagnosticsLogger))   // After each interrupt, restart to a brand new tokenizer
                       | CompletedWithAlreadyReportedError
                       | CompletedWithReportedError _
                       | Completed _ -> loop currTokenizer
@@ -3253,9 +3258,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiStdinSyphon = FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
 
-    let errorLogger = DiagnosticsLoggerThatStopsOnFirstError(tcConfigB, fsiStdinSyphon, fsiConsoleOutput)
+    let diagnosticsLogger = DiagnosticsLoggerThatStopsOnFirstError(tcConfigB, fsiStdinSyphon, fsiConsoleOutput)
 
-    do InstallErrorLoggingOnThisThread errorLogger // FSI error logging on main thread.
+    do InstallErrorLoggingOnThisThread diagnosticsLogger // FSI error logging on main thread.
 
     let updateBannerText() =
       tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpBannerVersion)
@@ -3368,8 +3373,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Choice2Of2 None -> raise (FsiCompilationException(FSIstrings.SR.fsiOperationFailed(), None))
         | Choice2Of2 (Some userExn) -> raise (makeNestedException userExn)
 
-    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationDiagnosticLogger) res =
-        let errs = errorLogger.GetDiagnostics()
+    let commitResultNonThrowing errorOptions scriptFile (diagnosticsLogger: CompilationDiagnosticLogger) res =
+        let errs = diagnosticsLogger.GetDiagnostics()
         let errorInfos = DiagnosticHelpers.CreateDiagnostics (errorOptions, true, scriptFile, errs, true)
         let userRes =
             match res with
@@ -3424,9 +3429,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
              fsi.EventLoopInvoke (
                 fun () ->
                     fprintfn fsiConsoleOutput.Error "%s" (exn.ToString())
-                    errorLogger.SetError()
+                    diagnosticsLogger.SetError()
                     try
-                        errorLogger.AbortOnError(fsiConsoleOutput)
+                        diagnosticsLogger.AbortOnError(fsiConsoleOutput)
                     with StopProcessing ->
                         // BUG 664864 some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
                         // at some moment one chart has raised InvalidArgumentException from OnPaint, this exception was intercepted by the code in higher layer and
@@ -3495,7 +3500,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, errorLogger)
+        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
         |> commitResult
 
     member _.EvalExpressionNonThrowing(code) =
@@ -3505,9 +3510,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let errorLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, errorLogger)
-        |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
+        |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
 
     member _.EvalInteraction(code, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
@@ -3515,7 +3520,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, errorLogger, cancellationToken)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
         |> commitResult
         |> ignore
 
@@ -3527,9 +3532,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let errorLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, errorLogger, cancellationToken)
-        |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
+        |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
 
     member _.EvalScript(filePath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the
@@ -3537,7 +3542,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalScript(ctok, filePath, errorLogger)
+        fsiInteractionProcessor.EvalScript(ctok, filePath, diagnosticsLogger)
         |> commitResult
         |> ignore
 
@@ -3548,9 +3553,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).diagnosticsOptions
-        let errorLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalScript(ctok, filePath, errorLogger)
-        |> commitResultNonThrowing errorOptions filePath errorLogger
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        fsiInteractionProcessor.EvalScript(ctok, filePath, diagnosticsLogger)
+        |> commitResultNonThrowing errorOptions filePath diagnosticsLogger
         |> function Choice1Of2 _, errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
@@ -3568,7 +3573,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, value)
+        fsiInteractionProcessor.AddBoundValue(ctok, diagnosticsLogger, name, value)
         |> commitResult
         |> ignore
 
@@ -3604,7 +3609,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         if fsiOptions.Interact then
             // page in the type check env
-            fsiInteractionProcessor.LoadDummyInteraction(ctokStartup, errorLogger)
+            fsiInteractionProcessor.LoadDummyInteraction(ctokStartup, diagnosticsLogger)
             if progress then fprintfn fsiConsoleOutput.Out "MAIN: InstallKillThread!";
 
             // Compute how long to pause before a ThreadAbort is actually executed.
@@ -3623,18 +3628,18 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
                 | _ -> ())
 #endif
 
-            fsiInteractionProcessor.LoadInitialFiles(ctokRun, errorLogger)
+            fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
 
-            fsiInteractionProcessor.StartStdinReadAndProcessThread(errorLogger)
+            fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
 
             DriveFsiEventLoop (fsi, fsiConsoleOutput )
 
         else // not interact
             if progress then fprintfn fsiConsoleOutput.Out "Run: not interact, loading initial files..."
-            fsiInteractionProcessor.LoadInitialFiles(ctokRun, errorLogger)
+            fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
 
             if progress then fprintfn fsiConsoleOutput.Out "Run: done..."
-            exit (min errorLogger.ErrorCount 1)
+            exit (min diagnosticsLogger.ErrorCount 1)
 
         // The Ctrl-C exception handler that we've passed to native code has
         // to be explicitly kept alive.

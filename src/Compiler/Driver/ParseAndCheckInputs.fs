@@ -266,7 +266,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
         let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules, trivia))
         inputT, moduleNamesDictT
 
-let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: DiagnosticsLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, fileName, isLastCompiland) =
+let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, fileName, isLastCompiland) =
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy file name
     //  - if you have a #line directive, e.g.
@@ -308,7 +308,7 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: D
         input
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
-        let filteringDiagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, errorLogger)
+        let filteringDiagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, diagnosticsLogger)
         delayLogger.CommitDelayedDiagnostics filteringDiagnosticsLogger
 
 type Tokenizer = unit -> Parser.token
@@ -374,7 +374,7 @@ let EmptyParsedInput(fileName, isLastCompiland) =
         )
 
 /// Parse an input, drawing tokens from the LexBuffer
-let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger) =
+let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger) =
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     try
 
@@ -382,10 +382,10 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
         let skipWhitespaceTokens = true
 
         // Set up the initial status for indentation-aware processing
-        let lightStatus = IndentationAwareSyntaxStatus (tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName, true)
+        let indentationSyntaxStatus = IndentationAwareSyntaxStatus (tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName, true)
 
         // Set up the initial lexer arguments
-        let lexargs = mkLexargs (tcConfig.conditionalDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
+        let lexargs = mkLexargs (tcConfig.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, tcConfig.pathMap)
 
         // Set up the initial lexer arguments
         let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir
@@ -399,9 +399,9 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     | TokenizeOption.Unfiltered ->
                         (fun () -> Lexer.token lexargs skipWhitespaceTokens lexbuf), true
                     | TokenizeOption.Only ->
-                        LexFilter.LexFilter(lightStatus, tcConfig.compilingFSharpCore, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, true
+                        LexFilter.LexFilter(indentationSyntaxStatus, tcConfig.compilingFSharpCore, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, true
                     | _ ->
-                        LexFilter.LexFilter(lightStatus, tcConfig.compilingFSharpCore, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, false
+                        LexFilter.LexFilter(indentationSyntaxStatus, tcConfig.compilingFSharpCore, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, false
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then
@@ -412,7 +412,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     TestInteractionParserAndExit (tokenizer, lexbuf)
 
                 // Parse the input
-                let res = ParseInput((fun _ -> tokenizer ()), tcConfig.diagnosticsOptions, errorLogger, lexbuf, None, fileName, isLastCompiland)
+                let res = ParseInput((fun _ -> tokenizer ()), tcConfig.diagnosticsOptions, diagnosticsLogger, lexbuf, None, fileName, isLastCompiland)
 
                 // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then
@@ -435,23 +435,23 @@ let checkInputFile (tcConfig: TcConfig) fileName =
     else
         error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName fileName tcConfig.implicitIncludeDir), rangeStartup))
 
-let parseInputStreamAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked, stream: Stream) =
+let parseInputStreamAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream) =
     use reader = stream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
     let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
 
     // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger)
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
-let parseInputSourceTextAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, sourceText: ISourceText) =
+let parseInputSourceTextAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText) =
     // Set up the LexBuffer for the file
     let lexbuf = UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, sourceText)
 
     // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger)
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
-let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked) =
+let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked) =
     // Get a stream reader for the file
     use fileStream = FileSystem.OpenFileForReadShim(fileName)
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
@@ -460,35 +460,35 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
     let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFSharpCore, tcConfig.langVersion, reader)
 
     // Parse the file drawing tokens from the lexbuf
-    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger)
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
 /// Parse an input from stream
-let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked, stream: Stream) =
+let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream: Stream) =
     try
-       parseInputStreamAux(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked, stream)
+       parseInputStreamAux(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked, stream)
     with exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
 /// Parse an input from source text
-let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, sourceText: ISourceText) =
+let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText: ISourceText) =
     try
-       parseInputSourceTextAux(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, sourceText)
+       parseInputSourceTextAux(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
     with exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
 /// Parse an input from disk
-let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked) =
+let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked) =
     try
        checkInputFile tcConfig fileName
-       parseInputFileAux(tcConfig, lexResourceManager, fileName, isLastCompiland, errorLogger, retryLocked)
+       parseInputFileAux(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, retryLocked)
     with exn ->
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
 /// Parse multiple input files from disk
-let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorLogger: DiagnosticsLogger, exiter: Exiter, createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger, retryLocked) =
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, exiter: Exiter, createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger, retryLocked) =
     try
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
@@ -521,7 +521,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorL
                     finally
                         delayedDiagnosticsLoggers
                         |> Array.iter (fun delayedDiagnosticsLogger ->
-                            delayedDiagnosticsLogger.CommitDelayedDiagnostics errorLogger
+                            delayedDiagnosticsLogger.CommitDelayedDiagnostics diagnosticsLogger
                         )
                 with
                 | StopProcessing ->
@@ -533,7 +533,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, errorL
             sourceFiles
             |> Array.map (fun (fileName, isLastCompiland) ->
                 let directoryName = Path.GetDirectoryName fileName
-                let input = ParseOneInputFile(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), errorLogger, retryLocked)
+                let input = ParseOneInputFile(tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), diagnosticsLogger, retryLocked)
                 (input, directoryName))
             |> List.ofArray
 

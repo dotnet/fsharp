@@ -296,16 +296,16 @@ let valRefHash (vref: ValRef) =
     | ValueNone -> 0
     | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
+/// Pairs an Item with a TyparInstantiation showing how generic type variables of the item are instantiated at
 /// a particular usage point.
 [<RequireQualifiedAccess>]
 type ItemWithInst =
     { Item: Item
-      TyparInst: TyparInst }
+      TyparInstantiation: TyparInstantiation }
 
-let ItemWithNoInst item = ({ Item = item; TyparInst = emptyTyparInst } : ItemWithInst)
+let ItemWithNoInst item = ({ Item = item; TyparInstantiation = emptyTyparInst } : ItemWithInst)
 
-let (|ItemWithInst|) (x: ItemWithInst) = (x.Item, x.TyparInst)
+let (|ItemWithInst|) (x: ItemWithInst) = (x.Item, x.TyparInstantiation)
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldInfo * bool
@@ -448,13 +448,13 @@ type NameResolutionEnv =
     member nenv.TyconsByDemangledNameAndArity fq =
         match fq with
         | FullyQualified -> nenv.eFullyQualifiedTyconsByDemangledNameAndArity
-        | OpenQualified  -> nenv.eTyconsByDemangledNameAndArity
+        | OpenQualified -> nenv.eTyconsByDemangledNameAndArity
 
     /// Get the table of types, indexed by name
     member nenv.TyconsByAccessNames fq =
         match fq with
         | FullyQualified -> nenv.eFullyQualifiedTyconsByAccessNames
-        | OpenQualified  -> nenv.eTyconsByAccessNames
+        | OpenQualified -> nenv.eTyconsByAccessNames
 
     /// Get the table of modules and namespaces
     member nenv.ModulesAndNamespaces fq =
@@ -694,7 +694,6 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
-
 /// bulkAddMode: true when adding the values from the 'open' of a namespace
 /// or module, when we collapse the value table down to a dictionary.
 let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: UnqualifiedItems) (vrefs: ValRef[]) =
@@ -717,7 +716,6 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
         eIndexedExtensionMembers.Add (vref.MemberApparentEntity, FSExtMem (vref, pri))
     else
         eIndexedExtensionMembers
-
 
 /// This entry point is used to add some extra items to the environment for Visual Studio, e.g. static members
 let AddFakeNamedValRefToNameEnv nm nenv vref =
@@ -980,6 +978,7 @@ let LookupTypeNameInEntityNoArity _m nm (mtyp: ModuleOrNamespaceType) =
 /// Lookup a type name in an entity.
 let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo: TypeNameResolutionStaticArgsInfo, modref: ModuleOrNamespaceRef) =
     let mtyp = modref.ModuleOrNamespaceType
+
     let tcrefs =
         match staticResInfo with
         | TypeNameResolutionStaticArgsInfo.Indefinite ->
@@ -989,14 +988,14 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo: TypeNa
             match LookupTypeNameInEntityHaveArity nm staticResInfo mtyp with
             | Some tycon -> [modref.NestedTyconRef tycon]
             | None -> []
+
 #if !NO_TYPEPROVIDERS
     let tcrefs =
         match tcrefs with
         | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, modref)
         | _ -> tcrefs
-#else
-    amap |> ignore
 #endif
+
     let tcrefs = tcrefs |> List.filter (IsEntityAccessible amap m ad)
     tcrefs
 
@@ -1010,6 +1009,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
             let tycon = tcref.Deref
             let mty = tycon.ModuleOrNamespaceType
             // No dotting through type generators to get to a nested type!
+
 #if !NO_TYPEPROVIDERS
             if checkForGenerated then
                 CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
@@ -1335,7 +1335,6 @@ let AddModuleAbbrevToNameEnv (id: Ident) nenv modrefs =
          let add old nw = nw @ old
          NameMap.layerAdditive add (Map.add id.idText modrefs Map.empty) nenv.eModulesAndNamespaces }
 
-
 //-------------------------------------------------------------------------
 // Open a structure or an IL namespace
 //-------------------------------------------------------------------------
@@ -1350,6 +1349,7 @@ let MakeNestedModuleRefs (modref: ModuleOrNamespaceRef) =
 let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: ModuleOrNamespaceRef list) =
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
+
     let addModrefs tab =
          let add old nw =
              if IsEntityAccessible amap m ad nw then
@@ -1357,20 +1357,23 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
              else
                  old
          NameMap.layerAdditive add modrefsMap tab
+
     let nenv =
-        {nenv with
+        { nenv with
            eModulesAndNamespaces = addModrefs nenv.eModulesAndNamespaces
            eFullyQualifiedModulesAndNamespaces =
               if root then
                   addModrefs nenv.eFullyQualifiedModulesAndNamespaces
               else
                   nenv.eFullyQualifiedModulesAndNamespaces }
+
     let nenv =
         (nenv, modrefs) ||> List.fold (fun nenv modref ->
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref
             else
                 nenv)
+
     nenv
 
 /// Add the contents of a module or namespace to the name resolution environment
@@ -1395,10 +1398,12 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
            if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
     let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
+
     let vrefs =
         mty.AllValsAndMembers.ToList()
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
         |> List.toArray
+
     let nenv = AddValRefsToNameEnvWithPriority g BulkAdd.Yes pri nenv vrefs
     let nestedModules = MakeNestedModuleRefs modref
     let nenv = (nenv, nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad
@@ -1427,7 +1432,6 @@ and AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root nenv (modref: Enti
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref: EntityRef) =
     AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv [modref]
-
 
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.
@@ -1518,12 +1522,15 @@ let AddResults res1 res2 =
     | Result x, Result l -> Result (x @ l)
     | Exception _, Result l -> Result l
     | Result x, Exception _ -> Result x
+
     // If we have error messages for the same symbol, then we can merge suggestions.
     | Exception (UndefinedName(n1, f, id1, suggestions1)), Exception (UndefinedName(n2, _, id2, suggestions2)) when n1 = n2 && id1.idText = id2.idText && equals id1.idRange id2.idRange ->
         Exception(UndefinedName(n1, f, id1, fun addToBuffer -> suggestions1 addToBuffer; suggestions2 addToBuffer))
+
     // This prefers error messages coming from deeper failing long identifier paths
     | Exception (UndefinedName(n1, _, _, _) as e1), Exception (UndefinedName(n2, _, _, _) as e2) ->
         if n1 < n2 then Exception e2 else Exception e1
+
     // Prefer more concrete errors about things being undefined
     | Exception (UndefinedName _ as e1), Exception (DiagnosticWithText _) -> Exception e1
     | Exception (DiagnosticWithText _), Exception (UndefinedName _ as e2) -> Exception e2
@@ -1628,8 +1635,8 @@ type FormatStringCheckContext =
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
-    abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
-    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
     abstract CurrentSourceText: ISourceText option
@@ -1846,7 +1853,7 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
 
     member _.Item = i
 
-    member _.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
+    member _.ItemWithInst = ({ Item = i; TyparInstantiation = tpinst } : ItemWithInst)
 
     member _.ItemOccurence = io
 
@@ -3634,7 +3641,7 @@ type AfterResolution =
     | DoNothing
 
     /// Notify the tcSink of a precise resolution. The 'Item' contains the candidate overrides.
-    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
+    | RecordResolution of Item option * (TyparInstantiation -> unit) * (MethInfo * PropInfo option * TyparInstantiation -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
 ///

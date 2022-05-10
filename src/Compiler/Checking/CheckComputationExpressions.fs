@@ -662,22 +662,22 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
     let (|OptionalIntoSuffix|) e = 
         match e with 
-        | IntoSuffix (body, intoWordRange, optInfo) -> (body, Some (intoWordRange, optInfo))
+        | IntoSuffix (body, intoWordRange, intoInfo) -> (body, Some (intoWordRange, intoInfo))
         | body -> (body, None)
 
     let (|CustomOperationClause|_|) e = 
         match e with 
-        | OptionalIntoSuffix(StripApps(SingleIdent nm, _) as core, optInto) when isCustomOperation nm ->  
+        | OptionalIntoSuffix(StripApps(SingleIdent nm, _) as core, intoOpt) when isCustomOperation nm ->  
             // Now we know we have a custom operation, commit the name resolution
-            let optIntoInfo = 
-                match optInto with 
-                | Some (intoWordRange, optInfo) -> 
+            let intoInfoOpt = 
+                match intoOpt with 
+                | Some (intoWordRange, intoInfo) -> 
                     let item = Item.CustomOperation ("into", (fun () -> None), None)
                     CallNameResolutionSink cenv.tcSink (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-                    Some optInfo
+                    Some intoInfo
                 | None -> None
 
-            Some (nm, Option.get (tryGetDataForCustomOperation nm), core, core.Range, optIntoInfo)
+            Some (nm, Option.get (tryGetDataForCustomOperation nm), core, core.Range, intoInfoOpt)
         | _ -> None
 
     let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, None, m, SynExprLambdaTrivia.Zero)

@@ -1879,7 +1879,7 @@ and p_tycon_repr x st =
     match x with
     | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
     | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
-    | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
+    | TAsmRepr ilTy        -> p_byte 1 st; p_byte 2 st; p_ILType ilTy st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false

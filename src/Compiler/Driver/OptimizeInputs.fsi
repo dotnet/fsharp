@@ -36,14 +36,14 @@ val CreateIlxAssemblyGenerator:
     TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 
 val GenerateIlxCode:
-    IlxGenBackend *
+    ilxBackend: IlxGenBackend *
     isInteractiveItExpr: bool *
     isInteractiveOnMono: bool *
-    TcConfig *
-    TopAttribs *
-    TypedAssemblyAfterOptimization *
+    tcConfig: TcConfig *
+    topAttrs: TopAttribs *
+    optimizedImpls: TypedAssemblyAfterOptimization *
     fragName: string *
-    IlxAssemblyGenerator ->
+    ilxGenerator: IlxAssemblyGenerator ->
         IlxGenResults
 
 // Used during static linking

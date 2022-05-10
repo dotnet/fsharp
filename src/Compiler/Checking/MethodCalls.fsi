@@ -248,7 +248,7 @@ type CalledMeth<'T> =
     member CalledTyArgs: TType list
 
     /// The instantiation of the method we're attempting to call
-    member CalledTyparInst: TypedTreeOps.TyparInst
+    member CalledTyparInst: TypedTreeOps.TyparInstantiation
 
     /// The types of the actual object arguments, if any
     member CallerObjArgTys: TType list

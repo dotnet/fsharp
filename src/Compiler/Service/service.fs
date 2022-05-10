@@ -94,24 +94,24 @@ module CompileHelpers =
             oneDiagnostic main
             List.iter oneDiagnostic related
 
-        let errorLogger = 
+        let diagnosticsLogger = 
             { new DiagnosticsLogger("CompileAPI") with 
             
                 member _.DiagnosticSink(exn, isError) = diagnosticSink isError exn
 
                 member _.ErrorCount =
                     diagnostics
-                    |> Seq.filter (fun diag -> diag.Severity = FSharpDiagnosticSeverity.Error)
+                    |> Seq.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
                     |> Seq.length }
 
         let loggerProvider = 
             { new DiagnosticsLoggerProvider() with 
-                member _.CreateDiagnosticsLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = errorLogger    }
-        diagnostics, errorLogger, loggerProvider
+                member _.CreateDiagnosticsLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = diagnosticsLogger    }
+        diagnostics, diagnosticsLogger, loggerProvider
 
-    let tryCompile errorLogger f = 
+    let tryCompile diagnosticsLogger f = 
         use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse            
-        use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+        use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> diagnosticsLogger)
         let exiter = { new Exiter with member x.Exit n = raise StopProcessing }
         try 
             f exiter
@@ -123,22 +123,22 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
     
-        let diagnostics, errorLogger, loggerProvider = mkCompilationDiagnosticsHandlers()
+        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers()
         let result = 
-            tryCompile errorLogger (fun exiter -> 
+            tryCompile diagnosticsLogger (fun exiter -> 
                 CompileFromCommandLineArguments (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
     
         diagnostics.ToArray(), result
 
     let compileFromAsts (ctok, legacyReferenceResolver, asts, assemblyName, outFile, dependencies, noframework, pdbFile, executable, tcImportsCapture, dynamicAssemblyCreator) =
 
-        let diagnostics, errorLogger, loggerProvider = mkCompilationDiagnosticsHandlers()
+        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers()
     
         let executable = defaultArg executable true
         let target = if executable then CompilerTarget.ConsoleExe else CompilerTarget.Dll
     
         let result = 
-            tryCompile errorLogger (fun exiter -> 
+            tryCompile diagnosticsLogger (fun exiter -> 
                 CompileFromSyntaxTrees (ctok, legacyReferenceResolver, ReduceMemoryFlag.Yes, assemblyName, target, outFile, pdbFile, dependencies, noframework, exiter, loggerProvider, asts, tcImportsCapture, dynamicAssemblyCreator))
 
         diagnostics.ToArray(), result
@@ -832,8 +832,8 @@ type BackgroundCompiler(
             let tcDiagnostics = tcInfo.TcDiagnostics
             let tcDependencyFiles = tcInfo.tcDependencyFiles
             let diagnostics =
-                [| yield! creationDiags;
-                    yield! DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors) |]
+                [| yield! creationDiags
+                   yield! DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors) |]
 
             let getAssemblyData() = 
                 match tcAssemblyDataOpt with

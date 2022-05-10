@@ -52,11 +52,11 @@ type LexArgs =
     {
       conditionalDefines: string list
       resourceManager: LexResourceManager
-      errorLogger: DiagnosticsLogger
+      diagnosticsLogger: DiagnosticsLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus : IndentationAwareSyntaxStatus
+      mutable indentationSyntaxStatus : IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
     }
 
@@ -67,13 +67,13 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (conditionalDefines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap: PathMap) =
+let mkLexargs (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap) =
     { 
       conditionalDefines = conditionalDefines
       ifdefStack = ifdefStack
-      lightStatus = lightStatus
+      indentationSyntaxStatus = indentationSyntaxStatus
       resourceManager = resourceManager
-      errorLogger = errorLogger
+      diagnosticsLogger = diagnosticsLogger
       applyLineDirectives = true
       stringNest = []
       pathMap = pathMap

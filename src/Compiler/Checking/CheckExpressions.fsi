@@ -249,7 +249,7 @@ type TcFileState =
 
       /// Holds a reference to the component being compiled.
       /// This field is very rarely used (mainly when fixing up forward references to fslib.
-      topCcu: CcuThunk
+      thisCcu: CcuThunk
 
       /// Holds the current inference constraints
       css: ConstraintSolverState
@@ -310,7 +310,7 @@ type TcFileState =
         isScript: bool *
         niceNameGen: NiceNameGenerator *
         amap: ImportMap *
-        topCcu: CcuThunk *
+        thisCcu: CcuThunk *
         isSig: bool *
         haveSig: bool *
         conditionalDefines: string list option *
@@ -326,7 +326,7 @@ type TcFileState =
 type MemberOrValContainerInfo =
     | MemberOrValContainerInfo of
         tcref: TyconRef *
-        optIntfSlotTy: (TType * SlotImplSet) option *
+        intfSlotTyOpt: (TType * SlotImplSet) option *
         baseValOpt: Val option *
         safeInitInfo: SafeInitData *
         declaredTyconTypars: Typars
@@ -418,13 +418,13 @@ type RecDefnBindingInfo =
 type PartialValReprInfo = PartialValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
 
 /// Holds the initial ValMemberInfo and other information before it is fully completed
-type PreValMemberInfo = PreValMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
+type PrelimMemberInfo = PrelimMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
 
 /// The result of checking a value or member signature
 type ValSpecResult =
     | ValSpecResult of
         altActualParent: ParentRef *
-        memberInfoOpt: PreValMemberInfo option *
+        memberInfoOpt: PrelimMemberInfo option *
         id: Ident *
         enclosingDeclaredTypars: Typars *
         declaredTypars: Typars *
@@ -476,7 +476,7 @@ type RecursiveBindingInfo =
         vspec: Val *
         explicitTyparInfo: ExplicitTyparInfo *
         partialValReprInfo: PartialValReprInfo *
-        memberInfoOpt: PreValMemberInfo option *
+        memberInfoOpt: PrelimMemberInfo option *
         baseValOpt: Val option *
         safeThisValOpt: Val option *
         safeInitInfo: SafeInitData *
@@ -490,7 +490,7 @@ type RecursiveBindingInfo =
 
 /// Represents the results of the first phase of preparing simple values from a pattern
 [<Sealed>]
-type PrelimValScheme1 =
+type PrelimVal1 =
     member Ident: Ident
     member Type: TType
 
@@ -503,13 +503,13 @@ type ValScheme =
     | ValScheme of
         id: Ident *
         typeScheme: TypeScheme *
-        topValInfo: ValReprInfo option *
-        memberInfo: PreValMemberInfo option *
+        valReprInfo: ValReprInfo option *
+        memberInfo: PrelimMemberInfo option *
         isMutable: bool *
         inlineInfo: ValInline *
         baseOrThisInfo: ValBaseOrThisInfo *
         visibility: SynAccess option *
-        compgen: bool *
+        isCompGen: bool *
         isIncrClass: bool *
         isTyFunc: bool *
         hasDeclaredTypars: bool
@@ -597,7 +597,7 @@ val CheckForNonAbstractInterface:
 
 /// Check the flags on a member definition for consistency
 val CheckMemberFlags:
-    optIntfSlotTy: 'a option ->
+    intfSlotTyOpt: 'a option ->
     newslotsOK: NewSlotsOK ->
     overridesOK: OverridesOK ->
     memberFlags: SynMemberFlags ->
@@ -684,7 +684,7 @@ val FreshenObjectArgType:
     tcref: TyconRef ->
     isExtrinsic: bool ->
     declaredTyconTypars: Typar list ->
-        TType * Typar list * TyparInst * TType * TType
+        TType * Typar list * TyparInstantiation * TType * TType
 
 /// Get the accumulated module/namespace type for the current module/namespace being processed.
 val GetCurrAccumulatedModuleOrNamespaceType: env: TcEnv -> ModuleOrNamespaceType
@@ -723,7 +723,7 @@ val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TT
 
 /// Make simple values (which are not recursive nor members)
 val MakeAndPublishSimpleVals:
-    cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
+    cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimVal1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option
@@ -734,12 +734,12 @@ val MakeMemberDataAndMangledNameForMemberVal:
     tcref: TyconRef *
     isExtrinsic: bool *
     attrs: Attribs *
-    optImplSlotTys: TType list *
+    implSlotTys: TType list *
     memberFlags: SynMemberFlags *
     valSynData: SynValInfo *
     id: Ident *
     isCompGen: bool ->
-        PreValMemberInfo
+        PrelimMemberInfo
 
 /// Return a new environment suitable for processing declarations in the interior of a type definition
 val MakeInnerEnvForTyconRef: env: TcEnv -> tcref: TyconRef -> isExtrinsicExtension: bool -> TcEnv
@@ -750,7 +750,7 @@ val MakeInnerEnv:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    modKind: ModuleOrNamespaceKind ->
+    modulKind: ModuleOrNamespaceKind ->
         TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
@@ -759,8 +759,8 @@ val MakeInnerEnvWithAcc:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    mtypeAcc: ModuleOrNamespaceType ref ->
-    modKind: ModuleOrNamespaceKind ->
+    modulTyAcc: ModuleOrNamespaceType ref ->
+    modulKind: ModuleOrNamespaceKind ->
         TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
@@ -963,7 +963,7 @@ val TcNewExpr:
 val TcProvidedTypeAppToStaticConstantArgs:
     cenv: TcFileState ->
     env: TcEnv ->
-    optGeneratedTypePath: string list option ->
+    generatedTypePathOpt: string list option ->
     tpenv: UnscopedTyparEnv ->
     tcref: TyconRef ->
     args: SynType list ->
@@ -974,18 +974,18 @@ val TcProvidedTypeAppToStaticConstantArgs:
 /// Check a set of simple patterns, e.g. the declarations of parameters for an implicit constructor.
 val TcSimplePatsOfUnknownType:
     cenv: TcFileState ->
-    optArgsOK: bool ->
-    checkCxs: CheckConstraints ->
+    optionalArgsOK: bool ->
+    checkConstraints: CheckConstraints ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
     spats: SynSimplePats ->
-        string list * (UnscopedTyparEnv * NameMap<PrelimValScheme1> * Set<string>)
+        string list * (UnscopedTyparEnv * NameMap<PrelimVal1> * Set<string>)
 
 /// Check a set of explicitly declared constraints on type parameters
 val TcTyparConstraints:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -999,7 +999,7 @@ val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl lis
 val TcType:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1008,10 +1008,10 @@ val TcType:
 
 /// Check a syntactic type or unit of measure
 val TcTypeOrMeasureAndRecover:
-    optKind: TyparKind option ->
+    kindOpt: TyparKind option ->
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1022,7 +1022,7 @@ val TcTypeOrMeasureAndRecover:
 val TcTypeAndRecover:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1046,7 +1046,7 @@ val TcValSpec:
 /// Given the declaration of a function or member, process it to produce the ValReprInfo
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
-val TranslateTopValSynInfo:
+val TranslateSynValInfo:
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
@@ -1054,7 +1054,7 @@ val TranslateTopValSynInfo:
 
 /// Given the declaration of a function or member, complete the processing of its ValReprInfo
 /// once type parameters have been fully inferred via generalization.
-val TranslatePartialArity: tps: Typar list -> PartialValReprInfo -> ValReprInfo
+val TranslatePartialValReprInfo: tps: Typar list -> PartialValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
 val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit

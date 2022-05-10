@@ -104,7 +104,7 @@ let debug = false
 //---------------------------------------------------------------------------
 
 type SubExprOfInput =
-    | SubExpr of (TyparInst -> Expr -> Expr) * (Expr * Val)
+    | SubExpr of (TyparInstantiation -> Expr -> Expr) * (Expr * Val)
 
 let BindSubExprOfInput g amap gtps (PBind(v, tyscheme)) m (SubExpr(accessf, (ve2, v2))) =
     let e' =

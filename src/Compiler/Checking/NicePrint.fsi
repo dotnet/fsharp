@@ -35,7 +35,7 @@ val prettyLayoutOfMemberSig:
     denv: DisplayEnv -> (Typar * TType) list * string * Typars * (TType * ArgReprInfo) list list * TType -> Layout
 
 val prettyLayoutOfUncurriedSig:
-    denv: DisplayEnv -> argInfos: TyparInst -> tau: UncurriedArgInfos -> (TType -> TyparInst * Layout)
+    denv: DisplayEnv -> argInfos: TyparInstantiation -> tau: UncurriedArgInfos -> (TType -> TyparInstantiation * Layout)
 
 val prettyLayoutsOfUnresolvedOverloading:
     denv: DisplayEnv ->
@@ -51,7 +51,11 @@ val outputValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> os: StringB
 val stringValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> x: ValRef -> string
 
 val layoutQualifiedValOrMember:
-    denv: DisplayEnv -> infoReader: InfoReader -> typarInst: TyparInst -> v: ValRef -> TyparInst * Layout
+    denv: DisplayEnv ->
+    infoReader: InfoReader ->
+    typarInst: TyparInstantiation ->
+    v: ValRef ->
+        TyparInstantiation * Layout
 
 val outputQualifiedValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> os: StringBuilder -> v: ValRef -> unit
 
@@ -66,9 +70,9 @@ val prettyLayoutOfMethInfoFreeStyle:
     infoReader: InfoReader ->
     m: range ->
     denv: DisplayEnv ->
-    typarInst: TyparInst ->
+    typarInst: TyparInstantiation ->
     minfo: MethInfo ->
-        TyparInst * Layout
+        TyparInstantiation * Layout
 
 val prettyLayoutOfPropInfoFreeStyle:
     g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> d: PropInfo -> Layout
@@ -132,7 +136,11 @@ val layoutInferredSigOfModuleExpr:
         Layout
 
 val prettyLayoutOfValOrMember:
-    denv: DisplayEnv -> infoReader: InfoReader -> typarInst: TyparInst -> v: ValRef -> TyparInst * Layout
+    denv: DisplayEnv ->
+    infoReader: InfoReader ->
+    typarInst: TyparInstantiation ->
+    v: ValRef ->
+        TyparInstantiation * Layout
 
 val prettyLayoutOfValOrMemberNoInst: denv: DisplayEnv -> infoReader: InfoReader -> v: ValRef -> Layout
 
@@ -141,7 +149,9 @@ val prettyLayoutOfMemberNoInstShort: denv: DisplayEnv -> v: Val -> Layout
 val layoutOfValReturnType: denv: DisplayEnv -> v: ValRef -> Layout
 
 val prettyLayoutOfInstAndSig:
-    denv: DisplayEnv -> TyparInst * TTypes * TType -> TyparInst * (TTypes * TType) * (Layout list * Layout) * Layout
+    denv: DisplayEnv ->
+    TyparInstantiation * TTypes * TType ->
+        TyparInstantiation * (TTypes * TType) * (Layout list * Layout) * Layout
 
 val minimalStringsOfTwoTypes: denv: DisplayEnv -> t1: TType -> t2: TType -> string * string * string
 
