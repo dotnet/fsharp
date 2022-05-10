@@ -67,4 +67,3 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `Tc`                  | Type-checker |
 | `IL`                 | Abstract  IL = F# representation of .NET IL |
 | `Ilx`                 | Extended Abstract IL = .NET IL plus a couple of contructs that get erased |
-

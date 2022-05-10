@@ -85,8 +85,8 @@ Walking over the AST
 
 The abstract syntax tree is defined as a number of discriminated unions that represent
 different syntactical elements (such as expressions, patterns, declarations etc.). The best
-way to understand the AST is to look at the definitions in [`ast.fs` in the source 
-code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
+way to understand the AST is to look at the definitions in [`SyntaxTree.fsi` in the source 
+code](https://github.com/fsharp/fsharp/blob/main/src/Compiler/SyntaxTree.fsi).
 
 The relevant parts are in the following namespace:
 *)
