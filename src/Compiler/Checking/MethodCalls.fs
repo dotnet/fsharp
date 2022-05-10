@@ -726,7 +726,7 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
-    member x.HasOptArgs = not (isNil x.UnnamedCalledOptArgs)
+    member x.HasOptionalArgs = not (isNil x.UnnamedCalledOptArgs)
 
     member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)
 

@@ -3038,7 +3038,7 @@ and ResolveOverloading
 
                     // Prefer methods that don't use optional args
                     // Note: Relies on 'compare' respecting true > false
-                    let c = compare (not candidate.HasOptArgs) (not other.HasOptArgs)
+                    let c = compare (not candidate.HasOptionalArgs) (not other.HasOptionalArgs)
                     if c <> 0 then c else
 
                     // check regular unnamed args. The argument counts will only be different if one is using param args
