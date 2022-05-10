@@ -12,14 +12,15 @@ module ``Mutation`` =
 
     [<Test>]
     let ``Mutation 01``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation01
 type Test = struct
               val mutable v: int
               member t.setV v = t.v <- 0
             end
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .class sequential ansi serializable sealed nested public Test
@@ -42,16 +43,17 @@ type Test = struct
           IL_0009:  ret
         } 
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 02``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation02
 let x = System.TimeSpan.MinValue
 x.ToString()
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.TimeSpan
@@ -91,16 +93,17 @@ void  .cctor() cil managed
     IL_0020:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 03``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation03
 let x = System.DateTime.Now
 x.Day
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.DateTime
@@ -139,16 +142,17 @@ x.Day
     IL_001a:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 04``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation04
 let x = System.Decimal.MaxValue
 x.ToString()
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public specialname static valuetype [mscorlib]System.Decimal
@@ -188,11 +192,12 @@ void  .cctor() cil managed
     IL_0020:  ret
   }
             """
-            ])
+            ]))
 
     [<Test>]
     let ``Mutation 05``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"|]
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions(
+            [|"-g"; "--optimize-"|],
             """
 module Mutation05
 type C() =
@@ -207,7 +212,7 @@ type StaticC() =
     static let mutable x = 1
 
     static member X with get() = x and set v = x <- v
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .class auto ansi serializable nested public C
@@ -286,43 +291,45 @@ type StaticC() =
             get_X() cil managed
     {
 
-        .maxstack  8
-          IL_0000:  volatile.
-          IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
-          IL_0007:  ldc.i4.1
-          IL_0008:  bge.s      IL_0013
-    
-          IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-          IL_000f:  nop
-          IL_0010:  nop
-          IL_0011:  br.s       IL_0014
-    
-          IL_0013:  nop
-          IL_0014:  volatile.
-          IL_0016:  ldsfld     int32 Mutation05/StaticC::x
-          IL_001b:  ret
+      .maxstack  8
+      IL_0000:  nop
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 Mutation05/StaticC::init@10
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
+
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_0010:  nop
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
+
+      IL_0014:  nop
+      IL_0015:  volatile.
+      IL_0017:  ldsfld     int32 Mutation05/StaticC::x
+      IL_001c:  ret
     }
 
     .method public specialname static void
             set_X(int32 v) cil managed
     {
 
-        .maxstack  8
-          IL_0000:  volatile.
-          IL_0002:  ldsfld     int32 Mutation05/StaticC::init@10
-          IL_0007:  ldc.i4.1
-          IL_0008:  bge.s      IL_0013
-    
-          IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-          IL_000f:  nop
-          IL_0010:  nop
-          IL_0011:  br.s       IL_0014
-    
-          IL_0013:  nop
-          IL_0014:  ldarg.0
-          IL_0015:  volatile.
-          IL_0017:  stsfld     int32 Mutation05/StaticC::x
-          IL_001c:  ret
+      .maxstack  8
+      IL_0000:  nop
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 Mutation05/StaticC::init@10
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
+
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_0010:  nop
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
+
+      IL_0014:  nop
+      IL_0015:  ldarg.0
+      IL_0016:  volatile.
+      IL_0018:  stsfld     int32 Mutation05/StaticC::x
+      IL_001d:  ret
     }
 
     .method private specialname rtspecialname static
@@ -353,4 +360,4 @@ type StaticC() =
     IL_000b:  stsfld     int32 Mutation05/StaticC::init@10
     IL_0010:  ret
             """
-            ])
+            ]))

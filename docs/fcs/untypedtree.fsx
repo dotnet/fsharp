@@ -85,8 +85,8 @@ Walking over the AST
 
 The abstract syntax tree is defined as a number of discriminated unions that represent
 different syntactical elements (such as expressions, patterns, declarations etc.). The best
-way to understand the AST is to look at the definitions in [`ast.fs` in the source 
-code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
+way to understand the AST is to look at the definitions in [`SyntaxTree.fsi` in the source 
+code](https://github.com/fsharp/fsharp/blob/main/src/Compiler/SyntaxTree.fsi).
 
 The relevant parts are in the following namespace:
 *)
@@ -97,7 +97,7 @@ When processing the AST, you will typically write a number of mutually recursive
 that pattern match on the different syntactical elements. There is a number of elements
 that need to be supported - the top-level element is module or namespace declaration, 
 containing declarations inside a module (let bindings, types etc.). A let declaration inside
-a module then contains expression, which can contain patterns.
+a module then contains expressions, which can contain patterns.
 
 ### Walking over patterns and expressions
 
@@ -161,7 +161,7 @@ be another source of calls to `visitExpression`.
 
 As mentioned earlier, the AST of a file contains a number of module or namespace declarations
 (top-level node) that contain declarations inside a module (let bindings or types) or inside
-a namespace (just types). The following functions walks over declarations - we ignore types,
+a namespace (just types). The following function walks over declarations - we ignore types,
 nested modules and all other elements and look only at top-level `let` bindings (values and 
 functions):
 *)
@@ -222,8 +222,8 @@ let file = "/home/user/Test.fsx"
 let tree = getUntypedTree(file, SourceText.ofString input)
 (**
 When you run the code in F# interactive, you can enter `tree;;` in the interactive console and
-see pretty printed representation of the data structure - the tree contains a lot of information,
-so this is not particularly readable, but it gives you good idea about how the tree looks.
+see a pretty printed representation of the data structure - the tree contains a lot of information,
+so this is not particularly readable, but it gives you a good idea about how the tree looks.
 
 The returned `tree` value is again a discriminated union that can be two different cases - one case
 is `ParsedInput.SigFile` which represents F# signature file (`*.fsi`) and the other one is 
@@ -241,9 +241,9 @@ match tree with
 (**
 Summary
 -------
-In this tutorial, we looked at basic of working with the untyped abstract syntax tree. This is a 
+In this tutorial, we looked at the basics of working with the untyped abstract syntax tree. This is a 
 comprehensive topic, so it is not possible to explain everything in a single article. The 
-[Fantomas project](https://github.com/dungpa/fantomas) is a good example of tool based on the untyped
+[Fantomas project](https://github.com/fsprojects/fantomas) is a good example of a tool based on the untyped
 AST that can help you understand more. In practice, it is also useful to combine the information here
 with some information you can obtain from the [editor services](editor.html) discussed in the next 
 tutorial.

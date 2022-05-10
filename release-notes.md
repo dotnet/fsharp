@@ -14,6 +14,18 @@ This document contains current and historical release notes information. They ar
 
 These release notes track our current efforts to document changes to the F# project over time. They are split into the language, core library, compiler/tools, and compiler service.
 
+### FSharp Compiler Service (main)
+
+* In FSharpParsingOptions, rename ConditionalCompilationDefines --> ConditionalDefines
+* Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
+* Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`
+* Some node types in FSharpExpr (e.g. Let, While, TryFinally, TryWith) reveal additional debug points
+* In FSharpExpr, FastIntegerForLoop has been renamed to IntegerForLoop 
+* SynModuleDecl.DoExpr --> SynModuleDecl.Expr because it was not corresponding to a 'do expr' declaration.
+  A 'do expr' declaration in a module will correspond to a SynModuleDecl.Expr enclosing a SynExpr.Do 
+  This constructo also loses the debug point as it was always None. The debug point
+  is always implicit for this construct.
+
 ### F# 6.0 / Visual Studio 17.0
 
 

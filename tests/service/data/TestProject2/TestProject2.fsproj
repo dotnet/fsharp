@@ -12,7 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+		<ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
 		<ProjectReference Include="..\TestProject\TestProject.fsproj" />
 		<ProjectReference Include="..\CSharp_Analysis\CSharp_Analysis.csproj" />
 		<Reference Include="TestTP">

@@ -469,8 +469,6 @@ namespace ProviderImplementation.ProvidedTypes
                 ShapeCombinationUnchecked (Shape (function [cond; body] -> Expr.WhileLoopUnchecked (cond,  body) | _ -> invalidArg "expr" "invalid shape"), [cond; body])
             | IfThenElse (g, t, e) ->
                 ShapeCombinationUnchecked (Shape (function [g; t; e] -> Expr.IfThenElseUnchecked (g, t, e) | _ -> invalidArg "expr" "invalid shape"), [g; t; e])
-            | TupleGet (expr, i) ->
-                ShapeCombinationUnchecked (Shape (function [expr] -> Expr.TupleGetUnchecked (expr, i) | _ -> invalidArg "expr" "invalid shape"), [expr])
             | ExprShape.ShapeCombination (comb,args) ->
                 ShapeCombinationUnchecked (Shape (fun args -> ExprShape.RebuildShapeCombination(comb, args)), args)
             | ExprShape.ShapeVar v -> ShapeVarUnchecked v
@@ -6555,7 +6553,7 @@ namespace ProviderImplementation.ProvidedTypes
     // implementation must support the operations used by the F# compiler to interrogate the reflection objects.
     //
     //     For a System.Assembly, the information must be sufficient to allow the Assembly --> ILScopeRef conversion
-    //     in ExtensionTyping.fs of the F# compiler. This requires:
+    //     in TypeProviders.fs of the F# compiler. This requires:
     //         Assembly.GetName()
     //
     //     For a System.Type representing a reference to a named type definition, the information must be sufficient
@@ -7724,9 +7722,6 @@ namespace ProviderImplementation.ProvidedTypes
             txTable.Get inp.Token (fun () -> 
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes,
                 // which fortunately also correspond to element types. We just use the design-time types instead.
-                // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
-                // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 | USome "System", "Void"->  typeof<Void>
                 (*
@@ -8986,7 +8981,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                 let systemRuntimeContainsTypeObj = config.GetField("systemRuntimeContainsType")
 
-                // Account for https://github.com/Microsoft/visualfsharp/pull/591
+                // Account for https://github.com/dotnet/fsharp/pull/591
                 let systemRuntimeContainsTypeObj2 =
                     if systemRuntimeContainsTypeObj.HasField("systemRuntimeContainsTypeRef") then
                         systemRuntimeContainsTypeObj.GetField("systemRuntimeContainsTypeRef").GetProperty("Value")
@@ -9799,7 +9794,6 @@ namespace ProviderImplementation.ProvidedTypes
                 bb.EmitByte (if req then et_CMOD_REQD else et_CMOD_OPT)
                 emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Namespace, tref.Name)
                 EmitType cenv env bb ty
-             | _ -> failwith "EmitType"
 
         and EmitLocalInfo cenv env (bb:ByteBuffer) (l:ILLocal) =
             if l.IsPinned then 
@@ -13034,7 +13028,7 @@ namespace ProviderImplementation.ProvidedTypes
              showTimes: bool
              dumpDebugInfo:bool }
 
-        let WriteILBinary (outfile, (args: options), modul) =
+        let WriteILBinaryFile (outfile, (args: options), modul) =
             writeBinaryAndReportMappings (outfile, 
                                           args.ilg, args.pdbfile, (* args.signer, *) args.portablePDB, args.embeddedPDB, args.embedAllSource, 
                                           args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
@@ -13342,7 +13336,7 @@ namespace ProviderImplementation.ProvidedTypes
         member _.Save() = 
             let il = mb.Content
             let options: BinaryWriter.options = { ilg = ilg; pdbfile = None; portablePDB = false; embeddedPDB = false; embedAllSource = false; embedSourceList = []; sourceLink = ""; emitTailcalls = true; deterministic = false; showTimes = false; dumpDebugInfo = false }
-            BinaryWriter.WriteILBinary (fileName, options, il)
+            BinaryWriter.WriteILBinaryFile (fileName, options, il)
         override _.ToString() = "builder for " + (assemblyName.ToString())
         
 

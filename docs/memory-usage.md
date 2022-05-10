@@ -29,7 +29,7 @@ In general, the F# compiler allocates a lot of memory. More than it needs to. Ho
 Some allocations are much more than others
 * Large Object Heap (LOH) allocations (> ~80K) are rarely collected and should only be used for long-lived items. 
 * Ephemeral allocations that never escape the Gen0 seem to not matter that much, though of course should be considered.
-* Don't try to remove all allocations, and don't asseume copy large structs is better than allocating a reference type. Measure instead.
+* Don't try to remove all allocations, and don't assume copy large structs is better than allocating a reference type. Measure instead.
 
 To analyze memory usage of F# tooling, you have two primary avenues:
 

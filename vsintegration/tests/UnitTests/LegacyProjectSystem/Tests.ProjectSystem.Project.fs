@@ -34,20 +34,8 @@ type Project() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction = 
-        match Path.GetExtension(filename) with 
-        | ".fsx" -> Salsa.BuildAction.None
-        | ".resx"
-        | ".resources" -> Salsa.BuildAction.EmbeddedResource
-        | _ -> Salsa.BuildAction.Compile            
-
-    static let GetReferenceContainerNode(project : ProjectNode) =
-        let l = new List<ReferenceContainerNode>()
-        project.FindNodesOfType(l)
-        l.[0]     
-
     [<Test>]    
-    member public this.NewFolderOnProjectMenu() =
+    member public _.NewFolderOnProjectMenu() =
         printfn "starting..."
         let package = new FSharpProjectPackage()
         let project = new FSharpProjectNode(package)
@@ -696,7 +684,7 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
-    [<Test>] //ref bug https://github.com/Microsoft/visualfsharp/issues/259
+    [<Test>] //ref bug https://github.com/dotnet/fsharp/issues/259
     member public this.``RenameFile.InFolder``() =
         this.MakeProjectAndDo(["file1.fs"; @"Folder1\file2.fs"; @"Folder1\nested1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
@@ -758,7 +746,7 @@ type Project() =
                 if File.Exists(absFilePath) then File.Delete(absFilePath)
             ))
     
-(* Disabled for now - see https://github.com/Microsoft/visualfsharp/pull/3071 - this is testing old project system features
+(* Disabled for now - see https://github.com/dotnet/fsharp/pull/3071 - this is testing old project system features
 
     [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
@@ -802,7 +790,7 @@ type Project() =
         VsMocks.vsUIShellShowMessageBoxResult <- Some 6 // IDYES = 6
 
         this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
-            let Absolutize filename = Path.Combine(project.ProjectFolder, filename)
+            let Absolutize fileName = Path.Combine(project.ProjectFolder, fileName)
             let mutable currentAbsoluteFilePath = Absolutize "foo.fs"
             File.AppendAllText(currentAbsoluteFilePath, "// dummy content")
             try

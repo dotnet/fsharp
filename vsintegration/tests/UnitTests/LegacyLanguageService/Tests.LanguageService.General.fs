@@ -130,10 +130,10 @@ type UsingMSBuild() =
     [<Test>]
     member public this.``Lexer.CommentsLexing.Bug1548``() =
         let scan = new FSharpScanner_DEPRECATED(fun source -> 
-                        let filename = "test.fs"
+                        let fileName = "test.fs"
                         let defines = [ "COMPILED"; "EDITING" ]
             
-                        FSharpSourceTokenizer(defines,Some(filename)).CreateLineTokenizer(source))
+                        FSharpSourceTokenizer(defines,Some(fileName)).CreateLineTokenizer(source))
         
         let cm = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Comment
         let kw = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Keyword

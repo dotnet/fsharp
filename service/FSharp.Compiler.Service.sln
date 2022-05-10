@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30503.244
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj", "{A59DB8AE-8044-41A5-848A-800A7FF31C93}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "..\src\Compiler\FSharp.Compiler.Service.fsproj", "{A59DB8AE-8044-41A5-848A-800A7FF31C93}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tests", "..\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{8D9C9683-5041-48AB-8FA9-0939D2D27D33}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "..\src\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{98E7659D-8E0C-489F-B4F5-E12AFC0D1BFA}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "..\src\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{98E7659D-8E0C-489F-B4F5-E12AFC0D1BFA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FSharp.Compiler.Service.Tests support", "FSharp.Compiler.Service.Tests support", "{875D91AC-BA4C-4191-AB11-AE461DB9B8DB}"
 EndProject
@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "..\tests
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestTP", "..\tests\service\data\TestTP\TestTP.fsproj", "{2EF674B9-8B56-4796-9933-42B2629E52C3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Test.Utilities", "..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{38A23D53-E2BF-4B76-907F-49F41D60C88E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{38A23D53-E2BF-4B76-907F-49F41D60C88E}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTests", "..\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,10 @@ Global
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A182B7D-EDA3-4BF2-84B8-C7553BB7A5A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
