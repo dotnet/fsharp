@@ -297,11 +297,6 @@
         <target state="translated">As cadeias de caracteres interpoladas usadas como tipo IFormattable ou tipo FormattableString não podem usar especificadores '%'. Apenas interpoladores de estilo .NET, como '{{expr}}', '{{expr,3}}' ou '{{expr:N5}}' podem ser usados.</target>
         <note />
       </trans-unit>
-      <trans-unit id="forPercentAInReflectionFreeCode">
-        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
-        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -445,11 +440,6 @@
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Exibe os valores permitidos para a versão do idioma, especifica a versão do idioma, como 'mais recente ' ou 'prévia'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsReflectionFree">
-        <source>Disable implicit generation of constructs using reflection</source>
-        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">

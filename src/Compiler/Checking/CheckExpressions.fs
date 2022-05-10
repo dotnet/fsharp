@@ -1426,7 +1426,7 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | Other -> ()
 
-let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, konst, isGeneratedEventVal) =
+let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
 
@@ -1535,7 +1535,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, 
         Construct.NewVal
             (logicalName, id.idRange, compiledName, ty, mut,
              isCompGen, valReprInfo, vis, vrec, memberInfoOpt, baseOrThis, attrs, inlineFlag,
-             doc, isTopBinding, isExtrinsic, isIncrClass, isTyFunc,
+             xmlDoc, isTopBinding, isExtrinsic, isIncrClass, isTyFunc,
              (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
 
@@ -1564,10 +1564,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, vrec, 
 
     vspec
 
-let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, vrec, valSchemes, attrs, doc, literalValue) =
+let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, vrec, valSchemes, attrs, xmlDoc, literalValue) =
     Map.foldBack
         (fun name (valscheme: ValScheme) values ->
-          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, literalValue, false), valscheme.TypeScheme) values)
+          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, xmlDoc, literalValue, false), valscheme.TypeScheme) values)
         valSchemes
         Map.empty
 
@@ -2599,12 +2599,12 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding cenv (env: TcEnv) binding =
         match binding with
-        | SynBinding (vis, kind, isInline, isMutable, Attributes attrs, doc, valSynData, headPat, retInfo, rhsExpr, mBinding, debugPoint, _) ->
+        | SynBinding (vis, kind, isInline, isMutable, Attributes attrs, xmlDoc, valSynData, headPat, retInfo, rhsExpr, mBinding, debugPoint, _) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) =
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData headPat (NormalizedBindingRhs ([], retInfo, rhsExpr))
             let paramNames = Some valSynData.SynValInfo.ArgNames
-            let doc = doc.ToXmlDoc(true, paramNames)
-            NormalizedBinding(vis, kind, isInline, isMutable, attrs, doc, typars, valSynData, pat, rhsExpr, mBinding, debugPoint)
+            let xmlDoc = xmlDoc.ToXmlDoc(true, paramNames)
+            NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, typars, valSynData, pat, rhsExpr, mBinding, debugPoint)
 
 //-------------------------------------------------------------------------
 // input is:
@@ -7149,7 +7149,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implTy tpenv (absSlotInfo, bind) =
 
     let g = cenv.g
 
-    let (NormalizedBinding(vis, kind, isInline, isMutable, attrs, doc, synTyparDecls, valSynData, headPat, bindingRhs, mBinding, debugPoint)) = bind
+    let (NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, synTyparDecls, valSynData, headPat, bindingRhs, mBinding, debugPoint)) = bind
     let (SynValData(memberFlagsOpt, _, _)) = valSynData
 
     // 4a2. adjust the binding, especially in the "member" case, a subset of the logic of AnalyzeAndMakeAndPublishRecursiveValue
@@ -7171,7 +7171,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implTy tpenv (absSlotInfo, bind) =
             | _ ->
                 error(InternalError("unexpected member binding", mBinding))
         lookPat headPat
-    let bind = NormalizedBinding (vis, kind, isInline, isMutable, attrs, doc, synTyparDecls, valSynData, mkSynPatVar vis logicalMethId, bindingRhs, mBinding, debugPoint)
+    let bind = NormalizedBinding (vis, kind, isInline, isMutable, attrs, xmlDoc, synTyparDecls, valSynData, mkSynPatVar vis logicalMethId, bindingRhs, mBinding, debugPoint)
 
     // 4b. typecheck the binding
     let bindingTy =
@@ -10472,7 +10472,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     let envinner = AddDeclaredTypars NoCheckForDuplicateTypars (enclosingDeclaredTypars@declaredTypars) env
 
     match bind with
-    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, doc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
+    | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
         let (SynValData(memberFlagsOpt, _, _)) = valSynData
 
         let callerName =
@@ -10720,7 +10720,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if not (isNil declaredTypars) then
                 errorR(Error(FSComp.SR.tcLiteralCannotHaveGenericParameters(), mBinding))
 
-        CheckedBindingInfo(inlineFlag, valAttribs, doc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
+        CheckedBindingInfo(inlineFlag, valAttribs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExprChecked, argAndRetAttribs, overallPatTy, mBinding, debugPoint, isCompGen, literalValue, isFixed), tpenv
 
 and TcLiteral cenv overallTy env tpenv (attrs, synLiteralValExpr) =
 
@@ -11005,7 +11005,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 
     // Generalize the bindings...
     (((fun x -> x), env, tpenv), checkedBinds) ||> List.fold (fun (buildExpr, env, tpenv) tbinfo ->
-        let (CheckedBindingInfo(inlineFlag, attrs, doc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExpr, _, tauTy, m, debugPoint, _, literalValue, isFixed)) = tbinfo
+        let (CheckedBindingInfo(inlineFlag, attrs, xmlDoc, tcPatPhase2, explicitTyparInfo, nameToPrelimValSchemeMap, rhsExpr, _, tauTy, m, debugPoint, _, literalValue, isFixed)) = tbinfo
         let enclosingDeclaredTypars = []
         let (ExplicitTyparInfo(_, declaredTypars, canInferTypars)) = explicitTyparInfo
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
@@ -11031,7 +11031,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // on all other paths.
         let tpenv = HideUnscopedTypars generalizedTypars tpenv
         let valSchemes = NameMap.map (UseCombinedArity g declKind rhsExpr) prelimValSchemes2
-        let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, doc, literalValue)
+        let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
         let prelimRecValues = NameMap.map fst values
 
@@ -12219,7 +12219,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
     let g = cenv.g
 
-    let (SynValSig (attributes=Attributes synAttrs; explicitValDecls=ValTyparDecls (synTypars, _, synCanInferTypars); isInline=isInline; isMutable=mutableFlag; xmlDoc=doc; accessibility=vis; synExpr=literalExprOpt; range=m)) = valSpfn
+    let (SynValSig (attributes=Attributes synAttrs; explicitValDecls=ValTyparDecls (synTypars, _, synCanInferTypars); isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = valSpfn
 
     GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
     let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
@@ -12276,8 +12276,8 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
                 | None -> None
                 | Some valReprInfo -> Some valReprInfo.ArgNames
 
-            let doc = doc.ToXmlDoc(true, paramNames)
-            let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, doc, literalValue, false)
+            let xmlDoc = xmlDoc.ToXmlDoc(true, paramNames)
+            let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
 
             assert(vspec.InlineInfo = inlineFlag)
 
