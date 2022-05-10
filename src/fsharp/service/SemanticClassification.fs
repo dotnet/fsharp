@@ -9,7 +9,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals 
@@ -17,6 +17,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 type SemanticClassificationType =
     | ReferenceType = 0
@@ -71,7 +72,7 @@ module TcResolutionsExtensions =
 
     type TcResolutions with
         member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
-            ErrorScope.Protect range0 (fun () ->
+            DiagnosticsScope.Protect range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
                     | ItemOccurence.UseInAttribute
@@ -341,7 +342,7 @@ module TcResolutionsExtensions =
                     | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, _, _, _, m ->
                         if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                             add m SemanticClassificationType.Enumeration
-                        elif tcref.IsExceptionDecl then
+                        elif tcref.IsFSharpException then
                             add m SemanticClassificationType.Exception
                         elif tcref.IsFSharpDelegateTycon then
                             add m SemanticClassificationType.Delegate

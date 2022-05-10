@@ -22,7 +22,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -125,8 +125,8 @@ let GetRangeOfDiagnostic(diag: PhasedDiagnostic) =
       | NotUpperCaseConstructor m
       | RecursiveUseCheckedAtRuntime (_, _, m)
       | LetRecEvaluatedOutOfOrder (_, _, _, m)
-      | Error (_, m)
-      | ErrorWithSuggestions (_, m, _, _)
+      | DiagnosticWithText (_, _, m)
+      | DiagnosticWithSuggestions (_, _, m, _, _)
       | SyntaxError (_, m)
       | InternalError (_, m)
       | InterfaceNotRevealed(_, _, m)
@@ -340,8 +340,8 @@ let GetDiagnosticNumber(diag: PhasedDiagnostic) =
 
       | WrappedError(e, _) -> GetFromException e
 
-      | Error ((n, _), _) -> n
-      | ErrorWithSuggestions ((n, _), _, _, _) -> n
+      | DiagnosticWithText (n, _, _) -> n
+      | DiagnosticWithSuggestions (n, _, _, _, _) -> n
       | Failure _ -> 192
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
 #if !NO_TYPEPROVIDERS
@@ -358,8 +358,8 @@ let GetWarningLevel diag =
     | LetRecEvaluatedOutOfOrder _
     | DefensiveCopyWarning _  -> 5
 
-    | Error((n, _), _)
-    | ErrorWithSuggestions((n, _), _, _, _) ->
+    | DiagnosticWithText(n, _, _)
+    | DiagnosticWithSuggestions(n, _, _, _, _) ->
         // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
         // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
         // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
@@ -1356,7 +1356,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
           | None ->
               os.AppendString(OverrideDoesntOverride1E().Format sig1)
           | Some minfoVirt ->
-              // https://github.com/Microsoft/visualfsharp/issues/35
+              // https://github.com/dotnet/fsharp/issues/35
               // Improve error message when attempting to override generic return type with unit:
               // we need to check if unit was used as a type argument
               let hasUnitTType_app (types: TType list) =
@@ -1480,9 +1480,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diag: PhasedDiagnostic) (canSuggestN
               os.AppendString(NonUniqueInferredAbstractSlot3E().Format ty1 ty2)
           os.AppendString(NonUniqueInferredAbstractSlot4E().Format)
 
-      | Error ((_, s), _) -> os.AppendString s
+      | DiagnosticWithText (_, s, _) -> os.AppendString s
 
-      | ErrorWithSuggestions ((_, s), _, idText, suggestionF) ->
+      | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
           os.AppendString(DecompileOpName s)
           suggestNames suggestionF idText
 
@@ -1740,32 +1740,32 @@ let SanitizeFileName fileName implicitIncludeDir =
         fileName
 
 [<RequireQualifiedAccess>]
-type DiagnosticLocation =
+type FormattedDiagnosticLocation =
     { Range: range
       File: string
       TextRepresentation: string
       IsEmpty: bool }
 
 [<RequireQualifiedAccess>]
-type DiagnosticCanonicalInformation =
+type FormattedDiagnosticCanonicalInformation =
     { ErrorNumber: int
       Subcategory: string
       TextRepresentation: string }
 
 [<RequireQualifiedAccess>]
-type DiagnosticDetailedInfo =
-    { Location: DiagnosticLocation option
-      Canonical: DiagnosticCanonicalInformation
+type FormattedDiagnosticDetailedInfo =
+    { Location: FormattedDiagnosticLocation option
+      Canonical: FormattedDiagnosticCanonicalInformation
       Message: string }
 
 [<RequireQualifiedAccess>]
-type Diagnostic =
+type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
-    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
+    | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity: FSharpDiagnosticSeverity, diag: PhasedDiagnostic, suggestNames: bool) =
-    let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
+let CollectFormattedDiagnostics (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity: FSharpDiagnosticSeverity, diag: PhasedDiagnostic, suggestNames: bool) =
+    let outputWhere (showFullPaths, diagnosticStyle) m: FormattedDiagnosticLocation =
         if equals m rangeStartup || equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
@@ -1775,30 +1775,30 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                        else
                             SanitizeFileName file implicitIncludeDir
             let text, m, file =
-                match errorStyle with
-                  | ErrorStyle.EmacsErrors ->
+                match diagnosticStyle with
+                  | DiagnosticStyle.Emacs ->
                     let file = file.Replace("\\", "/")
                     (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
 
                   // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
-                  | ErrorStyle.DefaultErrors ->
+                  | DiagnosticStyle.Default ->
                     let file = file.Replace('/', Path.DirectorySeparatorChar)
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
                     (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
-                  // We may also want to change TestErrors to be 1-based
-                  | ErrorStyle.TestErrors ->
+                  // We may also want to change Test to be 1-based
+                  | DiagnosticStyle.Test ->
                     let file = file.Replace("/", "\\")
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                     sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
-                  | ErrorStyle.GccErrors ->
+                  | DiagnosticStyle.Gcc ->
                     let file = file.Replace('/', Path.DirectorySeparatorChar)
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                     sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
                   // Here, we want the complete range information so Project Systems can generate proper squiggles
-                  | ErrorStyle.VSErrors ->
+                  | DiagnosticStyle.VisualStudio ->
                         // Show prefix only for real files. Otherwise, we just want a truncated error like:
                         //      parse error FS0031: blah blah
                         if not (equals m range0) && not (equals m rangeStartup) && not (equals m rangeCmdArgs) then
@@ -1812,19 +1812,19 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
     match diag.Exception with
     | ReportedError _ ->
         assert ("" = "Unexpected ReportedError") //  this should never happen
-        Seq.empty
+        [| |]
     | StopProcessing ->
         assert ("" = "Unexpected StopProcessing") // this should never happen
-        Seq.empty
+        [| |]
     | _ ->
         let errors = ResizeArray()
         let report diag =
             let OutputWhere diag =
                 match GetRangeOfDiagnostic diag with
-                | Some m -> Some(outputWhere (showFullPaths, errorStyle) m)
+                | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(subcategory, errorNumber) : DiagnosticCanonicalInformation =
+            let OutputCanonicalInformation(subcategory, errorNumber) : FormattedDiagnosticCanonicalInformation =
                 let message =
                     match severity with
                     | FSharpDiagnosticSeverity.Error -> "error"
@@ -1832,9 +1832,9 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     | FSharpDiagnosticSeverity.Info
                     | FSharpDiagnosticSeverity.Hidden -> "info"
                 let text =
-                    match errorStyle with
+                    match diagnosticStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
-                    | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory message errorNumber
+                    | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
                     | _ -> sprintf "%s FS%04d: " message errorNumber
                 { ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
 
@@ -1846,14 +1846,14 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                 OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
 
-            let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
+            let entry: FormattedDiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
 
-            errors.Add (Diagnostic.Long(severity, entry))
+            errors.Add (FormattedDiagnostic.Long(severity, entry))
 
             let OutputRelatedError(diag: PhasedDiagnostic) =
-                match errorStyle with
+                match diagnosticStyle with
                 // Give a canonical string when --vserror.
-                | ErrorStyle.VSErrors ->
+                | DiagnosticStyle.VisualStudio ->
                     let relWhere = OutputWhere mainError // mainError?
                     let relCanonical = OutputCanonicalInformation(diag.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage =
@@ -1861,13 +1861,13 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                         OutputPhasedDiagnostic os diag flattenErrors suggestNames
                         os.ToString()
 
-                    let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
-                    errors.Add( Diagnostic.Long (severity, entry) )
+                    let entry: FormattedDiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
+                    errors.Add (FormattedDiagnostic.Long (severity, entry) )
 
                 | _ ->
                     let os = StringBuilder()
                     OutputPhasedDiagnostic os diag flattenErrors suggestNames
-                    errors.Add( Diagnostic.Short(severity, os.ToString()) )
+                    errors.Add (FormattedDiagnostic.Short(severity, os.ToString()) )
 
             relatedErrors |> List.iter OutputRelatedError
 
@@ -1881,20 +1881,20 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 #endif
         | x -> report x
 
-        errors:> seq<_>
+        errors.ToArray()
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (diag: PhasedDiagnostic) =
+let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diag: PhasedDiagnostic) =
 
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity, diag, true)
+    let errors = CollectFormattedDiagnostics (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity, diag, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
-        | Diagnostic.Short(_, txt) ->
+        | FormattedDiagnostic.Short(_, txt) ->
             os.AppendString txt |> ignore
-        | Diagnostic.Long(_, details) ->
+        | FormattedDiagnostic.Long(_, details) ->
             match details.Location with
             | Some l when not l.IsEmpty -> os.AppendString l.TextRepresentation
             | _ -> ()
@@ -1960,7 +1960,7 @@ let ReportDiagnosticAsError options (diag, severity) =
 // Scoped #nowarn pragmas
 
 
-/// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
+/// Build an DiagnosticsLogger that delegates to another DiagnosticsLogger but filters warnings turned off by the given pragma declarations
 //
 // NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
 // #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
@@ -1968,8 +1968,8 @@ let ReportDiagnosticAsError options (diag, severity) =
 // However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger) =
-    inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
+type DiagnosticsLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: DiagnosticsLogger) =
+    inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
     override x.DiagnosticSink (phasedError, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
@@ -1998,5 +1998,5 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOp
 
     override _.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) =
-    ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> ErrorLogger
+let GetDiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) =
+    DiagnosticsLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> DiagnosticsLogger

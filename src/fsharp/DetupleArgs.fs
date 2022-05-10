@@ -5,7 +5,7 @@ module internal FSharp.Compiler.Detuple
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text

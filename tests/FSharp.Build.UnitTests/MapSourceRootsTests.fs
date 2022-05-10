@@ -14,27 +14,36 @@ type MockEngine() =
     member val Messages = ResizeArray() with get
 
     interface IBuildEngine with
-        member this.BuildProjectFile(projectFileName: string, targetNames: string [], globalProperties: System.Collections.IDictionary, targetOutputs: System.Collections.IDictionary): bool =
+
+        member _.BuildProjectFile(projectFileName: string, targetNames: string [], globalProperties: System.Collections.IDictionary, targetOutputs: System.Collections.IDictionary): bool =
             failwith "Not Implemented"
-        member this.ColumnNumberOfTaskNode: int = 0
-        member this.ContinueOnError: bool = true
-        member this.LineNumberOfTaskNode: int = 0
+
+        member _.ColumnNumberOfTaskNode: int = 0
+
+        member _.ContinueOnError = true
+
+        member _.LineNumberOfTaskNode: int = 0
+
         member this.LogCustomEvent(e: CustomBuildEventArgs): unit =
             this.Custom.Add e
             failwith "Not Implemented"
+
         member this.LogErrorEvent(e: BuildErrorEventArgs): unit =
             this.Errors.Add e
+
         member this.LogMessageEvent(e: BuildMessageEventArgs): unit =
             this.Messages.Add e
+
         member this.LogWarningEvent(e: BuildWarningEventArgs): unit =
             this.Warnings.Add e
-        member this.ProjectFileOfTaskNode: string = ""
+
+        member _.ProjectFileOfTaskNode: string = ""
 
 type SourceRoot =
     SourceRoot of
         path: string *
-        props: list<string * string> *
-        expectedProps: list<string * string>
+        props: (string * string) list *
+        expectedProps: (string * string) list
 
 
 /// these tests are ported from https://github.com/dotnet/roslyn/blob/093ea477717001c58be6231cf2a793f4245cbf72/src/Compilers/Core/MSBuildTaskTests/MapSourceRootTests.cs
@@ -71,7 +80,7 @@ type MapSourceRootsTests() =
             |> Array.iteri checkExpectations
 
     [<Test>]
-    member this.``basic deterministic scenarios`` () =
+    member _.``basic deterministic scenarios`` () =
         let items =
             [|
             SourceRoot(@"c:\packages\SourcePackage1\", [], ["MappedPath", @"/_1/"])
@@ -96,7 +105,7 @@ type MapSourceRootsTests() =
 
 
     [<Test>]
-    member this.``invalid chars`` () =
+    member _.``invalid chars`` () =
         let items =
             [|
                 SourceRoot(@"!@#:;$%^&*()_+|{}\", [], ["MappedPath", @"/_1/"])
@@ -116,7 +125,7 @@ type MapSourceRootsTests() =
         successfulTest items
 
     [<Test>]
-    member this.``input paths must end with separator`` () =
+    member _.``input paths must end with separator`` () =
         let items =
             [|
                 SourceRoot(@"C:\", [], [])
@@ -145,7 +154,7 @@ type MapSourceRootsTests() =
             Assert.Fail("Expected to fail on the inputs")
 
     [<Test>]
-    member this.``nested roots separators`` () =
+    member _.``nested roots separators`` () =
         let items =
             [|
                 SourceRoot(@"c:\MyProjects\MyProject\", [], [
@@ -174,7 +183,7 @@ type MapSourceRootsTests() =
         successfulTest items
 
     [<Test>]
-    member this.``sourceroot case sensitivity``() =
+    member _.``sourceroot case sensitivity``() =
         let items = [|
             SourceRoot(@"c:\packages\SourcePackage1\", [], ["MappedPath", @"/_/"])
             SourceRoot(@"C:\packages\SourcePackage1\", [], ["MappedPath", @"/_1/"])
@@ -184,7 +193,7 @@ type MapSourceRootsTests() =
         successfulTest items
 
     [<Test>]
-    member this.``recursion error`` () =
+    member _.``recursion error`` () =
         let path1 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\1\"
         let path2 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\2\"
         let path3 = Utilities.FixFilePath @"c:\MyProjects\MyProject\"
@@ -225,7 +234,7 @@ type MapSourceRootsTests() =
     [<TestCase(true)>]
     [<TestCase(false)>]
     [<Test>]
-    member this.``metadata merge 1`` (deterministic: bool) =
+    member _.``metadata merge 1`` (deterministic: bool) =
         let path1 = Utilities.FixFilePath @"c:\packages\SourcePackage1\"
         let path2 = Utilities.FixFilePath @"c:\packages\SourcePackage2\"
         let path3 = Utilities.FixFilePath @"c:\packages\SourcePackage3\"
@@ -319,7 +328,7 @@ type MapSourceRootsTests() =
             |> Array.iteri checkExpectations
 
     [<Test>]
-    member this.``missing containing root`` () =
+    member _.``missing containing root`` () =
         let items = [|
             SourceRoot(@"c:\MyProjects\MYPROJECT\", [], [])
             SourceRoot(@"c:\MyProjects\MyProject\a\b\", [
@@ -352,7 +361,7 @@ type MapSourceRootsTests() =
             Assert.Fail("Expected to fail on the inputs")
 
     [<Test>]
-    member this.``no containing root`` () =
+    member _.``no containing root`` () =
         let items = [|
             SourceRoot(@"c:\MyProjects\MyProject\", [], [])
             SourceRoot(@"c:\MyProjects\MyProject\a\b\", [
@@ -385,7 +394,7 @@ type MapSourceRootsTests() =
     [<TestCase(true)>]
     [<TestCase(false)>]
     [<Test>]
-    member this.``no top level source root`` (deterministic: bool) =
+    member _.``no top level source root`` (deterministic: bool) =
         let path1 = Utilities.FixFilePath @"c:\MyProjects\MyProject\a\b\"
         let items = [|
             SourceRoot(path1, [
