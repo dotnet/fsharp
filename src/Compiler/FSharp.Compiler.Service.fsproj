@@ -1,0 +1,1061 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
+    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
+    <!-- 1182: Unused variables -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>FSharp.Compiler.Service</PackageId>
+    <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>The F# Compiler Services package for F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
+    <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
+    <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+    <NuspecProperty Include="MicrosoftBuildFrameworkPackageVersion=$(MicrosoftBuildFrameworkVersion)" />
+    <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildTasksCoreVersion)" />
+    <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
+    <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
+    <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
+    <NuspecProperty Include="SystemDiagnosticsProcessPackageVersion=$(SystemDiagnosticsProcessVersion)" />
+    <NuspecProperty Include="SystemDiagnosticsTraceSourcePackageVersion=$(SystemDiagnosticsTraceSourceVersion)" />
+    <NuspecProperty Include="SystemLinqExpressionsPackageVersion=$(SystemLinqExpressionsVersion)" />
+    <NuspecProperty Include="SystemLinqQueryablePackageVersion=$(SystemLinqQueryableVersion)" />
+    <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
+    <NuspecProperty Include="SystemNetRequestsPackageVersion=$(SystemNetRequestsVersion)" />
+    <NuspecProperty Include="SystemNetSecurityPackageVersion=$(SystemNetSecurityVersion)" />
+    <NuspecProperty Include="SystemReflectionEmitPackageVersion=$(SystemReflectionEmitVersion)" />
+    <NuspecProperty Include="SystemReflectionMetadataPackageVersion=$(SystemReflectionMetadataVersion)" />
+    <NuspecProperty Include="SystemReflectionTypeExtensionsPackageVersion=$(SystemReflectionTypeExtensionsVersion)" />
+    <NuspecProperty Include="SystemRuntimePackageVersion=$(SystemRuntimeVersion)" />
+    <NuspecProperty Include="SystemRuntimeInteropServicesPackageVersion=$(SystemRuntimeInteropServicesVersion)" />
+    <NuspecProperty Include="SystemRuntimeLoaderPackageVersion=$(SystemRuntimeLoaderVersion)" />
+    <NuspecProperty Include="SystemSecurityClaimsPackageVersion=$(SystemSecurityClaimsVersion)" />
+    <NuspecProperty Include="SystemSecurityCryptographyAlgorithmsPackageVersion=$(SystemSecurityCryptographyAlgorithmsVersion)" />
+    <NuspecProperty Include="SystemSecurityPrincipalPackageVersion=$(SystemSecurityPrincipalVersion)" />
+    <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
+    <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
+    <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="fscAnyCpu" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+    <InternalsVisibleTo Include="HostedCompilerServer" />
+    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedText Include="FSComp.txt">
+      <Link>FSComp.txt</Link>
+    </EmbeddedText>
+    <EmbeddedText Include="Interactive\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </EmbeddedText>
+    <EmbeddedResource Include="FSStrings.resx">
+      <Link>FSStrings.resx</Link>
+      <LogicalName>FSStrings.resources</LogicalName>
+    </EmbeddedResource>
+    <Compile Include="Utilities\sformat.fsi">
+      <Link>Utilities\sformat.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\sformat.fs">
+      <Link>Utilities\sformat.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\sr.fsi">
+      <Link>Utilities\sr.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\sr.fs">
+      <Link>Utilities\sr.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\ResizeArray.fsi">
+      <Link>Utilities\ResizeArray.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\ResizeArray.fs">
+      <Link>Utilities\ResizeArray.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\HashMultiMap.fsi">
+      <Link>Utilities\HashMultiMap.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\HashMultiMap.fs">
+      <Link>Utilities\HashMultiMap.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\EditDistance.fsi">
+      <Link>Utilities\EditDistance.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\EditDistance.fs">
+      <Link>Utilities\EditDistance.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\TaggedCollections.fsi">
+      <Link>Utilities\TaggedCollections.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\TaggedCollections.fs">
+      <Link>Utilities\TaggedCollections.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\illib.fs">
+      <Link>Utilities\illib.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\FileSystem.fsi">
+      <Link>Utilities\FileSystem.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\FileSystem.fs">
+      <Link>Utilities\FileSystem.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\ildiag.fsi">
+      <Link>Utilities\ildiag.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\ildiag.fs">
+      <Link>Utilities\ildiag.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\zmap.fsi">
+      <Link>Utilities\zmap.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\zmap.fs">
+      <Link>Utilities\zmap.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\zset.fsi">
+      <Link>Utilities\zset.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\zset.fs">
+      <Link>Utilities\zset.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\XmlAdapters.fsi">
+      <Link>Utilities\XmlAdapters.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\InternalCollections.fsi">
+      <Link>Utilities\InternalCollections.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\InternalCollections.fs">
+      <Link>Utilities\InternalCollections.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\QueueList.fsi">
+      <Link>Utilities\QueueList.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\QueueList.fs">
+      <Link>Utilities\QueueList.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\lib.fsi">
+      <Link>Utilities\lib.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\lib.fs">
+      <Link>Utilities\lib.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\ImmutableArray.fsi">
+      <Link>Utilities\ImmutableArray.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\ImmutableArray.fs">
+      <Link>Utilities\ImmutableArray.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\rational.fsi">
+      <Link>Utilities\rational.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\rational.fs">
+      <Link>Utilities\rational.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\PathMap.fsi">
+      <Link>Utilities\PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\PathMap.fs">
+      <Link>Utilities\PathMap.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\RidHelpers.fs">
+      <Link>Utilities\RidHelpers.fs</Link>
+    </Compile>
+    <Compile Include="Utilities\range.fsi">
+      <Link>Utilities\range.fsi</Link>
+    </Compile>
+    <Compile Include="Utilities\range.fs">
+      <Link>Utilities\range.fs</Link>
+    </Compile>
+    <EmbeddedText Include="Facilities\UtilsStrings.txt" />
+    <Compile Include="Facilities\Logger.fsi">
+      <Link>Facilities\Logger.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\Logger.fs">
+      <Link>Facilities\Logger.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\LanguageFeatures.fsi">
+      <Link>Facilities\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\LanguageFeatures.fs">
+      <Link>Facilities\LanguageFeatures.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\Diagnostics.fsi">
+      <Link>Facilities\Diagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\Diagnostics.fs">
+      <Link>Facilities\Diagnostics.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\TextLayoutRender.fsi">
+      <Link>Facilities\TextLayoutRender.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\TextLayoutRender.fs">
+      <Link>Facilities\TextLayoutRender.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\DiagnosticsLogger.fsi">
+      <Link>Facilities\DiagnosticsLogger.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\DiagnosticsLogger.fs">
+      <Link>Facilities\DiagnosticsLogger.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\ErrorResolutionHints.fsi">
+      <Link>Facilities\ErrorResolutionHints.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\ErrorResolutionHints.fs">
+      <Link>Facilities\ErrorResolutionHints.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\prim-lexing.fsi">
+      <Link>Facilities\prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\prim-lexing.fs">
+      <Link>Facilities\prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\prim-parsing.fsi">
+      <Link>Facilities\prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\prim-parsing.fs">
+      <Link>Facilities\prim-parsing.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\ReferenceResolver.fsi">
+      <Link>Facilities\ReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\ReferenceResolver.fs">
+      <Link>Facilities\ReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\SimulatedMSBuildReferenceResolver.fsi">
+      <Link>Facilities/SimulatedMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Facilities/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="Facilities\CompilerLocationUtils.fsi">
+      <Link>Facilities\CompilerLocationUtils.fsi</Link>
+    </Compile>
+    <Compile Include="Facilities\CompilerLocationUtils.fs">
+      <Link>Facilities\CompilerLocationUtils.fs</Link>
+    </Compile>
+    <FsLex Include="AbstractIL\illex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>AbstractIL\illex.fsl</Link>
+    </FsLex>
+    <None Include="AbstractIL\illex.fsl">
+      <Link>AbstractIL\illex.fsl</Link>
+    </None>
+    <FsYacc Include="AbstractIL\ilpars.fsy">
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>AbstractIL\ilpars.fsy</Link>
+    </FsYacc>
+    <None Include="AbstractIL\ilpars.fsy">
+      <Link>AbstractIL\FsYacc\ilpars.fsy</Link>
+    </None>
+    <Compile Include="AbstractIL\il.fsi">
+      <Link>AbstractIL\il.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\il.fs">
+      <Link>AbstractIL\il.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilx.fsi">
+      <Link>AbstractIL\ilx.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilx.fs">
+      <Link>AbstractIL\ilx.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilascii.fsi">
+      <Link>AbstractIL\ilascii.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilascii.fs">
+      <Link>AbstractIL\ilascii.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
+      <Link>AbstractIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fs">
+      <Link>AbstractIL\FsLexOut\illex.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilprint.fsi">
+      <Link>AbstractIL\ilprint.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilprint.fs">
+      <Link>AbstractIL\ilprint.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilmorph.fsi">
+      <Link>AbstractIL\ilmorph.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilmorph.fs">
+      <Link>AbstractIL\ilmorph.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilsign.fsi">
+      <Link>AbstractIL\ilsign.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilsign.fs">
+      <Link>AbstractIL\ilsign.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilnativeres.fsi">
+      <Link>AbstractIL\ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilnativeres.fs">
+      <Link>AbstractIL\ilnativeres.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilsupp.fsi">
+      <Link>AbstractIL\ilsupp.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilsupp.fs">
+      <Link>AbstractIL\ilsupp.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilbinary.fsi">
+      <Link>AbstractIL\ilbinary.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilbinary.fs">
+      <Link>AbstractIL\ilbinary.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilread.fsi">
+      <Link>AbstractIL\ilread.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilread.fs">
+      <Link>AbstractIL\ilread.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilwritepdb.fsi">
+      <Link>AbstractIL\ilwritepdb.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilwritepdb.fs">
+      <Link>AbstractIL\ilwritepdb.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilwrite.fsi">
+      <Link>AbstractIL\ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilwrite.fs">
+      <Link>AbstractIL\ilwrite.fs</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilreflect.fsi">
+      <Link>AbstractIL\ilreflect.fsi</Link>
+    </Compile>
+    <Compile Include="AbstractIL\ilreflect.fs">
+      <Link>AbstractIL\ilreflect.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\PrettyNaming.fsi">
+      <Link>PrettyNaming\PrettyNaming.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\PrettyNaming.fs">
+      <Link>PrettyNaming\PrettyNaming.fs</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseClosures.fsi">
+      <Link>ILXErase\EraseClosures.fsi</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseClosures.fs">
+      <Link>ILXErase\EraseClosures.fs</Link>
+    </Compile>
+    <FsLex Include="pplex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>SyntaxTree\pplex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="pppars.fsy">
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>SyntaxTree\pppars.fsy</Link>
+    </FsYacc>
+    <FsLex Include="lex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>SyntaxTree\lex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="pars.fsy">
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>SyntaxTree\pars.fsy</Link>
+    </FsYacc>
+    <None Include="pplex.fsl">
+      <Link>SyntaxTree\FsLex\pplex.fsl</Link>
+    </None>
+    <None Include="lex.fsl">
+      <Link>SyntaxTree\FsLex\lex.fsl</Link>
+    </None>
+    <None Include="pppars.fsy">
+      <Link>SyntaxTree\FsYacc\pppars.fsy</Link>
+    </None>
+    <None Include="pars.fsy">
+      <Link>SyntaxTree\FsYacc\pars.fsy</Link>
+    </None>
+    <Compile Include="SyntaxTree\UnicodeLexing.fsi">
+      <Link>SyntaxTree\UnicodeLexing.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\UnicodeLexing.fs">
+      <Link>SyntaxTree\UnicodeLexing.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\XmlDoc.fsi">
+      <Link>SyntaxTree\XmlDoc.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\XmlDoc.fs">
+      <Link>SyntaxTree\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTrivia.fsi">
+      <Link>SyntaxTree\SyntaxTrivia.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTrivia.fs">
+      <Link>SyntaxTree\SyntaxTrivia.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTree.fsi">
+      <Link>SyntaxTree\SyntaxTree.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTree.fs">
+      <Link>SyntaxTree\SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTreeOps.fsi">
+      <Link>SyntaxTree\SyntaxTreeOps.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\SyntaxTreeOps.fs">
+      <Link>SyntaxTree\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\ParseHelpers.fsi">
+      <Link>SyntaxTree\ParseHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\ParseHelpers.fs">
+      <Link>SyntaxTree\ParseHelpers.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pppars.fs">
+      <Link>SyntaxTree\FsYaccOutput\pppars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pars.fs">
+      <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\LexHelpers.fsi">
+      <Link>SyntaxTree\lexhelp.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\LexHelpers.fs">
+      <Link>SyntaxTree\lexhelp.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)pplex.fs">
+      <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)\lex.fs">
+      <Link>SyntaxTree\FsLexOutput\lex.fs</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\LexFilter.fsi">
+      <Link>SyntaxTree\LexFilter.fsi</Link>
+    </Compile>
+    <Compile Include="SyntaxTree\LexFilter.fs">
+      <Link>SyntaxTree\LexFilter.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\tainted.fsi">
+      <Link>TypedTree\tainted.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\tainted.fs">
+      <Link>TypedTree\tainted.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypeProviders.fsi">
+      <Link>TypedTree\TypeProviders.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypeProviders.fs">
+      <Link>TypedTree\TypeProviders.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\QuotationPickler.fsi">
+      <Link>TypedTree\QuotationPickler.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\QuotationPickler.fs">
+      <Link>TypedTree\QuotationPickler.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\CompilerGlobalState.fsi">
+      <Link>TypedTree\CompilerGlobalState.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\CompilerGlobalState.fs">
+      <Link>TypedTree\CompilerGlobalState.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTree.fs">
+      <Link>TypedTree\TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreeBasics.fsi">
+      <Link>TypedTree\TypedTreeBasics.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreeBasics.fs">
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TcGlobals.fs">
+      <Link>TypedTree\TcGlobals.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreeOps.fsi">
+      <Link>TypedTree\TypedTreeOps.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreeOps.fs">
+      <Link>TypedTree\TypedTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreePickle.fsi">
+      <Link>TypedTree\TypedTreePickle.fsi</Link>
+    </Compile>
+    <Compile Include="TypedTree\TypedTreePickle.fs">
+      <Link>TypedTree\TypedTreePickle.fs</Link>
+    </Compile>
+    <Compile Include="Checking\import.fsi">
+      <Link>Checking\import.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\import.fs">
+      <Link>Checking\import.fs</Link>
+    </Compile>
+    <Compile Include="Checking\TypeHierarchy.fsi">
+      <Link>Checking\TypeHierarchy.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\TypeHierarchy.fs">
+      <Link>Checking\TypeHierarchy.fs</Link>
+    </Compile>
+    <Compile Include="Checking\infos.fsi">
+      <Link>Checking\infos.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\infos.fs">
+      <Link>Checking\infos.fs</Link>
+    </Compile>
+    <Compile Include="Checking\AccessibilityLogic.fsi">
+      <Link>Checking\AccessibilityLogic.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\AccessibilityLogic.fs">
+      <Link>Checking\AccessibilityLogic.fs</Link>
+    </Compile>
+    <Compile Include="Checking\AttributeChecking.fsi">
+      <Link>Checking\AttributeChecking.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\AttributeChecking.fs">
+      <Link>Checking\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="Checking\TypeRelations.fsi">
+      <Link>Checking\TypeRelations.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\TypeRelations.fs">
+      <Link>Checking\TypeRelations.fs</Link>
+    </Compile>
+    <Compile Include="Checking\InfoReader.fsi">
+      <Link>Checking\InfoReader.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\InfoReader.fs">
+      <Link>Checking\InfoReader.fs</Link>
+    </Compile>
+    <Compile Include="Checking\NicePrint.fsi">
+      <Link>Checking\NicePrint.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\NicePrint.fs">
+      <Link>Checking\NicePrint.fs</Link>
+    </Compile>
+    <Compile Include="Checking\AugmentWithHashCompare.fsi">
+      <Link>Checking\AugmentWithHashCompare.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\AugmentWithHashCompare.fs">
+      <Link>Checking\AugmentWithHashCompare.fs</Link>
+    </Compile>
+    <Compile Include="Checking\NameResolution.fsi">
+      <Link>Checking\NameResolution.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\NameResolution.fs">
+      <Link>Checking\NameResolution.fs</Link>
+    </Compile>
+    <Compile Include="Checking\SignatureConformance.fsi">
+      <Link>Checking\SignatureConformance.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\SignatureConformance.fs">
+      <Link>Checking\SignatureConformance.fs</Link>
+    </Compile>
+    <Compile Include="Checking\MethodOverrides.fsi">
+      <Link>Checking\MethodOverrides.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\MethodOverrides.fs">
+      <Link>Checking\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="Checking\MethodCalls.fsi">
+      <Link>Checking\MethodCalls.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\MethodCalls.fs">
+      <Link>Checking\MethodCalls.fs</Link>
+    </Compile>
+    <Compile Include="Checking\PatternMatchCompilation.fsi">
+      <Link>Checking\PatternMatchCompilation.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\PatternMatchCompilation.fs">
+      <Link>Checking\PatternMatchCompilation.fs</Link>
+    </Compile>
+    <Compile Include="Checking\ConstraintSolver.fsi">
+      <Link>Checking\ConstraintSolver.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\ConstraintSolver.fs">
+      <Link>Checking\ConstraintSolver.fs</Link>
+    </Compile>
+    <Compile Include="Checking\CheckFormatStrings.fsi">
+      <Link>Checking\CheckFormatStrings.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\CheckFormatStrings.fs">
+      <Link>Checking\CheckFormatStrings.fs</Link>
+    </Compile>
+    <Compile Include="Checking\FindUnsolved.fsi">
+      <Link>Checking\FindUnsolved.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\FindUnsolved.fs">
+      <Link>Checking\FindUnsolved.fs</Link>
+    </Compile>
+    <Compile Include="Checking\QuotationTranslator.fsi">
+      <Link>Checking\QuotationTranslator.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\QuotationTranslator.fs">
+      <Link>Checking\QuotationTranslator.fs</Link>
+    </Compile>
+    <Compile Include="Checking\PostInferenceChecks.fsi">
+      <Link>Checking\PostInferenceChecks.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\PostInferenceChecks.fs">
+      <Link>Checking\PostInferenceChecks.fs</Link>
+    </Compile>
+    <Compile Include="Checking\CheckExpressions.fsi">
+      <Link>Checking\CheckExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\CheckExpressions.fs">
+      <Link>Checking\CheckExpressions.fs</Link>
+    </Compile>
+    <Compile Include="Checking\CheckComputationExpressions.fsi">
+      <Link>Checking\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\CheckComputationExpressions.fs">
+      <Link>Checking\CheckComputationExpressions.fs</Link>
+    </Compile>
+    <Compile Include="Checking\CheckDeclarations.fsi">
+      <Link>Checking\CheckDeclarations.fsi</Link>
+    </Compile>
+    <Compile Include="Checking\CheckDeclarations.fs">
+      <Link>Checking\CheckDeclarations.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\Optimizer.fsi">
+      <Link>Optimize\Optimizer.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\Optimizer.fs">
+      <Link>Optimize\Optimizer.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\DetupleArgs.fsi">
+      <Link>Optimize\DetupleArgs.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\DetupleArgs.fs">
+      <Link>Optimize\DetupleArgs.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\InnerLambdasToTopLevelFuncs.fsi">
+      <Link>Optimize\InnerLambdasToTopLevelFuncs.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\InnerLambdasToTopLevelFuncs.fs">
+      <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerCalls.fsi">
+      <Link>Optimize\LowerCalls.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerCalls.fs">
+      <Link>Optimize\LowerCalls.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerSequences.fsi">
+      <Link>Optimize\LowerSequences.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerSequences.fs">
+      <Link>Optimize\LowerSequences.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerComputedCollections.fsi">
+      <Link>Optimize\LowerComputedCollections.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerComputedCollections.fs">
+      <Link>Optimize\LowerComputedCollections.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerStateMachines.fsi">
+      <Link>Optimize\LowerStateMachines.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerStateMachines.fs">
+      <Link>Optimize\LowerStateMachines.fs</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerLocalMutables.fsi">
+      <Link>Optimize\LowerLocalMutables.fsi</Link>
+    </Compile>
+    <Compile Include="Optimize\LowerLocalMutables.fs">
+      <Link>Optimize\LowerLocalMutables.fs</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseUnions.fsi">
+      <Link>CodeGen\EraseUnions.fsi</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseUnions.fs">
+      <Link>CodeGen\EraseUnions.fs</Link>
+    </Compile>
+    <Compile Include="CodeGen\IlxGen.fsi">
+      <Link>CodeGen\IlxGen.fsi</Link>
+    </Compile>
+    <Compile Include="CodeGen\IlxGen.fs">
+      <Link>CodeGen\IlxGen.fs</Link>
+    </Compile>
+    <Compile Include="Driver\FxResolver.fs">
+      <Link>Driver\FxResolver.fs</Link>
+    </Compile>
+    <Compile Include="DependencyManager/AssemblyResolveHandler.fsi">
+      <Link>Driver\AssemblyResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="DependencyManager/AssemblyResolveHandler.fs">
+      <Link>Driver\AssemblyResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="DependencyManager/NativeDllResolveHandler.fsi">
+      <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="DependencyManager/NativeDllResolveHandler.fs">
+      <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="DependencyManager/DependencyProvider.fsi">
+      <Link>Driver\DependencyProvider.fsi</Link>
+    </Compile>
+    <Compile Include="DependencyManager/DependencyProvider.fs">
+      <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="Driver\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerConfig.fsi">
+      <Link>Driver\CompilerConfig.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerConfig.fs">
+      <Link>Driver\CompilerConfig.fs</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerImports.fsi">
+      <Link>Driver\CompilerImports.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerImports.fs">
+      <Link>Driver\CompilerImports.fs</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerDiagnostics.fsi">
+      <Link>Driver\CompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerDiagnostics.fs">
+      <Link>Driver\CompilerDiagnostics.fs</Link>
+    </Compile>
+    <Compile Include="Driver\ParseAndCheckInputs.fsi">
+      <Link>Driver\ParseAndCheckInputs.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\ParseAndCheckInputs.fs">
+      <Link>Driver\ParseAndCheckInputs.fs</Link>
+    </Compile>
+    <Compile Include="Driver\ScriptClosure.fsi">
+      <Link>Driver\ScriptClosure.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\ScriptClosure.fs">
+      <Link>Driver\ScriptClosure.fs</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerOptions.fsi">
+      <Link>Driver\CompilerOptions.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\CompilerOptions.fs">
+      <Link>Driver\CompilerOptions.fs</Link>
+    </Compile>
+    <Compile Include="Driver\OptimizeInputs.fsi">
+      <Link>Driver\OptimizeInputs.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\OptimizeInputs.fs">
+      <Link>Driver\OptimizeInputs.fs</Link>
+    </Compile>
+    <Compile Include="Driver\XmlDocFileWriter.fsi">
+      <Link>Driver\XmlDocFileWriter.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\XmlDocFileWriter.fs">
+      <Link>Driver\XmlDocFileWriter.fs</Link>
+    </Compile>
+    <Compile Include="Driver\BinaryResourceFormats.fsi">
+      <Link>Driver\BinaryResourceFormats.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\BinaryResourceFormats.fs">
+      <Link>Driver\BinaryResourceFormats.fs</Link>
+    </Compile>
+    <Compile Include="Driver\StaticLinking.fsi">
+      <Link>Driver\StaticLinking.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\StaticLinking.fs">
+      <Link>Driver\StaticLinking.fs</Link>
+    </Compile>
+    <Compile Include="Driver\CreateILModule.fsi">
+      <Link>Driver\CreateILModule.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\CreateILModule.fs">
+      <Link>Driver\CreateILModule.fs</Link>
+    </Compile>
+    <Compile Include="Driver\fsc.fsi">
+      <Link>Driver\fsc.fsi</Link>
+    </Compile>
+    <Compile Include="Driver\fsc.fs">
+      <Link>Driver\fsc.fs</Link>
+    </Compile>
+
+    <!-- the symbol API. -->
+    <Compile Include="Symbols\FSharpDiagnostic.fsi">
+      <Link>Symbols/FSharpDiagnostic.fsi</Link>
+    </Compile>
+    <Compile Include="Symbols\FSharpDiagnostic.fs">
+      <Link>Symbols/FSharpDiagnostic.fs</Link>
+    </Compile>
+    <Compile Include="Symbols\SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="Symbols\SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
+    </Compile>
+    <Compile Include="Symbols\Symbols.fsi">
+      <Link>Symbols/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="Symbols\Symbols.fs">
+      <Link>Symbols/Symbols.fs</Link>
+    </Compile>
+    <Compile Include="Symbols\Exprs.fsi">
+      <Link>Symbols/Exprs.fsi</Link>
+    </Compile>
+    <Compile Include="Symbols\Exprs.fs">
+      <Link>Symbols/Exprs.fs</Link>
+    </Compile>
+    <Compile Include="Symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="Symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
+
+    <!-- the incremental builder and service . -->
+    <Compile Include="Service\SemanticClassification.fsi">
+      <Link>Service/SemanticClassification.fsi</Link>
+    </Compile>
+    <Compile Include="Service\SemanticClassification.fs">
+      <Link>Service/SemanticClassification.fs</Link>
+    </Compile>
+    <Compile Include="Service\ItemKey.fsi">
+      <Link>Service/ItemKey.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ItemKey.fs">
+      <Link>Service/ItemKey.fs</Link>
+    </Compile>
+	<Compile Include="Service\SemanticClassificationKey.fsi">
+		<Link>Service/SemanticClassificationKey.fsi</Link>
+	</Compile>
+	<Compile Include="Service\SemanticClassificationKey.fs">
+		<Link>Service/SemanticClassificationKey.fs</Link>
+	</Compile>
+	<Compile Include="Service\FSharpSource.fsi">
+      <Link>Service/FSharpSource.fsi</Link>
+    </Compile>
+    <Compile Include="Service\FSharpSource.fs">
+      <Link>Service/FSharpSource.fs</Link>
+    </Compile>
+    <Compile Include="Service\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="Service\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceCompilerDiagnostics.fsi">
+      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceCompilerDiagnostics.fs">
+      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceConstants.fs">
+      <Link>Service/ServiceConstants.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceLexing.fsi">
+      <Link>Service/ServiceLexing.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceLexing.fs">
+      <Link>Service/ServiceLexing.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParseTreeWalk.fsi">
+      <Link>Service/ServiceParseTreeWalk.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParseTreeWalk.fs">
+      <Link>Service/ServiceParseTreeWalk.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceNavigation.fsi">
+      <Link>Service/ServiceNavigation.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceNavigation.fs">
+      <Link>Service/ServiceNavigation.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParamInfoLocations.fsi">
+      <Link>Service/ServiceParamInfoLocations.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParamInfoLocations.fs">
+      <Link>Service/ServiceParamInfoLocations.fs</Link>
+    </Compile>
+    <Compile Include="Service\FSharpParseFileResults.fsi">
+      <Link>Service/FSharpParseFileResults.fsi</Link>
+    </Compile>
+    <Compile Include="Service\FSharpParseFileResults.fs">
+      <Link>Service/FSharpParseFileResults.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParsedInputOps.fsi">
+      <Link>Service/ServiceParsedInputOps.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceParsedInputOps.fs">
+      <Link>Service/ServiceParsedInputOps.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceAssemblyContent.fsi">
+      <Link>Service/ServiceAssemblyContent.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceAssemblyContent.fs">
+      <Link>Service/ServiceAssemblyContent.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceXmlDocParser.fsi">
+      <Link>Service/ServiceXmlDocParser.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceXmlDocParser.fs">
+      <Link>Service/ServiceXmlDocParser.fs</Link>
+    </Compile>
+    <Compile Include="Service\ExternalSymbol.fsi">
+      <Link>Service/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ExternalSymbol.fs">
+      <Link>Service/ExternalSymbol.fs</Link>
+    </Compile>
+    <Compile Include="Service\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="Service\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
+    <Compile Include="Service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="Service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
+    </Compile>
+    <Compile Include="Service\service.fsi">
+      <Link>Service/service.fsi</Link>
+    </Compile>
+    <Compile Include="Service\service.fs">
+      <Link>Service/service.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceInterfaceStubGenerator.fsi">
+      <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceInterfaceStubGenerator.fs">
+      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceStructure.fsi">
+      <Link>Service/ServiceStructure.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
+    </Compile>
+    <Compile Include="Service\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="Service\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="Interactive\fsi.fsi">
+      <Link>Interactive/fsi.fsi</Link>
+    </Compile>
+    <Compile Include="Interactive\fsi.fs">
+      <Link>Interactive/fsi.fs</Link>
+    </Compile>
+
+    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
+    <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fsi">
+      <Link>Legacy/LegacyMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Legacy/LegacyMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="Legacy\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Legacy/LegacyHostedCompilerForTesting.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="default.win32manifest">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
+    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+  </ItemGroup>
+
+</Project>
