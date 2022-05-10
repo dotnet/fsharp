@@ -49,7 +49,7 @@ We almost always now emit the [Portable PDB](https://github.com/dotnet/runtime/b
 
 IDE tooling performs queries into the F# language service, notably:
 
-* `ValidateBreakpointLocation` [(permalink)](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/service/FSharpParseFileResults.fs#L795) is called to validate every breakpoint before debugging is launched. This operates on syntax trees. See notes below.
+* `ValidateBreakpointLocation` is called to validate every breakpoint before debugging is launched. This operates on syntax trees. See notes below.
 
 ## Debugging and optimization
 
@@ -274,9 +274,9 @@ SyntaxTree --[CheckComputationExpressions.fs]--> TypedTree --> IlxGen -->[LowerC
 
 The TypedTree is a functional encoding into `Seq.toList`, `Seq.singleton` and so on. How do the debug points get propagated?
 
-* In [`CheckComputationExpressions.fs`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/CheckComputationExpressions.fs#L1783-L1787) we "note" the debug point for the For loop and attach it to one of the lambdas generated in the TypedTreeForm
-* In [`LowerCallsAndSeq.fs`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/LowerCallsAndSeqs.fs#L138-L139) we "recover" the debug point from precisely that lambda.
-* This becomes [an actual debug point in the actual generated "while" loop](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/LowerCallsAndSeqs.fs#L887)
+* In `CheckComputationExpressions.fs` we "note" the debug point for the For loop and attach it to one of the lambdas generated in the TypedTreeForm
+* In `LowerSequences.fs` we "recover" the debug point from precisely that lambda.
+* In `IlxGen.fs` this becomes an actual debug point in the actual generated "while" loop.
 
 This then gives accurate debug points for these constructs.
 
@@ -285,7 +285,7 @@ This then gives accurate debug points for these constructs.
 Debug points for `seq { .. }` compiling to state machines poses similar problems.
 
 * The de-sugaring is as for list and array expressions
-* The debug points are recovered in the state machine generation, for example [here (permalink)](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/LowerCallsAndSeqs.fs#L367)
+* The debug points are recovered in the state machine generation
 
 ### Internals: debug points for `task { .. .}` code
 
@@ -314,7 +314,7 @@ Some fragments of code use constructs generate calls and other IL code that shou
 
 > TODO: There is also the future prospect of generating `JustMyCodeWithNoSource` (0xF00F00) debug points but these are not yet emitted by F#.  We should check what this is and when the C# compiler emits these.
 
-> NOTE: We always make space for a debug point at the head of each method by [emitting a FeeFee debug sequence point](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L1953). This may be immediately replaced by a "real" debug point [here](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L2019).
+> NOTE: We always make space for a debug point at the head of each method by [emitting a FeeFee debug sequence point](https://github.com/dotnet/fsharp/blob/main/src/Compiler/CodeGen/IlxGen.fs#L1953). This may be immediately replaced by a "real" debug point [here](https://github.com/dotnet/fsharp/blob/main/src/Compiler/CodeGen/IlxGen.fs#L2019).
 
 ## Generated code
 
@@ -332,7 +332,7 @@ Generated methods for equality, hash and comparison on records, unions and struc
 
 Discriminated unions generate `NewXYZ`, `IsXYZ`, `Tag` etc. members. These do not get debug points at all.
 
-These methods also get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`, e.g. [here (permalink)](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseUnions.fs#L635)
+These methods also get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`.
 
 > TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing, however the absence of debug points should be sufficient to exclude these.
 
@@ -345,12 +345,12 @@ The debug codegen involved in closures is as follows:
 |  Source         | Construct         | Debug Points | Attributes   |
 |:----------------|:------------------|:-------------|:-------------|
 | (fun x -> ...)  | Closure class     |              |              |
-|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L584)     | CompilerGenerated, DebuggerNonUserCode |
+|                 | `.ctor` method    | none     | CompilerGenerated, DebuggerNonUserCode |
 |                 | `Invoke` method   | from body of closure     |                                        |
 | generic local defn  | Closure class |      |                                        |
-|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L486)     | CompilerGenerated, DebuggerNonUserCode |
+|                 | `.ctor` method    | none     | CompilerGenerated, DebuggerNonUserCode |
 |                 | `Specialize` method |  from body of closure  |                                        |
-|  Intermediate closure classes   |  For long curried closures `fun a b c d e f -> ...`.  | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGenerated, DebuggerNonUserCode     |
+|  Intermediate closure classes   |  For long curried closures `fun a b c d e f -> ...`.  |   | CompilerGenerated, DebuggerNonUserCode     |
 
 Generated intermediate closure methods do not get debug points, and are labelled CompilerGenerated and DebuggerNonUserCode.
 
@@ -365,12 +365,12 @@ The debug points recovered for the generated state machine code for `seq { ... }
 |  Source         | Construct         | Debug Points | Attributes   |
 |:----------------|:------------------|:-------------|:-------------|
 | seq { ... }     | State machine class |            |  "Closure"             |
-|                 | `.ctor` method    |   none      |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5150) |
-|                 | `GetFreshEnumerator`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5108)  | CompilerGenerated, DebuggerNonUserCode |
-|                 | `LastGenerated`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5146-L5148)  | CompilerGenerated, DebuggerNonUserCode |
-|                 | `Close`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5124-L5127)  | none |
-|                 | `get_CheckClose`  |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5130-L5133)  | none |
-|                 | `GenerateNext`    |  from desugaring, and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5136-L5143) | none |
+|                 | `.ctor` method    |   none      | none |
+|                 | `GetFreshEnumerator`   |  none  | CompilerGenerated, DebuggerNonUserCode |
+|                 | `LastGenerated`   |  none  | CompilerGenerated, DebuggerNonUserCode |
+|                 | `Close`   |  none  | none |
+|                 | `get_CheckClose`  |  none  | none |
+|                 | `GenerateNext`    |  from desugaring | none |
 
 > NOTE: it appears from the code that extraneous debug points are not being generated, which is good, though should be checked
 
@@ -456,7 +456,7 @@ Here the implicitly captured local is `y`, but `x` is **not** captured, instead 
 
 Code provided by erasing type providers has all debugging points removed.  It isn't possible to step into such code or if there are implicit debug points they will be the same range as the construct that was macro-expanded by the code erasure.
 
-> For example, a [provided if/then/else expression has no debug point](https://github.com/dotnet/fsharp/blob/main/src/fsharp/MethodCalls.fs#L1805)
+> For example, a [provided if/then/else expression has no debug point](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Checking/MethodCalls.fs#L1805)
 
 ## Added code generation for better debugging
 

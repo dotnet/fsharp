@@ -239,7 +239,7 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\src\buildtools\buildtools.proj`""
+    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
 
     $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }

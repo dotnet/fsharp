@@ -6,9 +6,9 @@ index: 400
 ---
 # Code Optimizations
 
-Code optimizations are performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs), [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/DetupleArgs.fs), [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs).
+Code optimizations are in [`Compiler/Optimize/*`](https://github.com/dotnet/fsharp/tree/main/src/Compiler/Optimize).
 
-Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs) are:
+Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/Optimizer.fs) are:
 
 * Propagation of known values (constants, x = y, lambdas, tuples/records/union-cases of known values)
 * Inlining of known lambda values
@@ -20,7 +20,7 @@ Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotne
 * Splitting large functions into multiple methods, especially at match cases, to avoid massive methods that take a long time to JIT
 * Removing tailcalls when it is determined that no code in the transitive closure does a tailcall nor recurses
 
-In [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/DetupleArgs.fs), tuples at call sites are eliminated if possible. Concretely, functions that accept a tuple at all call sites are replaced by functions that accept each of the tuple's arguments individually. This may require inlining to activate.
+In [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/DetupleArgs.fs), tuples at call sites are eliminated if possible. Concretely, functions that accept a tuple at all call sites are replaced by functions that accept each of the tuple's arguments individually. This may require inlining to activate.
 
 Considering the following example:
 
@@ -52,7 +52,7 @@ The inner function `offsetValues` will allocate a new tuple when called. However
 
 Currently, these optimizations are not applied to `struct` tuples or explicit `ValueTuple`s passed to a function. In most cases, this doesn't matter because the handling of `ValueTuple` is well-optimized and may be erased at runtime. However, in the previous `runWithTuple` function, the overhead of allocating a `ValueTuple` each call ends up being higher than the previous example with `inline` applied to `offsetValues`. This may be addressed in the future.
 
-In [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs), inner functions and lambdas are analyzed and, if possible, rewritten into separate methods that do not require an `FSharpFunc` allocation.
+In [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/InnerLambdasToTopLevelFuncs.fs), inner functions and lambdas are analyzed and, if possible, rewritten into separate methods that do not require an `FSharpFunc` allocation.
 
 Consider the following implementation of `sumBy` on an F# list:
 
@@ -67,9 +67,12 @@ let sumBy f xs =
 
 The inner `loop` function is emitted as a separate static method named `loop@2` and incurs no overhead involved with allocating an `FSharpFunc` at runtime.
 
-In [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs), a few optimizations are performed:
+In [`LowerCalls.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerCalls.fs): 
 
 * Performs eta-expansion on under-applied values applied to lambda expressions and does a beta-reduction to bind any known arguments
+
+In [`LowerSequences.fs`](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Optimize/LowerSequences.fs): 
+
 * Analyzes a sequence expression and translates it into a state machine so that operating on sequences doesn't incur significant closure overhead
 
 ### Potential future optimizations: Better Inlining

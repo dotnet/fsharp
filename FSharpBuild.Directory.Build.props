@@ -49,7 +49,7 @@
     <StrongNameKeyId>Microsoft</StrongNameKeyId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MonoPackaging)' == 'true'">
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\test.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
   </PropertyGroup>

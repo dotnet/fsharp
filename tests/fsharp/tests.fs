@@ -1,12 +1,6 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
-#if INTERACTIVE
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.Test.Utilities/TestFramework.fs"
-#load "single-test.fs"
-#else
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 module FSharp.Tests.Core
-#endif
 
 open System
 open System.IO

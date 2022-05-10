@@ -18,7 +18,7 @@
             // "preLaunchTask": "Build (Debug)",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net5.0/fsi.dll",
-            "cwd": "${workspaceFolder}/src/fsharp",
+            "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal",
             "stopAtEntry": false,
             "justMyCode": false,
