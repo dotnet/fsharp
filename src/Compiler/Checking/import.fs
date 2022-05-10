@@ -598,14 +598,14 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
             [ yield (enc, exportedType.Name, tcref)
               yield! visit exportedType net.Nested [yield! enc; yield net.Name] ])
 
-    let rec mkTree (currentNodeKey:string) (entries: (string list * string * Lazy<EntityRef>) list) : CcuTypeForwarderTree<string,Lazy<EntityRef>> =
-        let childNodes =
+    let rec mkTree (entries: (string list * string * Lazy<EntityRef>) list) : CcuTypeForwarderTree<string,Lazy<EntityRef>> =
+        let children =
             let leaves, entriesForSubNodes =
                 List.partition (fun (path: string list,_,_) -> path.IsEmpty) entries
 
             let leaves =
                 leaves
-                |> List.map (fun (_, item, value) -> CcuTypeForwarderTree.Node(item, Some value, []))
+                |> List.map (fun (_, item, value) -> item, { Value = Some value; Children = Dictionary(0) })
             
             let subNodes =
                 entriesForSubNodes
@@ -614,14 +614,14 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
                     let entries =
                         group
                         |> List.map (fun (path, item, value) -> List.tail path, item, value)
-                    mkTree nodeKey entries)
+                    nodeKey, mkTree entries)
 
-            [ yield! leaves; yield! subNodes ]
+            Dictionary.ofList [ yield! leaves; yield! subNodes ]
 
-        CcuTypeForwarderTree.Node(currentNodeKey, None, childNodes)
+        { Value = None; Children = children }
 
     match exportedTypes.AsList() with
-    | [] -> CcuTypeForwarderTable([])
+    | [] -> CcuTypeForwarderTable.Empty
     | rootTypes ->
         rootTypes
         |> List.collect (fun exportedType ->
@@ -630,10 +630,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
             [ yield (ns, n, tcref)
               yield! visit exportedType exportedType.Nested [yield! ns; yield n] ]
         )
-        |> fun allEntries ->
-            match mkTree "root" allEntries with
-            | CcuTypeForwarderTree.Node(_, _, nodes) ->
-                CcuTypeForwarderTable(nodes)
+        |> fun entries -> { Root = mkTree entries }
         
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 

@@ -5292,38 +5292,34 @@ type CcuData =
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
 type CcuTypeForwarderTree<'TKey, 'TValue> =
-    | Node of key: 'TKey * value: 'TValue option * children: CcuTypeForwarderTree<'TKey, 'TValue> list
+    {
+        Value : 'TValue option
+        Children : Dictionary<'TKey, CcuTypeForwarderTree<'TKey, 'TValue>>
+    }
+
+    static member Empty = { Value = None; Children = Dictionary(0) }
+
+module CcuTypeForwarderTable =
+    let rec findInTree (remainingPath: string ArraySegment) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
+        if remainingPath.Count = 0 then
+            tree.Value
+        else
+            let nodes = tree.Children
+            match nodes.TryGetValue ((remainingPath :> IList<_>).Item 0) with
+            | true, innerTree ->
+                findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) innerTree
+            | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
 type CcuTypeForwarderTable =
-    | CcuTypeForwarderTable of rootNodes: CcuTypeForwarderTree<string, Lazy<EntityRef>> list
+    {
+        Root : CcuTypeForwarderTree<string, Lazy<EntityRef>>
+    }
 
-    static member Empty : CcuTypeForwarderTable = CcuTypeForwarderTable(List.empty)   
+    static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree<_,_>.Empty }   
     member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
-        let rec findInTree remainingPath (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>) =
-            if Array.isEmpty remainingPath then
-                match tree with
-                | CcuTypeForwarderTree.Node(key, Some value, _) when key = item -> Some value
-                | CcuTypeForwarderTree.Node(_, _, nodes) ->
-                    List.choose (findInTree remainingPath) nodes
-                    |> List.tryHead
-            else
-                match tree with
-                | CcuTypeForwarderTree.Node(_, _, nodes) ->
-                    nodes
-                    |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = remainingPath[0])
-                    |> Option.bind (findInTree remainingPath[1..])
-                    
-        let (CcuTypeForwarderTable(rootNodes)) = this
-        if Array.isEmpty path then
-            rootNodes
-            |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = item)
-            |> Option.bind (fun (CcuTypeForwarderTree.Node(_, value, _)) -> value)
-        else
-            rootNodes
-            |> List.tryFind (function | CcuTypeForwarderTree.Node(key, _, _) -> key = path[0])
-            |> Option.bind (findInTree path[1..])
-
+        let fullPath = Array.append path [| item |] |> ArraySegment
+        CcuTypeForwarderTable.findInTree fullPath this.Root
 
 type CcuReference = string // ILAssemblyRef
 
