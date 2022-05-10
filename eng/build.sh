@@ -252,7 +252,7 @@ function BuildSolution {
     fi
     if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
       BuildMessage="Error building tools"
-      MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+      MSBuild "$repo_root/buildtools/buildtools.proj" \
         /restore \
         /p:Configuration=$bootstrap_config
 

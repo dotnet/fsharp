@@ -3,7 +3,7 @@
 open System.IO
 
 let lines = 
-    [| for dir in [ "src/fsharp"; "src/fsharp/FSharp.Core"; "src/fsharp/symbols"; "src/fsharp/service"; "src/fsharp/absil" ]do
+    [| for dir in [ "src" ]do
           for file in Directory.EnumerateFiles(__SOURCE_DIRECTORY__ + "/../../" + dir, "*.fs") do
         // TcGlobals.fs gets an exception
             let lines = File.ReadAllLines file
