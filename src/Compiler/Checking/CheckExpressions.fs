@@ -7124,7 +7124,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implTy: TType) virtNameAndArit
             else
                 errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound bindName, mBinding, bindName, suggestVirtualMembers))
 
-        | [ (_, absSlot) ] ->
+        | [ (_, absSlot: MethInfo) ] ->
             errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot), mBinding))
 
         | (_, absSlot) :: _ ->
