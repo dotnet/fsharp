@@ -508,8 +508,8 @@ type CompilationPath =
         let a, _ = List.frontAndBack x.AccessPath
         CompPath(x.ILScopeRef, a)
 
-    member x.NestedCompPath n modulKind =
-        CompPath(x.ILScopeRef, x.AccessPath@[(n, modulKind)])
+    member x.NestedCompPath n moduleKind =
+        CompPath(x.ILScopeRef, x.AccessPath@[(n, moduleKind)])
 
     member x.DemangledPath = 
         x.AccessPath |> List.map (fun (nm, k) -> CompilationPath.DemangleEntityName nm k)

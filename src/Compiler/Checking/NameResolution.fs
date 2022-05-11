@@ -1633,13 +1633,21 @@ type FormatStringCheckContext =
 
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
+
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
+
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
+
     abstract NotifyNameResolution: pos * item: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+
     abstract NotifyFormatSpecifierLocation: range * int -> unit
+
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
+
     abstract CurrentSourceText: ISourceText option
+
     abstract FormatStringCheckContext: FormatStringCheckContext option
 
 let (|ValRefOfProp|_|) (pi: PropInfo) = pi.ArbitraryValRef

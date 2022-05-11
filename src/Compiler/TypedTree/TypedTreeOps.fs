@@ -417,9 +417,9 @@ let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
 
 
-let mkTyparToTyparRenaming tpsOrig tps = 
+let mkTyparToTyparRenaming tpsorig tps = 
     let tinst = generalizeTypars tps
-    mkTyparInst tpsOrig tinst, tinst
+    mkTyparInst tpsorig tinst, tinst
 
 let mkTyconInst (tycon: Tycon) tinst = mkTyparInst tycon.TyparsNoRange tinst
 let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
@@ -5859,9 +5859,9 @@ and remapMemberInfo ctxt m topValInfo ty tyR tmenv x =
     // The slotsig in the ImplementedSlotSigs is w.r.t. the type variables in the value's type. 
     // REVIEW: this is a bit gross. It would be nice if the slotsig was standalone 
     assert (Option.isSome topValInfo)
-    let tpsOrig, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty m
+    let tpsorig, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty m
     let tps, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) tyR m
-    let renaming, _ = mkTyparToTyparRenaming tpsOrig tps 
+    let renaming, _ = mkTyparToTyparRenaming tpsorig tps 
     let tmenv = { tmenv with tpinst = tmenv.tpinst @ renaming } 
     { x with 
         ApparentEnclosingEntity = x.ApparentEnclosingEntity |> remapTyconRef tmenv.tyconRefRemap 

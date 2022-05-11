@@ -477,7 +477,7 @@ type TcFileState =
          (g, isScript, niceNameGen, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
           tcSequenceExpressionEntry, tcArrayOrListSequenceExpression, tcComputationExpression) =
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsOrig = FreshenTypars m tpsOrig
+        let instantiationGenerator m tpsorig = FreshenTypars m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
@@ -507,8 +507,8 @@ type TcFileState =
 
 type cenv = TcFileState
 
-let CopyAndFixupTypars m rigid tpsOrig =
-    FreshenAndFixupTypars m rigid [] [] tpsOrig
+let CopyAndFixupTypars m rigid tpsorig =
+    FreshenAndFixupTypars m rigid [] [] tpsorig
 
 let UnifyTypes (cenv: cenv) (env: TcEnv) m actualTy expectedTy =
     let g = cenv.g
@@ -565,9 +565,9 @@ let UnifyTypesAndRecover cenv env m expectedTy actualTy =
         errorRecovery exn m
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
-let MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc modulKind =
+let MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc moduleKind =
     let path = env.ePath @ [nm]
-    let cpath = env.eCompPath.NestedCompPath nm.idText modulKind
+    let cpath = env.eCompPath.NestedCompPath nm.idText moduleKind
     let nenv =
         if addOpenToNameEnv then
             { env.NameEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid path) }
@@ -583,10 +583,10 @@ let MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc modulKind =
         eModuleOrNamespaceTypeAccumulator = moduleTyAcc }
 
 /// Make an environment suitable for a module or namespace, creating a new accumulator.
-let MakeInnerEnv addOpenToNameEnv env nm modulKind =
+let MakeInnerEnv addOpenToNameEnv env nm moduleKind =
     // Note: here we allocate a new module type accumulator
-    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType modulKind)
-    MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc modulKind, moduleTyAcc
+    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType moduleKind)
+    MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc moduleKind, moduleTyAcc
 
 /// Make an environment suitable for processing inside a type definition
 let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension =
@@ -2508,9 +2508,9 @@ type NormalizedBindingRhs =
         returnTyOpt: SynBindingReturnInfo option *
         rhsExpr: SynExpr
 
-let PushOnePatternToRhs (cenv: cenv) isMember pat (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) =
-    let synSimplePats, rhsExpr = PushPatternToExpr cenv.synArgNameGenerator isMember pat rhsExpr
-    NormalizedBindingRhs(synSimplePats :: spatsL, rtyOpt, rhsExpr)
+let PushOnePatternToRhs (cenv: cenv) isMember synPat (NormalizedBindingRhs(simplePatsList, retTyOpt, rhsExpr)) =
+    let simplePats, rhsExpr = PushPatternToExpr cenv.synArgNameGenerator isMember synPat rhsExpr
+    NormalizedBindingRhs(simplePats :: simplePatsList, retTyOpt, rhsExpr)
 
 type NormalizedBindingPatternInfo =
     NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData * SynValTyparDecls
@@ -2816,10 +2816,10 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, valRecIn
     match valRecInfo with
     | ValInRecScope isComplete when isComplete && not (isNil tinst) ->
         cenv.css.PushPostInferenceCheck (preDefaults=false, check=fun () ->
-            let tpsOrig, tau2 = tryDestForallTy g vTy
-            if not (isNil tpsOrig) then
-              let tpsOrig = NormalizeDeclaredTyparsForEquiRecursiveInference g tpsOrig
-              let tau3 = instType (mkTyparInst tpsOrig tinst) tau2
+            let tpsorig, tau2 = tryDestForallTy g vTy
+            if not (isNil tpsorig) then
+              let tpsorig = NormalizeDeclaredTyparsForEquiRecursiveInference g tpsorig
+              let tau3 = instType (mkTyparInst tpsorig tinst) tau2
               if not (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m tau tau3) then
                   let txt = buildString (fun buf -> NicePrint.outputQualifiedValSpec env.DisplayEnv cenv.infoReader buf (mkLocalValRef v))
                   error(Error(FSComp.SR.tcInferredGenericTypeGivesRiseToInconsistency(v.DisplayName, txt), m)))
@@ -2837,7 +2837,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, valRecIn
 let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiationInfoOpt optAfterResolution m =
     let g = cenv.g
 
-    let tpsOrig, _, _, _, tinst, _ as res =
+    let tpsorig, _, _, _, tinst, _ as res =
         let v = vref.Deref
         let valRecInfo = v.RecursiveValInfo
         v.SetHasBeenReferenced()
@@ -2861,8 +2861,8 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
               // The value may still be generic, e.g.
               //   [<Literal>]
               //   let Null = null
-              let tpsOrig, _, tinst, tauTy = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
-              tpsOrig, Expr.Const (c, m, tauTy), isSpecial, tauTy, tinst, tpenv
+              let tpsorig, _, tinst, tauTy = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+              tpsorig, Expr.Const (c, m, tauTy), isSpecial, tauTy, tinst, tpenv
 
           | None ->
                 // References to 'this' in classes get dereferenced from their implicit reference cell and poked
@@ -2876,7 +2876,7 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
                   [], mkCallCheckThis g m ty (mkRefCellGet g m ty exprForVal), isSpecial, ty, [], tpenv
               else
                   // Instantiate the value
-                  let tpsOrig, vrefFlags, tinst, tau, tpenv =
+                  let tpsorig, vrefFlags, tinst, tau, tpenv =
                       // Have we got an explicit instantiation?
                       match instantiationInfoOpt with
                       // No explicit instantiation (the normal case)
@@ -2886,13 +2886,13 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
 
                           match valRecInfo with
                           | ValInRecScope false ->
-                              let tpsOrig, tau = vref.GeneralizedType
-                              let tinst = tpsOrig |> List.map mkTyparTy
-                              tpsOrig, NormalValUse, tinst, tau, tpenv
+                              let tpsorig, tau = vref.GeneralizedType
+                              let tinst = tpsorig |> List.map mkTyparTy
+                              tpsorig, NormalValUse, tinst, tau, tpenv
                           | ValInRecScope true
                           | ValNotInRecScope ->
-                              let tpsOrig, _, tinst, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
-                              tpsOrig, NormalValUse, tinst, tau, tpenv
+                              let tpsorig, _, tinst, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+                              tpsorig, NormalValUse, tinst, tau, tpenv
 
                       // If we have got an explicit instantiation then use that
                       | Some(vrefFlags, checkTys) ->
@@ -2901,24 +2901,24 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
                                     warning(Error(FSComp.SR.tcDoesNotAllowExplicitTypeArguments(v.DisplayName), m))
                             match valRecInfo with
                             | ValInRecScope false ->
-                                let tpsOrig, tau = vref.GeneralizedType
-                                let (tinst: TypeInst), tpenv = checkTys tpenv (tpsOrig |> List.map (fun tp -> tp.Kind))
+                                let tpsorig, tau = vref.GeneralizedType
+                                let (tinst: TypeInst), tpenv = checkTys tpenv (tpsorig |> List.map (fun tp -> tp.Kind))
 
                                 checkInst tinst
 
-                                if tpsOrig.Length <> tinst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tpsOrig.Length, tinst.Length), m))
+                                if tpsorig.Length <> tinst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tpsorig.Length, tinst.Length), m))
 
-                                let tau2 = instType (mkTyparInst tpsOrig tinst) tau
+                                let tau2 = instType (mkTyparInst tpsorig tinst) tau
 
-                                (tpsOrig, tinst) ||> List.iter2 (fun tp ty ->
+                                (tpsorig, tinst) ||> List.iter2 (fun tp ty ->
                                     try UnifyTypes cenv env m (mkTyparTy tp) ty
                                     with _ -> error (Recursion(env.DisplayEnv, v.Id, tau2, tau, m)))
 
-                                tpsOrig, vrefFlags, tinst, tau2, tpenv
+                                tpsorig, vrefFlags, tinst, tau2, tpenv
 
                             | ValInRecScope true
                             | ValNotInRecScope ->
-                                let tpsOrig, tps, tpTys, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+                                let tpsorig, tps, tpTys, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
 
                                 let (tinst: TypeInst), tpenv = checkTys tpenv (tps |> List.map (fun tp -> tp.Kind))
 
@@ -2930,7 +2930,7 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
 
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, valRecInfo, tinst, vTy, tau, m)
 
-                                tpsOrig, vrefFlags, tinst, tau, tpenv
+                                tpsorig, vrefFlags, tinst, tau, tpenv
 
                   let exprForVal = Expr.Val (vref, vrefFlags, m)
                   let exprForVal = mkTyAppExpr m (exprForVal, vTy) tinst
@@ -2941,10 +2941,10 @@ let TcVal checkAttributes (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValR
 
                   let exprForVal = RecordUseOfRecValue cenv valRecInfo vref exprForVal m
 
-                  tpsOrig, exprForVal, isSpecial, tau, tinst, tpenv
+                  tpsorig, exprForVal, isSpecial, tau, tinst, tpenv
 
     match optAfterResolution with
-    | Some (AfterResolution.RecordResolution(_, callSink, _, _)) -> callSink (mkTyparInst tpsOrig tinst)
+    | Some (AfterResolution.RecordResolution(_, callSink, _, _)) -> callSink (mkTyparInst tpsorig tinst)
     | Some AfterResolution.DoNothing | None -> ()
     res
 

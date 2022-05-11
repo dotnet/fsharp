@@ -750,7 +750,7 @@ val MakeInnerEnv:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    modulKind: ModuleOrNamespaceKind ->
+    moduleKind: ModuleOrNamespaceKind ->
         TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
@@ -760,7 +760,7 @@ val MakeInnerEnvWithAcc:
     env: TcEnv ->
     nm: Ident ->
     moduleTyAcc: ModuleOrNamespaceType ref ->
-    modulKind: ModuleOrNamespaceKind ->
+    moduleKind: ModuleOrNamespaceKind ->
         TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
