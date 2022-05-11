@@ -11363,19 +11363,18 @@ and AnalyzeRecursiveStaticMemberOrValDecl
            let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
            let envinner = MakeInnerEnvForTyconRef envinner tcref isExtrinsic
 
-
            let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
 
            let domainTy = NewInferenceType g
            
+           CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
+
            let optInferredImplSlotTys, declaredTypars =
                ApplyAbstractSlotInference cenv envinner (domainTy, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, objTy, optIntfSlotTy, valSynInfo, memberFlags, bindingAttribs)
 
            let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
            
-           let memberInfo =
-               let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-               MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, bindingAttribs, optInferredImplSlotTys, memberFlags, valSynInfo, id, false)
+           let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, bindingAttribs, optInferredImplSlotTys, memberFlags, valSynInfo, id, false)
 
            envinner, tpenv, id, None, Some memberInfo, vis, vis2, None, enclosingDeclaredTypars, None, explicitTyparInfo, bindingRhs, declaredTypars
 

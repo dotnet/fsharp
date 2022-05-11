@@ -299,8 +299,8 @@ type TyparFlags(flags: int32) =
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | TyparStaticReq.None                  -> 0b00000000000000000
-                     | TyparStaticReq.HeadType            -> 0b00000000000001000) |||
+                     | TyparStaticReq.None          -> 0b00000000000000000
+                     | TyparStaticReq.HeadType      -> 0b00000000000001000) |||
                    (match rigidity with
                      | TyparRigidity.Rigid          -> 0b00000000000000000
                      | TyparRigidity.WillBeRigid    -> 0b00000000000100000
