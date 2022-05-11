@@ -1,0 +1,7 @@
+root = true
+
+[*.fs]
+fsharp_newline_between_type_definition_and_members=true
+
+[*.fsi]
+fsharp_newline_between_type_definition_and_members=true

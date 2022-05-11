@@ -18,12 +18,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
+	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+		<Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+	</None>
+	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+		<Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+	</None>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -161,7 +161,8 @@
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
-    <Compile Include="Interop\SimpleInteropTests.fs" />
+	<Compile Include="Interop\SimpleInteropTests.fs" />
+	<Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
@@ -192,9 +193,9 @@
     <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
