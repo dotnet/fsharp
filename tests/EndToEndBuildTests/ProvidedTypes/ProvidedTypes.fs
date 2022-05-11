@@ -7722,9 +7722,6 @@ namespace ProviderImplementation.ProvidedTypes
             txTable.Get inp.Token (fun () -> 
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes,
                 // which fortunately also correspond to element types. We just use the design-time types instead.
-                // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
-                // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 | USome "System", "Void"->  typeof<Void>
                 (*

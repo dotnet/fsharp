@@ -13,37 +13,34 @@ open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Syntax
 
 type public HashIfExpression() =
-    let preludes    = [|"#if "; "#elif "|]
-    let epilogues   = [|""; " // Testing"|]
+    let preludes = [|"#if "; "#elif "|]
+    let epilogues = [|""; " // Testing"|]
 
-    let ONE         = IfdefId "ONE"
-    let TWO         = IfdefId "TWO"
-    let THREE       = IfdefId "THREE"
+    let ONE = IfdefId "ONE"
+    let TWO = IfdefId "TWO"
+    let THREE = IfdefId "THREE"
 
     let isSet l r = (l &&& r) <> 0
 
-    let (!!)  e     = IfdefNot(e)
-    let (&&&) l r   = IfdefAnd(l,r)
-    let (|||) l r   = IfdefOr(l,r)
-
+    let (!!)  e = IfdefNot(e)
+    let (&&&) l r = IfdefAnd(l,r)
+    let (|||) l r = IfdefOr(l,r)
 
     let exprAsString (e : LexerIfdefExpression) : string =
-        let sb                  = StringBuilder()
+        let sb = StringBuilder()
         let append (s : string) = ignore <| sb.Append s
         let rec build (e : LexerIfdefExpression) : unit =
             match e with
-            | IfdefAnd (l,r)-> append "("; build l; append " && "; build r; append ")"
+            | IfdefAnd (l,r) -> append "("; build l; append " && "; build r; append ")"
             | IfdefOr (l,r) -> append "("; build l; append " || "; build r; append ")"
-            | IfdefNot ee   -> append "!"; build ee
-            | IfdefId nm    -> append nm
+            | IfdefNot ee -> append "!"; build ee
+            | IfdefId nm -> append nm
 
         build e
 
@@ -53,40 +50,40 @@ type public HashIfExpression() =
         let errors = ResizeArray<PhasedDiagnostic>()
         let warnings = ResizeArray<PhasedDiagnostic>()
 
-        let errorLogger =
+        let diagnosticsLogger =
             {
-                new ErrorLogger("TestErrorLogger") with
-                    member x.DiagnosticSink(e, sev)    = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
-                    member x.ErrorCount         = errors.Count
+                new DiagnosticsLogger("TestDiagnosticsLogger") with
+                    member _.DiagnosticSink(e, sev) = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
+                    member _.ErrorCount = errors.Count
             }
 
         let lightSyntax = IndentationAwareSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines= []
         let startPos = Position.Empty
-        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
+        let args = mkLexargs (defines, lightSyntax, resourceManager, [], diagnosticsLogger, PathMap.empty)
 
-        CompileThreadStatic.ErrorLogger <- errorLogger
+        DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 
         let parser (s : string) =
-            let lexbuf          = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
-            lexbuf.StartPos     <- startPos
-            lexbuf.EndPos       <- startPos
-            let tokenStream     = PPLexer.tokenstream args
+            let lexbuf = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
+            lexbuf.StartPos <- startPos
+            lexbuf.EndPos <- startPos
+            let tokenStream = PPLexer.tokenstream args
 
             PPParser.start tokenStream lexbuf
 
         errors, warnings, parser
 
     do // Setup
-        CompileThreadStatic.BuildPhase  <- BuildPhase.Compile
+        DiagnosticsThreadStatics.BuildPhase <- BuildPhase.Compile
     interface IDisposable with // Teardown
         member _.Dispose() =
-            CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
-            CompileThreadStatic.ErrorLogger <- CompileThreadStatic.ErrorLogger
+            DiagnosticsThreadStatics.BuildPhase <- BuildPhase.DefaultPhase
+            DiagnosticsThreadStatics.DiagnosticsLogger <- DiagnosticsThreadStatics.DiagnosticsLogger
 
     [<Fact>]
-    member this.PositiveParserTestCases()=
+    member _.PositiveParserTestCases()=
 
         let errors, warnings, parser = createParser ()
 
@@ -117,8 +114,8 @@ type public HashIfExpression() =
                 "false"                     , IfdefId "false"
             |]
 
-        let failures    = ResizeArray<string> ()
-        let fail        = failures.Add
+        let failures = ResizeArray<string> ()
+        let fail = failures.Add
 
         for test,expected in positiveTestCases do
             for prelude in preludes do
@@ -126,12 +123,12 @@ type public HashIfExpression() =
                 for epilogue in epilogues do
                     let test = test + epilogue
                     try
-                        let expr    = parser test
+                        let expr = parser test
 
                         if expected <> expr then
                             fail <| sprintf "'%s', expected %A, actual %A" test (exprAsString expected) (exprAsString expr)
-                    with
-                    | e ->  fail <| sprintf "'%s', expected %A, actual %s,%A" test (exprAsString expected) (e.GetType().Name) e.Message
+                    with e ->
+                        fail <| sprintf "'%s', expected %A, actual %s,%A" test (exprAsString expected) (e.GetType().Name) e.Message
 
 
         let fs =
@@ -147,9 +144,9 @@ type public HashIfExpression() =
         ()
 
     [<Fact>]
-    member this.NegativeParserTestCases()=
+    member _.NegativeParserTestCases()=
 
-        let errors, warnings, parser = createParser ()
+        let errors, _warnings, parser = createParser ()
 
         let negativeTests =
             [|
@@ -183,18 +180,18 @@ type public HashIfExpression() =
                 "ONE )(@$&%*@^#%#!$)"
             |]
 
-        let failures    = ResizeArray<string> ()
-        let fail        = failures.Add
+        let failures = ResizeArray<string> ()
+        let fail = failures.Add
 
         for test in negativeTests do
             for prelude in preludes do
                 let test = prelude + test
                 for epilogue in epilogues do
-                    let test    = test + epilogue
+                    let test = test + epilogue
                     try
-                        let bec     = errors.Count
-                        let expr    = parser test
-                        let aec     = errors.Count
+                        let bec = errors.Count
+                        let expr = parser test
+                        let aec = errors.Count
 
                         if bec = aec then   // No new errors discovered
                             fail <| sprintf "'%s', expected 'parse error', actual %A" test (exprAsString expr)
@@ -208,22 +205,22 @@ type public HashIfExpression() =
         Assert.shouldBe "" fails
 
     [<Fact>]
-    member this.LexerIfdefEvalTestCases()=
+    member _.LexerIfdefEvalTestCases()=
 
-        let failures    = ResizeArray<string> ()
-        let fail        = failures.Add
+        let failures = ResizeArray<string> ()
+        let fail = failures.Add
 
         for i in 0..7 do
-            let one     = isSet i 1
-            let two     = isSet i 2
-            let three   = isSet i 4
+            let one = isSet i 1
+            let two = isSet i 2
+            let three = isSet i 4
 
             let lookup s =
                 match s with
-                | "ONE"     -> one
-                | "TWO"     -> two
-                | "THREE"   -> three
-                | _         -> false
+                | "ONE" -> one
+                | "TWO" -> two
+                | "THREE" -> three
+                | _ -> false
 
             let testCases =
                 [|

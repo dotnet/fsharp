@@ -14,7 +14,7 @@ open Util
 //
 type internal TextBufferStream(textLines:ITextBuffer MaybeNull, contentTypeRegistry: IContentTypeRegistryService) = 
     do if null = textLines then raise (new ArgumentNullException("textLines"))
-    // The following line causes unhandled excepiton on a background thread, see https://github.com/Microsoft/visualfsharp/issues/2318#issuecomment-279340343
+    // The following line causes unhandled excepiton on a background thread, see https://github.com/dotnet/fsharp/issues/2318#issuecomment-279340343
     // It seems we should provide a Quick Info Provider at the same time as uncommenting it.
     
     //do textLines.ChangeContentType(contentTypeRegistry.GetContentType Guids.fsiContentTypeName, Guid Guids.guidFsiLanguageService)

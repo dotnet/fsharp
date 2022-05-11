@@ -6,13 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
+    <Projects Include="src\FSharp.Build\FSharp.Build.fsproj">
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </Projects>
-    <Projects Include="src\fsharp\fsc\fsc.fsproj">
+    <Projects Include="src\fsc\fsc.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=net6.0</AdditionalProperties>
     </Projects>
-    <Projects Include="src\fsharp\fsi\fsi.fsproj">
+    <Projects Include="src\fsi\fsi.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=net6.0</AdditionalProperties>
     </Projects>
   </ItemGroup>

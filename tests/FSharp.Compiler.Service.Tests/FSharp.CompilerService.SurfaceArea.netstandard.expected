@@ -2081,19 +2081,19 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFsLib
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFsLib()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions Default
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions get_Default()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions ErrorSeverityOptions
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_ErrorSeverityOptions()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions DiagnosticOptions
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_DiagnosticOptions()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -9010,8 +9010,8 @@ FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo arity
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo get_SynInfo()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo get_arity()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValSig NewSynValSig(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynValTyparDecls, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynValInfo, Boolean, Boolean, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynValSigTrivia)
-FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls explicitValDecls
-FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls get_explicitValDecls()
+FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls explicitTypeParams
+FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls get_explicitTypeParams()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.SyntaxTrivia.SynValSigTrivia get_trivia()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.SyntaxTrivia.SynValSigTrivia trivia
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Text.Range RangeOfId
