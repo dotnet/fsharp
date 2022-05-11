@@ -61,7 +61,7 @@ let lexemeTrimLeft   lexbuf n = lexemeTrimBoth lexbuf n 0
 /// Throw a lexing error with a message
 let fail args (lexbuf:UnicodeLexing.Lexbuf) msg dflt =
      let m = lexbuf.LexemeRange
-     args.errorLogger.ErrorR(Error(msg,m))
+     args.diagnosticsLogger.ErrorR(Error(msg,m))
      dflt
 
 //--------------------------

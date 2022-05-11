@@ -290,7 +290,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
               {
                   SourceFiles = [|"CheckExpressions.fs"|]
                   ConditionalDefines = []
-                  ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+                  DiagnosticOptions = FSharpDiagnosticOptions.Default
                   LangVersionText = "default"
                   IsInteractive = false
                   LightSyntax = None

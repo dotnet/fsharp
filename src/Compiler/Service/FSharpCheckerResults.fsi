@@ -181,7 +181,7 @@ type public FSharpSymbolUse =
 
     // For internal use only
     internal new:
-        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInst * itemOcc: ItemOccurence * range: range ->
+        denv: DisplayEnv * symbol: FSharpSymbol * inst: TyparInstantiation * itemOcc: ItemOccurence * range: range ->
             FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions
@@ -210,7 +210,7 @@ type public FSharpParsingOptions =
 
       ConditionalDefines: string list
 
-      ErrorSeverityOptions: FSharpDiagnosticOptions
+      DiagnosticOptions: FSharpDiagnosticOptions
 
       LangVersionText: string
 
@@ -218,7 +218,7 @@ type public FSharpParsingOptions =
 
       IndentationAwareSyntax: bool option
 
-      CompilingFsLib: bool
+      CompilingFSharpCore: bool
 
       IsExe: bool }
 
@@ -435,7 +435,7 @@ type public FSharpCheckFileResults =
         sSymbolUses: TcSymbolUses *
         sFallback: NameResolutionEnv *
         loadClosure: LoadClosure option *
-        implFileOpt: TypedImplFile option *
+        implFileOpt: CheckedImplFile option *
         openDeclarations: OpenDeclaration [] ->
             FSharpCheckFileResults
 
@@ -509,7 +509,7 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic [] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string [] * FSharpProjectOptions) option ->
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string [] * FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =

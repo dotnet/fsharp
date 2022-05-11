@@ -19,7 +19,7 @@ type LexFilter =
     /// Create a lex filter
     new:
         indentationSyntaxStatus: IndentationAwareSyntaxStatus *
-        compilingFsLib: bool *
+        compilingFSharpCore: bool *
         lexer: (LexBuffer<char> -> token) *
         lexbuf: LexBuffer<char> ->
             LexFilter

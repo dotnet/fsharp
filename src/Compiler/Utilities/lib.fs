@@ -315,7 +315,7 @@ module Zset =
 let equalOn f x y = (f x) = (f y)
 
 /// Buffer printing utility
-let bufs f =
+let buildString f =
     let buf = StringBuilder 100
     f buf
     buf.ToString()

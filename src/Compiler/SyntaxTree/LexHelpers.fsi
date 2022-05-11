@@ -32,7 +32,7 @@ type LexResourceManager =
 type LexArgs =
     { conditionalDefines: string list
       resourceManager: LexResourceManager
-      errorLogger: DiagnosticsLogger
+      diagnosticsLogger: DiagnosticsLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
@@ -51,7 +51,7 @@ val mkLexargs:
     indentationSyntaxStatus: IndentationAwareSyntaxStatus *
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     pathMap: PathMap *
     applyLineDirectives: bool ->
         LexArgs

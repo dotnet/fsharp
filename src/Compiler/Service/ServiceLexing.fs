@@ -1523,7 +1523,7 @@ type FSharpToken =
 
 [<AutoOpen>]
 module FSharpLexerImpl =
-    let lexWithDiagnosticsLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
+    let lexWithDiagnosticsLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion diagnosticsLogger onToken pathMap (ct: CancellationToken) =
         let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
         let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
         let isCompiling = (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
@@ -1533,7 +1533,7 @@ module FSharpLexerImpl =
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
         let indentationSyntaxStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
         let applyLineDirectives = isCompiling
-        let lexargs = mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], errorLogger, pathMap, applyLineDirectives)
+        let lexargs = mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], diagnosticsLogger, pathMap, applyLineDirectives)
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia
@@ -1553,8 +1553,8 @@ module FSharpLexerImpl =
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
     let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
-        let errorLogger = CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
-        lexWithDiagnosticsLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
+        let diagnosticsLogger = CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
+        lexWithDiagnosticsLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion diagnosticsLogger lexCallback pathMap ct
 
 [<AbstractClass;Sealed>]
 type FSharpLexer =

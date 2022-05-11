@@ -1338,7 +1338,7 @@ module FSharpExprConvert =
         FSharpExpr(cenv, Some(fun () -> ConvExpr cenv env expr), E.Unused, expr.Range, tyOfExpr cenv.g expr)
 
 /// The contents of the F# assembly as provided through the compiler API
-type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) = 
+type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: CheckedImplFile list) = 
 
     new (tcGlobals, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(tcGlobals, thisCcu, thisCcuType, tcImports), mimpls)
 
@@ -1352,7 +1352,7 @@ and FSharpImplementationFileDeclaration =
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let g = cenv.g
-    let (TImplFile (qname, _pragmas, ModuleOrNamespaceContentsWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
+    let (CheckedImplFile (qname, _pragmas, _, contents, hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
     let rec getBind (bind: Binding) = 
         let v = bind.Var
         assert v.IsCompiledAsTopLevel
@@ -1366,7 +1366,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         let e = FSharpExprConvert.ConvExprOnDemand cenv env body
         FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(v, vslR, e) 
 
-    and getDecls mdef = 
+    and getDeclarations mdef = 
         match mdef with 
         | TMDefRec(_isRec, _opens, tycons, mbinds, _m) ->
             [ for tycon in tycons do 
@@ -1376,11 +1376,9 @@ and FSharpImplementationFileContents(cenv, mimpl) =
                   match mbind with 
                   | ModuleOrNamespaceBinding.Module(mspec, def) -> 
                       let entity = FSharpEntity(cenv, mkLocalEntityRef mspec)
-                      yield FSharpImplementationFileDeclaration.Entity (entity, getDecls def) 
+                      yield FSharpImplementationFileDeclaration.Entity (entity, getDeclarations def) 
                   | ModuleOrNamespaceBinding.Binding bind -> 
                       yield getBind bind ]
-        | TMWithSig mexpr ->
-            getDecls mexpr.Contents
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
         | TMDefOpens _ ->
@@ -1389,13 +1387,13 @@ and FSharpImplementationFileContents(cenv, mimpl) =
             [ let expr = FSharpExprConvert.ConvExprOnDemand cenv (ExprTranslationEnv.Empty(g)) expr
               yield FSharpImplementationFileDeclaration.InitAction expr  ]
         | TMDefs mdefs -> 
-            [ for mdef in mdefs do yield! getDecls mdef ]
+            [ for mdef in mdefs do yield! getDeclarations mdef ]
 
     member _.QualifiedName = qname.Text
 
     member _.FileName = qname.Range.FileName
 
-    member _.Declarations = getDecls mdef 
+    member _.Declarations = getDeclarations contents 
 
     member _.HasExplicitEntryPoint = hasExplicitEntryPoint
 
