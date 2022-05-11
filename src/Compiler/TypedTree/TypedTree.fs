@@ -5300,15 +5300,20 @@ type CcuTypeForwarderTree<'TKey, 'TValue> =
     static member Empty = { Value = None; Children = Dictionary(0) }
 
 module CcuTypeForwarderTable =
-    let rec findInTree (remainingPath: string ArraySegment) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
-        if remainingPath.Count = 0 then
-            tree.Value
-        else
-            let nodes = tree.Children
-            match nodes.TryGetValue ((remainingPath :> IList<_>).Item 0) with
-            | true, innerTree ->
-                findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) innerTree
-            | false, _ -> None
+    let rec findInTree (remainingPath: string ArraySegment) (finalKey : string) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
+        let nodes = tree.Children
+        let searchTerm =
+            if remainingPath.Count = 0 then
+                finalKey
+            else
+                remainingPath.Array.[remainingPath.Offset]
+        match nodes.TryGetValue searchTerm with
+        | true, innerTree ->
+            if remainingPath.Count = 0 then
+                innerTree.Value
+            else
+                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+        | false, _ -> None
 
 /// Represents a table of .NET CLI type forwarders for an assembly
 type CcuTypeForwarderTable =
@@ -5318,8 +5323,7 @@ type CcuTypeForwarderTable =
 
     static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree<_,_>.Empty }   
     member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
-        let fullPath = Array.append path [| item |] |> ArraySegment
-        CcuTypeForwarderTable.findInTree fullPath this.Root
+        CcuTypeForwarderTable.findInTree (ArraySegment path) item this.Root
 
 type CcuReference = string // ILAssemblyRef
 
