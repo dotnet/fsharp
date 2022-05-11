@@ -985,13 +985,15 @@ module ParsedInput =
                                 | _ -> 
                                     defaultTraverse expr
 
+                            | SynExpr.MatchLambda (matchClauses = clauses)
                             | SynExpr.Match (clauses = clauses)
                             | SynExpr.MatchBang (clauses = clauses) ->
                                 let rec traverse pos clausePat =
                                     match clausePat with
                                     // match x with
                                     // | z| ->
-                                    | SynPat.Named (range = range) -> Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range))
+                                    | SynPat.Named (range = range) ->
+                                        Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range))
 
                                     // match opt with
                                     // | Som| value ->

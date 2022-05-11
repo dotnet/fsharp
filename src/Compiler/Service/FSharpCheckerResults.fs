@@ -649,7 +649,7 @@ type internal TypeCheckInfo
     /// Find union cases and compatible active patterns when the item under the cursor position is an identifier with the type of a DU.
     let GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
         let rec doesActivePatternTakeTypeAsInput g ty paramType =
-            match paramType with
+            match stripTyEqns g paramType with
             | TType_var (typar, _) ->
                 match typar.Solution with
                 | Some paramType ->
@@ -677,14 +677,13 @@ type internal TypeCheckInfo
                 | ValueSome tcRef when tcRef.IsUnionTycon ->
                     let isUnionInScopeAsUnqualified = nenv.eTyconsByAccessNames.ContainsKey tcRef.DisplayName
                     let cases = ResolveUnionCasesOfType ncenv m res.AccessorDomain ty tcRef
-                    let activePatterns =
-                        nenv.ePatItems
-                        |> Seq.choose (fun x ->
-                            match x.Value with
+                    let activePatterns = [
+                        for kvp in nenv.ePatItems do
+                            match kvp.Value with
                             | Item.ActivePatternCase item when doesActivePatternTakeTypeAsInput nenv.DisplayEnv.g ty item.ActivePatternVal.Type ->
-                                Some x.Value
-                            | _ -> None)
-                        |> Seq.toList
+                                kvp.Value
+                            | _ -> ()
+                    ]
 
                     Some (isUnionInScopeAsUnqualified, cases @ activePatterns, nenv.DisplayEnv, m)
                 | _ -> None
@@ -1088,8 +1087,8 @@ type internal TypeCheckInfo
                         |> List.filter (fun cItem ->
                             match cItem.Item with
                             | Item.Value vref -> vref.LiteralValue.IsSome
-                            | Item.Types (_, types) ->
-                                types |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
+                            | Item.Types (_, tys) ->
+                                tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
                             | Item.ModuleOrNamespaces _
                             | Item.ActivePatternCase _
                             | Item.UnionCase _
