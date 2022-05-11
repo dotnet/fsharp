@@ -1112,7 +1112,7 @@ module PrintTypes =
     let layoutOfValReturnType denv (v: ValRef) =
         match v.ValReprInfo with 
         | None ->
-            let _, tau = v.TypeScheme
+            let tau = v.TauType
             let _argTysl, retTy = stripFunTy denv.g tau
             layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 retTy
         | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
@@ -1303,7 +1303,7 @@ module PrintTastMemberOrVals =
         let prettyTyparInst, valL =
             match vref.MemberInfo with 
             | None ->
-                let tps, tau = vref.TypeScheme
+                let tps, tau = vref.GeneralizedType
 
                 // adjust the type in case this is the 'this' pointer stored in a reference cell
                 let tau = StripSelfRefCell(denv.g, vref.BaseOrThisInfo, tau)
@@ -1422,7 +1422,7 @@ module InfoMemberPrinting =
             let layout = layout ^^ paramsL
             
             let retL =
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
+                let retTy = minfo.GetFSharpReturnType(amap, m, minst)
                 WordL.arrow ^^
                 PrintTypes.layoutType denv retTy
 
@@ -1434,7 +1434,7 @@ module InfoMemberPrinting =
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
     let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
-        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
+        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen

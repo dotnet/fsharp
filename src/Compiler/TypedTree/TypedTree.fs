@@ -605,7 +605,7 @@ type Entity =
       //
       // MUTABILITY: only used during creation and remapping of tycons and 
       // when compiling fslib to fixup compiler forward references to internal items 
-      mutable entity_modul_contents: MaybeLazy<ModuleOrNamespaceType>     
+      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>     
 
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
       // REVIEW: it looks like entity_cpath subsumes this 
@@ -779,7 +779,7 @@ type Entity =
             | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType = x.entity_modul_contents.Force()
+    member x.ModuleOrNamespaceType = x.entity_modul_type.Force()
 
     /// The logical contents of the entity when it is a type definition.
     member x.TypeContents = x.entity_tycon_tcaug
@@ -988,7 +988,7 @@ type Entity =
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
-          entity_modul_contents= Unchecked.defaultof<_>
+          entity_modul_type= Unchecked.defaultof<_>
           entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
@@ -1007,7 +1007,7 @@ type Entity =
         x.entity_attribs <- tg.entity_attribs 
         x.entity_tycon_repr <- tg.entity_tycon_repr
         x.entity_tycon_tcaug <- tg.entity_tycon_tcaug
-        x.entity_modul_contents <- tg.entity_modul_contents
+        x.entity_modul_type <- tg.entity_modul_type
         x.entity_pubpath <- tg.entity_pubpath 
         x.entity_cpath <- tg.entity_cpath 
         x.entity_il_repr_cache <- tg.entity_il_repr_cache 
@@ -2853,7 +2853,7 @@ type Val =
         | _ -> false
 
     /// Get the type of the value including any generic type parameters
-    member x.TypeScheme = 
+    member x.GeneralizedType = 
         match x.Type with 
         | TType_forall(tps, tau) -> tps, tau
         | ty -> [], ty
@@ -3726,7 +3726,7 @@ type ValRef =
     member x.Type = x.Deref.Type
 
     /// Get the type of the value including any generic type parameters
-    member x.TypeScheme = x.Deref.TypeScheme
+    member x.GeneralizedType = x.Deref.GeneralizedType
 
     /// Get the type of the value after removing any generic type parameters
     member x.TauType = x.Deref.TauType
@@ -5660,7 +5660,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
+            entity_modul_type = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
@@ -5681,7 +5681,7 @@ type Construct() =
           { entity_logical_name=id.idText
             entity_range = id.idRange
             entity_stamp=stamp
-            entity_modul_contents = mtype
+            entity_modul_type = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
@@ -5753,7 +5753,7 @@ type Construct() =
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
-            entity_modul_contents = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+            entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
@@ -5793,7 +5793,7 @@ type Construct() =
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = mtyp
+            entity_modul_type = mtyp
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
             entity_il_repr_cache = newCache()
@@ -5880,7 +5880,7 @@ type Construct() =
     /// contents of the module. 
     static member NewModifiedModuleOrNamespace f orig = 
         orig |> Construct.NewModifiedTycon (fun d -> 
-            { d with entity_modul_contents = MaybeLazy.Strict (f (d.entity_modul_contents.Force())) }) 
+            { d with entity_modul_type = MaybeLazy.Strict (f (d.entity_modul_type.Force())) }) 
 
     /// Create a Val based on an existing one using the function 'f'. 
     /// We require that we be given the parent for the new Val. 

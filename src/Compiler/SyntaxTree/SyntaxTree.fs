@@ -1570,7 +1570,7 @@ type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
         ident: SynIdent *
-        explicitValDecls: SynValTyparDecls *
+        explicitTypars: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
         isInline: bool *

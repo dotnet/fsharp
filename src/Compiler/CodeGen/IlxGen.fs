@@ -4852,7 +4852,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 | [meth] when meth.IsInstance -> meth
                 | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
             let argTys = implementedMeth.GetParamTypes(cenv.amap, m, []) |> List.concat
-            let retTy = implementedMeth.GetCompiledReturnTy(cenv.amap, m, [])
+            let retTy = implementedMeth.GetCompiledReturnType(cenv.amap, m, [])
             let ilRetTy = GenReturnType cenv m eenvinner.tyenv retTy
             let ilArgTys = argTys  |> GenTypes cenv m eenvinner.tyenv
             if ilArgTys.Length  <> argVals.Length then

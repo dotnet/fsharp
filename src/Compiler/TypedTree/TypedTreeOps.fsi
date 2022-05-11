@@ -233,18 +233,18 @@ val mkInvisibleBinds: Vals -> Exprs -> Bindings
 /// Make a let-rec expression that locally binds values to expressions where self-reference back to the values is possible.
 val mkLetRecBinds: range -> Bindings -> Expr -> Expr
 
-/// TypeScheme (generalizedTypars, tauTy)
+/// GeneralizedType (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
-type TypeScheme = TypeScheme of Typars * TType
+type GeneralizedType = GeneralizedType of Typars * TType
 
 /// Make the right-hand side of a generalized binding, incorporating the generalized generic parameters from the type
 /// scheme into the right-hand side as type generalizations.
-val mkGenericBindRhs: TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
+val mkGenericBindRhs: TcGlobals -> range -> Typars -> GeneralizedType -> Expr -> Expr
 
 /// Test if the type parameter is one of those being generalized by a type scheme.
-val isBeingGeneralized: Typar -> TypeScheme -> bool
+val isBeingGeneralized: Typar -> GeneralizedType -> bool
 
 /// Make the expression corresponding to 'expr1 && expr2'
 val mkLazyAnd: TcGlobals -> range -> Expr -> Expr -> Expr

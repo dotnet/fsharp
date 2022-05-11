@@ -2116,7 +2116,7 @@ let CheckAllTyparsInferrable amap m item =
             let freeInArgsAndRetType =
                 List.foldBack (accFreeInTypes CollectTyparsNoCaching) (minfo.GetParamTypes(amap, m, fminst))
                    (accFreeInTypes CollectTyparsNoCaching (minfo.GetObjArgTypes(amap, m, fminst))
-                       (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnTy(amap, m, fminst))))
+                       (freeInType CollectTyparsNoCaching (minfo.GetFSharpReturnType(amap, m, fminst))))
             let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 

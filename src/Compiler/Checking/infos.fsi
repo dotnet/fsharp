@@ -251,10 +251,10 @@ type ILMethInfo =
     member TcGlobals: TcGlobals
 
     /// Get the compiled return type of the method, where 'void' is None.
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -477,10 +477,10 @@ type MethInfo =
     member ComputeHashCode: unit -> int
 
     /// Get the return type of a method info, where 'void' is returned as 'None'
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the return type of a method info, where 'void' is returned as 'unit'
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Select all the type parameters of the declaring type of a method.
     ///

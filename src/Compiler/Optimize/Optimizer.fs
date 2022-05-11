@@ -1986,7 +1986,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
         | None -> None
 
     // match --> match
-    | Expr.Match (spBind, exprm, pt, targets, m, _ty) ->
+    | Expr.Match (spBind, mExpr, pt, targets, m, _ty) ->
         let targets =
             targets |> Array.map (fun (TTarget(vs, e, flags)) ->
                 match tryRewriteToSeqCombinators g e with
@@ -1996,7 +1996,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
         if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
             let ty = targets |> Array.pick (fun (TTarget(_, e, _)) -> Some(tyOfExpr g e))
-            Some (Expr.Match (spBind, exprm, pt, targets, m, ty))
+            Some (Expr.Match (spBind, mExpr, pt, targets, m, ty))
         else
             None
 
@@ -2203,8 +2203,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.TyChoose _ -> 
         OptimizeExpr cenv env (ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
 
-    | Expr.Match (spMatch, exprm, dtree, targets, m, ty) -> 
-        OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
+    | Expr.Match (spMatch, mExpr, dtree, targets, m, ty) -> 
+        OptimizeMatch cenv env (spMatch, mExpr, dtree, targets, m, ty)
 
     | Expr.LetRec (binds, bodyExpr, m, _) ->  
         OptimizeLetRec cenv env (binds, bodyExpr, m)
@@ -2707,7 +2707,7 @@ and OptimizeLinearExpr cenv env expr contf =
               MightMakeCriticalTailcall = bodyInfo.MightMakeCriticalTailcall // discard tailcall info from binding - not in tailcall position
               Info = evalueR } ))
 
-    | LinearMatchExpr (spMatch, exprm, dtree, tg1, e2, m, ty) ->
+    | LinearMatchExpr (spMatch, mExpr, dtree, tg1, e2, m, ty) ->
          let dtreeR, dinfo = OptimizeDecisionTree cenv env m dtree
          let tg1, tg1info = OptimizeDecisionTreeTarget cenv env m tg1
          // tailcall
@@ -2716,7 +2716,7 @@ and OptimizeLinearExpr cenv env expr contf =
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
              let targetsR = [tg1; TTarget([], e2, None)]
-             OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)))
+             OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
          let argsHeadR, argsHeadInfosR = OptimizeList (OptimizeExprThenConsiderSplit cenv env) argsHead
@@ -3288,7 +3288,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             fs, (remake >> (fun bodyExpr2 -> Expr.Sequential (x1, bodyExpr2, NormalSeq, m)))
 
         // Matches which compute a different function on each branch are awkward, see above.
-        | Expr.Match (spMatch, exprm, dtree, targets, dflt, _ty) when targets.Length <= 2 ->
+        | Expr.Match (spMatch, mExpr, dtree, targets, dflt, _ty) when targets.Length <= 2 ->
             let fsl, targetRemakes = 
                 targets 
                 |> Array.map (fun (TTarget(vs, bodyExpr, flags)) -> 
@@ -3306,7 +3306,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
                         chunk, (acc, i+chunkSize))
                 let targetsR = (newExprsInChunks, targetRemakes) ||> Array.map2 (fun newExprsChunk targetRemake -> targetRemake newExprsChunk)
                 let tyR = tyOfExpr g targetsR[0].TargetExpression
-                Expr.Match (spMatch, exprm, dtree, targetsR, dflt, tyR)
+                Expr.Match (spMatch, mExpr, dtree, targetsR, dflt, tyR)
             fs, remake
 
         | Expr.DebugPoint (dp, innerExpr) -> 
@@ -3722,14 +3722,14 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
         e, einfo 
 
 /// Optimize/analyze a pattern matching expression
-and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
+and OptimizeMatch cenv env (spMatch, mExpr, dtree, targets, m, ty) =
     // REVIEW: consider collecting, merging and using information flowing through each line of the decision tree to each target 
     let dtreeR, dinfo = OptimizeDecisionTree cenv env m dtree 
     let targetsR, tinfos = OptimizeDecisionTreeTargets cenv env m targets 
-    OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)
+    OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty)
 
-and OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty) =
-    let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtreeR, targetsR, dinfo, tinfos)
+and OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty) =
+    let newExpr, newInfo = RebuildOptimizedMatch (spMatch, mExpr, m, ty, dtreeR, targetsR, dinfo, tinfos)
     let newExpr2 = if not cenv.settings.LocalOptimizationsEnabled then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
 
@@ -3740,9 +3740,9 @@ and CombineMatchInfos dinfo tinfo =
       MightMakeCriticalTailcall=tinfo.MightMakeCriticalTailcall // discard tailcall info from decision tree since it's not in tailcall position
       Info= UnknownValue }
 
-and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) = 
+and RebuildOptimizedMatch (spMatch, mExpr, m, ty, dtree, tgs, dinfo, tinfos) = 
      let tinfo = CombineValueInfosUnknown tinfos
-     let expr = mkAndSimplifyMatch spMatch exprm m ty dtree tgs
+     let expr = mkAndSimplifyMatch spMatch mExpr m ty dtree tgs
      let einfo = CombineMatchInfos dinfo tinfo
      expr, einfo
 
@@ -4009,7 +4009,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
 
             and elimModSpec (mspec: ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
-                mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
+                mspec.entity_modul_type <- MaybeLazy.Strict mtyp
 
             let rec elimModuleDefn x =                  
                 match x with 

@@ -741,7 +741,7 @@ module internal DescriptionListsImpl =
         | Item.CtorGroup(_, minfo :: _) 
         | Item.MethodGroup(_, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
-            let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+            let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
@@ -759,7 +759,7 @@ module internal DescriptionListsImpl =
                 let argNamesAndTys = ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_, ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, argTy))
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+                let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
                 let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
 
                 // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
@@ -767,7 +767,7 @@ module internal DescriptionListsImpl =
                 prettyParams, prettyRetTyL
 
             | Some _ -> 
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+                let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
                 let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] retTy
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 

@@ -522,7 +522,7 @@ type internal TypeCheckInfo
                 let props =
                     methods
                     |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnTy(amap, m, meth.FormalMethodInst)
+                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
                         ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy
                     )
                 let parameters = CollectParameters methods amap m

@@ -2091,9 +2091,9 @@ type internal FsiDynamicCompiler(
             let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
             // Build a simple module with a single 'let' decl with a default value.
-            let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
+            let moduleEntity, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput =
-                AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleEntity
                 |> AddLocalVal tcGlobals TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.

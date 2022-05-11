@@ -1261,7 +1261,7 @@ let rangeOfExpr (x: Expr) = x.Range
 //---------------------------------------------------------------------------
 
 
-let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
+let primMkMatch(spBind, mExpr, tree, targets, mMatch, ty) = Expr.Match (spBind, mExpr, tree, targets, mMatch, ty)
 
 type MatchBuilder(spBind, inpRange: range) = 
 
@@ -1393,10 +1393,10 @@ let NormalizeDeclaredTyparsForEquiRecursiveInference g tps =
           | ValueSome anyParTy -> anyParTy 
           | ValueNone -> tp)
  
-type TypeScheme = TypeScheme of Typars * TType    
+type GeneralizedType = GeneralizedType of Typars * TType    
   
 let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr = 
-    let (TypeScheme(generalizedTypars, tauType)) = typeScheme
+    let (GeneralizedType(generalizedTypars, tauType)) = typeScheme
 
     // Normalize the generalized typars
     let generalizedTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g generalizedTypars
@@ -1417,7 +1417,7 @@ let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr 
     mkTypeLambda m generalizedTypars (mkTypeChoose m freeChoiceTypars bodyExpr, tauType)
 
 let isBeingGeneralized tp typeScheme = 
-    let (TypeScheme(generalizedTypars, _)) = typeScheme
+    let (GeneralizedType(generalizedTypars, _)) = typeScheme
     ListSet.contains typarRefEq tp generalizedTypars
 
 //-------------------------------------------------------------------------
@@ -5562,8 +5562,8 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
         let binds', tmenvinner = copyAndRemapAndBindBindings ctxt compgen tmenv binds 
         Expr.LetRec (binds', remapExprImpl ctxt compgen tmenvinner e, m, Construct.NewFreeVarsCache())
 
-    | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
-        primMkMatch (spBind, exprm, remapDecisionTree ctxt compgen tmenv pt, 
+    | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
+        primMkMatch (spBind, mExpr, remapDecisionTree ctxt compgen tmenv pt, 
                      targets |> Array.map (remapTarget ctxt compgen tmenv), 
                      m, remapType tmenv ty)
 
@@ -5680,13 +5680,13 @@ and remapLinearExpr ctxt compgen tmenv expr contf =
             if expr1 === expr1R && expr2 === expr2R then expr 
             else Expr.Sequential (expr1R, expr2R, dir, m)))
 
-    | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
+    | LinearMatchExpr (spBind, mExpr, dtree, tg1, expr2, m2, ty) ->
         let dtreeR = remapDecisionTree ctxt compgen tmenv dtree
         let tg1R = remapTarget ctxt compgen tmenv tg1
         let tyR = remapType tmenv ty
         // tailcall for the linear position
         remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2R -> 
-            rebuildLinearMatchExpr (spBind, exprm, dtreeR, tg1R, expr2R, m2, tyR)))
+            rebuildLinearMatchExpr (spBind, mExpr, dtreeR, tg1R, expr2R, m2, tyR)))
 
     | LinearOpExpr (op, tyargs, argsFront, argLast, m) -> 
         let opR = remapOp tmenv op 
@@ -5947,7 +5947,7 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
         tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
         let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
         tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
-        tcdR.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
+        tcdR.entity_modul_type <- MaybeLazy.Strict (tcd.entity_modul_type.Value 
                                                         |> mapImmediateValsAndTycons lookupTycon lookupVal)
         let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
         match tcdR.entity_opt_data with
@@ -6550,7 +6550,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
             treeR, targetsR
 
 // Simplify a little as we go, including dead target elimination 
-let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) = 
+let rec simplifyTrivialMatch spBind mExpr mMatch ty tree (targets : _[]) = 
     match tree with 
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
@@ -6567,18 +6567,18 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
             | _ -> res
         res
     | _ -> 
-        primMkMatch (spBind, exprm, tree, targets, matchm, ty)
+        primMkMatch (spBind, mExpr, tree, targets, mMatch, ty)
  
 // Simplify a little as we go, including dead target elimination 
-let mkAndSimplifyMatch spBind exprm matchm ty tree targets = 
+let mkAndSimplifyMatch spBind mExpr mMatch ty tree targets = 
     let targets = Array.ofList targets
     match tree with 
     | TDSuccess _ -> 
-        simplifyTrivialMatch spBind exprm matchm ty tree targets
+        simplifyTrivialMatch spBind mExpr mMatch ty tree targets
     | _ -> 
         let tree, targets = eliminateDeadTargetsFromMatch tree targets
         let tree, targets = foldLinearBindingTargetsOfMatch tree targets
-        simplifyTrivialMatch spBind exprm matchm ty tree targets
+        simplifyTrivialMatch spBind mExpr mMatch ty tree targets
 
 //-------------------------------------------------------------------------
 // mkExprAddrOfExprAux
@@ -8813,7 +8813,7 @@ let canUseUnboxFast g m ty =
 //
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
-let mkIsInstConditional g m tgty vinpe v e2 e3 = 
+let mkIsInstConditional g m tgty vinputExpr v e2 e3 = 
     
     if canUseTypeTestFast g tgty && isRefTy g tgty then 
 
@@ -8822,13 +8822,13 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let tg3 = mbuilder.AddResultTarget(e3)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
-        mkCompGenLet m v (mkIsInst tgty vinpe m) expr
+        mkCompGenLet m v (mkIsInst tgty vinputExpr m) expr
 
     else
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, None)))
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinputExpr], mbuilder.AddTarget(TTarget([v], e2, None)))
         let tg3 = mbuilder.AddResultTarget(e3)
-        let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
+        let dtree = TDSwitch(vinputExpr, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinputExpr, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
 
@@ -9110,10 +9110,10 @@ and rewriteExprStructure env expr =
       let bodyR = RewriteExpr env body
       mkTypeLambda m tps (bodyR, bodyTy)
 
-  | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
+  | Expr.Match (spBind, mExpr, dtree, targets, m, ty) -> 
       let dtreeR = RewriteDecisionTree env dtree
       let targetsR = rewriteTargets env targets
-      mkAndSimplifyMatch spBind exprm m ty dtreeR targetsR
+      mkAndSimplifyMatch spBind mExpr m ty dtreeR targetsR
 
   | Expr.LetRec (binds, e, m, _) ->
       let bindsR = rewriteBinds env binds
@@ -9162,12 +9162,12 @@ and rewriteLinearExpr env expr contf =
                 if argsFront === argsFrontR && argLast === argLastR then expr 
                 else rebuildLinearOpExpr (op, tyargs, argsFrontR, argLastR, m)))
 
-        | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
+        | LinearMatchExpr (spBind, mExpr, dtree, tg1, expr2, m2, ty) ->
             let dtree = RewriteDecisionTree env dtree
             let tg1R = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2R ->
-                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1R, expr2R, m2, ty)))
+                rebuildLinearMatchExpr (spBind, mExpr, dtree, tg1R, expr2R, m2, ty)))
       
         | Expr.DebugPoint (dpm, innerExpr) ->
             rewriteLinearExpr env innerExpr (contf << (fun innerExprR ->
@@ -9289,7 +9289,7 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
     let tyconAbbrevR = d.TypeAbbrev |> Option.map (remapType tmenvinner)
     let tyconTcaugR = d.entity_tycon_tcaug |> remapTyconAug tmenvinner
     let modulContentsR = 
-        MaybeLazy.Strict (d.entity_modul_contents.Value
+        MaybeLazy.Strict (d.entity_modul_type.Value
                           |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv))
     let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
     { d with 
@@ -9297,7 +9297,7 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
           entity_attribs = attribsR
           entity_tycon_repr = tyconReprR
           entity_tycon_tcaug = tyconTcaugR
-          entity_modul_contents = modulContentsR
+          entity_modul_type = modulContentsR
           entity_opt_data =
             match d.entity_opt_data with
             | Some dd ->
@@ -9882,7 +9882,7 @@ let CombineCcuContentFragments m l =
                         let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                         { data1 with 
                              entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                             entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                              entity_opt_data = 
                                 match data1.entity_opt_data with
                                 | Some optData -> Some { optData with entity_xmldoc = xml }
@@ -9938,11 +9938,11 @@ let (|TryWithExpr|_|) expr =
 
 let (|MatchTwoCasesExpr|_|) expr =
     match expr with 
-    | Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
+    | Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
 
         // How to rebuild this construct
         let rebuild (cond, ucref, tg1, tg2, tgs) = 
-            Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
+            Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
 
         Some (cond, ucref, tg1, tg2, tgs, rebuild)
 
