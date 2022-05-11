@@ -5,7 +5,7 @@
 // ?OP ~OP
 //<Expects status="success"></Expects>
 
-#light
+
 
 let (!!) x y = List.nth x y;;
 let (!!!) x y = List.nth y x
