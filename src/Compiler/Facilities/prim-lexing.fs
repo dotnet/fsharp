@@ -255,7 +255,7 @@ namespace Internal.Utilities.Text.Lexing
         member _.SupportsFeature featureId = langVersion.SupportsFeature featureId
 
         member _.CheckLanguageFeatureErrorRecover featureId range = 
-            FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureErrorRecover langVersion featureId range
+            FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureAndRecover langVersion featureId range
 
         static member FromFunction (reportLibraryOnlyFeatures, langVersion, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
             let extension= Array.zeroCreate 4096
