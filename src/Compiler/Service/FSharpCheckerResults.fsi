@@ -421,7 +421,7 @@ type public FSharpCheckFileResults =
         sSymbolUses: TcSymbolUses *
         sFallback: NameResolutionEnv *
         loadClosure: LoadClosure option *
-        implFileOpt: TypedImplFile option *
+        implFileOpt: CheckedImplFile option *
         openDeclarations: OpenDeclaration [] ->
             FSharpCheckFileResults
 
@@ -495,7 +495,7 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         diagnostics: FSharpDiagnostic [] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string [] * FSharpProjectOptions) option ->
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string [] * FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =

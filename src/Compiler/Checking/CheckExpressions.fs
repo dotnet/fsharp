@@ -565,7 +565,7 @@ let UnifyTypesAndRecover cenv env m expectedTy actualTy =
         errorRecovery exn m
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
-let MakeInnerEnvWithAcc addOpenToNameEnv env nm modulTyAcc modulKind =
+let MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc modulKind =
     let path = env.ePath @ [nm]
     let cpath = env.eCompPath.NestedCompPath nm.idText modulKind
     let nenv =
@@ -580,13 +580,13 @@ let MakeInnerEnvWithAcc addOpenToNameEnv env nm modulTyAcc modulKind =
         eAccessPath = cpath
         eAccessRights = ad
         eNameResEnv = nenv
-        eModuleOrNamespaceTypeAccumulator = modulTyAcc }
+        eModuleOrNamespaceTypeAccumulator = moduleTyAcc }
 
 /// Make an environment suitable for a module or namespace, creating a new accumulator.
 let MakeInnerEnv addOpenToNameEnv env nm modulKind =
     // Note: here we allocate a new module type accumulator
-    let modulTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType modulKind)
-    MakeInnerEnvWithAcc addOpenToNameEnv env nm modulTyAcc modulKind, modulTyAcc
+    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType modulKind)
+    MakeInnerEnvWithAcc addOpenToNameEnv env nm moduleTyAcc modulKind, moduleTyAcc
 
 /// Make an environment suitable for processing inside a type definition
 let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension =

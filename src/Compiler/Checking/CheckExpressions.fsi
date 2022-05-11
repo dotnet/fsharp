@@ -759,7 +759,7 @@ val MakeInnerEnvWithAcc:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    modulTyAcc: ModuleOrNamespaceType ref ->
+    moduleTyAcc: ModuleOrNamespaceType ref ->
     modulKind: ModuleOrNamespaceKind ->
         TcEnv
 

@@ -205,7 +205,7 @@ type TcInfoExtras =
       tcOpenDeclarations: OpenDeclaration[]
 
       /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+      latestImplFile: CheckedImplFile option
 
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
@@ -1013,7 +1013,7 @@ type IncrementalBuilderState =
         stampedReferencedAssemblies: ImmutableArray<DateTime>
         initialBoundModel: GraphNode<BoundModel>
         boundModels: ImmutableArray<GraphNode<BoundModel>>
-        finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option * BoundModel) * DateTime>
+        finalizedBoundModel: GraphNode<(ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option * BoundModel) * DateTime>
     }
 
 [<AutoOpen>]

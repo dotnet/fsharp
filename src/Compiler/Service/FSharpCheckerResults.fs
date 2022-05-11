@@ -314,7 +314,7 @@ type internal TypeCheckInfo
            // This is a name resolution environment to use if no better match can be found.
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
-           implFileOpt: TypedImplFile option,
+           implFileOpt: CheckedImplFile option,
            openDeclarations: OpenDeclaration[]) =
 
     // These strings are potentially large and the editor may choose to hold them for a while.
@@ -2148,12 +2148,12 @@ type FSharpCheckFileResults
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
-                let (TImplFile (implExprWithSig=mexpr)) = implFile
+                let (CheckedImplFile (contents=mexpr)) = implFile
                 let ad =
                     match scopeOptX with
                     | Some scope -> scope.AccessRights
                     | _ -> AccessibleFromSomewhere
-                let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader ad range0 mexpr
+                let layout = NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
                 layout |> LayoutRender.showL |> SourceText.ofString
             )
         )
@@ -2262,7 +2262,7 @@ type FSharpCheckProjectResults
           diagnostics: FSharpDiagnostic[],
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> *
                    TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef *
-                   AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option) =
+                   AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option) =
 
     let getDetails() =
         match details with
@@ -2315,7 +2315,7 @@ type FSharpCheckProjectResults
         let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
         let mimpls =
             match optimizedImpls with
-            | TypedAssemblyAfterOptimization files ->
+            | CheckedAssemblyAfterOptimization files ->
                 files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)

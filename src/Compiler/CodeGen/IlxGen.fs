@@ -1423,10 +1423,7 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
     (eenv, unrealizedSlots) ||> List.fold (fun eenv vref -> allocVal cloc vref.Deref eenv)
 
 /// Record how constructs are represented, for a sequence of definitions in a module or namespace fragment.
-let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
-    List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
-
-and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
+let AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
     let ilImports =
         [| 
           for openDecl in openDecls do
@@ -1466,12 +1463,12 @@ and AddDebugImportsToEnv (cenv: cenv) eenv (openDecls: OpenDeclaration list) =
                 
         { eenv with imports = Some { Parent = None; Imports = imports } }
 
-and AddBindingsForModuleDef allocVal cloc eenv x =
+let rec AddBindingsForModuleContents allocVal cloc eenv x =
     match x with
     | TMDefRec(_isRec, _opens, tycons, mbinds, _) ->
         // Virtual don't have 'let' bindings and must be added to the environment
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
-        let eenv = List.foldBack (AddBindingsForModule allocVal cloc) mbinds eenv
+        let eenv = List.foldBack (AddBindingsForModuleBinding allocVal cloc) mbinds eenv
         eenv
     | TMDefLet(bind, _) ->
         allocVal cloc bind.Var eenv
@@ -1479,13 +1476,11 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
         eenv
     | TMDefOpens _->
         eenv
-    | TMWithSig(ModuleOrNamespaceContentsWithSig(mtyp, _, _)) ->
-        AddBindingsForLocalModuleType allocVal cloc eenv mtyp
     | TMDefs mdefs ->
-        AddBindingsForModuleDefs allocVal cloc eenv mdefs
+        (eenv, mdefs) ||> List.fold (AddBindingsForModuleContents allocVal cloc)
 
 /// Record how constructs are represented, for a module or namespace.
-and AddBindingsForModule allocVal cloc x eenv =
+and AddBindingsForModuleBinding allocVal cloc x eenv =
     match x with
     | ModuleOrNamespaceBinding.Binding bind ->
         allocVal cloc bind.Var eenv
@@ -1494,7 +1489,7 @@ and AddBindingsForModule allocVal cloc x eenv =
             if mspec.IsNamespace then cloc
             else CompLocForFixedModule cloc.QualifiedNameOfFile cloc.TopImplQualifiedName mspec
 
-        AddBindingsForModuleDef allocVal cloc eenv mdef
+        AddBindingsForModuleContents allocVal cloc eenv mdef
 
 /// Record how constructs are represented, for the values and functions defined in a module or namespace fragment.
 and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
@@ -1504,16 +1499,16 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 /// into the stored results for the whole CCU.
 /// isIncrementalFragment = true --> "typed input"
 /// isIncrementalFragment = false --> "#load"
-let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (cenv: cenv, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) =
+let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (cenv: cenv, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, implFiles) =
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (cenv, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile (qualifiedNameOfFile=qname; implExprWithSig=mexpr)) ->
+    (eenv, implFiles) ||> List.fold (fun eenv implFile ->
+        let (CheckedImplFile (qualifiedNameOfFile=qname; signature=signature; contents=contents)) = implFile
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
-            match mexpr with
-            | ModuleOrNamespaceContentsWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
+            AddBindingsForModuleContents allocVal cloc eenv contents
         else
-            AddBindingsForLocalModuleType allocVal cloc eenv mexpr.Type)
+            AddBindingsForLocalModuleType allocVal cloc eenv signature)
 
 //--------------------------------------------------------------------------
 // Generate debugging marks
@@ -7430,9 +7425,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
     let tdef = tdef.WithSealed(true).WithAbstract(true)
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
-
-and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
-    let (ModuleOrNamespaceContentsWithSig(mty, def, _)) = x
+and GenImplFileContents cenv cgbuf qname lazyInitInfo eenv mty def =
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings
     // We use one scope for all the bindings in the module, which makes them all appear with their "default" values
     // rather than incrementally as we step through the initializations in the module. This is a little unfortunate
@@ -7442,15 +7435,11 @@ and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
         let eenv = AddSignatureRemapInfo "defs" sigToImplRemapInfo eenv
 
         // Allocate all the values, including any shadow locals for static fields
-        let eenv = AddBindingsForModuleDef (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
-        let _eenvEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenv def
+        let eenv = AddBindingsForModuleContents (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
+        let _eenvEnd = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv def
         ())
 
-and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs =
-    let _eenvEnd = (eenv, mdefs) ||> List.fold (GenModuleDef cenv cgbuf qname lazyInitInfo)
-    ()
-
-and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
+and GenModuleOrNamespaceContents cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     match x with
     | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
         let eenvinner = AddDebugImportsToEnv cenv eenv opens
@@ -7468,7 +7457,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                 let recBinds =
                     bindsRemaining
                     |> List.takeWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false)
-                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "GenModuleDef - unexpected")
+                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "GenModuleOrNamespaceContents - unexpected")
                 let otherBinds =
                     bindsRemaining
                     |> List.skipWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) 
@@ -7493,13 +7482,8 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
         GenExpr cenv cgbuf eenv e discard
         eenv
 
-    | TMWithSig mexpr ->
-        GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
-        eenv
-
     | TMDefs mdefs ->
-        GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
-        eenv
+        (eenv, mdefs) ||> List.fold (GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo)
 
 // Generate a module binding
 and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) lazyInitInfo eenv m x =
@@ -7529,7 +7513,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         GenTypeDefForCompLoc (cenv, eenvinner, cgbuf.mgbuf, eenvinner.cloc, hidden, mspec.Attribs, staticClassTrigger, false, (* atEnd= *) true)
 
     // Generate the declarations in the module and its initialization code
-    let _envAtEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenvinner mdef
+    let _envAtEnd = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenvinner mdef
 
     // If the module has a .cctor for some mutable fields, we need to ensure that when
     // those fields are "touched" the InitClass .cctor is forced. The InitClass .cctor will
@@ -7539,8 +7523,8 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 
 /// Generate the namespace fragments in a single file
-and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedImplFileAfterOptimization) =
-    let (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, _)) = implFile.ImplFile
+and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: CheckedImplFileAfterOptimization) =
+    let (CheckedImplFile (qname, _, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, _)) = implFile.ImplFile
     let optimizeDuringCodeGen = implFile.OptimizeDuringCodeGen
     let g = cenv.g
     let m = qname.Range
@@ -7561,9 +7545,11 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
 
     let initClassTrigger = (* if isFinalFile then *) ILTypeInit.OnAny (* else ILTypeInit.BeforeField *)
 
-    let eenv = {eenv with cloc = initClassCompLoc
-                          isFinalFile = isFinalFile
-                          someTypeInThisAssembly = initClassTy }
+    let eenv =
+        { eenv with
+            cloc = initClassCompLoc
+            isFinalFile = isFinalFile
+            someTypeInThisAssembly = initClassTy }
 
     // Create the class to hold the initialization code and static fields for this file.
     //     internal static class $<StartupCode...> {}
@@ -7595,7 +7581,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
         CodeGenMethod cenv mgbuf
             ([], methodName, eenv, 0, None,
              (fun cgbuf eenv ->
-                  GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+                  GenImplFileContents cenv cgbuf qname lazyInitInfo eenv signature contents
                   CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
 
     // The code generation for the initialization is now complete and the IL code is in topCode.
@@ -7614,7 +7600,6 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
             | _ -> [], []
         else
             [], []
-
 
     match mainInfoOpt with
     // Final file in .EXE
@@ -7685,7 +7670,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     // We add the module type all over again. Note no shadow locals for static fields needed here since they are only relevant to the main/.cctor
     let eenvafter =
         let allocVal = ComputeAndAddStorageForLocalTopVal (cenv, g, cenv.intraAssemblyInfo, cenv.options.isInteractive, NoShadowLocal)
-        AddBindingsForLocalModuleType allocVal clocCcu eenv mexpr.Type
+        AddBindingsForLocalModuleType allocVal clocCcu eenv signature
 
     eenvafter
 
@@ -8602,8 +8587,8 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                     let lazyInitInfo = ResizeArray()
                     let qname = QualifiedNameOfFile(mkSynId range0 "unused")
                     LocalScope "module" cgbuf (fun (_, endMark) ->
-                        let eenv = AddBindingsForModuleDef (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
-                        let _eenvEnv = GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr
+                        let eenv = AddBindingsForModuleContents (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
+                        let _eenvEnv = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv mexpr
                         ())), range0)
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
@@ -8644,7 +8629,7 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let g = cenv.g
@@ -8852,11 +8837,11 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
         ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (cenv, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedImplFiles)
 
     /// Generate ILX code for an assembly fragment
-    member _.GenerateCode (codeGenOpts, typedAssembly: TypedAssemblyAfterOptimization, assemAttribs, moduleAttribs) =
+    member _.GenerateCode (codeGenOpts, typedAssembly: CheckedAssemblyAfterOptimization, assemAttribs, moduleAttribs) =
         let namedDebugPointsForInlinedCode =
-            let (TypedAssemblyAfterOptimization impls) = typedAssembly
+            let (CheckedAssemblyAfterOptimization impls) = typedAssembly
             [| for impl in impls do
-                  let (TImplFile(namedDebugPointsForInlinedCode=dps)) = impl.ImplFile
+                  let (CheckedImplFile(namedDebugPointsForInlinedCode=dps)) = impl.ImplFile
                   for KeyValue(k,v) in dps do
                       yield (k,v) |]
 

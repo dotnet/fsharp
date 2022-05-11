@@ -140,7 +140,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
-    let tassembly = TypedAssemblyAfterOptimization implFiles
+    let tassembly = CheckedAssemblyAfterOptimization implFiles
     PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
     ReportTime tcConfig "Ending Optimizations"
     tassembly, assemblyOptData, optEnvFirstLoop

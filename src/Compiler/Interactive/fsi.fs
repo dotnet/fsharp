@@ -1303,20 +1303,21 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
     let compPath = (CompilationPath.CompPath(ILScopeRef.Local, []))
     let mutable mty = Unchecked.defaultof<_>
-    let moduleOrNamespace = Construct.NewModuleOrNamespace (Some compPath) vis (Ident(moduleName, m)) XmlDoc.Empty [] (MaybeLazy.Lazy(lazy mty))
+    let entity = Construct.NewModuleOrNamespace (Some compPath) vis (Ident(moduleName, m)) XmlDoc.Empty [] (MaybeLazy.Lazy(lazy mty))
     let v =
         Construct.NewVal
             (name, m, None, ty, ValMutability.Immutable,
              false, Some(ValReprInfo([], [], { Attribs = []; Name = None })), vis, ValNotInRecScope, None, NormalVal, [], ValInline.Optional,
              XmlDoc.Empty, true, false, false, false,
-             false, false, None, Parent(TypedTreeBasics.ERefLocal moduleOrNamespace))
+             false, false, None, Parent(TypedTreeBasics.ERefLocal entity))
     mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
 
     let bindExpr = mkCallDefaultOf tcGlobals range0 ty
     let binding = Binding.TBind(v, bindExpr, DebugPointAtBinding.NoneAtLet)
-    let mbinding = ModuleOrNamespaceBinding.Module(moduleOrNamespace, TMDefs([TMDefLet(binding, m)]))
-    let mexpr = ModuleOrNamespaceContentsWithSig(mty, TMDefs([TMDefs[TMDefRec(false, [], [], [mbinding], m)]]), range0)
-    moduleOrNamespace, v, TypedImplFile.TImplFile(QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m)), [], mexpr, false, false, StampMap.Empty, Map.empty)
+    let mbinding = ModuleOrNamespaceBinding.Module(entity, TMDefs([TMDefLet(binding, m)]))
+    let contents = TMDefs([TMDefs[TMDefRec(false, [], [], [mbinding], m)]])
+    let qname = QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m))
+    entity, v, CheckedImplFile.CheckedImplFile(qname, [], mty, contents, false, false, StampMap.Empty, Map.empty)
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -1604,8 +1605,8 @@ type internal FsiDynamicCompiler(
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath)
 
-            for TImplFile (implExprWithSig=mexpr) in declaredImpls do
-                let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere m mexpr
+            for CheckedImplFile (contents=mexpr) in declaredImpls do
+                let responseL = NicePrint.layoutImpliedSignatureOfModuleOrNamespace false denv infoReader AccessibleFromSomewhere m mexpr
                 if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
                     colorPrintL outWriter opts responseL

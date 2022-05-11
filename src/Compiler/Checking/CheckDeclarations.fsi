@@ -60,7 +60,7 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput ->
-        Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val CheckOneSigFile:
     TcGlobals *

@@ -1228,7 +1228,7 @@ val copyModuleOrNamespaceType: TcGlobals -> ValCopyFlag -> ModuleOrNamespaceType
 val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
 
 /// Copy an entire implementation file using the given copying flags
-val copyImplFile: TcGlobals -> ValCopyFlag -> TypedImplFile -> TypedImplFile
+val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile
 
 /// Copy a method slot signature, including new generic type parameters if the slot signature represents a generic method
 val copySlotSig: SlotSig -> SlotSig
@@ -1289,9 +1289,6 @@ val wrapModuleOrNamespaceTypeInNamespace:
 
 /// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
 val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
-
-/// Given an implementation, fetch its recorded signature
-val SigTypeOfImplFile: TypedImplFile -> ModuleOrNamespaceType
 
 /// Given a namespace, module or type definition, try to produce a reference to that entity.
 val tryRescopeEntity: CcuThunk -> Entity -> ValueOption<EntityRef>
@@ -1463,10 +1460,10 @@ module DebugPrint =
     val decisionTreeL: TcGlobals -> DecisionTree -> Layout
 
     /// Debug layout for an implementation file
-    val implFileL: TcGlobals -> TypedImplFile -> Layout
+    val implFileL: TcGlobals -> CheckedImplFile -> Layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL: TcGlobals -> TypedImplFile list -> Layout
+    val implFilesL: TcGlobals -> CheckedImplFile list -> Layout
 
     /// Debug layout for class and record fields
     val recdFieldRefL: RecdFieldRef -> Layout
@@ -1489,7 +1486,7 @@ type ExprFolder<'State> =
 val ExprFolder0: ExprFolder<'State>
 
 /// Fold over all the expressions in an implementation file
-val FoldImplFile: ExprFolder<'State> -> ('State -> TypedImplFile -> 'State)
+val FoldImplFile: ExprFolder<'State> -> ('State -> CheckedImplFile -> 'State)
 
 /// Fold over all the expressions in an expression
 val FoldExpr: ExprFolder<'State> -> ('State -> Expr -> 'State)
@@ -2419,7 +2416,7 @@ val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
 
 val RewriteExpr: ExprRewritingEnv -> Expr -> Expr
 
-val RewriteImplFile: ExprRewritingEnv -> TypedImplFile -> TypedImplFile
+val RewriteImplFile: ExprRewritingEnv -> CheckedImplFile -> CheckedImplFile
 
 val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
 

@@ -830,9 +830,8 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
     }
 
 /// Dummy typed impl file that contains no definitions and is not used for emitting any kind of assembly.
-let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
-    let dummyExpr = ModuleOrNamespaceContentsWithSig.ModuleOrNamespaceContentsWithSig(sigTy, ModuleOrNamespaceContents.TMDefs [], range.Zero)
-    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [], Map.empty)
+let CreateEmptyDummyImplFile qualNameOfFile sigTy =
+    CheckedImplFile.CheckedImplFile(qualNameOfFile, [], sigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInput
@@ -913,14 +912,14 @@ let CheckOneInput
               // Typecheck the implementation file
               let typeCheckOne =
                   if skipImplIfSigExists && hadSig then
-                    (EmptyTopAttrs, CreateEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
+                    (EmptyTopAttrs, CreateEmptyDummyImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Cancellable.ret
                   else
                     CheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, tcState.tcsImplicitOpenDeclarations, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring, tcImplEnv, rootSigOpt, file)
 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
-              let implFileSigType = SigTypeOfImplFile implFile
+              let implFileSigType = implFile.Signature
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
@@ -993,7 +992,7 @@ let CheckOneInputAndFinish(checkForErrors, tcConfig: TcConfig, tcImports, tcGlob
         return result
     }
 
-let CheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
+let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     // Latest contents to the CCU
     let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 

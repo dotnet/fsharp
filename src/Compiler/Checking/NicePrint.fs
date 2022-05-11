@@ -2186,9 +2186,10 @@ module InferredSigPrinting =
     open PrintTypes
 
     /// Layout the inferred signature of a compilation unit
-    let layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr =
+    let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m expr =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2197,13 +2198,8 @@ module InferredSigPrinting =
             | TMDefDo _ -> true
             | TMDefOpens _ -> false
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
-            | TMWithSig(ModuleOrNamespaceContentsWithSig(_, def, _)) -> isConcreteNamespace def
 
-        let rec imexprLP denv (ModuleOrNamespaceContentsWithSig(_, def, _)) = imdefL denv def
-
-        and imexprL denv (ModuleOrNamespaceContentsWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceContentsWithSig(mty, def, m))
-
-        and imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
+        let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv x = 
             let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
@@ -2244,8 +2240,6 @@ module InferredSigPrinting =
             | TMDefs defs -> imdefsL denv defs
 
             | TMDefDo _ -> emptyL
-
-            | TMWithSig mexpr -> imexprLP denv mexpr
 
         and imbindL denv (mspec, def) = 
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
@@ -2306,7 +2300,8 @@ module InferredSigPrinting =
                         else
                             modNameEqualsL @@* basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
-        imexprL denv expr
+
+        imdefL denv expr
 
 //--------------------------------------------------------------------------
 
@@ -2444,7 +2439,8 @@ let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL 
 
 let stringOfILAttrib denv x = x |> PrintTypes.layoutILAttrib denv |> squareAngleL |> showL
 
-let layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr = InferredSigPrinting.layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr 
+let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents =
+    InferredSigPrinting.layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents 
 
 let prettyLayoutOfValOrMember denv infoReader typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember denv infoReader typarInst v  
 

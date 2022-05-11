@@ -273,16 +273,16 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
 
 /// Write a .fsi file for the --sig option
 module InterfaceFileWriter =
-    let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls: TypedImplFile list) =
+    let WriteInterfaceFile (tcGlobals, tcConfig: TcConfig, infoReader, declaredImpls: CheckedImplFile list) =
         // there are two modes here:
         // * write one unified sig file to a given path, or
         // * write individual sig files to paths matching their impl files
         let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
         let denv = { denv with shrinkOverloads = false; printVerboseSignatures = true }
 
-        let writeToFile os (TImplFile (implExprWithSig=mexpr)) =
+        let writeToFile os (CheckedImplFile (contents=mexpr)) =
           writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-            (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
+            (NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
         let writeHeader filePath os =
             if filePath <> "" && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpIndentationAwareSyntaxFileSuffixes) then
@@ -310,8 +310,8 @@ module InterfaceFileWriter =
             else
                 ".fsi"
 
-        let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
-            for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
+        let writeToSeparateFiles (declaredImpls: CheckedImplFile list) =
+            for CheckedImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
                 let fileName = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" fileName
                 use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
@@ -695,7 +695,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = diagnosticsLogger
     let diagnosticsLogger =
-        let scopedPragmas = [ for TImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for CheckedImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
     let _unwindEL_3 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)

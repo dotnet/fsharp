@@ -1317,21 +1317,10 @@ let RemapOptimizationInfo g tmenv =
     remapLazyModulInfo
 
 /// Hide information when a value is no longer visible
-let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
+let AbstractAndRemapModulInfo g (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#else
-    ignore (msg, m)
-#endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#endif
     let info = info |> RemapOptimizationInfo g mrpi
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#endif
     info
 
 //-------------------------------------------------------------------------
@@ -3957,12 +3946,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
 and OptimizeBindings cenv isRec env xs =
     List.mapFold (OptimizeBinding cenv isRec) env xs
     
-and OptimizeModuleExprWithSig cenv env mexpr = 
-    let g = cenv.g
-    match mexpr with   
-    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> 
+and OptimizeModuleExprWithSig cenv env mty def  = 
+        let g = cenv.g
         // Optimize the module implementation
-        let (def, info), (_env, bindInfosColl) = OptimizeModuleDef cenv (env, []) def  
+        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def  
         let bindInfosColl = List.concat bindInfosColl 
         
         // Compute the elements truly hidden by the module signature.
@@ -4021,7 +4008,6 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
                 | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
-                | TMWithSig _ -> x 
 
             and elimModuleBinding modBind = 
                 match modBind with 
@@ -4035,14 +4021,14 @@ and OptimizeModuleExprWithSig cenv env mexpr =
             
             elimModuleDefn def 
 
-        let info = AbstractAndRemapModulInfo "defs" g m rpi info
+        let info = AbstractAndRemapModulInfo g rpi info
 
-        ModuleOrNamespaceContentsWithSig(mty, def, m), info 
+        def, info 
 
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and OptimizeModuleDef cenv (env, bindInfosColl) input = 
+and OptimizeModuleContents cenv (env, bindInfosColl) input = 
     match input with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef input) env else env
@@ -4056,11 +4042,6 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
          notlazy { ValInfos = ValInfos(List.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
-
-    | TMWithSig mexpr -> 
-        let mexpr, info = OptimizeModuleExprWithSig cenv env mexpr
-        let env = BindValsInModuleOrNamespace cenv info env
-        (TMWithSig mexpr, info), (env, bindInfosColl)
 
     | TMDefOpens _openDecls ->  
         (input, EmptyModuleInfo), (env, bindInfosColl)
@@ -4091,29 +4072,28 @@ and OptimizeModuleBinding cenv (env, bindInfosColl) x =
         (ModuleOrNamespaceBinding.Binding bindR, Choice1Of2 (bindR, binfo)), (env, [ bindInfo ] :: bindInfosColl)
     | ModuleOrNamespaceBinding.Module(mspec, def) ->
         let id = mspec.Id
-        let (def, info), (_, bindInfosColl) = OptimizeModuleDef cenv (env, bindInfosColl) def 
+        let (def, info), (_, bindInfosColl) = OptimizeModuleContents cenv (env, bindInfosColl) def 
         let env = BindValsInModuleOrNamespace cenv info env
         (ModuleOrNamespaceBinding.Module(mspec, def), Choice2Of2 (id.idText, info)), 
         (env, bindInfosColl)
 
 and OptimizeModuleDefs cenv (env, bindInfosColl) defs = 
-    let defs, (env, bindInfosColl) = List.mapFold (OptimizeModuleDef cenv) (env, bindInfosColl) defs
+    let defs, (env, bindInfosColl) = List.mapFold (OptimizeModuleContents cenv) (env, bindInfosColl) defs
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
 and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
     let g = cenv.g
-    let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
-    let env, mexprR, minfo, hidden = 
-        match mexpr with 
+    let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
         //
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        | ModuleOrNamespaceContentsWithSig(mty, def, m) when isIncrementalFragment -> 
+        if isIncrementalFragment then
             // This optimizes and builds minfo ignoring the signature
-            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
             let minfo =
                 // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
@@ -4123,11 +4103,11 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                 else
                     AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceContentsWithSig(mty, defR, m), minfo, hidden
-        | _ ->
+            env, defR, minfo, hidden
+        else
             // This optimizes and builds minfo w.r.t. the signature
-            let mexprR, minfo = OptimizeModuleExprWithSig cenv env mexpr
-            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
             let env =
                 // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
@@ -4138,7 +4118,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                     BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
-    let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     env, implFileR, minfo, hidden
 

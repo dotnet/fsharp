@@ -5084,25 +5084,6 @@ type SlotParam =
 
     override x.ToString() = "TSlotParam(...)"
 
-/// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
-/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceContents: it is only referenced from the 'outside' 
-/// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
-[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceContentsWithSig = 
-    | ModuleOrNamespaceContentsWithSig of 
-         moduleSig: ModuleOrNamespaceType *
-         contents: ModuleOrNamespaceContents *
-         range: range
-
-    member x.Type = let (ModuleOrNamespaceContentsWithSig(moduleSig=moduleSig)) = x in moduleSig
-
-    member x.Contents = let (ModuleOrNamespaceContentsWithSig(contents=contents)) = x in contents
-
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText = x.ToString()
-
-    override x.ToString() = "ModuleOrNamespaceContentsWithSig(...)"
-
 /// Represents open declaration statement.
 type OpenDeclaration =
     { /// Syntax after 'open' as it's presented in source code.
@@ -5139,9 +5120,6 @@ type OpenDeclaration =
 /// The contents of a module-or-namespace-fragment definition 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type ModuleOrNamespaceContents = 
-    /// Indicates the module is a module with a signature 
-    | TMWithSig of contentsWithSig: ModuleOrNamespaceContentsWithSig
-
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs of defs: ModuleOrNamespaceContents list  
 
@@ -5202,45 +5180,58 @@ type NamedDebugPointKey =
                compare x.Name y.Name
            | _ -> -1
 
-/// Represents a complete typechecked implementation file, including its typechecked signature if any.
+/// Represents a complete typechecked implementation file, including its inferred or explicit signature.
 ///
-/// TImplFile (qualifiedNameOfFile, pragmas, implExprWithSig, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
+/// CheckedImplFile (qualifiedNameOfFile, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedImplFile = 
-    | TImplFile of 
+type CheckedImplFile = 
+    | CheckedImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
         pragmas: ScopedPragma list *
-        implExprWithSig: ModuleOrNamespaceContentsWithSig *
+        signature: ModuleOrNamespaceType *
+        contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
         isScript: bool *
         anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
         namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
 
+    member x.Signature = let (CheckedImplFile (signature=res)) = x in res
+
+    member x.Contents = let (CheckedImplFile (contents=res)) = x in res
+
+    member x.QualifiedNameOfFile = let (CheckedImplFile (qualifiedNameOfFile=res)) = x in res
+
+    member x.Pragmas = let (CheckedImplFile (pragmas=res)) = x in res
+
+    member x.HasExplicitEntryPoint = let (CheckedImplFile (hasExplicitEntryPoint=res)) = x in res
+
+    member x.IsScript = let (CheckedImplFile (isScript=res)) = x in res
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TImplFile (...)"
+    override x.ToString() = "CheckedImplFile (...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedImplFileAfterOptimization = 
-    { ImplFile: TypedImplFile 
+type CheckedImplFileAfterOptimization = 
+    { ImplFile: CheckedImplFile 
       OptimizeDuringCodeGen: bool -> Expr -> Expr }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TypedImplFileAfterOptimization(...)"
+    override x.ToString() = "CheckedImplFileAfterOptimization(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedAssemblyAfterOptimization = 
-    | TypedAssemblyAfterOptimization of TypedImplFileAfterOptimization list
+type CheckedAssemblyAfterOptimization = 
+    | CheckedAssemblyAfterOptimization of CheckedImplFileAfterOptimization list
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TypedAssemblyAfterOptimization(...)"
+    override x.ToString() = "CheckedAssemblyAfterOptimization(...)"
 
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuData = 

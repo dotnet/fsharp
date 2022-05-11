@@ -4316,12 +4316,11 @@ module DebugPrint =
         let z = if isNil args then z else z --- spaceListL (List.map (atomL g) args)
         z
 
-    and implFileL g (TImplFile (implExprWithSig=mexpr)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g mexpr]
+    and implFileL g (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
+        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g implFileTy implFileContents]
 
-    and mexprL g x =
-        match x with 
-        | ModuleOrNamespaceContentsWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
+    and mexprL g mtyp defs =
+        mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
 
     and mdefsL  g defs =
         wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
@@ -4333,7 +4332,6 @@ module DebugPrint =
         | TMDefDo(e, _) -> exprL g e
         | TMDefOpens _ -> wordL (tagText "open ... ")
         | TMDefs defs -> mdefsL g defs
-        | TMWithSig mexpr -> mexprL g mexpr
 
     and mbindL g x =
        match x with
@@ -4415,9 +4413,6 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
 let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
-
-// cleanup: make this a property
-let SigTypeOfImplFile (TImplFile (implExprWithSig=mexpr)) = mexpr.Type 
 
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped
@@ -4584,7 +4579,6 @@ let rec accEntityRemapFromModuleOrNamespace msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accEntityRemapFromModuleOrNamespaceDefs msigty defs acc
-    | TMWithSig mexpr -> accEntityRemapFromModuleOrNamespaceType mexpr.Type msigty acc
 
 and accEntityRemapFromModuleOrNamespaceDefs msigty mdefs acc = 
     List.foldBack (accEntityRemapFromModuleOrNamespace msigty) mdefs acc
@@ -4607,7 +4601,6 @@ let rec accValRemapFromModuleOrNamespace g aenv msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accValRemapFromModuleOrNamespaceDefs g aenv msigty defs acc
-    | TMWithSig mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
 
 and accValRemapFromModuleOrNamespaceBind g aenv msigty x acc = 
     match x with 
@@ -4687,9 +4680,6 @@ let rec accImplHidingInfoAtAssemblyBoundary mdef acc =
                 | ModuleOrNamespaceBinding.Module(_mspec, def) -> 
                     accImplHidingInfoAtAssemblyBoundary def acc)
         acc
-
-    | TMWithSig mexpr -> 
-        accModuleOrNamespaceHidingInfoAtAssemblyBoundary mexpr.Type acc
 
     | TMDefOpens _openDecls ->  acc
 
@@ -5188,7 +5178,6 @@ let rec accFreeInModuleOrNamespace opts mexpr acc =
     | TMDefDo(e, _) -> accFreeInExpr opts e acc
     | TMDefOpens _ -> acc
     | TMDefs defs -> accFreeInModuleOrNamespaces opts defs acc
-    | TMWithSig(ModuleOrNamespaceContentsWithSig(_, mdef, _)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
 
 and accFreeInModuleOrNamespaceBind opts mbind acc = 
     match mbind with 
@@ -5980,8 +5969,7 @@ and allEntitiesOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allEntitiesOfModDef def
-          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
-              yield! allEntitiesOfModuleOrNamespaceTy mty }
+    }
 
 and allValsOfModDef mdef = 
     seq { match mdef with 
@@ -5998,18 +5986,7 @@ and allValsOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allValsOfModDef def
-          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
-              yield! allValsOfModuleOrNamespaceTy mty }
-
-and remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef
-    let mty, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv mty
-    ModuleOrNamespaceContentsWithSig(mty, mdef, m), tmenv
-
-and remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef 
-    let mty = remapModTy ctxt compgen tmenv mty 
-    ModuleOrNamespaceContentsWithSig(mty, mdef, m)
+    }
 
 and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
@@ -6048,9 +6025,6 @@ and remapAndRenameModDef ctxt compgen tmenv mdef =
     | TMDefs defs -> 
         let defs = remapAndRenameModDefs ctxt compgen tmenv defs
         TMDefs defs
-    | TMWithSig mexpr -> 
-        let mexpr = remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv mexpr
-        TMWithSig mexpr
 
 and remapAndRenameModBind ctxt compgen tmenv x = 
     match x with 
@@ -6063,8 +6037,12 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         let def = remapAndRenameModDef ctxt compgen tmenv def
         ModuleOrNamespaceBinding.Module(mspec, def)
 
-and remapImplFile ctxt compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen) tmenv mv
+and remapImplFile ctxt compgen tmenv implFile = 
+    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let contentsR = copyAndRemapModDef ctxt compgen tmenv contents
+    let signatureR, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv signature
+    let implFileR = CheckedImplFile (fragName, pragmas, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    implFileR, tmenv
 
 // Entry points
 
@@ -7099,10 +7077,6 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             let (TObjExprMethod(_, _, _, _, e, _)) = x
             exprF z e
 
-    and mexprF z x =
-        match x with 
-        | ModuleOrNamespaceContentsWithSig(_, def, _) -> mdefF z def
-
     and mdefF z x = 
         match x with
         | TMDefRec(_, _, _, mbinds, _) -> 
@@ -7113,14 +7087,14 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | TMDefOpens _ -> z
         | TMDefDo(e, _) -> exprF z e
         | TMDefs defs -> List.fold mdefF z defs 
-        | TMWithSig x -> mexprF z x
 
     and mbindF z x = 
         match x with 
         | ModuleOrNamespaceBinding.Binding b -> valBindF false z b
         | ModuleOrNamespaceBinding.Module(_, def) -> mdefF z def
 
-    and implF z x = foldTImplFile mexprF z x
+    let implF z (x: CheckedImplFile) =
+        mdefF z x.Contents
 
     do exprFClosure <- exprF // allocate one instance of this closure
     do exprNoInterceptFClosure <- exprNoInterceptF // allocate one instance of this closure
@@ -9213,30 +9187,28 @@ and rewriteObjExprInterfaceImpl env (ty, overrides) =
     (ty, List.map (rewriteObjExprOverride env) overrides)
     
 and rewriteModuleOrNamespaceContents env x = 
-    match x with  
-    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> ModuleOrNamespaceContentsWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
-
-and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef env) x
-    
-and rewriteModuleOrNamespaceDef env x = 
     match x with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> TMDefRec(isRec, opens, tycons, rewriteModuleOrNamespaceBindings env mbinds, m)
     | TMDefLet(bind, m) -> TMDefLet(rewriteBind env bind, m)
     | TMDefDo(e, m) -> TMDefDo(RewriteExpr env e, m)
     | TMDefOpens _ -> x
-    | TMDefs defs -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
-    | TMWithSig mexpr -> TMWithSig(rewriteModuleOrNamespaceContents env mexpr)
+    | TMDefs defs -> TMDefs(List.map (rewriteModuleOrNamespaceContents env) defs)
 
 and rewriteModuleOrNamespaceBinding env x = 
-   match x with 
-   | ModuleOrNamespaceBinding.Binding bind -> ModuleOrNamespaceBinding.Binding (rewriteBind env bind)
-   | ModuleOrNamespaceBinding.Module(nm, rhs) -> ModuleOrNamespaceBinding.Module(nm, rewriteModuleOrNamespaceDef env rhs)
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind ->
+        ModuleOrNamespaceBinding.Binding (rewriteBind env bind)
+    | ModuleOrNamespaceBinding.Module(nm, rhs) ->
+        ModuleOrNamespaceBinding.Module(nm, rewriteModuleOrNamespaceContents env rhs)
 
-and rewriteModuleOrNamespaceBindings env mbinds = List.map (rewriteModuleOrNamespaceBinding env) mbinds
+and rewriteModuleOrNamespaceBindings env mbinds =
+    List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
-and RewriteImplFile env mv = mapTImplFile (rewriteModuleOrNamespaceContents env) mv
-
-
+and RewriteImplFile env implFile =
+    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let contentsR = rewriteModuleOrNamespaceContents env contents
+    let implFileR = CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    implFileR
 
 //--------------------------------------------------------------------------
 // Build a Remap that converts all "local" references to "public" things 

@@ -150,14 +150,14 @@ val CheckOneInput:
     TcState *
     ParsedInput *
     skipImplIfSigExists: bool ->
-        Cancellable<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
+        Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:
     (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
 
 /// Finish the checking of a closed set of inputs
-val CheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list * ModuleOrNamespace
+val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * CheckedImplFile list * ModuleOrNamespace
 
 /// Check a closed set of inputs
 val CheckClosedInputSet:
@@ -169,7 +169,7 @@ val CheckClosedInputSet:
     LongIdent option *
     TcState *
     ParsedInput list ->
-        TcState * TopAttribs * TypedImplFile list * TcEnv
+        TcState * TopAttribs * CheckedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val CheckOneInputAndFinish:
@@ -181,4 +181,4 @@ val CheckOneInputAndFinish:
     NameResolution.TcResultsSink *
     TcState *
     ParsedInput ->
-        Cancellable<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+        Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>
