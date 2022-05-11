@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-// Regression test for https://github.com/Microsoft/visualfsharp/issues/109
+// Regression test for https://github.com/dotnet/fsharp/issues/109
 
 // pretty printing signatures with params arguments
 //<Expects status="success">type Heterogeneous =</Expects>
