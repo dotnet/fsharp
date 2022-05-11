@@ -74,7 +74,7 @@ type internal TcInfoExtras =
       tcOpenDeclarations: OpenDeclaration []
 
       /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+      latestImplFile: CheckedImplFile option
 
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
@@ -95,6 +95,8 @@ type internal PartialCheckResults =
     member TcConfig: TcConfig
 
     member TimeStamp: DateTime
+
+    member ProjectTimeStamp: DateTime
 
     member TryPeekTcInfo: unit -> TcInfo option
 
@@ -212,16 +214,18 @@ type internal IncrementalBuilder =
     /// This may be a long-running operation.
     member GetCheckResultsAfterLastFileInProject: unit -> NodeCode<PartialCheckResults>
 
-    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
+    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     member GetCheckResultsAndImplementationsForProject:
-        unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+        unit ->
+            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
-    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
+    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     /// This will get full type-check info for the project, meaning no partial type-checking.
     member GetFullCheckResultsAndImplementationsForProject:
-        unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+        unit ->
+            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime

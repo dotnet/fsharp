@@ -2564,14 +2564,7 @@ let CheckEntityDefns cenv env tycons =
 // check modules
 //--------------------------------------------------------------------------
 
-let rec CheckModuleExpr cenv env x = 
-    match x with  
-    | ModuleOrNamespaceContentsWithSig(mty, def, _) -> 
-       let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g def mty
-       let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
-       CheckDefnInModule cenv env def
-    
-and CheckDefnsInModule cenv env mdefs = 
+let rec CheckDefnsInModule cenv env mdefs = 
     for mdef in mdefs do
         CheckDefnInModule cenv env mdef
 
@@ -2596,7 +2589,6 @@ and CheckDefnInModule cenv env mdef =
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e
         CheckExprNoByrefs cenv env e
-    | TMWithSig def  -> CheckModuleExpr cenv env def
     | TMDefs defs -> CheckDefnsInModule cenv env defs 
 
 and CheckModuleSpec cenv env mbind =
@@ -2609,7 +2601,12 @@ and CheckModuleSpec cenv env mbind =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, mexpr, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
+let CheckImplFileContents cenv env implFileTy implFileContents  = 
+    let rpi, mhi = ComputeRemappingFromImplementationToSignature cenv.g implFileContents implFileTy
+    let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi, mhi) :: env.sigToImplRemapInfo }
+    CheckDefnInModule cenv env implFileContents
+    
+let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, implFileTy, implFileContents, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
     let cenv = 
         { g = g  
           reportErrors = reportErrors 
@@ -2653,7 +2650,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           isInAppExpr = false
           resumableCode = Resumable.None }
 
-    CheckModuleExpr cenv env mexpr
+    CheckImplFileContents cenv env implFileTy implFileContents
     CheckAttribs cenv env extraAttribs
 
     if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 

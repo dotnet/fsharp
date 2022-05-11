@@ -133,11 +133,11 @@ type CompilerService() =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalDefines = []
-            ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+            DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = "default"
             IsInteractive = false
             IndentationAwareSyntax = None
-            CompilingFsLib = false
+            CompilingFSharpCore = false
             IsExe = false
         }
 

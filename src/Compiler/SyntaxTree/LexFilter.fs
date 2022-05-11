@@ -14,6 +14,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
+open FSharp.Compiler.UnicodeLexing
 
 let debug = false
 
@@ -575,7 +576,12 @@ type PositionWithColumn =
 //----------------------------------------------------------------------------
 // build a LexFilter
 //--------------------------------------------------------------------------*)
-type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+type LexFilterImpl (
+    indentationSyntaxStatus: IndentationAwareSyntaxStatus,
+    compilingFSharpCore,
+    lexer: (Lexbuf -> token),
+    lexbuf: Lexbuf
+) = 
 
     //----------------------------------------------------------------------------
     // Part I. Building a new lex stream from an old
@@ -1381,7 +1387,7 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
             //     (# "unbox.any !0" type ('T) x : 'T #)
             // where the type keyword is used inside an expression, so we must exempt FSharp.Core from some extra failed-parse-diagnostics-recovery-processing of the 'type' keyword
             let mutable effectsToDo = []
-            if not compilingFsLib then
+            if not compilingFSharpCore then
                 // ... <<< code with unmatched ( or [ or { or [| >>> ... "type" ...
                 // We want a TYPE or MODULE keyword to close any currently-open "expression" contexts, as though there were close delimiters in the file, so:
                 let rec nextOuterMostInterestingContextIsNamespaceOrModule offsideStack =
@@ -2532,15 +2538,15 @@ type LexFilterImpl (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, l
             let _firstTokenTup = peekInitial()
             ()
 
-        if lightStatus.Status
+        if indentationSyntaxStatus.Status
         then hwTokenFetch true  
         else swTokenFetch()
   
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
-type LexFilter (lightStatus: IndentationAwareSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
-    let inner = LexFilterImpl(lightStatus, compilingFsLib, lexer, lexbuf)
+type LexFilter (indentationSyntaxStatus: IndentationAwareSyntaxStatus, compilingFSharpCore, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
+    let inner = LexFilterImpl(indentationSyntaxStatus, compilingFSharpCore, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.

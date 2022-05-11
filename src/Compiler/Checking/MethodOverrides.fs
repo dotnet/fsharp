@@ -35,19 +35,36 @@ type OverrideCanImplement =
     
 /// The overall information about a method implementation in a class or object expression 
 type OverrideInfo = 
-    | Override of OverrideCanImplement * TyconRef * Ident * (Typars * TyparInst) * TType list list * TType option * bool * bool
-    member x.CanImplement = let (Override(a, _, _, _, _, _, _, _)) = x in a
-    member x.BoundingTyconRef = let (Override(_, ty, _, _, _, _, _, _)) = x in ty
-    member x.LogicalName = let (Override(_, _, id, _, _, _, _, _)) = x in id.idText
-    member x.Range = let (Override(_, _, id, _, _, _, _, _)) = x in id.idRange
-    member x.IsFakeEventProperty = let (Override(_, _, _, _, _, _, b, _)) = x in b
-    member x.ArgTypes = let (Override(_, _, _, _, b, _, _, _)) = x in b
-    member x.ReturnType = let (Override(_, _, _, _, _, b, _, _)) = x in b
-    member x.IsCompilerGenerated = let (Override(_, _, _, _, _, _, _, b)) = x in b
+    | Override of
+        canImplement: OverrideCanImplement *
+        boundingTyconRef: TyconRef *
+        id: Ident *
+        methTypars: Typars *
+        memberToParentInstantiation: TyparInstantiation *
+        argTypes: TType list list *
+        returnType: TType option *
+        isFakeEventProperty: bool *
+        isCompilerGenerated: bool
+
+    member x.CanImplement = let (Override(canImplement=a)) = x in a
+
+    member x.BoundingTyconRef = let (Override(boundingTyconRef=ty)) = x in ty
+
+    member x.LogicalName = let (Override(id=id)) = x in id.idText
+
+    member x.Range = let (Override(id=id)) = x in id.idRange
+
+    member x.IsFakeEventProperty = let (Override(isFakeEventProperty=b)) = x in b
+
+    member x.ArgTypes = let (Override(argTypes=b)) = x in b
+
+    member x.ReturnType = let (Override(returnType=b)) = x in b
+
+    member x.IsCompilerGenerated = let (Override(isCompilerGenerated=b)) = x in b
 
 type RequiredSlot = 
-    | RequiredSlot of MethInfo * isOptional: bool
-    | DefaultInterfaceImplementationSlot of MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
+    | RequiredSlot of methodInfo: MethInfo * isOptional: bool
+    | DefaultInterfaceImplementationSlot of methodInfo: MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
 
     /// A slot which does not have to be implemented, because an inherited implementation is available.
     member this.IsOptional =
@@ -74,7 +91,12 @@ type RequiredSlot =
         | RequiredSlot(methInfo, _)
         | DefaultInterfaceImplementationSlot(methInfo, _, _) -> methInfo
 
-type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
+type SlotImplSet =
+    | SlotImplSet of
+        dispatchSlots: RequiredSlot list *
+        dispatchSlotsKeyed: NameMultiMap<RequiredSlot> *
+        availablePriorOverrides: OverrideInfo list *
+        requiredProperties: PropInfo list
 
 exception TypeIsImplicitlyAbstract of range
 exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
@@ -82,7 +104,7 @@ exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option 
 module DispatchSlotChecking =
 
     /// Print the signature of an override to a buffer as part of an error message
-    let PrintOverrideToBuffer denv os (Override(_, _, id, (methTypars, memberToParentInst), argTys, retTy, _, _)) = 
+    let PrintOverrideToBuffer denv os (Override(_, _, id, methTypars, memberToParentInst, argTys, retTy, _, _)) = 
        let denv = { denv with showTyparBinding = true }
        let retTy = (retTy  |> GetFSharpViewOfReturnType denv.g)
        let argInfos = 
@@ -101,10 +123,12 @@ module DispatchSlotChecking =
         LayoutRender.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst, nm, fmethTypars, argInfos, retTy))
 
     /// Format the signature of an override as a string as part of an error message
-    let FormatOverride denv d = bufs (fun buf -> PrintOverrideToBuffer denv buf d)
+    let FormatOverride denv d =
+        buildString (fun buf -> PrintOverrideToBuffer denv buf d)
 
     /// Format the signature of a MethInfo as a string as part of an error message
-    let FormatMethInfoSig g amap m denv d = bufs (fun buf -> PrintMethInfoSigToBuffer g amap m denv buf d)
+    let FormatMethInfoSig g amap m denv d =
+        buildString (fun buf -> PrintMethInfoSigToBuffer g amap m denv buf d)
 
     /// Get the override info for an existing (inherited) method being used to implement a dispatch slot.
     let GetInheritedMemberOverrideInfo g amap m parentType (minfo: MethInfo) = 
@@ -112,7 +136,7 @@ module DispatchSlotChecking =
         let (CompiledSig (argTys, retTy, fmethTypars, ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
-        Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, (fmethTypars, ttpinst), argTys, retTy, isFakeEventProperty, false)
+        Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, fmethTypars, ttpinst, argTys, retTy, isFakeEventProperty, false)
 
     /// Get the override info for a value being used to implement a dispatch slot.
     let GetTypeMemberOverrideInfo g reqdTy (overrideBy: ValRef) = 
@@ -129,6 +153,7 @@ module DispatchSlotChecking =
                 memberMethodTypars, memberToParentInst, argTys, retTy
             | None -> 
                 error(Error(FSComp.SR.typrelMethodIsOverconstrained(), overrideBy.Range))
+
         let implKind = 
             if ValRefIsExplicitImpl g overrideBy then 
                 
@@ -150,7 +175,7 @@ module DispatchSlotChecking =
                 //CanImplementAnySlot  <<----- Change to this to enable implicit interface implementation
 
         let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
-        Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, (memberMethodTypars, memberToParentInst), argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
+        Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, memberMethodTypars, memberToParentInst, argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
     let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
@@ -173,7 +198,7 @@ module DispatchSlotChecking =
                     CanImplementAnyClassHierarchySlot
                     //CanImplementAnySlot  <<----- Change to this to enable implicit interface implementation
             let isFakeEventProperty = CompileAsEvent g bindingAttribs
-            let overrideByInfo = Override(implKind, tcrefOfAppTy g implty, id, (tps, []), argTys, retTy, isFakeEventProperty, false)
+            let overrideByInfo = Override(implKind, tcrefOfAppTy g implty, id, tps, [], argTys, retTy, isFakeEventProperty, false)
             overrideByInfo, (baseValOpt, thisv, vs, bindingAttribs, rhsExpr)
         | _ -> 
             error(InternalError("Unexpected shape for object expression override", id.idRange))
@@ -194,13 +219,13 @@ module DispatchSlotChecking =
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
     let IsTyparKindMatch compiledSig overrideBy = 
-        let (Override(_, _, _, (methTypars, _), _, _, _, _)) = overrideBy
+        let (Override(methTypars=methTypars)) = overrideBy
         let (CompiledSig (_, _, fvmethTypars, _)) = compiledSig
         List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) methTypars fvmethTypars
         
     /// Check if an override is a partial match for the requirements for a dispatch slot except for the name.
     let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig overrideBy =
-        let (Override(_, _, _, (methTypars, _), argTys, _retTy, _, _)) = overrideBy
+        let (Override(_, _, _, methTypars, _, argTys, _retTy, _, _)) = overrideBy
         let (CompiledSig (vargTys, _, fvmethTypars, _)) = compiledSig
         methTypars.Length = fvmethTypars.Length &&
         IsTyparKindMatch compiledSig overrideBy && 
@@ -222,7 +247,7 @@ module DispatchSlotChecking =
      
     /// Check if an override exactly matches the requirements for a dispatch slot except for the name.
     let IsSigExactMatch g amap m dispatchSlot overrideBy =
-        let (Override(_, _, _, (methTypars, mtpinst), argTys, retTy, _, _)) = overrideBy
+        let (Override(_, _, _, methTypars, memberToParentInst, argTys, retTy, _, _)) = overrideBy
         let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
         IsSigPartialMatch g dispatchSlot compiledSig overrideBy &&
         let (CompiledSig (vargTys, vrty, fvmethTypars, ttpinst)) = compiledSig
@@ -248,20 +273,22 @@ module DispatchSlotChecking =
         //     
         //     we have 
         //         ttpinst maps  ctps --> ctys[dtps] 
-        //         mtpinst maps  ttps --> dtps
+        //         memberToParentInst maps  ttps --> dtps
         //       
         //     compare fvtmps[ctps] and methTypars[ttps] by 
         //        fvtmps[ctps]  @ ttpinst     -- gives fvtmps[dtps]
-        //        fvtmps[dtps] @ rev(mtpinst) -- gives fvtmps[ttps]
+        //        fvtmps[dtps] @ rev(memberToParentInst) -- gives fvtmps[ttps]
         //        
-        //     Now fvtmps[ttps] and mtpinst[ttps] are comparable, i.e. have constraints w.r.t. the same set of type variables 
+        //     Now fvtmps[ttps] and memberToParentInst[ttps] are comparable, i.e. have constraints w.r.t. the same set of type variables 
         //         
-        // i.e.  Compose the substitutions ttpinst and rev(mtpinst) 
+        // i.e.  Compose the substitutions ttpinst and rev(memberToParentInst) 
         
         let ttpinst = 
             // check we can reverse - in some error recovery situations we can't 
-            if mtpinst |> List.exists (snd >> isTyparTy g >> not) then ttpinst 
-            else ComposeTyparInsts ttpinst (ReverseTyparRenaming g mtpinst)
+            if memberToParentInst |> List.exists (snd >> isTyparTy g >> not) then
+                ttpinst 
+            else
+                ComposeTyparInsts ttpinst (ReverseTyparRenaming g memberToParentInst)
 
         // Compare under the composed substitutions 
         let aenv = TypeEquivEnv.FromTyparInst ttpinst 
@@ -335,7 +362,7 @@ module DispatchSlotChecking =
                 then 
                     // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
                     if reqdSlot.HasDefaultInterfaceImplementation then
-                        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
@@ -357,7 +384,7 @@ module DispatchSlotChecking =
                             noimpl()
                         | [ overrideBy ] ->
 
-                            let (Override(_, _, _, (methTypars, _), argTys, _, _, _)) = overrideBy
+                            let (Override(_, _, _, methTypars, _, argTys, _, _, _)) = overrideBy
 
                             let moreThanOnePossibleDispatchSlot =
                                 dispatchSlots
@@ -832,7 +859,7 @@ module DispatchSlotChecking =
             overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
-let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv) (tycon: Tycon) =
+let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv, tycon: Tycon) =
 
     let g = infoReader.g
     let amap = infoReader.amap
@@ -907,7 +934,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, _k, _valSynData) = 
+let GetAbstractPropInfosForSynPropertyDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers) = 
     let pinfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, _, _, reqdProps)) -> 

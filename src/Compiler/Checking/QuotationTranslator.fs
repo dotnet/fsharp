@@ -585,8 +585,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let methArgTypesR = ConvTypes cenv env m argTys
             let argsR = ConvExprs cenv env args
             let objR =
-                QP.mkCtorCall( { ctorParent   = parentTyconR
-                                 ctorArgTypes = methArgTypesR },
+                QP.mkCtorCall( { Parent   = parentTyconR
+                                 ArgTypes = methArgTypesR },
                               [], argsR)
             let exnTypeR = ConvType cenv env m g.exn_ty
             QP.mkCoerce(exnTypeR, objR)
@@ -862,18 +862,18 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
     elif isNewObj then
         assert witnessArgTypesR.IsEmpty
         let ctorR : QuotationPickler.CtorData =
-            { ctorParent   = parentTyconR
-              ctorArgTypes = methArgTypesR }
+            { Parent   = parentTyconR
+              ArgTypes = methArgTypesR }
         QP.mkCtorCall(ctorR, tyargsR, allArgsR)
 
     elif witnessArgTypesR.IsEmpty then
 
         let methR : QuotationPickler.MethodData =
-            { methParent   = parentTyconR
-              methArgTypes = methArgTypesR
-              methRetType  = methRetTypeR
-              methName     = methName
-              numGenericArgs = numGenericArgs }
+            { Parent = parentTyconR
+              ArgTypes = methArgTypesR
+              RetType = methRetTypeR
+              Name = methName
+              NumGenericArgs = numGenericArgs }
 
         QP.mkMethodCall(methR, tyargsR, allArgsR)
 
@@ -881,19 +881,19 @@ and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTy
 
         // The old method entry point
         let methR: QuotationPickler.MethodData =
-            { methParent   = parentTyconR
-              methArgTypes = methArgTypesR
-              methRetType  = methRetTypeR
-              methName     = methName
-              numGenericArgs = numGenericArgs }
+            { Parent = parentTyconR
+              ArgTypes = methArgTypesR
+              RetType = methRetTypeR
+              Name = methName
+              NumGenericArgs = numGenericArgs }
 
         // The witness-passing method entry point
         let methWR: QuotationPickler.MethodData =
-            { methParent   = parentTyconR
-              methArgTypes = witnessArgTypesR @ methArgTypesR
-              methRetType  = methRetTypeR
-              methName     = ExtraWitnessMethodName methName
-              numGenericArgs = numGenericArgs }
+            { Parent = parentTyconR
+              ArgTypes = witnessArgTypesR @ methArgTypesR
+              RetType = methRetTypeR
+              Name = ExtraWitnessMethodName methName
+              NumGenericArgs = numGenericArgs }
 
         QP.mkMethodCallW(methR, methWR, List.length witnessArgTypesR, tyargsR, allArgsR)
 
@@ -969,9 +969,12 @@ and ConvRecdFieldRef cenv (rfref: RecdFieldRef) m =
             rfref.FieldName
     (typR, nm)
 
-and ConvVal cenv env (v: Val) =
+and ConvVal cenv env (v: Val) : QuotationPickler.ValData =
     let tyR = ConvType cenv env v.Range v.Type
-    QP.freshVar (v.CompiledName cenv.g.CompilerGlobalState, tyR, v.IsMutable)
+    let name = v.CompiledName cenv.g.CompilerGlobalState
+    { Name = name
+      Type = tyR
+      IsMutable = v.IsMutable }
 
 and ConvTyparRef cenv env m (tp: Typar) =
     match env.tyvs.TryFind tp.Stamp  with
@@ -1284,15 +1287,15 @@ let ConvMethodBase cenv env (methName, v: Val) =
         if isNewObj then
             assert witnessArgTysR.IsEmpty
             QP.MethodBaseData.Ctor
-                { ctorParent   = parentTyconR
-                  ctorArgTypes = methArgTypesR }
+                { Parent = parentTyconR
+                  ArgTypes = methArgTypesR }
         else
             QP.MethodBaseData.Method
-                { methParent   = parentTyconR
-                  methArgTypes = witnessArgTysR @ methArgTypesR
-                  methRetType  = methRetTypeR
-                  methName     = methName
-                  numGenericArgs=numGenericArgs }
+                { Parent = parentTyconR
+                  ArgTypes = witnessArgTysR @ methArgTypesR
+                  RetType = methRetTypeR
+                  Name = methName
+                  NumGenericArgs=numGenericArgs }
 
     | _ when v.IsExtensionMember ->
 
@@ -1306,11 +1309,11 @@ let ConvMethodBase cenv env (methName, v: Val) =
         let numGenericArgs = tps.Length
 
         QP.MethodBaseData.Method
-          { methParent   = parentTyconR
-            methArgTypes = witnessArgTysR @ methArgTypesR
-            methRetType  = methRetTypeR
-            methName     = methName
-            numGenericArgs=numGenericArgs }
+          { Parent = parentTyconR
+            ArgTypes = witnessArgTysR @ methArgTypesR
+            RetType = methRetTypeR
+            Name = methName
+            NumGenericArgs = numGenericArgs }
 
     | _ ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
@@ -1352,7 +1355,7 @@ let ConvReflectedDefinition cenv methName v e =
             (fun witnessInfo e -> 
                 let ty = GenWitnessTy g witnessInfo
                 let tyR = ConvType cenv env v.DefinitionRange ty
-                let vR = QuotationPickler.freshVar (witnessInfo.MemberName, tyR, false)
+                let vR = { Name = witnessInfo.MemberName; Type = tyR; IsMutable = false }
                 QuotationPickler.mkLambda (vR, e))
             witnessInfos
             astExpr

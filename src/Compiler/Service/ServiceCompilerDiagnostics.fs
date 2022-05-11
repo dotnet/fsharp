@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.Diagnostics
 
-open FSharp.Compiler.ErrorResolutionHints
+open FSharp.Compiler.DiagnosticResolutionHints
 
 [<RequireQualifiedAccess>]
 type FSharpDiagnosticKind =

@@ -101,6 +101,6 @@ val internal ImportILAssemblyTypeForwarders:
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
 val RescopeAndImportILType:
-    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilty: ILType -> TType
+    scoref: ILScopeRef -> amap: ImportMap -> m: range -> importInst: TType list -> ilTy: ILType -> TType
 
-val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilty: ILType -> bool
+val CanRescopeAndImportILType: scoref: ILScopeRef -> amap: ImportMap -> m: range -> ilTy: ILType -> bool

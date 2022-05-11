@@ -233,18 +233,18 @@ val mkInvisibleBinds: Vals -> Exprs -> Bindings
 /// Make a let-rec expression that locally binds values to expressions where self-reference back to the values is possible.
 val mkLetRecBinds: range -> Bindings -> Expr -> Expr
 
-/// TypeScheme (generalizedTypars, tauTy)
+/// GeneralizedType (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
-type TypeScheme = TypeScheme of Typars * TType
+type GeneralizedType = GeneralizedType of Typars * TType
 
 /// Make the right-hand side of a generalized binding, incorporating the generalized generic parameters from the type
 /// scheme into the right-hand side as type generalizations.
-val mkGenericBindRhs: TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
+val mkGenericBindRhs: TcGlobals -> range -> Typars -> GeneralizedType -> Expr -> Expr
 
 /// Test if the type parameter is one of those being generalized by a type scheme.
-val isBeingGeneralized: Typar -> TypeScheme -> bool
+val isBeingGeneralized: Typar -> GeneralizedType -> bool
 
 /// Make the expression corresponding to 'expr1 && expr2'
 val mkLazyAnd: TcGlobals -> range -> Expr -> Expr -> Expr
@@ -539,7 +539,7 @@ val valRefEq: TcGlobals -> ValRef -> ValRef -> bool
 //-------------------------------------------------------------------------
 
 /// Represents an instantiation where types replace type parameters
-type TyparInst = (Typar * TType) list
+type TyparInstantiation = (Typar * TType) list
 
 /// Represents an instantiation where type definition references replace other type definition references
 type TyconRefRemap = TyconRefMap<TyconRef>
@@ -550,7 +550,7 @@ type ValRemap = ValMap<ValRef>
 /// Represents a combination of substitutions/instantiations where things replace other things during remapping
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst: TyparInst
+    { tpinst: TyparInstantiation
       valRemap: ValRemap
       tyconRefRemap: TyconRefRemap
       removeTraitSolutions: bool }
@@ -561,19 +561,19 @@ val addTyconRefRemap: TyconRef -> TyconRef -> Remap -> Remap
 
 val addValRemap: Val -> Val -> Remap -> Remap
 
-val mkTyparInst: Typars -> TTypes -> TyparInst
+val mkTyparInst: Typars -> TTypes -> TyparInstantiation
 
-val mkTyconRefInst: TyconRef -> TypeInst -> TyparInst
+val mkTyconRefInst: TyconRef -> TypeInst -> TyparInstantiation
 
-val emptyTyparInst: TyparInst
+val emptyTyparInst: TyparInstantiation
 
-val instType: TyparInst -> TType -> TType
+val instType: TyparInstantiation -> TType -> TType
 
-val instTypes: TyparInst -> TypeInst -> TypeInst
+val instTypes: TyparInstantiation -> TypeInst -> TypeInst
 
-val instTyparConstraints: TyparInst -> TyparConstraint list -> TyparConstraint list
+val instTyparConstraints: TyparInstantiation -> TyparConstraint list -> TyparConstraint list
 
-val instTrait: TyparInst -> TraitConstraintInfo -> TraitConstraintInfo
+val instTrait: TyparInstantiation -> TraitConstraintInfo -> TraitConstraintInfo
 
 val generalTyconRefInst: TyconRef -> TypeInst
 
@@ -584,7 +584,7 @@ val generalizeTyconRef: TcGlobals -> TyconRef -> TTypes * TType
 
 val generalizedTyconRef: TcGlobals -> TyconRef -> TType
 
-val mkTyparToTyparRenaming: Typars -> Typars -> TyparInst * TTypes
+val mkTyparToTyparRenaming: Typars -> Typars -> TyparInstantiation * TTypes
 
 //-------------------------------------------------------------------------
 // See through typar equations from inference and/or type abbreviation equations.
@@ -695,7 +695,7 @@ val tryDestAnonRecdTy: TcGlobals -> TType -> ValueOption<AnonRecdTypeInfo * TTyp
 
 val argsOfAppTy: TcGlobals -> TType -> TypeInst
 
-val mkInstForAppTy: TcGlobals -> TType -> TyparInst
+val mkInstForAppTy: TcGlobals -> TType -> TyparInstantiation
 
 /// Try to get a TyconRef for a type without erasing type abbreviations
 val tryNiceEntityRefOfTy: TType -> ValueOption<TyconRef>
@@ -723,11 +723,11 @@ val tryDestRefTupleTy: TcGlobals -> TType -> TType list
 
 val actualResultTyOfUnionCase: TypeInst -> UnionCaseRef -> TType
 
-val actualTysOfUnionCaseFields: TyparInst -> UnionCaseRef -> TType list
+val actualTysOfUnionCaseFields: TyparInstantiation -> UnionCaseRef -> TType list
 
-val actualTysOfInstanceRecdFields: TyparInst -> TyconRef -> TType list
+val actualTysOfInstanceRecdFields: TyparInstantiation -> TyconRef -> TType list
 
-val actualTyOfRecdField: TyparInst -> RecdField -> TType
+val actualTyOfRecdField: TyparInstantiation -> RecdField -> TType
 
 val actualTyOfRecdFieldRef: RecdFieldRef -> TypeInst -> TType
 
@@ -860,7 +860,7 @@ type TypeEquivEnv =
 
     member BindEquivTypars: Typars -> Typars -> TypeEquivEnv
 
-    static member FromTyparInst: TyparInst -> TypeEquivEnv
+    static member FromTyparInst: TyparInstantiation -> TypeEquivEnv
 
     static member FromEquivTypars: Typars -> Typars -> TypeEquivEnv
 
@@ -944,13 +944,13 @@ val GetMemberTypeInMemberForm:
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
 val PartitionValTyparsForApparentEnclosingType:
-    TcGlobals -> Val -> (Typars * Typars * Typars * TyparInst * TType list) option
+    TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInst * TType list) option
+val PartitionValTypars: TcGlobals -> Val -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
-val PartitionValRefTypars: TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInst * TType list) option
+val PartitionValRefTypars: TcGlobals -> ValRef -> (Typars * Typars * Typars * TyparInstantiation * TType list) option
 
 /// Count the number of type parameters on the enclosing type
 val CountEnclosingTyparsOfActualParentOfVal: Val -> int
@@ -973,14 +973,16 @@ module PrettyTypes =
 
     val NeedsPrettyTyparName: Typar -> bool
 
-    val NewPrettyTypars: TyparInst -> Typars -> string list -> Typars * TyparInst
+    val NewPrettyTypars: TyparInstantiation -> Typars -> string list -> Typars * TyparInstantiation
 
     val PrettyTyparNames: (Typar -> bool) -> string list -> Typars -> string list
 
     val PrettifyType: TcGlobals -> TType -> TType * TyparConstraintsWithTypars
 
     val PrettifyInstAndTyparsAndType:
-        TcGlobals -> TyparInst * Typars * TType -> (TyparInst * Typars * TType) * TyparConstraintsWithTypars
+        TcGlobals ->
+        TyparInstantiation * Typars * TType ->
+            (TyparInstantiation * Typars * TType) * TyparConstraintsWithTypars
 
     val PrettifyTypePair: TcGlobals -> TType * TType -> (TType * TType) * TyparConstraintsWithTypars
 
@@ -992,14 +994,18 @@ module PrettyTypes =
     val PrettifyDiscriminantAndTypePairs:
         TcGlobals -> ('Discriminant * TType) list -> ('Discriminant * TType) list * TyparConstraintsWithTypars
 
-    val PrettifyInst: TcGlobals -> TyparInst -> TyparInst * TyparConstraintsWithTypars
+    val PrettifyInst: TcGlobals -> TyparInstantiation -> TyparInstantiation * TyparConstraintsWithTypars
 
-    val PrettifyInstAndType: TcGlobals -> TyparInst * TType -> (TyparInst * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndType:
+        TcGlobals -> TyparInstantiation * TType -> (TyparInstantiation * TType) * TyparConstraintsWithTypars
 
-    val PrettifyInstAndTypes: TcGlobals -> TyparInst * TTypes -> (TyparInst * TTypes) * TyparConstraintsWithTypars
+    val PrettifyInstAndTypes:
+        TcGlobals -> TyparInstantiation * TTypes -> (TyparInstantiation * TTypes) * TyparConstraintsWithTypars
 
     val PrettifyInstAndSig:
-        TcGlobals -> TyparInst * TTypes * TType -> (TyparInst * TTypes * TType) * TyparConstraintsWithTypars
+        TcGlobals ->
+        TyparInstantiation * TTypes * TType ->
+            (TyparInstantiation * TTypes * TType) * TyparConstraintsWithTypars
 
     val PrettifyCurriedTypes: TcGlobals -> TType list list -> TType list list * TyparConstraintsWithTypars
 
@@ -1008,13 +1014,13 @@ module PrettyTypes =
 
     val PrettifyInstAndUncurriedSig:
         TcGlobals ->
-        TyparInst * UncurriedArgInfos * TType ->
-            (TyparInst * UncurriedArgInfos * TType) * TyparConstraintsWithTypars
+        TyparInstantiation * UncurriedArgInfos * TType ->
+            (TyparInstantiation * UncurriedArgInfos * TType) * TyparConstraintsWithTypars
 
     val PrettifyInstAndCurriedSig:
         TcGlobals ->
-        TyparInst * TTypes * CurriedArgInfos * TType ->
-            (TyparInst * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
+        TyparInstantiation * TTypes * CurriedArgInfos * TType ->
+            (TyparInstantiation * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
 /// Describes how generic type parameters in a type will be formatted during printing
 type GenericParameterStyle =
@@ -1222,16 +1228,16 @@ val copyModuleOrNamespaceType: TcGlobals -> ValCopyFlag -> ModuleOrNamespaceType
 val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
 
 /// Copy an entire implementation file using the given copying flags
-val copyImplFile: TcGlobals -> ValCopyFlag -> TypedImplFile -> TypedImplFile
+val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile
 
 /// Copy a method slot signature, including new generic type parameters if the slot signature represents a generic method
 val copySlotSig: SlotSig -> SlotSig
 
 /// Instantiate the generic type parameters in a method slot signature, building a new one
-val instSlotSig: TyparInst -> SlotSig -> SlotSig
+val instSlotSig: TyparInstantiation -> SlotSig -> SlotSig
 
 /// Instantiate the generic type parameters in an expression, building a new one
-val instExpr: TcGlobals -> TyparInst -> Expr -> Expr
+val instExpr: TcGlobals -> TyparInstantiation -> Expr -> Expr
 
 /// The remapping that corresponds to a module meeting its signature
 /// and also report the set of tycons, tycon representations and values hidden in the process.
@@ -1283,9 +1289,6 @@ val wrapModuleOrNamespaceTypeInNamespace:
 
 /// Wrap one module or namespace definition in a 'module M = ..' outer wrapper
 val wrapModuleOrNamespaceType: Ident -> CompilationPath -> ModuleOrNamespaceType -> ModuleOrNamespace
-
-/// Given an implementation, fetch its recorded signature
-val SigTypeOfImplFile: TypedImplFile -> ModuleOrNamespaceType
 
 /// Given a namespace, module or type definition, try to produce a reference to that entity.
 val tryRescopeEntity: CcuThunk -> Entity -> ValueOption<EntityRef>
@@ -1457,10 +1460,10 @@ module DebugPrint =
     val decisionTreeL: TcGlobals -> DecisionTree -> Layout
 
     /// Debug layout for an implementation file
-    val implFileL: TcGlobals -> TypedImplFile -> Layout
+    val implFileL: TcGlobals -> CheckedImplFile -> Layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL: TcGlobals -> TypedImplFile list -> Layout
+    val implFilesL: TcGlobals -> CheckedImplFile list -> Layout
 
     /// Debug layout for class and record fields
     val recdFieldRefL: RecdFieldRef -> Layout
@@ -1483,7 +1486,7 @@ type ExprFolder<'State> =
 val ExprFolder0: ExprFolder<'State>
 
 /// Fold over all the expressions in an implementation file
-val FoldImplFile: ExprFolder<'State> -> ('State -> TypedImplFile -> 'State)
+val FoldImplFile: ExprFolder<'State> -> ('State -> CheckedImplFile -> 'State)
 
 /// Fold over all the expressions in an expression
 val FoldExpr: ExprFolder<'State> -> ('State -> Expr -> 'State)
@@ -2413,7 +2416,7 @@ val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
 
 val RewriteExpr: ExprRewritingEnv -> Expr -> Expr
 
-val RewriteImplFile: ExprRewritingEnv -> TypedImplFile -> TypedImplFile
+val RewriteImplFile: ExprRewritingEnv -> CheckedImplFile -> CheckedImplFile
 
 val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
 

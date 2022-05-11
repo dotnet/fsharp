@@ -140,12 +140,14 @@ type Item =
     /// This includes backticks, parens etc.
     member DisplayName: string
 
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
+/// Pairs an Item with a TyparInstantiation showing how generic type variables of the item are instantiated at
 /// a particular usage point.
 [<RequireQualifiedAccess>]
-type ItemWithInst = { Item: Item; TyparInst: TyparInst }
+type ItemWithInst =
+    { Item: Item
+      TyparInstantiation: TyparInstantiation }
 
-val (|ItemWithInst|): ItemWithInst -> Item * TyparInst
+val (|ItemWithInst|): ItemWithInst -> Item * TyparInstantiation
 val ItemWithNoInst: Item -> ItemWithInst
 
 /// Represents a record field resolution and the information if the usage is deprecated.
@@ -458,11 +460,12 @@ type ITypecheckResultsSink =
 
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution:
-        pos * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
+        pos * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a method group name resolution occurred at a specific location in the source
     abstract NotifyMethodGroupNameResolution:
-        pos * Item * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
+        pos * Item * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool ->
+            unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation: range * int -> unit
@@ -522,15 +525,17 @@ val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorD
 
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific method group name resolution at a source range
 val internal CallMethodGroupNameResolutionSink:
-    TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink ->
+    range * NameResolutionEnv * Item * Item * TyparInstantiation * ItemOccurence * AccessorDomain ->
+        unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions
 val internal CallNameResolutionSinkReplacing:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
@@ -723,8 +728,8 @@ type AfterResolution =
     /// a specific override. The 'Item option' contains the candidate overrides.
     | RecordResolution of
         Item option *
-        (TyparInst -> unit) *
-        (MethInfo * PropInfo option * TyparInst -> unit) *
+        (TyparInstantiation -> unit) *
+        (MethInfo * PropInfo option * TyparInstantiation -> unit) *
         (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
