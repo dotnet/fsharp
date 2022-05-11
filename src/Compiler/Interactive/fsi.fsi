@@ -316,7 +316,7 @@ module Settings =
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart: unit -> unit
 
-    /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
+    /// Operations supported by the currently executing F# Interactive session.
     [<Sealed>]
     type InteractiveSettings =
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>

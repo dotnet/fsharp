@@ -423,7 +423,7 @@ let genWith g : ILCode =
     g { new ICodeGen<ILCodeLabel> with 
             member _.CodeLabel(m) = m
             member _.GenerateDelayMark() = generateCodeLabel()
-            member _.GenLocal(ilty) = failwith "not needed"
+            member _.GenLocal(ilTy) = failwith "not needed"
             member _.SetMarkToHere(m) = lab2pc[m] <- instrs.Count
             member _.EmitInstr x = instrs.Add x
             member cg.EmitInstrs xs = for i in xs do cg.EmitInstr i 

@@ -244,11 +244,11 @@ type CalledMeth<'T> =
     /// Return type after tupling of out args is taken into account
     member CalledReturnTypeAfterOutArgTupling: TType
 
-    /// The instantiation of the method we're attempting to call
+    /// The generic instantiation of the method we're attempting to call
     member CalledTyArgs: TType list
 
     /// The instantiation of the method we're attempting to call
-    member CalledTyparInst: TypedTreeOps.TyparInst
+    member CalledTyparInst: TyparInstantiation
 
     /// The types of the actual object arguments, if any
     member CallerObjArgTys: TType list
@@ -260,7 +260,7 @@ type CalledMeth<'T> =
 
     member HasCorrectGenericArity: bool
 
-    member HasOptArgs: bool
+    member HasOptionalArgs: bool
 
     member HasOutArgs: bool
 

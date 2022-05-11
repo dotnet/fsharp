@@ -231,11 +231,11 @@
     <Compile Include="Facilities\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="Facilities\Diagnostics.fsi">
-      <Link>Facilities\Diagnostics.fsi</Link>
+    <Compile Include="Facilities\DiagnosticOptions.fsi">
+      <Link>Facilities\DiagnosticOptions.fsi</Link>
     </Compile>
-    <Compile Include="Facilities\Diagnostics.fs">
-      <Link>Facilities\Diagnostics.fs</Link>
+    <Compile Include="Facilities\DiagnosticOptions.fs">
+      <Link>Facilities\DiagnosticOptions.fs</Link>
     </Compile>
     <Compile Include="Facilities\TextLayoutRender.fsi">
       <Link>Facilities\TextLayoutRender.fsi</Link>
@@ -249,11 +249,11 @@
     <Compile Include="Facilities\DiagnosticsLogger.fs">
       <Link>Facilities\DiagnosticsLogger.fs</Link>
     </Compile>
-    <Compile Include="Facilities\ErrorResolutionHints.fsi">
-      <Link>Facilities\ErrorResolutionHints.fsi</Link>
+    <Compile Include="Facilities\DiagnosticResolutionHints.fsi">
+      <Link>Facilities\DiagnosticResolutionHints.fsi</Link>
     </Compile>
-    <Compile Include="Facilities\ErrorResolutionHints.fs">
-      <Link>Facilities\ErrorResolutionHints.fs</Link>
+    <Compile Include="Facilities\DiagnosticResolutionHints.fs">
+      <Link>Facilities\DiagnosticResolutionHints.fs</Link>
     </Compile>
     <Compile Include="Facilities\prim-lexing.fsi">
       <Link>Facilities\prim-lexing.fsi</Link>
@@ -384,16 +384,10 @@
       <Link>AbstractIL\ilreflect.fs</Link>
     </Compile>
     <Compile Include="SyntaxTree\PrettyNaming.fsi">
-      <Link>PrettyNaming\PrettyNaming.fsi</Link>
+      <Link>SyntaxTree\PrettyNaming.fsi</Link>
     </Compile>
     <Compile Include="SyntaxTree\PrettyNaming.fs">
-      <Link>PrettyNaming\PrettyNaming.fs</Link>
-    </Compile>
-    <Compile Include="CodeGen\EraseClosures.fsi">
-      <Link>ILXErase\EraseClosures.fsi</Link>
-    </Compile>
-    <Compile Include="CodeGen\EraseClosures.fs">
-      <Link>ILXErase\EraseClosures.fs</Link>
+      <Link>SyntaxTree\PrettyNaming.fs</Link>
     </Compile>
     <FsLex Include="pplex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -466,10 +460,10 @@
       <Link>SyntaxTree\FsYaccOutput\pars.fs</Link>
     </Compile>
     <Compile Include="SyntaxTree\LexHelpers.fsi">
-      <Link>SyntaxTree\lexhelp.fsi</Link>
+      <Link>SyntaxTree\LexHelpers.fsi</Link>
     </Compile>
     <Compile Include="SyntaxTree\LexHelpers.fs">
-      <Link>SyntaxTree\lexhelp.fs</Link>
+      <Link>SyntaxTree\LexHelpers.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
       <Link>SyntaxTree\FsLexOutput\pplex.fs</Link>
@@ -710,6 +704,12 @@
     </Compile>
     <Compile Include="Optimize\LowerLocalMutables.fs">
       <Link>Optimize\LowerLocalMutables.fs</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseClosures.fsi">
+      <Link>CodeGen\EraseClosures.fsi</Link>
+    </Compile>
+    <Compile Include="CodeGen\EraseClosures.fs">
+      <Link>CodeGen\EraseClosures.fs</Link>
     </Compile>
     <Compile Include="CodeGen\EraseUnions.fsi">
       <Link>CodeGen\EraseUnions.fsi</Link>

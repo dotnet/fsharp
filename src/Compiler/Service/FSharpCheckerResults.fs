@@ -207,7 +207,7 @@ module internal FSharpCheckerResultsSettings =
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
 
 [<Sealed>]
-type FSharpSymbolUse(denv: DisplayEnv, symbol:FSharpSymbol, inst: TyparInst, itemOcc, range: range) =
+type FSharpSymbolUse(denv: DisplayEnv, symbol:FSharpSymbol, inst: TyparInstantiation, itemOcc, range: range) =
 
     member _.Symbol  = symbol
 
@@ -314,7 +314,7 @@ type internal TypeCheckInfo
            // This is a name resolution environment to use if no better match can be found.
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
-           implFileOpt: TypedImplFile option,
+           implFileOpt: CheckedImplFile option,
            openDeclarations: OpenDeclaration[]) =
 
     // These strings are potentially large and the editor may choose to hold them for a while.
@@ -522,7 +522,7 @@ type internal TypeCheckInfo
                 let props =
                     methods
                     |> List.collect (fun meth ->
-                        let retTy = meth.GetFSharpReturnTy(amap, m, meth.FormalMethodInst)
+                        let retTy = meth.GetFSharpReturnType(amap, m, meth.FormalMethodInst)
                         ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy
                     )
                 let parameters = CollectParameters methods amap m
@@ -1231,7 +1231,7 @@ type internal TypeCheckInfo
                             | items ->
                                 items
                                 |> List.map (fun item -> let symbol = FSharpSymbol.Create(cenv, item.Item)
-                                                         FSharpSymbolUse(denv, symbol, item.ItemWithInst.TyparInst, ItemOccurence.Use, m)))
+                                                         FSharpSymbolUse(denv, symbol, item.ItemWithInst.TyparInstantiation, ItemOccurence.Use, m)))
 
                     //end filtering
                     items)
@@ -1294,7 +1294,7 @@ type internal TypeCheckInfo
 
         let item = symbol.Item
         let inst = inst |> List.map (fun (typar, t) -> typar.TypeParameter, t.Type)
-        let itemWithInst = { ItemWithInst.Item = item; ItemWithInst.TyparInst = inst }
+        let itemWithInst = { ItemWithInst.Item = item; ItemWithInst.TyparInstantiation = inst }
 
         let toolTipElement = FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst
         ToolTipText [toolTipElement]
@@ -1581,11 +1581,11 @@ type internal TypeCheckInfo
 type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalDefines: string list
-      ErrorSeverityOptions: FSharpDiagnosticOptions
+      DiagnosticOptions: FSharpDiagnosticOptions
       LangVersionText: string
       IsInteractive: bool
       IndentationAwareSyntax: bool option
-      CompilingFsLib: bool
+      CompilingFSharpCore: bool
       IsExe: bool }
 
     member x.LastFileName =
@@ -1595,32 +1595,32 @@ type FSharpParsingOptions =
     static member Default =
         { SourceFiles = Array.empty
           ConditionalDefines = []
-          ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+          DiagnosticOptions = FSharpDiagnosticOptions.Default
           LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
           IndentationAwareSyntax = None
-          CompilingFsLib = false
+          CompilingFSharpCore = false
           IsExe = false }
 
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         { SourceFiles = sourceFiles
           ConditionalDefines = tcConfig.conditionalDefines
-          ErrorSeverityOptions = tcConfig.diagnosticsOptions
+          DiagnosticOptions = tcConfig.diagnosticsOptions
           LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
           IndentationAwareSyntax = tcConfig.indentationAwareSyntax
-          CompilingFsLib = tcConfig.compilingFSharpCore
+          CompilingFSharpCore = tcConfig.compilingFSharpCore
           IsExe = tcConfig.target.IsExe }
 
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
           ConditionalDefines = tcConfigB.conditionalDefines
-          ErrorSeverityOptions = tcConfigB.diagnosticsOptions
+          DiagnosticOptions = tcConfigB.diagnosticsOptions
           LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
           IndentationAwareSyntax = tcConfigB.indentationAwareSyntax
-          CompilingFsLib = tcConfigB.compilingFSharpCore
+          CompilingFSharpCore = tcConfigB.compilingFSharpCore
           IsExe = tcConfigB.target.IsExe
         }
 
@@ -1629,58 +1629,60 @@ module internal ParseAndCheckFile =
     /// Error handler for parsing & type checking while processing a single file
     type ErrorHandler(reportErrors, mainInputFileName, diagnosticsOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = diagnosticsOptions
-        let errorsAndWarningsCollector = ResizeArray<_>()
+        let diagnosticsCollector = ResizeArray<_>()
         let mutable errorCount = 0
 
         // We'll need number of lines for adjusting error messages at EOF
         let fileInfo = sourceText.GetLastCharacterPosition()
 
+        let collectOne severity diagnostic =
+            for diagnostic in DiagnosticHelpers.ReportDiagnostic (options, false, mainInputFileName, fileInfo, diagnostic, severity, suggestNamesForErrors) do
+                diagnosticsCollector.Add diagnostic
+                if severity = FSharpDiagnosticSeverity.Error then
+                    errorCount <- errorCount + 1
+
         // This function gets called whenever an error happens during parsing or checking
-        let diagnosticSink sev (exn: PhasedDiagnostic) =
+        let diagnosticSink severity (diagnostic: PhasedDiagnostic) =
             // Sanity check here. The phase of an error should be in a phase known to the language service.
-            let exn =
-                if not(exn.IsPhaseInCompile()) then
+            let diagnostic =
+                if not(diagnostic.IsPhaseInCompile()) then
                     // Reaching this point means that the error would be sticky if we let it prop up to the language service.
                     // Assert and recover by replacing phase with one known to the language service.
-                    Trace.TraceInformation(sprintf "The subcategory '%s' seen in an error should not be seen by the language service" (exn.Subcategory()))
-                    { exn with Phase = BuildPhase.TypeCheck }
-                else exn
+                    Trace.TraceInformation(sprintf "The subcategory '%s' seen in an error should not be seen by the language service" (diagnostic.Subcategory()))
+                    { diagnostic with Phase = BuildPhase.TypeCheck }
+                else diagnostic
+
             if reportErrors then
-                let report exn =
-                    for ei in DiagnosticHelpers.ReportDiagnostic (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
-                        errorsAndWarningsCollector.Add ei
-                        if sev = FSharpDiagnosticSeverity.Error then
-                            errorCount <- errorCount + 1
-
-                match exn with
+                match diagnostic with
 #if !NO_TYPEPROVIDERS
-                | { Exception = :? TypeProviderError as tpe } -> tpe.Iter(fun e -> report { exn with Exception = e })
+                | { Exception = :? TypeProviderError as tpe } ->
+                    tpe.Iter(fun exn -> collectOne severity { diagnostic with Exception = exn })
 #endif
-                | e -> report e
+                | _ -> collectOne severity diagnostic
 
-        let errorLogger =
+        let diagnosticsLogger =
             { new DiagnosticsLogger("ErrorHandler") with
-                member x.DiagnosticSink (exn, severity) = diagnosticSink severity exn
-                member x.ErrorCount = errorCount }
+                member _.DiagnosticSink (exn, severity) = diagnosticSink severity exn
+                member _.ErrorCount = errorCount }
 
         // Public members
-        member _.DiagnosticsLogger = errorLogger
+        member _.DiagnosticsLogger = diagnosticsLogger
 
-        member _.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
+        member _.CollectedDiagnostics = diagnosticsCollector.ToArray()
 
         member _.ErrorCount = errorCount
 
-        member _.ErrorSeverityOptions with set opts = options <- opts
+        member _.DiagnosticOptions with set opts = options <- opts
 
         member _.AnyErrors = errorCount > 0
 
     let getLightSyntaxStatus fileName options =
         let indentationAwareSyntaxOnByDefault = List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
-        let lightStatus = if indentationAwareSyntaxOnByDefault then (options.IndentationAwareSyntax <> Some false) else (options.IndentationAwareSyntax = Some true)
-        IndentationAwareSyntaxStatus(lightStatus, true)
+        let indentationSyntaxStatus = if indentationAwareSyntaxOnByDefault then (options.IndentationAwareSyntax <> Some false) else (options.IndentationAwareSyntax = Some true)
+        IndentationAwareSyntaxStatus(indentationSyntaxStatus, true)
 
     let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
-        let lightStatus = getLightSyntaxStatus fileName options
+        let indentationSyntaxStatus = getLightSyntaxStatus fileName options
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
@@ -1693,10 +1695,10 @@ module internal ParseAndCheckFile =
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(conditionalDefines, lightStatus, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty)
+        let lexargs = mkLexargs(conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
-        let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
+        let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())
 
     let createLexbuf langVersion sourceText =
@@ -1716,7 +1718,7 @@ module internal ParseAndCheckFile =
 
         let matchingBraces = ResizeArray<_>()
         usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
-            let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
+            let errHandler = ErrorHandler(false, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
@@ -1787,7 +1789,7 @@ module internal ParseAndCheckFile =
 
     let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        let errHandler = ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
+        let errHandler = ErrorHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
         use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.DiagnosticsLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
@@ -1801,7 +1803,7 @@ module internal ParseAndCheckFile =
                 let isExe = options.IsExe
 
                 try
-                    ParseInput(lexfun, options.ErrorSeverityOptions, errHandler.DiagnosticsLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
+                    ParseInput(lexfun, options.DiagnosticOptions, errHandler.DiagnosticsLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
                     errHandler.DiagnosticsLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
@@ -1856,9 +1858,9 @@ module internal ParseAndCheckFile =
                     if sameFile file fileOfHashLoad then
                         for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
                             let diagnostics = errorGroupedByFileName |> Array.map(fun (_,(pe,f)) -> pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
-                            let errors = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Error then yield err ]
-                            let warnings = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Warning then yield err ]
-                            let infos = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Info then yield err ]
+                            let errors = [ for err, severity in diagnostics do if severity = FSharpDiagnosticSeverity.Error then yield err ]
+                            let warnings = [ for err, severity in diagnostics do if severity = FSharpDiagnosticSeverity.Warning then yield err ]
+                            let infos = [ for err, severity in diagnostics do if severity = FSharpDiagnosticSeverity.Info then yield err ]
 
                             let message = HashLoadedSourceHasIssues(infos, warnings, errors, rangeOfHashLoad)
                             if isNil errors && isNil warnings then
@@ -1869,11 +1871,11 @@ module internal ParseAndCheckFile =
                                 errorR message
 
             // Replay other background errors.
-            for phasedError, sev in otherBackgroundDiagnostics do
-                match sev with
-                | FSharpDiagnosticSeverity.Info -> informationalWarning phasedError.Exception
-                | FSharpDiagnosticSeverity.Warning -> warning phasedError.Exception
-                | FSharpDiagnosticSeverity.Error -> errorR phasedError.Exception
+            for diagnostic, severity in otherBackgroundDiagnostics do
+                match severity with
+                | FSharpDiagnosticSeverity.Info -> informationalWarning diagnostic.Exception
+                | FSharpDiagnosticSeverity.Warning -> warning diagnostic.Exception
+                | FSharpDiagnosticSeverity.Error -> errorR diagnostic.Exception
                 | FSharpDiagnosticSeverity.Hidden -> ()
 
         | None ->
@@ -1908,11 +1910,11 @@ module internal ParseAndCheckFile =
         use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.DiagnosticsLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
-        // Apply nowarns to tcConfig (may generate errors, so ensure errorLogger is installed)
+        // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
         let tcConfig = ApplyNoWarnsToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName)
 
         // update the error handler with the modified tcConfig
-        errHandler.ErrorSeverityOptions <- tcConfig.diagnosticsOptions
+        errHandler.DiagnosticOptions <- tcConfig.diagnosticsOptions
 
         // Play background errors and warnings for this file.
         do for err, severity in backgroundDiagnostics do
@@ -2057,13 +2059,13 @@ type FSharpCheckFileResults
     member _.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.GetSymbolUseAtLocation (line, lineText, colAtEndOfNames, names)
-            |> Option.map (fun (sym, itemWithInst, denv,m) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInst,ItemOccurence.Use,m)))
+            |> Option.map (fun (sym, itemWithInst, denv,m) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInstantiation,ItemOccurence.Use,m)))
 
     member _.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.GetMethodsAsSymbols (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
-                symbols |> List.map (fun (sym, itemWithInst) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInst,ItemOccurence.Use,m))))
+                symbols |> List.map (fun (sym, itemWithInst) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInstantiation,ItemOccurence.Use,m))))
 
     member _.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names) =
         threadSafeOp (fun () -> None) (fun scope ->
@@ -2110,7 +2112,7 @@ type FSharpCheckFileResults
                             cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                             if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                                 let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
-                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range)
+                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range)
                 })
 
     member _.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
@@ -2120,7 +2122,7 @@ type FSharpCheckFileResults
                 [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
                      cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range) |])
+                        yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range) |])
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         threadSafeOp
@@ -2146,12 +2148,12 @@ type FSharpCheckFileResults
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
-                let (TImplFile (implExprWithSig=mexpr)) = implFile
+                let (CheckedImplFile (contents=mexpr)) = implFile
                 let ad =
                     match scopeOptX with
                     | Some scope -> scope.AccessRights
                     | _ -> AccessibleFromSomewhere
-                let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader ad range0 mexpr
+                let layout = NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
                 layout |> LayoutRender.showL |> SourceText.ofString
             )
         )
@@ -2260,7 +2262,7 @@ type FSharpCheckProjectResults
           diagnostics: FSharpDiagnostic[],
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> *
                    TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef *
-                   AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option) =
+                   AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option) =
 
     let getDetails() =
         match details with
@@ -2313,7 +2315,7 @@ type FSharpCheckProjectResults
         let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
         let mimpls =
             match optimizedImpls with
-            | TypedAssemblyAfterOptimization files ->
+            | CheckedAssemblyAfterOptimization files ->
                 files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
@@ -2346,7 +2348,7 @@ type FSharpCheckProjectResults
         |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
         |> Seq.map (fun symbolUse ->
                cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
-               FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range))
+               FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range))
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
@@ -2379,7 +2381,7 @@ type FSharpCheckProjectResults
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                       let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
-                      yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range) |]
+                      yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range) |]
 
     member _.ProjectContext =
         let tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles, projectOptions = getDetails()
