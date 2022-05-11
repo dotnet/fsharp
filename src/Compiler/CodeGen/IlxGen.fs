@@ -7808,7 +7808,7 @@ and GenToStringMethod cenv eenv ilThisTy m =
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
   let g = cenv.g
-  [ if not cenv.opts.useReflectionFreeCodeGen then
+  [ if not g.useReflectionFreeCodeGen then
       match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind g.new_format_vref.Deref) with
       | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
