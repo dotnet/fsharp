@@ -362,7 +362,7 @@ module DispatchSlotChecking =
                 then 
                     // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
                     if reqdSlot.HasDefaultInterfaceImplementation then
-                        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))

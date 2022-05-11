@@ -6,6 +6,7 @@ open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
+
 #nowarn "57"
 
 /// Represents encoded information for the end-of-line continuation of lexing

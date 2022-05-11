@@ -711,7 +711,7 @@ let internal checkLanguageFeatureError langVersion langFeature m =
     | Some e -> error e
     | None -> ()
 
-let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
+let internal checkLanguageFeatureAndRecover langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
     | Some e -> errorR e
     | None -> ()

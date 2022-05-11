@@ -383,7 +383,7 @@ val NormalizeErrorString: text: string -> string
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
-val checkLanguageFeatureErrorRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
