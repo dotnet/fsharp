@@ -17,7 +17,7 @@ let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString l
 
 let fail (args : LexArgs) (lexbuf:UnicodeLexing.Lexbuf) e =
      let m = lexbuf.LexemeRange
-     args.errorLogger.ErrorR(Error(e,m))
+     args.diagnosticsLogger.ErrorR(Error(e,m))
      PPParser.EOF
 }
 

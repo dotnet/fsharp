@@ -328,14 +328,11 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
                 match e with
                 | NLambdas nargs (vs, e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
                 | _ -> combL "NewDelegate" [typeL ty; expr e]
-        //| CombTerm(_, args) -> combL "??" (exprs args)
         | VarTerm v -> wordL (tagLocal v.Name)
         | LambdaTerm(v, b) -> combL "Lambda" [varL v; expr b]
         | HoleTerm _ -> wordL (tagLocal "_")
         | CombTerm(QuoteOp _, args) -> combL "Quote" (exprs args)
-        | _ -> failwithf "Unexpected term in layout %A" x.Tree
-
-
+        | _ -> failwithf "Unexpected term"
 
 and [<CompiledName("FSharpExpr`1")>]
     Expr<'T>(term:Tree, attribs) =
@@ -1411,7 +1408,7 @@ module Patterns =
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
             match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with
             | Some ty -> ty
-            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName)) // "Available types are:\n%A" tcName assembly (assembly.GetTypes() |> Array.map (fun a -> a.FullName))
+            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName))
         | ty -> ty
 
     let decodeNamedTy genericType tsR = mkNamedType (genericType, tsR)
@@ -1711,7 +1708,7 @@ module Patterns =
                     if minfo.IsStatic then StaticMethodCallWOp(minfo, minfoW, n)
                     else InstanceMethodCallWOp(minfo, minfoW, n))
             // 51 taken above
-            | _ -> failwithf "u_constSpec, unrecognized tag %d" tag
+            | _ -> failwith ("u_constSpec, unrecognized tag " + string tag)
         Unique constSpec
 
     let u_ReflectedDefinition = u_tup2 u_MethodBase u_Expr

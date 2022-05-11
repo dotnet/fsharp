@@ -31,16 +31,37 @@ val NewErrorType: unit -> TType
 val NewErrorMeasure: unit -> Measure
 
 /// Create a list of inference type variables, one for each element in the input list
-val NewInferenceTypes: TcGlobals -> 'a list -> TType list
+val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars: range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenAndFixupTypars:
+    m: range -> rigid: TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInstantiation * TType list
 
-val FreshenTypeInst: range -> Typars -> Typars * TyparInst * TType list
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns
+///   1. the new type parameters
+///   2. the instantiation mapping old type parameters to inference variables
+///   3. the inference type variables as a list of types.
+val FreshenTypeInst: range -> Typars -> Typars * TyparInstantiation * TType list
 
+/// Given a set of type parameters, make new inference type variables for
+/// each and ensure that the constraints on the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
 val FreshenTypars: range -> Typars -> TType list
 
+/// Given a method, which may be generic, make new inference type variables for
+/// its generic parameters, and ensure that the constraints the new type variables are adjusted.
+///
+/// Returns the inference type variables as a list of types.
 val FreshenMethInfo: range -> MethInfo -> TType list
 
 /// Information about the context of a type equation.

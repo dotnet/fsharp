@@ -6,7 +6,7 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
-val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
+val DetupleImplFile: CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile
 
 module GlobalUsageAnalysis =
     val GetValsBoundInExpr: Expr -> Zset<Val>
@@ -32,4 +32,4 @@ module GlobalUsageAnalysis =
           /// top of expr toplevel? (true)
           IterationIsAtTopLevel: bool }
 
-    val GetUsageInfoOfImplFile: TcGlobals -> TypedImplFile -> Results
+    val GetUsageInfoOfImplFile: TcGlobals -> CheckedImplFile -> Results

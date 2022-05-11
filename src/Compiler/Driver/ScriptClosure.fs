@@ -117,7 +117,7 @@ module ScriptPreprocessClosure =
             tcConfig: TcConfig,
             codeContext,
             lexResourceManager: Lexhelp.LexResourceManager,
-            errorLogger: DiagnosticsLogger
+            diagnosticsLogger: DiagnosticsLogger
         ) =
 
         // fsc.exe -- COMPILED\!INTERACTIVE
@@ -139,7 +139,7 @@ module ScriptPreprocessClosure =
 
         // The root compiland is last in the list of compilands.
         let isLastCompiland = (IsScript fileName, tcConfig.target.IsExe)
-        ParseOneInputLexbuf (tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, errorLogger)
+        ParseOneInputLexbuf (tcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger)
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig
@@ -185,8 +185,8 @@ module ScriptPreprocessClosure =
 
             match basicReferences with
             | None ->
-                let errorLogger = CapturingDiagnosticsLogger("ScriptDefaultReferences")
-                use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                let diagnosticsLogger = CapturingDiagnosticsLogger("ScriptDefaultReferences")
+                use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> diagnosticsLogger)
                 let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences useFsiAuxLib
 
                 // If the user requested .NET Core scripting but something went wrong and we reverted to
@@ -198,7 +198,7 @@ module ScriptPreprocessClosure =
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)
 
-                errorLogger.Diagnostics
+                diagnosticsLogger.Diagnostics
 
             | Some (rs, diagnostics) ->
                 for m, reference in rs do
@@ -357,13 +357,13 @@ module ScriptPreprocessClosure =
                     //printfn "visiting %s" fileName
                     if IsScript fileName || parseRequired then
                         let parseResult, parseDiagnostics =
-                            let errorLogger = CapturingDiagnosticsLogger("FindClosureParse")
-                            use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptClosureInput (fileName, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger)
-                            result, errorLogger.Diagnostics
+                            let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureParse")
+                            use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> diagnosticsLogger)
+                            let result = ParseScriptClosureInput (fileName, sourceText, tcConfig, codeContext, lexResourceManager, diagnosticsLogger)
+                            result, diagnosticsLogger.Diagnostics
 
-                        let errorLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
-                        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
+                        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> diagnosticsLogger)
                         let pathOfMetaCommandSource = Path.GetDirectoryName fileName
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
@@ -382,7 +382,7 @@ module ScriptPreprocessClosure =
                                     yield! loop subSource
                             else
                                 yield ClosureFile(subFile, m, None, [], [], [])
-                        yield ClosureFile(fileName, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+                        yield ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics, noWarns)
 
                     else
                         // Don't traverse into .fs leafs.
@@ -429,12 +429,12 @@ module ScriptPreprocessClosure =
 
         // Resolve all references.
         let references, unresolvedReferences, resolutionDiagnostics =
-            let errorLogger = CapturingDiagnosticsLogger("GetLoadClosure")
+            let diagnosticsLogger = CapturingDiagnosticsLogger("GetLoadClosure")
 
-            use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+            use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> diagnosticsLogger)
             let references, unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
             let references = references |> List.map (fun ar -> ar.resolvedPath, ar)
-            references, unresolvedReferences, errorLogger.Diagnostics
+            references, unresolvedReferences, diagnosticsLogger.Diagnostics
 
         // Root errors and warnings - look at the last item in the closureFiles list
         let loadClosureRootDiagnostics, allRootDiagnostics =

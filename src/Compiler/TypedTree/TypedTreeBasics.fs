@@ -74,20 +74,6 @@ let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 
 //---------------------------------------------------------------------------
-// Aggregate operations to help transform the components that 
-// make up the entire compilation unit
-//---------------------------------------------------------------------------
-
-let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
-    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
-
-let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
-    let moduleExpr, z = f z moduleExpr
-    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode), z
-
-let foldTImplFile f z (TImplFile (implExprWithSig= moduleExpr)) = f z moduleExpr
-
-//---------------------------------------------------------------------------
 // Equality relations on locally defined things 
 //---------------------------------------------------------------------------
 

@@ -663,7 +663,7 @@ module LeafExpressionConverter =
             failConvert inp
 
     and failConvert inp =
-            raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
+        raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%s\n-------------\n" (inp.ToString())))
 
     and transBinOp inp env addConvertLeft args addConvertRight (exprErasedConstructor : _ * _ -> _) =
         match args with 

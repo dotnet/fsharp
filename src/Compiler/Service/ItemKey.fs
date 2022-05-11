@@ -180,8 +180,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         eref.CompilationPath.MangledPath
         |> List.iter (fun str -> writeString str)
 
-    let rec writeILType (ilty: ILType) =
-        match ilty with
+    let rec writeILType (ilTy: ILType) =
+        match ilTy with
         | ILType.TypeVar n ->
             writeString "!"
             writeUInt16 n

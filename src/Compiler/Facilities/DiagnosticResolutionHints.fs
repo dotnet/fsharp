@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to format error message details
-module internal FSharp.Compiler.ErrorResolutionHints
+module internal FSharp.Compiler.DiagnosticResolutionHints
 
 open Internal.Utilities
 open Internal.Utilities.Library
@@ -19,7 +19,7 @@ let minStringLengthForSuggestion = 3
 /// We report a candidate if its edit distance is <= the threshold.
 /// The threshold is set to about a quarter of the number of characters.
 let IsInEditDistanceProximity idText suggestion =
-    let editDistance = EditDistance.CalcEditDistance(idText, suggestion)
+    let editDistance = EditDistance.CalculateEditDistance(idText, suggestion)
     let threshold =
         match idText.Length with
         | x when x < 5 -> 1

@@ -45,7 +45,7 @@ let code_instr2instr_ty2ty (finstr,fTy) (code: ILCode) =
         [ for exnSpec in codeR.Exceptions do
             let clause =
                 match exnSpec.Clause with
-                | ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fTy ilty, b)
+                | ILExceptionClause.TypeCatch (ilTy, b) -> ILExceptionClause.TypeCatch (fTy ilTy, b)
                 | cl -> cl
             { exnSpec with Clause = clause } ]
     { codeR with Exceptions = exnSpecsR }

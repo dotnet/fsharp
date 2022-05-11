@@ -14,55 +14,61 @@ exception Accept of obj
 
 [<Sealed>]
 type internal IParseState(ruleStartPoss:Position[], ruleEndPoss:Position[], lhsPos:Position[], ruleValues:obj[], lexbuf:LexBuffer<char>) = 
-    member p.LexBuffer = lexbuf
+    member _.LexBuffer = lexbuf
 
-    member p.InputRange index = ruleStartPoss[index-1], ruleEndPoss[index-1]
+    member _.InputRange index = ruleStartPoss[index-1], ruleEndPoss[index-1]
 
-    member p.InputStartPosition index = ruleStartPoss[index-1]
+    member _.InputStartPosition index = ruleStartPoss[index-1]
 
-    member p.InputEndPosition index = ruleEndPoss[index-1]
+    member _.InputEndPosition index = ruleEndPoss[index-1]
 
-    member p.ResultStartPosition    = lhsPos[0]
+    member _.ResultStartPosition = lhsPos[0]
 
-    member p.ResultEndPosition    = lhsPos[1]
+    member _.ResultEndPosition = lhsPos[1]
 
-    member p.GetInput index    = ruleValues[index-1]        
+    member _.GetInput index = ruleValues[index-1]        
 
-    member p.ResultRange    = (lhsPos[0], lhsPos[1])  
+    member _.ResultRange = (lhsPos[0], lhsPos[1])  
 
     // Side note: this definition coincidentally tests the fairly complex logic associated with an object expression implementing a generic abstract method.
-    member p.RaiseError()  = raise RecoverableParseError 
-
+    member _.RaiseError() = raise RecoverableParseError 
 
 /// This context is passed to the error reporter when a syntax error occurs
 [<Sealed>]
-type internal ParseErrorContext<'tok>
+type internal ParseErrorContext<'Token>
          (//lexbuf: LexBuffer<_>,
           stateStack:int list,
-          parseState: IParseState, 
-          reduceTokens: int list, 
-          currentToken: 'tok option, 
+          parseState: IParseState,
+          reduceTokens: int list,
+          currentToken: 'Token option,
           reducibleProductions: int list list, 
-          shiftableTokens: int list , 
+          shiftableTokens: int list,
           message : string) =
-      //member x.LexBuffer = lexbuf
-      member x.StateStack  = stateStack
-      member x.ReduceTokens = reduceTokens
-      member x.CurrentToken = currentToken
-      member x.ParseState = parseState
-      member x.ReducibleProductions = reducibleProductions
-      member x.ShiftTokens = shiftableTokens
-      member x.Message = message
 
+      //member _.LexBuffer = lexbuf
+
+      member _.StateStack = stateStack
+
+      member _.ReduceTokens = reduceTokens
+
+      member _.CurrentToken = currentToken
+
+      member _.ParseState = parseState
+
+      member _.ReducibleProductions = reducibleProductions
+
+      member _.ShiftTokens = shiftableTokens
+
+      member _.Message = message
 
 //-------------------------------------------------------------------------
 // This is the data structure emitted as code by FSYACC.  
 
-type internal Tables<'tok> = 
+type internal Tables<'Token> = 
     { reductions: (IParseState -> obj)[]
       endOfInputTag: int
-      tagOfToken: 'tok -> int
-      dataOfToken: 'tok -> obj 
+      tagOfToken: 'Token -> int
+      dataOfToken: 'Token -> obj 
       actionTableElements: uint16[]  
       actionTableRowOffsets: uint16[]
       reductionSymbolCounts: uint16[]
@@ -72,10 +78,11 @@ type internal Tables<'tok> =
       stateToProdIdxsTableElements: uint16[]  
       stateToProdIdxsTableRowOffsets: uint16[]  
       productionToNonTerminalTable: uint16[]
-      /// For <c>fsyacc.exe</c>, this entry is filled in by context from the generated parser file. If no 'parse_error' function
-      /// is defined by the user then <c>ParseHelpers.parse_error</c> is used by default (ParseHelpers is opened
+
+      /// For fsyacc.exe, this entry is filled in by context from the generated parser file. If no 'parse_error' function
+      /// is defined by the user then ParseHelpers.parse_error is used by default (ParseHelpers is opened
       /// at the top of the generated parser file)
-      parseError:  ParseErrorContext<'tok> -> unit
+      parseError:  ParseErrorContext<'Token> -> unit
       numTerminals: int
       tagOfErrorTerminal: int }
 
@@ -85,7 +92,7 @@ type internal Tables<'tok> =
 // This type is in <c>System.dll</c> so for the moment we can't use it in <c>FSharp.Core.dll</c>
 // type Stack<'a> = System.Collections.Generic.Stack<'a>
 
-type Stack<'a>(n)  = 
+type Stack<'a>(n) = 
     let mutable contents = Array.zeroCreate<'a>(n)
     let mutable count = 0
 
@@ -173,7 +180,7 @@ module internal Implementation =
 
         // Read all entries in the association table
         // Used during error recovery to find all valid entries in the table
-        member x.ReadAll(n) =       
+        member _.ReadAll(n) =       
             let headOfTable = int offsetTab[n]
             let firstElemNumber = headOfTable + 1           
             let numberOfElementsInAssoc = int32 elemTab[headOfTable*2]           
@@ -184,7 +191,7 @@ module internal Implementation =
     type IdxToIdxListTable(elemTab:uint16[], offsetTab:uint16[]) =
 
         // Read all entries in a row of the table
-        member x.ReadAll(n) =       
+        member _.ReadAll(n) =       
             let headOfTable = int offsetTab[n]
             let firstElemNumber = headOfTable + 1           
             let numberOfElements = int32 elemTab[headOfTable]           
@@ -201,7 +208,7 @@ module internal Implementation =
         val endPos: Position
         new(value,startPos,endPos) = { value=value; startPos=startPos;endPos=endPos }
 
-    let interpret (tables: Tables<'tok>) lexer (lexbuf : LexBuffer<_>) initialState =                                                                      
+    let interpret (tables: Tables<'Token>) lexer (lexbuf : LexBuffer<_>) initialState =                                                                      
 #if DEBUG
         if Flags.debug then Console.WriteLine("\nParser: interpret tables")
 #endif
@@ -209,7 +216,7 @@ module internal Implementation =
         stateStack.Push(initialState)
         let valueStack = Stack<ValueInfo>(100)
         let mutable haveLookahead = false                                                                              
-        let mutable lookaheadToken = Unchecked.defaultof<'tok>
+        let mutable lookaheadToken = Unchecked.defaultof<'Token>
         let mutable lookaheadEndPos = Unchecked.defaultof<Position>
         let mutable lookaheadStartPos = Unchecked.defaultof<Position>
         let mutable finished = false
@@ -227,9 +234,9 @@ module internal Implementation =
         let mutable eofCountDown = 20 // Number of EOFs to supply at the end for error recovery
         // The 100 here means a maximum of 100 elements for each rule
         let ruleStartPoss = (Array.zeroCreate 100 : Position[])              
-        let ruleEndPoss   = (Array.zeroCreate 100 : Position[])              
-        let ruleValues    = (Array.zeroCreate 100 : obj[])              
-        let lhsPos        = (Array.zeroCreate 2 : Position[])                                            
+        let ruleEndPoss = (Array.zeroCreate 100 : Position[])              
+        let ruleValues = (Array.zeroCreate 100 : obj[])              
+        let lhsPos     = (Array.zeroCreate 2 : Position[])                                            
         let reductions = tables.reductions
         let cacheSize = 7919 // the 1000'th prime
         // Use a simpler hash table with faster lookup, but only one
@@ -479,7 +486,7 @@ module internal Implementation =
                                     if not (explicit.Contains(tag)) then 
                                          yield tag ] in
                         //let activeRules = stateStack |> List.iter (fun state -> 
-                        let errorContext = new ParseErrorContext<'tok>(stateStack, parseState, reduceTokens, currentToken, reducibleProductions, shiftableTokens, "syntax error")
+                        let errorContext = new ParseErrorContext<'Token>(stateStack, parseState, reduceTokens, currentToken, reducibleProductions, shiftableTokens, "syntax error")
                         tables.parseError(errorContext)
                         popStackUntilErrorShifted(None)
                         errorSuppressionCountDown <- 3
@@ -497,7 +504,7 @@ module internal Implementation =
         // OK, we're done - read off the overall generated value
         valueStack.Peep().value
 
-type internal Tables<'tok> with
+type internal Tables<'Token> with
     member tables.Interpret (lexer, lexbuf, initialState) = 
         Implementation.interpret tables lexer lexbuf initialState
     

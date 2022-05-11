@@ -417,7 +417,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
         // transferred to the r.h.s. are not yet compiled.
         //
         // TODO: remove this limitation
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
+        | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
             let tglArray =
                 targets
@@ -449,7 +449,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                         let gtg = TTarget(vs, generate, Some flags)
                                         gtg, dispose, checkDispose)
                                   |> List.unzip3
-                            let generate = primMkMatch (spBind, exprm, pt, Array.ofList gtgs, m, ty)
+                            let generate = primMkMatch (spBind, mExpr, pt, Array.ofList gtgs, m, ty)
                             let dispose = if isNil disposals then mkUnit g m else List.reduce (mkSequential m) disposals
                             let checkDispose = if isNil checkDisposes then mkFalse g m else List.reduce (mkSequential m) checkDisposes
                             generate, dispose, checkDispose)

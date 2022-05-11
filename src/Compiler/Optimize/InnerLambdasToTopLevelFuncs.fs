@@ -839,7 +839,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let envp = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp", string)
         let name = f.LogicalName (* + "_TLR_" + string wf *)
         let m = f.Range
-        let tps, tau = f.TypeScheme
+        let tps, tau = f.GeneralizedType
         let argTys, retTy = stripFunTy g tau
         let newTps = envp.ep_etps @ tps
 
@@ -1166,13 +1166,13 @@ module Pass4_RewriteAssembly =
 
         // Lifting TLR out over constructs (disabled)
         // Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
-        | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
+        | Expr.Match (spBind, mExpr, dtree, targets, m, ty) ->
             let targets = Array.toList targets
             let dtree, z = TransDecisionTree penv z dtree
             let targets, z = List.mapFold (TransDecisionTreeTarget penv) z targets
             // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs 
             let pds,z = ExtractPreDecs z
-            MakePreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets), z
+            MakePreDecs m pds (mkAndSimplifyMatch spBind mExpr m ty dtree targets), z
 
         // all others - below - rewrite structurally - so boiler plate code after this point... 
         | Expr.Const _ -> 
@@ -1256,12 +1256,12 @@ module Pass4_RewriteAssembly =
                  let e = mkLetsFromBindings m rebinds e
                  MakePreDecs m pds (mkLetsFromBindings m binds e), z))
 
-         | LinearMatchExpr (spBind, exprm, dtree, tg1, e2, m2, ty) ->
+         | LinearMatchExpr (spBind, mExpr, dtree, tg1, e2, m2, ty) ->
              let dtree, z = TransDecisionTree penv z dtree
              let tg1, z = TransDecisionTreeTarget penv z tg1
              // tailcall
              TransLinearExpr penv z e2 (contf << (fun (e2, z) ->
-                 rebuildLinearMatchExpr (spBind, exprm, dtree, tg1, e2, m2, ty), z))
+                 rebuildLinearMatchExpr (spBind, mExpr, dtree, tg1, e2, m2, ty), z))
 
          | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
              let argsHead,z = List.mapFold (TransExpr penv) z argsHead
@@ -1315,15 +1315,7 @@ module Pass4_RewriteAssembly =
 
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
 
-    and TransModuleExpr penv z x =
-        match x with
-        | ModuleOrNamespaceContentsWithSig(mty, def, m) ->
-            let def, z = TransModuleDef penv z def
-            ModuleOrNamespaceContentsWithSig(mty, def, m), z
-
-    and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
-
-    and TransModuleDef penv (z: RewriteState) x: ModuleOrNamespaceContents * RewriteState =
+    and TransModuleContents penv (z: RewriteState) x: ModuleOrNamespaceContents * RewriteState =
         match x with
         | TMDefRec(isRec, opens, tycons, mbinds, m) ->
             let mbinds, z = TransModuleBindings penv z mbinds
@@ -1335,13 +1327,10 @@ module Pass4_RewriteAssembly =
             let _bind, z = TransExpr penv z e
             TMDefDo(e, m), z
         | TMDefs defs   ->
-            let defs, z = TransModuleDefs penv z defs
+            let defs, z = List.mapFold (TransModuleContents penv) z defs
             TMDefs defs, z
         | TMDefOpens _ ->
             x, z
-        | TMWithSig mexpr ->
-            let mexpr, z = TransModuleExpr penv z mexpr
-            TMWithSig mexpr, z
 
     and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
 
@@ -1351,12 +1340,12 @@ module Pass4_RewriteAssembly =
             let bind, z = TransValBinding penv z bind
             ModuleOrNamespaceBinding.Binding bind, z
         | ModuleOrNamespaceBinding.Module(nm, rhs) ->
-            let rhs, z = TransModuleDef penv z rhs
+            let rhs, z = TransModuleContents penv z rhs
             ModuleOrNamespaceBinding.Module(nm, rhs), z
 
-    let TransImplFile penv z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
-        let moduleExpr, z = TransModuleExpr penv z moduleExpr
-        (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)), z
+    let TransImplFile penv z (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
+        let contentsR, z = TransModuleContents penv z contents
+        (CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)), z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr

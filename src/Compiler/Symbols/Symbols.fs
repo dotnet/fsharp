@@ -1681,7 +1681,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | E e -> e.GetDelegateType(cenv.amap, range0)
             | P p -> p.GetPropertyType(cenv.amap, range0)
             | M m | C m -> 
-                let retTy = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
                 let argTysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                 mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argTysl) retTy
             | V v -> v.TauType
@@ -2041,7 +2041,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V v -> 
         match v.ValReprInfo with 
         | None ->
-            let _, tau = v.TypeScheme
+            let _, tau = v.GeneralizedType
             if isFunTy cenv.g tau then
                 let argTysl, _typ = stripFunTy cenv.g tau
                 [ for ty in argTysl do
@@ -2088,12 +2088,12 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt) 
         | M m | C m -> 
             // INCOMPLETENESS: Attribs is empty here, so we can't look at return attributes for .NET or F# methods
-            let retTy = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+            let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
             FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt) 
         | V v -> 
         match v.ValReprInfo with 
         | None ->
-            let _, tau = v.TypeScheme
+            let _, tau = v.GeneralizedType
             let _argTysl, retTy = stripFunTy cenv.g tau
             FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt)
         | Some (ValReprInfo(_typars, argInfos, retInfo)) -> 
@@ -2242,7 +2242,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 | E e -> e.GetDelegateType(cenv.amap, range0)
                 | P p -> p.GetPropertyType(cenv.amap, range0)
                 | M m | C m -> 
-                    let retTy = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                    let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
                     let argTysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                     mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argTysl) retTy
                 | V v -> v.TauType
@@ -2260,7 +2260,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | P _
             | C _ -> None
             | M m ->
-                let retTy = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
                 NicePrint.layoutType (displayContext.Contents cenv.g) retTy
                 |> LayoutRender.toArray
                 |> Some

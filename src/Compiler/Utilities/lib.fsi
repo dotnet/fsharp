@@ -227,7 +227,7 @@ module Zset =
 val equalOn: f: ('a -> 'b) -> x: 'a -> y: 'a -> bool when 'b: equality
 
 /// Buffer printing utility
-val bufs: f: (StringBuilder -> unit) -> string
+val buildString: f: (StringBuilder -> unit) -> string
 
 /// Writing to output stream via a string buffer.
 val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> 'a -> unit) -> x: 'a -> unit

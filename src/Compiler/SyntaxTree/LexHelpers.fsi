@@ -32,11 +32,11 @@ type LexResourceManager =
 type LexArgs =
     { conditionalDefines: string list
       resourceManager: LexResourceManager
-      errorLogger: DiagnosticsLogger
+      diagnosticsLogger: DiagnosticsLogger
       applyLineDirectives: bool
       pathMap: PathMap
       mutable ifdefStack: LexerIfdefStack
-      mutable lightStatus: IndentationAwareSyntaxStatus
+      mutable indentationSyntaxStatus: IndentationAwareSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting }
 
 type LongUnicodeLexResult =
@@ -48,10 +48,10 @@ val resetLexbufPos: string -> Lexbuf -> unit
 
 val mkLexargs:
     conditionalDefines: string list *
-    lightStatus: IndentationAwareSyntaxStatus *
+    indentationSyntaxStatus: IndentationAwareSyntaxStatus *
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
-    errorLogger: DiagnosticsLogger *
+    diagnosticsLogger: DiagnosticsLogger *
     pathMap: PathMap ->
         LexArgs
 

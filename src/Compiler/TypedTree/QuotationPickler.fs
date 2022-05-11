@@ -17,7 +17,7 @@ type NamedTypeData =
     | Named of tcName: string * tcAssembly: string
 
 type TypeCombOp =
-    | ArrayTyOp of int (* rank *)
+    | ArrayTyOp of rank: int
     | FunTyOp
     | NamedTyOp of NamedTypeData
 
@@ -34,20 +34,20 @@ let mkArrayTy (n, x) = AppType(ArrayTyOp n, [x])
 let mkILNamedTy (r, l) = AppType(NamedTyOp r, l)
 
 type CtorData =
-    { ctorParent: NamedTypeData
-      ctorArgTypes: TypeData list; }
+    { Parent: NamedTypeData
+      ArgTypes: TypeData list }
 
 type MethodData =
-    { methParent: NamedTypeData
-      methName: string
-      methArgTypes: TypeData list
-      methRetType: TypeData
-      numGenericArgs: int }
+    { Parent: NamedTypeData
+      Name: string
+      ArgTypes: TypeData list
+      RetType: TypeData
+      NumGenericArgs: int }
 
-type VarData =
-    { vText: string
-      vType: TypeData
-      vMutable: bool }
+type ValData =
+    { Name: string
+      Type: TypeData
+      IsMutable: bool }
 
 type PropInfoData = NamedTypeData * string * TypeData * TypeData list
 
@@ -109,7 +109,7 @@ type ExprData =
     | CombExpr of CombOp * TypeData list * ExprData list
     | VarExpr of int
     | QuoteExpr of ExprData
-    | LambdaExpr of VarData * ExprData
+    | LambdaExpr of ValData * ExprData
     | HoleExpr of TypeData * int
     | ThisVarExpr of TypeData
     | QuoteRawExpr of ExprData
@@ -242,8 +242,6 @@ let isAttributedExpression e = match e with AttrExpr _ -> true | _ -> false
 //---------------------------------------------------------------------------
 
 let SerializedReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
-
-let freshVar (n, ty, mut) = { vText=n; vType=ty; vMutable=mut }
 
 /// Arbitrary value
 [<Literal>]
@@ -415,17 +413,17 @@ let rec p_type x st =
 
 and p_types x st = p_list p_type x st
 
-let p_varDecl v st = p_tup3 p_string p_type p_bool (v.vText, v.vType, v.vMutable) st
+let p_varDecl (v: ValData) st = p_tup3 p_string p_type p_bool (v.Name, v.Type, v.IsMutable) st
 
 let p_recdFieldSpec v st = p_tup2 p_NamedType p_string v st
 
 let p_ucaseSpec v st = p_tup2 p_NamedType p_string v st
 
-let p_MethodData a st =
-    p_tup5 p_NamedType p_types p_type p_string p_int (a.methParent, a.methArgTypes, a.methRetType, a.methName, a.numGenericArgs) st
+let p_MethodData (a: MethodData) st =
+    p_tup5 p_NamedType p_types p_type p_string p_int (a.Parent, a.ArgTypes, a.RetType, a.Name, a.NumGenericArgs) st
 
-let p_CtorData a st =
-    p_tup2 p_NamedType p_types (a.ctorParent, a.ctorArgTypes) st
+let p_CtorData (a: CtorData) st =
+    p_tup2 p_NamedType p_types (a.Parent, a.ArgTypes) st
 
 let p_PropInfoData a st =
     p_tup4 p_NamedType p_string p_type p_types a st

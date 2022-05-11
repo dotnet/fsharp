@@ -456,7 +456,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> List.map (fun ilty -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilty), m) )
+            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) )
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m) :: constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m) :: constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m) :: constraints) else constraints
@@ -649,9 +649,9 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
 //-------------------------------------------------------------------------
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
-let RescopeAndImportILType scoref amap m importInst ilty =
-    ilty |> rescopeILType scoref |>  ImportILType amap m importInst
+let RescopeAndImportILType scoref amap m importInst ilTy =
+    ilTy |> rescopeILType scoref |>  ImportILType amap m importInst
 
-let CanRescopeAndImportILType scoref amap m ilty =
-    ilty |> rescopeILType scoref |>  CanImportILType amap m
+let CanRescopeAndImportILType scoref amap m ilTy =
+    ilTy |> rescopeILType scoref |>  CanImportILType amap m
 

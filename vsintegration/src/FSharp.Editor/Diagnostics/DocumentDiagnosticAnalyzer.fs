@@ -27,8 +27,9 @@ type internal FSharpDocumentDiagnosticAnalyzer
     (
     ) =
 
-    static let errorInfoEqualityComparer =
+    static let diagnosticEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with 
+
             member _.Equals (x, y) =
                 x.FileName = y.FileName &&
                 x.StartLine = y.StartLine &&
@@ -39,6 +40,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 x.Message = y.Message &&
                 x.Subcategory = y.Subcategory &&
                 x.ErrorNumber = y.ErrorNumber
+
             member _.GetHashCode x =
                 let mutable hash = 17
                 hash <- hash * 23 + x.StartLine.GetHashCode()
@@ -67,22 +69,22 @@ type internal FSharpDocumentDiagnosticAnalyzer
                     | DiagnosticsType.Semantic ->
                         let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
                         // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                        let allErrors = HashSet(checkResults.Diagnostics, errorInfoEqualityComparer)
-                        allErrors.ExceptWith(parseResults.Diagnostics)
-                        return Seq.toArray allErrors
+                        let allDiagnostics = HashSet(checkResults.Diagnostics, diagnosticEqualityComparer)
+                        allDiagnostics.ExceptWith(parseResults.Diagnostics)
+                        return Seq.toArray allDiagnostics
                     | DiagnosticsType.Syntax ->
                         return parseResults.Diagnostics
                 }
             
             let results = 
-                HashSet(errors, errorInfoEqualityComparer)
-                |> Seq.choose(fun error ->
-                    if error.StartLine = 0 || error.EndLine = 0 then
-                        // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
+                HashSet(errors, diagnosticEqualityComparer)
+                |> Seq.choose(fun diagnostic ->
+                    if diagnostic.StartLine = 0 || diagnostic.EndLine = 0 then
+                        // F# diagnostic line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
                         None
                     else
                         // Roslyn line numbers are zero-based
-                        let linePositionSpan = LinePositionSpan(LinePosition(error.StartLine - 1, error.StartColumn), LinePosition(error.EndLine - 1, error.EndColumn))
+                        let linePositionSpan = LinePositionSpan(LinePosition(diagnostic.StartLine - 1, diagnostic.StartColumn), LinePosition(diagnostic.EndLine - 1, diagnostic.EndColumn))
                         let textSpan = sourceText.Lines.GetTextSpan(linePositionSpan)
                         
                         // F# compiler report errors at end of file if parsing fails. It should be corrected to match Roslyn boundaries
@@ -97,7 +99,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
                                 TextSpan.FromBounds(start, sourceText.Length)
                         
                         let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                        Some(RoslynHelpers.ConvertError(error, location)))
+                        Some(RoslynHelpers.ConvertError(diagnostic, location)))
                 |> Seq.toImmutableArray
             return results
         }

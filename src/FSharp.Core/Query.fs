@@ -1799,27 +1799,26 @@ module Query =
         let linqQuery = TransInnerWithFinalConsume canElim queryProducingSequence
         let linqQueryAfterEliminatingNestedQueries = EliminateNestedQueries linqQuery
 
-#if DEBUG
-        let debug() =
-              Printf.printfn "----------------------queryProducingSequence-------------------------"
-              Printf.printfn "%A" queryProducingSequence
-              Printf.printfn "--------------------------linqQuery (before nested)------------------"
-              Printf.printfn "%A" linqQuery
-              Printf.printfn "--------------------------linqQuery (after nested)-------------------"
-              Printf.printfn "%A" linqQueryAfterEliminatingNestedQueries
-#endif
-
+//#if DEBUG
+//        let debug() =
+//              Printf.printfn "----------------------queryProducingSequence-------------------------"
+//              Printf.printfn "%A" queryProducingSequence
+//              Printf.printfn "--------------------------linqQuery (before nested)------------------"
+//              Printf.printfn "%A" linqQuery
+//              Printf.printfn "--------------------------linqQuery (after nested)-------------------"
+//              Printf.printfn "%A" linqQueryAfterEliminatingNestedQueries
+//#endif
 
         let result =
            try
               LeafExpressionConverter.EvaluateQuotation linqQueryAfterEliminatingNestedQueries
            with e ->
-#if DEBUG
-              debug()
-              Printf.printfn "--------------------------error--------------------------------------"
-              Printf.printfn "%A" (e.ToString())
-              Printf.printfn "---------------------------------------------------------------------"
-#endif
+//#if DEBUG
+//              debug()
+//              Printf.printfn "--------------------------error--------------------------------------"
+//              Printf.printfn "%A" (e.ToString())
+//              Printf.printfn "---------------------------------------------------------------------"
+//#endif
               reraise ()
 
 

@@ -53,7 +53,7 @@ let GetSuperTypeOfType g amap m ty =
         let tinst = argsOfAppTy g ty
         match tdef.Extends with
         | None -> None
-        | Some ilty -> Some (RescopeAndImportILType scoref amap m tinst ilty)
+        | Some ilTy -> Some (RescopeAndImportILType scoref amap m tinst ilTy)
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         if isFSharpObjModelTy g ty || isFSharpExceptionTy g ty then
@@ -327,12 +327,12 @@ let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor =
     ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
-let ImportILTypeFromMetadata amap m scoref tinst minst ilty =
-    RescopeAndImportILType scoref amap m (tinst@minst) ilty
+let ImportILTypeFromMetadata amap m scoref tinst minst ilTy =
+    RescopeAndImportILType scoref amap m (tinst@minst) ilTy
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
-let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty getCattrs =
-    let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilty
+let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilTy getCattrs =
+    let ty = RescopeAndImportILType scoref amap m (tinst@minst) ilTy
     // If the type is a byref and one of attributes from a return or parameter has IsReadOnly, then it's a inref.
     if isByrefTy amap.g ty && TryFindILAttribute amap.g.attrib_IsReadOnlyAttribute (getCattrs ()) then
         mkInByrefTy amap.g (destByrefTy amap.g ty)
@@ -340,13 +340,13 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst ilty getCat
         ty
 
 /// Get the parameter type of an IL method.
-let ImportParameterTypeFromMetadata amap m ilty getCattrs scoref tinst mist =
-    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilty getCattrs
+let ImportParameterTypeFromMetadata amap m ilTy getCattrs scoref tinst mist =
+    ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist ilTy getCattrs
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m ilty getCattrs scoref tinst minst =
-    match ilty with
+let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
+    match ilTy with
     | ILType.Void -> None
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
 

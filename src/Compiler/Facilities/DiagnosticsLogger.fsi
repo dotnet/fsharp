@@ -77,11 +77,11 @@ exception DiagnosticWithSuggestions of
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
 
-val inline protectAssemblyExploration: dflt: 'a -> f: (unit -> 'a) -> 'a
+val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 
-val inline protectAssemblyExplorationF: dflt: (string * string -> 'a) -> f: (unit -> 'a) -> 'a
+val inline protectAssemblyExplorationF: dflt: (string * string -> 'T) -> f: (unit -> 'T) -> 'T
 
-val inline protectAssemblyExplorationNoReraise: dflt1: 'a -> dflt2: 'a -> f: (unit -> 'a) -> 'a
+val inline protectAssemblyExplorationNoReraise: dflt1: 'T -> dflt2: 'T -> f: (unit -> 'T) -> 'T
 
 val AttachRange: m: range -> exn: exn -> exn
 
@@ -173,7 +173,7 @@ type DiagnosticsLogger =
 
     member DebugDisplay: unit -> string
 
-    abstract member DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract member DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     abstract member ErrorCount: int
 
@@ -186,16 +186,16 @@ type CapturingDiagnosticsLogger =
 
     new: nm: string -> CapturingDiagnosticsLogger
 
-    member CommitDelayedDiagnostics: errorLogger: DiagnosticsLogger -> unit
+    member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
-    override DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    override DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
     override ErrorCount: int
 
 [<Class>]
-type CompileThreadStatic =
+type DiagnosticsThreadStatics =
 
     static member BuildPhase: BuildPhase with get, set
 
@@ -209,7 +209,7 @@ module DiagnosticsLoggerExtensions =
     val tryAndDetectDev15: bool
 
     /// Instruct the exception not to reset itself when thrown again.
-    val PreserveStackTrace: exn: 'a -> unit
+    val PreserveStackTrace: exn: 'T -> unit
 
     /// Reraise an exception if it is one we want to report to Watson.
     val ReraiseIfWatsonable: exn: exn -> unit
@@ -220,9 +220,9 @@ module DiagnosticsLoggerExtensions =
 
         member Warning: exn: exn -> unit
 
-        member Error: exn: exn -> 'b
+        member Error: exn: exn -> 'T
 
-        member SimulateError: ph: PhasedDiagnostic -> 'a
+        member SimulateError: diagnostic: PhasedDiagnostic -> 'T
 
         member ErrorRecovery: exn: exn -> m: range -> unit
 
@@ -235,11 +235,11 @@ val PushThreadBuildPhaseUntilUnwind: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 val PushDiagnosticsLoggerPhaseUntilUnwind:
-    errorLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+    diagnosticsLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
-val SetThreadDiagnosticsLoggerNoUnwind: errorLogger: DiagnosticsLogger -> unit
+val SetThreadDiagnosticsLoggerNoUnwind: diagnosticsLogger: DiagnosticsLogger -> unit
 
 /// Reports an error diagnostic and continues
 val errorR: exn: exn -> unit
@@ -248,18 +248,18 @@ val errorR: exn: exn -> unit
 val warning: exn: exn -> unit
 
 /// Reports an error and raises a ReportedError exception
-val error: exn: exn -> 'a
+val error: exn: exn -> 'T
 
 /// Reports an informational diagnostic
 val informationalWarning: exn: exn -> unit
 
-val simulateError: p: PhasedDiagnostic -> 'a
+val simulateError: diagnostic: PhasedDiagnostic -> 'T
 
-val diagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+val diagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
-val errorSink: pe: PhasedDiagnostic -> unit
+val errorSink: diagnostic: PhasedDiagnostic -> unit
 
-val warnSink: pe: PhasedDiagnostic -> unit
+val warnSink: diagnostic: PhasedDiagnostic -> unit
 
 val errorRecovery: exn: exn -> m: range -> unit
 
@@ -267,7 +267,7 @@ val stopProcessingRecovery: exn: exn -> m: range -> unit
 
 val errorRecoveryNoRange: exn: exn -> unit
 
-val report: f: (unit -> 'a) -> 'a
+val report: f: (unit -> 'T) -> 'T
 
 val deprecatedWithError: s: string -> m: range -> unit
 
@@ -281,42 +281,42 @@ val mlCompatWarning: s: string -> m: range -> unit
 
 val mlCompatError: s: string -> m: range -> unit
 
-val suppressErrorReporting: f: (unit -> 'a) -> 'a
+val suppressErrorReporting: f: (unit -> 'T) -> 'T
 
-val conditionallySuppressErrorReporting: cond: bool -> f: (unit -> 'a) -> 'a
+val conditionallySuppressErrorReporting: cond: bool -> f: (unit -> 'T) -> 'T
 
-/// The result type of a computational modality to colelct warnings and possibly fail
+/// The result type of a computational modality to collect warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> =
-    | OkResult of warnings: exn list * 'T
-    | ErrorResult of warnings: exn list * exn
+    | OkResult of warnings: exn list * result: 'T
+    | ErrorResult of warnings: exn list * error: exn
 
 type ImperativeOperationResult = OperationResult<unit>
 
 val ReportWarnings: warns: #exn list -> unit
 
-val CommitOperationResult: res: OperationResult<'a> -> 'a
+val CommitOperationResult: res: OperationResult<'T> -> 'T
 
 val RaiseOperationResult: res: OperationResult<unit> -> unit
 
-val ErrorD: err: exn -> OperationResult<'a>
+val ErrorD: err: exn -> OperationResult<'T>
 
 val WarnD: err: exn -> OperationResult<unit>
 
 val CompleteD: OperationResult<unit>
 
-val ResultD: x: 'a -> OperationResult<'a>
+val ResultD: x: 'T -> OperationResult<'T>
 
-val CheckNoErrorsAndGetWarnings: res: OperationResult<'a> -> (exn list * 'a) option
+val CheckNoErrorsAndGetWarnings: res: OperationResult<'T> -> (exn list * 'T) option
 
-val (++): res: OperationResult<'a> -> f: ('a -> OperationResult<'b>) -> OperationResult<'b>
+val (++): res: OperationResult<'T> -> f: ('T -> OperationResult<'b>) -> OperationResult<'b>
 
 /// Stop on first error. Accumulate warnings and continue.
-val IterateD: f: ('a -> OperationResult<unit>) -> xs: 'a list -> OperationResult<unit>
+val IterateD: f: ('T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
 
 val WhileD: gd: (unit -> bool) -> body: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
-val MapD: f: ('a -> OperationResult<'b>) -> xs: 'a list -> OperationResult<'b list>
+val MapD: f: ('T -> OperationResult<'b>) -> xs: 'T list -> OperationResult<'b list>
 
 type TrackErrorsBuilder =
 
@@ -334,7 +334,7 @@ type TrackErrorsBuilder =
 
     member ReturnFrom: res: 'f -> 'f
 
-    member Run: fn: (unit -> 'a) -> 'a
+    member Run: fn: (unit -> 'T) -> 'T
 
     member While: gd: (unit -> bool) * k: (unit -> OperationResult<unit>) -> OperationResult<unit>
 
@@ -342,34 +342,34 @@ type TrackErrorsBuilder =
 
 val trackErrors: TrackErrorsBuilder
 
-val OptionD: f: ('a -> OperationResult<unit>) -> xs: 'a option -> OperationResult<unit>
+val OptionD: f: ('T -> OperationResult<unit>) -> xs: 'T option -> OperationResult<unit>
 
-val IterateIdxD: f: (int -> 'a -> OperationResult<unit>) -> xs: 'a list -> OperationResult<unit>
+val IterateIdxD: f: (int -> 'T -> OperationResult<unit>) -> xs: 'T list -> OperationResult<unit>
 
 /// Stop on first error. Accumulate warnings and continue.
-val Iterate2D: f: ('a -> 'b -> OperationResult<unit>) -> xs: 'a list -> ys: 'b list -> OperationResult<unit>
+val Iterate2D: f: ('T -> 'b -> OperationResult<unit>) -> xs: 'T list -> ys: 'b list -> OperationResult<unit>
 
-val TryD: f: (unit -> OperationResult<'a>) -> g: (exn -> OperationResult<'a>) -> OperationResult<'a>
+val TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
 
 val RepeatWhileD: nDeep: int -> body: (int -> OperationResult<bool>) -> OperationResult<unit>
 
-val inline AtLeastOneD: f: ('a -> OperationResult<bool>) -> l: 'a list -> OperationResult<bool>
+val inline AtLeastOneD: f: ('T -> OperationResult<bool>) -> l: 'T list -> OperationResult<bool>
 
-val inline AtLeastOne2D: f: ('a -> 'b -> OperationResult<bool>) -> xs: 'a list -> ys: 'b list -> OperationResult<bool>
+val inline AtLeastOne2D: f: ('T -> 'b -> OperationResult<bool>) -> xs: 'T list -> ys: 'b list -> OperationResult<bool>
 
 val inline MapReduceD:
-    mapper: ('a -> OperationResult<'b>) -> zero: 'b -> reducer: ('b -> 'b -> 'b) -> l: 'a list -> OperationResult<'b>
+    mapper: ('T -> OperationResult<'b>) -> zero: 'b -> reducer: ('b -> 'b -> 'b) -> l: 'T list -> OperationResult<'b>
 
 val inline MapReduce2D:
-    mapper: ('a -> 'b -> OperationResult<'c>) ->
+    mapper: ('T -> 'T2 -> OperationResult<'c>) ->
     zero: 'c ->
     reducer: ('c -> 'c -> 'c) ->
-    xs: 'a list ->
-    ys: 'b list ->
+    xs: 'T list ->
+    ys: 'T2 list ->
         OperationResult<'c>
 
 module OperationResult =
-    val inline ignore: res: OperationResult<'a> -> OperationResult<unit>
+    val inline ignore: res: OperationResult<'T> -> OperationResult<unit>
 
 // For --flaterrors flag that is only used by the IDE
 val stringThatIsAProxyForANewlineInFlatErrors: String
@@ -383,13 +383,13 @@ val NormalizeErrorString: text: string -> string
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
-val checkLanguageFeatureErrorRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
+val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit
 
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
 val languageFeatureNotSupportedInLibraryError:
-    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> 'a
+    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
     new: maxDepth: int -> StackGuard
@@ -403,7 +403,7 @@ type StackGuard =
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope =
-    new: errorLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
+    new: diagnosticsLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
     interface IDisposable
 

@@ -5,4 +5,4 @@ module internal FSharp.Compiler.InnerLambdasToTopLevelFuncs
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
-val MakeTopLevelRepresentationDecisions: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
+val MakeTopLevelRepresentationDecisions: CcuThunk -> TcGlobals -> CheckedImplFile -> CheckedImplFile

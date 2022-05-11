@@ -67,7 +67,7 @@ type public FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromExceptionAndAdjustEof:
-        diag: PhasedDiagnostic *
+        diagnostic: PhasedDiagnostic *
         severity: FSharpDiagnosticSeverity *
         range *
         lastPosInFile: (int * int) *
@@ -75,7 +75,8 @@ type public FSharpDiagnostic =
             FSharpDiagnostic
 
     static member internal CreateFromException:
-        diag: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool -> FSharpDiagnostic
+        diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool ->
+            FSharpDiagnostic
 
     /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'),
     /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
@@ -117,7 +118,8 @@ module internal DiagnosticHelpers =
         allErrors: bool *
         mainInputFileName: string *
         fileInfo: (int * int) *
-        (PhasedDiagnostic * FSharpDiagnosticSeverity) *
+        diagnostic: PhasedDiagnostic *
+        severity: FSharpDiagnosticSeverity *
         suggestNames: bool ->
             FSharpDiagnostic list
 

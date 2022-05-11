@@ -161,7 +161,7 @@ module internal Adapters =
             mutableTupleType.MakeGenericType (ty.GetGenericArguments() |> Array.toList |> conv |> Array.ofList)
         | _ -> 
             assert false
-            Printf.failwithf "unreachable, ty = %A" ty
+            failwith "unreachable"
 
     let (|RecordFieldGetSimplification|_|) (expr:Expr) = 
         match expr with 

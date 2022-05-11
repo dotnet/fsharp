@@ -29,21 +29,21 @@ val ApplyAllOptimizations:
     isIncrementalFragment: bool *
     optEnv: IncrementalOptimizationEnv *
     ccu: CcuThunk *
-    implFiles: TypedImplFile list ->
-        TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
+    implFiles: CheckedImplFile list ->
+        CheckedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
 
 val CreateIlxAssemblyGenerator:
     TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
 
 val GenerateIlxCode:
-    IlxGenBackend *
+    ilxBackend: IlxGenBackend *
     isInteractiveItExpr: bool *
     isInteractiveOnMono: bool *
-    TcConfig *
-    TopAttribs *
-    TypedAssemblyAfterOptimization *
+    tcConfig: TcConfig *
+    topAttrs: TopAttribs *
+    optimizedImpls: CheckedAssemblyAfterOptimization *
     fragName: string *
-    IlxAssemblyGenerator ->
+    ilxGenerator: IlxAssemblyGenerator ->
         IlxGenResults
 
 // Used during static linking

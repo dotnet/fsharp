@@ -57,17 +57,6 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val mapTImplFile:
-    f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
-
-val mapAccImplFile:
-    f: ('a -> ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig * 'b) ->
-    z: 'a ->
-    TypedImplFile ->
-        TypedImplFile * 'b
-
-val foldTImplFile: f: ('a -> ModuleOrNamespaceContentsWithSig -> 'b) -> z: 'a -> TypedImplFile -> 'b
-
 val typarEq: lv1: Typar -> lv2: Typar -> bool
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.

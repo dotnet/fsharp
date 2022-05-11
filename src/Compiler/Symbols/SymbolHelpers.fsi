@@ -75,4 +75,4 @@ module internal SymbolHelpers =
 
     val GetXmlCommentForMethInfoItem: infoReader: InfoReader -> m: range -> d: Item -> minfo: MethInfo -> FSharpXmlDoc
 
-    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInst -> Layout list
+    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInstantiation -> Layout list

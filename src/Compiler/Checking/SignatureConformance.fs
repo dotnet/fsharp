@@ -328,8 +328,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             elif implVal.LiteralValue <> sigVal.LiteralValue then (err denv FSComp.SR.ValueNotContainedMutabilityLiteralConstantValuesDiffer)
             elif implVal.IsTypeFunction <> sigVal.IsTypeFunction then (err denv FSComp.SR.ValueNotContainedMutabilityOneIsTypeFunction)
             else 
-                let implTypars, atau = implVal.TypeScheme
-                let sigTypars, ftau = sigVal.TypeScheme
+                let implTypars, atau = implVal.GeneralizedType
+                let sigTypars, ftau = sigVal.GeneralizedType
                 if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) else
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
                 checkTypars m aenv implTypars sigTypars &&
