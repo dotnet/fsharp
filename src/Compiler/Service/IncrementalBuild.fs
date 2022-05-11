@@ -1271,7 +1271,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
         match result with
         | Some (boundModel, timestamp) ->
-            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(filename)
+            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
             Some (PartialCheckResults (boundModel, timestamp, projectTimeStamp))
         | _ -> None
 
@@ -1281,7 +1281,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
         match result with
         | Some (boundModel, timestamp) ->
-            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(filename)
+            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
             Some (PartialCheckResults (boundModel, timestamp, projectTimeStamp))
         | _ -> None
 
@@ -1292,7 +1292,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let slotOfFile = builder.GetSlotOfFileName fileName
         match tryGetBeforeSlot tmpState slotOfFile with
         | Some(boundModel, timestamp) ->
-            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(filename)
+            let projectTimeStamp = builder.GetLogicalTimeStampForFileInProject(fileName)
             Some (PartialCheckResults (boundModel, timestamp, projectTimeStamp))
         | _ -> None
 
