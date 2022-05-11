@@ -848,10 +848,13 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
             OptionSwitch (crossOptimizeSwitch tcConfigB), None,
             Some (FSComp.SR.optsCrossoptimize()))
 
+<<<<<<< HEAD
           CompilerOption
            ("reflectionfree", tagNone,
             OptionUnit (fun () -> tcConfigB.useReflectionFreeCodeGen <- true), None,
             Some (FSComp.SR.optsReflectionFree()))
+=======
+>>>>>>> e063dd2a7005faf953619ab4f232d1e3606c7ed2
         ]
     if isFsi then debug @ codegen
     else debug @ embed @ codegen

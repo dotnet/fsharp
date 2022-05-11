@@ -29,8 +29,8 @@ val ApplyAllOptimizations:
     isIncrementalFragment: bool *
     optEnv: IncrementalOptimizationEnv *
     ccu: CcuThunk *
-    implFiles: TypedImplFile list ->
-        TypedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
+    implFiles: CheckedImplFile list ->
+        CheckedAssemblyAfterOptimization * LazyModuleInfo * IncrementalOptimizationEnv
 
 val CreateIlxAssemblyGenerator:
     TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator
@@ -41,7 +41,7 @@ val GenerateIlxCode:
     isInteractiveOnMono: bool *
     tcConfig: TcConfig *
     topAttrs: TopAttribs *
-    optimizedImpls: TypedAssemblyAfterOptimization *
+    optimizedImpls: CheckedAssemblyAfterOptimization *
     fragName: string *
     ilxGenerator: IlxAssemblyGenerator ->
         IlxGenResults

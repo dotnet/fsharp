@@ -1327,7 +1327,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 runtimeAssemblyAttributes: ILAttribute list,
                 entityToInjectInto, invalidateCcu: Event<_>, m) =
 
-        let startingErrorCount = CompileThreadStatic.DiagnosticsLogger.ErrorCount
+        let startingErrorCount = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
@@ -1454,7 +1454,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     with e ->
                         errorRecovery e m
 
-                if startingErrorCount<CompileThreadStatic.DiagnosticsLogger.ErrorCount then
+                if startingErrorCount<DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount then
                     error(Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting(), m))
 
             providers

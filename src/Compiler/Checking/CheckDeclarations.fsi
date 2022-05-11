@@ -44,7 +44,8 @@ val CombineTopAttrs: TopAttribs -> TopAttribs -> TopAttribs
 val TcOpenModuleOrNamespaceDecl:
     TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> LongIdent * range -> TcEnv * OpenDeclaration list
 
-val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
+val AddLocalSubModule:
+    g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> moduleEntity: ModuleOrNamespace -> TcEnv
 
 val CheckOneImplFile:
     TcGlobals *
@@ -59,7 +60,7 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput ->
-        Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val CheckOneSigFile:
     TcGlobals *

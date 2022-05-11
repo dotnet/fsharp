@@ -140,7 +140,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
-    let tassembly = TypedAssemblyAfterOptimization implFiles
+    let tassembly = CheckedAssemblyAfterOptimization implFiles
     PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
     ReportTime tcConfig "Ending Optimizations"
     tassembly, assemblyOptData, optEnvFirstLoop
@@ -174,7 +174,7 @@ let GenerateIlxCode (
     let ilxGenOpts: IlxGenOptions =
         { generateFilterBlocks = tcConfig.generateFilterBlocks
           emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
-          workAroundReflectionEmitBugs = tcConfig.isInteractive // REVIEW: is this still required?
+          workAroundReflectionEmitBugs = tcConfig.isInteractive
           generateDebugSymbols = tcConfig.debuginfo
           fragName = fragName
           localOptimizationsEnabled= tcConfig.optSettings.LocalOptimizationsEnabled
