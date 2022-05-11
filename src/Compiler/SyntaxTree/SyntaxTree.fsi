@@ -896,6 +896,9 @@ type SynExpr =
     /// Debug points arising from computation expressions
     | DebugPoint of debugPoint: DebugPointAtLeafExpr * isControlFlow: bool * innerExpr: SynExpr
 
+    /// x?k
+    | Dynamic of expr: SynExpr * qmark: range * operation: SynExpr * range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 

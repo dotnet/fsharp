@@ -773,7 +773,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Null _
           | SynExpr.Ident _
           | SynExpr.ImplicitZero _
-          | SynExpr.Const _ -> false
+          | SynExpr.Const _
+          | SynExpr.Dynamic _ -> false
 
           | SynExpr.TypeTest (e, _, _)
           | SynExpr.Upcast (e, _, _)
