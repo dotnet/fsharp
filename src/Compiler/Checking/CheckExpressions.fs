@@ -4263,7 +4263,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv synValSig attrs =
     let g = cenv.g
-    let (SynValSig(ident=SynIdent(id,_); explicitTypars=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
+    let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
@@ -12504,8 +12504,8 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
     let g = cenv.g
 
-    let (SynValSig (attributes=Attributes synAttrs; explicitTypars=explicitTypars; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
-    let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypars
+    let (SynValSig (attributes=Attributes synAttrs; explicitTypeParams=explicitTypeParams; isInline=isInline; isMutable=mutableFlag; xmlDoc=xmlDoc; accessibility=vis; synExpr=literalExprOpt; range=m)) = synValSig
+    let (ValTyparDecls (synTypars, _, synCanInferTypars)) = explicitTypeParams
 
     GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
 
