@@ -2,6 +2,10 @@
 
 This document details more advanced options for developing in this codebase. It is not quite necessary to follow it, but it is likely that you'll find something you'll need from here.
 
+## Documentation
+
+The compiler is documented in [docs](docs/index.md). This is essential reading.
+
 ## Recommended workflow
 
 We recommend the following overall workflow when developing for this repository:
@@ -122,9 +126,7 @@ Running any of the above will build the latest changes and run tests against the
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
 ```shell
-pushd src\fsharp\FSharp.Compiler.Service
-msbuild FSharp.Compiler.Service.fsproj /t:UpdateXlf
-popd
+dotnet build src\Compiler /t:UpdateXlf
 ```
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
@@ -152,13 +154,13 @@ export TEST_UPDATE_BSL=1
 Some of the code in this repository is formatted automatically by [Fantomas](https://github.com/fsprojects/fantomas). To format all files use:
 
 ```cmd
-dotnet fantomas src/fsharp -r
+dotnet fantomas src -r
 ```
 
 The formatting is checked automatically by CI:
 
 ```cmd
-dotnet fantomas src/fsharp -r --check
+dotnet fantomas src -r --check
 ```
 
 At the time of writing only a subset of signature files (`*.fsi`) are formatted. See the settings in `.fantomasignore` and `.editorconfig`.
@@ -239,6 +241,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 ### Example benchmark setup using [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet)
 
 1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
+
 2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
 
       ```shell
@@ -251,13 +254,13 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     ```shell
     cd FcsBench
     dotnet add package BenchmarkDotNet
-    dotnet add reference ..\..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj
+    dotnet add reference ..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj
     ```
 
 4. Additionally, if you want to test changes to the FSharp.Core
 
      ```shell
-     dotnet add reference ..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj
+     dotnet add reference ..\..\..\src\FSharp.Core\FSharp.Core.fsproj
      ```
 
     > as well as the following property have to be added to `FcsBench.fsproj`:
@@ -287,7 +290,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
               {
                   SourceFiles = [|"CheckExpressions.fs"|]
                   ConditionalDefines = []
-                  ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+                  DiagnosticOptions = FSharpDiagnosticOptions.Default
                   LangVersionText = "default"
                   IsInteractive = false
                   LightSyntax = None
@@ -304,7 +307,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
               match sourceOpt with
               | None ->
-                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\fsharp\CheckExpressions.fs"""))
+                  sourceOpt <- Some <| SourceText.ofString(File.ReadAllText("""C:\Users\vlza\code\fsharp\src\Compiler\Checking\CheckExpressions.fs"""))
               | _ -> ()
 
 

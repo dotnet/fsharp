@@ -34,13 +34,17 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 
 ### Documentation for contributors
 
+* The [Compiler Documentation](docs/index.md) is essential reading for any larger contributions to the F# compiler codebase and contains links to learning videos, architecture diagrams and other resources.
+
+* The same docs are also published as the [The F# Compiler Guide](https://fsharp.github.io/fsharp-compiler-docs/). It also contains the public searchable docs for FSharp.Compiler.Service component.
+
 * See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building the codebase. In practice, you only really need to run `build.cmd`/`build.sh`.
 
 * See [TESTGUIDE.md](TESTGUIDE.md) for information about the various test suites in this codebase and how to run them individually.
 
-* [The F# Documentation](https://docs.microsoft.com/en-us/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
+### Documentation for F# community
 
-* [The F# Compiler Guide](https://fsharp.github.io/fsharp-compiler-docs/) is essential reading for any larger contributions to the F# compiler codebase and contains links to learning videos, architecture diagrams and other resources. It also contains the public searchable docs for FSharp.Compiler.Service (or equivalent of Roslyn). The source for the content is [in this repo under `docs/`](docs/) and the site is built automatically by [this small repo](https://github.com/fsharp/fsharp-compiler-docs).
+* [The F# Documentation](https://docs.microsoft.com/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
 
 * [The F# Language Design Process](https://github.com/fsharp/fslang-design/) is the fundamental design process for the language, from [suggestions](https://github.com/fsharp/fslang-suggestions) to completed RFCs.  There are also [tooling RFCs](https://github.com/fsharp/fslang-design/tree/main/tooling) for some topics where cross-community co-operation and visibility is most useful.
 
