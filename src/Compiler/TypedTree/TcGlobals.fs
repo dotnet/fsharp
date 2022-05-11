@@ -83,17 +83,6 @@ module FSharpLib =
 // Access the initial environment: helpers to build references
 //-------------------------------------------------------------------------
 
-let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n
-
-let mk_MFCore_tcref             ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CorePathArray n
-let mk_MFQuotations_tcref       ccu n = mkNonLocalTyconRef2 ccu FSharpLib.QuotationsPath n
-let mk_MFLinq_tcref             ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n
-let mk_MFCollections_tcref      ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n
-let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n
-let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu FSharpLib.RuntimeHelpersPath n
-let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n
-
-
 type
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     BuiltinAttribInfo =
@@ -193,6 +182,24 @@ type TcGlobals(
     noDebugAttributes: bool,
     pathMap: PathMap,
     langVersion: LanguageVersion) =
+
+  let v_langFeatureNullness = langVersion.SupportsFeature LanguageFeature.NullnessChecking
+
+  let v_knownWithoutNull =
+      if v_langFeatureNullness then KnownWithoutNull else KnownAmbivalentToNull
+
+  let mkNonGenericTy tcref = TType_app(tcref, [], v_knownWithoutNull)
+
+  let mkNonGenericTyWithNullness tcref nullness = TType_app(tcref, [], nullness)
+
+  let mkNonLocalTyconRef2 ccu path n = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) n 
+
+  let mk_MFCore_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CorePathArray n 
+  let mk_MFQuotations_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.QuotationsPath n 
+  let mk_MFLinq_tcref ccu n = mkNonLocalTyconRef2 ccu LinqPathArray n 
+  let mk_MFCollections_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CollectionsPathArray n 
+  let mk_MFCompilerServices_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.CompilerServicesPath n 
+  let mk_MFControl_tcref ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n 
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange

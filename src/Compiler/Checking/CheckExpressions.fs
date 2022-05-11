@@ -4551,7 +4551,7 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
         NewErrorType (), tpenv
 
     | SynType.WithNull(innerTy, ambivalent, m) -> 
-        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv innerTy
+        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv innerTy
         if g.langFeatureNullness then 
             if TypeNullNever g innerTyC then
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC
@@ -4705,7 +4705,7 @@ and TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy =
 and TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
     let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv elemTy
-    let tyR = mkArrayTy g n g.knownWithoutNull elemTy m
+    let tyR = mkArrayTy g rank g.knownWithoutNull elemTy m
     tyR, tpenv
 
 and TcTypeParameter kindOpt cenv env newOk tpenv tp =
