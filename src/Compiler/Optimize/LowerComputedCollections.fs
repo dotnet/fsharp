@@ -35,8 +35,8 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
         let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
-        let inpe = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
-        mkIsInstConditional g m g.system_IDisposable_ty inpe disposeObjVar disposeExpr (mkUnit g m)
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
     let listCollectorTy = tyOfExpr g collExpr
@@ -167,7 +167,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 Result.Ok(closed, exprR)
             | Result.Error msg -> Result.Error msg
 
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
+        | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
             let resTargets =
                 targets |> Array.map (fun (TTarget(vs, targetExpr, flags)) -> 
@@ -179,7 +179,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             if resTargets |> Array.forall (function Result.Ok _ -> true | _ -> false) then
                 let tglArray = Array.map (function Result.Ok v -> v | _ -> failwith "unreachable") resTargets
 
-                let exprR = primMkMatch (spBind, exprm, pt, tglArray, m, ty)
+                let exprR = primMkMatch (spBind, mExpr, pt, tglArray, m, ty)
                 Result.Ok(false, exprR)
             else
                 resTargets |> Array.pick (function Result.Error msg -> Some (Result.Error msg) | _ -> None)

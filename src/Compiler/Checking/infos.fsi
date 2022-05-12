@@ -118,10 +118,10 @@ type ParamNameAndType =
 
     static member FromMember: isCSharpExtMem: bool -> g: TcGlobals -> vref: ValRef -> ParamNameAndType list list
 
-    static member Instantiate: inst: TyparInst -> p: ParamNameAndType -> ParamNameAndType
+    static member Instantiate: inst: TyparInstantiation -> p: ParamNameAndType -> ParamNameAndType
 
     static member InstantiateCurried:
-        inst: TyparInst -> paramTypes: ParamNameAndType list list -> ParamNameAndType list list
+        inst: TyparInstantiation -> paramTypes: ParamNameAndType list list -> ParamNameAndType list list
 
 /// Full information about a parameter returned for use by the type checker and language service.
 [<NoComparison; NoEquality>]
@@ -143,7 +143,7 @@ type ILTypeInfo =
 
     static member FromType: g: TcGlobals -> ty: TType -> ILTypeInfo
 
-    member Instantiate: inst: TyparInst -> ILTypeInfo
+    member Instantiate: inst: TyparInstantiation -> ILTypeInfo
 
     member ILScopeRef: ILScopeRef
 
@@ -251,10 +251,10 @@ type ILMethInfo =
     member TcGlobals: TcGlobals
 
     /// Get the compiled return type of the method, where 'void' is None.
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -352,7 +352,7 @@ type MethInfo =
     /// Get the formal generic method parameters for the method as a list of variable types.
     member FormalMethodInst: TypeInst
 
-    member FormalMethodTyparInst: TyparInst
+    member FormalMethodTyparInst: TyparInstantiation
 
     /// Get the formal generic method parameters for the method as a list of type variables.
     ///
@@ -477,10 +477,10 @@ type MethInfo =
     member ComputeHashCode: unit -> int
 
     /// Get the return type of a method info, where 'void' is returned as 'None'
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the return type of a method info, where 'void' is returned as 'unit'
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Select all the type parameters of the declaring type of a method.
     ///
@@ -510,7 +510,7 @@ type MethInfo =
     member HasParamArrayArg: amap: ImportMap * m: range * minst: TType list -> bool
 
     /// Apply a type instantiation to a method info, i.e. apply the instantiation to the enclosing type.
-    member Instantiate: amap: ImportMap * m: range * inst: TyparInst -> MethInfo
+    member Instantiate: amap: ImportMap * m: range * inst: TyparInstantiation -> MethInfo
 
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
@@ -668,7 +668,7 @@ type UnionCaseInfo =
     member UnionCaseRef: UnionCaseRef
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member GetTyparInst: m: range -> TyparInst
+    member GetTyparInst: m: range -> TyparInstantiation
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -987,7 +987,7 @@ type CompiledSig =
         argTys: TType list list *
         returnTy: TType option *
         formalMethTypars: Typars *
-        formalMethTyparInst: TyparInst
+        formalMethTyparInst: TyparInstantiation
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.

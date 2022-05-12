@@ -40,9 +40,9 @@ type Pattern =
 
     member Range: range
 
-and PatternValBinding = PBind of Val * TypeScheme
+and PatternValBinding = PatternValBinding of Val * GeneralizedType
 
-and TypedMatchClause = TClause of Pattern * Expr option * DecisionTreeTarget * range
+and MatchClause = MatchClause of Pattern * Expr option * DecisionTreeTarget * range
 
 val ilFieldToTastConst: ILFieldInit -> Const
 
@@ -62,7 +62,7 @@ val internal CompilePattern:
     ActionOnFailure ->
     Val * Typars * Expr option ->
         // input type-checked syntax of pattern matching
-        TypedMatchClause list ->
+        MatchClause list ->
         // input type
         TType ->
         // result type
