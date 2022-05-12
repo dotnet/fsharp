@@ -954,6 +954,50 @@ type internal TypeCheckInfo
                        | ValueNone, ValueSome y -> Some y
                        | ValueNone, ValueNone -> None
 
+    /// Get completions on an identifier in a match clause
+    let GetMatchCompletionsAtPosition (identifierRange: range, parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
+        residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads) =
+
+        match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition identifierRange.End with
+        | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
+            let items =
+                items
+                |> List.map (fun item ->
+                    let unresolved =
+                        match item with
+                        | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
+                            Some {
+                                FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
+                                Namespace = trimPathByDisplayEnvList denv uci.Tycon.CompilationPath.DemangledPath |> List.toArray
+                                DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
+                            }
+                        | _ -> None
+
+                    {
+                        ItemWithInst = ItemWithNoInst item
+                        MinorPriority = 0
+                        Kind = CompletionItemKind.Other
+                        IsOwnMember = false
+                        Type = None
+                        Unresolved = unresolved
+                    })
+
+            Some (items, denv, range)
+        | _ ->
+            // We're not matching against a DU of a determined type, but at least filter out things that may not appear in a match pattern clause
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, fun () -> [])
+            |> Option.map (fun (items, denv, m) ->
+                items
+                |> List.filter (fun cItem ->
+                    match cItem.Item with
+                    | Item.Value vref -> vref.LiteralValue.IsSome
+                    | Item.Types (_, tys) ->
+                        tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
+                    | Item.ModuleOrNamespaces _
+                    | Item.ActivePatternCase _
+                    | Item.UnionCase _
+                    | Item.ExnCase _ -> true
+                    | _ -> false), denv, m)
 
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
@@ -1054,46 +1098,7 @@ type internal TypeCheckInfo
 
             // Completion at ' match x with S... -> () ' unless we're dotting into a type/module/...
             | Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range)) when origLongIdentOpt.IsNone || origLongIdentOpt.Value.IsEmpty ->
-                match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition range.End with
-                | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
-                    let items =
-                        items
-                        |> List.map (fun item ->
-                            let unresolved =
-                                match item with
-                                | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
-                                    Some {
-                                        FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
-                                        Namespace = trimPathByDisplayEnvList denv uci.Tycon.CompilationPath.DemangledPath |> List.toArray
-                                        DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
-                                    }
-                                | _ -> None
-
-                            {
-                                ItemWithInst = ItemWithNoInst item
-                                MinorPriority = 0
-                                Kind = CompletionItemKind.Other
-                                IsOwnMember = false
-                                Type = None
-                                Unresolved = unresolved
-                            })
-
-                    Some (items, denv, range)
-                | _ ->
-                    // We're not matching against a DU of a determined type, but at least filter out things that may not appear in a match pattern clause
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
-                    |> Option.map (fun (items, denv, m) ->
-                        items
-                        |> List.filter (fun cItem ->
-                            match cItem.Item with
-                            | Item.Value vref -> vref.LiteralValue.IsSome
-                            | Item.Types (_, tys) ->
-                                tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
-                            | Item.ModuleOrNamespaces _
-                            | Item.ActivePatternCase _
-                            | Item.UnionCase _
-                            | Item.ExnCase _ -> true
-                            | _ -> false), denv, m)
+                GetMatchCompletionsAtPosition (range, parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads)
 
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
@@ -1199,7 +1204,7 @@ type internal TypeCheckInfo
 
     member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
+        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m ad
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =

@@ -757,6 +757,72 @@ module ParsedInput =
     /// Matches the most nested [< and >] pair.
     let insideAttributeApplicationRegex = Regex(@"(?<=\[\<)(?<attribute>(.*?))(?=\>\])", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
+    /// Try to determine completion context in match clauses
+    let tryGetMatchClauseCompletionContext defaultTraverseMatchExpr clauses pos =
+        let rec traverse pos clausePat =
+            match clausePat with
+            // match x with
+            // | z| ->
+            | SynPat.Named (range = range) ->
+                Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range))
+
+            // match opt with
+            // | Som| value ->
+            //
+            // but not
+            //
+            // match opt with
+            // | Some va| ->
+            | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier lidwd.Range))
+
+            // match x with
+            // | Choice1| value
+            // | Choice2Of3 value ->
+            | SynPat.Or (lhs, rhs, _, _) ->
+                match traverse pos lhs with
+                | None -> traverse pos rhs
+                | x -> x
+
+            // match x with
+            // | ActivePattern1 & ActivePatte| ->
+            | SynPat.Ands (pats, _) ->
+                pats |> List.tryPick (fun pat ->
+                    if rangeContainsPos pat.Range pos then
+                        traverse pos pat
+                    else
+                        None)
+
+            // match opt with
+            // | (Som| value) ->
+            | SynPat.Paren (pat, _) -> traverse pos pat
+
+            // match tup with
+            // | (x, Som| ) ->
+
+            // match recd with
+            // | { Fi| = } ->
+
+            // match list with
+            // | [ Som| ] ->
+
+            // match obj with
+            // | :? int6|
+
+            // match obj with
+            // | :? int64 as ActivePatt|
+            | _ -> None
+
+        clauses
+        |> List.tryPick (fun (SynMatchClause (pat = pat; whenExpr = whenExpr)) ->
+            if rangeContainsPos pat.Range pos then
+                traverse pos pat
+            elif whenExpr.IsSome && rangeContainsPos whenExpr.Value.Range pos then
+                Some (CompletionContext.Match MatchContext.ClauseGuard)
+            else
+                None)
+        |> Option.orElseWith defaultTraverseMatchExpr
+
     /// Try to determine completion context for the given pair (row, columns)
     let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option = 
 
@@ -988,50 +1054,7 @@ module ParsedInput =
                             | SynExpr.MatchLambda (matchClauses = clauses)
                             | SynExpr.Match (clauses = clauses)
                             | SynExpr.MatchBang (clauses = clauses) ->
-                                let rec traverse pos clausePat =
-                                    match clausePat with
-                                    // match x with
-                                    // | z| ->
-                                    | SynPat.Named (range = range) ->
-                                        Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier range))
-
-                                    // match opt with
-                                    // | Som| value ->
-                                    | SynPat.LongIdent (longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
-                                        Some (CompletionContext.Match (MatchContext.ClausePatternIdentifier lidwd.Range))
-
-                                    // match x with
-                                    // | Choice1| value
-                                    // | Choice2Of3 value ->
-                                    | SynPat.Or (lhs, rhs, _, _) ->
-                                        match traverse pos lhs with
-                                        | None -> traverse pos rhs
-                                        | x -> x
-
-                                    // match x with
-                                    // | ActivePattern1 & ActivePatte| ->
-                                    | SynPat.Ands (pats, _) ->
-                                        pats |> List.tryPick (fun pat ->
-                                            if rangeContainsPos pat.Range pos then
-                                                traverse pos pat
-                                            else
-                                                None)
-
-                                    // match opt with
-                                    // | (Som| value) ->
-                                    | SynPat.Paren (pat, _) -> traverse pos pat
-
-                                    | _ -> None
-
-                                clauses
-                                |> List.tryPick (fun (SynMatchClause (pat = pat; whenExpr = whenExpr)) ->
-                                    if rangeContainsPos pat.Range pos then
-                                        traverse pos pat
-                                    elif whenExpr.IsSome && rangeContainsPos whenExpr.Value.Range pos then
-                                        Some (CompletionContext.Match MatchContext.ClauseGuard)
-                                    else
-                                        None)
-                                |> Option.orElseWith (fun () -> defaultTraverse expr)
+                                tryGetMatchClauseCompletionContext (fun () -> defaultTraverse expr) clauses pos
 
                             | SynExpr.Record(None, None, [], _) ->
                                 Some(CompletionContext.RecordField RecordContext.Empty)

@@ -789,7 +789,7 @@ val ResolveCompletionsInType:
         Item list
 
 val GetVisibleNamespacesAndModulesAtPoint:
-    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
+    NameResolver -> NameResolutionEnv -> FullyQualifiedFlag -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 
