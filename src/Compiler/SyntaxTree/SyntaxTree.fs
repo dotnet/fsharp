@@ -888,7 +888,7 @@ type SynExpr =
         isControlFlow: bool *
         innerExpr: SynExpr
 
-    | Dynamic of expr: SynExpr * qmark: range * operation: SynExpr * range: range
+    | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
     
     member e.Range =
         match e with

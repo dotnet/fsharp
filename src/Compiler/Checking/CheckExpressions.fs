@@ -5969,18 +5969,9 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
             TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, SynLongIdent([altId], [], [None]), None, mLongId)) delayed
         | _ -> TcLongIdentThen cenv overallTy env tpenv longId delayed
 
-    // x?k<-42
+    // f?x<-v
     | SynExpr.Set(SynExpr.Dynamic(e1, _, e2, _) , rhsExpr, m) ->
-        let e2 =
-            match e2 with
-            | SynExpr.Ident ident ->
-                let con = SynConst.String (ident.idText, SynStringKind.Regular, ident.idRange)
-                SynExpr.Const (con, con.Range ident.idRange)
-            | SynExpr.Paren(expr = e) -> e
-            | e -> e
-
-        let appExpr = mkSynQMarkSet m e1 e2 rhsExpr
-        TcExprThen cenv overallTy env tpenv isArg appExpr delayed
+        TcExprThenSetDynamic cenv overallTy env tpenv isArg e1 e2 rhsExpr m delayed
     
     // f x
     // f(x)  // hpa=true
@@ -6019,18 +6010,7 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
 
     // e1?e2
     | SynExpr.Dynamic(e1, mQmark, e2, _) ->
-         let appExpr =
-             let argExpr =
-                 match e2 with
-                 | SynExpr.Ident ident ->
-                     let con = SynConst.String (ident.idText, SynStringKind.Regular, ident.idRange)
-                     SynExpr.Const (con, con.Range ident.idRange)
-                 | SynExpr.Paren(expr = e) -> e
-                 | e -> e
-
-             mkSynInfix mQmark e1 "?" argExpr
-
-         TcExprThen cenv overallTy env tpenv isArg appExpr delayed
+         TcExprThenDynamic cenv overallTy env tpenv isArg e1 mQmark e2 delayed
 
     // e<tyargs>
     | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
@@ -6067,6 +6047,18 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
         | _ ->
             let expr, exprTy, tpenv = TcExprUndelayedNoType cenv env tpenv synExpr
             PropagateThenTcDelayed cenv overallTy env tpenv synExpr.Range (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.NonAtomic delayed
+
+and TcExprThenSetDynamic cenv overallTy env tpenv isArg e1 e2 rhsExpr m delayed =
+    let e2 = mkDynamicArgExpr e2
+    let appExpr = mkSynQMarkSet m e1 e2 rhsExpr
+    TcExprThen cenv overallTy env tpenv isArg appExpr delayed
+
+and TcExprThenDynamic cenv overallTy env tpenv isArg e1 mQmark e2 delayed =
+   let appExpr =
+       let argExpr = mkDynamicArgExpr e2   
+       mkSynInfix mQmark e1 "?" argExpr
+   
+   TcExprThen cenv overallTy env tpenv isArg appExpr delayed
 
 and TcExprsWithFlexes cenv env m tpenv flexes argTys args =
     if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))

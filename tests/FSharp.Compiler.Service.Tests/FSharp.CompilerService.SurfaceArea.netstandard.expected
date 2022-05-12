@@ -6340,10 +6340,10 @@ FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Syntax.SynType get_targ
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Syntax.SynType targetType
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr expr
-FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_expr()
-FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_operation()
-FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr operation
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr argExpr
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr funcExpr
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_argExpr()
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_funcExpr()
 FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range get_qmark()
 FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range qmark
