@@ -588,49 +588,58 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders): CcuTypeForwarderTable =            
-    let rec visit
+    let rec addToTree tree path item value =
+        match path with
+        | [] ->
+            { tree with
+                Children =
+                    tree.Children.Add(
+                        item,
+                        { Value = Some value
+                          Children = ImmutableDictionary.Empty }
+                    ) }
+        | nodeKey :: rest ->
+            match tree.Children.TryGetValue(nodeKey) with
+            | true, subTree -> { tree with Children = tree.Children.SetItem(nodeKey, addToTree subTree rest item value) }
+            | false, _ -> { tree with Children = tree.Children.Add(nodeKey, mkTreeWith rest item value) }
+
+    and mkTreeWith path item value =
+        match path with
+        | [] ->
+            { Value = None
+              Children =
+                ImmutableDictionary.Empty.Add(
+                    item,
+                    { Value = Some value
+                      Children = ImmutableDictionary.Empty }
+                ) }
+        | nodeKey :: rest ->
+            { Value = None
+              Children = ImmutableDictionary.Empty.Add(nodeKey, mkTreeWith rest item value) }
+
+    let rec addNested
         (exportedType: ILExportedTypeOrForwarder)
         (nets: ILNestedExportedTypes)
-        (enc: string list) =
-        nets.AsList()
-        |> List.collect (fun net ->
+        (enc: string list)
+        (tree: CcuTypeForwarderTree<string, Lazy<EntityRef>>)
+        : CcuTypeForwarderTree<string, Lazy<EntityRef>> =
+        (tree, nets.AsList())
+        ||> List.fold(fun tree net ->
             let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, enc, net.Name))
-            [ yield (enc, exportedType.Name, tcref)
-              yield! visit exportedType net.Nested [yield! enc; yield net.Name] ])
-
-    let rec mkTree (entries: (string list * string * Lazy<EntityRef>) list) : CcuTypeForwarderTree<string,Lazy<EntityRef>> =
-        let children =
-            let leaves, entriesForSubNodes =
-                List.partition (fun (path: string list,_,_) -> path.IsEmpty) entries
-
-            let leaves =
-                leaves
-                |> List.map (fun (_, item, value) -> item, { Value = Some value; Children = Dictionary(0) })
-            
-            let subNodes =
-                entriesForSubNodes
-                |> List.groupBy (fun (path, _, _) -> List.head path)
-                |> List.map (fun (nodeKey, group) ->
-                    let entries =
-                        group
-                        |> List.map (fun (path, item, value) -> List.tail path, item, value)
-                    nodeKey, mkTree entries)
-
-            Dictionary.ofList [ yield! leaves; yield! subNodes ]
-
-        { Value = None; Children = children }
+            addToTree tree enc exportedType.Name tcref
+            |> addNested exportedType net.Nested [yield! enc; yield net.Name])
 
     match exportedTypes.AsList() with
     | [] -> CcuTypeForwarderTable.Empty
     | rootTypes ->
-        rootTypes
-        |> List.collect (fun exportedType ->
+        ({ Value = None; Children = ImmutableDictionary.Empty } , rootTypes)
+        ||> List.fold(fun tree exportedType ->
             let ns, n = splitILTypeName exportedType.Name
             let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
-            [ yield (ns, n, tcref)
-              yield! visit exportedType exportedType.Nested [yield! ns; yield n] ]
+            addToTree tree ns n tcref
+            |> addNested exportedType exportedType.Nested [yield! ns; yield n]
         )
-        |> fun entries -> { Root = mkTree entries }
+        |> fun root -> { Root = root }
         
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 

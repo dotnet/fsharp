@@ -5,6 +5,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Reflection
 
@@ -5294,13 +5295,13 @@ type CcuData =
 type CcuTypeForwarderTree<'TKey, 'TValue> =
     {
         Value : 'TValue option
-        Children : Dictionary<'TKey, CcuTypeForwarderTree<'TKey, 'TValue>>
+        Children : ImmutableDictionary<'TKey, CcuTypeForwarderTree<'TKey, 'TValue>>
     }
 
-    static member Empty = { Value = None; Children = Dictionary(0) }
+    static member Empty = { Value = None; Children = ImmutableDictionary.Empty }
 
 module CcuTypeForwarderTable =
-    let rec findInTree (remainingPath: string ArraySegment) (finalKey : string) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
+    let rec findInTree (remainingPath: ArraySegment<string>) (finalKey : string) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
         let nodes = tree.Children
         let searchTerm =
             if remainingPath.Count = 0 then
