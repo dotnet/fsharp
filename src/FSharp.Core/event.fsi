@@ -23,7 +23,7 @@ type DelegateEvent<'Delegate when 'Delegate :> System.Delegate> =
     /// <param name="args">The parameters for the event.</param>
     ///
     /// <example-tbd></example-tbd>
-    member Trigger: args: obj [] -> unit
+    member Trigger: args: obj[] -> unit
 
     /// <summary>Publishes the event as a first class event value.</summary>
     ///

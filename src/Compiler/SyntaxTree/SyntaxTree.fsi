@@ -163,11 +163,11 @@ type SynConst =
     ///
     /// Also used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
-    | Bytes of bytes: byte [] * synByteStringKind: SynByteStringKind * range: range
+    | Bytes of bytes: byte[] * synByteStringKind: SynByteStringKind * range: range
 
     /// Used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
-    | UInt16s of uint16 []
+    | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
     | Measure of constant: SynConst * constantRange: range * SynMeasure
@@ -1120,29 +1120,33 @@ type SynMatchClause =
 /// Represents an attribute
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
-    { /// The name of the type for the attribute
-      TypeName: SynLongIdent
+    {
+        /// The name of the type for the attribute
+        TypeName: SynLongIdent
 
-      /// The argument of the attribute, perhaps a tuple
-      ArgExpr: SynExpr
+        /// The argument of the attribute, perhaps a tuple
+        ArgExpr: SynExpr
 
-      /// Target specifier, e.g. "assembly", "module", etc.
-      Target: Ident option
+        /// Target specifier, e.g. "assembly", "module", etc.
+        Target: Ident option
 
-      /// Is this attribute being applied to a property getter or setter?
-      AppliesToGetterAndSetter: bool
+        /// Is this attribute being applied to a property getter or setter?
+        AppliesToGetterAndSetter: bool
 
-      /// The syntax range of the attribute
-      Range: range }
+        /// The syntax range of the attribute
+        Range: range
+    }
 
 /// List of attributes enclosed in [< ... >].
 [<RequireQualifiedAccess>]
 type SynAttributeList =
-    { /// The list of attributes
-      Attributes: SynAttribute list
+    {
+        /// The list of attributes
+        Attributes: SynAttribute list
 
-      /// The syntax range of the list of attributes
-      Range: range }
+        /// The syntax range of the list of attributes
+        Range: range
+    }
 
 type SynAttributes = SynAttributeList list
 
@@ -1188,23 +1192,25 @@ type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: r
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
-    { /// The member is an instance member (non-static)
-      IsInstance: bool
+    {
+        /// The member is an instance member (non-static)
+        IsInstance: bool
 
-      /// The member is a dispatch slot
-      IsDispatchSlot: bool
+        /// The member is a dispatch slot
+        IsDispatchSlot: bool
 
-      /// The member is an 'override' or explicit interface implementation
-      IsOverrideOrExplicitImpl: bool
+        /// The member is an 'override' or explicit interface implementation
+        IsOverrideOrExplicitImpl: bool
 
-      /// The member is 'final'
-      IsFinal: bool
+        /// The member is 'final'
+        IsFinal: bool
 
-      /// The kind of the member
-      MemberKind: SynMemberKind
+        /// The kind of the member
+        MemberKind: SynMemberKind
 
-      /// Additional information
-      Trivia: SynMemberFlagsTrivia }
+        /// Additional information
+        Trivia: SynMemberFlagsTrivia
+    }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
