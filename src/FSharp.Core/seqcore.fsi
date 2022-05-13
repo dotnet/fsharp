@@ -191,27 +191,25 @@ type ArrayCollector<'T> =
     member AddMany: values: seq<'T> -> unit
 
     /// Add multiple elements to the collector and return the resulting array
-    member AddManyAndClose: values: seq<'T> -> 'T []
+    member AddManyAndClose: values: seq<'T> -> 'T[]
 
-    /// Return the resulting list
-    member Close: unit -> 'T []
-        /// Return the resulting array
-        member Close: unit -> 'T[]
+    /// Return the resulting array
+    member Close: unit -> 'T[]
 
-    /// Collects elements and builds a block
-    [<Struct; NoEquality; NoComparison>]
-    type BlockCollector<'T> =
-        [<DefaultValue(false)>]
-        val mutable internal Builder: ImmutableArray<'T>.Builder
+/// Collects elements and builds a block
+[<Struct; NoEquality; NoComparison>]
+type BlockCollector<'T> =
+    [<DefaultValue(false)>]
+    val mutable internal Builder: ImmutableArray<'T>.Builder
 
-        /// Add an element to the collector
-        member Add: value: 'T -> unit
+    /// Add an element to the collector
+    member Add: value: 'T -> unit
 
-        /// Add multiple elements to the collector
-        member AddMany: values: seq<'T> -> unit
+    /// Add multiple elements to the collector
+    member AddMany: values: seq<'T> -> unit
 
-        /// Add multiple elements to the collector and return the resulting block
-        member AddManyAndClose: values: seq<'T> -> ImmutableArray<'T>
+    /// Add multiple elements to the collector and return the resulting block
+    member AddManyAndClose: values: seq<'T> -> ImmutableArray<'T>
 
-        /// Return the resulting block
-        member Close: unit -> ImmutableArray<'T>
+    /// Return the resulting block
+    member Close: unit -> ImmutableArray<'T>

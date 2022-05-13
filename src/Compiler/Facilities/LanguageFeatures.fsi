@@ -58,10 +58,10 @@ type LanguageVersion =
     member SupportsFeature: LanguageFeature -> bool
 
     /// Get the list of valid versions
-    member ValidVersions: string []
+    member ValidVersions: string[]
 
     /// Get the list of valid options
-    member ValidOptions: string []
+    member ValidOptions: string[]
 
     /// Get the specified LanguageVersion
     member SpecifiedVersion: decimal

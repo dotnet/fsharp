@@ -109,7 +109,7 @@ type internal CompilationDiagnosticLogger =
     new: debugName: string * options: FSharpDiagnosticOptions -> CompilationDiagnosticLogger
 
     /// Get the captured diagnostics
-    member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity) []
+    member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
 module internal DiagnosticHelpers =
 
@@ -129,4 +129,4 @@ module internal DiagnosticHelpers =
         mainInputFileName: string *
         seq<PhasedDiagnostic * FSharpDiagnosticSeverity> *
         suggestNames: bool ->
-            FSharpDiagnostic []
+            FSharpDiagnostic[]

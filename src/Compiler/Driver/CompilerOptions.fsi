@@ -87,4 +87,4 @@ val ReportTime: TcConfig -> string -> unit
 
 val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 
-val PostProcessCompilerArgs: Set<string> -> string [] -> string list
+val PostProcessCompilerArgs: Set<string> -> string[] -> string list

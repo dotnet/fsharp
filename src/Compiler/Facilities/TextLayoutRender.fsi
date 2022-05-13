@@ -26,7 +26,7 @@ type internal NoResult = NoResult
 
 module internal LayoutRender =
 
-    val internal toArray: Layout -> TaggedText []
+    val internal toArray: Layout -> TaggedText[]
 
     val internal emitL: (TaggedText -> unit) -> Layout -> unit
 

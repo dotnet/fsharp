@@ -74,14 +74,14 @@ type public FSharpParseFileResults =
     member ValidateBreakpointLocation: pos: pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles: string []
+    member DependencyFiles: string[]
 
     /// Get the errors and warnings for the parse
-    member Diagnostics: FSharpDiagnostic []
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors: bool
 
     internal new:
-        diagnostics: FSharpDiagnostic [] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string [] ->
+        diagnostics: FSharpDiagnostic[] * input: ParsedInput * parseHadErrors: bool * dependencyFiles: string[] ->
             FSharpParseFileResults

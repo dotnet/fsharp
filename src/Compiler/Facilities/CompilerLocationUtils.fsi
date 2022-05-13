@@ -57,8 +57,8 @@ module internal FSharpEnvironment =
 
     val getDotnetHostPath: unit -> string option
 
-    val getDotnetHostDirectories: unit -> string []
+    val getDotnetHostDirectories: unit -> string[]
 
     val getDotnetHostDirectory: unit -> string option
 
-    val getDotnetHostSubDirectories: string -> DirectoryInfo []
+    val getDotnetHostSubDirectories: string -> DirectoryInfo[]

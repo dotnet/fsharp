@@ -148,7 +148,7 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr []
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 

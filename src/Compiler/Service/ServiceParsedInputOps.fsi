@@ -76,11 +76,13 @@ type public ScopeKind =
 /// Insert open namespace context.
 [<RequireQualifiedAccess>]
 type public InsertionContext =
-    { /// Current scope kind.
-      ScopeKind: ScopeKind
+    {
+        /// Current scope kind.
+        ScopeKind: ScopeKind
 
-      /// Current position (F# compiler line number).
-      Pos: pos }
+        /// Current position (F# compiler line number).
+        Pos: pos
+    }
 
 /// Where open statements should be added.
 [<RequireQualifiedAccess>]
@@ -92,27 +94,29 @@ type public OpenStatementInsertionPoint =
 type public ShortIdent = string
 
 /// An array of `ShortIdent`.
-type public ShortIdents = ShortIdent []
+type public ShortIdents = ShortIdent[]
 
 /// `ShortIdent` with a flag indicating if it's resolved in some scope.
 type public MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
 
 /// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
 type public InsertionContextEntity =
-    { /// Full name, relative to the current scope.
-      FullRelativeName: string
+    {
+        /// Full name, relative to the current scope.
+        FullRelativeName: string
 
-      /// Ident parts needed to append to the current ident to make it resolvable in current scope.
-      Qualifier: string
+        /// Ident parts needed to append to the current ident to make it resolvable in current scope.
+        Qualifier: string
 
-      /// Namespace that is needed to open to make the entity resolvable in the current scope.
-      Namespace: string option
+        /// Namespace that is needed to open to make the entity resolvable in the current scope.
+        Namespace: string option
 
-      /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
-      FullDisplayName: string
+        /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
+        FullDisplayName: string
 
-      /// Last part of the entity's full name.
-      LastIdent: ShortIdent }
+        /// Last part of the entity's full name.
+        LastIdent: ShortIdent
+    }
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
@@ -126,15 +130,15 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string []
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val TryFindInsertionContext:
         currentLine: int ->
         parsedInput: ParsedInput ->
-        partiallyQualifiedName: MaybeUnresolvedIdent [] ->
+        partiallyQualifiedName: MaybeUnresolvedIdent[] ->
         insertionPoint: OpenStatementInsertionPoint ->
-            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *)  * ShortIdents option (*  entityNamespace *)  * ShortIdents option (* entity: *)  * ShortIdents) -> (InsertionContextEntity * InsertionContext) [])
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *)  * ShortIdents option (*  entityNamespace *)  * ShortIdents option (* entity: *)  * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:

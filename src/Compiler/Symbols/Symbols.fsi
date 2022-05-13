@@ -487,7 +487,7 @@ type FSharpAnonRecordTypeDetails =
     member CompiledName: string
 
     /// The sorted labels of the anonymous type
-    member SortedFieldNames: string []
+    member SortedFieldNames: string[]
 
 /// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
 [<Class>]
@@ -504,7 +504,7 @@ type FSharpField =
     member IsAnonRecordField: bool
 
     /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
-    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType [] * int
+    member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
     /// Indicates if the field is declared in a union case
     member IsUnionCaseField: bool
@@ -942,10 +942,10 @@ type FSharpMemberOrFunctionOrValue =
     member IsConstructor: bool
 
     /// Format the type using the rules of the given display context
-    member FormatLayout: displayContext: FSharpDisplayContext -> TaggedText []
+    member FormatLayout: displayContext: FSharpDisplayContext -> TaggedText[]
 
     /// Format the type using the rules of the given display context
-    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText [] option
+    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> TaggedText[] option
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
@@ -958,7 +958,7 @@ type FSharpMemberOrFunctionOrValue =
     member TryGetFullDisplayName: unit -> string option
 
     /// Full operator compiled name.
-    member TryGetFullCompiledOperatorNameIdents: unit -> string [] option
+    member TryGetFullCompiledOperatorNameIdents: unit -> string[] option
 
 /// A subtype of FSharpSymbol that represents a parameter
 [<Class>]
@@ -1089,10 +1089,10 @@ type FSharpType =
     member FormatWithConstraints: context: FSharpDisplayContext -> string
 
     /// Format the type using the rules of the given display context
-    member FormatLayout: context: FSharpDisplayContext -> TaggedText []
+    member FormatLayout: context: FSharpDisplayContext -> TaggedText[]
 
     /// Format the type - with constraints - using the rules of the given display context
-    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText []
+    member FormatLayoutWithConstraints: context: FSharpDisplayContext -> TaggedText[]
 
     /// Instantiate generic type parameters in a type
     member Instantiate: (FSharpGenericParameter * FSharpType) list -> FSharpType

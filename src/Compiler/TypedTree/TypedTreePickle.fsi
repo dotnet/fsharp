@@ -12,11 +12,13 @@ open FSharp.Compiler.TcGlobals
 /// Represents deserialized data with a dangling set of CCU fixup thunks indexed by name
 [<NoEquality; NoComparison>]
 type PickledDataWithReferences<'RawData> =
-    { /// The data that uses a collection of CcuThunks internally
-      RawData: 'RawData
+    {
+        /// The data that uses a collection of CcuThunks internally
+        RawData: 'RawData
 
-      /// The assumptions that need to be fixed up
-      FixupThunks: CcuThunk [] }
+        /// The assumptions that need to be fixed up
+        FixupThunks: CcuThunk[]
+    }
 
     member Fixup: (CcuReference -> CcuThunk) -> 'RawData
 
@@ -55,7 +57,7 @@ val inline internal p_tup4:
     pickler<'T1> -> pickler<'T2> -> pickler<'T3> -> pickler<'T4> -> pickler<'T1 * 'T2 * 'T3 * 'T4>
 
 /// Serialize an array of data
-val internal p_array: pickler<'T> -> pickler<'T []>
+val internal p_array: pickler<'T> -> pickler<'T[]>
 
 /// Serialize a namemap of data
 val internal p_namemap: pickler<'T> -> pickler<NameMap<'T>>
@@ -117,7 +119,7 @@ val inline internal u_tup4:
     unpickler<'T2> -> unpickler<'T3> -> unpickler<'T4> -> unpickler<'T5> -> unpickler<'T2 * 'T3 * 'T4 * 'T5>
 
 /// Deserialize an array of values
-val internal u_array: unpickler<'T> -> unpickler<'T []>
+val internal u_array: unpickler<'T> -> unpickler<'T[]>
 
 /// Deserialize a namemap
 val internal u_namemap: unpickler<'T> -> unpickler<NameMap<'T>>

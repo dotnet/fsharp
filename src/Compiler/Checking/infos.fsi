@@ -442,7 +442,7 @@ type MethInfo =
 #if NO_TYPEPROVIDERS
     member ProvidedStaticParameterInfo: obj option
 #else
-    member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo> []) option
+    member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo>[]) option
 #endif
 
     /// Get the TcGlobals value that governs the method declaration

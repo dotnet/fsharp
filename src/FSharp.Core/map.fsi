@@ -293,7 +293,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray: elements: ('Key * 'T) [] -> Map<'Key, 'T>
+    val ofArray: elements: ('Key * 'T)[] -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
     ///
@@ -360,7 +360,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: table: Map<'Key, 'T> -> ('Key * 'T) []
+    val toArray: table: Map<'Key, 'T> -> ('Key * 'T)[]
 
     /// <summary>Is the map empty?</summary>
     ///

@@ -96,7 +96,7 @@ type internal Layout =
 
     static member internal JuxtapositionMiddle: left: Layout * right: Layout -> bool
 
-#else  // FSharp.Compiler.Service.dll, fsc.exe
+#else
 /// Data representing structured layouts of terms.
 type internal Layout
 

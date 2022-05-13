@@ -19,7 +19,7 @@ val textOfId: id: Ident -> string
 
 val pathOfLid: lid: Ident list -> string list
 
-val arrPathOfLid: lid: Ident list -> string []
+val arrPathOfLid: lid: Ident list -> string[]
 
 val textOfPath: path: seq<string> -> string
 

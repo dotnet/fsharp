@@ -46,7 +46,7 @@ type DiagnosticsLoggerUpToMaxErrors =
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val CompileFromCommandLineArguments:
     ctok: CompilationThreadToken *
-    argv: string [] *
+    argv: string[] *
     legacyReferenceResolver: LegacyReferenceResolver *
     bannerAlreadyPrinted: bool *
     reduceMemoryUsage: ReduceMemoryFlag *

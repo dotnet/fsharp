@@ -165,10 +165,10 @@ val mkMethodCallW: MethodData * MethodData * int * TypeData list * ExprData list
 
 val mkAttributedExpression: ExprData * ExprData -> ExprData
 
-val pickle: (ExprData -> byte [])
+val pickle: (ExprData -> byte[])
 
 val isAttributedExpression: ExprData -> bool
 
-val PickleDefns: ((MethodBaseData * ExprData) list -> byte [])
+val PickleDefns: ((MethodBaseData * ExprData) list -> byte[])
 
 val SerializedReflectedDefinitionsResourceNameBase: string

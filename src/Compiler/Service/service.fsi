@@ -54,7 +54,7 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member MatchBraces:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string ->
-            Async<(range * range) []>
+            Async<(range * range)[]>
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -68,7 +68,7 @@ type public FSharpChecker =
     [<Obsolete("Please pass FSharpParsingOptions to MatchBraces. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
     member MatchBraces:
         fileName: string * source: string * options: FSharpProjectOptions * ?userOpName: string ->
-            Async<(range * range) []>
+            Async<(range * range)[]>
 
     /// <summary>
     /// Parses a source code for a file and caches the results. Returns an AST that can be traversed for various features.
@@ -209,7 +209,7 @@ type public FSharpChecker =
         source: ISourceText *
         ?previewEnabled: bool *
         ?loadedTimeStamp: DateTime *
-        ?otherFlags: string [] *
+        ?otherFlags: string[] *
         ?useFsiAuxLib: bool *
         ?useSdkRefs: bool *
         ?assumeDotNetFramework: bool *
@@ -228,7 +228,7 @@ type public FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     member GetProjectOptionsFromCommandLineArgs:
-        projectFileName: string * argv: string [] * ?loadedTimeStamp: DateTime * ?isInteractive: bool * ?isEditing: bool ->
+        projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?isInteractive: bool * ?isEditing: bool ->
             FSharpProjectOptions
 
     /// <summary>
@@ -325,7 +325,7 @@ type public FSharpChecker =
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv: string [] * ?userOpName: string -> Async<FSharpDiagnostic [] * int>
+    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * int>
 
     /// <summary>
     /// TypeCheck and compile provided AST
@@ -348,7 +348,7 @@ type public FSharpChecker =
         ?executable: bool *
         ?noframework: bool *
         ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int>
+            Async<FSharpDiagnostic[] * int>
 
     /// <summary>
     /// Compiles to a dynamic assembly using the given flags.
@@ -367,8 +367,8 @@ type public FSharpChecker =
     /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CompileToDynamicAssembly:
-        otherFlags: string [] * execute: (TextWriter * TextWriter) option * ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int * System.Reflection.Assembly option>
+        otherFlags: string[] * execute: (TextWriter * TextWriter) option * ?userOpName: string ->
+            Async<FSharpDiagnostic[] * int * System.Reflection.Assembly option>
 
     /// <summary>
     /// TypeCheck and compile provided AST
@@ -389,7 +389,7 @@ type public FSharpChecker =
         ?debug: bool *
         ?noframework: bool *
         ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int * System.Reflection.Assembly option>
+            Async<FSharpDiagnostic[] * int * System.Reflection.Assembly option>
 
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the
@@ -468,10 +468,10 @@ type public FSharpChecker =
     member internal ReferenceResolver: LegacyReferenceResolver
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
-    member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo [] * FSharpTokenizerLexState
+    member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState
 
     /// Tokenize an entire file, line by line
-    member TokenizeFile: source: string -> FSharpTokenInfo [] []
+    member TokenizeFile: source: string -> FSharpTokenInfo[][]
 
 namespace FSharp.Compiler
 

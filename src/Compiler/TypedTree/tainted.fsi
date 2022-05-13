@@ -79,7 +79,7 @@ type internal Tainted<'T> =
     member PApplyWithProvider: ('T * ITypeProvider -> 'U) * range: range -> Tainted<'U>
 
     /// Apply an operation that returns an array. Unwrap array. Any exception will be attributed to the type provider with an error located at the given range.  String is method name of thing-returning-array, to diagnostically attribute if it is null
-    member PApplyArray: ('T -> 'U [] MaybeNull) * string * range: range -> Tainted<'U> []
+    member PApplyArray: ('T -> 'U[] MaybeNull) * string * range: range -> Tainted<'U>[]
 
     /// Apply an operation that returns an option. Unwrap option. Any exception will be attributed to the type provider with an error located at the given range
     member PApplyOption: ('T -> 'U option) * range: range -> Tainted<'U> option
