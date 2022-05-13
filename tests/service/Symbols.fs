@@ -1164,6 +1164,60 @@ global
             | idents -> Assert.Fail $"Expected a single SynIdent, got {idents}"
         | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
 
+    [<Test>]
+    let ``SynExpr.Dynamic does contain ident`` () =
+        let ast =
+            getParseResults "x?k"
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Expr(expr = SynExpr.Dynamic (_, _, SynExpr.Ident(idK) ,mDynamicExpr))
+                    ])
+                ])) ->
+            Assert.AreEqual("k", idK.idText)
+            assertRange (1,0) (1, 3) mDynamicExpr
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``SynExpr.Dynamic does contain parentheses`` () =
+        let ast =
+            getParseResults "x?(g)"
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Expr(expr =
+                            SynExpr.Dynamic (_, _, SynExpr.Paren(SynExpr.Ident(idG), lpr, Some rpr, mParen) ,mDynamicExpr))
+                    ])
+                ])) ->
+            Assert.AreEqual("g", idG.idText)
+            assertRange (1, 2) (1,3) lpr
+            assertRange (1, 4) (1,5) rpr
+            assertRange (1, 2) (1,5) mParen
+            assertRange (1,0) (1, 5) mDynamicExpr
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``SynExpr.Set with SynExpr.Dynamic`` () =
+        let ast =
+            getParseResults "x?v <- 2"
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Expr(expr = SynExpr.Set(
+                            SynExpr.Dynamic (_, _, SynExpr.Ident(idV) ,mDynamicExpr),
+                            SynExpr.Const _,
+                            mSetExpr
+                        ))
+                    ])
+                ])) ->
+            Assert.AreEqual("v", idV.idText)
+            assertRange (1,0) (1, 3) mDynamicExpr
+            assertRange (1,0) (1, 8) mSetExpr
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

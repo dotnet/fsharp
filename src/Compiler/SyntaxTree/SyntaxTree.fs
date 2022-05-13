@@ -894,6 +894,8 @@ type SynExpr =
         isControlFlow: bool *
         innerExpr: SynExpr
 
+    | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
+    
     member e.Range =
         match e with
         | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
@@ -962,7 +964,8 @@ type SynExpr =
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
-        | SynExpr.InterpolatedString (range=m) -> m
+        | SynExpr.InterpolatedString (range=m)
+        | SynExpr.Dynamic(range=m) -> m
         | SynExpr.Ident id -> id.idRange
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
