@@ -62,14 +62,14 @@ type public NavigationItem =
 [<NoEquality; NoComparison>]
 type public NavigationTopLevelDeclaration =
     { Declaration: NavigationItem
-      Nested: NavigationItem [] }
+      Nested: NavigationItem[] }
 
 /// Represents result of 'GetNavigationItems' operation - this contains
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
 type public NavigationItems =
-    member Declarations: NavigationTopLevelDeclaration []
+    member Declarations: NavigationTopLevelDeclaration[]
 
 // Functionality to access navigable F# items.
 module public Navigation =
@@ -110,4 +110,4 @@ type NavigableItem =
       Container: NavigableContainer }
 
 module public NavigateTo =
-    val GetNavigableItems: ParsedInput -> NavigableItem []
+    val GetNavigableItems: ParsedInput -> NavigableItem[]
