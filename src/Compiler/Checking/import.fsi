@@ -3,6 +3,7 @@
 /// Functions to import .NET binary metadata as TAST objects
 module internal FSharp.Compiler.Import
 
+open System.Collections.Immutable
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TcGlobals
@@ -96,7 +97,7 @@ val internal ImportILAssembly:
 
 /// Import the type forwarder table for an IL assembly
 val internal ImportILAssemblyTypeForwarders:
-    (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<string array * string, Lazy<EntityRef>>
+    (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> CcuTypeForwarderTable
 
 /// Import an IL type as an F# type, first rescoping to view the metadata from the current assembly
 /// being compiled. importInst gives the context for interpreting type variables.
