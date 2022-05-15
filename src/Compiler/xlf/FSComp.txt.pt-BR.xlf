@@ -612,6 +612,11 @@
         <target state="translated">Este recurso não tem suporte nesta versão do F#. Talvez seja necessário adicionar /langversion:preview para usar este recurso.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>Duplicate field labels in anonymous records are not allowed.</source>
+        <target state="new">Duplicate field labels in anonymous records are not allowed.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">Este é o registro anônimo errado. Ele deve ter os campos {0}.</target>
