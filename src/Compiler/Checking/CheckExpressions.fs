@@ -8082,6 +8082,13 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecd
 // Check '{| .... |}'
 and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
 
+    let uniqueFieldIdsCounts =
+        unsortedFieldIdsAndSynExprsGiven
+        |> List.countBy (fun (fId, _, _) -> fId.idText)
+
+    if List.exists (fun (_, count) -> count > 1) uniqueFieldIdsCounts then
+        error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(), mWholeExpr))
+
     match optOrigSynExpr with
     | None ->
         TcNewAnonRecdExpr cenv overallTy env tpenv (isStruct, unsortedFieldIdsAndSynExprsGiven, mWholeExpr)
