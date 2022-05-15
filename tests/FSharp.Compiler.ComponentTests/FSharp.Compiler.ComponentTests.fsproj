@@ -83,6 +83,7 @@
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
+    <Compile Include="Conformance\RecordTypes\AnonymousRecords.fs" />
     <Compile Include="Conformance\RecordTypes\RecordTypes.fs" />
     <Compile Include="Conformance\StructTypes\StructTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
