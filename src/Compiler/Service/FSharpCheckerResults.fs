@@ -648,20 +648,6 @@ type internal TypeCheckInfo
 
     /// Find union cases and compatible active patterns when the item under the cursor position is an identifier with the type of a DU.
     let GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
-        let rec doesActivePatternTakeTypeAsInput g ty paramType =
-            match stripTyEqns g paramType with
-            | TType_var (typar, _) ->
-                match typar.Solution with
-                | Some paramType ->
-                    doesActivePatternTakeTypeAsInput g ty paramType
-                | _ -> false
-            | TType_fun (domainType, rangeType, _) ->
-                if typeEquiv g domainType ty then
-                    true
-                else
-                    doesActivePatternTakeTypeAsInput g ty rangeType
-            | _ -> false
-
         let resolutions = GetCapturedNameResolutions cursorPos ResolveOverloads.Yes
 
         if resolutions.Count = 1 then
@@ -677,15 +663,18 @@ type internal TypeCheckInfo
                 | ValueSome tcRef when tcRef.IsUnionTycon ->
                     let isUnionInScopeAsUnqualified = nenv.eTyconsByAccessNames.ContainsKey tcRef.DisplayName
                     let cases = ResolveUnionCasesOfType ncenv m res.AccessorDomain ty tcRef
+                    let modulesAndNamespaces =
+                        GetVisibleNamespacesAndModulesAtPoint ncenv nenv OpenQualified m res.AccessorDomain
+                        |> List.map (fun x -> Item.ModuleOrNamespaces [ x ])
                     let activePatterns = [
                         for kvp in nenv.ePatItems do
                             match kvp.Value with
-                            | Item.ActivePatternCase item when doesActivePatternTakeTypeAsInput nenv.DisplayEnv.g ty item.ActivePatternVal.Type ->
+                            | Item.ActivePatternCase item when TypeRelations.ActivePatternFeasiblyAcceptsTypeAsInput ncenv.g ncenv.amap m ty item.ActivePatternVal.Type ->
                                 kvp.Value
                             | _ -> ()
                     ]
 
-                    Some (isUnionInScopeAsUnqualified, cases @ activePatterns, nenv.DisplayEnv, m)
+                    Some (isUnionInScopeAsUnqualified, cases @ activePatterns @ modulesAndNamespaces, nenv.DisplayEnv, m)
                 | _ -> None
             | _ -> None
         else
@@ -958,7 +947,9 @@ type internal TypeCheckInfo
     let GetMatchCompletionsAtPosition (identifierRange: range, parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads) =
 
-        match GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition identifierRange.End with
+        let patternItems = GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition identifierRange.End
+
+        match patternItems with
         | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
             let items =
                 items

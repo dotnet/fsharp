@@ -80,3 +80,6 @@ val IteratedAdjustArityOfLambda:
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 val FindUniqueFeasibleSupertype: g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> TType option
+
+/// Returns true if ty is feasibly accepted as one of the parameters of activePatternTy
+val ActivePatternFeasiblyAcceptsTypeAsInput: g: TcGlobals -> amap: ImportMap -> m: range -> ty: TType -> activePatternTy: TType -> bool

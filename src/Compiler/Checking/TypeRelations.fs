@@ -286,5 +286,21 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
-    
+
+/// Returns true if ty is feasibly accepted as one of the parameters of activePatternTy
+let rec ActivePatternFeasiblyAcceptsTypeAsInput g amap m ty activePatternTy =
+    match stripTyEqns g activePatternTy with
+    | TType_forall (_, bodyTy) ->
+        ActivePatternFeasiblyAcceptsTypeAsInput g amap m ty bodyTy
+    | TType_var (typar, _) ->
+        match typar.Solution with
+        | Some paramType ->
+            ActivePatternFeasiblyAcceptsTypeAsInput g amap m ty paramType
+        | _ -> false
+    | TType_fun (domainType, rangeType, _) ->
+        if TypeFeasiblySubsumesType 0 g amap m domainType CanCoerce ty then
+            true
+        else
+            ActivePatternFeasiblyAcceptsTypeAsInput g amap m ty rangeType
+    | _ -> false
 
