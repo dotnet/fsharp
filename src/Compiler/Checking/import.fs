@@ -621,8 +621,8 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
         (exportedType: ILExportedTypeOrForwarder)
         (nets: ILNestedExportedTypes)
         (enc: string list)
-        (tree: CcuTypeForwarderTree<string, Lazy<EntityRef>>)
-        : CcuTypeForwarderTree<string, Lazy<EntityRef>> =
+        (tree: CcuTypeForwarderTree)
+        : CcuTypeForwarderTree =
         (tree, nets.AsList())
         ||> List.fold(fun tree net ->
             let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, enc, net.Name))
