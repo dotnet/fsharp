@@ -174,10 +174,11 @@ let call (choice: M.ChoiceZ) =
     | C
         """
         let completions = script.GetCompletionItems(text, 12, 7) |> Async.RunSynchronously
+        let choiceCaseCompletions = completions |> Array.filter (fun x -> x.Name.StartsWith "Choice")
         
-        Assert.Equal (2, completions.Length)
+        Assert.Equal (2, choiceCaseCompletions.Length)
 
-        for c in completions do
+        for c in choiceCaseCompletions do
             Assert.Equal (None, c.NamespaceToOpen)
             Assert.Equal ("ChoiceZ." + c.Name, c.NameInCode)
 
@@ -196,10 +197,11 @@ let call (choice: M.ChoiceZ) =
     | C
         """
         let completions = script.GetCompletionItems(text, 10, 7) |> Async.RunSynchronously
+        let choiceCaseCompletions = completions |> Array.filter (fun x -> x.Name.StartsWith "Choice")
         
-        Assert.Equal (2, completions.Length)
+        Assert.Equal (2, choiceCaseCompletions.Length)
 
-        for c in completions do
+        for c in choiceCaseCompletions do
             Assert.Equal (Some "M", c.NamespaceToOpen)
             Assert.StartsWith ("ChoiceZ.", c.NameInCode)
 
@@ -218,10 +220,11 @@ let call (choice: M.ChoiceZ) =
     | C
         """
         let completions = script.GetCompletionItems(text, 10, 7) |> Async.RunSynchronously
+        let choiceCaseCompletions = completions |> Array.filter (fun x -> x.Name.StartsWith "Choice")
         
-        Assert.Equal (2, completions.Length)
+        Assert.Equal (2, choiceCaseCompletions.Length)
 
-        for c in completions do
+        for c in choiceCaseCompletions do
             Assert.Equal (None, c.NamespaceToOpen)
             Assert.Equal (c.Name, c.NameInCode)
 
@@ -242,10 +245,11 @@ module F =
         | C
         """
         let completions = script.GetCompletionItems(text, 12, 11) |> Async.RunSynchronously
+        let choiceCaseCompletions = completions |> Array.filter (fun x -> x.Name.StartsWith "Choice")
         
-        Assert.Equal (2, completions.Length)
+        Assert.Equal (2, choiceCaseCompletions.Length)
 
-        for c in completions do
+        for c in choiceCaseCompletions do
             Assert.Equal (Some "N.M", c.NamespaceToOpen)
             Assert.Equal (c.Name, c.NameInCode)
 
