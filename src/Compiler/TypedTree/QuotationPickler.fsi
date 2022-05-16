@@ -25,18 +25,21 @@ val mkILNamedTy: NamedTypeData * TypeData list -> TypeData
 
 type ExprData
 
-type VarData
+type ValData =
+    { Name: string
+      Type: TypeData
+      IsMutable: bool }
 
 type CtorData =
-    { ctorParent: NamedTypeData
-      ctorArgTypes: TypeData list }
+    { Parent: NamedTypeData
+      ArgTypes: TypeData list }
 
 type MethodData =
-    { methParent: NamedTypeData
-      methName: string
-      methArgTypes: TypeData list
-      methRetType: TypeData
-      numGenericArgs: int }
+    { Parent: NamedTypeData
+      Name: string
+      ArgTypes: TypeData list
+      RetType: TypeData
+      NumGenericArgs: int }
 
 type ModuleDefnData =
     { Module: NamedTypeData
@@ -58,7 +61,7 @@ val mkHole: TypeData * int -> ExprData
 
 val mkApp: ExprData * ExprData -> ExprData
 
-val mkLambda: VarData * ExprData -> ExprData
+val mkLambda: ValData * ExprData -> ExprData
 
 val mkQuote: ExprData -> ExprData
 
@@ -70,9 +73,9 @@ val mkModuleValueApp: NamedTypeData * string * bool * TypeData list * ExprData l
 
 val mkModuleValueWApp: NamedTypeData * string * bool * string * int * TypeData list * ExprData list -> ExprData
 
-val mkLetRec: (VarData * ExprData) list * ExprData -> ExprData
+val mkLetRec: (ValData * ExprData) list * ExprData -> ExprData
 
-val mkLet: (VarData * ExprData) * ExprData -> ExprData
+val mkLet: (ValData * ExprData) * ExprData -> ExprData
 
 val mkRecdMk: NamedTypeData * TypeData list * ExprData list -> ExprData
 
@@ -142,7 +145,7 @@ val mkWhileLoop: ExprData * ExprData -> ExprData
 
 val mkTryFinally: ExprData * ExprData -> ExprData
 
-val mkTryWith: ExprData * VarData * ExprData * VarData * ExprData -> ExprData
+val mkTryWith: ExprData * ValData * ExprData * ValData * ExprData -> ExprData
 
 val mkDelegate: TypeData * ExprData -> ExprData
 
@@ -162,12 +165,10 @@ val mkMethodCallW: MethodData * MethodData * int * TypeData list * ExprData list
 
 val mkAttributedExpression: ExprData * ExprData -> ExprData
 
-val pickle: (ExprData -> byte [])
+val pickle: (ExprData -> byte[])
 
 val isAttributedExpression: ExprData -> bool
 
-val PickleDefns: ((MethodBaseData * ExprData) list -> byte [])
+val PickleDefns: ((MethodBaseData * ExprData) list -> byte[])
 
 val SerializedReflectedDefinitionsResourceNameBase: string
-
-val freshVar: string * TypeData * bool -> VarData

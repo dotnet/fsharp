@@ -57,17 +57,6 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val mapTImplFile:
-    f: (ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig) -> TypedImplFile -> TypedImplFile
-
-val mapAccImplFile:
-    f: ('a -> ModuleOrNamespaceContentsWithSig -> ModuleOrNamespaceContentsWithSig * 'b) ->
-    z: 'a ->
-    TypedImplFile ->
-        TypedImplFile * 'b
-
-val foldTImplFile: f: ('a -> ModuleOrNamespaceContentsWithSig -> 'b) -> z: 'a -> TypedImplFile -> 'b
-
 val typarEq: lv1: Typar -> lv2: Typar -> bool
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
@@ -96,7 +85,7 @@ val (|ERefLocal|ERefNonLocal|): x: EntityRef -> Choice<NonNullSlot<Entity>, NonL
 
 val mkLocalTyconRef: x: NonNullSlot<Entity> -> EntityRef
 
-val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string [] -> NonLocalEntityRef
+val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string[] -> NonLocalEntityRef
 
 val mkNestedNonLocalEntityRef: nleref: NonLocalEntityRef -> id: string -> NonLocalEntityRef
 
@@ -165,7 +154,7 @@ val tyconRefUsesLocalXmlDoc: compilingFSharpCore: bool -> x: TyconRef -> bool
 
 val entityRefInThisAssembly: compilingFSharpCore: bool -> x: EntityRef -> bool
 
-val arrayPathEq: y1: string [] -> y2: string [] -> bool
+val arrayPathEq: y1: string[] -> y2: string[] -> bool
 
 val nonLocalRefEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
 

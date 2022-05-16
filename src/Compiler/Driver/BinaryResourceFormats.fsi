@@ -10,12 +10,12 @@ module VersionResourceFormat =
         (ILVersionInfo * ILVersionInfo * int32 * int32 * int32 * int32 * int32 * int64) *
         seq<string * #seq<string * string>> *
         seq<int32 * int32> ->
-            byte []
+            byte[]
 
 module ManifestResourceFormat =
 
-    val VS_MANIFEST_RESOURCE: data: byte [] * isLibrary: bool -> byte []
+    val VS_MANIFEST_RESOURCE: data: byte[] * isLibrary: bool -> byte[]
 
 module ResFileFormat =
 
-    val ResFileHeader: unit -> byte []
+    val ResFileHeader: unit -> byte[]

@@ -4,7 +4,8 @@
 module internal rec FSharp.Compiler.TypedTree 
 
 open System
-open System.Collections.Generic 
+open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Reflection
 
@@ -496,9 +497,9 @@ type PublicPath =
 type CompilationPath = 
     | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
 
-    member x.ILScopeRef = (let (CompPath(scoref, _)) = x in scoref)
+    member x.ILScopeRef = let (CompPath(scoref, _)) = x in scoref
 
-    member x.AccessPath = (let (CompPath(_, p)) = x in p)
+    member x.AccessPath = let (CompPath(_, p)) = x in p
 
     member x.MangledPath = List.map fst x.AccessPath
 
@@ -508,7 +509,8 @@ type CompilationPath =
         let a, _ = List.frontAndBack x.AccessPath
         CompPath(x.ILScopeRef, a)
 
-    member x.NestedCompPath n modKind = CompPath(x.ILScopeRef, x.AccessPath@[(n, modKind)])
+    member x.NestedCompPath n moduleKind =
+        CompPath(x.ILScopeRef, x.AccessPath@[(n, moduleKind)])
 
     member x.DemangledPath = 
         x.AccessPath |> List.map (fun (nm, k) -> CompilationPath.DemangleEntityName nm k)
@@ -604,7 +606,7 @@ type Entity =
       //
       // MUTABILITY: only used during creation and remapping of tycons and 
       // when compiling fslib to fixup compiler forward references to internal items 
-      mutable entity_modul_contents: MaybeLazy<ModuleOrNamespaceType>     
+      mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>     
 
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
       // REVIEW: it looks like entity_cpath subsumes this 
@@ -778,7 +780,7 @@ type Entity =
             | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
-    member x.ModuleOrNamespaceType = x.entity_modul_contents.Force()
+    member x.ModuleOrNamespaceType = x.entity_modul_type.Force()
 
     /// The logical contents of the entity when it is a type definition.
     member x.TypeContents = x.entity_tycon_tcaug
@@ -987,7 +989,7 @@ type Entity =
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
-          entity_modul_contents= Unchecked.defaultof<_>
+          entity_modul_type= Unchecked.defaultof<_>
           entity_pubpath = Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
@@ -1006,7 +1008,7 @@ type Entity =
         x.entity_attribs <- tg.entity_attribs 
         x.entity_tycon_repr <- tg.entity_tycon_repr
         x.entity_tycon_tcaug <- tg.entity_tycon_tcaug
-        x.entity_modul_contents <- tg.entity_modul_contents
+        x.entity_modul_type <- tg.entity_modul_type
         x.entity_pubpath <- tg.entity_pubpath 
         x.entity_cpath <- tg.entity_cpath 
         x.entity_il_repr_cache <- tg.entity_il_repr_cache 
@@ -2852,7 +2854,7 @@ type Val =
         | _ -> false
 
     /// Get the type of the value including any generic type parameters
-    member x.TypeScheme = 
+    member x.GeneralizedType = 
         match x.Type with 
         | TType_forall(tps, tau) -> tps, tau
         | ty -> [], ty
@@ -3725,7 +3727,7 @@ type ValRef =
     member x.Type = x.Deref.Type
 
     /// Get the type of the value including any generic type parameters
-    member x.TypeScheme = x.Deref.TypeScheme
+    member x.GeneralizedType = x.Deref.GeneralizedType
 
     /// Get the type of the value after removing any generic type parameters
     member x.TauType = x.Deref.TauType
@@ -5083,25 +5085,6 @@ type SlotParam =
 
     override x.ToString() = "TSlotParam(...)"
 
-/// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
-/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceContents: it is only referenced from the 'outside' 
-/// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
-[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceContentsWithSig = 
-    | ModuleOrNamespaceContentsWithSig of 
-         moduleSig: ModuleOrNamespaceType *
-         contents: ModuleOrNamespaceContents *
-         range: range
-
-    member x.Type = let (ModuleOrNamespaceContentsWithSig(moduleSig=moduleSig)) = x in moduleSig
-
-    member x.Contents = let (ModuleOrNamespaceContentsWithSig(contents=contents)) = x in contents
-
-    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    member x.DebugText = x.ToString()
-
-    override x.ToString() = "ModuleOrNamespaceContentsWithSig(...)"
-
 /// Represents open declaration statement.
 type OpenDeclaration =
     { /// Syntax after 'open' as it's presented in source code.
@@ -5138,9 +5121,6 @@ type OpenDeclaration =
 /// The contents of a module-or-namespace-fragment definition 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type ModuleOrNamespaceContents = 
-    /// Indicates the module is a module with a signature 
-    | TMWithSig of contentsWithSig: ModuleOrNamespaceContentsWithSig
-
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs of defs: ModuleOrNamespaceContents list  
 
@@ -5201,45 +5181,58 @@ type NamedDebugPointKey =
                compare x.Name y.Name
            | _ -> -1
 
-/// Represents a complete typechecked implementation file, including its typechecked signature if any.
+/// Represents a complete typechecked implementation file, including its inferred or explicit signature.
 ///
-/// TImplFile (qualifiedNameOfFile, pragmas, implExprWithSig, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
+/// CheckedImplFile (qualifiedNameOfFile, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedImplFile = 
-    | TImplFile of 
+type CheckedImplFile = 
+    | CheckedImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
         pragmas: ScopedPragma list *
-        implExprWithSig: ModuleOrNamespaceContentsWithSig *
+        signature: ModuleOrNamespaceType *
+        contents: ModuleOrNamespaceContents *
         hasExplicitEntryPoint: bool *
         isScript: bool *
         anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
         namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
 
+    member x.Signature = let (CheckedImplFile (signature=res)) = x in res
+
+    member x.Contents = let (CheckedImplFile (contents=res)) = x in res
+
+    member x.QualifiedNameOfFile = let (CheckedImplFile (qualifiedNameOfFile=res)) = x in res
+
+    member x.Pragmas = let (CheckedImplFile (pragmas=res)) = x in res
+
+    member x.HasExplicitEntryPoint = let (CheckedImplFile (hasExplicitEntryPoint=res)) = x in res
+
+    member x.IsScript = let (CheckedImplFile (isScript=res)) = x in res
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TImplFile (...)"
+    override x.ToString() = "CheckedImplFile (...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedImplFileAfterOptimization = 
-    { ImplFile: TypedImplFile 
+type CheckedImplFileAfterOptimization = 
+    { ImplFile: CheckedImplFile 
       OptimizeDuringCodeGen: bool -> Expr -> Expr }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TypedImplFileAfterOptimization(...)"
+    override x.ToString() = "CheckedImplFileAfterOptimization(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TypedAssemblyAfterOptimization = 
-    | TypedAssemblyAfterOptimization of TypedImplFileAfterOptimization list
+type CheckedAssemblyAfterOptimization = 
+    | CheckedAssemblyAfterOptimization of CheckedImplFileAfterOptimization list
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TypedAssemblyAfterOptimization(...)"
+    override x.ToString() = "CheckedAssemblyAfterOptimization(...)"
 
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuData = 
@@ -5299,8 +5292,39 @@ type CcuData =
 
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
+type CcuTypeForwarderTree<'TKey, 'TValue> =
+    {
+        Value : 'TValue option
+        Children : ImmutableDictionary<'TKey, CcuTypeForwarderTree<'TKey, 'TValue>>
+    }
+
+    static member Empty = { Value = None; Children = ImmutableDictionary.Empty }
+
+module CcuTypeForwarderTable =
+    let rec findInTree (remainingPath: ArraySegment<string>) (finalKey : string) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
+        let nodes = tree.Children
+        let searchTerm =
+            if remainingPath.Count = 0 then
+                finalKey
+            else
+                remainingPath.Array.[remainingPath.Offset]
+        match nodes.TryGetValue searchTerm with
+        | true, innerTree ->
+            if remainingPath.Count = 0 then
+                innerTree.Value
+            else
+                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+        | false, _ -> None
+
 /// Represents a table of .NET CLI type forwarders for an assembly
-type CcuTypeForwarderTable = Map<string[] * string, Lazy<EntityRef>>
+type CcuTypeForwarderTable =
+    {
+        Root : CcuTypeForwarderTree<string, Lazy<EntityRef>>
+    }
+
+    static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree<_,_>.Empty }   
+    member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
+        CcuTypeForwarderTable.findInTree (ArraySegment path) item this.Root
 
 type CcuReference = string // ILAssemblyRef
 
@@ -5389,7 +5413,7 @@ type CcuThunk =
     member ccu.Contents = ccu.Deref.Contents
 
     /// The table of type forwarders for this assembly
-    member ccu.TypeForwarders: Map<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
+    member ccu.TypeForwarders: CcuTypeForwarderTable = ccu.Deref.TypeForwarders
 
     /// The table of modules and namespaces at the "root" of the assembly
     member ccu.RootModulesAndNamespaces = ccu.Contents.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions
@@ -5426,10 +5450,8 @@ type CcuThunk =
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath: string[], item: string) : EntityRef option = 
         ccu.EnsureDerefable nlpath
-        let key = nlpath, item
-        match ccu.TypeForwarders.TryGetValue key with
-        | true, entity -> Some(entity.Force())
-        | _ -> None
+        ccu.TypeForwarders.TryGetValue nlpath item
+        |> Option.map (fun entity -> entity.Force())
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member ccu.MemberSignatureEquality(ty1: TType, ty2: TType) = 
@@ -5659,7 +5681,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
+            entity_modul_type = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
@@ -5680,7 +5702,7 @@ type Construct() =
           { entity_logical_name=id.idText
             entity_range = id.idRange
             entity_stamp=stamp
-            entity_modul_contents = mtype
+            entity_modul_type = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
@@ -5752,7 +5774,7 @@ type Construct() =
             entity_range = id.idRange
             entity_tycon_tcaug = TyconAugmentation.Create()
             entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
-            entity_modul_contents = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
+            entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
@@ -5792,7 +5814,7 @@ type Construct() =
             entity_typars=typars
             entity_tycon_repr = TNoRepr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = mtyp
+            entity_modul_type = mtyp
             entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
             entity_cpath = cpath
             entity_il_repr_cache = newCache()
@@ -5879,7 +5901,7 @@ type Construct() =
     /// contents of the module. 
     static member NewModifiedModuleOrNamespace f orig = 
         orig |> Construct.NewModifiedTycon (fun d -> 
-            { d with entity_modul_contents = MaybeLazy.Strict (f (d.entity_modul_contents.Force())) }) 
+            { d with entity_modul_type = MaybeLazy.Strict (f (d.entity_modul_type.Force())) }) 
 
     /// Create a Val based on an existing one using the function 'f'. 
     /// We require that we be given the parent for the new Val. 

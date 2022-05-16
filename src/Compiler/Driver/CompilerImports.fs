@@ -6,6 +6,7 @@ module internal FSharp.Compiler.CompilerImports
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 
@@ -1114,7 +1115,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> ImportProvidedType (tcImports.GetImportMap()) m ty)
                 TryGetILModuleDef = (fun () -> Some ilModule)
-                TypeForwarders = Map.empty
+                TypeForwarders = CcuTypeForwarderTable.Empty
                 XmlDocumentationInfo =
                     match tcConfig.xmlDocInfoLoader with
                     | Some xmlDocInfoLoader -> xmlDocInfoLoader.TryLoad(fileName)
@@ -1327,7 +1328,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 runtimeAssemblyAttributes: ILAttribute list,
                 entityToInjectInto, invalidateCcu: Event<_>, m) =
 
-        let startingErrorCount = CompileThreadStatic.DiagnosticsLogger.ErrorCount
+        let startingErrorCount = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
@@ -1454,7 +1455,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     with e ->
                         errorRecovery e m
 
-                if startingErrorCount<CompileThreadStatic.DiagnosticsLogger.ErrorCount then
+                if startingErrorCount<DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount then
                     error(Error(FSComp.SR.etOneOrMoreErrorsSeenDuringExtensionTypeSetting(), m))
 
             providers
@@ -1915,10 +1916,18 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
-        let tcGlobals = TcGlobals(tcConfig.compilingFSharpCore, ilGlobals, fslibCcu,
-                                  tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
-                                  tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugAttributes, tcConfig.pathMap, tcConfig.langVersion)
+        let tcGlobals =
+            TcGlobals(tcConfig.compilingFSharpCore,
+                ilGlobals,
+                fslibCcu,
+                tcConfig.implicitIncludeDir,
+                tcConfig.mlCompatibility,
+                tcConfig.isInteractive,
+                tryFindSysTypeCcu,
+                tcConfig.emitDebugInfoInQuotations,
+                tcConfig.noDebugAttributes,
+                tcConfig.pathMap,
+                tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

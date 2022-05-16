@@ -773,7 +773,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Null _
           | SynExpr.Ident _
           | SynExpr.ImplicitZero _
-          | SynExpr.Const _ -> false
+          | SynExpr.Const _
+          | SynExpr.Dynamic _ -> false
 
           | SynExpr.TypeTest (e, _, _)
           | SynExpr.Upcast (e, _, _)
@@ -902,3 +903,11 @@ let prependIdentInLongIdentWithTrivia (SynIdent(ident, identTrivia)) dotm lid =
     match lid with
     | SynLongIdent(lid, dots, trivia) ->
         SynLongIdent(ident :: lid, dotm :: dots, identTrivia :: trivia)
+
+let mkDynamicArgExpr expr =
+    match expr with
+    | SynExpr.Ident ident ->
+       let con = SynConst.String (ident.idText, SynStringKind.Regular, ident.idRange)
+       SynExpr.Const (con, con.Range ident.idRange)
+    | SynExpr.Paren(expr = e) -> e
+    | e -> e

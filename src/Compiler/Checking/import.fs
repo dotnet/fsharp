@@ -5,6 +5,7 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Collections.Immutable
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
@@ -456,7 +457,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
         (tps, gps) ||> List.iter2 (fun tp gp -> 
-            let constraints = gp.Constraints |> List.map (fun ilty -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilty), m) )
+            let constraints = gp.Constraints |> List.map (fun ilTy -> TyparConstraint.CoercesTo(ImportILType amap m importInst (rescopeILType scoref ilTy), m) )
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m) :: constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m) :: constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m) :: constraints) else constraints
@@ -586,25 +587,60 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
     CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
-let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders) = 
-    // Note 'td' may be in another module or another assembly!
-    // Note: it is very important that we call auxModLoader lazily
-    [ //printfn "reading forwarders..." 
-        for exportedType in exportedTypes.AsList() do 
-            let ns, n = splitILTypeName exportedType.Name
-            //printfn "found forwarder for %s..." n
-            let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
-            yield (Array.ofList ns, n), tcref
-            let rec nested (nets: ILNestedExportedTypes) enc = 
-                [ for net in nets.AsList() do 
-                    
-                    //printfn "found nested forwarder for %s..." net.Name
-                    let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create (exportedType.ScopeRef, enc, net.Name))
-                    yield (Array.ofList enc, exportedType.Name), tcref 
-                    yield! nested net.Nested (enc @ [ net.Name ]) ]
-            yield! nested exportedType.Nested (ns@[n]) 
-    ] |> Map.ofList
+let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders): CcuTypeForwarderTable =            
+    let rec addToTree tree path item value =
+        match path with
+        | [] ->
+            { tree with
+                Children =
+                    tree.Children.Add(
+                        item,
+                        { Value = Some value
+                          Children = ImmutableDictionary.Empty }
+                    ) }
+        | nodeKey :: rest ->
+            match tree.Children.TryGetValue(nodeKey) with
+            | true, subTree -> { tree with Children = tree.Children.SetItem(nodeKey, addToTree subTree rest item value) }
+            | false, _ -> { tree with Children = tree.Children.Add(nodeKey, mkTreeWith rest item value) }
 
+    and mkTreeWith path item value =
+        match path with
+        | [] ->
+            { Value = None
+              Children =
+                ImmutableDictionary.Empty.Add(
+                    item,
+                    { Value = Some value
+                      Children = ImmutableDictionary.Empty }
+                ) }
+        | nodeKey :: rest ->
+            { Value = None
+              Children = ImmutableDictionary.Empty.Add(nodeKey, mkTreeWith rest item value) }
+
+    let rec addNested
+        (exportedType: ILExportedTypeOrForwarder)
+        (nets: ILNestedExportedTypes)
+        (enc: string list)
+        (tree: CcuTypeForwarderTree<string, Lazy<EntityRef>>)
+        : CcuTypeForwarderTree<string, Lazy<EntityRef>> =
+        (tree, nets.AsList())
+        ||> List.fold(fun tree net ->
+            let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, enc, net.Name))
+            addToTree tree enc exportedType.Name tcref
+            |> addNested exportedType net.Nested [yield! enc; yield net.Name])
+
+    match exportedTypes.AsList() with
+    | [] -> CcuTypeForwarderTable.Empty
+    | rootTypes ->
+        ({ Value = None; Children = ImmutableDictionary.Empty } , rootTypes)
+        ||> List.fold(fun tree exportedType ->
+            let ns, n = splitILTypeName exportedType.Name
+            let tcref = lazy ImportILTypeRefUncached (amap ()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
+            addToTree tree ns n tcref
+            |> addNested exportedType exportedType.Nested [yield! ns; yield n]
+        )
+        |> fun root -> { Root = root }
+        
 /// Import an IL assembly as a new TAST CCU
 let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, fileName, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
@@ -616,7 +652,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let mty = ImportILAssemblyTypeDefs(amap, m, auxModuleLoader, aref, ilModule)
     let forwarders = 
         match ilModule.Manifest with 
-        | None -> Map.empty
+        | None -> CcuTypeForwarderTable.Empty
         | Some manifest -> ImportILAssemblyTypeForwarders(amap, m, manifest.ExportedTypes)
 
     let ccuData: CcuData = 
@@ -649,9 +685,9 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
 //-------------------------------------------------------------------------
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
-let RescopeAndImportILType scoref amap m importInst ilty =
-    ilty |> rescopeILType scoref |>  ImportILType amap m importInst
+let RescopeAndImportILType scoref amap m importInst ilTy =
+    ilTy |> rescopeILType scoref |>  ImportILType amap m importInst
 
-let CanRescopeAndImportILType scoref amap m ilty =
-    ilty |> rescopeILType scoref |>  CanImportILType amap m
+let CanRescopeAndImportILType scoref amap m ilTy =
+    ilTy |> rescopeILType scoref |>  CanImportILType amap m
 

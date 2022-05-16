@@ -53,58 +53,60 @@ type UngeneralizableItem
 /// and other information about the scope.
 [<NoEquality; NoComparison>]
 type TcEnv =
-    { /// Name resolution information
-      eNameResEnv: NameResolutionEnv
+    {
+        /// Name resolution information
+        eNameResEnv: NameResolutionEnv
 
-      /// The list of items in the environment that may contain free inference
-      /// variables (which may not be generalized). The relevant types may
-      /// change as a result of inference equations being asserted, hence may need to
-      /// be recomputed.
-      eUngeneralizableItems: UngeneralizableItem list
+        /// The list of items in the environment that may contain free inference
+        /// variables (which may not be generalized). The relevant types may
+        /// change as a result of inference equations being asserted, hence may need to
+        /// be recomputed.
+        eUngeneralizableItems: UngeneralizableItem list
 
-      // Two (!) versions of the current module path
-      // These are used to:
-      //    - Look up the appropriate point in the corresponding signature
-      //      see if an item is public or not
-      //    - Change fslib canonical module type to allow compiler references to these items
-      //    - Record the cpath for concrete modul_specs, tycon_specs and excon_specs so they can cache their generated IL representation where necessary
-      //    - Record the pubpath of public, concrete {val, tycon, modul, excon}_specs.
-      //      This information is used mainly when building non-local references
-      //      to public items.
-      //
-      // Of the two, 'ePath' is the one that's barely used. It's only
-      // used by UpdateAccModuleOrNamespaceType to modify the CCU while compiling FSharp.Core
-      ePath: Ident list
+        // Two (!) versions of the current module path
+        // These are used to:
+        //    - Look up the appropriate point in the corresponding signature
+        //      see if an item is public or not
+        //    - Change fslib canonical module type to allow compiler references to these items
+        //    - Record the cpath for concrete modul_specs, tycon_specs and excon_specs so they can cache their generated IL representation where necessary
+        //    - Record the pubpath of public, concrete {val, tycon, modul, excon}_specs.
+        //      This information is used mainly when building non-local references
+        //      to public items.
+        //
+        // Of the two, 'ePath' is the one that's barely used. It's only
+        // used by UpdateAccModuleOrNamespaceType to modify the CCU while compiling FSharp.Core
+        ePath: Ident list
 
-      eCompPath: CompilationPath
+        eCompPath: CompilationPath
 
-      eAccessPath: CompilationPath
+        eAccessPath: CompilationPath
 
-      /// This field is computed from other fields, but we amortize the cost of computing it.
-      eAccessRights: AccessorDomain
+        /// This field is computed from other fields, but we amortize the cost of computing it.
+        eAccessRights: AccessorDomain
 
-      /// Internals under these should be accessible
-      eInternalsVisibleCompPaths: CompilationPath list
+        /// Internals under these should be accessible
+        eInternalsVisibleCompPaths: CompilationPath list
 
-      /// Mutable accumulator for the current module type
-      eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
+        /// Mutable accumulator for the current module type
+        eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
 
-      /// Context information for type checker
-      eContextInfo: ContextInfo
+        /// Context information for type checker
+        eContextInfo: ContextInfo
 
-      /// Here Some tcref indicates we can access protected members in all super types
-      eFamilyType: TyconRef option
+        /// Here Some tcref indicates we can access protected members in all super types
+        eFamilyType: TyconRef option
 
-      // Information to enforce special restrictions on valid expressions
-      // for .NET constructors.
-      eCtorInfo: CtorInfo option
+        // Information to enforce special restrictions on valid expressions
+        // for .NET constructors.
+        eCtorInfo: CtorInfo option
 
-      eCallerMemberName: string option
+        eCallerMemberName: string option
 
-      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
-      eLambdaArgInfos: ArgReprInfo list list
+        // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
+        eLambdaArgInfos: ArgReprInfo list list
 
-      eIsControlFlow: bool }
+        eIsControlFlow: bool
+    }
 
     member DisplayEnv: DisplayEnv
 
@@ -223,94 +225,96 @@ type UnscopedTyparEnv
 /// Represents the compilation environment for typechecking a single file in an assembly.
 [<NoEquality; NoComparison>]
 type TcFileState =
-    { g: TcGlobals
+    {
+        g: TcGlobals
 
-      /// Push an entry every time a recursive value binding is used,
-      /// in order to be able to fix up recursive type applications as
-      /// we infer type parameters
-      mutable recUses: ValMultiMap<Expr ref * range * bool>
+        /// Push an entry every time a recursive value binding is used,
+        /// in order to be able to fix up recursive type applications as
+        /// we infer type parameters
+        mutable recUses: ValMultiMap<Expr ref * range * bool>
 
-      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-      stackGuard: StackGuard
+        /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+        stackGuard: StackGuard
 
-      /// Set to true if this file causes the creation of generated provided types.
-      mutable createsGeneratedProvidedTypes: bool
+        /// Set to true if this file causes the creation of generated provided types.
+        mutable createsGeneratedProvidedTypes: bool
 
-      /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
-      isScript: bool
+        /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
+        isScript: bool
 
-      /// Environment needed to convert IL types to F# types in the importer.
-      amap: ImportMap
+        /// Environment needed to convert IL types to F# types in the importer.
+        amap: ImportMap
 
-      /// Used to generate new syntactic argument names in post-parse syntactic processing
-      synArgNameGenerator: SynArgNameGenerator
+        /// Used to generate new syntactic argument names in post-parse syntactic processing
+        synArgNameGenerator: SynArgNameGenerator
 
-      tcSink: TcResultsSink
+        tcSink: TcResultsSink
 
-      /// Holds a reference to the component being compiled.
-      /// This field is very rarely used (mainly when fixing up forward references to fslib.
-      topCcu: CcuThunk
+        /// Holds a reference to the component being compiled.
+        /// This field is very rarely used (mainly when fixing up forward references to fslib.
+        thisCcu: CcuThunk
 
-      /// Holds the current inference constraints
-      css: ConstraintSolverState
+        /// Holds the current inference constraints
+        css: ConstraintSolverState
 
-      /// Are we compiling the signature of a module from fslib?
-      compilingCanonicalFslibModuleType: bool
+        /// Are we compiling the signature of a module from fslib?
+        compilingCanonicalFslibModuleType: bool
 
-      /// Is this a .fsi file?
-      isSig: bool
+        /// Is this a .fsi file?
+        isSig: bool
 
-      /// Does this .fs file have a .fsi file?
-      haveSig: bool
+        /// Does this .fs file have a .fsi file?
+        haveSig: bool
 
-      /// Used to generate names
-      niceNameGen: NiceNameGenerator
+        /// Used to generate names
+        niceNameGen: NiceNameGenerator
 
-      /// Used to read and cache information about types and members
-      infoReader: InfoReader
+        /// Used to read and cache information about types and members
+        infoReader: InfoReader
 
-      /// Used to resolve names
-      nameResolver: NameResolver
+        /// Used to resolve names
+        nameResolver: NameResolver
 
-      /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
-      conditionalDefines: string list option
+        /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
+        conditionalDefines: string list option
 
-      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+        namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
-      isInternalTestSpanStackReferring: bool
+        isInternalTestSpanStackReferring: bool
 
-      // forward call
-      TcSequenceExpressionEntry: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> bool * SynExpr
-          -> range
-          -> Expr * UnscopedTyparEnv
+        // forward call
+        TcSequenceExpressionEntry: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> bool * SynExpr
+            -> range
+            -> Expr * UnscopedTyparEnv
 
-      // forward call
-      TcArrayOrListComputedExpression: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> bool * SynExpr
-          -> range
-          -> Expr * UnscopedTyparEnv
+        // forward call
+        TcArrayOrListComputedExpression: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> bool * SynExpr
+            -> range
+            -> Expr * UnscopedTyparEnv
 
-      // forward call
-      TcComputationExpression: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> range * Expr * TType * SynExpr
-          -> Expr * UnscopedTyparEnv }
+        // forward call
+        TcComputationExpression: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> range * Expr * TType * SynExpr
+            -> Expr * UnscopedTyparEnv
+    }
 
     static member Create:
         g: TcGlobals *
         isScript: bool *
         niceNameGen: NiceNameGenerator *
         amap: ImportMap *
-        topCcu: CcuThunk *
+        thisCcu: CcuThunk *
         isSig: bool *
         haveSig: bool *
         conditionalDefines: string list option *
@@ -326,7 +330,7 @@ type TcFileState =
 type MemberOrValContainerInfo =
     | MemberOrValContainerInfo of
         tcref: TyconRef *
-        optIntfSlotTy: (TType * SlotImplSet) option *
+        intfSlotTyOpt: (TType * SlotImplSet) option *
         baseValOpt: Val option *
         safeInitInfo: SafeInitData *
         declaredTyconTypars: Typars
@@ -415,21 +419,21 @@ type RecDefnBindingInfo =
         synBinding: SynBinding
 
 /// Represents the ValReprInfo for a value, before the typars are fully inferred
-type PartialValReprInfo = PartialValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
+type PrelimValReprInfo = PrelimValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
 
 /// Holds the initial ValMemberInfo and other information before it is fully completed
-type PreValMemberInfo = PreValMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
+type PrelimMemberInfo = PrelimMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
 
 /// The result of checking a value or member signature
 type ValSpecResult =
     | ValSpecResult of
         altActualParent: ParentRef *
-        memberInfoOpt: PreValMemberInfo option *
+        memberInfoOpt: PrelimMemberInfo option *
         id: Ident *
         enclosingDeclaredTypars: Typars *
         declaredTypars: Typars *
         ty: TType *
-        partialValReprInfo: PartialValReprInfo *
+        prelimValReprInfo: PrelimValReprInfo *
         declKind: DeclKind
 
 /// An empty environment of type variables with implicit scope
@@ -475,8 +479,8 @@ type RecursiveBindingInfo =
         inlineFlag: ValInline *
         vspec: Val *
         explicitTyparInfo: ExplicitTyparInfo *
-        partialValReprInfo: PartialValReprInfo *
-        memberInfoOpt: PreValMemberInfo option *
+        prelimValReprInfo: PrelimValReprInfo *
+        memberInfoOpt: PrelimMemberInfo option *
         baseValOpt: Val option *
         safeThisValOpt: Val option *
         safeInitInfo: SafeInitData *
@@ -490,7 +494,7 @@ type RecursiveBindingInfo =
 
 /// Represents the results of the first phase of preparing simple values from a pattern
 [<Sealed>]
-type PrelimValScheme1 =
+type PrelimVal1 =
     member Ident: Ident
     member Type: TType
 
@@ -502,14 +506,14 @@ type CheckedBindingInfo
 type ValScheme =
     | ValScheme of
         id: Ident *
-        typeScheme: TypeScheme *
-        topValInfo: ValReprInfo option *
-        memberInfo: PreValMemberInfo option *
+        typeScheme: GeneralizedType *
+        valReprInfo: ValReprInfo option *
+        memberInfo: PrelimMemberInfo option *
         isMutable: bool *
         inlineInfo: ValInline *
         baseOrThisInfo: ValBaseOrThisInfo *
         visibility: SynAccess option *
-        compgen: bool *
+        isCompGen: bool *
         isIncrClass: bool *
         isTyFunc: bool *
         hasDeclaredTypars: bool
@@ -597,7 +601,7 @@ val CheckForNonAbstractInterface:
 
 /// Check the flags on a member definition for consistency
 val CheckMemberFlags:
-    optIntfSlotTy: 'a option ->
+    intfSlotTyOpt: 'a option ->
     newslotsOK: NewSlotsOK ->
     overridesOK: OverridesOK ->
     memberFlags: SynMemberFlags ->
@@ -644,13 +648,13 @@ val CompilePatternForMatchClauses:
     cenv: TcFileState ->
     env: TcEnv ->
     mExpr: range ->
-    matchm: range ->
+    mMatch: range ->
     warnOnUnused: bool ->
     actionOnFailure: ActionOnFailure ->
     inputExprOpt: Expr option ->
     inputTy: TType ->
     resultTy: TType ->
-    tclauses: TypedMatchClause list ->
+    tclauses: MatchClause list ->
         Val * Expr
 
 /// Process recursive bindings so that initialization is through laziness and is checked.
@@ -684,7 +688,7 @@ val FreshenObjectArgType:
     tcref: TyconRef ->
     isExtrinsic: bool ->
     declaredTyconTypars: Typar list ->
-        TType * Typar list * TyparInst * TType * TType
+        TType * Typar list * TyparInstantiation * TType * TType
 
 /// Get the accumulated module/namespace type for the current module/namespace being processed.
 val GetCurrAccumulatedModuleOrNamespaceType: env: TcEnv -> ModuleOrNamespaceType
@@ -693,7 +697,7 @@ val GetCurrAccumulatedModuleOrNamespaceType: env: TcEnv -> ModuleOrNamespaceType
 val GetInstanceMemberThisVariable: vspec: Val * expr: Expr -> Val option
 
 /// Build the full ValReprInfo one type inference is complete.
-val InferGenericArityFromTyScheme: TypeScheme -> partialValReprInfo: PartialValReprInfo -> ValReprInfo
+val InferGenericArityFromTyScheme: GeneralizedType -> prelimValReprInfo: PrelimValReprInfo -> ValReprInfo
 
 /// Locate the environment within a particular namespace path, used to process a
 /// 'namespace' declaration.
@@ -710,10 +714,10 @@ val MakeAndPublishVal:
     altActualParent: ParentRef *
     inSig: bool *
     declKind: DeclKind *
-    vrec: ValRecursiveScopeInfo *
+    valRecInfo: ValRecursiveScopeInfo *
     vscheme: ValScheme *
     attrs: Attribs *
-    doc: XmlDoc *
+    xmlDoc: XmlDoc *
     konst: Const option *
     isGeneratedEventVal: bool ->
         Val
@@ -723,7 +727,7 @@ val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TT
 
 /// Make simple values (which are not recursive nor members)
 val MakeAndPublishSimpleVals:
-    cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
+    cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimVal1> -> NameMap<Val * GeneralizedType> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option
@@ -734,12 +738,12 @@ val MakeMemberDataAndMangledNameForMemberVal:
     tcref: TyconRef *
     isExtrinsic: bool *
     attrs: Attribs *
-    optImplSlotTys: TType list *
+    implSlotTys: TType list *
     memberFlags: SynMemberFlags *
     valSynData: SynValInfo *
     id: Ident *
     isCompGen: bool ->
-        PreValMemberInfo
+        PrelimMemberInfo
 
 /// Return a new environment suitable for processing declarations in the interior of a type definition
 val MakeInnerEnvForTyconRef: env: TcEnv -> tcref: TyconRef -> isExtrinsicExtension: bool -> TcEnv
@@ -750,7 +754,7 @@ val MakeInnerEnv:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    modKind: ModuleOrNamespaceKind ->
+    moduleKind: ModuleOrNamespaceKind ->
         TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
@@ -759,13 +763,13 @@ val MakeInnerEnvWithAcc:
     addOpenToNameEnv: bool ->
     env: TcEnv ->
     nm: Ident ->
-    mtypeAcc: ModuleOrNamespaceType ref ->
-    modKind: ModuleOrNamespaceKind ->
+    moduleTyAcc: ModuleOrNamespaceType ref ->
+    moduleKind: ModuleOrNamespaceKind ->
         TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
 /// is appplied.
-val NonGenericTypeScheme: ty: TType -> TypeScheme
+val NonGenericTypeScheme: ty: TType -> GeneralizedType
 
 /// Publish a module definition to the module/namespace type accumulator.
 val PublishModuleDefn: cenv: TcFileState -> env: TcEnv -> mspec: ModuleOrNamespace -> unit
@@ -789,7 +793,7 @@ val TcAndPublishValSpec:
     declKind: DeclKind *
     memFlagsOpt: SynMemberFlags option *
     tpenv: UnscopedTyparEnv *
-    valSpfn: SynValSig ->
+    synValSig: SynValSig ->
         Val list * UnscopedTyparEnv
 
 /// Check a set of attributes
@@ -816,7 +820,7 @@ val TcAttributesWithPossibleTargets:
         (AttributeTargets * Attrib) list * bool
 
 /// Check a constant value, e.g. a literal
-val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
+val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> synConst: SynConst -> Const
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr:
@@ -824,16 +828,16 @@ val TcExpr:
     ty: OverallTy ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
-    expr: SynExpr ->
+    synExpr: SynExpr ->
         Expr * UnscopedTyparEnv
 
 /// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
 /// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
-val RewriteRangeExpr: expr: SynExpr -> SynExpr option
+val RewriteRangeExpr: synExpr: SynExpr -> SynExpr option
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType:
-    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> expr: SynExpr -> Expr * TType * UnscopedTyparEnv
+    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> Expr * TType * UnscopedTyparEnv
 
 /// Check a syntactic expression and convert it to a typed tree expression. Possibly allow for subsumption flexibility
 /// and insert a coercion if necessary.
@@ -861,7 +865,7 @@ val TcPropagatingExprLeafThenConvert:
 
 /// Check a syntactic statement and convert it to a typed tree expression.
 val TcStmtThatCantBeCtorBody:
-    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> expr: SynExpr -> Expr * UnscopedTyparEnv
+    cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synExpr: SynExpr -> Expr * UnscopedTyparEnv
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprUndelayed:
@@ -882,7 +886,7 @@ val TcLinearExprs:
     overallTy: OverallTy ->
     tpenv: UnscopedTyparEnv ->
     isCompExpr: bool ->
-    expr: SynExpr ->
+    synExpr: SynExpr ->
     cont: (Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) ->
         Expr * UnscopedTyparEnv
 
@@ -896,7 +900,8 @@ val TcMatchPattern:
     inputTy: TType ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
-    pat: SynPat * optWhenExpr: SynExpr option ->
+    synPat: SynPat ->
+    synWhenExprOpt: SynExpr option ->
         Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv
 
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
@@ -963,7 +968,7 @@ val TcNewExpr:
 val TcProvidedTypeAppToStaticConstantArgs:
     cenv: TcFileState ->
     env: TcEnv ->
-    optGeneratedTypePath: string list option ->
+    generatedTypePathOpt: string list option ->
     tpenv: UnscopedTyparEnv ->
     tcref: TyconRef ->
     args: SynType list ->
@@ -974,18 +979,18 @@ val TcProvidedTypeAppToStaticConstantArgs:
 /// Check a set of simple patterns, e.g. the declarations of parameters for an implicit constructor.
 val TcSimplePatsOfUnknownType:
     cenv: TcFileState ->
-    optArgsOK: bool ->
-    checkCxs: CheckConstraints ->
+    optionalArgsOK: bool ->
+    checkConstraints: CheckConstraints ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
-    spats: SynSimplePats ->
-        string list * (UnscopedTyparEnv * NameMap<PrelimValScheme1> * Set<string>)
+    synSimplePats: SynSimplePats ->
+        string list * (UnscopedTyparEnv * NameMap<PrelimVal1> * Set<string>)
 
 /// Check a set of explicitly declared constraints on type parameters
 val TcTyparConstraints:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -999,7 +1004,7 @@ val TcTyparDecls: cenv: TcFileState -> env: TcEnv -> synTypars: SynTyparDecl lis
 val TcType:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1008,10 +1013,10 @@ val TcType:
 
 /// Check a syntactic type or unit of measure
 val TcTypeOrMeasureAndRecover:
-    optKind: TyparKind option ->
+    kindOpt: TyparKind option ->
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1022,7 +1027,7 @@ val TcTypeOrMeasureAndRecover:
 val TcTypeAndRecover:
     cenv: TcFileState ->
     newOk: ImplicitlyBoundTyparsAllowed ->
-    checkCxs: CheckConstraints ->
+    checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
@@ -1032,13 +1037,13 @@ val TcTypeAndRecover:
 /// Check a specification of a value or member in a signature or an abstract member
 val TcValSpec:
     cenv: TcFileState ->
-    TcEnv ->
-    DeclKind ->
-    ImplicitlyBoundTyparsAllowed ->
-    ContainerInfo ->
-    SynMemberFlags option ->
+    env: TcEnv ->
+    declKind: DeclKind ->
+    newOk: ImplicitlyBoundTyparsAllowed ->
+    containerInfo: ContainerInfo ->
+    memFlagsOpt: SynMemberFlags option ->
     thisTyOpt: TType option ->
-    UnscopedTyparEnv ->
+    tpenv: UnscopedTyparEnv ->
     SynValSig ->
     Attrib list ->
         ValSpecResult list * UnscopedTyparEnv
@@ -1046,15 +1051,15 @@ val TcValSpec:
 /// Given the declaration of a function or member, process it to produce the ValReprInfo
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
-val TranslateTopValSynInfo:
+val TranslateSynValInfo:
     range ->
     tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) ->
     synValInfo: SynValInfo ->
-        PartialValReprInfo
+        PrelimValReprInfo
 
 /// Given the declaration of a function or member, complete the processing of its ValReprInfo
 /// once type parameters have been fully inferred via generalization.
-val TranslatePartialArity: tps: Typar list -> PartialValReprInfo -> ValReprInfo
+val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
 val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit

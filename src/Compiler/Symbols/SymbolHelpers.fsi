@@ -63,10 +63,10 @@ module internal SymbolHelpers =
     val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option
 
     val (|ItemIsWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
     val (|ItemIsProvidedTypeWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
     val SimplerDisplayEnv: DisplayEnv -> DisplayEnv
@@ -75,4 +75,4 @@ module internal SymbolHelpers =
 
     val GetXmlCommentForMethInfoItem: infoReader: InfoReader -> m: range -> d: Item -> minfo: MethInfo -> FSharpXmlDoc
 
-    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInst -> Layout list
+    val FormatTyparMapping: denv: DisplayEnv -> prettyTyparInst: TyparInstantiation -> Layout list

@@ -4019,7 +4019,7 @@ type ILTypeSigParser (tstring : string) =
             | None -> []
             | Some genericArgs -> genericArgs
         let tspec = ILTypeSpec.Create (tref, genericArgs)
-        let ilty =
+        let ilTy =
             match tspec.Name with
             | "System.SByte"
             | "System.Byte"
@@ -4037,13 +4037,13 @@ type ILTypeSigParser (tstring : string) =
 
         // if it's an array, wrap it - otherwise, just return the IL type
         match rank with
-        | Some r -> ILType.Array (r, ilty)
-        | _ -> ilty
+        | Some r -> ILType.Array (r, ilTy)
+        | _ -> ilTy
 
     member x.ParseTypeSpec() =
         reset()
-        let ilty = x.ParseType()
-        ILAttribElem.Type (Some ilty)
+        let ilTy = x.ParseType()
+        ILAttribElem.Type (Some ilTy)
 
 let decodeILAttribData (ca: ILAttribute) =
     match ca with
@@ -4328,7 +4328,7 @@ and refsOfILCode s (c: ILCode) =
 
     for exnClause in c.Exceptions do
         match exnClause.Clause with
-        | ILExceptionClause.TypeCatch (ilty, _) -> refsOfILType s ilty
+        | ILExceptionClause.TypeCatch (ilTy, _) -> refsOfILType s ilTy
         | _ -> ()
 
 and refsOfILMethodBody s (il: ILMethodBody) =

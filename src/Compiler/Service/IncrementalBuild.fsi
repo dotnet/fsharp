@@ -46,41 +46,45 @@ module internal IncrementalBuilderEventTesting =
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type internal TcInfo =
-    { tcState: TcState
-      tcEnvAtEndOfFile: CheckExpressions.TcEnv
+    {
+        tcState: TcState
+        tcEnvAtEndOfFile: CheckExpressions.TcEnv
 
-      /// Disambiguation table for module names
-      moduleNamesDict: ModuleNamesDict
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
 
-      topAttribs: TopAttribs option
+        topAttribs: TopAttribs option
 
-      latestCcuSigForFile: ModuleOrNamespaceType option
+        latestCcuSigForFile: ModuleOrNamespaceType option
 
-      /// Accumulated errors, last file first
-      tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] list
+        /// Accumulated errors, last file first
+        tcDiagnosticsRev: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
-      tcDependencyFiles: string list
+        tcDependencyFiles: string list
 
-      sigNameOpt: (string * QualifiedNameOfFile) option }
+        sigNameOpt: (string * QualifiedNameOfFile) option
+    }
 
     /// Accumulated diagnostics
-    member TcDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) []
+    member TcDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
 type internal TcInfoExtras =
-    { tcResolutions: TcResolutions
-      tcSymbolUses: TcSymbolUses
-      tcOpenDeclarations: OpenDeclaration []
+    {
+        tcResolutions: TcResolutions
+        tcSymbolUses: TcSymbolUses
+        tcOpenDeclarations: OpenDeclaration[]
 
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+        /// Result of checking most recent file, if any
+        latestImplFile: CheckedImplFile option
 
-      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-      itemKeyStore: ItemKeyStore option
+        /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+        itemKeyStore: ItemKeyStore option
 
-      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassificationKeyStore: SemanticClassificationKeyStore option }
+        /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+        semanticClassificationKeyStore: SemanticClassificationKeyStore option
+    }
 
     member TcSymbolUses: TcSymbolUses
 
@@ -95,6 +99,8 @@ type internal PartialCheckResults =
     member TcConfig: TcConfig
 
     member TimeStamp: DateTime
+
+    member ProjectTimeStamp: DateTime
 
     member TryPeekTcInfo: unit -> TcInfo option
 
@@ -158,7 +164,7 @@ type internal IncrementalBuilder =
     member IsReferencesInvalidated: bool
 
     /// The list of files the build depends on
-    member AllDependenciesDeprecated: string []
+    member AllDependenciesDeprecated: string[]
 
     /// The project build. Return true if the background work is finished.
     member PopulatePartialCheckingResults: unit -> NodeCode<unit>
@@ -212,16 +218,18 @@ type internal IncrementalBuilder =
     /// This may be a long-running operation.
     member GetCheckResultsAfterLastFileInProject: unit -> NodeCode<PartialCheckResults>
 
-    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
+    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     member GetCheckResultsAndImplementationsForProject:
-        unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+        unit ->
+            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
-    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the TypedAssemblyAfterOptimization will contain implementations.
+    /// Get the final typecheck result. If 'generateTypedImplFiles' was set on Create then the CheckedAssemblyAfterOptimization will contain implementations.
     /// This may be a long-running operation.
     /// This will get full type-check info for the project, meaning no partial type-checking.
     member GetFullCheckResultsAndImplementationsForProject:
-        unit -> NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * TypedImplFile list option>
+        unit ->
+            NodeCode<PartialCheckResults * IL.ILAssemblyRef * ProjectAssemblyDataResult * CheckedImplFile list option>
 
     /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
     member GetLogicalTimeStampForProject: TimeStampCache -> DateTime
@@ -233,7 +241,7 @@ type internal IncrementalBuilder =
     ///
     /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
     member GetParseResultsForFile:
-        fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity) []
+        fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:
@@ -254,7 +262,7 @@ type internal IncrementalBuilder =
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
         dependencyProvider: DependencyProvider option ->
-            NodeCode<IncrementalBuilder option * FSharpDiagnostic []>
+            NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =

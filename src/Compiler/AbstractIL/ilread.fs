@@ -3678,13 +3678,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     (* PE SIGNATURE *)
     let machine = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 0)
     let numSections = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 2)
-    let optHeaderSize = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 16)
-    if optHeaderSize <> 0xe0 &&
-       optHeaderSize <> 0xf0 then failwith "not a PE file - bad optional header size"
-    let x64adjust = optHeaderSize - 0xe0
-    let only64 = (optHeaderSize = 0xf0) (* May want to read in the optional header Magic number and check that as well... *)
+    let headerSizeOpt = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 16)
+    if headerSizeOpt <> 0xe0 &&
+       headerSizeOpt <> 0xf0 then failwith "not a PE file - bad optional header size"
+    let x64adjust = headerSizeOpt - 0xe0
+    let only64 = (headerSizeOpt = 0xf0) (* May want to read in the optional header Magic number and check that as well... *)
     let platform = match machine with | 0x8664 -> Some AMD64 | 0x200 -> Some IA64 | _ -> Some X86
-    let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + optHeaderSize
+    let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + headerSizeOpt
 
     let flags = seekReadUInt16AsInt32 pev (peFileHeaderPhysLoc + 18)
     let isDll = (flags &&& 0x2000) <> 0x0

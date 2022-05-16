@@ -15,7 +15,7 @@ module internal CompilerService =
 
 /// For extra diagnostics
 val mutable showParserStackOnParseError: bool
-#endif // DEBUG
+#endif
 
 /// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
@@ -48,16 +48,17 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 exception InternalCommandLineOption of string * range
 
 /// Get the location associated with an error
-val GetRangeOfDiagnostic: PhasedDiagnostic -> range option
+val GetRangeOfDiagnostic: diagnostic: PhasedDiagnostic -> range option
 
 /// Get the number associated with an error
-val GetDiagnosticNumber: PhasedDiagnostic -> int
+val GetDiagnosticNumber: diagnostic: PhasedDiagnostic -> int
 
 /// Split errors into a "main" error and a set of associated errors
-val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
+val SplitRelatedDiagnostics: diagnostic: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
+val OutputPhasedDiagnostic:
+    os: StringBuilder -> diagnostic: PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic:
@@ -126,4 +127,4 @@ val CollectFormattedDiagnostics:
     severity: FSharpDiagnosticSeverity *
     PhasedDiagnostic *
     suggestNames: bool ->
-        FormattedDiagnostic []
+        FormattedDiagnostic[]

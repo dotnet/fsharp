@@ -68,14 +68,16 @@ val CalledArg:
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
 type AssignedCalledArg<'T> =
-    { /// The identifier for a named argument, if any
-      NamedArgIdOpt: Ident option
+    {
+        /// The identifier for a named argument, if any
+        NamedArgIdOpt: Ident option
 
-      /// The called argument in the method
-      CalledArg: CalledArg
+        /// The called argument in the method
+        CalledArg: CalledArg
 
-      /// The argument on the caller side
-      CallerArg: CallerArg<'T> }
+        /// The argument on the caller side
+        CallerArg: CallerArg<'T>
+    }
 
     member Position: struct (int * int)
 
@@ -159,20 +161,22 @@ val AdjustCalledArgType:
         TType * TypeDirectedConversionUsed * (TType * TType * (DisplayEnv -> unit)) option
 
 type CalledMethArgSet<'T> =
-    { /// The called arguments corresponding to "unnamed" arguments
-      UnnamedCalledArgs: CalledArg list
+    {
+        /// The called arguments corresponding to "unnamed" arguments
+        UnnamedCalledArgs: CalledArg list
 
-      /// Any unnamed caller arguments not otherwise assigned
-      UnnamedCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments not otherwise assigned
+        UnnamedCallerArgs: CallerArg<'T> list
 
-      /// The called "ParamArray" argument, if any
-      ParamArrayCalledArgOpt: CalledArg option
+        /// The called "ParamArray" argument, if any
+        ParamArrayCalledArgOpt: CalledArg option
 
-      /// Any unnamed caller arguments assigned to a "param array" argument
-      ParamArrayCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments assigned to a "param array" argument
+        ParamArrayCallerArgs: CallerArg<'T> list
 
-      /// Named args
-      AssignedNamedArgs: AssignedCalledArg<'T> list }
+        /// Named args
+        AssignedNamedArgs: AssignedCalledArg<'T> list
+    }
 
     member NumAssignedNamedArgs: int
 
@@ -244,11 +248,11 @@ type CalledMeth<'T> =
     /// Return type after tupling of out args is taken into account
     member CalledReturnTypeAfterOutArgTupling: TType
 
-    /// The instantiation of the method we're attempting to call
+    /// The generic instantiation of the method we're attempting to call
     member CalledTyArgs: TType list
 
     /// The instantiation of the method we're attempting to call
-    member CalledTyparInst: TypedTreeOps.TyparInst
+    member CalledTyparInst: TyparInstantiation
 
     /// The types of the actual object arguments, if any
     member CallerObjArgTys: TType list
@@ -260,7 +264,7 @@ type CalledMeth<'T> =
 
     member HasCorrectGenericArity: bool
 
-    member HasOptArgs: bool
+    member HasOptionalArgs: bool
 
     member HasOutArgs: bool
 

@@ -2081,19 +2081,19 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFsLib
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFsLib()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions Default
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.CodeAnalysis.FSharpParsingOptions get_Default()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions ErrorSeverityOptions
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_ErrorSeverityOptions()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions DiagnosticOptions
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_DiagnosticOptions()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -6369,6 +6369,14 @@ FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Syntax.SynType get_targ
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Syntax.SynType targetType
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Downcast: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr argExpr
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr funcExpr
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_argExpr()
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Syntax.SynExpr get_funcExpr()
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range get_qmark()
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range qmark
+FSharp.Compiler.Syntax.SynExpr+Dynamic: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+Fixed: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+Fixed: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+Fixed: FSharp.Compiler.Text.Range get_range()
@@ -6700,6 +6708,7 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DotIndexedSet
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DotNamedIndexedPropertySet
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DotSet
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Downcast
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Dynamic
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Fixed
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 For
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ForEach
@@ -6859,6 +6868,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsDotIndexedSet
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDotNamedIndexedPropertySet
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDotSet
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDowncast
+FSharp.Compiler.Syntax.SynExpr: Boolean IsDynamic
 FSharp.Compiler.Syntax.SynExpr: Boolean IsFixed
 FSharp.Compiler.Syntax.SynExpr: Boolean IsFor
 FSharp.Compiler.Syntax.SynExpr: Boolean IsForEach
@@ -6926,6 +6936,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDotIndexedSet()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDotNamedIndexedPropertySet()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDotSet()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDowncast()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDynamic()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsFixed()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsFor()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsForEach()
@@ -6992,6 +7003,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotIndexedSet(
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotNamedIndexedPropertySet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDowncast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDynamic(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFixed(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFor(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.DebugPointAtInOrTo, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewForEach(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.DebugPointAtInOrTo, FSharp.Compiler.Syntax.SeqExprOnly, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -7058,6 +7070,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DotIndexedSet
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DotNamedIndexedPropertySet
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DotSet
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Downcast
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Dynamic
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Fixed
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+For
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ForEach
@@ -9039,8 +9052,8 @@ FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo arity
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo get_SynInfo()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValInfo get_arity()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValSig NewSynValSig(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynIdent, FSharp.Compiler.Syntax.SynValTyparDecls, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynValInfo, Boolean, Boolean, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynValSigTrivia)
-FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls explicitValDecls
-FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls get_explicitValDecls()
+FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls explicitTypeParams
+FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Syntax.SynValTyparDecls get_explicitTypeParams()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.SyntaxTrivia.SynValSigTrivia get_trivia()
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.SyntaxTrivia.SynValSigTrivia trivia
 FSharp.Compiler.Syntax.SynValSig: FSharp.Compiler.Text.Range RangeOfId
