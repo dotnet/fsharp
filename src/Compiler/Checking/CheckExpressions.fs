@@ -11682,8 +11682,6 @@ and AnalyzeRecursiveStaticMemberOrValDecl
 
            let domainTy = NewInferenceType g
 
-           CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
-
            let optInferredImplSlotTys, declaredTypars =
                ApplyAbstractSlotInference cenv envinner (domainTy, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, objTy, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
