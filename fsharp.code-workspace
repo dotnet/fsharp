@@ -28,50 +28,5 @@
 			"name": "Visual Studio (vsintegration)",
 			"path": "vsintegration"
 		}
-	],
-	"settings": {
-		"files.associations": {
-			"*.csproj": "msbuild",
-			"*.fsproj": "msbuild",
-			"*.nuspec": "xml",
-			"*.props": "msbuild",
-			"*.targets": "msbuild",
-			"*.vsixmanifest": "xml",
-			"*.vstemplate": "xml"
-		},
-		"explorer.fileNesting.enabled": true,
-		"explorer.fileNesting.expand": false,
-		"explorer.fileNesting.patterns": {
-			"*.fs": "${capture}.fsi"
-		},
-		"FSharp.suggestGitignore": false,
-		"FSharp.enableMSBuildProjectGraph": true,
-		"FSharp.workspacePath": "FSharp.sln",
-		"FSharp.workspaceModePeekDeepLevel": 1,
-		"FSharp.excludeProjectDirectories": [
-			".git",
-			"eng",
-			"artifacts",
-			"fcs-samples",
-			"tests/projects",
-			"tests/benchmarks",
-			"tests/EndToEndBuildTests"
-		],
-		"csharp.showOmnisharpLogOnError": false,
-		"csharp.suppressBuildAssetsNotification": true,
-		"csharp.suppressDotnetInstallWarning": true,
-		"csharp.suppressDotnetRestoreNotification": true,
-		"csharp.suppressHiddenDiagnostics": true,
-		"omnisharp.autoStart": true,
-		"omnisharp.enableMsBuildLoadProjectsOnDemand": true,
-		"omnisharp.disableMSBuildDiagnosticWarning": true,
-		"razor.disabled": true,
-		"powershell.promptToUpdatePowerShell": false,
-		"powershell.integratedConsole.showOnStartup": false,
-		"powershell.startAutomatically": false,
-		"dotnet-test-explorer.testProjectPath": "tests/+(FSharp.Compiler.Service.Tests|FSharp.Compiler.UnitTests|FSharp.Core.UnitTests|FSharp.Build.UnitTests|FSharp.Compiler.ComponentTests)/*Tests.fsproj",
-		"dotnet-test-explorer.addProblems": true,
-		"dotnet-test-explorer.autoWatch": false,
-		"dotnet-test-explorer.treeMode": "merged"
-	}
+	]
 }

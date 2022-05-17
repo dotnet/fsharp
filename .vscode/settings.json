@@ -10,6 +10,11 @@
         "*.vsixmanifest": "xml",
         "*.vstemplate": "xml",
     },
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "*.fs": "${capture}.fsi"
+    },
     "FSharp.suggestGitignore": false,
     "FSharp.enableMSBuildProjectGraph": true,
     "FSharp.workspacePath": "FSharp.sln",
