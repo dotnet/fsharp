@@ -5330,7 +5330,7 @@ and TcConstPat warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty synCons
     match synConst with
     | SynConst.Bytes (bytes, _, m) ->
         UnifyTypes cenv env m ty (mkByteArrayTy g)
-        let synReplacementExpr = SynPat.ArrayOrList (true, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m)
+        let synReplacementExpr = SynPat.ArrayOrList (CollectionType.Array, [ for b in bytes -> SynPat.Const(SynConst.Byte b, m) ], m)
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty synReplacementExpr
 
     | SynConst.UserNum _ ->
@@ -5417,15 +5417,20 @@ and TcPatTuple warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty isExpli
         let phase2 _ = TPat_error m
         phase2, acc
 
-and TcPatArrayOrList warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty isArray args m =
+and TcPatArrayOrList warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty ct args m =
     let g = cenv.g
     let argTy = NewInferenceType g
-    UnifyTypes cenv env m ty (if isArray then mkArrayType g argTy else mkListTy g argTy)
+    UnifyTypes cenv env m ty (match ct with | CollectionType.Array -> mkArrayType g argTy | CollectionType.List -> mkListTy g argTy | CollectionType.ImmutableArray -> mkBlockType g argTy)
     let argsR, acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> argTy) args) args
     let phase2 values =
         let argsR = List.map (fun f -> f values) argsR
-        if isArray then TPat_array(argsR, argTy, m)
-        else List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
+        match ct with
+        | CollectionType.Array ->
+            TPat_array(argsR, argTy, m)
+        | CollectionType.List ->
+            List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
+        | CollectionType.ImmutableArray ->
+            TPat_block(argsR, argTy, m)
     phase2, acc
 
 and TcRecordPat warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty fieldPats m =
@@ -6593,11 +6598,11 @@ and TcExprArrayOrList cenv overallTy env tpenv (cType:CollectionType, args, m) =
         let expr =
             match cType with
             | CollectionType.Array ->
-                Expr.Op (TOp.Array, [argty], args', m)
+                Expr.Op (TOp.Array, [argTy], argsR, m)
             | CollectionType.List ->
-                List.foldBack (mkCons g argty) args' (mkNil g m argty)
+                List.foldBack (mkCons g argTy) argsR (mkNil g m argTy)
             | CollectionType.ImmutableArray ->
-                Expr.Op (TOp.Block, [argty], args', m)
+                Expr.Op (TOp.Block, [argTy], argsR, m)
         expr, tpenv
     )
 
