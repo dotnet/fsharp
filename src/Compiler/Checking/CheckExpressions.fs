@@ -5417,20 +5417,25 @@ and TcPatTuple warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty isExpli
         let phase2 _ = TPat_error m
         phase2, acc
 
-and TcPatArrayOrList warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty isArray args m =
+and TcPatArrayOrList warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty ct args m =
     let g = cenv.g
     let argTy = NewInferenceType g
     let tt =
         match cType with
-        | CollectionType.Array -> mkArrayType g argty
-        | CollectionType.List -> mkListTy g argty
-        | CollectionType.ImmutableArray -> mkBlockType g argty
+        | CollectionType.Array -> mkArrayType g argTy
+        | CollectionType.List -> mkListTy g argTy
+        | CollectionType.ImmutableArray -> mkBlockType g argTy
     UnifyTypes cenv env m ty tt
     let argsR, acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> argTy) args) args
     let phase2 values =
         let argsR = List.map (fun f -> f values) argsR
-        if isArray then TPat_array(argsR, argTy, m)
-        else List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
+        match ct with
+        | CollectionType.Array ->
+            TPat_array(argsR, argTy, m)
+        | CollectionType.List ->
+            List.foldBack (mkConsListPat g argTy) argsR (mkNilListPat g m argTy)
+        | CollectionType.ImmutableArray ->
+            TPat_block(argsR, argTy, m)
     phase2, acc
 
 and TcRecordPat warnOnUpper cenv env vFlags (tpenv, names, takenNames) ty fieldPats m =

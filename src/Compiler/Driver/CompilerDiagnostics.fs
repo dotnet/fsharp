@@ -640,14 +640,14 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
           match contextInfo with
           | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression(ty1, ty2))
-          | ContextInfo.CollectionElement (cc, range) when equals range m ->
-            match cc with
+          | ContextInfo.CollectionElement (ct, range) when equals range m ->
+            match ct with
             | CollectionType.Array ->
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             | CollectionType.List ->
                 os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
             | CollectionType.ImmutableArray ->
-                os.Append(FSComp.SR.blockElementHasWrongType(t1, t2)) |> ignore
+                os.AppendString(FSComp.SR.blockElementHasWrongType(ty1, ty2))
           | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch(ty2))
           | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType(ty1, ty2))
           | ContextInfo.FollowingPatternMatchClause range when equals range m -> os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType(ty1, ty2))
@@ -676,15 +676,14 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
           | ContextInfo.IfExpression range when equals range m ->
               os.AppendString(FSComp.SR.ifExpression(ty1, ty2))
 
-          | ContextInfo.CollectionElement (cc, range) when equals range m ->
-            match cc with
-            | CollectionType.Array ->
-                os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
-            | CollectionType.List ->
-                os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
-            | CollectionType.ImmutableArray ->
-                os.Append(FSComp.SR.blockElementHasWrongType(t1, t2)) |> ignore
-
+          | ContextInfo.CollectionElement (cType, range) when equals range m ->
+              match cType with
+              | CollectionType.Array ->
+                  os.AppendString(FSComp.SR.arrayElementHasWrongType(ty1, ty2))
+              | CollectionType.List ->
+                  os.AppendString(FSComp.SR.listElementHasWrongType(ty1, ty2))
+              | CollectionType.ImmutableArray ->
+                  os.AppendString(FSComp.SR.blockElementHasWrongType(ty1, ty2))
           | ContextInfo.OmittedElseBranch range when equals range m ->
               os.AppendString(FSComp.SR.missingElseBranch(ty2))
 
