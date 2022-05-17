@@ -30,9 +30,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.VS.FSI", "vsintegrat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpFull", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj", "{59ADCE46-9740-4079-834D-9A03A3494EBC}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Server.Shared", "src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Server.Shared", "src\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\fsharp\FSharp.Core\FSharp.Core.fsproj", "{DED3BBD7-53F4-428A-8C9F-27968E768605}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{DED3BBD7-53F4-428A-8C9F-27968E768605}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.LanguageService", "vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}"
 EndProject
@@ -74,15 +74,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlDocAttributeWithLongComm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlDocAttributeWithNullComment", "vsintegration\tests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj", "{956BBE41-ABD1-4DBA-9F3B-BA1C9821C98C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build", "src\fsharp\FSharp.Build\FSharp.Build.fsproj", "{702A7979-BCF9-4C41-853E-3ADFC9897890}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build", "src\FSharp.Build\FSharp.Build.fsproj", "{702A7979-BCF9-4C41-853E-3ADFC9897890}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsharp\fsc\fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsc", "src\fsc\fsc.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Interactive.Settings", "src\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Interactive.Settings", "src\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj", "{649FA588-F02E-457C-9FCF-87E46407481E}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsiAnyCpu\fsiAnyCpu.fsproj", "{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsharp\fsi\fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsi\fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB}"
 EndProject
@@ -90,7 +90,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\
 	ProjectSection(ProjectDependencies) = postProject
 		{D0E98C0D-490B-4C61-9329-0862F6E87645} = {D0E98C0D-490B-4C61-9329-0862F6E87645}
 		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B} = {8B3E283D-B5FE-4055-9D80-7E3A32F3967B}
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236} = {2E60864A-E3FF-4BCC-810F-DC7C34E6B236}
 		{C94C257C-3C0A-4858-B5D8-D746498D1F08} = {C94C257C-3C0A-4858-B5D8-D746498D1F08}
 	EndProjectSection
 EndProject
@@ -112,8 +111,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XMLFile", "vsintegration\It
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "HostedCompilerServer", "tests\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj", "{4239EFEA-E746-446A-BF7A-51FCBAB13946}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ILComparer", "tests\fsharpqa\testenv\src\ILComparer\ILComparer.fsproj", "{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.UIResources", "vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj", "{C4586A06-1402-48BC-8E35-A1B8642F895B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
@@ -123,8 +120,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResourceFile", "vsintegration\ItemTemplates\ResourceFile\ResourceFile.csproj", "{0385564F-07B4-4264-AB8A-17C393E9140C}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Build.UnitTests", "tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj", "{400FAB03-786E-40CC-85A8-04B0C2869B14}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PEVerify", "tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj", "{B0689A4E-07D8-494D-A0C8-791CB1D74E54}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.PatternMatcher", "vsintegration\src\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj", "{18227628-DF90-4C47-AF3D-CC72D2EDD986}"
 EndProject
@@ -140,7 +135,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.FSharp.SDK", "set
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scripting.UnitTests", "tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj", "{09F56540-AFA5-4694-B7A6-0DBF6D4618C2}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "src\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{DFA30881-C0B1-4813-B087-C21B5AF9B77F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "src\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{DFA30881-C0B1-4813-B087-C21B5AF9B77F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpTemplates", "vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj", "{AA259A37-418F-4E18-87B2-C7D5F8C26CC4}"
 EndProject
@@ -158,7 +153,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\benchmark
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTests", "tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{0610FB97-7C15-422A-86FD-32335C6DF14D}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj", "{B5A9BBD9-2F45-4722-A6CA-BAE3C64CD4E2}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "src\Compiler\FSharp.Compiler.Service.fsproj", "{B5A9BBD9-2F45-4722-A6CA-BAE3C64CD4E2}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tests", "tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{14F3D3D6-5C8E-43C2-98A2-17EA704D4DEA}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -178,9 +173,11 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MicroPerf", "tests\benchmar
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MicroPerf", "MicroPerf", "{47112E07-9FF1-43E7-8021-F2A21D6A19A0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fscAnyCpu", "src\fsharp\fscAnyCpu\fscAnyCpu.fsproj", "{52DCA91F-3843-43E3-8FE1-FB2B66658CBD}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fscAnyCpu", "src\fscAnyCpu\fscAnyCpu.fsproj", "{52DCA91F-3843-43E3-8FE1-FB2B66658CBD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shims", "vsintegration\shims\shims.csproj", "{B1E30F2C-894F-47A9-9C8A-3324831E7D26}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PEVerify", "tests\PEVerify\PEVerify.csproj", "{035CF639-9704-44C0-96AA-BCB132AA881A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -672,18 +669,6 @@ Global
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Release|x86.ActiveCfg = Release|Any CPU
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946}.Release|x86.Build.0 = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Debug|x86.Build.0 = Debug|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Proto|Any CPU.ActiveCfg = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Proto|Any CPU.Build.0 = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Proto|x86.ActiveCfg = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Proto|x86.Build.0 = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|x86.ActiveCfg = Release|Any CPU
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236}.Release|x86.Build.0 = Release|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -744,18 +729,6 @@ Global
 		{400FAB03-786E-40CC-85A8-04B0C2869B14}.Release|Any CPU.Build.0 = Release|Any CPU
 		{400FAB03-786E-40CC-85A8-04B0C2869B14}.Release|x86.ActiveCfg = Release|Any CPU
 		{400FAB03-786E-40CC-85A8-04B0C2869B14}.Release|x86.Build.0 = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Debug|x86.Build.0 = Debug|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Proto|Any CPU.ActiveCfg = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Proto|Any CPU.Build.0 = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Proto|x86.ActiveCfg = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Proto|x86.Build.0 = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Release|x86.ActiveCfg = Release|Any CPU
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54}.Release|x86.Build.0 = Release|Any CPU
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -1020,6 +993,18 @@ Global
 		{B1E30F2C-894F-47A9-9C8A-3324831E7D26}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B1E30F2C-894F-47A9-9C8A-3324831E7D26}.Release|x86.ActiveCfg = Release|Any CPU
 		{B1E30F2C-894F-47A9-9C8A-3324831E7D26}.Release|x86.Build.0 = Release|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Debug|x86.Build.0 = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Proto|x86.ActiveCfg = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Proto|x86.Build.0 = Debug|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Release|x86.ActiveCfg = Release|Any CPU
+		{035CF639-9704-44C0-96AA-BCB132AA881A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1070,13 +1055,11 @@ Global
 		{D11FC318-8F5D-4C8C-9287-AB40A016D13C} = {F6DAEE9A-8BE1-4C4A-BC83-09215517C7DA}
 		{1FB1DD07-06AA-45B4-B5AC-20FF5BEE98B6} = {F6DAEE9A-8BE1-4C4A-BC83-09215517C7DA}
 		{4239EFEA-E746-446A-BF7A-51FCBAB13946} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
-		{2E60864A-E3FF-4BCC-810F-DC7C34E6B236} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{C4586A06-1402-48BC-8E35-A1B8642F895B} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{887630A3-4B1D-40EA-B8B3-2D842E9C40DB} = {35636A82-401A-4C3A-B2AB-EB7DC5E9C268}
 		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B} = {35636A82-401A-4C3A-B2AB-EB7DC5E9C268}
 		{0385564F-07B4-4264-AB8A-17C393E9140C} = {F6DAEE9A-8BE1-4C4A-BC83-09215517C7DA}
 		{400FAB03-786E-40CC-85A8-04B0C2869B14} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
-		{B0689A4E-07D8-494D-A0C8-791CB1D74E54} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{18227628-DF90-4C47-AF3D-CC72D2EDD986} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
 		{4CBEE353-EB7F-4A47-988B-0070AEB4EE7A} = {6235B3AF-774D-4EA1-8F37-789E767F6368}
 		{6BCFED7A-3F67-4180-B307-C7D69D191D8C} = {6235B3AF-774D-4EA1-8F37-789E767F6368}
@@ -1101,6 +1084,7 @@ Global
 		{47112E07-9FF1-43E7-8021-F2A21D6A19A0} = {DFB6ADD7-3149-43D9-AFA0-FC4A818B472B}
 		{52DCA91F-3843-43E3-8FE1-FB2B66658CBD} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{B1E30F2C-894F-47A9-9C8A-3324831E7D26} = {4C7B48D7-19AF-4AE7-9D1D-3BB289D5480D}
+		{035CF639-9704-44C0-96AA-BCB132AA881A} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}

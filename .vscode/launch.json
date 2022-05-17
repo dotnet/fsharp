@@ -1,0 +1,77 @@
+{
+    // For further information about `coreclr` debugging, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "argsPrompt",
+            "description": "Enter arguments for fsc",
+            "default": "",
+            "type": "promptString",
+        }
+    ],
+    "configurations": [
+        {
+            "name": "Launch FSI (Debug, .NET 5.0)",
+            "type": "coreclr",
+            "request": "launch",
+            // TODO: Shall we assume that it's already been built, or build it every time we debug?
+            // "preLaunchTask": "Build (Debug)",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net5.0/fsi.dll",
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "symbolOptions": {
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            },
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": false
+                }
+            },
+        },
+        {
+            "name": "Launch FSC (Debug, .NET 5.0)",
+            "type": "coreclr",
+            "request": "launch",
+            // TODO: Shall we assume that it's already been built, or build it every time we debug?
+            // "preLaunchTask": "Build (Debug)",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net5.0/fsc.dll",
+            "args": [
+                "${input:argsPrompt}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "symbolOptions": {
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            },
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": false
+                }
+            },
+        },
+        {
+            "name": "Attach to .NET process",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": true
+                }
+            },
+            "stopAtEntry": false,
+            "justMyCode": false,
+            "enableStepFiltering": false,
+        }
+    ]
+}

@@ -21,6 +21,9 @@ type AsyncType() =
     let ignoreSynchCtx f =
         f ()
 
+    [<VolatileField>]
+    let mutable spinloop = true
+        
     let waitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.True(result, "Task did not finish after waiting for a second.")
@@ -179,14 +182,13 @@ type AsyncType() =
     [<Fact>]
     member _.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
-        let mutable spinloop = true
         let doSpinloop () = while spinloop do ()
         let a = async {
             cts.CancelAfter (100)
             doSpinloop()
         }
-        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
 
+        use t : Task<unit> = Async.StartAsTask(a, cancellationToken = cts.Token)
         // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
@@ -201,7 +203,9 @@ type AsyncType() =
             match a.InnerException with
             | :? TaskCanceledException as t -> ()
             | _ -> reraise()
+
         Assert.True (t.IsCompleted, "Task is not completed")
+
 
     [<Fact>]
     member _.``AwaitTask ignores Async cancellation`` () =
@@ -334,7 +338,7 @@ type AsyncType() =
 
 #if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToImmediateTask () =
         let a = async {
                 while true do ()
@@ -351,7 +355,7 @@ type AsyncType() =
 
 #if IGNORED
     [<Fact>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/4337")>]
     member _.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false

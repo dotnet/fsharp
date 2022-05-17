@@ -1,12 +1,6 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
-#if INTERACTIVE
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.Test.Utilities/TestFramework.fs"
-#load "single-test.fs"
-#else
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 module FSharp.Tests.Core
-#endif
 
 open System
 open System.IO
@@ -819,9 +813,9 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /r:split\a-part1.dll /out:split\a.dll /define:PART2;SPLIT""" ["a.cs"]
 
-        copy_y cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
+        copy cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
 
-        copy_y cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
+        copy cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
 
         fsc cfg """-o:orig\test.exe -r:orig\b.dll -r:orig\a.dll""" ["test.fs"]
 
@@ -834,6 +828,22 @@ module CoreTests =
         peverify cfg ("split" ++ "b.dll")
 
         peverify cfg ("split" ++ "c.dll")
+
+    [<Test>]
+    let xmldoc () =
+        let cfg = testConfig "core/xmldoc"
+
+        fsc cfg "%s -a --doc:lib.xml -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
+        let outFile = "lib.xml"
+        let expectedFile = "lib.xml.bsl"
+
+        if not (fileExists cfg expectedFile) then
+            copy cfg outFile expectedFile
+
+        let diffs = fsdiff cfg outFile expectedFile
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
 
     [<Test>]
     let fsfromcs () =
@@ -1036,8 +1046,6 @@ module CoreTests =
 
        if requireENCulture () then
 
-        let copy from' = Commands.copy_y cfg.Directory from' >> checkResult
-
         let ``fsi <a >b 2>c`` =
             // "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
             let ``exec <a >b 2>c`` (inFile, outFile, errFile) p =
@@ -1059,12 +1067,11 @@ module CoreTests =
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
 
-        let withDefault default' to' =
-            if not (fileExists cfg to') then copy default' to'
+        let withDefault defaultFile toFile =
+            if not (fileExists cfg toFile) then copy cfg defaultFile toFile
 
         expectedFileOut |> withDefault diffFileOut
         expectedFileErr |> withDefault diffFileErr
-
 
         match fsdiff cfg diffFileOut expectedFileOut with
         | "" -> ()
@@ -1092,14 +1099,14 @@ module CoreTests =
     // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
     // as it feeds in many incremental fragments into stdin of the FSI process.
     [<Test>]
-    let ``printing-legacyemitoff`` () =
-         runPrintingTest "--multiemit+ --debug+" "output.legacyemitoff"
+    let ``printing-multiemit`` () =
+         runPrintingTest "--multiemit+ --debug+" "output.multiemit"
 
     // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
     // needs to be tested with optimizations off.  The output should not change.
     [<Test>]
-    let ``printing-legacyemitoff-optimizeoff`` () =
-         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.legacyemitoff"
+    let ``printing-multiemit-optimizeoff`` () =
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.multiemit"
 
     [<Test>]
     let ``printing-width-1000`` () =
@@ -1305,7 +1312,7 @@ module CoreTests =
         exec cfg ("." ++ "main.exe") ""
 
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
+    // Repro for https://github.com/dotnet/fsharp/issues/1298
     [<Test>]
     let fileorder () =
         let cfg = testConfig "core/fileorder"
@@ -1332,7 +1339,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test2.exe") ""
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    // Repro for https://github.com/dotnet/fsharp/issues/2679
     [<Test>]
     let ``add files with same name from different folders`` () =
         let cfg = testConfig "core/samename"
@@ -1377,7 +1384,7 @@ module CoreTests =
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
-        // see https://github.com/Microsoft/visualfsharp/issues/3139
+        // see https://github.com/dotnet/fsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
         let stderrPath = "out.stderr.txt" |> getfullpath cfg
@@ -1580,7 +1587,7 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
-//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
+//BUGBUG: https://github.com/dotnet/fsharp/issues/6601
 //    [<Test>]
 //    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
 
@@ -2092,7 +2099,7 @@ module VersionTests =
 [<NonParallelizable>]
 module ToolsTests =
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let bundle () =
         let cfg = testConfig "tools/bundle"
@@ -2142,6 +2149,11 @@ module RegressionTests =
 
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
+
+    [<Test >]
+    let ``4715-optimized`` () =
+        let cfg = testConfig "regression/4715"
+        fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
 
 #if NETCOREAPP
     [<Test >]
@@ -2247,7 +2259,7 @@ module RegressionTests =
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``655`` () =
         let cfg = testConfig "regression/655"
@@ -2266,7 +2278,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test >]
     let ``656`` () =
         let cfg = testConfig "regression/656"
@@ -2300,7 +2312,7 @@ module RegressionTests =
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () =
         let cfg = testConfig "regression/struct-measure-bug-1"

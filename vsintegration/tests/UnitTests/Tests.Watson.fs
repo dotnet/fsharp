@@ -31,17 +31,17 @@ type Check =
                     |]
 
                 let ctok = AssumeCompilationThreadWithoutEvidence ()
-                let _code = mainCompile (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
+                let _code = CompileFromCommandLineArguments (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.DiagnosticsLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 
                 let msg = e.ToString();
-                if msg.Contains("ReportTime") || msg.Contains("TypeCheckOneInput") then ()
+                if msg.Contains("ReportTime") || msg.Contains("CheckOneInput") then ()
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")
-            | (FSharp.Compiler.ErrorLogger.ReportedError (Some (FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e)))
-            | (FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e) -> 
+            | (FSharp.Compiler.DiagnosticsLogger.ReportedError (Some (FSharp.Compiler.DiagnosticsLogger.InternalError (msg, range) as e)))
+            | (FSharp.Compiler.DiagnosticsLogger.InternalError (msg, range) as e) -> 
                 printfn "InternalError Exception: %s, range = %A, stack = %s" msg range (e.ToString())
                 Assert.Fail("An InternalError exception occurred.")
         finally               

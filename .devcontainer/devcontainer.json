@@ -1,34 +1,38 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.108.0/containers/dotnetcore-3.1-fsharp
 {
-	"name": "F# (.NET Core 3.1)",
-	"dockerFile": "Dockerfile",
+    "name": "F# (.NET 6)",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0
+            // Append -bullseye or -focal to pin to an OS version.
+            "VARIANT": "6.0-focal"
+        }
+    },
+    "hostRequirements": {
+        "cpus": 2,
+        "memory": "4gb",
+        "storage": "32gb"
+    },
 
-	// Set *default* container specific settings.json values on container create.
-	//
-	// .NET Core is now the default for F# in .NET Core 3.0+
-	// However, .NET Core scripting is not the default yet. Set that to true.
-	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash",
-		"FSharp.useSdkScripts":true,
-		"editor.trimAutoWhitespace": false,
-		"files.trimTrailingWhitespace": false,
-		"FSharp.suggestGitignore": false,
-		"FSharp.workspacePath": "FSharp.sln"
-	},
+    // Default settings are set in .vscode/settings.json
+    "settings": {},
 
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"Ionide.Ionide-fsharp",
-		"ms-dotnettools.csharp"
-	],
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "./build.sh",
-
-	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "formulahendry.dotnet-test-explorer",
+        "ms-dotnettools.csharp",
+        "Ionide.Ionide-fsharp",
+        "tintoy.msbuild-project-tools"
+    ],
+    "onCreateCommand": [
+        "/bin/bash",
+        "-c",
+        "./build.sh",
+        "-c",
+        "Debug"
+    ],
+    "waitFor": "onCreateCommand"
 }

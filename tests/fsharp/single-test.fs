@@ -29,10 +29,10 @@ let cleanUpFSharpCore cfg =
     { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
 // Generate a project files
-let emitFile filename (body:string) =
+let emitFile fileName (body:string) =
     try
         // Create a file to write to
-        use sw = File.CreateText(filename)
+        use sw = File.CreateText(fileName)
         sw.WriteLine(body)
     with | _ -> ()
 
@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
             |> List.rev
             |> List.tryFind (fileExists cfg)
 
-        source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
+        source1 |> Option.iter (fun from -> copy cfg from "tmptest.fs")
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]

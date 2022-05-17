@@ -157,8 +157,8 @@ module Utils =
         elif ty.IsGenericParameter then
             let pos = ty.GenericParameterPosition
             let (inst1: Type[], inst2: Type[]) = inst
-            if pos < inst1.Length then inst1.[pos]
-            elif pos < inst1.Length + inst2.Length then inst2.[pos - inst1.Length]
+            if pos < inst1.Length then inst1[pos]
+            elif pos < inst1.Length + inst2.Length then inst2[pos - inst1.Length]
             else ty
         else ty
 
@@ -612,7 +612,7 @@ type ProvidedTypeSymbol(kind: ProvidedTypeSymbolKind, typeArgs: Type list, typeB
         | ProvidedTypeSymbolKind.Pointer, [| arg |] -> arg.Name + "*"
         | ProvidedTypeSymbolKind.ByRef, [| arg |] -> arg.Name + "&"
         | ProvidedTypeSymbolKind.Generic gty, _typeArgs -> gty.Name
-        | ProvidedTypeSymbolKind.FSharpTypeAbbreviation (_, _, path), _ -> path.[path.Length-1]
+        | ProvidedTypeSymbolKind.FSharpTypeAbbreviation (_, _, path), _ -> path[path.Length-1]
         | _ -> failwith "unreachable"
 
     override __.BaseType =
@@ -1452,10 +1452,10 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
             bindings <- Dictionary<_, _>(HashIdentity.Structural)
 
         if not (moreMembers()) && bindings.ContainsKey(key)  then 
-            bindings.[key] :?> 'T
+            bindings[key] :?> 'T
         else
             let res = f () // this will refresh the members
-            bindings.[key] <- box res
+            bindings[key] <- box res
             res
 
     let evalInterfaces() =
@@ -1590,7 +1590,7 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
     override this.GetConstructorImpl(bindingFlags, _binder, _callConventions, _types, _modifiers) = 
         let xs = this.GetConstructors bindingFlags |> Array.filter (fun m -> m.Name = ".ctor")
         if xs.Length > 1 then failwith "GetConstructorImpl. not support overloads"
-        if xs.Length > 0 then xs.[0] else null
+        if xs.Length > 0 then xs[0] else null
 
     override __.GetMethodImpl(name, bindingFlags, _binderBinder, _callConvention, _types, _modifiers): MethodInfo =
         (//save ("methimpl", bindingFlags, Some name) (fun () -> 
@@ -1601,15 +1601,15 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
                     let methods = this.GetMethods bindingFlags
                     methods |> Seq.groupBy (fun m -> m.Name) |> Seq.map (fun (k, v) -> k, Seq.toArray v) |> dict)
                 
-            let xs = if table.ContainsKey name then table.[name] else [| |]
+            let xs = if table.ContainsKey name then table[name] else [| |]
             //let xs = this.GetMethods bindingFlags |> Array.filter (fun m -> m.Name = name)
             if xs.Length > 1 then failwithf "GetMethodImpl. not support overloads, name = '%s', methods - '%A', callstack = '%A'" name xs Environment.StackTrace
-            if xs.Length > 0 then xs.[0] else null)
+            if xs.Length > 0 then xs[0] else null)
 
     override this.GetField(name, bindingFlags) =
         (//save ("field1", bindingFlags, Some name) (fun () -> 
             let xs = this.GetFields bindingFlags |> Array.filter (fun m -> m.Name = name)
-            if xs.Length > 0 then xs.[0] else null)
+            if xs.Length > 0 then xs[0] else null)
 
     override __.GetPropertyImpl(name, bindingFlags, _binder, _returnType, _types, _modifiers) =
         (//save ("prop1", bindingFlags, Some name) (fun () -> 
@@ -1617,19 +1617,19 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
                 save (bindingFlags ||| BindingFlags.GetProperty) (fun () -> 
                     let methods = this.GetProperties bindingFlags
                     methods |> Seq.groupBy (fun m -> m.Name) |> Seq.map (fun (k, v) -> k, Seq.toArray v) |> dict)
-            let xs = if table.ContainsKey name then table.[name] else [| |]
+            let xs = if table.ContainsKey name then table[name] else [| |]
             //let xs = this.GetProperties bindingFlags |> Array.filter (fun m -> m.Name = name)
-            if xs.Length > 0 then xs.[0] else null)
+            if xs.Length > 0 then xs[0] else null)
 
     override __.GetEvent(name, bindingFlags) =
         (//save ("event1", bindingFlags, Some name) (fun () -> 
             let xs = this.GetEvents bindingFlags |> Array.filter (fun m -> m.Name = name)
-            if xs.Length > 0 then xs.[0] else null)
+            if xs.Length > 0 then xs[0] else null)
 
     override __.GetNestedType(name, bindingFlags) =
         (//save ("nested1", bindingFlags, Some name) (fun () -> 
             let xs = this.GetNestedTypes bindingFlags |> Array.filter (fun m -> m.Name = name)
-            if xs.Length > 0 then xs.[0] else null)
+            if xs.Length > 0 then xs[0] else null)
 
     override __.GetInterface(_name, _ignoreCase) = notRequired this "GetInterface" this.Name
 
@@ -1804,7 +1804,7 @@ and ProvidedTypeDefinition(isTgt: bool, container:TypeContainer, className: stri
                     match keylist with
                     | [] -> ()
                     | key::rest ->
-                        buckets.[key] <- (rest, v) :: (if buckets.ContainsKey key then buckets.[key] else []);
+                        buckets[key] <- (rest, v) :: (if buckets.ContainsKey key then buckets[key] else []);
 
                 [ for (KeyValue(key, items)) in buckets -> nodef key items ]
 
@@ -1998,7 +1998,7 @@ module internal AssemblyReader =
 
             let shaRead8 sha =
                 let s = sha.stream
-                let b = if sha.pos >= s.Length then shaAfterEof sha else int32 s.[sha.pos]
+                let b = if sha.pos >= s.Length then shaAfterEof sha else int32 s[sha.pos]
                 sha.pos <- sha.pos + 1
                 b
 
@@ -2024,16 +2024,16 @@ module internal AssemblyReader =
                 let w = Array.create 80 0x00
                 while (not sha.eof) do
                     for i = 0 to 15 do
-                        w.[i] <- shaRead32 sha
+                        w[i] <- shaRead32 sha
                     for t = 16 to 79 do
-                        w.[t] <- rotLeft32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
+                        w[t] <- rotLeft32 (w[t-3] ^^^ w[t-8] ^^^ w[t-14] ^^^ w[t-16]) 1
                     a <- h0
                     b <- h1
                     c <- h2
                     d <- h3
                     e <- h4
                     for t = 0 to 79 do
-                        let temp = (rotLeft32 a 5) + f(t, b, c, d) + e + w.[t] + k(t)
+                        let temp = (rotLeft32 a 5) + f(t, b, c, d) + e + w[t] + k(t)
                         e <- d
                         d <- c
                         c <- rotLeft32 b 30
@@ -2141,7 +2141,7 @@ module internal AssemblyReader =
                               else System.Convert.ToInt32 'a' + (digit - 10)
                           System.Convert.ToChar(digitc)
                       for i = 0 to pkt.Length-1 do
-                          let v = pkt.[i]
+                          let v = pkt[i]
                           addC (convDigit(System.Convert.ToInt32(v)/16))
                           addC (convDigit(System.Convert.ToInt32(v)%16))
                 // retargetable can be true only for system assemblies that definitely have Version
@@ -2848,9 +2848,9 @@ module internal AssemblyReader =
                 for y in larr.Force() do
                     let key = y.Name
                     if lmap.ContainsKey key then
-                        lmap.[key] <- Array.append [| y |] lmap.[key]
+                        lmap[key] <- Array.append [| y |] lmap[key]
                     else
-                        lmap.[key] <- [| y |]
+                        lmap[key] <- [| y |]
             lmap
 
         member __.Entries = larr.Force()
@@ -2875,7 +2875,7 @@ module internal AssemblyReader =
           //OtherMethods: ILMethodRef[]
           CustomAttrs: ILCustomAttrs
           Token: int }
-        member x.EventHandlerType = x.AddMethod.ArgTypes.[0]
+        member x.EventHandlerType = x.AddMethod.ArgTypes[0]
         member x.IsStatic = x.AddMethod.CallingConv.IsStatic
         member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
         member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
@@ -3065,7 +3065,7 @@ module internal AssemblyReader =
                 lmap <- Dictionary()
                 for (nsp, nm, ltd) in larr.Force() do
                     let key = nsp, nm
-                    lmap.[key] <- ltd
+                    lmap[key] <- ltd
             lmap
 
         member __.Entries =
@@ -3075,7 +3075,7 @@ module internal AssemblyReader =
             let tdefs = getmap()
             let key = (nsp, nm)
             if tdefs.ContainsKey key then
-                Some (tdefs.[key].Force())
+                Some (tdefs[key].Force())
             else
                 None
 
@@ -3109,7 +3109,7 @@ module internal AssemblyReader =
                 lmap <- Dictionary()
                 for ltd in larr.Force() do
                     let key = ltd.Namespace, ltd.Name
-                    lmap.[key] <- ltd
+                    lmap[key] <- ltd
             lmap
         member __.Entries = larr.Force()
         member __.TryFindByName (nsp, nm) = match getmap().TryGetValue ((nsp, nm)) with true, v -> Some v | false, _ -> None
@@ -4151,7 +4151,7 @@ module internal AssemblyReader =
             let sub ( b:byte[]) s l = Array.sub b s l   
             let blit (a:byte[]) b c d e = Array.blit a b c d e 
 
-            let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr.[i]) 
+            let ofInt32Array (arr:int[]) = Array.init arr.Length (fun i -> byte arr[i]) 
 
             let stringAsUtf8NullTerminated (s:string) = 
                 Array.append (Encoding.UTF8.GetBytes s) (ofInt32Array [| 0x0 |]) 
@@ -4165,7 +4165,7 @@ module internal AssemblyReader =
               max: int }
             member b.ReadByte() = 
                 if b.pos >= b.max then failwith "end of stream"
-                let res = b.bytes.[b.pos]
+                let res = b.bytes[b.pos]
                 b.pos <- b.pos + 1
                 res 
             member b.ReadUtf8String n = 
@@ -4201,7 +4201,7 @@ module internal AssemblyReader =
             member buf.EmitIntAsByte (i:int) = 
                 let newSize = buf.bbCurrent + 1 
                 buf.Ensure newSize
-                buf.bbArray.[buf.bbCurrent] <- byte i
+                buf.bbArray[buf.bbCurrent] <- byte i
                 buf.bbCurrent <- newSize 
 
             member buf.EmitByte (b:byte) = buf.EmitIntAsByte (int b)
@@ -4213,14 +4213,14 @@ module internal AssemblyReader =
                 let bbarr = buf.bbArray
                 let bbbase = buf.bbCurrent
                 for i = 0 to n - 1 do 
-                    bbarr.[bbbase + i] <- byte arr.[i] 
+                    bbarr[bbbase + i] <- byte arr[i] 
                 buf.bbCurrent <- newSize 
 
             member bb.FixupInt32 pos n = 
-                bb.bbArray.[pos] <- (b0 n |> byte)
-                bb.bbArray.[pos + 1] <- (b1 n |> byte)
-                bb.bbArray.[pos + 2] <- (b2 n |> byte)
-                bb.bbArray.[pos + 3] <- (b3 n |> byte)
+                bb.bbArray[pos] <- (b0 n |> byte)
+                bb.bbArray[pos + 1] <- (b1 n |> byte)
+                bb.bbArray[pos + 2] <- (b2 n |> byte)
+                bb.bbArray[pos + 3] <- (b3 n |> byte)
 
             member buf.EmitInt32 n = 
                 let newSize = buf.bbCurrent + 4 
@@ -4238,8 +4238,8 @@ module internal AssemblyReader =
             member buf.EmitInt32AsUInt16 n = 
                 let newSize = buf.bbCurrent + 2 
                 buf.Ensure newSize
-                buf.bbArray.[buf.bbCurrent] <- (b0 n |> byte)
-                buf.bbArray.[buf.bbCurrent + 1] <- (b1 n |> byte)
+                buf.bbArray[buf.bbCurrent] <- (b0 n |> byte)
+                buf.bbArray[buf.bbCurrent + 1] <- (b1 n |> byte)
                 buf.bbCurrent <- newSize 
     
             member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
@@ -4303,13 +4303,13 @@ module internal AssemblyReader =
 
     type ByteFile(bytes:byte[]) =
 
-        member __.ReadByte addr = bytes.[addr]
+        member __.ReadByte addr = bytes[addr]
 
         member __.ReadBytes addr len = Array.sub bytes addr len
 
         member __.CountUtf8String addr =
             let mutable p = addr
-            while bytes.[p] <> 0uy do
+            while bytes[p] <> 0uy do
                 p <- p + 1
             p - addr
 
@@ -4393,7 +4393,7 @@ module internal AssemblyReader =
             i32ToUncodedToken (seekReadInt32 is addr)
 
         let sigptrGetByte (bytes:byte[]) sigptr =
-            bytes.[sigptr], sigptr + 1
+            bytes[sigptr], sigptr + 1
 
         let sigptrGetBool bytes sigptr =
             let b0, sigptr = sigptrGetByte bytes sigptr
@@ -4413,10 +4413,10 @@ module internal AssemblyReader =
             int16 u, sigptr
 
         let sigptrGetInt32 (bytes: byte[]) sigptr =
-            let b0 = bytes.[sigptr]
-            let b1 = bytes.[sigptr+1]
-            let b2 = bytes.[sigptr+2]
-            let b3 = bytes.[sigptr+3]
+            let b0 = bytes[sigptr]
+            let b1 = bytes[sigptr+1]
+            let b2 = bytes[sigptr+2]
+            let b3 = bytes[sigptr+3]
             let res = int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
             res, sigptr + 4
 
@@ -4468,7 +4468,7 @@ module internal AssemblyReader =
         let sigptrGetBytes n (bytes:byte[]) sigptr =
                 let res = Array.zeroCreate n
                 for i = 0 to (n - 1) do
-                    res.[i] <- bytes.[sigptr + i]
+                    res[i] <- bytes[sigptr + i]
                 res, sigptr + n
 
         let sigptrGetString n bytes sigptr =
@@ -4555,7 +4555,7 @@ module internal AssemblyReader =
                     res
                 else
                     let res = f idx
-                    cache.[idx] <- res;
+                    cache[idx] <- res;
                     res
 
         let mkCacheGeneric lowMem _inbase _nm _sz  =
@@ -4567,8 +4567,8 @@ module internal AssemblyReader =
                     | null -> cache := new Dictionary<_, _>(11 (* sz:int *) )
                     | _ -> ()
                     !cache
-                if cache.ContainsKey idx then cache.[idx]
-                else let res = f idx in cache.[idx] <- res; res
+                if cache.ContainsKey idx then cache[idx]
+                else let res = f idx in cache[idx] <- res; res
 
         let seekFindRow numRows rowChooser =
             let mutable i = 1
@@ -4646,7 +4646,7 @@ module internal AssemblyReader =
         let seekReadOptionalIndexedRow (info) =
             match seekReadIndexedRows info with
             | [| |] -> None
-            | xs -> Some xs.[0]
+            | xs -> Some xs[0]
 
         let seekReadIndexedRow (info) =
             match seekReadOptionalIndexedRow info with
@@ -4729,13 +4729,13 @@ module internal AssemblyReader =
             (* PE SIGNATURE *)
             let machine = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 0)
             let numSections = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 2)
-            let optHeaderSize = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 16)
-            do if optHeaderSize <>  0xe0 &&
-                 optHeaderSize <> 0xf0 then failwith "not a PE file - bad optional header size";
-            let x64adjust = optHeaderSize - 0xe0
-            let only64 = (optHeaderSize = 0xf0)    (* May want to read in the optional header Magic number and check that as well... *)
+            let headerSizeOpt = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 16)
+            do if headerSizeOpt <>  0xe0 &&
+                 headerSizeOpt <> 0xf0 then failwith "not a PE file - bad optional header size";
+            let x64adjust = headerSizeOpt - 0xe0
+            let only64 = (headerSizeOpt = 0xf0)    (* May want to read in the optional header Magic number and check that as well... *)
             let platform = match machine with | 0x8664 -> Some(AMD64) | 0x200 -> Some(IA64) | _ -> Some(X86)
-            let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + optHeaderSize
+            let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + headerSizeOpt
 
             let flags = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 18)
             let isDll = (flags &&& 0x2000) <> 0x0
@@ -4828,7 +4828,7 @@ module internal AssemblyReader =
                       let c= seekReadByteAsInt32 is (pos + 8 + (!n))
                       if c = 0 then
                           fin := true
-                      elif !n >= Array.length name || c <> name.[!n] then
+                      elif !n >= Array.length name || c <> name[!n] then
                           res := false;
                       incr n
                   if !res then Some(offset + metadataPhysLoc, length)
@@ -4934,11 +4934,11 @@ module internal AssemblyReader =
                 let prevNumRowIdx = ref (tablesStreamPhysLoc + 24)
                 for i = 0 to 63 do
                     if (valid &&& (int64 1 <<< i)) <> int64  0 then
-                        numRows.[i] <-  (seekReadInt32 is !prevNumRowIdx);
+                        numRows[i] <-  (seekReadInt32 is !prevNumRowIdx);
                         prevNumRowIdx := !prevNumRowIdx + 4
                 numRows, !prevNumRowIdx
 
-            let getNumRows (tab:ILTableName) = tableRowCount.[tab.Index]
+            let getNumRows (tab:ILTableName) = tableRowCount[tab.Index]
             let stringsBigness = (heapSizes &&& 1) <> 0
             let guidsBigness = (heapSizes &&& 2) <> 0
             let blobsBigness = (heapSizes &&& 4) <> 0
@@ -5040,7 +5040,7 @@ module internal AssemblyReader =
                     | GGuid -> (if guidsBigness then 4 else 2)
                     | Blob  -> (if blobsBigness then 4 else 2)
                     | SString  -> (if stringsBigness then 4 else 2)
-                    | SimpleIndex tab -> (if tableBigness.[tab.Index] then 4 else 2)
+                    | SimpleIndex tab -> (if tableBigness[tab.Index] then 4 else 2)
                     | TypeDefOrRefOrSpec -> (if tdorBigness then 4 else 2)
                     | TypeOrMethodDef -> (if tomdBigness then 4 else 2)
                     | HasConstant  -> (if hcBigness then 4 else 2)
@@ -5061,8 +5061,8 @@ module internal AssemblyReader =
                  let res = Array.create 64 0x0
                  let prevTablePhysLoc = ref startOfTables
                  for i = 0 to 63 do
-                     res.[i] <- !prevTablePhysLoc;
-                     prevTablePhysLoc := !prevTablePhysLoc + (tableRowCount.[i] * tableRowSizes.[i]);
+                     res[i] <- !prevTablePhysLoc;
+                     prevTablePhysLoc := !prevTablePhysLoc + (tableRowCount[i] * tableRowSizes[i]);
                  res
 
             // All the caches.  The sizes are guesstimates for the rough sharing-density of the assembly
@@ -5081,7 +5081,7 @@ module internal AssemblyReader =
 
            //-----------------------------------------------------------------------
 
-            let rowAddr (tab:ILTableName) idx = tablePhysLocations.[tab.Index] + (idx - 1) * tableRowSizes.[tab.Index]
+            let rowAddr (tab:ILTableName) idx = tablePhysLocations[tab.Index] + (idx - 1) * tableRowSizes[tab.Index]
 
             let seekReadUInt16Adv (addr: byref<int>) =
                 let res = seekReadUInt16 is addr
@@ -5107,7 +5107,7 @@ module internal AssemblyReader =
                 if big then seekReadInt32Adv &addr else seekReadUInt16AsInt32Adv &addr
 
             let seekReadUntaggedIdx (tab:ILTableName) (addr: byref<int>) =
-                seekReadIdx tableBigness.[tab.Index] &addr
+                seekReadIdx tableBigness[tab.Index] &addr
 
 
             let seekReadResolutionScopeIdx     (addr: byref<int>) = seekReadTaggedIdx (fun idx -> ResolutionScopeTag idx)    2 rsBigness   &addr
@@ -5810,8 +5810,8 @@ module internal AssemblyReader =
                     let lobounds, sigptr = sigptrFold sigptrGetZInt32 numLoBounded bytes sigptr
                     let shape =
                         let dim i =
-                          (if i <  numLoBounded then Some lobounds.[i] else None), 
-                          (if i <  numSized then Some sizes.[i] else None)
+                          (if i <  numLoBounded then Some lobounds[i] else None), 
+                          (if i <  numSized then Some sizes[i] else None)
                         ILArrayShape (Array.init rank dim)
                     ILType.Array (shape, typ), sigptr
 
@@ -6007,8 +6007,8 @@ module internal AssemblyReader =
                                     //Marshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None);
                                     CustomAttrs = cas }
                else
-                   paramsRes.[seq - 1] <-
-                      { paramsRes.[seq - 1] with
+                   paramsRes[seq - 1] <-
+                      { paramsRes[seq - 1] with
                            //Marshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None)
                            Default = (if hasDefault then USome (seekReadConstant (TaggedIndex(HasConstantTag.ParamDef, idx))) else UNone)
                            Name = readStringHeapOption nameIdx
@@ -6045,7 +6045,7 @@ module internal AssemblyReader =
             and seekReadOptionalMethodSemantics id =
                 match seekReadMultipleMethodSemantics id with
                 | [| |] -> None
-                | xs -> Some xs.[0]
+                | xs -> Some xs[0]
 
             and seekReadMethodSemantics id =
                 match seekReadOptionalMethodSemantics id with
@@ -6259,7 +6259,7 @@ module internal AssemblyReader =
             member __.ILAssemblyRefs = ilAssemblyRefs
 
         let sigptr_get_byte (bytes: byte[]) sigptr =
-            int bytes.[sigptr], sigptr + 1
+            int bytes[sigptr], sigptr + 1
 
         let sigptr_get_u8 bytes sigptr =
             let b0, sigptr = sigptr_get_byte bytes sigptr
@@ -6491,10 +6491,10 @@ module internal AssemblyReader =
             let nil = '\r' // cannot appear in a type sig
 
             // take a look at the next value, but don't advance
-            let peek() = if currentPos < (tstring.Length-1) then tstring.[currentPos+1] else nil
-            let peekN(skip) = if currentPos < (tstring.Length - skip) then tstring.[currentPos+skip] else nil
+            let peek() = if currentPos < (tstring.Length-1) then tstring[currentPos+1] else nil
+            let peekN(skip) = if currentPos < (tstring.Length - skip) then tstring[currentPos+skip] else nil
             // take a look at the current value, but don't advance
-            let here() = if currentPos < tstring.Length then tstring.[currentPos] else nil
+            let here() = if currentPos < tstring.Length then tstring[currentPos] else nil
             // move on to the next character
             let step() = currentPos <- currentPos+1
             // ignore the current lexeme
@@ -6503,7 +6503,7 @@ module internal AssemblyReader =
             let drop() = skip() ; step() ; skip()
             // return the current lexeme, advance
             let take() =
-                let s = if currentPos < tstring.Length then tstring.[startPos..currentPos] else ""
+                let s = if currentPos < tstring.Length then tstring[startPos..currentPos] else ""
                 drop()
                 s
 
@@ -6601,7 +6601,7 @@ module internal AssemblyReader =
                     | None -> [| |]
                     | Some(genericArgs) -> genericArgs
                 let tspec = ILTypeSpec(tref, genericArgs)
-                let ilty =
+                let ilTy =
                     match tspec.Name with
                     | "System.SByte"
                     | "System.Byte"
@@ -6619,14 +6619,14 @@ module internal AssemblyReader =
 
                 // if it's an array, wrap it - otherwise, just return the IL type
                 match rank with
-                | Some(r) -> ILType.Array(r, ilty)
-                | _ -> ilty
+                | Some(r) -> ILType.Array(r, ilTy)
+                | _ -> ilTy
 
 
         let sigptr_get_bytes n (bytes:byte[]) sigptr =
             let res = Array.zeroCreate n
             for i = 0 to n - 1 do
-                res.[i] <- bytes.[sigptr + i]
+                res[i] <- bytes[sigptr + i]
             res, sigptr + n
 
         let sigptr_get_string n bytes sigptr =
@@ -6754,9 +6754,9 @@ module internal AssemblyReader =
                         let unqualified_tname, rest =
                             let pieces = qualified_tname.Split(',')
                             if pieces.Length > 1 then
-                                pieces.[0], Some (String.concat "," pieces.[1..])
+                                pieces[0], Some (String.concat "," pieces[1..])
                             else
-                                pieces.[0], None
+                                pieces[0], None
                         let scoref =
                             match rest with
                             | Some aname -> ILTypeRefScope.Top(ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName(System.Reflection.AssemblyName(aname))))
@@ -6848,7 +6848,7 @@ module internal AssemblyReader =
                     let lastWriteTime = File.GetLastWriteTime(file)
                     let reader = createReader ilGlobals file
                     // record in the weak cache, to enable sharing within a provider, even if the strong cache is flushed.
-                    readerWeakCache.[key] <-  (lastWriteTime, WeakReference<_>(reader))
+                    readerWeakCache[key] <-  (lastWriteTime, WeakReference<_>(reader))
                     (lastWriteTime, 1, reader)
 
                 let update _ (currentLastWriteTime, count, reader) =
@@ -6856,7 +6856,7 @@ module internal AssemblyReader =
                     if currentLastWriteTime <> lastWriteTime then
                         let reader = createReader ilGlobals file
                         // record in the weak cache, to enable sharing within a provider, even if the strong cache is flushed.
-                        readerWeakCache.[key] <-  (lastWriteTime, WeakReference<_>(reader))
+                        readerWeakCache[key] <-  (lastWriteTime, WeakReference<_>(reader))
                         (lastWriteTime, count + 1, reader)
                     else
                         (lastWriteTime, count, reader)
@@ -6893,7 +6893,7 @@ namespace ProviderImplementation.ProvidedTypes
     // implementation must support the operations used by the F# compiler to interrogate the reflection objects.
     //
     //     For a System.Assembly, the information must be sufficient to allow the Assembly --> ILScopeRef conversion
-    //     in ExtensionTyping.fs of the F# compiler. This requires:
+    //     in TypeProviders.fs of the F# compiler. This requires:
     //         Assembly.GetName()
     //
     //     For a System.Type representing a reference to a named type definition, the information must be sufficient
@@ -6957,10 +6957,10 @@ namespace ProviderImplementation.ProvidedTypes
             let tab = Dictionary<int, 'T2>()
             member __.Get inp f =
                 if tab.ContainsKey inp then
-                    tab.[inp]
+                    tab[inp]
                 else
                     let res = f()
-                    tab.[inp] <- res
+                    tab[inp] <- res
                     res
 
             member __.ContainsKey inp = tab.ContainsKey inp
@@ -7040,7 +7040,7 @@ namespace ProviderImplementation.ProvidedTypes
                 ty1.IsByRef && eqTypeAndILTypeWithInst inst2 (ty1.GetElementType()) arg2
             | ILType.Var(arg2) ->
                 if int arg2 < inst2.Length then
-                     eqTypes ty1 inst2.[int arg2]
+                     eqTypes ty1 inst2[int arg2]
                 else
                      ty1.IsGenericParameter && ty1.GenericParameterPosition = int arg2
 
@@ -7896,8 +7896,8 @@ namespace ProviderImplementation.ProvidedTypes
             | ILType.Modified(_, _mod, arg) -> txILType gps arg
             | ILType.Var(n) ->
                 let (gps1:Type[]), (gps2:Type[]) = gps
-                if n < gps1.Length then gps1.[n]
-                elif n < gps1.Length + gps2.Length then gps2.[n - gps1.Length]
+                if n < gps1.Length then gps1[n]
+                elif n < gps1.Length + gps2.Length then gps2[n - gps1.Length]
                 else failwithf "generic parameter index out of range: %d" n
 
         /// Convert an ILGenericParameterDef read from a binary to a System.Type.
@@ -8101,9 +8101,6 @@ namespace ProviderImplementation.ProvidedTypes
             txTable.Get inp.Token (fun () -> 
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes, 
                 // which fortunately also correspond to element types. We just use the design-time types instead.
-                // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
-                // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 //| USome "System", "Void"->  typeof<Void>
                 (*
@@ -8137,13 +8134,13 @@ namespace ProviderImplementation.ProvidedTypes
         override x.GetType (nm:string) =
             if nm.Contains("+") then
                 let i = nm.LastIndexOf("+")
-                let enc, nm2 = nm.[0..i-1], nm.[i+1..]
+                let enc, nm2 = nm[0..i-1], nm[i+1..]
                 match x.GetType(enc) with
                 | null -> null
                 | t -> t.GetNestedType(nm2, bindAll)
             elif nm.Contains(".") then
                 let i = nm.LastIndexOf(".")
-                let nsp, nm2 = nm.[0..i-1], nm.[i+1..]
+                let nsp, nm2 = nm[0..i-1], nm[i+1..]
                 x.TryBindType(USome nsp, nm2) |> Option.toObj
             else
                 x.TryBindType(UNone, nm) |> Option.toObj
@@ -8231,7 +8228,7 @@ namespace ProviderImplementation.ProvidedTypes
         override x.GetType (nm: string) = 
             if nm.Contains("+") then
                 let i = nm.LastIndexOf("+")
-                let enc, nm2 = nm.[0..i-1], nm.[i+1..]
+                let enc, nm2 = nm[0..i-1], nm[i+1..]
                 match x.GetType(enc) with
                 | null -> null
                 | t -> t.GetNestedType(nm2, bindAll)
@@ -8348,11 +8345,11 @@ namespace ProviderImplementation.ProvidedTypes
                 let maxTuple = 8
 
                 let n = min tys.Length maxTuple
-                let tupleFullName = tupleNames.[n - 1 + (if isStruct then 9 else 0)]
+                let tupleFullName = tupleNames[n - 1 + (if isStruct then 9 else 0)]
                 let ty = asm.GetType(tupleFullName)
                 if tys.Length >= maxTuple then 
-                    let tysA = (Array.ofList tys).[0..maxTuple-2] |> List.ofArray
-                    let tysB = (Array.ofList tys).[maxTuple-1..] |> List.ofArray
+                    let tysA = (Array.ofList tys)[0..maxTuple-2] |> List.ofArray
+                    let tysB = (Array.ofList tys)[maxTuple-1..] |> List.ofArray
                     let tyB = mkTupleType isStruct asm tysB
                     ProvidedTypeBuilder.MakeGenericType(ty, List.append  tysA [ tyB ])
                 else
@@ -8445,14 +8442,14 @@ namespace ProviderImplementation.ProvidedTypes
                                 let fields = ty.GetFields() |> Array.sortBy (fun fi -> fi.Name) 
                                 if index >= fields.Length then
                                     invalidArg "index" (sprintf "The tuple index '%d' was out of range for tuple type %s" index ty.Name)
-                                fields.[index]
+                                fields[index]
                         let tupleEncField = 7
                         let fget = Expr.FieldGetUnchecked(e, get i)
                         if i < tupleEncField then
                             fget
                         else
                             let etys = ty.GetGenericArguments()
-                            mkGet etys.[tupleEncField] (i - tupleEncField) fget
+                            mkGet etys[tupleEncField] (i - tupleEncField) fget
                     else
                         let pi, restOpt = Reflection.FSharpValue.PreComputeTuplePropertyInfo(ty, i)
                         let propGet = Expr.PropertyGetUnchecked(e, pi)
@@ -8574,7 +8571,7 @@ namespace ProviderImplementation.ProvidedTypes
             let setRef (v:Var) e =
                 let m = match <@ (ref 1) := 2 @> with Call(None, m, [_;_]) -> m | _ -> failwith "Extracting MethodInfo from <@ (ref 1) := 2 @> failed"
                 let im = ProvidedTypeBuilder.MakeGenericMethod(m.GetGenericMethodDefinition(), [ v.Type ])
-                Expr.CallUnchecked(im, [Expr.Var varDict.[v.Name]; e])
+                Expr.CallUnchecked(im, [Expr.Var varDict[v.Name]; e])
 
             // Something like
             //  <@
@@ -8594,7 +8591,7 @@ namespace ProviderImplementation.ProvidedTypes
             //   ...
             //   body
             (body, vars)
-            ||> List.fold (fun b v -> Expr.LetUnchecked(varDict.[v.Name], init v.Type, b)) 
+            ||> List.fold (fun b v -> Expr.LetUnchecked(varDict[v.Name], init v.Type, b)) 
             |> simplifyExpr
 
 
@@ -8637,8 +8634,8 @@ namespace ProviderImplementation.ProvidedTypes
             elif ty.IsGenericType && ty.GetGenericTypeDefinition() = typedefof<_ list> then
                 let nil, cons =
                     let cases = Reflection.FSharpType.GetUnionCases(ty)
-                    let a = cases.[0]
-                    let b = cases.[1]
+                    let a = cases[0]
+                    let b = cases[1]
                     if a.Name = "Empty" then a, b
                     else b, a
 
@@ -8718,7 +8715,7 @@ namespace ProviderImplementation.ProvidedTypes
             and loopCore fallback orig =
                 match orig with
                 | Let(id, (Value(_) as v), body) when not id.IsMutable ->
-                    map.[id] <- v
+                    map[id] <- v
                     let fixedBody = loop body
                     map.Remove(id) |> ignore
                     fixedBody
@@ -8761,10 +8758,10 @@ namespace ProviderImplementation.ProvidedTypes
                                 if not t.IsGenericType then None else
                                 let args = t.GetGenericArguments()
                                 if args.Length <> 2 then None else
-                                Some (args.[1], args.[1])
+                                Some (args[1], args[1])
                             )
                             |> Seq.toArray
-                            |> (fun arr -> arr.[n - 1])
+                            |> (fun arr -> arr[n - 1])
 
                         let adaptMethod = getFastFuncType args resultType
                         let adapted = Expr.Call(adaptMethod, [loop applicable])
@@ -8790,7 +8787,7 @@ namespace ProviderImplementation.ProvidedTypes
         member __.TranslateQuotationToCode qexprf (paramNames: string[]) (argExprs: Expr[]) =
             // Use the real variable names instead of indices, to improve output of Debug.fs
             // Add let bindings for arguments to ensure that arguments will be evaluated
-            let varDecisions = argExprs |> Array.mapi (fun i e -> match e with Var v when v.Name = paramNames.[i] -> false, v | _ -> true, Var(paramNames.[i], e.Type))
+            let varDecisions = argExprs |> Array.mapi (fun i e -> match e with Var v when v.Name = paramNames[i] -> false, v | _ -> true, Var(paramNames[i], e.Type))
             let vars = varDecisions |> Array.map snd
             let expr = qexprf ([for v in vars -> Expr.Var v])
 
@@ -8883,7 +8880,7 @@ namespace ProviderImplementation.ProvidedTypes
               for ref in referencedAssemblyPaths do
                   let reader = mkReader ref 
                   let simpleName = Path.GetFileNameWithoutExtension ref 
-                  targetAssembliesTable_.[simpleName] <- reader
+                  targetAssembliesTable_[simpleName] <- reader
                   match reader with 
                   | Choice2Of2 _ -> () 
                   | Choice1Of2 asm -> targetAssemblies_.Add asm)
@@ -8896,7 +8893,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         let tryBindTargetAssemblySimple(simpleName:string): Choice<Assembly, exn> =
             let table = getTargetAssembliesTable()
-            if table.ContainsKey(simpleName) then table.[simpleName]
+            if table.ContainsKey(simpleName) then table[simpleName]
             else Choice2Of2 (Exception(sprintf "assembly %s not found" simpleName))
 
         let sourceAssembliesTable_ =  ConcurrentDictionary<string, Assembly>()
@@ -8920,7 +8917,7 @@ namespace ProviderImplementation.ProvidedTypes
                     for asm in q() do 
                         let simpleName = asm.GetName().Name
                         if not (sourceAssembliesTable_.ContainsKey(simpleName)) then 
-                            sourceAssembliesTable_.[simpleName] <- asm
+                            sourceAssembliesTable_[simpleName] <- asm
                             sourceAssemblies_.Add asm
                             // Find the transitive closure of all referenced assemblies
                             enqueueReferencedAssemblies asm
@@ -8996,9 +8993,9 @@ namespace ProviderImplementation.ProvidedTypes
                             else sprintf "The target type '%O' utilized by a type provider was not found in the design-time assembly set '%A'. Please report this problem to the project site for the type provider." t (getSourceAssemblies() |> Seq.toList)
                         failwith msg
                     else
-                        match tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName asms.[i] with
+                        match tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName asms[i] with
                         | Some (newT, canSave) ->
-                            if canSave then table.[t] <- newT
+                            if canSave then table[t] <- newT
                             newT
                         | None -> loop (i - 1)
                 loop (asms.Count - 1)
@@ -9330,7 +9327,7 @@ namespace ProviderImplementation.ProvidedTypes
                                         x.HideObjectMethods, ProvidedTypeBuilder.typeBuilder) 
 
             Debug.Assert(not (typeTableFwd.ContainsKey(x)))
-            typeTableFwd.[x] <- xT
+            typeTableFwd[x] <- xT
             if x.IsNested then
                 let parentT = (convTypeToTgt x.DeclaringType :?> ProvidedTypeDefinition)
                 parentT.PatchDeclaringTypeOfMember xT
@@ -9471,7 +9468,7 @@ namespace ProviderImplementation.ProvidedTypes
             let ilg = ilGlobals.Force()
             let is = ByteFile(bytes)
             let pe = PEReader(fileName, is)
-            let mdchunk = bytes.[pe.MetadataPhysLoc .. pe.MetadataPhysLoc + pe.MetadataSize - 1]
+            let mdchunk = bytes[pe.MetadataPhysLoc .. pe.MetadataPhysLoc + pe.MetadataSize - 1]
             let mdfile = ByteFile(mdchunk)
             let reader = ILModuleReader(fileName, mdfile, ilg, true)
             TargetAssembly(ilg, this.TryBindILAssemblyRefToTgt, Some reader, fileName, ProvidedTypeBuilder.typeBuilder) :> Assembly
@@ -9481,7 +9478,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         member __.AddTargetAssembly(asmName: AssemblyName, asm: Assembly) = 
             targetAssembliesQueue.Add (fun () -> 
-                targetAssembliesTable_.[asmName.Name] <- Choice1Of2 asm
+                targetAssembliesTable_[asmName.Name] <- Choice1Of2 asm
                 targetAssemblies_.Add asm)
 
         static member Create (config: TypeProviderConfig, assemblyReplacementMap, sourceAssemblies) =
@@ -9557,16 +9554,16 @@ namespace ProviderImplementation.ProvidedTypes
         /// Check that the data held at a fixup is some special magic value, as a sanity check
         /// to ensure the fixup is being placed at a ood location.
         let checkFixup32 (data: byte[]) offset exp = 
-            if data.[offset + 3] <> b3 exp then failwith "fixup sanity check failed"
-            if data.[offset + 2] <> b2 exp then failwith "fixup sanity check failed"
-            if data.[offset + 1] <> b1 exp then failwith "fixup sanity check failed"
-            if data.[offset] <> b0 exp then failwith "fixup sanity check failed"
+            if data[offset + 3] <> b3 exp then failwith "fixup sanity check failed"
+            if data[offset + 2] <> b2 exp then failwith "fixup sanity check failed"
+            if data[offset + 1] <> b1 exp then failwith "fixup sanity check failed"
+            if data[offset] <> b0 exp then failwith "fixup sanity check failed"
 
         let applyFixup32 (data:byte[]) offset v = 
-            data.[offset] <-   b0 v
-            data.[offset+1] <- b1 v
-            data.[offset+2] <- b2 v
-            data.[offset+3] <- b3 v
+            data[offset] <-   b0 v
+            data[offset+1] <- b1 v
+            data[offset+2] <- b2 v
+            data[offset+3] <- b3 v
 
         //---------------------------------------------------------------------
         // TYPES FOR TABLES
@@ -9681,7 +9678,7 @@ namespace ProviderImplementation.ProvidedTypes
         let hashRow (elems:RowElement[]) = 
             let mutable acc = 0
             for i in 0 .. elems.Length - 1 do 
-                acc <- (acc <<< 1) + elems.[i].Tag + elems.[i].Val + 631 
+                acc <- (acc <<< 1) + elems[i].Tag + elems[i].Val + 631 
             acc
 
         let equalRows (elems:RowElement[]) (elems2:RowElement[]) = 
@@ -9690,7 +9687,7 @@ namespace ProviderImplementation.ProvidedTypes
             let n = elems.Length
             let mutable i = 0 
             while ok && i < n do 
-                if elems.[i].Tag <> elems2.[i].Tag || elems.[i].Val <> elems2.[i].Val then ok <- false
+                if elems[i].Tag <> elems2[i].Tag || elems[i].Val <> elems2[i].Val then ok <- false
                 i <- i + 1
             ok
 
@@ -9775,7 +9772,7 @@ namespace ProviderImplementation.ProvidedTypes
 
             member tbl.AddSharedEntry x =
                 let n = tbl.rows.Count + 1
-                tbl.dict.[x] <- n
+                tbl.dict[x] <- n
                 tbl.rows.Add(x)
                 n
 
@@ -9796,13 +9793,13 @@ namespace ProviderImplementation.ProvidedTypes
                 tbl.rows <- ResizeArray(t)  
                 let h = tbl.dict
                 h.Clear()
-                t |> Array.iteri (fun i x -> h.[x] <- (i+1))
+                t |> Array.iteri (fun i x -> h[x] <- (i+1))
 
             member tbl.AddUniqueEntry nm geterr x =
                 if tbl.dict.ContainsKey x then failwith ("duplicate entry '"+geterr x+"' in "+nm+" table")
                 else tbl.AddSharedEntry x
 
-            member tbl.GetTableEntry x = tbl.dict.[x] 
+            member tbl.GetTableEntry x = tbl.dict[x] 
             member tbl.GetTableKeys() = tbl.dict.Keys |> Seq.toArray
 
         //---------------------------------------------------------------------
@@ -9915,7 +9912,7 @@ namespace ProviderImplementation.ProvidedTypes
               strings: MetadataTable<string> 
               userStrings: MetadataTable<string>
             }
-            member cenv.GetTable (tab:ILTableName) = cenv.tables.[tab.Index]
+            member cenv.GetTable (tab:ILTableName) = cenv.tables[tab.Index]
 
 
             member cenv.AddCode ((reqdStringFixupsOffset, requiredStringFixups), code) = 
@@ -10126,7 +10123,7 @@ namespace ProviderImplementation.ProvidedTypes
             let mutable res = 0
             if cenv.trefCache.TryGetValue(tref, &res) then res else 
             let res = FindOrAddSharedRow cenv ILTableNames.TypeRef (GetTypeRefAsTypeRefRow cenv tref)
-            cenv.trefCache.[tref] <- res
+            cenv.trefCache[tref] <- res
             res
 
         and GetTypeDescAsTypeRefIdx cenv (enc, nsp, n) =  
@@ -10431,7 +10428,7 @@ namespace ProviderImplementation.ProvidedTypes
                  )
                  (GetKeyForMethodDef tidx md) 
             
-            cenv.methodDefIdxs.[md] <- idx
+            cenv.methodDefIdxs[md] <- idx
 
         and GetKeyForPropertyDef tidx (x: ILPropertyDef)  = 
             PropKey (tidx, x.Name, x.PropertyType, x.IndexParameterTypes)
@@ -10524,7 +10521,7 @@ namespace ProviderImplementation.ProvidedTypes
 
 
         let rec GetMethodDefIdx cenv md = 
-            cenv.methodDefIdxs.[md]
+            cenv.methodDefIdxs[md]
 
         and FindFieldDefIdx cenv fdkey = 
             try cenv.fieldDefs.GetTableEntry fdkey 
@@ -10858,7 +10855,7 @@ namespace ProviderImplementation.ProvidedTypes
 
             member codebuf.RecordReqdBrFixup i tg = codebuf.RecordReqdBrFixups i [tg]
             member codebuf.RecordAvailBrFixup tg = 
-                codebuf.availBrFixups.[tg] <- codebuf.code.Position
+                codebuf.availBrFixups[tg] <- codebuf.code.Position
 
         module Codebuf = 
              // -------------------------------------------------------------------- 
@@ -10874,7 +10871,7 @@ namespace ProviderImplementation.ProvidedTypes
                     if n > m then raise (KeyNotFoundException("binary chop did not find element"))
                     else 
                         let i = (n+m)/2
-                        let c = p arr.[i] 
+                        let c = p arr[i] 
                         if c = 0 then i elif c < 0 then go n (i-1) else go (i+1) m
                 go 0 (Array.length arr)
 
@@ -10908,7 +10905,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                       // Copy over a chunk of non-branching code 
                       let nobranch_len = origEndOfNoBranchBlock - origStartOfNoBranchBlock
-                      newCode.EmitBytes origCode.[origStartOfNoBranchBlock..origStartOfNoBranchBlock+nobranch_len-1]
+                      newCode.EmitBytes origCode[origStartOfNoBranchBlock..origStartOfNoBranchBlock+nobranch_len-1]
                         
                       // Record how to adjust addresses in this range, including the branch instruction 
                       // we write below, or the end of the method if we're doing the last bblock 
@@ -10924,7 +10921,7 @@ namespace ProviderImplementation.ProvidedTypes
                       else 
                           let (i, origStartOfInstr, tgs:ILCodeLabel list) = List.head !remainingReqdFixups
                           remainingReqdFixups := List.tail !remainingReqdFixups
-                          if origCode.[origStartOfInstr] <> 0x11uy then failwith "br fixup sanity check failed (1)"
+                          if origCode[origStartOfInstr] <> 0x11uy then failwith "br fixup sanity check failed (1)"
                           let i_length = if fst i = i_switch then 5 else 1
                           origWhere := !origWhere + i_length
 
@@ -10942,7 +10939,7 @@ namespace ProviderImplementation.ProvidedTypes
                                     if not (origAvailBrFixups.ContainsKey tg) then 
                                         printfn "%s" ("branch target " + formatCodeLabel tg + " not found in code")
                                     let origDest = 
-                                        if origAvailBrFixups.ContainsKey tg then origAvailBrFixups.[tg]
+                                        if origAvailBrFixups.ContainsKey tg then origAvailBrFixups[tg]
                                         else 666666
                                     let origRelOffset = origDest - origEndOfInstr
                                     -128 <= origRelOffset && origRelOffset <= 127
@@ -10984,7 +10981,7 @@ namespace ProviderImplementation.ProvidedTypes
                           with 
                              :? KeyNotFoundException -> 
                                  failwith ("adjuster: address "+string addr+" is out of range")
-                      let (origStartOfNoBranchBlock, _, newStartOfNoBranchBlock) = arr.[i]
+                      let (origStartOfNoBranchBlock, _, newStartOfNoBranchBlock) = arr[i]
                       addr - (origStartOfNoBranchBlock - newStartOfNoBranchBlock) 
 
                   newCode.Close(), 
@@ -10995,7 +10992,7 @@ namespace ProviderImplementation.ProvidedTypes
               let newAvailBrFixups = 
                   let tab = Dictionary<_, _>(10, HashIdentity.Structural) 
                   for (KeyValue(tglab, origBrDest)) in origAvailBrFixups do 
-                      tab.[tglab]  <- adjuster origBrDest
+                      tab[tglab]  <- adjuster origBrDest
                   tab
               let newReqdStringFixups = Array.map (fun (origFixupLoc, stok) -> adjuster origFixupLoc, stok) origReqdStringFixups
 #if EMIT_DEBUG_INFO
@@ -11023,11 +11020,11 @@ namespace ProviderImplementation.ProvidedTypes
                     if not (newAvailBrFixups.ContainsKey tg) then 
                       failwith ("target "+formatCodeLabel tg+" not found in new fixups")
                     try 
-                        let n = newAvailBrFixups.[tg]
+                        let n = newAvailBrFixups[tg]
                         let relOffset = (n - endOfInstr)
                         if small then 
                             if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
-                            newCode.[newFixupLoc] <- b0 relOffset
+                            newCode[newFixupLoc] <- b0 relOffset
                         else 
                             checkFixup32 newCode newFixupLoc 0xf00dd00fl
                             applyFixup32 newCode newFixupLoc relOffset
@@ -11056,9 +11053,9 @@ namespace ProviderImplementation.ProvidedTypes
             let encodingsForNoArgInstrs = Dictionary<_, _>(300, HashIdentity.Structural)
             let _ = 
               List.iter 
-                (fun (x, mk) -> encodingsForNoArgInstrs.[mk] <- x)
+                (fun (x, mk) -> encodingsForNoArgInstrs[mk] <- x)
                 (noArgInstrs.Force())
-            let encodingsOfNoArgInstr si = encodingsForNoArgInstrs.[si]
+            let encodingsOfNoArgInstr si = encodingsForNoArgInstrs[si]
 
             // -------------------------------------------------------------------- 
             // Emit instructions
@@ -11131,7 +11128,7 @@ namespace ProviderImplementation.ProvidedTypes
                 | si when isNoArgInstr si ->
                      emitInstrCode codebuf (encodingsOfNoArgInstr si)
                 | I_brcmp (cmp, tg1)  -> 
-                    codebuf.RecordReqdBrFixup (ILCmpInstrMap.Value.[cmp], Some ILCmpInstrRevMap.Value.[cmp]) tg1
+                    codebuf.RecordReqdBrFixup (ILCmpInstrMap.Value[cmp], Some ILCmpInstrRevMap.Value[cmp]) tg1
                 | I_br tg -> codebuf.RecordReqdBrFixup (i_br, Some i_br_s) tg
 #if EMIT_DEBUG_INFO
                 | I_seqpoint s ->   codebuf.EmitSeqPoint cenv s
@@ -11368,7 +11365,7 @@ namespace ProviderImplementation.ProvidedTypes
               | ILExceptionClause.TypeCatch (_ty, r1) -> [r1]  
 
 
-            let labelsToRange (lab2pc: Dictionary<ILCodeLabel, int>) p = let (l1, l2) = p in lab2pc.[l1], lab2pc.[l2]
+            let labelsToRange (lab2pc: Dictionary<ILCodeLabel, int>) p = let (l1, l2) = p in lab2pc[l1], lab2pc[l2]
 
             let labelRangeInsideLabelRange lab2pc ls1 ls2 = 
                 rangeInsideRange (labelsToRange lab2pc ls1) (labelsToRange lab2pc ls2) 
@@ -11383,8 +11380,8 @@ namespace ProviderImplementation.ProvidedTypes
                     let mutable acc = acc
                     let res = Array.zeroCreate len
                     for i = 0 to array.Length-1 do
-                        let h', s' = f.Invoke(acc, array.[i])
-                        res.[i] <- h'
+                        let h', s' = f.Invoke(acc, array[i])
+                        res[i] <- h'
                         acc <- s'
                     res, acc
 #endif
@@ -11426,7 +11423,7 @@ namespace ProviderImplementation.ProvidedTypes
                 let trees = 
                     roots |> Array.map (fun (cl, ch) -> 
                         let r1 = labelsToRange lab2pc cl.Range
-                        let conv ((s1, e1), (s2, e2)) x = pc2pos.[s1], pc2pos.[e1] - pc2pos.[s1], pc2pos.[s2], pc2pos.[e2] - pc2pos.[s2], x
+                        let conv ((s1, e1), (s2, e2)) x = pc2pos[s1], pc2pos[e1] - pc2pos[s1], pc2pos[s2], pc2pos[e2] - pc2pos[s2], x
                         let children = makeSEHTree cenv env pc2pos lab2pc ch
                         let n = 
                             match cl.Clause with 
@@ -11435,7 +11432,7 @@ namespace ProviderImplementation.ProvidedTypes
                             | ILExceptionClause.Fault r2 -> 
                                 conv (r1, labelsToRange lab2pc r2) ExceptionClauseKind.FaultClause
                             | ILExceptionClause.FilterCatch ((filterStart, _), r3) -> 
-                                conv (r1, labelsToRange lab2pc r3) (ExceptionClauseKind.FilterClause (pc2pos.[lab2pc.[filterStart]]))
+                                conv (r1, labelsToRange lab2pc r3) (ExceptionClauseKind.FilterClause (pc2pos[lab2pc[filterStart]]))
                             | ILExceptionClause.TypeCatch (typ, r2) -> 
                                 conv (r1, labelsToRange lab2pc r2) (TypeFilterClause (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env typ)))
                         SEHTree.Node (Some n, children) )
@@ -11471,17 +11468,17 @@ namespace ProviderImplementation.ProvidedTypes
                 let pc2pos = Array.zeroCreate (instrs.Length+1)
                 let pc2labs = Dictionary()
                 for (KeyValue(lab, pc)) in code.Labels do
-                    if pc2labs.ContainsKey pc then pc2labs.[pc] <- lab :: pc2labs.[pc] else pc2labs.[pc] <- [lab]
+                    if pc2labs.ContainsKey pc then pc2labs[pc] <- lab :: pc2labs[pc] else pc2labs[pc] <- [lab]
 
                 // Emit the instructions
                 for pc = 0 to instrs.Length do
                     if pc2labs.ContainsKey pc then  
-                        for lab in pc2labs.[pc] do
+                        for lab in pc2labs[pc] do
                             codebuf.RecordAvailBrFixup lab
-                    pc2pos.[pc] <- codebuf.code.Position
+                    pc2pos[pc] <- codebuf.code.Position
                     if pc < instrs.Length then 
-                        match instrs.[pc] with 
-                        | I_br l when code.Labels.[l] = pc + 1 -> () // compress I_br to next instruction
+                        match instrs[pc] with 
+                        | I_br l when code.Labels[l] = pc + 1 -> () // compress I_br to next instruction
                         | i -> emitInstr cenv codebuf env i
 
                 // Build the exceptions and locals information, ready to emit
@@ -12226,7 +12223,7 @@ namespace ProviderImplementation.ProvidedTypes
             rows 
                 // This needs to be a stable sort, so we use List.sortWith
                 |> Array.toList
-                |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
+                |> List.sortWith (fun r1 r2 -> rowElemCompare r1[col] r2[col]) 
                 |> Array.ofList
                 //|> Array.map SharedRow
 
@@ -12404,7 +12401,7 @@ namespace ProviderImplementation.ProvidedTypes
             let strings, userStrings, blobs, guids, tables, entryPointToken, code, requiredStringFixups, data, resources, pdbData, mappings = 
               generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress
 
-            let tableSize (tab: ILTableName) = tables.[tab.Index].Count
+            let tableSize (tab: ILTableName) = tables[tab.Index].Count
 
            // Now place the code 
             let codeSize = code.Length
@@ -12482,46 +12479,46 @@ namespace ProviderImplementation.ProvidedTypes
                 let tab = Array.create (strings.Length + 1) 0
                 let pos = ref 1
                 for i = 1 to strings.Length do
-                    tab.[i] <- !pos
-                    let s = strings.[i - 1]
+                    tab[i] <- !pos
+                    let s = strings[i - 1]
                     pos := !pos + s.Length
                 tab
 
             let stringAddress n = 
                 if n >= Array.length stringAddressTable then failwith ("string index "+string n+" out of range")
-                stringAddressTable.[n]
+                stringAddressTable[n]
             
             let userStringAddressTable = 
                 let tab = Array.create (Array.length userStrings + 1) 0
                 let pos = ref 1
                 for i = 1 to Array.length userStrings do
-                    tab.[i] <- !pos
-                    let s = userStrings.[i - 1]
+                    tab[i] <- !pos
+                    let s = userStrings[i - 1]
                     let n = s.Length + 1
                     pos := !pos + n + ByteBuffer.Z32Size n
                 tab
 
             let userStringAddress n = 
                 if n >= Array.length userStringAddressTable then failwith "userString index out of range"
-                userStringAddressTable.[n]
+                userStringAddressTable[n]
             
             let blobAddressTable = 
                 let tab = Array.create (blobs.Length + 1) 0
                 let pos = ref 1
                 for i = 1 to blobs.Length do
-                    tab.[i] <- !pos
-                    let blob = blobs.[i - 1]
+                    tab[i] <- !pos
+                    let blob = blobs[i - 1]
                     pos := !pos + blob.Length + ByteBuffer.Z32Size blob.Length
                 tab
 
             let blobAddress n = 
                 if n >= blobAddressTable.Length then failwith "blob index out of range"
-                blobAddressTable.[n]
+                blobAddressTable[n]
             
 
             let sortedTables = 
               Array.init 64 (fun i -> 
-                  let tab = tables.[i]
+                  let tab = tables[i]
                   let tabName = ILTableName.FromIndex i
                   let rows = tab.GenericRowsOfTable
                   if TableRequiresSorting tabName then SortTableRows tabName rows else rows)
@@ -12530,7 +12527,7 @@ namespace ProviderImplementation.ProvidedTypes
             let codedTables = 
                   
                 let bignessTable = Array.map (fun rows -> Array.length rows >= 0x10000) sortedTables
-                let bigness (tab:int32) = bignessTable.[tab]
+                let bigness (tab:int32) = bignessTable[tab]
                 
                 let codedBigness nbits tab =
                   (tableSize tab) >= (0x10000 >>> nbits)
@@ -13615,7 +13612,7 @@ namespace ProviderImplementation.ProvidedTypes
                            }
 
         member __.DefineLabel() = labelCount <- labelCount + 1; labelCount
-        member __.MarkLabel(label) = labels.[label] <- instrs.Count
+        member __.MarkLabel(label) = labels[label] <- instrs.Count
         member this.DefineLabelHere() = let label = this.DefineLabel() in this.MarkLabel(label); label
         member __.Emit(opcode) = instrs.Add(opcode)
         override __.ToString() = "generator for " + methodName
@@ -13685,7 +13682,7 @@ namespace ProviderImplementation.ProvidedTypes
         let mutable body = None
 
         member __.DefineGenericParameter(name, attrs) =  let eb = ILGenericParameterBuilder(name, attrs) in gparams.Add eb; eb
-        member __.DefineParameter(i, attrs, parameterName) =  ilParams.[i].SetData(attrs, parameterName) ; ilParams.[i]
+        member __.DefineParameter(i, attrs, parameterName) =  ilParams[i].SetData(attrs, parameterName) ; ilParams[i]
         member __.SetCustomAttribute(ca) = cattrs.Add(ca)
         member __.GetILGenerator() = let ilg = ILGenerator(methodName) in body <- Some ilg; ilg
         member __.FormalMethodRef = 
@@ -13701,9 +13698,9 @@ namespace ProviderImplementation.ProvidedTypes
               ImplAttributes = implflags
               GenericParams = [| for x in gparams -> x.Content |]  
               CustomAttrs = mkILCustomAttrs (cattrs.ToArray()) 
-              Parameters = [| for p in ilParams.[1..] -> p.Content |]
+              Parameters = [| for p in ilParams[1..] -> p.Content |]
               CallingConv = (if attrs &&& MethodAttributes.Static <> enum<_>(0) then ILCallingConv.Static else ILCallingConv.Instance)
-              Return = (let p = ilParams.[0].Content in { Type = p.ParameterType; CustomAttrs = p.CustomAttrs })
+              Return = (let p = ilParams[0].Content in { Type = p.ParameterType; CustomAttrs = p.CustomAttrs })
               Body = body |> Option.map (fun b -> b.Content)
               IsEntryPoint = false }
         override __.ToString() = "builder for " + methodName
@@ -14118,8 +14115,8 @@ namespace ProviderImplementation.ProvidedTypes
                 if t.IsGenericType then 
                     let args = t.GetGenericArguments()
                     let gdef = t.GetGenericTypeDefinition()
-                    if args.Length = 2 && gdef.FullName = fsharpFuncType.FullName && args.[1] = voidType then 
-                        gdef.MakeGenericType(lambdaType args.[0], typeof<unit>)
+                    if args.Length = 2 && gdef.FullName = fsharpFuncType.FullName && args[1] = voidType then 
+                        gdef.MakeGenericType(lambdaType args[0], typeof<unit>)
                     else
                         gdef.MakeGenericType(args |> Array.map lambdaType)
                 else
@@ -14153,7 +14150,7 @@ namespace ProviderImplementation.ProvidedTypes
                 ilg.Emit(I_ldarg 0)
                 ilg.Emit(I_ldfld (ILAlignment.Aligned, ILVolatility.Nonvolatile, f.FormalFieldSpec))
                 ilg.Emit(I_stloc l.LocalIndex)
-                lambdaLocals.[v] <- l
+                lambdaLocals[v] <- l
 
             let unitType = transType (convTypeToTgt (typeof<unit>))
             let expectedState = if (retType = ILType.Void || retType.QualifiedName = unitType.QualifiedName) then ExpectedStackState.Empty else ExpectedStackState.Value
@@ -15134,14 +15131,14 @@ namespace ProviderImplementation.ProvidedTypes
                         ilg.Emit(mkNormalCall (transMeth (getTypeFromHandleMethod())))
                     | :? decimal as x ->
                         let bits = Decimal.GetBits x
-                        ilg.Emit(mk_ldc bits.[0])
-                        ilg.Emit(mk_ldc bits.[1])
-                        ilg.Emit(mk_ldc bits.[2])
+                        ilg.Emit(mk_ldc bits[0])
+                        ilg.Emit(mk_ldc bits[1])
+                        ilg.Emit(mk_ldc bits[2])
                         do
-                            let sign = (bits.[3] &&& 0x80000000) <> 0
+                            let sign = (bits[3] &&& 0x80000000) <> 0
                             ilg.Emit(if sign then mk_ldc 1 else mk_ldc 0)
                         do
-                            let scale = (bits.[3] >>> 16) &&& 0x7F
+                            let scale = (bits[3] >>> 16) &&& 0x7F
                             ilg.Emit(mk_ldc scale)
                         ilg.Emit(I_newobj (transCtorSpec (decimalConstructor()), None))
                     | :? DateTime as x ->
@@ -15291,7 +15288,7 @@ namespace ProviderImplementation.ProvidedTypes
                 // Adjust the attributes - we're codegen'ing this type as nested
                 let attributes = adjustTypeAttributes true ntd.Attributes 
                 let ntb = tb.DefineNestedType(pntd.Name, attributes)
-                typeMap.[pntd] <- ntb
+                typeMap[pntd] <- ntb
                 defineNestedTypes ntb pntd
             | _ -> ()
 
@@ -15345,13 +15342,13 @@ namespace ProviderImplementation.ProvidedTypes
         let transCtorSpec (f:ConstructorInfo) = 
             if (match f with :? ProvidedConstructor as f -> not f.BelongsToTargetModel | _ -> false) then failwithf "expected '%O' to belong to the target model" f
             match f with 
-            | :? ProvidedConstructor as pc when ctorMap.ContainsKey pc -> ctorMap.[pc].FormalMethodSpec
+            | :? ProvidedConstructor as pc when ctorMap.ContainsKey pc -> ctorMap[pc].FormalMethodSpec
             | m -> ILMethodSpec(transCtorRef f, transType m.DeclaringType, [| |])
 
         let transFieldSpec (f:FieldInfo) = 
             if (match f with :? ProvidedField as f -> not f.BelongsToTargetModel | _ -> false) then failwithf "expected '%O' to belong to the target model" f
             match f with 
-            | :? ProvidedField as pf when fieldMap.ContainsKey pf -> fieldMap.[pf].FormalFieldSpec
+            | :? ProvidedField as pf when fieldMap.ContainsKey pf -> fieldMap[pf].FormalFieldSpec
             | f -> 
                 let f2 = f.GetDefinition()
                 ILFieldSpec(ILFieldRef (transTypeRef f2.DeclaringType, f2.Name, transType f2.FieldType), transType f.DeclaringType)
@@ -15367,7 +15364,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         let transMeth (m:MethodInfo): ILMethodSpec = 
             match m with 
-            | :? ProvidedMethod as pm when methMap.ContainsKey pm -> methMap.[pm].FormalMethodSpec
+            | :? ProvidedMethod as pm when methMap.ContainsKey pm -> methMap[pm].FormalMethodSpec
             | m -> 
                 //Debug.Assert (m.Name <> "get_Item1" || m.DeclaringType.Name <> "Tuple`2")
                 let mref = transMethRef m
@@ -15376,7 +15373,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         let iterateTypes f providedTypeDefinitions =
             let rec typeMembers (ptd: ProvidedTypeDefinition) =
-                let tb = typeMap.[ptd]
+                let tb = typeMap[ptd]
                 f tb (Some ptd)
                 for ntd in ptd.GetNestedTypes(bindAll) do
                     nestedType ntd
@@ -15394,7 +15391,7 @@ namespace ProviderImplementation.ProvidedTypes
                     let _fullName  =
                         ("", ns) ||> List.fold (fun fullName n ->
                             let fullName = if fullName = "" then n else fullName + "." + n
-                            f typeMapExtra.[fullName] None
+                            f typeMapExtra[fullName] None
                             fullName)
                     nestedType pt
 
@@ -15437,14 +15434,14 @@ namespace ProviderImplementation.ProvidedTypes
                     // Adjust the attributes - we're codegen'ing as non-nested
                     let attributes = adjustTypeAttributes false attributes
                     let tb = assemblyMainModule.DefineType(StructOption.ofObj pt.Namespace, pt.Name, attributes)
-                    typeMap.[pt] <- tb
+                    typeMap[pt] <- tb
                     defineNestedTypes tb pt
 
                 | Some ns ->
                     let otb, _ =
                         ((None, ""), ns) ||> List.fold (fun (otb:ILTypeBuilder option, fullName) n ->
                             let fullName = if fullName = "" then n else fullName + "." + n
-                            let priorType = if typeMapExtra.ContainsKey(fullName) then Some typeMapExtra.[fullName]  else None
+                            let priorType = if typeMapExtra.ContainsKey(fullName) then Some typeMapExtra[fullName]  else None
                             let tb =
                                 match priorType with
                                 | Some tbb -> tbb
@@ -15459,7 +15456,7 @@ namespace ProviderImplementation.ProvidedTypes
                                         assemblyMainModule.DefineType(nsp, n, attributes)
                                     | Some (otb:ILTypeBuilder) -> 
                                         otb.DefineNestedType(n, attributes)
-                                typeMapExtra.[fullName] <- tb
+                                typeMapExtra[fullName] <- tb
                                 tb
                             (Some tb, fullName))
                     defineNestedType otb.Value pt
@@ -15491,7 +15488,7 @@ namespace ProviderImplementation.ProvidedTypes
                                     for (i, p) in cinfo.GetParameters() |> Seq.mapi (fun i x -> (i, x)) do
                                         cb.DefineParameter(i+1, ParameterAttributes.None, p.Name) |> ignore
                                     cb
-                            ctorMap.[pcinfo] <- cb
+                            ctorMap[pcinfo] <- cb
                         | _ -> ()
 
                     if ptdT.IsEnum then
@@ -15508,7 +15505,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                             defineCustomAttrs fb.SetCustomAttribute (pinfo.GetCustomAttributesData())
 
-                            fieldMap.[finfo] <- fb
+                            fieldMap[finfo] <- fb
 
                         | _ -> ()
 
@@ -15536,7 +15533,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                                     pb.SetConstant p.RawDefaultValue
 
-                            methMap.[pminfo] <- mb
+                            methMap[pminfo] <- mb
 
                         | _ -> ()
 
@@ -15572,7 +15569,7 @@ namespace ProviderImplementation.ProvidedTypes
                     for pcinfo in ctors do
                         assert ctorMap.ContainsKey pcinfo
                         if not pcinfo.BelongsToTargetModel then failwithf "expected '%O' to be a target ProvidedConstructor. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" pcinfo
-                        let cb = ctorMap.[pcinfo]
+                        let cb = ctorMap[pcinfo]
 
                         defineCustomAttrs cb.SetCustomAttribute (pcinfo.GetCustomAttributesData())
 
@@ -15614,7 +15611,7 @@ namespace ProviderImplementation.ProvidedTypes
                     | Some _ when ptdT.IsInterface ->
                         failwith "The provided type definition is an interface; therefore, it may not provide constructors."
                     | Some pc ->
-                        let cb = ctorMap.[pc]
+                        let cb = ctorMap[pc]
                         let ilg = cb.GetILGenerator()
 
                         defineCustomAttrs cb.SetCustomAttribute (pc.GetCustomAttributesData())
@@ -15630,7 +15627,7 @@ namespace ProviderImplementation.ProvidedTypes
                       match minfo with
                       | :? ProvidedMethod as pminfo   ->
                         if not pminfo.BelongsToTargetModel then failwithf "expected '%O' to be a target ProvidedMethod. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" pminfo
-                        let mb = methMap.[pminfo]
+                        let mb = methMap[pminfo]
                         defineCustomAttrs mb.SetCustomAttribute (pminfo.GetCustomAttributesData())
 
                         let parameterVars =
@@ -15667,7 +15664,7 @@ namespace ProviderImplementation.ProvidedTypes
                       | _ -> ()
 
                     for (bodyMethInfo, declMethInfo) in ptdT.GetMethodOverrides() do
-                        let bodyMethBuilder = methMap.[bodyMethInfo]
+                        let bodyMethBuilder = methMap[bodyMethInfo]
                         tb.DefineMethodOverride
                             { Overrides = OverridesSpec(transMethRef declMethInfo, transType declMethInfo.DeclaringType)
                               OverrideBy = bodyMethBuilder.FormalMethodSpec }
@@ -15676,8 +15673,8 @@ namespace ProviderImplementation.ProvidedTypes
                         if not evt.BelongsToTargetModel then failwithf "expected '%O' to be a target ProvidedEvent. Please report this bug to https://github.com/fsprojects/FSharp.TypeProviders.SDK/issues" evt
                         let eb = tb.DefineEvent(evt.Name, evt.Attributes)
                         defineCustomAttrs eb.SetCustomAttribute (evt.GetCustomAttributesData())
-                        eb.SetAddOnMethod(methMap.[evt.GetAddMethod(true) :?> _])
-                        eb.SetRemoveOnMethod(methMap.[evt.GetRemoveMethod(true) :?> _])
+                        eb.SetAddOnMethod(methMap[evt.GetAddMethod(true) :?> _])
+                        eb.SetRemoveOnMethod(methMap[evt.GetRemoveMethod(true) :?> _])
 
                     for pinfo in ptdT.GetProperties(bindAll) |> Seq.choose (function :? ProvidedProperty as pe -> Some pe | _ -> None) do
 
@@ -15687,11 +15684,11 @@ namespace ProviderImplementation.ProvidedTypes
 
                         if  pinfo.CanRead then
                             let minfo = pinfo.GetGetMethod(true)
-                            pb.SetGetMethod (methMap.[minfo :?> ProvidedMethod ])
+                            pb.SetGetMethod (methMap[minfo :?> ProvidedMethod ])
 
                         if  pinfo.CanWrite then
                             let minfo = pinfo.GetSetMethod(true)
-                            pb.SetSetMethod (methMap.[minfo :?> ProvidedMethod ]))
+                            pb.SetSetMethod (methMap[minfo :?> ProvidedMethod ]))
 
             //printfn "saving generated binary to '%s'" assemblyFileName
             assemblyBuilder.Save ()
@@ -15935,7 +15932,7 @@ namespace ProviderImplementation.ProvidedTypes
                     if minfoT.IsStatic then
                         Expr.CallUnchecked(minfoT, Array.toList parametersT)
                     else
-                        Expr.CallUnchecked(parametersT.[0], minfoT, Array.toList parametersT.[1..])
+                        Expr.CallUnchecked(parametersT[0], minfoT, Array.toList parametersT[1..])
 
                 | _ -> failwith ("TypeProviderForNamespaces.GetInvokerExpression: not a ProvidedMethod/ProvidedConstructor/ConstructorInfo/MethodInfo, name=" + methodBaseT.Name + " class=" + methodBaseT.GetType().FullName)
 
@@ -15949,7 +15946,7 @@ namespace ProviderImplementation.ProvidedTypes
                 | _ -> [| |]
 
             member __.ApplyStaticArguments(ty, typePathAfterArguments:string[], objs) =
-                let typePathAfterArguments = typePathAfterArguments.[typePathAfterArguments.Length-1]
+                let typePathAfterArguments = typePathAfterArguments[typePathAfterArguments.Length-1]
                 match ty with
                 | :? ProvidedTypeDefinition as t -> 
                     let ty = (t.ApplyStaticArguments(typePathAfterArguments, objs) :> Type)
@@ -15970,7 +15967,7 @@ namespace ProviderImplementation.ProvidedTypes
                         match assembly with 
                         | :? ProvidedAssembly as targetAssembly -> AssemblyCompiler(targetAssembly, ctxt).Compile(config.IsHostedExecution)
                         | _ -> File.ReadAllBytes assembly.ManifestModule.FullyQualifiedName
-                    theTable.[key] <- bytes
+                    theTable[key] <- bytes
                     bytes
 
 #if !NO_GENERATIVE
@@ -15984,7 +15981,7 @@ namespace ProviderImplementation.ProvidedTypes
                     ctxt.ReadRelatedAssembly(fileName)
             ctxt.AddTargetAssembly(assembly.GetName(), assembly)
             let key = assembly.GetName().Name
-            theTable.[key] <- assemblyBytes
+            theTable[key] <- assemblyBytes
             assembly
 
 #endif 
