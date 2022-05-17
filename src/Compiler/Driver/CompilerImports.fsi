@@ -69,20 +69,22 @@ type ResolveAssemblyReferenceMode =
     | ReportErrors
 
 type AssemblyResolution =
-    { /// The original reference to the assembly.
-      originalReference: AssemblyReference
+    {
+        /// The original reference to the assembly.
+        originalReference: AssemblyReference
 
-      /// Path to the resolvedFile
-      resolvedPath: string
+        /// Path to the resolvedFile
+        resolvedPath: string
 
-      /// Create the tooltip text for the assembly reference
-      prepareToolTip: unit -> string
+        /// Create the tooltip text for the assembly reference
+        prepareToolTip: unit -> string
 
-      /// Whether or not this is an installed system assembly (for example, System.dll)
-      sysdir: bool
+        /// Whether or not this is an installed system assembly (for example, System.dll)
+        sysdir: bool
 
-      /// Lazily populated ilAssemblyRef for this reference.
-      mutable ilAssemblyRef: ILAssemblyRef option }
+        /// Lazily populated ilAssemblyRef for this reference.
+        mutable ilAssemblyRef: ILAssemblyRef option
+    }
 
 #if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference =

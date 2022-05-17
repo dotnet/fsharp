@@ -5292,16 +5292,16 @@ type CcuData =
 
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
-type CcuTypeForwarderTree<'TKey, 'TValue> =
+type CcuTypeForwarderTree =
     {
-        Value : 'TValue option
-        Children : ImmutableDictionary<'TKey, CcuTypeForwarderTree<'TKey, 'TValue>>
+        Value : Lazy<EntityRef> option
+        Children : ImmutableDictionary<string, CcuTypeForwarderTree>
     }
 
     static member Empty = { Value = None; Children = ImmutableDictionary.Empty }
 
 module CcuTypeForwarderTable =
-    let rec findInTree (remainingPath: ArraySegment<string>) (finalKey : string) (tree:CcuTypeForwarderTree<string, Lazy<EntityRef>>): Lazy<EntityRef> option =
+    let rec findInTree (remainingPath: ArraySegment<string>) (finalKey : string) (tree:CcuTypeForwarderTree): Lazy<EntityRef> option =
         let nodes = tree.Children
         let searchTerm =
             if remainingPath.Count = 0 then
@@ -5319,10 +5319,10 @@ module CcuTypeForwarderTable =
 /// Represents a table of .NET CLI type forwarders for an assembly
 type CcuTypeForwarderTable =
     {
-        Root : CcuTypeForwarderTree<string, Lazy<EntityRef>>
+        Root : CcuTypeForwarderTree
     }
 
-    static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree<_,_>.Empty }   
+    static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree.Empty }   
     member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
         CcuTypeForwarderTable.findInTree (ArraySegment path) item this.Root
 

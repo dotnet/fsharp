@@ -63,10 +63,10 @@ module internal SymbolHelpers =
     val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option
 
     val (|ItemIsWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
     val (|ItemIsProvidedTypeWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
     val SimplerDisplayEnv: DisplayEnv -> DisplayEnv

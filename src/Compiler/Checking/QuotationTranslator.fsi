@@ -20,11 +20,13 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    { /// Indicates that witness parameters are recorded
-      SupportsWitnesses: bool
+    {
+        /// Indicates that witness parameters are recorded
+        SupportsWitnesses: bool
 
-      /// Indicates that type references are emitted as integer indexes into a supplied table
-      SupportsDeserializeEx: bool }
+        /// Indicates that type references are emitted as integer indexes into a supplied table
+        SupportsDeserializeEx: bool
+    }
 
 [<Sealed>]
 type QuotationGenerationScope =
