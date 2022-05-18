@@ -78,14 +78,14 @@ module LeafExpressionConverter =
     /// </summary>
     ///
     /// <example-tbd></example-tbd>
-    val SubstHelper: Expr * Var [] * obj [] -> Expr<'T>
+    val SubstHelper: Expr * Var[] * obj[] -> Expr<'T>
 
     /// <summary>
     /// A runtime helper used to evaluate nested quotation literals.
     /// </summary>
     ///
     /// <example-tbd></example-tbd>
-    val SubstHelperRaw: Expr * Var [] * obj [] -> Expr
+    val SubstHelperRaw: Expr * Var[] * obj[] -> Expr
 
     val internal (|SpecificCallToMethod|_|):
         System.RuntimeMethodHandle -> (Expr -> (Expr option * Type list * Expr list) option)

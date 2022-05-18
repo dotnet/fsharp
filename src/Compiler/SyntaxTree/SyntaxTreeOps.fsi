@@ -19,7 +19,7 @@ val textOfId: id: Ident -> string
 
 val pathOfLid: lid: Ident list -> string list
 
-val arrPathOfLid: lid: Ident list -> string []
+val arrPathOfLid: lid: Ident list -> string[]
 
 val textOfPath: path: seq<string> -> string
 
@@ -340,3 +340,5 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
 
 val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent
+
+val mkDynamicArgExpr: expr: SynExpr -> SynExpr

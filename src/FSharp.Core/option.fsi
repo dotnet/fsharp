@@ -381,7 +381,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: option: 'T option -> 'T []
+    val toArray: option: 'T option -> 'T[]
 
     /// <summary>Convert the option to a list of length 0 or 1.</summary>
     ///
@@ -829,7 +829,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: voption: 'T voption -> 'T []
+    val toArray: voption: 'T voption -> 'T[]
 
     /// <summary>Convert the value option to a list of length 0 or 1.</summary>
     ///
