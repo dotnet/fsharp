@@ -78,7 +78,6 @@ open Helpers
 
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
-[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2218:OverrideGetHashCodeOnOverridingEquals", Justification="Equals override does not equate further objects, so default GetHashCode is still valid")>]
 type Var(name: string, typ: Type, ?isMutable: bool) =
     inherit obj()
 

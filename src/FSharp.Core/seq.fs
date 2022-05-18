@@ -1040,7 +1040,6 @@ namespace Microsoft.FSharp.Collections
             let cached = cache source2
             source1 |> collect (fun x -> cached |> map (fun y -> x, y))
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("ReadOnly")>]
         let readonly (source:seq<_>) =
             checkNonNull "source" source
