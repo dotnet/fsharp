@@ -2,8 +2,10 @@
 
 
 namespace Microsoft.FSharp.Core
+
 [<AutoOpen>]
 module internal DetailedExceptions =
+
     open System
     open Microsoft.FSharp.Core
 
