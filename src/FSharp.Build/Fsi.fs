@@ -7,6 +7,7 @@ open System.Diagnostics
 open System.Globalization
 open System.IO
 open System.Reflection
+open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
@@ -160,33 +161,33 @@ type public Fsi() as this =
     // --codepage <int>: Specify the codepage to use when opening source files
     member _.CodePage
         with get () = codePage
-        and set (s) = codePage <- s
+        and set value = codePage <- value
 
     // --nowarn <string>: Do not report the given specific warning.
     member _.DisabledWarnings
         with get () = disabledWarnings
-        and set (a) = disabledWarnings <- a
+        and set value = disabledWarnings <- value
 
     // --define <string>: Define the given conditional compilation symbol.
     member _.DefineConstants
         with get () = defineConstants
-        and set (a) = defineConstants <- a
+        and set value = defineConstants <- value
 
     member _.DotnetFsiCompilerPath
         with get () = dotnetFsiCompilerPath
-        and set (p) = dotnetFsiCompilerPath <- p
+        and set value = dotnetFsiCompilerPath <- value
 
     member _.FsiExec
         with get () = fsiExec
-        and set (p) = fsiExec <- p
+        and set value = fsiExec <- value
 
     member _.LCID
         with get () = vslcid
-        and set (p) = vslcid <- p
+        and set value = vslcid <- value
 
     member _.LangVersion
         with get () = langVersion
-        and set (s) = langVersion <- s
+        and set value = langVersion <- value
 
     // --noframework
     member _.NoFramework
@@ -196,101 +197,101 @@ type public Fsi() as this =
     // --optimize
     member _.Optimize
         with get () = optimize
-        and set (p) = optimize <- p
+        and set value = optimize <- value
 
     // --tailcalls
     member _.Tailcalls
         with get () = tailcalls
-        and set (p) = tailcalls <- p
+        and set value = tailcalls <- value
 
     member _.OtherFlags
         with get () = otherFlags
-        and set (s) = otherFlags <- s
+        and set value = otherFlags <- value
 
     member _.PreferredUILang
         with get () = preferredUILang
-        and set (s) = preferredUILang <- s
+        and set value = preferredUILang <- value
 
     member _.ProvideCommandLineArgs
         with get () = provideCommandLineArgs
-        and set (p) = provideCommandLineArgs <- p
+        and set value = provideCommandLineArgs <- value
 
     // -r <string>: Reference an F# or .NET assembly.
     member _.References
         with get () = references
-        and set (a) = references <- a
+        and set value = references <- value
 
     // --lib
     member _.ReferencePath
         with get () = referencePath
-        and set (s) = referencePath <- s
+        and set value = referencePath <- value
 
     // -load:<string>: load an F# source file
     member _.LoadSources
         with get () = loadSources
-        and set (a) = loadSources <- a
+        and set value = loadSources <- value
 
     member _.SkipCompilerExecution
         with get () = skipCompilerExecution
-        and set (p) = skipCompilerExecution <- p
+        and set value = skipCompilerExecution <- value
 
     // source files
     member _.Sources
         with get () = sources
-        and set (a) = sources <- a
+        and set value = sources <- value
 
     member _.TargetProfile
         with get () = targetProfile
-        and set (p) = targetProfile <- p
+        and set value = targetProfile <- value
 
     member _.TreatWarningsAsErrors
         with get () = treatWarningsAsErrors
-        and set (p) = treatWarningsAsErrors <- p
+        and set value = treatWarningsAsErrors <- value
 
     // For targeting other folders for "fsi.exe" (or ToolExe if different)
     member _.ToolPath
         with get () = toolPath
-        and set (s) = toolPath <- s
+        and set value = toolPath <- value
 
     // --use:<string>: execute an F# source file on startup
     member _.UseSources
         with get () = useSources
-        and set (a) = useSources <- a
+        and set value = useSources <- value
 
     // For specifying the warning level (0-4)
     member _.WarningLevel
         with get () = warningLevel
-        and set (s) = warningLevel <- s
+        and set value = warningLevel <- value
 
     member _.WarningsAsErrors
         with get () = warningsAsErrors
-        and set (s) = warningsAsErrors <- s
+        and set value = warningsAsErrors <- value
 
     member _.WarningsNotAsErrors
         with get () = warningsNotAsErrors
-        and set (s) = warningsNotAsErrors <- s
+        and set value = warningsNotAsErrors <- value
 
     member _.Utf8Output
         with get () = utf8output
-        and set (p) = utf8output <- p
+        and set value = utf8output <- value
 
     [<Output>]
     member _.CommandLineArgs
         with get () = List.toArray commandLineArgs
-        and set (p) = commandLineArgs <- (List.ofArray p)
+        and set value = commandLineArgs <- List.ofArray value
 
     // ToolTask methods
     override _.ToolName = "fsi.exe"
 
     override _.StandardErrorEncoding =
         if utf8output then
-            System.Text.Encoding.UTF8
+            Encoding.UTF8
         else
             base.StandardErrorEncoding
 
     override _.StandardOutputEncoding =
         if utf8output then
-            System.Text.Encoding.UTF8
+            Encoding.UTF8
         else
             base.StandardOutputEncoding
 

@@ -143,11 +143,9 @@ type WriteCodeFragment() =
                     let sb = StringBuilder().AppendLine(boilerplate).AppendLine()
 
                     let code =
-                        Array.fold
-                            (fun (sb: StringBuilder) (item: ITaskItem) ->
-                                sb.AppendLine(WriteCodeFragment.GenerateAttribute(item, _language.ToLowerInvariant())))
-                            sb
-                            _assemblyAttributes
+                        (sb, _assemblyAttributes)
+                        ||> Array.fold (fun (sb: StringBuilder) (item: ITaskItem) ->
+                            sb.AppendLine(WriteCodeFragment.GenerateAttribute(item, _language.ToLowerInvariant())))
 
                     if _language.ToLowerInvariant() = "f#" then
                         code.AppendLine("do()") |> ignore
