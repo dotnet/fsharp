@@ -32,14 +32,10 @@ type internal SimpleEventLoop() =
             Thread.Sleep(1)
 
     let waitSignal signal =
-        WaitHandle.WaitAll([| (signal :> WaitHandle) |])
-        |> ignore
+        WaitHandle.WaitAll([| (signal :> WaitHandle) |]) |> ignore
 
     let waitSignal2 signal1 signal2 =
-        WaitHandle.WaitAny(
-            [| (signal1 :> WaitHandle)
-               (signal2 :> WaitHandle) |]
-        )
+        WaitHandle.WaitAny([| (signal1 :> WaitHandle); (signal2 :> WaitHandle) |])
 
     let mutable running = false
     let mutable restart = false
@@ -86,8 +82,6 @@ type internal SimpleEventLoop() =
             runSignal.Dispose()
             exitSignal.Dispose()
             doneSignal.Dispose()
-
-
 
 [<Sealed>]
 type InteractiveSession() =
@@ -157,9 +151,7 @@ type InteractiveSession() =
         and set v = args <- v
 
     member _.AddPrinter(printer: 'T -> string) =
-        addedPrinters <-
-            Choice1Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x)))
-            :: addedPrinters
+        addedPrinters <- Choice1Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
 
     member _.EventLoop
         with get () = evLoop
@@ -168,9 +160,7 @@ type InteractiveSession() =
             evLoop <- x
 
     member _.AddPrintTransformer(printer: 'T -> obj) =
-        addedPrinters <-
-            Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x)))
-            :: addedPrinters
+        addedPrinters <- Choice2Of2(typeof<'T>, (fun (x: obj) -> printer (unbox x))) :: addedPrinters
 
     member internal self.SetEventLoop(run: (unit -> bool), invoke: ((unit -> obj) -> obj), restart: (unit -> unit)) =
         evLoop.ScheduleRestart()
@@ -182,7 +172,8 @@ type InteractiveSession() =
                 member _.Invoke(f) =
                     invoke ((fun () -> f () |> box)) |> unbox
 
-                member _.ScheduleRestart() = restart () }
+                member _.ScheduleRestart() = restart ()
+            }
 
 module Settings =
     let fsi = new InteractiveSession()
