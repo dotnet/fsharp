@@ -5,8 +5,10 @@ open System
 open System.Diagnostics
 open System.Collections.Generic
 open System.Collections.Immutable
+open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
@@ -372,7 +374,7 @@ type Entity =
     {
 
         /// The declared type parameters of the type
-        mutable entity_typars: Internal.Utilities.Library.LazyWithContext<Typars, range>
+        mutable entity_typars: LazyWithContext<Typars, range>
 
         mutable entity_flags: EntityFlags
 
@@ -676,7 +678,7 @@ type Entity =
 
     /// Gets all immediate members of an F# type definition keyed by name, including compiler-generated ones.
     /// Note: result is a indexed table, type for each name the results are in reverse declaration order
-    member MembersOfFSharpTyconByName: Internal.Utilities.Library.NameMultiMap<ValRef>
+    member MembersOfFSharpTyconByName: NameMultiMap<ValRef>
 
     /// Gets the immediate members of an F# type definition, excluding compiler-generated ones.
     /// Note: result is alphabetically sorted, then for each name the results are in declaration order
@@ -1292,11 +1294,7 @@ type ExceptionInfo =
 [<Sealed; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceType =
 
-    new:
-        kind: ModuleOrNamespaceKind *
-        vals: Internal.Utilities.Collections.QueueList<Val> *
-        entities: Internal.Utilities.Collections.QueueList<Entity> ->
-            ModuleOrNamespaceType
+    new: kind: ModuleOrNamespaceKind * vals: QueueList<Val> * entities: QueueList<Entity> -> ModuleOrNamespaceType
 
     /// Return a new module or namespace type with an entity added.
     member AddEntity: tycon: Tycon -> ModuleOrNamespaceType
@@ -1319,7 +1317,7 @@ type ModuleOrNamespaceType =
     member ActivePatternElemRefLookupTable: NameMap<ActivePatternElemRef> option ref
 
     /// Type, mapping mangled name to Tycon, e.g.
-    member AllEntities: Internal.Utilities.Collections.QueueList<Entity>
+    member AllEntities: QueueList<Entity>
 
     /// Get a table of entities indexed by both logical type compiled names
     member AllEntitiesByCompiledAndLogicalMangledNames: NameMap<Entity>
@@ -1328,7 +1326,7 @@ type ModuleOrNamespaceType =
     member AllEntitiesByLogicalMangledName: NameMap<Entity>
 
     /// Values, including members in F# types in this module-or-namespace-fragment.
-    member AllValsAndMembers: Internal.Utilities.Collections.QueueList<Val>
+    member AllValsAndMembers: QueueList<Val>
 
     /// Compute a table of values type members indexed by logical name.
     member AllValsAndMembersByLogicalNameUncached: MultiMap<string, Val>
@@ -1658,7 +1656,7 @@ type TraitConstraintInfo =
     member ReturnType: TType option
 
     /// Get or set the solution of the member constraint during inference
-    member Solution: TraitConstraintSln option
+    member Solution: TraitConstraintSln option with get, set
 
     /// Get the key associated with the member constraint.
     member TraitKey: TraitWitnessInfo
@@ -2967,7 +2965,7 @@ type Measure =
     | One
 
     /// Raising a measure to a rational power
-    | RationalPower of measure: Measure * power: Internal.Utilities.Rational.Rational
+    | RationalPower of measure: Measure * power: Rational
 
     override ToString: unit -> string
 
@@ -4001,7 +3999,7 @@ type CcuThunk =
     member TypeForwarders: CcuTypeForwarderTable
 
     /// Indicates that this DLL uses F# 2.0+ quotation literals somewhere. This is used to implement a restriction on static linking.
-    member UsesFSharp20PlusQuotations: bool
+    member UsesFSharp20PlusQuotations: bool with get, set
 
 /// The result of attempting to resolve an assembly name to a full ccu.
 /// UnresolvedCcu will contain the name of the assembly that could not be resolved.
@@ -4029,23 +4027,23 @@ type PickledCcuInfo =
 
 /// Represents a set of free local values. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
-type FreeLocals = Internal.Utilities.Collections.Zset<Val>
+type FreeLocals = Zset<Val>
 
 /// Represents a set of free type parameters. Computed type cached by later phases
 /// (never cached type checking). Cached in expressions. Not pickled.
-type FreeTypars = Internal.Utilities.Collections.Zset<Typar>
+type FreeTypars = Zset<Typar>
 
 /// Represents a set of 'free' named type definitions. Used to collect the named type definitions referred to
 /// from a type or expression. Computed type cached by later phases (never cached type checking). Cached
 /// in expressions. Not pickled.
-type FreeTycons = Internal.Utilities.Collections.Zset<Tycon>
+type FreeTycons = Zset<Tycon>
 
 /// Represents a set of 'free' record field definitions. Used to collect the record field definitions referred to
 /// from an expression.
-type FreeRecdFields = Internal.Utilities.Collections.Zset<RecdFieldRef>
+type FreeRecdFields = Zset<RecdFieldRef>
 
 /// Represents a set of 'free' union cases. Used to collect the union cases referred to from an expression.
-type FreeUnionCases = Internal.Utilities.Collections.Zset<UnionCaseRef>
+type FreeUnionCases = Zset<UnionCaseRef>
 
 /// Represents a set of 'free' type-related elements, including named types, trait solutions, union cases and
 /// record fields.
