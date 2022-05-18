@@ -16,7 +16,6 @@ src/FSharp.Core/**/*.fs
 src/Compiler/**/*.fs
 src/fsc/**/*.fs
 src/fscAnyCpu/**/*.fs
-src/FSharp.Build/**/*.fs
 src/FSharp.Compiler.Interactive.Settings/**/*.fs
 src/FSharp.Compiler.Server.Shared/**/*.fs
 src/FSharp.DependencyManager.Nuget/**/*.fs
