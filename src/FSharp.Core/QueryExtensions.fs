@@ -21,14 +21,13 @@ open System.Linq.Expressions
 /// on a result of a query.
 type Grouping<'K, 'T>(key:'K, values:seq<'T>) =
     interface System.Linq.IGrouping<'K, 'T> with
-        member x.Key = key
+        member _.Key = key
 
     interface System.Collections.IEnumerable with
-        member x.GetEnumerator() = values.GetEnumerator() :> System.Collections.IEnumerator
+        member _.GetEnumerator() = values.GetEnumerator() :> System.Collections.IEnumerator
 
     interface System.Collections.Generic.IEnumerable<'T> with
-        member x.GetEnumerator() = values.GetEnumerator()
-
+        member _.GetEnumerator() = values.GetEnumerator()
 
 module internal Adapters = 
 

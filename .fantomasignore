@@ -1,6 +1,16 @@
-**/*.fsx
+# Explicitly unformatted directories
 
-# Unformatted implementation files
+buildtools/
+docs/
+eng/
+fcs-samples/
+scripts/
+service/
+setup/
+tests/
+vsintegration/
+
+# Explicitly unformatted implementation files
 
 src/Compiler/**/*.fs
 src/fsc/**/*.fs
@@ -27,26 +37,26 @@ src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
 # Fantomas limitations on signature files  (to investigate)
-**/ilread.fsi
-**/range.fsi
-**/prim-parsing.fsi
-**/TaggedCollections.fsi
-**/ServiceDeclarationLists.fsi
 
-# https://github.com/fsprojects/fantomas/issues/1974
-**/ParseHalpers.fsi
+src/Compiler/AbstractIL/ilread.fsi
+src/Compiler/Utilities/range.fsi
+src/Compiler/Facilities/prim-parsing.fsi
+src/Compiler/Utilities/TaggedCollections.fsi
+src/Compiler/Service/ServiceDeclarationLists.fsi
 
 # Fantomas limitations on signature files in FSharp.Core (to investigate)
-**/fslib-extra-pervasives.fsi
-**/Nullable.fsi
-**/prim-types-prelude.fsi
-**/prim-types.fsi
-**/list.fsi
-**/Query.fsi
-**/resumable.fsi
-**/async.fsi
+
+src/FSharp.Core/fslib-extra-pervasives.fsi
+src/FSharp.Core/Nullable.fsi
+src/FSharp.Core/prim-types-prelude.fsi
+src/FSharp.Core/prim-types.fsi
+src/FSharp.Core/list.fsi
+src/FSharp.Core/Query.fsi
+src/FSharp.Core/resumable.fsi
+src/FSharp.Core/async.fsi
 
 # Fantomas limitations on signature files in FSharp.Core (https://github.com/fsprojects/fantomas/issues/2230)
-**/array.fsi
-**/tasks.fsi
-**/seq.fsi
+
+src/FSharp.Core/array.fsi
+src/FSharp.Core/tasks.fsi
+src/FSharp.Core/seq.fsi
