@@ -5,6 +5,7 @@ namespace FSharp.Compiler.Interactive
 open System
 open System.Text
 open System.Collections.Generic
+open FSharp.Compiler.DiagnosticsLogger
 
 type internal Style =
     | Prompt
@@ -77,7 +78,7 @@ module internal Utils =
             f ()
         with
         | e ->
-            FSharp.Compiler.DiagnosticsLogger.warning (
+            warning (
                 Failure(
                     sprintf
                         "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n"
