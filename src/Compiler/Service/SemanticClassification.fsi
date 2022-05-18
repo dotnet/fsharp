@@ -65,5 +65,5 @@ module internal TcResolutionsExtensions =
     type TcResolutions with
 
         member GetSemanticClassification:
-            g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option ->
-                SemanticClassificationItem []
+            g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int)[] * range: range option ->
+                SemanticClassificationItem[]

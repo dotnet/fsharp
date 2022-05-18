@@ -558,7 +558,6 @@ module internal SetTree =
 [<CompiledName("FSharpSet`1")>]
 [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
 [<DebuggerDisplay("Count = {Count}")>]
-[<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
 type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) =
 
     [<System.NonSerialized>]
@@ -663,14 +662,12 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
     member s.ForAll f =
         SetTree.forall f s.Tree
 
-    [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
     static member (-) (set1: Set<'T>, set2: Set<'T>) = 
         if SetTree.isEmpty set1.Tree then set1 (* 0 - B = 0 *)
         else
             if SetTree.isEmpty set2.Tree then set1 (* A - 0 = A *)
             else Set(set1.Comparer, SetTree.diff set1.Comparer set1.Tree set2.Tree)
 
-    [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
     static member (+) (set1: Set<'T>, set2: Set<'T>) = 
 #if TRACE_SETS_AND_MAPS
         SetTree.report()

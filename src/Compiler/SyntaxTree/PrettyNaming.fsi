@@ -191,7 +191,7 @@ val internal FSharpModuleSuffix: string = "Module"
 [<Literal>]
 val internal MangledGlobalName: string = "`global`"
 
-val internal IllegalCharactersInTypeAndNamespaceNames: char []
+val internal IllegalCharactersInTypeAndNamespaceNames: char[]
 
 type internal ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
@@ -205,14 +205,14 @@ val internal ActivePatternInfoOfValName: nm: string -> m: range -> ActivePattern
 
 exception internal InvalidMangledStaticArg of string
 
-val internal demangleProvidedTypeName: typeLogicalName: string -> string * (string * string) []
+val internal demangleProvidedTypeName: typeLogicalName: string -> string * (string * string)[]
 
 /// Mangle the static parameters for a provided type or method
-val internal mangleProvidedTypeName: typeLogicalName: string * nonDefaultArgs: (string * string) [] -> string
+val internal mangleProvidedTypeName: typeLogicalName: string * nonDefaultArgs: (string * string)[] -> string
 
 /// Mangle the static parameters for a provided type or method
 val internal computeMangledNameWithoutDefaultArgValues:
-    nm: string * staticArgs: 'a [] * defaultArgValues: (string * string option) [] -> string
+    nm: string * staticArgs: 'a[] * defaultArgValues: (string * string option)[] -> string
 
 val internal outArgCompilerGeneratedName: string
 

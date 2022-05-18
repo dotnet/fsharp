@@ -501,6 +501,9 @@
     <Compile Include="TypedTree\CompilerGlobalState.fs">
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
+    <Compile Include="TypedTree\TypedTree.fsi">
+      <Link>TypedTree\TypedTree.fsi</Link>
+    </Compile>
     <Compile Include="TypedTree\TypedTree.fs">
       <Link>TypedTree\TypedTree.fs</Link>
     </Compile>
@@ -722,6 +725,9 @@
     </Compile>
     <Compile Include="CodeGen\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
+    </Compile>
+    <Compile Include="Driver\FxResolver.fsi">
+      <Link>Driver\FxResolver.fsi</Link>
     </Compile>
     <Compile Include="Driver\FxResolver.fs">
       <Link>Driver\FxResolver.fs</Link>
