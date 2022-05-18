@@ -36,6 +36,9 @@ src/FSharp.Core/printf.fs
 src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
+# Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
+src/FSharp.Core/SI.fs
+
 # Fantomas limitations on signature files  (to investigate)
 
 src/Compiler/AbstractIL/ilread.fsi
