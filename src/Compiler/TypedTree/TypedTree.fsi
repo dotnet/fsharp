@@ -2902,6 +2902,9 @@ type TType =
     /// 'flags' is a placeholder for future features, in particular nullness analysis
     | TType_var of typar: Typar * flags: byte
 
+    /// Indicates the type is a union type, containing common ancestor type and the disjoint cases
+    | TType_erased_union of unionInfo: ErasedUnionInfo * choices: TTypes
+
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
 
@@ -2938,6 +2941,18 @@ type AnonRecdTypeInfo =
     member ILTypeRef: ILTypeRef
 
     member IsLinked: bool
+
+[<RequireQualifiedAccess>]
+type ErasedUnionInfo =
+    {
+        /// Common ancestor type for all cases in this union, used for ILgen
+        CommonAncestorTy: TType
+
+        /// Indices representing order of cases they were defined in
+        UnsortedCaseSourceIndices: int[]
+    }
+
+    static member Create: commonAncestorTy: TType * unsortedCaseSourceIndices: int[] -> ErasedUnionInfo
 
 [<RequireQualifiedAccess>]
 type TupInfo =
