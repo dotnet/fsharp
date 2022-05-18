@@ -4,7 +4,8 @@
 module internal rec FSharp.Compiler.TypedTree 
 
 open System
-open System.Collections.Generic 
+open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Reflection
 
@@ -5307,8 +5308,39 @@ type CcuData =
 
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
+type CcuTypeForwarderTree =
+    {
+        Value : Lazy<EntityRef> option
+        Children : ImmutableDictionary<string, CcuTypeForwarderTree>
+    }
+
+    static member Empty = { Value = None; Children = ImmutableDictionary.Empty }
+
+module CcuTypeForwarderTable =
+    let rec findInTree (remainingPath: ArraySegment<string>) (finalKey : string) (tree:CcuTypeForwarderTree): Lazy<EntityRef> option =
+        let nodes = tree.Children
+        let searchTerm =
+            if remainingPath.Count = 0 then
+                finalKey
+            else
+                remainingPath.Array.[remainingPath.Offset]
+        match nodes.TryGetValue searchTerm with
+        | true, innerTree ->
+            if remainingPath.Count = 0 then
+                innerTree.Value
+            else
+                 findInTree (ArraySegment<string>(remainingPath.Array, remainingPath.Offset + 1, remainingPath.Count - 1)) finalKey innerTree
+        | false, _ -> None
+
 /// Represents a table of .NET CLI type forwarders for an assembly
-type CcuTypeForwarderTable = Map<string[] * string, Lazy<EntityRef>>
+type CcuTypeForwarderTable =
+    {
+        Root : CcuTypeForwarderTree
+    }
+
+    static member Empty : CcuTypeForwarderTable = { Root = CcuTypeForwarderTree.Empty }   
+    member this.TryGetValue (path:string array) (item:string): Lazy<EntityRef> option =
+        CcuTypeForwarderTable.findInTree (ArraySegment path) item this.Root
 
 type CcuReference = string // ILAssemblyRef
 
@@ -5397,7 +5429,7 @@ type CcuThunk =
     member ccu.Contents = ccu.Deref.Contents
 
     /// The table of type forwarders for this assembly
-    member ccu.TypeForwarders: Map<string[] * string, Lazy<EntityRef>> = ccu.Deref.TypeForwarders
+    member ccu.TypeForwarders: CcuTypeForwarderTable = ccu.Deref.TypeForwarders
 
     /// The table of modules and namespaces at the "root" of the assembly
     member ccu.RootModulesAndNamespaces = ccu.Contents.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions
@@ -5434,10 +5466,8 @@ type CcuThunk =
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath: string[], item: string) : EntityRef option = 
         ccu.EnsureDerefable nlpath
-        let key = nlpath, item
-        match ccu.TypeForwarders.TryGetValue key with
-        | true, entity -> Some(entity.Force())
-        | _ -> None
+        ccu.TypeForwarders.TryGetValue nlpath item
+        |> Option.map (fun entity -> entity.Force())
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member ccu.MemberSignatureEquality(ty1: TType, ty2: TType) = 

@@ -922,7 +922,6 @@ val MeasureExprConExponent: TcGlobals -> bool -> TyconRef -> Measure -> Rational
 
 val normalizeMeasure: TcGlobals -> Measure -> Measure
 
-
 //-------------------------------------------------------------------------
 // Members
 //-------------------------------------------------------------------------
@@ -1035,36 +1034,38 @@ type GenericParameterStyle =
 
 [<NoEquality; NoComparison>]
 type DisplayEnv =
-    { includeStaticParametersInTypeNames: bool
-      openTopPathsSorted: Lazy<string list list>
-      openTopPathsRaw: string list list
-      shortTypeNames: bool
-      suppressNestedTypes: bool
-      maxMembers: int option
-      showObsoleteMembers: bool
-      showHiddenMembers: bool
-      showTyparBinding: bool
-      showInferenceTyparAnnotations: bool
-      suppressInlineKeyword: bool
-      suppressMutableKeyword: bool
-      showMemberContainers: bool
-      shortConstraints: bool
-      useColonForReturnType: bool
-      showAttributes: bool
-      showOverrides: bool
-      showStaticallyResolvedTyparAnnotations: bool
-      abbreviateAdditionalConstraints: bool
-      showTyparDefaultConstraints: bool
-      /// If set, signatures will be rendered with XML documentation comments for members if they exist
-      /// Defaults to false, expected use cases include things like signature file generation.
-      showDocumentation: bool
-      shrinkOverloads: bool
-      printVerboseSignatures: bool
-      escapeKeywordNames: bool
-      g: TcGlobals
-      contextAccessibility: Accessibility
-      generatedValueLayout: Val -> Layout option
-      genericParameterStyle: GenericParameterStyle }
+    {
+        includeStaticParametersInTypeNames: bool
+        openTopPathsSorted: Lazy<string list list>
+        openTopPathsRaw: string list list
+        shortTypeNames: bool
+        suppressNestedTypes: bool
+        maxMembers: int option
+        showObsoleteMembers: bool
+        showHiddenMembers: bool
+        showTyparBinding: bool
+        showInferenceTyparAnnotations: bool
+        suppressInlineKeyword: bool
+        suppressMutableKeyword: bool
+        showMemberContainers: bool
+        shortConstraints: bool
+        useColonForReturnType: bool
+        showAttributes: bool
+        showOverrides: bool
+        showStaticallyResolvedTyparAnnotations: bool
+        abbreviateAdditionalConstraints: bool
+        showTyparDefaultConstraints: bool
+        /// If set, signatures will be rendered with XML documentation comments for members if they exist
+        /// Defaults to false, expected use cases include things like signature file generation.
+        showDocumentation: bool
+        shrinkOverloads: bool
+        printVerboseSignatures: bool
+        escapeKeywordNames: bool
+        g: TcGlobals
+        contextAccessibility: Accessibility
+        generatedValueLayout: Val -> Layout option
+        genericParameterStyle: GenericParameterStyle
+    }
 
     member SetOpenPaths: string list list -> DisplayEnv
 
@@ -1244,11 +1245,13 @@ val instExpr: TcGlobals -> TyparInstantiation -> Expr -> Expr
 /// The remapping that corresponds to a module meeting its signature
 /// and also report the set of tycons, tycon representations and values hidden in the process.
 type SignatureRepackageInfo =
-    { /// The list of corresponding values
-      RepackagedVals: (ValRef * ValRef) list
+    {
+        /// The list of corresponding values
+        RepackagedVals: (ValRef * ValRef) list
 
-      /// The list of corresponding modules, namespaces and type definitions
-      RepackagedEntities: (TyconRef * TyconRef) list }
+        /// The list of corresponding modules, namespaces and type definitions
+        RepackagedEntities: (TyconRef * TyconRef) list
+    }
 
     /// The empty table
     static member Empty: SignatureRepackageInfo
@@ -1934,7 +1937,6 @@ val mkByteArrayTy: TcGlobals -> TType
 
 val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 
-
 //-------------------------------------------------------------------------
 // Construct calls to some intrinsic functions
 //-------------------------------------------------------------------------
@@ -2252,7 +2254,6 @@ val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
 
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
 
-
 val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
 
 val mkCompilationMappingAttrForQuotationResource: TcGlobals -> string * ILTypeRef list -> ILAttribute
@@ -2330,7 +2331,7 @@ val mkMethodTy: TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident [] -> Exprs -> TType list -> Expr
+val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr
 
 val AdjustValForExpectedArity: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 

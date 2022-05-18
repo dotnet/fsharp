@@ -75,7 +75,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         let empty<'T> : 'T [] = [| |]
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704: IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("CopyTo")>]
         let inline blit (source: 'T[]) (sourceIndex: int) (target: 'T[]) (targetIndex: int) (count: int) = 
             Array.Copy(source, sourceIndex, target, targetIndex, count)
