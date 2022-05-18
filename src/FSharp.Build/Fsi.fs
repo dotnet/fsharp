@@ -395,5 +395,5 @@ type public Fsi() as this =
     member internal fsi.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsi.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
-    member internal fsi.GetCapturedArguments() =
+    member internal _.GetCapturedArguments() =
         [| yield! capturedArguments; yield! capturedFilenames |]
