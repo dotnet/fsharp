@@ -29,7 +29,6 @@ type internal FSharpInteractiveServer() =
     abstract Interrupt: unit -> unit
     default x.Interrupt() = ()
 
-    [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters")>]
     static member StartServer(channelName: string, server: FSharpInteractiveServer) =
         let chan = new Ipc.IpcChannel(channelName)
         LifetimeServices.LeaseTime <- TimeSpan(7, 0, 0, 0) // days,hours,mins,secs
