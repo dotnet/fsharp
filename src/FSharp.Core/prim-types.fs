@@ -4834,6 +4834,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
+        [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         let inline nameof (_: 'T) : string =
             raise (Exception "may not call directly, should always be optimized away")
 
