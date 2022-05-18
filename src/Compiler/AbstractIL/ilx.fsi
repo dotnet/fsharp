@@ -27,7 +27,6 @@ type IlxUnionCase =
     member IsNullary: bool
     member FieldTypes: ILType[]
 
-
 type IlxUnionHasHelpers =
     | NoHelpers
     | AllHelpers
@@ -108,7 +107,6 @@ type IlxClosureSpec =
 
     /// Indicates if a static field being used to store an instance of this closure (because it has no free variables)
     member UseStaticField: bool
-
 
 /// IlxClosureApps - i.e. types being applied at a callsite.
 type IlxClosureApps =
