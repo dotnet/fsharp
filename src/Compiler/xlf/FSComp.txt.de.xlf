@@ -613,8 +613,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
-        <source>The field '{0}' appears multiple times in this record expression or pattern.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression or pattern.</target>
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -635,6 +635,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Ungültige Deklaration für anonymen Datensatztyp.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">

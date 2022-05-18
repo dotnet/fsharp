@@ -19,7 +19,7 @@ module AnonRecd =
         |> compile
         |> shouldFail
         |> withErrorCode 3522
-        |> withMessage "The field 'A' appears multiple times in this record expression or pattern."
+        |> withMessage "The field 'A' appears multiple times in this record expression."
 
     [<Fact>]
     let ``Anonymous Records with duplicate labels - Copy and update expression`` () =
@@ -43,4 +43,4 @@ module AnonRecd =
 """
         |> compile
         |> shouldFail
-        |> withErrorCode 3522
+        |> withErrorCode 3523

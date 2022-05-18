@@ -4652,7 +4652,7 @@ and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
     unsortedFieldIds
     |> Array.countBy (fun fieldId -> fieldId.idText)
     |> Array.iter (fun (idText, count) ->
-        if count > 1 then errorR (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(idText), m)))
+        if count > 1 then error (Error (FSComp.SR.tcAnonRecdTypeDuplicateFieldId(idText), m)))
 
     // Sort into canonical order
     let sortedFieldTys, sortedCheckedArgTys = List.zip args argsR |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
