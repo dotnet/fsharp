@@ -279,11 +279,11 @@
     <Compile Include="Facilities\SimulatedMSBuildReferenceResolver.fs">
       <Link>Facilities/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
-    <Compile Include="Facilities\CompilerLocationUtils.fsi">
-      <Link>Facilities\CompilerLocationUtils.fsi</Link>
+    <Compile Include="Facilities\CompilerLocation.fsi">
+      <Link>Facilities\CompilerLocation.fsi</Link>
     </Compile>
-    <Compile Include="Facilities\CompilerLocationUtils.fs">
-      <Link>Facilities\CompilerLocationUtils.fs</Link>
+    <Compile Include="Facilities\CompilerLocation.fs">
+      <Link>Facilities\CompilerLocation.fs</Link>
     </Compile>
     <FsLex Include="AbstractIL\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
