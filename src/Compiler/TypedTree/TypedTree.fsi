@@ -753,7 +753,7 @@ type Entity =
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
-    member XmlDocSig: string
+    member XmlDocSig: string with get, set
 
 type EntityData = Entity
 
@@ -1268,7 +1268,7 @@ type RecdField =
     member XmlDoc: XmlDoc
 
     /// Get or set the XML documentation signature for the field
-    member XmlDocSig: string
+    member XmlDocSig: string with get, set
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison>]
@@ -2122,7 +2122,7 @@ type Val =
     member XmlDoc: XmlDoc
 
     ///Get the signature for the value's XML documentation
-    member XmlDocSig: string
+    member XmlDocSig: string with get, set
 
 /// Represents the extra information stored for a member
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
