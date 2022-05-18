@@ -17,7 +17,6 @@ open Internal.Utilities
 //The goal is to have the most common/important flags available via the Fsi class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
-[<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>]
 type public Fsi() as this =
 
     inherit ToolTask()
