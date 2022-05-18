@@ -14,14 +14,26 @@ vsintegration/
 
 src/FSharp.Core/**/*.fs
 src/Compiler/**/*.fs
+src/Compiler/AbstractIL/**/*.fs
+src/Compiler/Checking/**/*.fs
+src/Compiler/CodeGen/**/*.fs
+src/Compiler/DependencyManager/**/*.fs
+src/Compiler/Driver/**/*.fs
+src/Compiler/Facilities/**/*.fs
+src/Compiler/Interactive/**/*.fs
+src/Compiler/Legacy/**/*.fs
+src/Compiler/Optimize/**/*.fs
+src/Compiler/Service/**/*.fs
+src/Compiler/Symbols/**/*.fs
+src/Compiler/SyntaxTree/**/*.fs
+src/Compiler/TypedTree/**/*.fs
+src/Compiler/Utilities/**/*.fs
 src/fsc/**/*.fs
 src/fscAnyCpu/**/*.fs
 src/FSharp.Build/**/*.fs
 src/FSharp.Compiler.Interactive.Settings/**/*.fs
 src/FSharp.Compiler.Server.Shared/**/*.fs
 src/FSharp.DependencyManager.Nuget/**/*.fs
-src/fsi/**/*.fs
-src/fsiAnyCpu/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
 
 # Fantomas limitations on signature files  (to investigate)
