@@ -3,10 +3,8 @@
 namespace FSharp.Build
 
 open System
-open System.Collections
 open System.IO
 open Microsoft.Build.Framework
-open Microsoft.Build.Utilities
 
 type SubstituteText() =
 

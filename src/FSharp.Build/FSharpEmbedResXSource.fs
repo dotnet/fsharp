@@ -3,8 +3,6 @@
 namespace FSharp.Build
 
 open System
-open System.Collections
-open System.Globalization
 open System.IO
 open System.Linq
 open System.Text

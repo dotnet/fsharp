@@ -4,9 +4,7 @@ namespace FSharp.Build
 
 open System
 open System.IO
-open System.Text
 open Microsoft.Build.Tasks
-open Microsoft.Build.Utilities
 
 type CreateFSharpManifestResourceName public () =
     inherit CreateCSharpManifestResourceName()
@@ -16,11 +14,11 @@ type CreateFSharpManifestResourceName public () =
 
     override this.CreateManifestName
         (
-            (fileName: string),
-            (linkFileName: string),
-            (rootNamespace: string) (* may be null *) ,
-            (dependentUponFileName: string) (* may be null *) ,
-            (binaryStream: System.IO.Stream) (* may be null *)
+            fileName: string,
+            linkFileName: string,
+            rootNamespace: string,  // may be null
+            dependentUponFileName: string,  // may be null
+            binaryStream: Stream // may be null
         ) : string =
 
         // The Visual CSharp and XBuild CSharp toolchains transform resource names like this:
