@@ -1535,7 +1535,6 @@ type ILPreTypeDef =
     /// Realise the actual full typedef
     abstract GetTypeDef: unit -> ILTypeDef
 
-
 [<NoEquality; NoComparison; Sealed>]
 type internal ILPreTypeDefImpl =
     interface ILPreTypeDef
@@ -1709,7 +1708,6 @@ type ILAssemblyManifest =
 
     member CustomAttrs: ILAttributes
     member SecurityDecls: ILSecurityDecls
-
 
 [<RequireQualifiedAccess>]
 type ILNativeResource =
