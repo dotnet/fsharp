@@ -87,9 +87,6 @@ module internal List =
 
     let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
-    [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]
-    let nonempty x = match x with [] -> false | _ -> true
-
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let inline setFreshConsTail cons t = cons.( :: ).1 <- t
