@@ -510,7 +510,6 @@ type TcResultsSink =
     static member NoSink: TcResultsSink
     static member WithSink: ITypecheckResultsSink -> TcResultsSink
 
-
 /// Indicates if we only need one result or all possible results from a resolution.
 [<RequireQualifiedAccess>]
 type ResultCollectionSettings =
@@ -598,7 +597,6 @@ type LookupKind =
     | Expr
     | Type
     | Ctor
-
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
 type WarnOnUpperFlag =

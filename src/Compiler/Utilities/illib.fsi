@@ -229,7 +229,6 @@ module internal ValueOptionInternal =
 
     val inline bind: f: ('a -> 'b voption) -> x: 'a voption -> 'b voption
 
-
 module internal String =
 
     val make: n: int -> c: char -> string
@@ -521,7 +520,6 @@ module internal NameMap =
 
     val exists: f: ('a -> 'b -> bool) -> m: Map<'a, 'b> -> bool when 'a: comparison
 
-
     val ofKeyedList: f: ('a -> 'b) -> l: 'a list -> Map<'b, 'a> when 'b: comparison
 
     val ofList: l: (string * 'T) list -> NameMap<'T>
@@ -611,7 +609,6 @@ module internal MultiMap =
     val initBy: f: ('a -> 'b) -> xs: seq<'a> -> MultiMap<'b, 'a> when 'b: comparison
 
 type internal LayeredMap<'Key, 'Value when 'Key: comparison> = Map<'Key, 'Value>
-
 
 [<AutoOpen>]
 module internal MapAutoOpens =

@@ -6,7 +6,6 @@ open System
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
-
 /// <summary>Contains operations for working with options.</summary>
 ///
 /// <category>Options</category>
