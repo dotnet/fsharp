@@ -16,7 +16,6 @@ src/FSharp.Core/**/*.fs
 src/Compiler/**/*.fs
 src/fsc/**/*.fs
 src/fscAnyCpu/**/*.fs
-src/FSharp.Build/**/*.fs
 src/fsi/**/*.fs
 src/fsiAnyCpu/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
