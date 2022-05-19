@@ -9,7 +9,7 @@ open FSharp.Compiler.AbstractIL.IL
 [<Class>]
 type public XmlDoc =
 
-    new: unprocessedLines: string [] * range: range -> XmlDoc
+    new: unprocessedLines: string[] * range: range -> XmlDoc
 
     /// Merge two XML documentation
     static member Merge: doc1: XmlDoc -> doc2: XmlDoc -> XmlDoc
@@ -18,7 +18,7 @@ type public XmlDoc =
     member internal Check: paramNamesOpt: string list option -> unit
 
     /// Get the lines after insertion of implicit summary tags and encoding
-    member GetElaboratedXmlLines: unit -> string []
+    member GetElaboratedXmlLines: unit -> string[]
 
     /// Get the elaborated XML documentation as XML text
     member GetXmlText: unit -> string
@@ -33,7 +33,7 @@ type public XmlDoc =
     member Range: range
 
     /// Get the lines before insertion of implicit summary tags and encoding
-    member UnprocessedLines: string []
+    member UnprocessedLines: string[]
 
     /// Get the empty XmlDoc
     static member Empty: XmlDoc
@@ -54,7 +54,7 @@ type internal XmlDocCollector =
     member AddXmlDocLine: line: string * range: range -> unit
 
     /// Get the documentation lines before the given point
-    member LinesBefore: grabPointPos: pos -> (string * range) []
+    member LinesBefore: grabPointPos: pos -> (string * range)[]
 
     /// Indicates it the given point has XmlDoc comments
     member HasComments: grabPointPos: pos -> bool
@@ -72,7 +72,7 @@ type public PreXmlDoc =
     static member Merge: a: PreXmlDoc -> b: PreXmlDoc -> PreXmlDoc
 
     /// Create a PreXmlDoc from a collection of unprocessed lines
-    static member Create: unprocessedLines: string [] * range: range -> PreXmlDoc
+    static member Create: unprocessedLines: string[] * range: range -> PreXmlDoc
 
     /// Process and check the PreXmlDoc, checking with respect to the given parameter names
     member ToXmlDoc: check: bool * paramNamesOpt: string list option -> XmlDoc

@@ -23,7 +23,7 @@ val ParseFormatString:
     printerArgTy: TType ->
     printerResidueTy: TType ->
     printerResultTy: TType ->
-        TType list * TType * TType * TType [] * (range * int) list * string
+        TType list * TType * TType * TType[] * (range * int) list * string
 
 val TryCountFormatStringArguments:
     m: range ->

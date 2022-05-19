@@ -15,7 +15,7 @@ module internal CompilerService =
 
 /// For extra diagnostics
 val mutable showParserStackOnParseError: bool
-#endif // DEBUG
+#endif
 
 /// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
@@ -127,4 +127,4 @@ val CollectFormattedDiagnostics:
     severity: FSharpDiagnosticSeverity *
     PhasedDiagnostic *
     suggestNames: bool ->
-        FormattedDiagnostic []
+        FormattedDiagnostic[]

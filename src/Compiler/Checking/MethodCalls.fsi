@@ -68,14 +68,16 @@ val CalledArg:
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
 type AssignedCalledArg<'T> =
-    { /// The identifier for a named argument, if any
-      NamedArgIdOpt: Ident option
+    {
+        /// The identifier for a named argument, if any
+        NamedArgIdOpt: Ident option
 
-      /// The called argument in the method
-      CalledArg: CalledArg
+        /// The called argument in the method
+        CalledArg: CalledArg
 
-      /// The argument on the caller side
-      CallerArg: CallerArg<'T> }
+        /// The argument on the caller side
+        CallerArg: CallerArg<'T>
+    }
 
     member Position: struct (int * int)
 
@@ -170,20 +172,22 @@ val AdjustCalledArgType:
         TypeAdjustmentInfo
 
 type CalledMethArgSet<'T> =
-    { /// The called arguments corresponding to "unnamed" arguments
-      UnnamedCalledArgs: CalledArg list
+    {
+        /// The called arguments corresponding to "unnamed" arguments
+        UnnamedCalledArgs: CalledArg list
 
-      /// Any unnamed caller arguments not otherwise assigned
-      UnnamedCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments not otherwise assigned
+        UnnamedCallerArgs: CallerArg<'T> list
 
-      /// The called "ParamArray" argument, if any
-      ParamArrayCalledArgOpt: CalledArg option
+        /// The called "ParamArray" argument, if any
+        ParamArrayCalledArgOpt: CalledArg option
 
-      /// Any unnamed caller arguments assigned to a "param array" argument
-      ParamArrayCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments assigned to a "param array" argument
+        ParamArrayCallerArgs: CallerArg<'T> list
 
-      /// Named args
-      AssignedNamedArgs: AssignedCalledArg<'T> list }
+        /// Named args
+        AssignedNamedArgs: AssignedCalledArg<'T> list
+    }
 
     member NumAssignedNamedArgs: int
 

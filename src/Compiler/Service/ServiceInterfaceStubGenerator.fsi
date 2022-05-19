@@ -15,7 +15,7 @@ type InterfaceData =
 
     member Range: range
 
-    member TypeParameters: string []
+    member TypeParameters: string[]
 
 module InterfaceStubGenerator =
 
@@ -45,7 +45,7 @@ module InterfaceStubGenerator =
     val FormatInterface:
         startColumn: int ->
         indentation: int ->
-        typeInstances: string [] ->
+        typeInstances: string[] ->
         objectIdent: string ->
         methodBody: string ->
         displayContext: FSharpDisplayContext ->

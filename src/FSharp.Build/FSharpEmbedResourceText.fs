@@ -14,10 +14,10 @@ type FSharpEmbedResourceText() =
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
 
-    let PrintErr(fileName, line, msg) =
+    let PrintErr (fileName, line, msg) =
         printfn "%s(%d): error : %s" fileName line msg
 
-    let Err(fileName, line, msg) =
+    let Err (fileName, line, msg) =
         PrintErr(fileName, line, msg)
         printfn "Note that the syntax of each line is one of these three alternatives:"
         printfn "# comment"
@@ -25,7 +25,8 @@ type FSharpEmbedResourceText() =
         printfn "errNum,ident,\"string\""
         failwith (sprintf "there were errors in the file '%s'" fileName)
 
-    let xmlBoilerPlateString = @"<?xml version=""1.0"" encoding=""utf-8""?>
+    let xmlBoilerPlateString =
+        @"<?xml version=""1.0"" encoding=""utf-8""?>
 <root>
     <!--
     Microsoft ResX Schema
@@ -147,87 +148,123 @@ type FSharpEmbedResourceText() =
 </root>"
 
     // The kinds of 'holes' we can do
-    let ComputeHoles fileName lineNum (txt:string) : ResizeArray<string> * string =
+    let ComputeHoles fileName lineNum (txt: string) : ResizeArray<string> * string =
         // takes in a %d%s kind of string, returns array of string and {0}{1} kind of string
         let mutable i = 0
         let mutable holeNumber = 0
-        let mutable holes = ResizeArray()  //  order
+        let mutable holes = ResizeArray() //  order
         let sb = new System.Text.StringBuilder()
+
         let AddHole holeType =
             match holeType with
             | "System.UInt32" -> sb.Append(sprintf "{%d:x}" holeNumber) |> ignore
             | _ -> sb.Append(sprintf "{%d}" holeNumber) |> ignore
+
             holeNumber <- holeNumber + 1
             holes.Add(holeType)
+
         while i < txt.Length do
             if txt.[i] = '%' then
-                if i+1 = txt.Length then
+                if i + 1 = txt.Length then
                     Err(fileName, lineNum, "(at end of string) % must be followed by d, x, f, s, or %")
                 else
-                    match txt.[i+1] with
+                    match txt.[i + 1] with
                     | 'd' -> AddHole "System.Int32"
                     | 'x' -> AddHole "System.UInt32"
                     | 'X' -> AddHole "System.UInt32"
                     | 'f' -> AddHole "System.Double"
                     | 's' -> AddHole "System.String"
                     | '%' -> sb.Append('%') |> ignore
-                    | c -> Err(fileName, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c)
+                    | c ->
+                        Err(
+                            fileName,
+                            lineNum,
+                            sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c
+                        )
+
                 i <- i + 2
             else
                 match txt.[i] with
                 | '{' -> sb.Append "{{" |> ignore
                 | '}' -> sb.Append "}}" |> ignore
                 | c -> sb.Append c |> ignore
+
                 i <- i + 1
         //printfn "holes.Length = %d, lineNum = %d" holes.Length //lineNum txt
         (holes, sb.ToString())
 
     let Unquote (s: string) =
-        if s.StartsWith "\"" && s.EndsWith "\"" then s.Substring(1, s.Length - 2)
-        else failwith "error message string should be quoted"
+        if s.StartsWith "\"" && s.EndsWith "\"" then
+            s.Substring(1, s.Length - 2)
+        else
+            failwith "error message string should be quoted"
 
-    let ParseLine fileName lineNum (txt:string) =
+    let ParseLine fileName lineNum (txt: string) =
         let mutable errNum = None
         let identB = new System.Text.StringBuilder()
         let mutable i = 0
         // parse optional error number
         if i < txt.Length && System.Char.IsDigit txt.[i] then
             let numB = new System.Text.StringBuilder()
+
             while i < txt.Length && System.Char.IsDigit txt.[i] do
                 numB.Append txt.[i] |> ignore
                 i <- i + 1
+
             errNum <- Some(int (numB.ToString()))
+
             if i = txt.Length || txt.[i] <> ',' then
                 Err(fileName, lineNum, sprintf "After the error number '%d' there should be a comma" errNum.Value)
             // Skip the comma
             i <- i + 1
         // parse short identifier
-        if i < txt.Length && not(System.Char.IsLetter(txt.[i])) then
-            Err(fileName, lineNum, sprintf "The first character in the short identifier should be a letter, but found '%c'" txt.[i])
+        if i < txt.Length && not (System.Char.IsLetter(txt.[i])) then
+            Err(
+                fileName,
+                lineNum,
+                sprintf "The first character in the short identifier should be a letter, but found '%c'" txt.[i]
+            )
+
         while i < txt.Length && System.Char.IsLetterOrDigit txt.[i] do
             identB.Append txt.[i] |> ignore
             i <- i + 1
+
         let ident = identB.ToString()
+
         if ident.Length = 0 then
             Err(fileName, lineNum, "Did not find the short identifier")
+        else if i = txt.Length || txt.[i] <> ',' then
+            Err(fileName, lineNum, sprintf "After the identifier '%s' there should be a comma" ident)
         else
-            if i = txt.Length || txt.[i] <> ',' then
-                Err(fileName, lineNum, sprintf "After the identifier '%s' there should be a comma" ident)
-            else
-                // Skip the comma
-                i <- i + 1
-                if i = txt.Length then
-                    Err(fileName, lineNum, sprintf "After the identifier '%s' and comma, there should be the quoted string resource" ident)
-                else
-                    let str =
-                        try
-                            System.String.Format(Unquote(txt.Substring i))  // Format turns e.g '\n' into that char, but also requires that we 'escape' curlies in the original .txt file, e.g. "{{"
-                        with
-                            e -> Err(fileName, lineNum, sprintf "Error calling System.String.Format (note that curly braces must be escaped, and there cannot be trailing space on the line): >>>%s<<< -- %s" (txt.Substring i) e.Message)
-                    let holes, netFormatString = ComputeHoles fileName lineNum str
-                    (lineNum, (errNum,ident), str, holes.ToArray(), netFormatString)
+            // Skip the comma
+            i <- i + 1
 
-    let stringBoilerPlatePrefix = @"
+            if i = txt.Length then
+                Err(
+                    fileName,
+                    lineNum,
+                    sprintf "After the identifier '%s' and comma, there should be the quoted string resource" ident
+                )
+            else
+                let str =
+                    try
+                        System.String.Format(Unquote(txt.Substring i)) // Format turns e.g '\n' into that char, but also requires that we 'escape' curlies in the original .txt file, e.g. "{{"
+                    with
+                    | e ->
+                        Err(
+                            fileName,
+                            lineNum,
+                            sprintf
+                                "Error calling System.String.Format (note that curly braces must be escaped, and there cannot be trailing space on the line): >>>%s<<< -- %s"
+                                (txt.Substring i)
+                                e.Message
+                        )
+
+                let holes, netFormatString = ComputeHoles fileName lineNum str
+                (lineNum, (errNum, ident), str, holes.ToArray(), netFormatString)
+
+    let stringBoilerPlatePrefix =
+        @"
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open System.Reflection
@@ -238,14 +275,18 @@ open Microsoft.FSharp.Text
 open Microsoft.FSharp.Collections
 open Printf
 "
-    let StringBoilerPlate fileName = @"
+
+    let StringBoilerPlate fileName =
+        @"
     // BEGIN BOILERPLATE
 
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
     static let getTypeInfo (t: System.Type) = t
 
-    static let resources = lazy (new System.Resources.ResourceManager(""" + fileName + @""", getCurrentAssembly()))
+    static let resources = lazy (new System.Resources.ResourceManager("""
+        + fileName
+        + @""", getCurrentAssembly()))
 
     static let GetString(name:string) =
         let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
@@ -332,150 +373,235 @@ open Printf
     // END BOILERPLATE
 "
 
-    let generateResxAndSource (fileName:string) =
+    let generateResxAndSource (fileName: string) =
         try
-          let printMessage message = printfn "FSharpEmbedResourceText: %s" message
-          let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
-          if justFileName |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
-              Err(fileName, 0, sprintf "The file name '%s' is not allowed; only letters and digits can be used, as the file name also becomes the namespace for the SR class" justFileName)
-          let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
-          let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
+            let printMessage message =
+                printfn "FSharpEmbedResourceText: %s" message
 
-          let condition1 = File.Exists(outFileName)
-          let condition2 = condition1 && File.Exists(outXmlFileName)
-          let condition3 = condition2 && File.Exists(fileName)
-          let condition4 = condition3 && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outFileName))
-          let condition5 = condition4 && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName) )
-          if condition5 then
-            printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName)
-            Some (fileName, outFileName, outXmlFileName)
-          else
-            printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFileName outXmlFileName fileName (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
+            let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
 
-            printMessage (sprintf "Reading %s" fileName)
-            let lines = File.ReadAllLines(fileName)
-                        |> Array.mapi (fun i s -> i,s) // keep line numbers
-                        |> Array.filter (fun (i,s) -> not(s.StartsWith "#"))  // filter out comments
-
-            printMessage (sprintf "Parsing %s" fileName)
-            let stringInfos = lines |> Array.map (fun (i,s) -> ParseLine fileName i s)
-            // now we have array of (lineNum, ident, str, holes, netFormatString)  // str has %d, netFormatString has {0}
-
-            printMessage (sprintf "Validating %s" fileName)
-            // validate that all the idents are unique
-            let allIdents = new System.Collections.Generic.Dictionary<string,int>()
-            for (line,(_,ident),_,_,_) in stringInfos do
-                if allIdents.ContainsKey(ident) then
-                    Err(fileName,line,sprintf "Identifier '%s' is already used previously on line %d - each identifier must be unique" ident allIdents.[ident])
-                allIdents.Add(ident,line)
-
-            printMessage (sprintf "Validating uniqueness of %s" fileName)
-            // validate that all the strings themselves are unique
-            let allStrs = new System.Collections.Generic.Dictionary<string,(int*string)>()
-            for (line,(_,ident),str,_,_) in stringInfos do
-                if allStrs.ContainsKey(str) then
-                    let prevLine,prevIdent = allStrs.[str]
-                    Err(fileName,line,sprintf "String '%s' already appears on line %d with identifier '%s' - each string must be unique" str prevLine prevIdent)
-                allStrs.Add(str,(line,ident))
-
-            printMessage (sprintf "Generating %s" outFileName)
-            use outStream = File.Create outFileName
-            use out = new StreamWriter(outStream)
-            fprintfn out "// This is a generated file; the original input is '%s'" fileName
-            fprintfn out "namespace %s" justFileName
-            fprintfn out "%s" stringBoilerPlatePrefix
-            fprintfn out "type internal SR private() ="
-            let theResourceName = justFileName
-            fprintfn out "%s" (StringBoilerPlate theResourceName)
-
-            printMessage (sprintf "Generating resource methods for %s" outFileName)
-            // gen each resource method
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
-                let formalArgs = new System.Text.StringBuilder()
-                let actualArgs = new System.Text.StringBuilder()
-                let mutable firstTime = true
-                let mutable n = 0
-                formalArgs.Append "(" |> ignore
-                for hole in holes do
-                    if firstTime then
-                        firstTime <- false
-                    else
-                        formalArgs.Append ", " |> ignore
-                        actualArgs.Append " " |> ignore
-                    formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
-                    actualArgs.Append(sprintf "a%d" n) |> ignore
-                    n <- n + 1
-                formalArgs.Append ")" |> ignore
-                fprintfn out "    /// %s" str
-                fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum+1)
-                let justPercentsFromFormatString =
-                    (holes |> Array.fold (fun acc holeType ->
-                        acc + match holeType with
-                                | "System.Int32" -> ",,,%d"
-                                | "System.UInt32" -> ",,,%x"
-                                | "System.Double" -> ",,,%f"
-                                | "System.String" -> ",,,%s"
-                                | _ -> failwith "unreachable") "") + ",,,"
-                let errPrefix = match optErrNum with
-                                | None -> ""
-                                | Some n -> sprintf "%d, " n
-                fprintfn out "    static member %s%s = (%sGetStringFunc(\"%s\",\"%s\") %s)" ident (formalArgs.ToString()) errPrefix ident justPercentsFromFormatString (actualArgs.ToString())
+            if justFileName |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
+                Err(
+                    fileName,
+                    0,
+                    sprintf
+                        "The file name '%s' is not allowed; only letters and digits can be used, as the file name also becomes the namespace for the SR class"
+                        justFileName
                 )
 
-            printMessage (sprintf "Generating .resx for %s" outFileName)
-            fprintfn out ""
-            // gen validation method
-            fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
-            fprintfn out "    static member RunStartupValidation() ="
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
-                fprintfn out "        ignore(GetString(\"%s\"))" ident
-            )
-            fprintfn out "        ()"  // in case there are 0 strings, we need the generated code to parse
-            // gen to resx
-            let xd = new System.Xml.XmlDocument()
-            xd.LoadXml(xmlBoilerPlateString)
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
-                let xn = xd.CreateElement("data")
-                xn.SetAttribute("name",ident) |> ignore
-                xn.SetAttribute("xml:space","preserve") |> ignore
-                let xnc = xd.CreateElement "value"
-                xn.AppendChild xnc |> ignore
-                xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
-                xd.LastChild.AppendChild xn |> ignore
-            )
-            use outXmlStream = File.Create outXmlFileName
-            xd.Save outXmlStream
-            printMessage (sprintf "Done %s" outFileName)
-            Some (fileName, outFileName, outXmlFileName)
-        with e ->
+            let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
+            let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
+
+            let condition1 = File.Exists(outFileName)
+            let condition2 = condition1 && File.Exists(outXmlFileName)
+            let condition3 = condition2 && File.Exists(fileName)
+
+            let condition4 =
+                condition3
+                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outFileName))
+
+            let condition5 =
+                condition4
+                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
+
+            if condition5 then
+                printMessage (
+                    sprintf
+                        "Skipping generation of %s and %s from %s since up-to-date"
+                        outFileName
+                        outXmlFileName
+                        fileName
+                )
+
+                Some(fileName, outFileName, outXmlFileName)
+            else
+                printMessage (
+                    sprintf
+                        "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
+                        outFileName
+                        outXmlFileName
+                        fileName
+                        (if not condition1 then 1
+                         elif not condition2 then 2
+                         elif not condition3 then 3
+                         elif not condition4 then 4
+                         else 5)
+                )
+
+                printMessage (sprintf "Reading %s" fileName)
+
+                let lines =
+                    File.ReadAllLines(fileName)
+                    |> Array.mapi (fun i s -> i, s) // keep line numbers
+                    |> Array.filter (fun (i, s) -> not (s.StartsWith "#")) // filter out comments
+
+                printMessage (sprintf "Parsing %s" fileName)
+                let stringInfos = lines |> Array.map (fun (i, s) -> ParseLine fileName i s)
+                // now we have array of (lineNum, ident, str, holes, netFormatString)  // str has %d, netFormatString has {0}
+
+                printMessage (sprintf "Validating %s" fileName)
+                // validate that all the idents are unique
+                let allIdents = new System.Collections.Generic.Dictionary<string, int>()
+
+                for (line, (_, ident), _, _, _) in stringInfos do
+                    if allIdents.ContainsKey(ident) then
+                        Err(
+                            fileName,
+                            line,
+                            sprintf
+                                "Identifier '%s' is already used previously on line %d - each identifier must be unique"
+                                ident
+                                allIdents.[ident]
+                        )
+
+                    allIdents.Add(ident, line)
+
+                printMessage (sprintf "Validating uniqueness of %s" fileName)
+                // validate that all the strings themselves are unique
+                let allStrs = new System.Collections.Generic.Dictionary<string, (int * string)>()
+
+                for (line, (_, ident), str, _, _) in stringInfos do
+                    if allStrs.ContainsKey(str) then
+                        let prevLine, prevIdent = allStrs.[str]
+
+                        Err(
+                            fileName,
+                            line,
+                            sprintf
+                                "String '%s' already appears on line %d with identifier '%s' - each string must be unique"
+                                str
+                                prevLine
+                                prevIdent
+                        )
+
+                    allStrs.Add(str, (line, ident))
+
+                printMessage (sprintf "Generating %s" outFileName)
+                use outStream = File.Create outFileName
+                use out = new StreamWriter(outStream)
+                fprintfn out "// This is a generated file; the original input is '%s'" fileName
+                fprintfn out "namespace %s" justFileName
+                fprintfn out "%s" stringBoilerPlatePrefix
+                fprintfn out "type internal SR private() ="
+                let theResourceName = justFileName
+                fprintfn out "%s" (StringBoilerPlate theResourceName)
+
+                printMessage (sprintf "Generating resource methods for %s" outFileName)
+                // gen each resource method
+                stringInfos
+                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                    let formalArgs = new System.Text.StringBuilder()
+                    let actualArgs = new System.Text.StringBuilder()
+                    let mutable firstTime = true
+                    let mutable n = 0
+                    formalArgs.Append "(" |> ignore
+
+                    for hole in holes do
+                        if firstTime then
+                            firstTime <- false
+                        else
+                            formalArgs.Append ", " |> ignore
+                            actualArgs.Append " " |> ignore
+
+                        formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
+                        actualArgs.Append(sprintf "a%d" n) |> ignore
+                        n <- n + 1
+
+                    formalArgs.Append ")" |> ignore
+                    fprintfn out "    /// %s" str
+                    fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
+
+                    let justPercentsFromFormatString =
+                        (holes
+                         |> Array.fold
+                             (fun acc holeType ->
+                                 acc
+                                 + match holeType with
+                                   | "System.Int32" -> ",,,%d"
+                                   | "System.UInt32" -> ",,,%x"
+                                   | "System.Double" -> ",,,%f"
+                                   | "System.String" -> ",,,%s"
+                                   | _ -> failwith "unreachable")
+                             "")
+                        + ",,,"
+
+                    let errPrefix =
+                        match optErrNum with
+                        | None -> ""
+                        | Some n -> sprintf "%d, " n
+
+                    fprintfn
+                        out
+                        "    static member %s%s = (%sGetStringFunc(\"%s\",\"%s\") %s)"
+                        ident
+                        (formalArgs.ToString())
+                        errPrefix
+                        ident
+                        justPercentsFromFormatString
+                        (actualArgs.ToString()))
+
+                printMessage (sprintf "Generating .resx for %s" outFileName)
+                fprintfn out ""
+                // gen validation method
+                fprintfn
+                    out
+                    "    /// Call this method once to validate that all known resources are valid; throws if not"
+
+                fprintfn out "    static member RunStartupValidation() ="
+
+                stringInfos
+                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                    fprintfn out "        ignore(GetString(\"%s\"))" ident)
+
+                fprintfn out "        ()" // in case there are 0 strings, we need the generated code to parse
+                // gen to resx
+                let xd = new System.Xml.XmlDocument()
+                xd.LoadXml(xmlBoilerPlateString)
+
+                stringInfos
+                |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
+                    let xn = xd.CreateElement("data")
+                    xn.SetAttribute("name", ident) |> ignore
+                    xn.SetAttribute("xml:space", "preserve") |> ignore
+                    let xnc = xd.CreateElement "value"
+                    xn.AppendChild xnc |> ignore
+                    xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
+                    xd.LastChild.AppendChild xn |> ignore)
+
+                use outXmlStream = File.Create outXmlFileName
+                xd.Save outXmlStream
+                printMessage (sprintf "Done %s" outFileName)
+                Some(fileName, outFileName, outXmlFileName)
+        with
+        | e ->
             PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
             None
 
     [<Required>]
     member _.EmbeddedText
-        with get() = _embeddedText
-         and set(value) = _embeddedText <- value
+        with get () = _embeddedText
+        and set (value) = _embeddedText <- value
 
     [<Required>]
     member _.IntermediateOutputPath
-        with get() = _outputPath
-         and set(value) = _outputPath <- value
+        with get () = _outputPath
+        and set (value) = _outputPath <- value
 
     [<Output>]
-    member _.GeneratedSource
-        with get() = _generatedSource
+    member _.GeneratedSource = _generatedSource
 
     [<Output>]
-    member _.GeneratedResx
-        with get() = _generatedResx
+    member _.GeneratedResx = _generatedResx
 
     interface ITask with
         member _.BuildEngine
-            with get() = _buildEngine
-             and set(value) = _buildEngine <- value
+            with get () = _buildEngine
+            and set (value) = _buildEngine <- value
+
         member _.HostObject
-            with get() = _hostObject
-             and set(value) = _hostObject <- value
+            with get () = _hostObject
+            and set (value) = _hostObject <- value
+
         member this.Execute() =
 
             let generatedFiles =
@@ -483,20 +609,24 @@ open Printf
                 |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
 
             let generatedSource, generatedResx =
-                [| for (textFile, source, resx) in generatedFiles do
-                    let sourceItem =
-                        let item = TaskItem(source)
-                        item.SetMetadata("AutoGen", "true")
-                        item.SetMetadata("DesignTime", "true")
-                        item.SetMetadata("DependentUpon", resx)
-                        item :> ITaskItem
-                    let resxItem =
-                        let item = TaskItem(resx)
-                        item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
-                        item.SetMetadata("SourceDocumentPath", textFile)
-                        item :> ITaskItem
-                    yield (sourceItem, resxItem) |]
-                 |> Array.unzip
+                [|
+                    for (textFile, source, resx) in generatedFiles do
+                        let sourceItem =
+                            let item = TaskItem(source)
+                            item.SetMetadata("AutoGen", "true")
+                            item.SetMetadata("DesignTime", "true")
+                            item.SetMetadata("DependentUpon", resx)
+                            item :> ITaskItem
+
+                        let resxItem =
+                            let item = TaskItem(resx)
+                            item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
+                            item.SetMetadata("SourceDocumentPath", textFile)
+                            item :> ITaskItem
+
+                        yield (sourceItem, resxItem)
+                |]
+                |> Array.unzip
 
             let generatedResult = (generatedFiles.Length = this.EmbeddedText.Length)
 
