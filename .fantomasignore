@@ -28,8 +28,6 @@ src/Compiler/Symbols/**/*.fs
 src/Compiler/SyntaxTree/**/*.fs
 src/Compiler/TypedTree/**/*.fs
 src/Compiler/Utilities/**/*.fs
-src/fsc/**/*.fs
-src/fscAnyCpu/**/*.fs
 src/FSharp.Compiler.Server.Shared/**/*.fs
 src/FSharp.DependencyManager.Nuget/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
