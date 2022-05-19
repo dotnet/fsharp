@@ -354,7 +354,6 @@ module Settings =
 
         member internal AddedPrinters: Choice<Type * (obj -> string), Type * (obj -> obj)> list
 
-
         /// <summary>The command line arguments after ignoring the arguments relevant to the interactive
         /// environment and replacing the first argument with the name of the last script file,
         /// if any. Thus 'fsi.exe test1.fs test2.fs -- hello goodbye' will give arguments

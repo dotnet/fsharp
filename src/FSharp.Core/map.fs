@@ -561,7 +561,6 @@ module MapTree =
 [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
 [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
 [<Sealed>]
-[<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710: IdentifiersShouldHaveCorrectSuffix")>]
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
