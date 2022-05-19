@@ -190,7 +190,7 @@ type ArrayCollector<'T> =
     member AddMany: values: seq<'T> -> unit
 
     /// Add multiple elements to the collector and return the resulting array
-    member AddManyAndClose: values: seq<'T> -> 'T []
+    member AddManyAndClose: values: seq<'T> -> 'T[]
 
     /// Return the resulting list
-    member Close: unit -> 'T []
+    member Close: unit -> 'T[]

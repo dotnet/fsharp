@@ -17,7 +17,7 @@ type internal PrimaryAssembly =
     member Name: string
 
 /// Represents guids
-type ILGuid = byte []
+type ILGuid = byte[]
 
 [<StructuralEquality; StructuralComparison>]
 type ILPlatform =
@@ -49,14 +49,14 @@ type internal ILDebugPoint =
 
 [<StructuralEquality; StructuralComparison>]
 type PublicKey =
-    | PublicKey of byte []
-    | PublicKeyToken of byte []
+    | PublicKey of byte[]
+    | PublicKeyToken of byte[]
 
     member IsKey: bool
     member IsKeyToken: bool
-    member Key: byte []
-    member KeyToken: byte []
-    static member KeyAsToken: byte [] -> PublicKey
+    member Key: byte[]
+    member KeyToken: byte[]
+    static member KeyAsToken: byte[] -> PublicKey
 
 [<Struct>]
 type ILVersionInfo =
@@ -72,7 +72,7 @@ type ILVersionInfo =
 type ILAssemblyRef =
     static member Create:
         name: string *
-        hash: byte [] option *
+        hash: byte[] option *
         publicKey: PublicKey option *
         retargetable: bool *
         version: ILVersionInfo option *
@@ -86,7 +86,7 @@ type ILAssemblyRef =
     /// The fully qualified name of the assembly reference, e.g. mscorlib, Version=1.0.3705 etc.
     member QualifiedName: string
 
-    member Hash: byte [] option
+    member Hash: byte[] option
 
     member PublicKey: PublicKey option
 
@@ -103,13 +103,13 @@ type ILAssemblyRef =
 
 [<Sealed>]
 type ILModuleRef =
-    static member Create: name: string * hasMetadata: bool * hash: byte [] option -> ILModuleRef
+    static member Create: name: string * hasMetadata: bool * hash: byte[] option -> ILModuleRef
 
     member Name: string
 
     member HasMetadata: bool
 
-    member Hash: byte [] option
+    member Hash: byte[] option
 
     interface System.IComparable
 
@@ -630,7 +630,7 @@ type internal ILLocalDebugInfo =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILCode =
     { Labels: Dictionary<ILCodeLabel, int>
-      Instrs: ILInstr []
+      Instrs: ILInstr[]
       Exceptions: ILExceptionSpec list
       Locals: ILLocalDebugInfo list }
 
@@ -707,7 +707,7 @@ type internal ILNativeVariant =
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType =
     | Empty
-    | Custom of ILGuid * nativeTypeName: string * custMarshallerName: string * cookieString: byte []
+    | Custom of ILGuid * nativeTypeName: string * custMarshallerName: string * cookieString: byte[]
     | FixedSysString of int32
     | FixedArray of int32
     | Currency
@@ -776,23 +776,25 @@ type ILDebugImport =
 /// Emitted to the PortablePDB format.
 type ILDebugImports =
     { Parent: ILDebugImports option
-      Imports: ILDebugImport [] }
+      Imports: ILDebugImport[] }
 
 /// IL method bodies
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal ILMethodBody =
-    { IsZeroInit: bool
-      MaxStack: int32
-      NoInlining: bool
-      AggressiveInlining: bool
-      Locals: ILLocals
-      Code: ILCode
+    {
+        IsZeroInit: bool
+        MaxStack: int32
+        NoInlining: bool
+        AggressiveInlining: bool
+        Locals: ILLocals
+        Code: ILCode
 
-      /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
-      /// Additionally, if the range is not set, then no debug points are emitted.
-      DebugRange: ILDebugPoint option
+        /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
+        /// Additionally, if the range is not set, then no debug points are emitted.
+        DebugRange: ILDebugPoint option
 
-      DebugImports: ILDebugImports option }
+        DebugImports: ILDebugImports option
+    }
 
 /// Member Access
 [<RequireQualifiedAccess>]
@@ -838,7 +840,7 @@ type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 type ILAttribute =
     /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
     /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
-    | Encoded of method: ILMethodSpec * data: byte [] * elements: ILAttribElem list
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
 
     /// Attribute with args in decoded form.
     | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
@@ -853,7 +855,7 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
-    member AsArray: unit -> ILAttribute []
+    member AsArray: unit -> ILAttribute[]
 
     member AsList: unit -> ILAttribute list
 
@@ -864,16 +866,18 @@ type ILAttributesStored
 /// Method parameters and return values.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILParameter =
-    { Name: string option
-      Type: ILType
-      Default: ILFieldInit option
-      /// Marshalling map for parameters. COM Interop only.
-      Marshal: ILNativeType option
-      IsIn: bool
-      IsOut: bool
-      IsOptional: bool
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
+    {
+        Name: string option
+        Type: ILType
+        Default: ILFieldInit option
+        /// Marshalling map for parameters. COM Interop only.
+        Marshal: ILNativeType option
+        IsIn: bool
+        IsOut: bool
+        IsOptional: bool
+        CustomAttrsStored: ILAttributesStored
+        MetadataIndex: int32
+    }
 
     member CustomAttrs: ILAttributes
 
@@ -914,7 +918,7 @@ type internal ILSecurityAction =
     | InheritanceDemandChoice
     | DemandChoice
 
-type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte []
+type internal ILSecurityDecl = ILSecurityDecl of ILSecurityAction * byte[]
 
 /// Abstract type equivalent to ILSecurityDecl list - use helpers
 /// below to construct/destruct these.
@@ -983,28 +987,30 @@ type MethodBody =
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
 type ILGenericParameterDef =
-    { Name: string
+    {
+        Name: string
 
-      /// At most one is the parent type, the others are interface types.
-      Constraints: ILTypes
+        /// At most one is the parent type, the others are interface types.
+        Constraints: ILTypes
 
-      /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
-      Variance: ILGenericVariance
+        /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
+        Variance: ILGenericVariance
 
-      /// Indicates the type argument must be a reference type.
-      HasReferenceTypeConstraint: bool
+        /// Indicates the type argument must be a reference type.
+        HasReferenceTypeConstraint: bool
 
-      /// Indicates the type argument must be a value type, but not Nullable.
-      HasNotNullableValueTypeConstraint: bool
+        /// Indicates the type argument must be a value type, but not Nullable.
+        HasNotNullableValueTypeConstraint: bool
 
-      /// Indicates the type argument must have a public nullary constructor.
-      HasDefaultConstructorConstraint: bool
+        /// Indicates the type argument must have a public nullary constructor.
+        HasDefaultConstructorConstraint: bool
 
-      /// Do not use this
-      CustomAttrsStored: ILAttributesStored
+        /// Do not use this
+        CustomAttrsStored: ILAttributesStored
 
-      /// Do not use this
-      MetadataIndex: int32 }
+        /// Do not use this
+        MetadataIndex: int32
+    }
 
     member CustomAttrs: ILAttributes
 
@@ -1140,7 +1146,7 @@ type ILMethodDef =
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
-    member AsArray: unit -> ILMethodDef []
+    member AsArray: unit -> ILMethodDef[]
     member AsList: unit -> ILMethodDef list
     member FindByName: string -> ILMethodDef list
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
@@ -1154,7 +1160,7 @@ type ILFieldDef =
         name: string *
         fieldType: ILType *
         attributes: FieldAttributes *
-        data: byte [] option *
+        data: byte[] option *
         literalValue: ILFieldInit option *
         offset: int32 option *
         marshal: ILNativeType option *
@@ -1167,7 +1173,7 @@ type ILFieldDef =
         name: string *
         fieldType: ILType *
         attributes: FieldAttributes *
-        data: byte [] option *
+        data: byte[] option *
         literalValue: ILFieldInit option *
         offset: int32 option *
         marshal: ILNativeType option *
@@ -1177,7 +1183,7 @@ type ILFieldDef =
     member Name: string
     member FieldType: ILType
     member Attributes: FieldAttributes
-    member Data: byte [] option
+    member Data: byte[] option
     member LiteralValue: ILFieldInit option
 
     /// The explicit offset in bytes when explicit layout is used.
@@ -1196,7 +1202,7 @@ type ILFieldDef =
         ?name: string *
         ?fieldType: ILType *
         ?attributes: FieldAttributes *
-        ?data: byte [] option *
+        ?data: byte[] option *
         ?literalValue: ILFieldInit option *
         ?offset: int32 option *
         ?marshal: ILNativeType option *
@@ -1396,12 +1402,12 @@ type ILTypeDefKind =
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
 
-    member internal AsArray: unit -> ILTypeDef []
+    member internal AsArray: unit -> ILTypeDef[]
 
     member internal AsList: unit -> ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef []
+    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
     /// Calls to <c>FindByName</c> will result in any laziness in the overall
     /// set of ILTypeDefs being read in in addition
@@ -1529,7 +1535,6 @@ type ILPreTypeDef =
     /// Realise the actual full typedef
     abstract GetTypeDef: unit -> ILTypeDef
 
-
 [<NoEquality; NoComparison; Sealed>]
 type internal ILPreTypeDefImpl =
     interface ILPreTypeDef
@@ -1583,13 +1588,15 @@ type ILNestedExportedType =
 /// these are only found in the ILExportedTypesAndForwarders table in the manifest
 [<NoComparison; NoEquality>]
 type ILExportedTypeOrForwarder =
-    { ScopeRef: ILScopeRef
-      /// [Namespace.]Name
-      Name: string
-      Attributes: TypeAttributes
-      Nested: ILNestedExportedTypes
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
+    {
+        ScopeRef: ILScopeRef
+        /// [Namespace.]Name
+        Name: string
+        Attributes: TypeAttributes
+        Nested: ILNestedExportedTypes
+        CustomAttrsStored: ILAttributesStored
+        MetadataIndex: int32
+    }
 
     member Access: ILTypeDefAccess
 
@@ -1655,51 +1662,52 @@ type ILAssemblyLongevity =
 
 /// The main module of an assembly is a module plus some manifest information.
 type ILAssemblyManifest =
-    { Name: string
-      /// This is the ID of the algorithm used for the hashes of auxiliary
-      /// files in the assembly.   These hashes are stored in the
-      /// <c>ILModuleRef.Hash</c> fields of this assembly. These are not
-      /// cryptographic hashes: they are simple file hashes. The algorithm
-      /// is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.
-      AuxModuleHashAlgorithm: int32
+    {
+        Name: string
+        /// This is the ID of the algorithm used for the hashes of auxiliary
+        /// files in the assembly.   These hashes are stored in the
+        /// <c>ILModuleRef.Hash</c> fields of this assembly. These are not
+        /// cryptographic hashes: they are simple file hashes. The algorithm
+        /// is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.
+        AuxModuleHashAlgorithm: int32
 
-      SecurityDeclsStored: ILSecurityDeclsStored
+        SecurityDeclsStored: ILSecurityDeclsStored
 
-      /// This is the public key used to sign this
-      /// assembly (the signature itself is stored elsewhere: see the
-      /// binary format, and may not have been written if delay signing
-      /// is used).  (member Name, member PublicKey) forms the full
-      /// public name of the assembly.
-      PublicKey: byte [] option
+        /// This is the public key used to sign this
+        /// assembly (the signature itself is stored elsewhere: see the
+        /// binary format, and may not have been written if delay signing
+        /// is used).  (member Name, member PublicKey) forms the full
+        /// public name of the assembly.
+        PublicKey: byte[] option
 
-      Version: ILVersionInfo option
+        Version: ILVersionInfo option
 
-      Locale: string option
+        Locale: string option
 
-      CustomAttrsStored: ILAttributesStored
+        CustomAttrsStored: ILAttributesStored
 
-      AssemblyLongevity: ILAssemblyLongevity
+        AssemblyLongevity: ILAssemblyLongevity
 
-      DisableJitOptimizations: bool
+        DisableJitOptimizations: bool
 
-      JitTracking: bool
+        JitTracking: bool
 
-      IgnoreSymbolStoreSequencePoints: bool
+        IgnoreSymbolStoreSequencePoints: bool
 
-      Retargetable: bool
+        Retargetable: bool
 
-      /// Records the types implemented by this assembly in auxiliary
-      /// modules.
-      ExportedTypes: ILExportedTypesAndForwarders
+        /// Records the types implemented by this assembly in auxiliary
+        /// modules.
+        ExportedTypes: ILExportedTypesAndForwarders
 
-      /// Records whether the entrypoint resides in another module.
-      EntrypointElsewhere: ILModuleRef option
+        /// Records whether the entrypoint resides in another module.
+        EntrypointElsewhere: ILModuleRef option
 
-      MetadataIndex: int32 }
+        MetadataIndex: int32
+    }
 
     member CustomAttrs: ILAttributes
     member SecurityDecls: ILSecurityDecls
-
 
 [<RequireQualifiedAccess>]
 type ILNativeResource =
@@ -1708,7 +1716,7 @@ type ILNativeResource =
     | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
 
     /// Represents a native resource to be written in an output file
-    | Out of unlinkedResource: byte []
+    | Out of unlinkedResource: byte[]
 
 /// One module in the "current" assembly, either a main-module or
 /// an auxiliary module.  The main module will have a manifest.
@@ -1716,28 +1724,30 @@ type ILNativeResource =
 /// An assembly is built by joining together a "main" module plus
 /// several auxiliary modules.
 type ILModuleDef =
-    { Manifest: ILAssemblyManifest option
-      Name: string
-      TypeDefs: ILTypeDefs
-      SubsystemVersion: int * int
-      UseHighEntropyVA: bool
-      SubSystemFlags: int32
-      IsDLL: bool
-      IsILOnly: bool
-      Platform: ILPlatform option
-      StackReserveSize: int32 option
-      Is32Bit: bool
-      Is32BitPreferred: bool
-      Is64Bit: bool
-      VirtualAlignment: int32
-      PhysicalAlignment: int32
-      ImageBase: int32
-      MetadataVersion: string
-      Resources: ILResources
-      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
-      NativeResources: ILNativeResource list
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
+    {
+        Manifest: ILAssemblyManifest option
+        Name: string
+        TypeDefs: ILTypeDefs
+        SubsystemVersion: int * int
+        UseHighEntropyVA: bool
+        SubSystemFlags: int32
+        IsDLL: bool
+        IsILOnly: bool
+        Platform: ILPlatform option
+        StackReserveSize: int32 option
+        Is32Bit: bool
+        Is32BitPreferred: bool
+        Is64Bit: bool
+        VirtualAlignment: int32
+        PhysicalAlignment: int32
+        ImageBase: int32
+        MetadataVersion: string
+        Resources: ILResources
+        /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+        NativeResources: ILNativeResource list
+        CustomAttrsStored: ILAttributesStored
+        MetadataIndex: int32
+    }
 
     member ManifestOfAssembly: ILAssemblyManifest
 
@@ -1766,7 +1776,7 @@ val internal resolveILMethodRefWithRescope: (ILType -> ILType) -> ILTypeDef -> I
 
 val internal splitNamespace: string -> string list
 
-val internal splitNamespaceToArray: string -> string []
+val internal splitNamespaceToArray: string -> string[]
 
 /// The <c>splitILTypeName</c> utility helps you split a string representing
 /// a type name into the leading namespace elements (if any), the
@@ -1775,7 +1785,7 @@ val internal splitNamespaceToArray: string -> string []
 /// the type name.
 val internal splitILTypeName: string -> string list * string
 
-val internal splitILTypeNameWithPossibleStaticArguments: string -> string [] * string
+val internal splitILTypeNameWithPossibleStaticArguments: string -> string[] * string
 
 /// <c>splitTypeNameRight</c> is like <c>splitILTypeName</c> except the
 /// namespace is kept as a whole string, rather than split at dots.
@@ -1941,7 +1951,7 @@ val internal mkILCustomAttribute:
     ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) ->
         ILAttribute
 
-val internal getCustomAttrData: ILAttribute -> byte []
+val internal getCustomAttrData: ILAttribute -> byte[]
 
 val internal mkPermissionSet:
     ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
@@ -2031,8 +2041,8 @@ val internal mkILNonGenericInstanceMethod:
 
 /// Make field definitions.
 val internal mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
-val internal mkILStaticField: string * ILType * ILFieldInit option * byte [] option * ILMemberAccess -> ILFieldDef
-val internal mkILLiteralField: string * ILType * ILFieldInit * byte [] option * ILMemberAccess -> ILFieldDef
+val internal mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
+val internal mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.
 val internal mkILGenericClass:
@@ -2125,15 +2135,15 @@ val internal mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
 val mkILCustomAttrs: ILAttribute list -> ILAttributes
-val mkILCustomAttrsFromArray: ILAttribute [] -> ILAttributes
+val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
-val internal mkILCustomAttrsReader: (int32 -> ILAttribute []) -> ILAttributesStored
+val internal mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
 val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
-val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl []) -> ILSecurityDeclsStored
+val internal mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
 val mkILEvents: ILEventDef list -> ILEventDefs
 val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
@@ -2144,8 +2154,8 @@ val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
-val mkILMethodsFromArray: ILMethodDef [] -> ILMethodDefs
-val mkILMethodsComputed: (unit -> ILMethodDef []) -> ILMethodDefs
+val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
+val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
@@ -2157,7 +2167,7 @@ val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
 val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
-val mkILTypeDefsFromArray: ILTypeDef [] -> ILTypeDefs
+val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 
 /// Create table of types which is loaded/computed on-demand, and whose individual
@@ -2168,7 +2178,7 @@ val emptyILTypeDefs: ILTypeDefs
 ///
 /// Note that individual type definitions may contain further delays
 /// in their method, field and other tables.
-val mkILTypeDefsComputed: (unit -> ILPreTypeDef []) -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
 
 val internal addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
@@ -2267,7 +2277,7 @@ val internal unscopeILType: ILType -> ILType
 val internal buildILCode:
     string ->
     lab2pc: Dictionary<ILCodeLabel, int> ->
-    instrs: ILInstr [] ->
+    instrs: ILInstr[] ->
     ILExceptionSpec list ->
     ILLocalDebugInfo list ->
         ILCode
@@ -2303,9 +2313,9 @@ val internal isILTypedReferenceTy: ILGlobals -> ILType -> bool
 val internal isILDoubleTy: ILGlobals -> ILType -> bool
 val internal isILSingleTy: ILGlobals -> ILType -> bool
 
-val internal sha1HashInt64: byte [] -> int64
+val internal sha1HashInt64: byte[] -> int64
 /// Get a public key token from a public key.
-val internal sha1HashBytes: byte [] -> byte (* SHA1 hash *)  []
+val internal sha1HashBytes: byte[] -> byte (* SHA1 hash *) []
 
 /// Get a version number from a CLR version string, e.g. 1.0.3705.0
 val internal parseILVersion: string -> ILVersionInfo
@@ -2337,11 +2347,11 @@ type internal ILPropertyRef =
     interface System.IComparable
 
 type ILReferences =
-    { AssemblyReferences: ILAssemblyRef []
-      ModuleReferences: ILModuleRef []
-      TypeReferences: ILTypeRef []
-      MethodReferences: ILMethodRef []
-      FieldReferences: ILFieldRef [] }
+    { AssemblyReferences: ILAssemblyRef[]
+      ModuleReferences: ILModuleRef[]
+      TypeReferences: ILTypeRef[]
+      MethodReferences: ILMethodRef[]
+      FieldReferences: ILFieldRef[] }
 
 /// Find the full set of assemblies referenced by a module.
 val internal computeILRefs: ILGlobals -> ILModuleDef -> ILReferences

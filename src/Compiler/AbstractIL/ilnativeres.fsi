@@ -26,14 +26,14 @@ type RESOURCE =
     member LanguageId: WORD with get, set
     member Version: DWORD with get, set
     member Characteristics: DWORD with get, set
-    member data: byte [] with get, set
+    member data: byte[] with get, set
 
 type Win32Resource =
     new:
-        data: byte [] * codePage: DWORD * languageId: DWORD * id: int * name: string * typeId: int * typeName: string ->
+        data: byte[] * codePage: DWORD * languageId: DWORD * id: int * name: string * typeId: int * typeName: string ->
             Win32Resource
     member CodePage: DWORD
-    member Data: byte []
+    member Data: byte[]
     member Id: int
     member LanguageId: DWORD
     member Name: string

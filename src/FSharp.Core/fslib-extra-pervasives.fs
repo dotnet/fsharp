@@ -8,11 +8,9 @@ module ExtraTopLevelOperators =
     open System.Collections.Generic
     open System.IO
     open System.Diagnostics
-    open System.Reflection
     open Microsoft.FSharp
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Text
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Primitives.Basics
@@ -46,70 +44,96 @@ module ExtraTopLevelOperators =
 #if NETSTANDARD
         static let emptyEnumerator = (Array.empty<KeyValuePair<'Key, 'T>> :> seq<_>).GetEnumerator()
 #endif
-        member x.Count = t.Count
+        member _.Count = t.Count
 
         // Give a read-only view of the dictionary
         interface IDictionary<'Key, 'T> with
-            member s.Item 
+            member _.Item 
                 with get x = dont_tail_call (fun () -> t.[makeSafeKey x])
                 and  set _ _ = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-            member s.Keys = 
+
+            member _.Keys = 
                 let keys = t.Keys
                 { new ICollection<'Key> with 
-                      member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                      member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                      member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                      member s.Contains(x) = t.ContainsKey (makeSafeKey x)
-                      member s.CopyTo(arr,i) =
+                      member _.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+                      member _.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+                      member _.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+                      member _.Contains(x) = t.ContainsKey (makeSafeKey x)
+
+                      member _.CopyTo(arr,i) =
                           let mutable n = 0 
                           for k in keys do 
                               arr.[i+n] <- getKey k
                               n <- n + 1
-                      member s.IsReadOnly = true
-                      member s.Count = keys.Count
+
+                      member _.IsReadOnly = true
+
+                      member _.Count = keys.Count
+
                   interface IEnumerable<'Key> with
-                        member s.GetEnumerator() = (keys |> Seq.map getKey).GetEnumerator()
+                        member _.GetEnumerator() = (keys |> Seq.map getKey).GetEnumerator()
+
                   interface System.Collections.IEnumerable with
-                        member s.GetEnumerator() = ((keys |> Seq.map getKey) :> System.Collections.IEnumerable).GetEnumerator() }
+                        member _.GetEnumerator() = ((keys |> Seq.map getKey) :> System.Collections.IEnumerable).GetEnumerator() }
                 
-            member s.Values = upcast t.Values
-            member s.Add(_,_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-            member s.ContainsKey(k) = dont_tail_call (fun () -> t.ContainsKey(makeSafeKey k))
-            member s.TryGetValue(k,r) = 
+            member _.Values = upcast t.Values
+
+            member _.Add(_,_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+            member _.ContainsKey(k) = dont_tail_call (fun () -> t.ContainsKey(makeSafeKey k))
+
+            member _.TryGetValue(k,r) = 
                 let safeKey = makeSafeKey k
                 if t.ContainsKey(safeKey) then (r <- t.[safeKey]; true) else false
-            member s.Remove(_ : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
+
+            member _.Remove(_ : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
 
         interface IReadOnlyDictionary<'Key, 'T> with
+
             member _.Item with get key = t.[makeSafeKey key]
+
             member _.Keys = t.Keys |> Seq.map getKey
+
             member _.TryGetValue(key, r) =
                 match t.TryGetValue (makeSafeKey key) with
                 | false, _ -> false
                 | true, value ->
                     r <- value
                     true
+
             member _.Values = (t :> IReadOnlyDictionary<_,_>).Values
+
             member _.ContainsKey k = t.ContainsKey (makeSafeKey k)
 
         interface ICollection<KeyValuePair<'Key, 'T>> with 
-            member s.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-            member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-            member s.Remove(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-            member s.Contains(KeyValue(k,v)) = ICollection_Contains t (KeyValuePair<_,_>(makeSafeKey k,v))
-            member s.CopyTo(arr,i) = 
+
+            member _.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+            member _.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+            member _.Remove(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+
+            member _.Contains(KeyValue(k,v)) = ICollection_Contains t (KeyValuePair<_,_>(makeSafeKey k,v))
+
+            member _.CopyTo(arr,i) = 
                 let mutable n = 0 
                 for (KeyValue(k,v)) in t do 
                     arr.[i+n] <- KeyValuePair<_,_>(getKey k,v)
                     n <- n + 1
-            member s.IsReadOnly = true
-            member s.Count = t.Count
+
+            member _.IsReadOnly = true
+
+            member _.Count = t.Count
 
         interface IReadOnlyCollection<KeyValuePair<'Key, 'T>> with
             member _.Count = t.Count
 
         interface IEnumerable<KeyValuePair<'Key, 'T>> with
-            member s.GetEnumerator() =
+
+            member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics. 
                 // Coreclr has a bug with SZGenericEnumerators --- implement a correct enumerator.  On desktop use the desktop implementation because it's ngened.
@@ -129,20 +153,24 @@ module ExtraTopLevelOperators =
 
                     {new IEnumerator<_> with
                         member _.Current = current ()
+
                       interface System.Collections.IEnumerator with
                             member _.Current = box(current())
+
                             member _.MoveNext() =
                                 if index < endIndex then
                                     index <- index + 1
                                     index < endIndex
                                 else false
+
                             member _.Reset() = index <- -1
+
                       interface System.IDisposable with 
-                            member self.Dispose() = () }
+                            member _.Dispose() = () }
 #endif
 
         interface System.Collections.IEnumerable with
-            member s.GetEnumerator() =
+            member _.GetEnumerator() =
                 // We use an array comprehension here instead of seq {} as otherwise we get incorrect
                 // IEnumerator.Reset() and IEnumerator.Current semantics. 
                 let kvps = [| for (KeyValue (k,v)) in t -> KeyValuePair (getKey k, v) |] :> System.Collections.IEnumerable
@@ -150,7 +178,7 @@ module ExtraTopLevelOperators =
 
     and DictDebugView<'SafeKey,'Key,'T>(d:DictImpl<'SafeKey,'Key,'T>) =
         [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-        member x.Items = Array.ofSeq d
+        member _.Items = Array.ofSeq d
 
     let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey : 'Key->'SafeKey) (getKey : 'SafeKey->'Key) (l:seq<'Key*'T>) =
         let t = Dictionary comparer
@@ -159,22 +187,26 @@ module ExtraTopLevelOperators =
         DictImpl(t, makeSafeKey, getKey)
 
     // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-    let dictValueType (l:seq<'Key*'T>) = dictImpl HashIdentity.Structural<'Key> id id l
+    let dictValueType (l:seq<'Key*'T>) =
+        dictImpl HashIdentity.Structural<'Key> id id l
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-    let dictRefType   (l:seq<'Key*'T>) = dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+    let dictRefType (l:seq<'Key*'T>) =
+        dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs:seq<'Key*'T>) : IDictionary<'Key,'T> =
-        if typeof<'Key>.IsValueType
-            then dictValueType keyValuePairs :> _
-            else dictRefType   keyValuePairs :> _
+        if typeof<'Key>.IsValueType then
+            dictValueType keyValuePairs
+        else
+            dictRefType keyValuePairs
 
     [<CompiledName("CreateReadOnlyDictionary")>]
     let readOnlyDict (keyValuePairs:seq<'Key*'T>) : IReadOnlyDictionary<'Key,'T> =
-        if typeof<'Key>.IsValueType
-            then dictValueType keyValuePairs :> _
-            else dictRefType   keyValuePairs :> _
+        if typeof<'Key>.IsValueType then
+            dictValueType keyValuePairs
+        else
+            dictRefType keyValuePairs
 
     let getArray (vals : seq<'T>) = 
         match vals with
@@ -203,36 +235,41 @@ module ExtraTopLevelOperators =
                     res.[i,j] <- rowiArr.[j]
             res
 
-    // --------------------------------------------------------------------
-    // Printf
-    // -------------------------------------------------------------------- 
-
     [<CompiledName("PrintFormatToString")>]
-    let sprintf     format = Printf.sprintf     format
+    let sprintf format =
+        Printf.sprintf format
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf   format = Printf.failwithf   format
+    let failwithf format =
+        Printf.failwithf format
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (textWriter:TextWriter)  format = Printf.fprintf textWriter  format 
+    let fprintf (textWriter:TextWriter) format =
+        Printf.fprintf textWriter  format 
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
+    let fprintfn (textWriter:TextWriter) format =
+        Printf.fprintfn textWriter format 
     
     [<CompiledName("PrintFormat")>]
-    let printf format = Printf.printf      format 
+    let printf format =
+        Printf.printf format 
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf format = Printf.eprintf     format 
+    let eprintf format =
+        Printf.eprintf format 
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn format = Printf.printfn     format 
+    let printfn format =
+        Printf.printfn format 
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = Printf.eprintfn    format 
+    let eprintfn format =
+        Printf.eprintfn format 
 
     [<CompiledName("FailWith")>]
-    let failwith s = raise (Failure s)
+    let failwith s =
+        raise (Failure s)
 
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = AsyncBuilder()
@@ -282,7 +319,8 @@ module ExtraTopLevelOperators =
     do()
 
     [<CompiledName("LazyPattern")>]
-    let (|Lazy|) (input:Lazy<_>) = input.Force()
+    let (|Lazy|) (input:Lazy<_>) =
+        input.Force()
 
     let query = Microsoft.FSharp.Linq.QueryBuilder()
 
@@ -291,9 +329,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     open System
     open System.Reflection
-    open System.Linq.Expressions
-    open System.Collections.Generic
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Quotations
 
     /// <summary>Represents the product of two measure expressions when returned as a generic argument of a provided type.</summary>
     [<Sealed>]
@@ -315,11 +353,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type TypeProviderAssemblyAttribute(assemblyName : string) = 
         inherit System.Attribute()
         new () = TypeProviderAssemblyAttribute(null)
+
         member _.AssemblyName = assemblyName
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
     type TypeProviderXmlDocAttribute(commentText: string) = 
         inherit System.Attribute()
+
         member _.CommentText = commentText
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple = false)>]
@@ -328,8 +368,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let mutable filePath : string = null
         let mutable line : int = 0
         let mutable column : int = 0
+
         member _.FilePath with get() = filePath and set v = filePath <- v
+
         member _.Line with get() = line and set v = line <- v
+
         member _.Column with get() = column and set v = column <- v
 
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
@@ -342,41 +385,57 @@ namespace Microsoft.FSharp.Core.CompilerServices
         | IsErased = 0x40000000
 
     type TypeProviderConfig( systemRuntimeContainsType : string -> bool ) =
-        let mutable resolutionFolder      : string   = null  
-        let mutable runtimeAssembly       : string   = null  
-        let mutable referencedAssemblies  : string[] = null  
-        let mutable temporaryFolder       : string   = null  
-        let mutable isInvalidationSupported : bool   = false 
-        let mutable useResolutionFolderAtRuntime : bool = false
-        let mutable systemRuntimeAssemblyVersion : System.Version = null
-        member _.ResolutionFolder         with get() = resolutionFolder        and set v = resolutionFolder <- v
-        member _.RuntimeAssembly          with get() = runtimeAssembly         and set v = runtimeAssembly <- v
-        member _.ReferencedAssemblies     with get() = referencedAssemblies    and set v = referencedAssemblies <- v
-        member _.TemporaryFolder          with get() = temporaryFolder         and set v = temporaryFolder <- v
-        member _.IsInvalidationSupported  with get() = isInvalidationSupported and set v = isInvalidationSupported <- v
+        let mutable resolutionFolder: string   = null  
+        let mutable runtimeAssembly: string   = null  
+        let mutable referencedAssemblies: string[] = null  
+        let mutable temporaryFolder: string   = null  
+        let mutable isInvalidationSupported: bool   = false 
+        let mutable useResolutionFolderAtRuntime: bool = false
+        let mutable systemRuntimeAssemblyVersion: System.Version = null
+
+        member _.ResolutionFolder with get() = resolutionFolder and set v = resolutionFolder <- v
+
+        member _.RuntimeAssembly with get() = runtimeAssembly and set v = runtimeAssembly <- v
+
+        member _.ReferencedAssemblies with get() = referencedAssemblies and set v = referencedAssemblies <- v
+
+        member _.TemporaryFolder with get() = temporaryFolder and set v = temporaryFolder <- v
+
+        member _.IsInvalidationSupported with get() = isInvalidationSupported and set v = isInvalidationSupported <- v
+
         member _.IsHostedExecution with get() = useResolutionFolderAtRuntime and set v = useResolutionFolderAtRuntime <- v
-        member _.SystemRuntimeAssemblyVersion  with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
-        member _.SystemRuntimeContainsType (typeName : string) = systemRuntimeContainsType typeName
+
+        member _.SystemRuntimeAssemblyVersion with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
+
+        member _.SystemRuntimeContainsType (typeName: string) = systemRuntimeContainsType typeName
 
     type IProvidedNamespace =
-        abstract NamespaceName : string
-        abstract GetNestedNamespaces : unit -> IProvidedNamespace[] 
-        abstract GetTypes : unit -> Type[] 
-        abstract ResolveTypeName : typeName: string -> Type
 
+        abstract NamespaceName: string
+
+        abstract GetNestedNamespaces: unit -> IProvidedNamespace[] 
+
+        abstract GetTypes: unit -> Type[] 
+
+        abstract ResolveTypeName: typeName: string -> Type
 
     type ITypeProvider =
         inherit System.IDisposable
-        abstract GetNamespaces : unit -> IProvidedNamespace[] 
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
-        abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string[] * staticArguments:obj[] -> Type 
-        abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Microsoft.FSharp.Quotations.Expr[] -> Microsoft.FSharp.Quotations.Expr
+
+        abstract GetNamespaces: unit -> IProvidedNamespace[] 
+
+        abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo[]
+
+        abstract ApplyStaticArguments: typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments:obj[] -> Type 
+
+        abstract GetInvokerExpression: syntheticMethodBase:MethodBase * parameters:Expr[] -> Expr
 
         [<CLIEvent>]
-        abstract Invalidate : Microsoft.FSharp.Control.IEvent<System.EventHandler, System.EventArgs>
-        abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
+        abstract Invalidate : IEvent<System.EventHandler, System.EventArgs>
+        abstract GetGeneratedAssemblyContents: assembly:System.Reflection.Assembly -> byte[]
 
     type ITypeProvider2 =
-        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
-        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
+        abstract GetStaticParametersForMethod: methodWithoutArguments:MethodBase -> ParameterInfo[] 
+
+        abstract ApplyStaticArgumentsForMethod: methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 

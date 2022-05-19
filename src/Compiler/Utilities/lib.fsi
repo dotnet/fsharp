@@ -74,7 +74,7 @@ module Check =
 
     /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
-    val ArrayArgumentNotNullOrEmpty: arr: 'T [] -> argName: string -> unit
+    val ArrayArgumentNotNullOrEmpty: arr: 'T[] -> argName: string -> unit
 
     /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
@@ -315,6 +315,6 @@ type DisposablesTracker =
 [<RequireQualifiedAccess>]
 module ArrayParallel =
 
-    val inline map: ('T -> 'U) -> 'T [] -> 'U []
+    val inline map: ('T -> 'U) -> 'T[] -> 'U[]
 
-    val inline mapi: (int -> 'T -> 'U) -> 'T [] -> 'U []
+    val inline mapi: (int -> 'T -> 'U) -> 'T[] -> 'U[]
