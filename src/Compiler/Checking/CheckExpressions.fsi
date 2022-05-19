@@ -1179,8 +1179,8 @@ val TcPatLongIdentActivePatternCase:
     vFlags: TcPatValFlags ->
     patEnv: TcPatLinearEnv ->
     ty: TType ->
-        lidRange: range * item: Item * apref: ActivePatternElemRef * args: SynPat list * m: range ->
-            (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
+    lidRange: range * item: Item * apref: ActivePatternElemRef * args: SynPat list * m: range ->
+        (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
 /// The pattern syntax can also represent active pattern arguments. This routine
 /// converts from the pattern syntax to the expression syntax.
