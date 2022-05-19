@@ -1,11 +1,11 @@
 {
   "sdk": {
-    "version": "6.0.300",
+    "version": "6.0.200",
     "allowPrerelease": true,
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "6.0.300",
+    "dotnet": "6.0.200",
     "vs": {
       "version": "16.8",
       "components": [

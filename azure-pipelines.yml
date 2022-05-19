@@ -401,7 +401,7 @@ stages:
               packageType: sdk
               useGlobalJson: true
               includePreviewVersions: false
-              workingDirectory: $(Build.SourcesDirectory)/service
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
