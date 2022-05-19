@@ -15,11 +15,13 @@ module public SimplifyNames =
 
     /// Data for use in finding unnecessarily-qualified names and generating diagnostics to simplify them
     type SimplifiableRange =
-        { /// The range of a name that can be simplified
-          Range: range
+        {
+            /// The range of a name that can be simplified
+            Range: range
 
-          /// The relative name that can be applied to a simplifiable name
-          RelativeName: string }
+            /// The relative name that can be applied to a simplifiable name
+            RelativeName: string
+        }
 
     /// Get all ranges that can be simplified in a file
     val getSimplifiableNames:

@@ -265,7 +265,6 @@ type internal FSharpColorizer_DEPRECATED
                   | None -> () }
         tokens() |> Array.ofSeq
 
-    [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId="length-1")>] // exceeds EndIndex
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
         let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
         scanner.SetLineText lineText

@@ -42,45 +42,46 @@ type public FSharpUnresolvedReferencesSet = internal FSharpUnresolvedReferencesS
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =
     {
-      // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
-      ProjectFileName: string
+        // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
+        ProjectFileName: string
 
-      /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
-      ProjectId: string option
+        /// This is the unique identifier for the project, it is case sensitive. If it's None, will key off of ProjectFileName in our caching.
+        ProjectId: string option
 
-      /// The files in the project
-      SourceFiles: string []
+        /// The files in the project
+        SourceFiles: string[]
 
-      /// Additional command line argument options for the project. These can include additional files and references.
-      OtherOptions: string []
+        /// Additional command line argument options for the project. These can include additional files and references.
+        OtherOptions: string[]
 
-      /// The command line arguments for the other projects referenced by this project, indexed by the
-      /// exact text used in the "-r:" reference in FSharpProjectOptions.
-      ReferencedProjects: FSharpReferencedProject []
+        /// The command line arguments for the other projects referenced by this project, indexed by the
+        /// exact text used in the "-r:" reference in FSharpProjectOptions.
+        ReferencedProjects: FSharpReferencedProject[]
 
-      /// When true, the typechecking environment is known a priori to be incomplete, for
-      /// example when a .fs file is opened outside of a project. In this case, the number of error
-      /// messages reported is reduced.
-      IsIncompleteTypeCheckEnvironment: bool
+        /// When true, the typechecking environment is known a priori to be incomplete, for
+        /// example when a .fs file is opened outside of a project. In this case, the number of error
+        /// messages reported is reduced.
+        IsIncompleteTypeCheckEnvironment: bool
 
-      /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
-      UseScriptResolutionRules: bool
+        /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
+        UseScriptResolutionRules: bool
 
-      /// Timestamp of project/script load, used to differentiate between different instances of a project load.
-      /// This ensures that a complete reload of the project or script type checking
-      /// context occurs on project or script unload/reload.
-      LoadTime: DateTime
+        /// Timestamp of project/script load, used to differentiate between different instances of a project load.
+        /// This ensures that a complete reload of the project or script type checking
+        /// context occurs on project or script unload/reload.
+        LoadTime: DateTime
 
-      /// Unused in this API and should be 'None' when used as user-specified input
-      UnresolvedReferences: FSharpUnresolvedReferencesSet option
+        /// Unused in this API and should be 'None' when used as user-specified input
+        UnresolvedReferences: FSharpUnresolvedReferencesSet option
 
-      /// Unused in this API and should be '[]' when used as user-specified input
-      OriginalLoadReferences: (range * string * string) list
+        /// Unused in this API and should be '[]' when used as user-specified input
+        OriginalLoadReferences: (range * string * string) list
 
-      /// An optional stamp to uniquely identify this set of options
-      /// If two sets of options both have stamps, then they are considered equal
-      /// if and only if the stamps are equal
-      Stamp: int64 option }
+        /// An optional stamp to uniquely identify this set of options
+        /// If two sets of options both have stamps, then they are considered equal
+        /// if and only if the stamps are equal
+        Stamp: int64 option
+    }
 
     /// Whether the two parse options refer to the same project.
     static member internal UseSameProject: options1: FSharpProjectOptions * options2: FSharpProjectOptions -> bool
@@ -199,42 +200,44 @@ type public FSharpProjectContext =
 
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
 type public FSharpParsingOptions =
-    { SourceFiles: string []
+    {
+        SourceFiles: string[]
 
-      /// Indicates if the ranges returned by parsing should have '#line' directives applied to them.
-      /// When compiling code, this should usually be 'true'.  For editing tools, this is usually 'false.
-      /// The default for FSharpParsingOptions.ApplyLineDirectives is 'false'.  The default for
-      /// FSharpParsingOptions arising from FSharpProjectOptions will be 'true' unless '--ignorelinedirectives' is used in the
-      /// parameters from which these are derived.
-      ApplyLineDirectives: bool
+        /// Indicates if the ranges returned by parsing should have '#line' directives applied to them.
+        /// When compiling code, this should usually be 'true'.  For editing tools, this is usually 'false.
+        /// The default for FSharpParsingOptions.ApplyLineDirectives is 'false'.  The default for
+        /// FSharpParsingOptions arising from FSharpProjectOptions will be 'true' unless '--ignorelinedirectives' is used in the
+        /// parameters from which these are derived.
+        ApplyLineDirectives: bool
 
-      ConditionalDefines: string list
+        ConditionalDefines: string list
 
-      DiagnosticOptions: FSharpDiagnosticOptions
+        DiagnosticOptions: FSharpDiagnosticOptions
 
-      LangVersionText: string
+        LangVersionText: string
 
-      IsInteractive: bool
+        IsInteractive: bool
 
-      IndentationAwareSyntax: bool option
+        IndentationAwareSyntax: bool option
 
-      CompilingFSharpCore: bool
+        CompilingFSharpCore: bool
 
-      IsExe: bool }
+        IsExe: bool
+    }
 
     static member Default: FSharpParsingOptions
 
     static member internal FromTcConfig:
-        tcConfig: TcConfig * sourceFiles: string [] * isInteractive: bool -> FSharpParsingOptions
+        tcConfig: TcConfig * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
 
     static member internal FromTcConfigBuilder:
-        tcConfigB: TcConfigBuilder * sourceFiles: string [] * isInteractive: bool -> FSharpParsingOptions
+        tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
-    member Diagnostics: FSharpDiagnostic []
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature: FSharpAssemblySignature
@@ -252,7 +255,7 @@ type public FSharpCheckFileResults =
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
-    member DependencyFiles: string []
+    member DependencyFiles: string[]
 
     /// <summary>Get the items for a declaration list</summary>
     ///
@@ -374,22 +377,22 @@ type public FSharpCheckFileResults =
         line: int * colAtEndOfNames: int * lineText: string * names: string list -> FSharpSymbolUse option
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification: range option -> SemanticClassificationItem []
+    member GetSemanticClassification: range option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
-    member GetFormatSpecifierLocations: unit -> range []
+    member GetFormatSpecifierLocations: unit -> range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
-    member GetFormatSpecifierLocationsAndArity: unit -> (range * int) []
+    member GetFormatSpecifierLocationsAndArity: unit -> (range * int)[]
 
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile: ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
 
     /// Get the textual usages that resolved to the given symbol throughout the file
-    member GetUsesOfSymbolInFile: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse []
+    member GetUsesOfSymbolInFile: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
-    member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef []
+    member internal GetVisibleNamespacesAndModulesAtPoint: pos -> ModuleOrNamespaceRef[]
 
     /// Find the most precise display environment for the given line and column.
     member GetDisplayContextForPos: cursorPos: pos -> FSharpDisplayContext option
@@ -404,14 +407,14 @@ type public FSharpCheckFileResults =
     member ImplementationFile: FSharpImplementationFileContents option
 
     /// Open declarations in the file, including auto open modules.
-    member OpenDeclarations: FSharpOpenDeclaration []
+    member OpenDeclarations: FSharpOpenDeclaration[]
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: unit -> ISourceText option
 
     /// Internal constructor
     static member internal MakeEmpty:
-        fileName: string * creationErrors: FSharpDiagnostic [] * keepAssemblyContents: bool -> FSharpCheckFileResults
+        fileName: string * creationErrors: FSharpDiagnostic[] * keepAssemblyContents: bool -> FSharpCheckFileResults
 
     /// Internal constructor
     static member internal Make:
@@ -422,10 +425,10 @@ type public FSharpCheckFileResults =
         isIncompleteTypeCheckEnvironment: bool *
         builder: IncrementalBuilder *
         projectOptions: FSharpProjectOptions *
-        dependencyFiles: string [] *
-        creationErrors: FSharpDiagnostic [] *
-        parseErrors: FSharpDiagnostic [] *
-        tcErrors: FSharpDiagnostic [] *
+        dependencyFiles: string[] *
+        creationErrors: FSharpDiagnostic[] *
+        parseErrors: FSharpDiagnostic[] *
+        tcErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         ccuSigForFile: ModuleOrNamespaceType *
         thisCcu: CcuThunk *
@@ -436,7 +439,7 @@ type public FSharpCheckFileResults =
         sFallback: NameResolutionEnv *
         loadClosure: LoadClosure option *
         implFileOpt: CheckedImplFile option *
-        openDeclarations: OpenDeclaration [] ->
+        openDeclarations: OpenDeclaration[] ->
             FSharpCheckFileResults
 
     /// Internal constructor - check a file and collect errors
@@ -451,13 +454,13 @@ type public FSharpCheckFileResults =
         tcState: TcState *
         moduleNamesDict: ModuleNamesDict *
         loadClosure: LoadClosure option *
-        backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) [] *
+        backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *
         isIncompleteTypeCheckEnvironment: bool *
         projectOptions: FSharpProjectOptions *
         builder: IncrementalBuilder *
-        dependencyFiles: string [] *
-        creationErrors: FSharpDiagnostic [] *
-        parseErrors: FSharpDiagnostic [] *
+        dependencyFiles: string[] *
+        creationErrors: FSharpDiagnostic[] *
+        parseErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         suggestNamesForErrors: bool ->
             Cancellable<FSharpCheckFileResults>
@@ -475,7 +478,7 @@ and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
 type public FSharpCheckProjectResults =
 
     /// The errors returned by processing the project
-    member Diagnostics: FSharpDiagnostic []
+    member Diagnostics: FSharpDiagnostic[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature: FSharpAssemblySignature
@@ -490,10 +493,10 @@ type public FSharpCheckProjectResults =
     member ProjectContext: FSharpProjectContext
 
     /// Get the textual usages that resolved to the given symbol throughout the project
-    member GetUsesOfSymbol: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse []
+    member GetUsesOfSymbol: symbol: FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
     /// Get all textual usages of all symbols throughout the project
-    member GetAllUsesOfAllSymbols: ?cancellationToken: CancellationToken -> FSharpSymbolUse []
+    member GetAllUsesOfAllSymbols: ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
     /// Indicates if critical errors existed in the project options
     member HasCriticalErrors: bool
@@ -501,15 +504,15 @@ type public FSharpCheckProjectResults =
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
-    member DependencyFiles: string []
+    member DependencyFiles: string[]
 
     // Internal constructor.
     internal new:
         projectFileName: string *
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
-        diagnostics: FSharpDiagnostic [] *
-        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string [] * FSharpProjectOptions) option ->
+        diagnostics: FSharpDiagnostic[] *
+        details: (TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> * TopAttribs option * (unit -> IRawFSharpAssemblyData option) * ILAssemblyRef * AccessorDomain * CheckedImplFile list option * string[] * FSharpProjectOptions) option ->
             FSharpCheckProjectResults
 
 module internal ParseAndCheckFile =
@@ -520,7 +523,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool ->
-            FSharpDiagnostic [] * ParsedInput * bool
+            FSharpDiagnostic[] * ParsedInput * bool
 
     val matchBraces:
         sourceText: ISourceText *
@@ -528,7 +531,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool ->
-            (range * range) []
+            (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

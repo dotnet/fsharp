@@ -85,7 +85,7 @@ val addByteChar: ByteBuffer -> char -> unit
 
 val stringBufferAsString: ByteBuffer -> string
 
-val stringBufferAsBytes: ByteBuffer -> byte []
+val stringBufferAsBytes: ByteBuffer -> byte[]
 
 val stringBufferIsBytes: ByteBuffer -> bool
 
