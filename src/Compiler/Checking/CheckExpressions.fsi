@@ -53,58 +53,60 @@ type UngeneralizableItem
 /// and other information about the scope.
 [<NoEquality; NoComparison>]
 type TcEnv =
-    { /// Name resolution information
-      eNameResEnv: NameResolutionEnv
+    {
+        /// Name resolution information
+        eNameResEnv: NameResolutionEnv
 
-      /// The list of items in the environment that may contain free inference
-      /// variables (which may not be generalized). The relevant types may
-      /// change as a result of inference equations being asserted, hence may need to
-      /// be recomputed.
-      eUngeneralizableItems: UngeneralizableItem list
+        /// The list of items in the environment that may contain free inference
+        /// variables (which may not be generalized). The relevant types may
+        /// change as a result of inference equations being asserted, hence may need to
+        /// be recomputed.
+        eUngeneralizableItems: UngeneralizableItem list
 
-      // Two (!) versions of the current module path
-      // These are used to:
-      //    - Look up the appropriate point in the corresponding signature
-      //      see if an item is public or not
-      //    - Change fslib canonical module type to allow compiler references to these items
-      //    - Record the cpath for concrete modul_specs, tycon_specs and excon_specs so they can cache their generated IL representation where necessary
-      //    - Record the pubpath of public, concrete {val, tycon, modul, excon}_specs.
-      //      This information is used mainly when building non-local references
-      //      to public items.
-      //
-      // Of the two, 'ePath' is the one that's barely used. It's only
-      // used by UpdateAccModuleOrNamespaceType to modify the CCU while compiling FSharp.Core
-      ePath: Ident list
+        // Two (!) versions of the current module path
+        // These are used to:
+        //    - Look up the appropriate point in the corresponding signature
+        //      see if an item is public or not
+        //    - Change fslib canonical module type to allow compiler references to these items
+        //    - Record the cpath for concrete modul_specs, tycon_specs and excon_specs so they can cache their generated IL representation where necessary
+        //    - Record the pubpath of public, concrete {val, tycon, modul, excon}_specs.
+        //      This information is used mainly when building non-local references
+        //      to public items.
+        //
+        // Of the two, 'ePath' is the one that's barely used. It's only
+        // used by UpdateAccModuleOrNamespaceType to modify the CCU while compiling FSharp.Core
+        ePath: Ident list
 
-      eCompPath: CompilationPath
+        eCompPath: CompilationPath
 
-      eAccessPath: CompilationPath
+        eAccessPath: CompilationPath
 
-      /// This field is computed from other fields, but we amortize the cost of computing it.
-      eAccessRights: AccessorDomain
+        /// This field is computed from other fields, but we amortize the cost of computing it.
+        eAccessRights: AccessorDomain
 
-      /// Internals under these should be accessible
-      eInternalsVisibleCompPaths: CompilationPath list
+        /// Internals under these should be accessible
+        eInternalsVisibleCompPaths: CompilationPath list
 
-      /// Mutable accumulator for the current module type
-      eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
+        /// Mutable accumulator for the current module type
+        eModuleOrNamespaceTypeAccumulator: ModuleOrNamespaceType ref
 
-      /// Context information for type checker
-      eContextInfo: ContextInfo
+        /// Context information for type checker
+        eContextInfo: ContextInfo
 
-      /// Here Some tcref indicates we can access protected members in all super types
-      eFamilyType: TyconRef option
+        /// Here Some tcref indicates we can access protected members in all super types
+        eFamilyType: TyconRef option
 
-      // Information to enforce special restrictions on valid expressions
-      // for .NET constructors.
-      eCtorInfo: CtorInfo option
+        // Information to enforce special restrictions on valid expressions
+        // for .NET constructors.
+        eCtorInfo: CtorInfo option
 
-      eCallerMemberName: string option
+        eCallerMemberName: string option
 
-      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
-      eLambdaArgInfos: ArgReprInfo list list
+        // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
+        eLambdaArgInfos: ArgReprInfo list list
 
-      eIsControlFlow: bool }
+        eIsControlFlow: bool
+    }
 
     member DisplayEnv: DisplayEnv
 
@@ -223,87 +225,89 @@ type UnscopedTyparEnv
 /// Represents the compilation environment for typechecking a single file in an assembly.
 [<NoEquality; NoComparison>]
 type TcFileState =
-    { g: TcGlobals
+    {
+        g: TcGlobals
 
-      /// Push an entry every time a recursive value binding is used,
-      /// in order to be able to fix up recursive type applications as
-      /// we infer type parameters
-      mutable recUses: ValMultiMap<Expr ref * range * bool>
+        /// Push an entry every time a recursive value binding is used,
+        /// in order to be able to fix up recursive type applications as
+        /// we infer type parameters
+        mutable recUses: ValMultiMap<Expr ref * range * bool>
 
-      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-      stackGuard: StackGuard
+        /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+        stackGuard: StackGuard
 
-      /// Set to true if this file causes the creation of generated provided types.
-      mutable createsGeneratedProvidedTypes: bool
+        /// Set to true if this file causes the creation of generated provided types.
+        mutable createsGeneratedProvidedTypes: bool
 
-      /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
-      isScript: bool
+        /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
+        isScript: bool
 
-      /// Environment needed to convert IL types to F# types in the importer.
-      amap: ImportMap
+        /// Environment needed to convert IL types to F# types in the importer.
+        amap: ImportMap
 
-      /// Used to generate new syntactic argument names in post-parse syntactic processing
-      synArgNameGenerator: SynArgNameGenerator
+        /// Used to generate new syntactic argument names in post-parse syntactic processing
+        synArgNameGenerator: SynArgNameGenerator
 
-      tcSink: TcResultsSink
+        tcSink: TcResultsSink
 
-      /// Holds a reference to the component being compiled.
-      /// This field is very rarely used (mainly when fixing up forward references to fslib.
-      thisCcu: CcuThunk
+        /// Holds a reference to the component being compiled.
+        /// This field is very rarely used (mainly when fixing up forward references to fslib.
+        thisCcu: CcuThunk
 
-      /// Holds the current inference constraints
-      css: ConstraintSolverState
+        /// Holds the current inference constraints
+        css: ConstraintSolverState
 
-      /// Are we compiling the signature of a module from fslib?
-      compilingCanonicalFslibModuleType: bool
+        /// Are we compiling the signature of a module from fslib?
+        compilingCanonicalFslibModuleType: bool
 
-      /// Is this a .fsi file?
-      isSig: bool
+        /// Is this a .fsi file?
+        isSig: bool
 
-      /// Does this .fs file have a .fsi file?
-      haveSig: bool
+        /// Does this .fs file have a .fsi file?
+        haveSig: bool
 
-      /// Used to generate names
-      niceNameGen: NiceNameGenerator
+        /// Used to generate names
+        niceNameGen: NiceNameGenerator
 
-      /// Used to read and cache information about types and members
-      infoReader: InfoReader
+        /// Used to read and cache information about types and members
+        infoReader: InfoReader
 
-      /// Used to resolve names
-      nameResolver: NameResolver
+        /// Used to resolve names
+        nameResolver: NameResolver
 
-      /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
-      conditionalDefines: string list option
+        /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
+        conditionalDefines: string list option
 
-      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+        namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
 
-      isInternalTestSpanStackReferring: bool
+        isInternalTestSpanStackReferring: bool
 
-      // forward call
-      TcSequenceExpressionEntry: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> bool * SynExpr
-          -> range
-          -> Expr * UnscopedTyparEnv
+        // forward call
+        TcSequenceExpressionEntry: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> bool * SynExpr
+            -> range
+            -> Expr * UnscopedTyparEnv
 
-      // forward call
-      TcArrayOrListComputedExpression: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> bool * SynExpr
-          -> range
-          -> Expr * UnscopedTyparEnv
+        // forward call
+        TcArrayOrListComputedExpression: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> bool * SynExpr
+            -> range
+            -> Expr * UnscopedTyparEnv
 
-      // forward call
-      TcComputationExpression: TcFileState
-          -> TcEnv
-          -> OverallTy
-          -> UnscopedTyparEnv
-          -> range * Expr * TType * SynExpr
-          -> Expr * UnscopedTyparEnv }
+        // forward call
+        TcComputationExpression: TcFileState
+            -> TcEnv
+            -> OverallTy
+            -> UnscopedTyparEnv
+            -> range * Expr * TType * SynExpr
+            -> Expr * UnscopedTyparEnv
+    }
 
     static member Create:
         g: TcGlobals *
