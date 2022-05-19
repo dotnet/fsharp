@@ -1,6 +1,7 @@
 root = true
 
 [*.fs]
+max_line_length=140
 fsharp_newline_between_type_definition_and_members=true
 fsharp_max_infix_operator_expression=80
 fsharp_max_array_or_list_width=80
