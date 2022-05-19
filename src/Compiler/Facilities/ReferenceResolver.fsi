@@ -15,14 +15,16 @@ type internal LegacyResolutionEnvironment =
     | CompilationAndEvaluation
 
 type internal LegacyResolvedFile =
-    { /// Item specification.
-      itemSpec: string
+    {
+        /// Item specification.
+        itemSpec: string
 
-      /// Prepare textual information about where the assembly was resolved from, used for tooltip output
-      prepareToolTip: string * string -> string
+        /// Prepare textual information about where the assembly was resolved from, used for tooltip output
+        prepareToolTip: string * string -> string
 
-      /// Round-tripped baggage
-      baggage: string }
+        /// Round-tripped baggage
+        baggage: string
+    }
 
 [<AllowNullLiteral>]
 type internal ILegacyReferenceResolver =
@@ -37,7 +39,7 @@ type internal ILegacyReferenceResolver =
     /// Perform assembly resolution on the given references under the given conditions
     abstract Resolve:
         resolutionEnvironment: LegacyResolutionEnvironment *
-        references: (string * string) [] *
+        references: (string * string)[] *
         targetFrameworkVersion: string *
         targetFrameworkDirectories: string list *
         targetProcessorArchitecture: string *
@@ -46,7 +48,7 @@ type internal ILegacyReferenceResolver =
         implicitIncludeDir: string *
         logMessage: (string -> unit) *
         logDiagnostic: (bool -> string -> string -> unit) ->
-            LegacyResolvedFile []
+            LegacyResolvedFile[]
 
     /// Get the Reference Assemblies directory for the .NET Framework (on Windows)
     /// This is added to the default resolution path for

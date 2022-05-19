@@ -31,7 +31,6 @@ type public FSharpXmlDoc =
     /// Indicates that the XML for the documentation can be found in a .xml documentation file for the given DLL, using the given signature key
     | FromXmlFile of dllName: string * xmlSig: string
 
-
 // Implementation details used by other code in the compiler
 module internal SymbolHelpers =
 
@@ -63,10 +62,10 @@ module internal SymbolHelpers =
     val (|ItemIsProvidedType|_|): TcGlobals -> Item -> TyconRef option
 
     val (|ItemIsWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 
     val (|ItemIsProvidedTypeWithStaticArguments|_|):
-        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo> [] option
+        range -> TcGlobals -> Item -> Tainted<TypeProviders.ProvidedParameterInfo>[] option
 #endif
 
     val SimplerDisplayEnv: DisplayEnv -> DisplayEnv

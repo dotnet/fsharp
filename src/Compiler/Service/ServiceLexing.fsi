@@ -272,28 +272,30 @@ module FSharpTokenTag =
 
 /// Information about a particular token from the tokenizer
 type FSharpTokenInfo =
-    { /// Left column of the token.
-      LeftColumn: int
+    {
+        /// Left column of the token.
+        LeftColumn: int
 
-      /// Right column of the token.
-      RightColumn: int
+        /// Right column of the token.
+        RightColumn: int
 
-      ColorClass: FSharpTokenColorKind
+        ColorClass: FSharpTokenColorKind
 
-      /// Gives an indication of the class to assign to the token an IDE
-      CharClass: FSharpTokenCharKind
+        /// Gives an indication of the class to assign to the token an IDE
+        CharClass: FSharpTokenCharKind
 
-      /// Actions taken when the token is typed
-      FSharpTokenTriggerClass: FSharpTokenTriggerClass
+        /// Actions taken when the token is typed
+        FSharpTokenTriggerClass: FSharpTokenTriggerClass
 
-      /// The tag is an integer identifier for the token
-      Tag: int
+        /// The tag is an integer identifier for the token
+        Tag: int
 
-      /// Provides additional information about the token
-      TokenName: string
+        /// Provides additional information about the token
+        TokenName: string
 
-      /// The full length consumed by this match, including delayed tokens (which can be ignored in naive lexers)
-      FullMatchedLength: int }
+        /// The full length consumed by this match, including delayed tokens (which can be ignored in naive lexers)
+        FullMatchedLength: int
+    }
 
 /// Object to tokenize a line of F# source code, starting with the given lexState.  The lexState should be FSharpTokenizerLexState.Initial for
 /// the first line of text. Returns an array of ranges of the text and two enumerations categorizing the
@@ -328,7 +330,7 @@ type FSharpSourceTokenizer =
     member CreateLineTokenizer: lineText: string -> FSharpLineTokenizer
 
     /// Create a tokenizer for a line of this source file using a buffer filler
-    member CreateBufferTokenizer: bufferFiller: (char [] * int * int -> int) -> FSharpLineTokenizer
+    member CreateBufferTokenizer: bufferFiller: (char[] * int * int -> int) -> FSharpLineTokenizer
 
 module internal TestExpose =
     val TokenInfo: Parser.token -> FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass

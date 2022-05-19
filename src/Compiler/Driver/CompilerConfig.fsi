@@ -200,275 +200,278 @@ type MetadataAssemblyGeneration =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: PrimaryAssembly
+    {
+        mutable primaryAssembly: PrimaryAssembly
 
-      mutable noFeedback: bool
+        mutable noFeedback: bool
 
-      mutable stackReserveSize: int32 option
+        mutable stackReserveSize: int32 option
 
-      mutable implicitIncludeDir: string
+        mutable implicitIncludeDir: string
 
-      mutable openDebugInformationForLaterStaticLinking: bool
+        mutable openDebugInformationForLaterStaticLinking: bool
 
-      defaultFSharpBinariesDir: string
+        defaultFSharpBinariesDir: string
 
-      mutable compilingFSharpCore: bool
+        mutable compilingFSharpCore: bool
 
-      mutable useIncrementalBuilder: bool
+        mutable useIncrementalBuilder: bool
 
-      mutable includes: string list
+        mutable includes: string list
 
-      mutable implicitOpens: string list
+        mutable implicitOpens: string list
 
-      mutable useFsiAuxLib: bool
+        mutable useFsiAuxLib: bool
 
-      mutable implicitlyReferenceDotNetAssemblies: bool
+        mutable implicitlyReferenceDotNetAssemblies: bool
 
-      mutable resolutionEnvironment: LegacyResolutionEnvironment
+        mutable resolutionEnvironment: LegacyResolutionEnvironment
 
-      mutable implicitlyResolveAssemblies: bool
+        mutable implicitlyResolveAssemblies: bool
 
-      /// Set if the user has explicitly turned indentation-aware syntax on/off
-      mutable indentationAwareSyntax: bool option
+        /// Set if the user has explicitly turned indentation-aware syntax on/off
+        mutable indentationAwareSyntax: bool option
 
-      mutable conditionalDefines: string list
+        mutable conditionalDefines: string list
 
-      /// Sources added into the build with #load
-      mutable loadedSources: (range * string * string) list
+        /// Sources added into the build with #load
+        mutable loadedSources: (range * string * string) list
 
-      mutable compilerToolPaths: string list
+        mutable compilerToolPaths: string list
 
-      mutable referencedDLLs: AssemblyReference list
+        mutable referencedDLLs: AssemblyReference list
 
-      mutable packageManagerLines: Map<string, PackageManagerLine list>
+        mutable packageManagerLines: Map<string, PackageManagerLine list>
 
-      mutable projectReferences: IProjectReference list
+        mutable projectReferences: IProjectReference list
 
-      mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
+        mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
 
-      reduceMemoryUsage: ReduceMemoryFlag
+        reduceMemoryUsage: ReduceMemoryFlag
 
-      mutable subsystemVersion: int * int
+        mutable subsystemVersion: int * int
 
-      mutable useHighEntropyVA: bool
+        mutable useHighEntropyVA: bool
 
-      mutable inputCodePage: int option
+        mutable inputCodePage: int option
 
-      mutable embedResources: string list
+        mutable embedResources: string list
 
-      mutable diagnosticsOptions: FSharpDiagnosticOptions
+        mutable diagnosticsOptions: FSharpDiagnosticOptions
 
-      mutable mlCompatibility: bool
+        mutable mlCompatibility: bool
 
-      mutable checkOverflow: bool
+        mutable checkOverflow: bool
 
-      mutable showReferenceResolutions: bool
+        mutable showReferenceResolutions: bool
 
-      mutable outputDir: string option
+        mutable outputDir: string option
 
-      mutable outputFile: string option
+        mutable outputFile: string option
 
-      mutable platform: ILPlatform option
+        mutable platform: ILPlatform option
 
-      mutable prefer32Bit: bool
+        mutable prefer32Bit: bool
 
-      mutable useSimpleResolution: bool
+        mutable useSimpleResolution: bool
 
-      mutable target: CompilerTarget
+        mutable target: CompilerTarget
 
-      mutable debuginfo: bool
+        mutable debuginfo: bool
 
-      mutable testFlagEmitFeeFeeAs100001: bool
+        mutable testFlagEmitFeeFeeAs100001: bool
 
-      mutable dumpDebugInfo: bool
+        mutable dumpDebugInfo: bool
 
-      mutable debugSymbolFile: string option
+        mutable debugSymbolFile: string option
 
-      mutable typeCheckOnly: bool
+        mutable typeCheckOnly: bool
 
-      mutable parseOnly: bool
+        mutable parseOnly: bool
 
-      mutable importAllReferencesOnly: bool
+        mutable importAllReferencesOnly: bool
 
-      mutable simulateException: string option
+        mutable simulateException: string option
 
-      mutable printAst: bool
+        mutable printAst: bool
 
-      mutable tokenize: TokenizeOption
+        mutable tokenize: TokenizeOption
 
-      mutable testInteractionParser: bool
+        mutable testInteractionParser: bool
 
-      mutable reportNumDecls: bool
+        mutable reportNumDecls: bool
 
-      mutable printSignature: bool
+        mutable printSignature: bool
 
-      mutable printSignatureFile: string
+        mutable printSignatureFile: string
 
-      mutable printAllSignatureFiles: bool
+        mutable printAllSignatureFiles: bool
 
-      mutable xmlDocOutputFile: string option
+        mutable xmlDocOutputFile: string option
 
-      mutable stats: bool
+        mutable stats: bool
 
-      mutable generateFilterBlocks: bool
+        mutable generateFilterBlocks: bool
 
-      mutable signer: string option
+        mutable signer: string option
 
-      mutable container: string option
+        mutable container: string option
 
-      mutable delaysign: bool
+        mutable delaysign: bool
 
-      mutable publicsign: bool
+        mutable publicsign: bool
 
-      mutable version: VersionFlag
+        mutable version: VersionFlag
 
-      mutable metadataVersion: string option
+        mutable metadataVersion: string option
 
-      mutable standalone: bool
+        mutable standalone: bool
 
-      mutable extraStaticLinkRoots: string list
+        mutable extraStaticLinkRoots: string list
 
-      mutable noSignatureData: bool
+        mutable noSignatureData: bool
 
-      mutable onlyEssentialOptimizationData: bool
+        mutable onlyEssentialOptimizationData: bool
 
-      mutable useOptimizationDataFile: bool
+        mutable useOptimizationDataFile: bool
 
-      mutable jitTracking: bool
+        mutable jitTracking: bool
 
-      mutable portablePDB: bool
+        mutable portablePDB: bool
 
-      mutable embeddedPDB: bool
+        mutable embeddedPDB: bool
 
-      mutable embedAllSource: bool
+        mutable embedAllSource: bool
 
-      mutable embedSourceList: string list
+        mutable embedSourceList: string list
 
-      mutable sourceLink: string
+        mutable sourceLink: string
 
-      mutable ignoreSymbolStoreSequencePoints: bool
+        mutable ignoreSymbolStoreSequencePoints: bool
 
-      mutable internConstantStrings: bool
+        mutable internConstantStrings: bool
 
-      mutable extraOptimizationIterations: int
+        mutable extraOptimizationIterations: int
 
-      mutable win32icon: string
+        mutable win32icon: string
 
-      mutable win32res: string
+        mutable win32res: string
 
-      mutable win32manifest: string
+        mutable win32manifest: string
 
-      mutable includewin32manifest: bool
+        mutable includewin32manifest: bool
 
-      mutable linkResources: string list
+        mutable linkResources: string list
 
-      mutable legacyReferenceResolver: LegacyReferenceResolver
+        mutable legacyReferenceResolver: LegacyReferenceResolver
 
-      mutable showFullPaths: bool
+        mutable showFullPaths: bool
 
-      mutable diagnosticStyle: DiagnosticStyle
+        mutable diagnosticStyle: DiagnosticStyle
 
-      mutable utf8output: bool
+        mutable utf8output: bool
 
-      mutable flatErrors: bool
+        mutable flatErrors: bool
 
-      mutable maxErrors: int
+        mutable maxErrors: int
 
-      mutable abortOnError: bool
+        mutable abortOnError: bool
 
-      mutable baseAddress: int32 option
+        mutable baseAddress: int32 option
 
-      mutable checksumAlgorithm: HashAlgorithm
+        mutable checksumAlgorithm: HashAlgorithm
 
 #if DEBUG
-      mutable showOptimizationData: bool
+        mutable showOptimizationData: bool
 #endif
 
-      mutable showTerms: bool
+        mutable showTerms: bool
 
-      mutable writeTermsToFiles: bool
+        mutable writeTermsToFiles: bool
 
-      mutable doDetuple: bool
+        mutable doDetuple: bool
 
-      mutable doTLR: bool
+        mutable doTLR: bool
 
-      mutable doFinalSimplify: bool
+        mutable doFinalSimplify: bool
 
-      mutable optsOn: bool
+        mutable optsOn: bool
 
-      mutable optSettings: Optimizer.OptimizationSettings
+        mutable optSettings: Optimizer.OptimizationSettings
 
-      mutable emitTailcalls: bool
+        mutable emitTailcalls: bool
 
-      mutable deterministic: bool
+        mutable deterministic: bool
 
-      mutable concurrentBuild: bool
+        mutable concurrentBuild: bool
 
-      mutable emitMetadataAssembly: MetadataAssemblyGeneration
+        mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
-      mutable preferredUiLang: string option
+        mutable preferredUiLang: string option
 
-      mutable lcid: int option
+        mutable lcid: int option
 
-      mutable productNameForBannerText: string
+        mutable productNameForBannerText: string
 
-      mutable showBanner: bool
+        mutable showBanner: bool
 
-      mutable showTimes: bool
+        mutable showTimes: bool
 
-      mutable showLoadedAssemblies: bool
+        mutable showLoadedAssemblies: bool
 
-      mutable continueAfterParseFailure: bool
+        mutable continueAfterParseFailure: bool
 
 #if !NO_TYPEPROVIDERS
-      mutable showExtensionTypeMessages: bool
+        mutable showExtensionTypeMessages: bool
 #endif
 
-      mutable pause: bool
+        mutable pause: bool
 
-      mutable alwaysCallVirt: bool
+        mutable alwaysCallVirt: bool
 
-      mutable noDebugAttributes: bool
-      mutable useReflectionFreeCodeGen: bool
+        mutable noDebugAttributes: bool
 
-      /// If true, indicates all type checking and code generation is in the context of fsi.exe
-      isInteractive: bool
+        mutable useReflectionFreeCodeGen: bool
 
-      isInvalidationSupported: bool
+        /// If true, indicates all type checking and code generation is in the context of fsi.exe
+        isInteractive: bool
 
-      mutable emitDebugInfoInQuotations: bool
+        isInvalidationSupported: bool
 
-      mutable exename: string option
+        mutable emitDebugInfoInQuotations: bool
 
-      mutable copyFSharpCore: CopyFSharpCoreFlag
+        mutable exename: string option
 
-      mutable shadowCopyReferences: bool
+        mutable copyFSharpCore: CopyFSharpCoreFlag
 
-      mutable useSdkRefs: bool
+        mutable shadowCopyReferences: bool
 
-      mutable fxResolver: FxResolver option
+        mutable useSdkRefs: bool
 
-      mutable fsiMultiAssemblyEmit: bool
+        mutable fxResolver: FxResolver option
 
-      rangeForErrors: range
+        mutable fsiMultiAssemblyEmit: bool
 
-      sdkDirOverride: string option
+        rangeForErrors: range
 
-      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
-      /// and from which we can read the metadata. Only used when metadataOnly=true.
-      mutable tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        sdkDirOverride: string option
 
-      /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
-      mutable internalTestSpanStackReferring: bool
+        /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+        /// and from which we can read the metadata. Only used when metadataOnly=true.
+        mutable tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
-      /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
-      mutable noConditionalErasure: bool
+        /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
+        mutable internalTestSpanStackReferring: bool
 
-      mutable pathMap: PathMap
+        /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
+        mutable noConditionalErasure: bool
 
-      mutable langVersion: LanguageVersion
+        mutable pathMap: PathMap
 
-      mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option }
+        mutable langVersion: LanguageVersion
+
+        mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+    }
 
     static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *

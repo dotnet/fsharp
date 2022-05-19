@@ -70,10 +70,10 @@ module internal List =
     val splitInto: int -> 'T list -> 'T list list
     val zip: 'T1 list -> 'T2 list -> ('T1 * 'T2) list
     val zip3: 'T1 list -> 'T2 list -> 'T3 list -> ('T1 * 'T2 * 'T3) list
-    val ofArray: 'T [] -> 'T list
+    val ofArray: 'T[] -> 'T list
     val take: int -> 'T list -> 'T list
     val takeWhile: ('T -> bool) -> 'T list -> 'T list
-    val toArray: 'T list -> 'T []
+    val toArray: 'T list -> 'T[]
     val inline ofSeq: seq<'T> -> 'T List
     val splitAt: int -> 'T list -> ('T list * 'T list)
     val transpose: 'T list list -> 'T list list
@@ -82,40 +82,40 @@ module internal List =
 
 module internal Array =
     // The input parameter should be checked by callers if necessary
-    val inline zeroCreateUnchecked: int -> 'T []
+    val inline zeroCreateUnchecked: int -> 'T[]
 
-    val inline init: int -> (int -> 'T) -> 'T []
+    val inline init: int -> (int -> 'T) -> 'T[]
 
-    val splitInto: int -> 'T [] -> 'T [] []
+    val splitInto: int -> 'T[] -> 'T[][]
 
-    val findBack: predicate: ('T -> bool) -> array: 'T [] -> 'T
+    val findBack: predicate: ('T -> bool) -> array: 'T[] -> 'T
 
-    val tryFindBack: predicate: ('T -> bool) -> array: 'T [] -> 'T option
+    val tryFindBack: predicate: ('T -> bool) -> array: 'T[] -> 'T option
 
-    val findIndexBack: predicate: ('T -> bool) -> array: 'T [] -> int
+    val findIndexBack: predicate: ('T -> bool) -> array: 'T[] -> int
 
-    val tryFindIndexBack: predicate: ('T -> bool) -> array: 'T [] -> int option
+    val tryFindIndexBack: predicate: ('T -> bool) -> array: 'T[] -> int option
 
-    val mapFold: ('State -> 'T -> 'U * 'State) -> 'State -> 'T [] -> 'U [] * 'State
+    val mapFold: ('State -> 'T -> 'U * 'State) -> 'State -> 'T[] -> 'U[] * 'State
 
-    val mapFoldBack: ('T -> 'State -> 'U * 'State) -> 'T [] -> 'State -> 'U [] * 'State
+    val mapFoldBack: ('T -> 'State -> 'U * 'State) -> 'T[] -> 'State -> 'U[] * 'State
 
-    val permute: indexMap: (int -> int) -> 'T [] -> 'T []
+    val permute: indexMap: (int -> int) -> 'T[] -> 'T[]
 
     val scanSubRight:
-        f: ('T -> 'State -> 'State) -> array: 'T [] -> start: int -> fin: int -> initState: 'State -> 'State []
+        f: ('T -> 'State -> 'State) -> array: 'T[] -> start: int -> fin: int -> initState: 'State -> 'State[]
 
-    val inline subUnchecked: int -> int -> 'T [] -> 'T []
+    val inline subUnchecked: int -> int -> 'T[] -> 'T[]
 
-    val unstableSortInPlaceBy: projection: ('T -> 'Key) -> array: 'T [] -> unit when 'Key: comparison
+    val unstableSortInPlaceBy: projection: ('T -> 'Key) -> array: 'T[] -> unit when 'Key: comparison
 
-    val unstableSortInPlace: array: 'T [] -> unit when 'T: comparison
+    val unstableSortInPlace: array: 'T[] -> unit when 'T: comparison
 
-    val stableSortInPlaceBy: projection: ('T -> 'Key) -> array: 'T [] -> unit when 'Key: comparison
+    val stableSortInPlaceBy: projection: ('T -> 'Key) -> array: 'T[] -> unit when 'Key: comparison
 
-    val stableSortInPlaceWith: comparer: ('T -> 'T -> int) -> array: 'T [] -> unit
+    val stableSortInPlaceWith: comparer: ('T -> 'T -> int) -> array: 'T[] -> unit
 
-    val stableSortInPlace: array: 'T [] -> unit when 'T: comparison
+    val stableSortInPlace: array: 'T[] -> unit when 'T: comparison
 
 module internal Seq =
     val tryLastV: 'T seq -> 'T ValueOption

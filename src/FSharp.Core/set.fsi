@@ -380,7 +380,6 @@ module Set =
     [<CompiledName("IsProperSuperset")>]
     val isProperSuperset: set1: Set<'T> -> set2: Set<'T> -> bool
 
-
     /// <summary>Returns the number of elements in the set. Same as <c>size</c>.</summary>
     ///
     /// <param name="set">The input set.</param>
@@ -752,7 +751,7 @@ module Set =
     /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray: array: 'T [] -> Set<'T>
+    val ofArray: array: 'T[] -> Set<'T>
 
     /// <summary>Builds an array that contains the elements of the set in order.</summary>
     ///
@@ -769,7 +768,7 @@ module Set =
     /// The sample evaluates to the following output: <c>The set is [|1; 2; 3|] and type is System.Int32[]</c>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: set: Set<'T> -> 'T []
+    val toArray: set: Set<'T> -> 'T[]
 
     /// <summary>Returns an ordered view of the collection as an enumerable object.</summary>
     ///
