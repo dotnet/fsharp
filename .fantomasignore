@@ -13,7 +13,6 @@ vsintegration/
 # Explicitly unformatted implementation files
 
 src/FSharp.Core/**/*.fs
-src/Compiler/**/*.fs
 src/Compiler/AbstractIL/**/*.fs
 src/Compiler/Checking/**/*.fs
 src/Compiler/CodeGen/**/*.fs
@@ -27,8 +26,11 @@ src/Compiler/Service/**/*.fs
 src/Compiler/Symbols/**/*.fs
 src/Compiler/SyntaxTree/**/*.fs
 src/Compiler/TypedTree/**/*.fs
-src/Compiler/Utilities/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
+
+# Fantomas limitations on implementation files  (to investigate)
+
+src/Compiler/Utilities/lib.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
