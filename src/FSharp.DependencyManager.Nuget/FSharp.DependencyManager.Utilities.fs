@@ -144,13 +144,7 @@ module internal Utilities =
             | None -> -1
 
         let arguments prefix =
-            sprintf
-                "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement"
-                prefix
-                binLoggingArguments
-                '\"'
-                projectPath
-                '\"'
+            sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
         let dotnetHostPath = getDotnetHostPath ()
