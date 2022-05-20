@@ -80,6 +80,8 @@ type internal CompletionItem =
 
       IsOwnMember: bool
 
+      MajorPriority: int option
+
       MinorPriority: int
 
       Type: TyconRef option 
@@ -113,6 +115,8 @@ type public DeclarationListItem =
     member Kind: CompletionItemKind
 
     member IsOwnMember: bool
+
+    member MajorPriority: int option
 
     member MinorPriority: int
 

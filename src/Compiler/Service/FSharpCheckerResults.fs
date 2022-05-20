@@ -15,7 +15,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
@@ -47,11 +46,6 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AbstractIL
-open System.Reflection.PortableExecutable
-open FSharp.Compiler.CreateILModule
-open FSharp.Compiler.IlxGen
-open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -647,7 +641,7 @@ type internal TypeCheckInfo
         items, nenv.DisplayEnv, m
 
     /// Find union cases and compatible active patterns when the item under the cursor position is an identifier with the type of a DU.
-    let GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
+    let _GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition cursorPos =
         let resolutions = GetCapturedNameResolutions cursorPos ResolveOverloads.Yes
 
         if resolutions.Count = 1 then
@@ -770,6 +764,7 @@ type internal TypeCheckInfo
             | _ -> CompletionItemKind.Other
 
         { ItemWithInst = item
+          MajorPriority = None
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
@@ -947,48 +942,116 @@ type internal TypeCheckInfo
     let GetMatchCompletionsAtPosition (identifierRange: range, parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads) =
 
-        let patternItems = GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition identifierRange.End
+        let identifierTy =
+            GetCapturedNameResolutions identifierRange.End ResolveOverloads.Yes
+            |> Seq.tryHead
+            |> Option.bind (fun res ->
+                match res.Item with
+                | Item.Value vref -> Some vref.Type
+                | _ -> None)
+        
+        let identifierTypeNoneOrSubsumedByType identifierTy ty =
+            match identifierTy with
+            | Some identifierTy -> TypeRelations.TypeFeasiblySubsumesType 0 g amap identifierRange identifierTy TypeRelations.CanCoerce ty
+            | _ -> true
 
-        match patternItems with
-        | Some (isUnionInScopeAsUnqualified, items, denv, range) ->
-            let items =
-                items
-                |> List.map (fun item ->
-                    let unresolved =
-                        match item with
-                        | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
-                            Some {
-                                FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
-                                Namespace = trimPathByDisplayEnvList denv uci.Tycon.CompilationPath.DemangledPath |> List.toArray
-                                DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
-                            }
-                        | _ -> None
+        GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, fun () -> [])
+        |> Option.map (fun (items, denv, m) ->
+            let identifierTyNoneOrException = identifierTypeNoneOrSubsumedByType identifierTy g.exn_ty
 
-                    {
-                        ItemWithInst = ItemWithNoInst item
-                        MinorPriority = 0
-                        Kind = CompletionItemKind.Other
-                        IsOwnMember = false
-                        Type = None
-                        Unresolved = unresolved
-                    })
-
-            Some (items, denv, range)
-        | _ ->
-            // We're not matching against a DU of a determined type, but at least filter out things that may not appear in a match pattern clause
-            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, fun () -> [])
-            |> Option.map (fun (items, denv, m) ->
-                items
-                |> List.filter (fun cItem ->
+            let items = [
+                for cItem in items do
                     match cItem.Item with
-                    | Item.Value vref -> vref.LiteralValue.IsSome
+                    | Item.UnionCase (uci, _) ->
+                        if identifierTypeNoneOrSubsumedByType identifierTy uci.UnionCase.ReturnType then
+                            // Compatible union cases - top of the list
+                            { cItem with MajorPriority = Some 0 }
+                        else
+                            // Incompatible union cases bottom of the list
+                            cItem
+                    | Item.ExnCase _ ->
+                        if identifierTyNoneOrException then
+                            // Exception names when the target type is an exception - top of the list
+                            { cItem with MajorPriority = Some 0 }
+                        else
+                            // Otherwise - bottom of the list
+                            cItem
+                    | Item.ActivePatternCase activePattern ->
+                        if identifierTy.IsNone || TypeRelations.ActivePatternFeasiblyAcceptsTypeAsInput g amap m identifierTy.Value activePattern.ActivePatternVal.Type then
+                            // Compatible active patterns cases - top of the list below union cases
+                            { cItem with MajorPriority = Some 1 }
+                        else
+                            // Incompatible active patterns bottom of the list
+                            cItem
+                    | Item.Value vref ->
+                        if vref.LiteralValue.IsSome && identifierTypeNoneOrSubsumedByType identifierTy vref.Type then
+                            // Compatible literals - top of the list below active patterns
+                            { cItem with MajorPriority = Some 2 }
+                        elif vref.LiteralValue.IsSome then
+                            // Incompatible literals bottom of the list
+                            cItem
+                    | Item.ModuleOrNamespaces [ moduleOrNamespace ] ->
+                        // Namespaces - removed from the list
+                        if moduleOrNamespace.IsModule then
+                            // Modules - top of the list below literals
+                            { cItem with MajorPriority = Some 3 }
                     | Item.Types (_, tys) ->
-                        tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
-                    | Item.ModuleOrNamespaces _
-                    | Item.ActivePatternCase _
-                    | Item.UnionCase _
-                    | Item.ExnCase _ -> true
-                    | _ -> false), denv, m)
+                        if tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty) then
+                            // Non-enum/union types - removed from the list
+                            if tys |> List.exists (fun ty -> identifierTypeNoneOrSubsumedByType identifierTy ty) then
+                                // Compatible union, enum types - top of the list below modules
+                                { cItem with MajorPriority = Some 4 }
+                            else
+                                // Incompatible union, enum types - bottom of the list
+                                cItem
+                    | _ ->
+                        ()
+            ]
+
+            items, denv, m)
+
+        //let patternItems = GetUnionCasesAndActivePatternsEnvironmentLookupResolutionsAtPosition identifierRange.End
+
+        //match patternItems with
+        //| Some (isUnionInScopeAsUnqualified, items, denv, range) ->
+        //    let items =
+        //        items
+        //        |> List.map (fun item ->
+        //            let unresolved =
+        //                match item with
+        //                | Item.UnionCase (uci, requiresQualifiedAccess) when not isUnionInScopeAsUnqualified ->
+        //                    Some {
+        //                        FullName = uci.Tycon.CompiledRepresentationForNamedType.FullName
+        //                        Namespace = trimPathByDisplayEnvList denv uci.Tycon.CompilationPath.DemangledPath |> List.toArray
+        //                        DisplayName = if requiresQualifiedAccess then $"{uci.Tycon.DisplayName}.{uci.DisplayName}" else uci.DisplayName
+        //                    }
+        //                | _ -> None
+
+        //            {
+        //                ItemWithInst = ItemWithNoInst item
+        //                MinorPriority = 0
+        //                Kind = CompletionItemKind.Other
+        //                IsOwnMember = false
+        //                Type = None
+        //                Unresolved = unresolved
+        //            })
+
+        //    Some (items, denv, range)
+        //| _ ->
+        //    // We're not matching against a DU of a determined type, but at least filter out things that may not appear in a match pattern clause
+        //    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, fun () -> [])
+        //    |> Option.map (fun (items, denv, m) ->
+        //        items
+        //        |> List.filter (fun cItem ->
+        //            match cItem.Item with
+        //            | Item.Value vref -> vref.LiteralValue.IsSome
+        //            | Item.Types (_, tys) ->
+        //                tys |> List.exists (fun ty -> isUnionTy g ty || isEnumTy g ty)
+        //            | Item.ModuleOrNamespaces _
+        //            | Item.ActivePatternCase _
+        //            | Item.UnionCase _
+        //            | Item.ExnCase _ -> true
+        //            | _ -> false), denv, m)
 
     let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
@@ -1117,6 +1180,7 @@ type internal TypeCheckInfo
                         |> List.map (fun item ->
                             { ItemWithInst = item
                               Kind = CompletionItemKind.Argument
+                              MajorPriority = None
                               MinorPriority = 0
                               IsOwnMember = false
                               Type = None

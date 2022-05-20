@@ -80,6 +80,7 @@ type CompletionItem =
     { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
+      MajorPriority: int option
       MinorPriority: int
       Type: TyconRef option
       Unresolved: UnresolvedSymbol option }
@@ -916,7 +917,7 @@ module internal DescriptionListsImpl =
 /// An intellisense declaration
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+                               kind: CompletionItemKind, isOwnMember: bool, majorPriority: int option, priority: int, isResolved: bool, namespaceToOpen: string option) =
     member _.Name = textInDeclList
 
     member _.NameInCode = textInCode
@@ -935,6 +936,8 @@ type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: s
     member _.Kind = kind
 
     member _.IsOwnMember = isOwnMember
+
+    member _.MajorPriority = majorPriority
 
     member _.MinorPriority = priority
 
@@ -1092,14 +1095,14 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
 
                 DeclarationListItem(
                     textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
-                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
+                    item.Kind, item.IsOwnMember, item.MajorPriority, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)
     
     static member Error message = 
         DeclarationListInfo(
                 [| DeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (ToolTipText [ToolTipElement.CompositionError message]),
-                                             FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None) |], false, true)
+                                             FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, None, 0, false, None) |], false, true)
     
     static member Empty = empty
 

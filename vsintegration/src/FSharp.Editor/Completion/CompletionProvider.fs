@@ -124,13 +124,15 @@ type internal FSharpCompletionProvider
                 |> Array.sortWith (fun x y ->
                     let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
                     if n <> 0 then n else
-                        n <- (CompletionUtils.getKindPriority x.Kind).CompareTo(CompletionUtils.getKindPriority y.Kind) 
+                        n <- (Option.defaultValue Int32.MaxValue x.MajorPriority).CompareTo(Option.defaultValue Int32.MaxValue y.MajorPriority)
                         if n <> 0 then n else
-                            n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
+                            n <- (CompletionUtils.getKindPriority x.Kind).CompareTo(CompletionUtils.getKindPriority y.Kind) 
                             if n <> 0 then n else
-                                n <- String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase)
+                                n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
                                 if n <> 0 then n else
-                                    x.MinorPriority.CompareTo(y.MinorPriority))
+                                    n <- String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase)
+                                    if n <> 0 then n else
+                                        x.MinorPriority.CompareTo(y.MinorPriority))
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
