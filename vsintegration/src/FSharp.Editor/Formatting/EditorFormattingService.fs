@@ -167,14 +167,17 @@ type internal FSharpEditorFormattingService
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }
         
-    interface IFSharpEditorFormattingService with
+    interface IFSharpEditorFormattingServiceWithOptions with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
         member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
-        override _.SupportsFormattingOnTypedCharacter (document, ch) =
-            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
+        override _.SupportsFormattingOnTypedCharacter (_document, _ch) =
+            false
+
+        override _.SupportsFormattingOnTypedCharacter (_document, options, ch) =
+            if options.IndentStyle = FormattingOptions.IndentStyle.Smart then
                 match ch with
                 | ')' | ']' | '}' -> true
                 | _ -> false
