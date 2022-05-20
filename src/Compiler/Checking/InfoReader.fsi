@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 

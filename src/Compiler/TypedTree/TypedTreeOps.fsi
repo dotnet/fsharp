@@ -920,7 +920,6 @@ val MeasureExprConExponent: TcGlobals -> bool -> TyconRef -> Measure -> Rational
 
 val normalizeMeasure: TcGlobals -> Measure -> Measure
 
-
 //-------------------------------------------------------------------------
 // Members
 //-------------------------------------------------------------------------
@@ -1939,7 +1938,6 @@ val mkByteArrayTy: TcGlobals -> TType
 
 val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 
-
 //-------------------------------------------------------------------------
 // Construct calls to some intrinsic functions
 //-------------------------------------------------------------------------
@@ -2256,7 +2254,6 @@ val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
 val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
 
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
-
 
 val mkCompilationMappingAttrWithVariantNumAndSeqNum: TcGlobals -> int -> int -> int -> ILAttribute
 

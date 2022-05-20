@@ -380,7 +380,6 @@ module Set =
     [<CompiledName("IsProperSuperset")>]
     val isProperSuperset: set1: Set<'T> -> set2: Set<'T> -> bool
 
-
     /// <summary>Returns the number of elements in the set. Same as <c>size</c>.</summary>
     ///
     /// <param name="set">The input set.</param>

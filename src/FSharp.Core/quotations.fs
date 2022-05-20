@@ -78,7 +78,6 @@ open Helpers
 
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
-[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2218:OverrideGetHashCodeOnOverridingEquals", Justification="Equals override does not equate further objects, so default GetHashCode is still valid")>]
 type Var(name: string, typ: Type, ?isMutable: bool) =
     inherit obj()
 
@@ -91,10 +90,13 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
     let stamp = getStamp ()
     let isMutable = defaultArg isMutable false
 
-    member v.Name = name
-    member v.IsMutable = isMutable
-    member v.Type = typ
-    member v.Stamp = stamp
+    member _.Name = name
+
+    member _.IsMutable = isMutable
+
+    member _.Type = typ
+
+    member _.Stamp = stamp
 
     static member Global(name, typ: Type) =
         checkNonNull "name" name
@@ -107,9 +109,9 @@ type Var(name: string, typ: Type, ?isMutable: bool) =
             globals.[(name, typ)] <- res
             res)
 
-    override v.ToString() = name
+    override _.ToString() = name
 
-    override v.GetHashCode() = base.GetHashCode()
+    override _.GetHashCode() = base.GetHashCode()
 
     override v.Equals(obj:obj) =
         match obj with

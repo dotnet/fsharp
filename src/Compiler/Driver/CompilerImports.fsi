@@ -117,7 +117,6 @@ type ImportedAssembly =
 #endif
       FSharpOptimizationData: Lazy<Option<LazyModuleInfo>> }
 
-
 /// Tables of assembly resolutions
 [<Sealed>]
 type TcAssemblyResolutions =
