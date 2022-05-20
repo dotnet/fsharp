@@ -8,16 +8,19 @@ open System.Reflection
 open FSDependencyManager
 open Internal.Utilities.FSharpEnvironment
 
-[<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
-type DependencyManagerAttribute() = inherit Attribute()
+[<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class, AllowMultiple = false)>]
+type DependencyManagerAttribute() =
+    inherit Attribute()
 
 /// The result of building the package resolution files.
 type PackageBuildResolutionResult =
-    { success: bool
-      projectPath: string
-      stdOut: string array
-      stdErr: string array
-      resolutionsFile: string option }
+    {
+        success: bool
+        projectPath: string
+        stdOut: string array
+        stdErr: string array
+        resolutionsFile: string option
+    }
 
 module internal Utilities =
 
@@ -25,48 +28,57 @@ module internal Utilities =
     /// Note that a quoted string is not going to be mangled into pieces.
     let trimChars = [| ' '; '\t'; '\''; '\"' |]
 
-    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text[n-1] <> '\\'
+    let inline private isNotQuotedQuotation (text: string) n = n > 0 && text[n - 1] <> '\\'
 
     let getOptions text =
-        let split (option:string) =
+        let split (option: string) =
             let pos = option.IndexOf('=')
+
             let stringAsOpt text =
-                if String.IsNullOrEmpty(text) then None
-                else Some text
+                if String.IsNullOrEmpty(text) then
+                    None
+                else
+                    Some text
+
             let nameOpt =
-                if pos <= 0 then None
-                else stringAsOpt (option.Substring(0, pos).Trim(trimChars).ToLowerInvariant())
+                if pos <= 0 then
+                    None
+                else
+                    stringAsOpt (option.Substring(0, pos).Trim(trimChars).ToLowerInvariant())
+
             let valueOpt =
                 let valueText =
-                    if pos < 0 then option
+                    if pos < 0 then
+                        option
                     else if pos < option.Length then
                         option.Substring(pos + 1)
-                    else ""
+                    else
+                        ""
+
                 stringAsOpt (valueText.Trim(trimChars))
-            nameOpt,valueOpt
+
+            nameOpt, valueOpt
 
         let last = String.length text - 1
         let result = ResizeArray()
         let mutable insideSQ = false
         let mutable start = 0
         let isSeperator c = c = ','
+
         for i = 0 to last do
             match text[i], insideSQ with
-            | c, false when isSeperator c ->                        // split when seeing a separator
+            | c, false when isSeperator c -> // split when seeing a separator
                 result.Add(text.Substring(start, i - start))
                 insideSQ <- false
                 start <- i + 1
-            | _, _ when i = last ->
-                result.Add(text.Substring(start, i - start + 1))
-            | c, true when isSeperator c ->                         // keep reading if a separator is inside quotation
+            | _, _ when i = last -> result.Add(text.Substring(start, i - start + 1))
+            | c, true when isSeperator c -> // keep reading if a separator is inside quotation
                 insideSQ <- true
-            | '\'', _ when isNotQuotedQuotation text i ->           // open or close quotation
-                insideSQ <- not insideSQ                            // keep reading
+            | '\'', _ when isNotQuotedQuotation text i -> // open or close quotation
+                insideSQ <- not insideSQ // keep reading
             | _ -> ()
 
-        result
-        |> List.ofSeq
-        |> List.map (fun option -> split option)
+        result |> List.ofSeq |> List.map (fun option -> split option)
 
     let executeTool pathToExe arguments workingDir timeout =
         match pathToExe with
@@ -75,6 +87,7 @@ module internal Utilities =
             let outputList = ResizeArray()
             let mutable errorslock = obj
             let mutable outputlock = obj
+
             let outputDataReceived (message: string) =
                 if not (isNull message) then
                     lock outputlock (fun () -> outputList.Add(message))
@@ -90,23 +103,25 @@ module internal Utilities =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
-            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath") // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
             use p = new Process()
             p.StartInfo <- psi
 
             p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
-            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+            p.ErrorDataReceived.Add(fun a -> errorDataReceived a.Data)
 
             if p.Start() then
                 p.BeginOutputReadLine()
                 p.BeginErrorReadLine()
-                if not(p.WaitForExit(timeout)) then
+
+                if not (p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
+                    raise (TimeoutException(SR.timedoutResolvingPackages (psi.FileName, psi.Arguments)))
                 else
                     p.WaitForExit()
+
             p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()
 
         | None -> false, Array.empty, Array.empty
@@ -114,26 +129,27 @@ module internal Utilities =
     let buildProject projectPath binLogPath timeout =
         let binLoggingArguments =
             match binLogPath with
-            | Some(path) ->
-                let path = match path with
-                           | Some path -> path // specific file
-                           | None -> Path.Combine(Path.GetDirectoryName(projectPath), "msbuild.binlog") // auto-generated file
+            | Some (path) ->
+                let path =
+                    match path with
+                    | Some path -> path // specific file
+                    | None -> Path.Combine(Path.GetDirectoryName(projectPath), "msbuild.binlog") // auto-generated file
+
                 sprintf "/bl:\"%s\"" path
             | None -> ""
 
         let timeout =
             match timeout with
-            | Some(timeout) -> timeout
+            | Some (timeout) -> timeout
             | None -> -1
 
         let arguments prefix =
             sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
-        let dotnetHostPath = getDotnetHostPath()
+        let dotnetHostPath = getDotnetHostPath ()
         let args = arguments "msbuild -v:quiet"
-        let success, stdOut, stdErr =
-            executeTool dotnetHostPath args workingDir timeout
+        let success, stdOut, stdErr = executeTool dotnetHostPath args workingDir timeout
 
 #if DEBUG
         let diagnostics =
@@ -142,13 +158,20 @@ module internal Utilities =
                 $"dotnetHostPath:   {dotnetHostPath}"
                 $"arguments:        {args}"
             |]
+
         File.WriteAllLines(Path.Combine(workingDir, "build_CommandLine.txt"), diagnostics)
         File.WriteAllLines(Path.Combine(workingDir, "build_StandardOutput.txt"), stdOut)
         File.WriteAllLines(Path.Combine(workingDir, "build_StandardError.txt"), stdErr)
 #endif
 
         let outputFile = projectPath + ".resolvedReferences.paths"
-        let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None
+
+        let resolutionsFile =
+            if success && File.Exists(outputFile) then
+                Some outputFile
+            else
+                None
+
         {
             success = success
             projectPath = projectPath
@@ -158,8 +181,9 @@ module internal Utilities =
         }
 
     let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
-        let dotnetHostPath = getDotnetHostPath()
+        let dotnetHostPath = getDotnetHostPath ()
         let args = "nuget list source --format short"
+
         let success, stdOut, stdErr =
             executeTool dotnetHostPath args scriptDirectory timeout
 #if DEBUG
@@ -169,6 +193,7 @@ module internal Utilities =
                 $"dotnetHostPath:   {dotnetHostPath}"
                 $"arguments:        {args}"
             |]
+
         File.WriteAllLines(Path.Combine(workingDir, "nuget_CommandLine.txt"), diagnostics)
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardOutput.txt"), stdOut)
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardError.txt"), stdErr)
@@ -184,5 +209,7 @@ module internal Utilities =
                     // E https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
                     // So strip off the flags
                     let pos = source.IndexOf(" ")
-                    if pos >= 0 then yield ("i", source.Substring(pos).Trim())
+
+                    if pos >= 0 then
+                        yield ("i", source.Substring(pos).Trim())
         }

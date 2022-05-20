@@ -7,15 +7,15 @@ namespace FSharp.Compiler.Server.Shared
 // e.g.
 //   - interrupt
 //   - intellisense completion
-// 
+//
 // This is done via remoting.
 // Here we define the service class.
 // This dll is required for both client (fsi-vs plugin) and server (spawned fsi).
 
 //[<assembly: System.Security.SecurityTransparent>]
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-[<assembly: System.CLSCompliant(true)>]  
-do()
+[<assembly: System.CLSCompliant(true)>]
+do ()
 
 open System
 open System.Diagnostics
@@ -25,21 +25,23 @@ open System.Runtime.Remoting.Lifetime
 
 [<AbstractClass>]
 type internal FSharpInteractiveServer() =
-    inherit System.MarshalByRefObject()  
-    abstract Interrupt       : unit -> unit
+    inherit System.MarshalByRefObject()
+    abstract Interrupt: unit -> unit
     default x.Interrupt() = ()
 
-    static member StartServer(channelName:string,server:FSharpInteractiveServer) =
-        let chan = new Ipc.IpcChannel(channelName) 
-        LifetimeServices.LeaseTime            <- TimeSpan(7,0,0,0); // days,hours,mins,secs 
-        LifetimeServices.LeaseManagerPollTime <- TimeSpan(7,0,0,0);
-        LifetimeServices.RenewOnCallTime      <- TimeSpan(7,0,0,0);
-        LifetimeServices.SponsorshipTimeout   <- TimeSpan(7,0,0,0);
-        ChannelServices.RegisterChannel(chan,false);
-        let objRef = RemotingServices.Marshal(server,"FSIServer") 
+    static member StartServer(channelName: string, server: FSharpInteractiveServer) =
+        let chan = new Ipc.IpcChannel(channelName)
+        LifetimeServices.LeaseTime <- TimeSpan(7, 0, 0, 0) // days,hours,mins,secs
+        LifetimeServices.LeaseManagerPollTime <- TimeSpan(7, 0, 0, 0)
+        LifetimeServices.RenewOnCallTime <- TimeSpan(7, 0, 0, 0)
+        LifetimeServices.SponsorshipTimeout <- TimeSpan(7, 0, 0, 0)
+        ChannelServices.RegisterChannel(chan, false)
+        let objRef = RemotingServices.Marshal(server, "FSIServer")
         ()
 
     static member StartClient(channelName) =
-        let T = Activator.GetObject(typeof<FSharpInteractiveServer>,"ipc://" + channelName + "/FSIServer") 
-        let x = T :?> FSharpInteractiveServer 
+        let T =
+            Activator.GetObject(typeof<FSharpInteractiveServer>, "ipc://" + channelName + "/FSIServer")
+
+        let x = T :?> FSharpInteractiveServer
         x
