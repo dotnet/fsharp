@@ -68,8 +68,59 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
-    
+
+
+    (*  For reference:
+        Roslyn generates the following interface:
+        .class interface public auto ansi abstract IGetNext`1<(class IGetNext`1<!T>) T>
+        {
+            // Methods
+            .method public hidebysig abstract virtual static 
+            !T Next (
+                !T other
+            ) cil managed 
+            {
+            } // end of method IGetNext`1::Next
+
+        } // end of class IGetNext`1
+
+        And the following implementation:
+        .method public hidebysig static 
+        class RepeatSequence Next (class RepeatSequence other) cil managed 
+        {
+            .override method !0 class IGetNext`1<class RepeatSequence>::Next(!0)
+            ...
+        }
+    *)
     #if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``F# generates valid IL for abstract static interface methods`` () =
+
+        let csharpLib = csharpBaseClass 
+
+        let fsharpSource =
+            """
+module StaticsTesting 
+open StaticsInInterfaces
+
+type MyRepeatSequence() =
+    interface IGetNext<MyRepeatSequence> with
+        static member Next(other: MyRepeatSequence) : MyRepeatSequence = other 
+"""
+        Fsx fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+        """
+foo
+        """]
+    
+#if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
     [<Fact>]
