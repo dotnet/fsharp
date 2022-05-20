@@ -58,20 +58,12 @@ module FSharpDependencyManager =
             p
 
         seq {
-            match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script))
-                with
-            | true, true, false ->
-                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
+            match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
+            | true, true, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
             | true, true, true ->
-                yield
-                    sprintf
-                        @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>"
-                        inc
-                        ver
-                        script
+                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>" inc ver script
             | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' /></ItemGroup>" inc
-            | true, false, true ->
-                yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
+            | true, false, true -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
             | _ -> ()
 
             match not (String.IsNullOrEmpty(src)) with
@@ -188,8 +180,7 @@ module FSharpDependencyManager =
         let mutable timeout = None
 
         lines
-        |> List.choose (fun line ->
-            parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
         |> List.distinct
         |> (fun l -> l, binLogPath, timeout)
 
@@ -202,8 +193,7 @@ module FSharpDependencyManager =
             match directive with
             | "i" -> sprintf "RestoreSources=%s" line
             | _ -> line)
-        |> List.choose (fun line ->
-            parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) (fun t -> timeout <- t) line)
         |> List.distinct
         |> (fun l -> l, binLogPath, timeout)
 
@@ -391,13 +381,7 @@ type FSharpDependencyManager(outputDirectory: string option) =
             let directiveLines = Seq.append packageManagerTextLines configIncludes
 
             let resolutionResult =
-                prepareDependencyResolutionFiles (
-                    scriptExt,
-                    directiveLines,
-                    targetFrameworkMoniker,
-                    runtimeIdentifier,
-                    timeout
-                )
+                prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
 
             match resolutionResult.resolutionsFile with
             | Some file ->
@@ -425,13 +409,6 @@ type FSharpDependencyManager(outputDirectory: string option) =
             | None ->
                 let empty = Seq.empty<string>
 
-                ResolveDependenciesResult(
-                    resolutionResult.success,
-                    resolutionResult.stdOut,
-                    resolutionResult.stdErr,
-                    empty,
-                    empty,
-                    empty
-                )
+                ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, empty, empty, empty)
 
         generateAndBuildProjectArtifacts :> obj

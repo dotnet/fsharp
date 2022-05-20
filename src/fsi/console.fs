@@ -189,9 +189,7 @@ type internal ReadLineConsole() =
                 if (lastDot < 0) then
                     None, name, input.Substring(0, start)
                 else
-                    Some(name.Substring(0, lastDot)),
-                    name.Substring(lastDot + 1),
-                    input.Substring(0, start + lastDot + 1)
+                    Some(name.Substring(0, lastDot)), name.Substring(lastDot + 1), input.Substring(0, start + lastDot + 1)
 
             try
                 complete (attr, pref)
