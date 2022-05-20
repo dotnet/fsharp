@@ -98,9 +98,7 @@ module internal {1} =
                                 XElement(xname "summary", docComment)
                                     .ToString()
                                     .Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
-                                |> Array.fold
-                                    (fun (sb: StringBuilder) line -> sb.AppendLine("    /// " + line))
-                                    (StringBuilder())
+                                |> Array.fold (fun (sb: StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
                             // add the resource
                             let accessorBody =
                                 match (generateLegacy, generateLiteral) with
