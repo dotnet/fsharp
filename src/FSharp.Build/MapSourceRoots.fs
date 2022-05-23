@@ -22,9 +22,10 @@ module Utilities =
     /// Copied from msbuild. ItemSpecs are normalized using this method.
     /// </summary>
     let FixFilePath (path: string) =
-        if String.IsNullOrEmpty(path) || Path.DirectorySeparatorChar = '\\'
-        then path
-        else path.Replace('\\', '/');
+        if String.IsNullOrEmpty(path) || Path.DirectorySeparatorChar = '\\' then
+            path
+        else
+            path.Replace('\\', '/')
 
 /// <summary>
 /// Given a list of SourceRoot items produces a list of the same items with added <c>MappedPath</c> metadata that
@@ -36,8 +37,8 @@ module Utilities =
 /// The <c>MappedPath</c> is either the path (ItemSpec) itself, when <see cref="Deterministic"/> is false,
 /// or a calculated deterministic source path (starting with prefix '/_/', '/_1/', etc.), otherwise.
 /// </remarks>
-type MapSourceRoots () =
-    inherit Task ()
+type MapSourceRoots() =
+    inherit Task()
 
     static let MappedPath = "MappedPath"
     static let SourceControl = "SourceControl"
@@ -45,6 +46,7 @@ type MapSourceRoots () =
     static let ContainingRoot = "ContainingRoot"
     static let RevisionId = "RevisionId"
     static let SourceLinkUrl = "SourceLinkUrl"
+
     static let knownMetadataNames =
         [
             SourceControl
@@ -55,36 +57,44 @@ type MapSourceRoots () =
             SourceLinkUrl
         ]
 
-    static let (|NullOrEmpty|HasValue|) (s: string) = if String.IsNullOrEmpty s then NullOrEmpty else HasValue s
+    static let (|NullOrEmpty|HasValue|) (s: string) =
+        if String.IsNullOrEmpty s then
+            NullOrEmpty
+        else
+            HasValue s
+
     static let ensureEndsWithSlash (path: string) =
-        if path.EndsWith "/" then path
-        else path + "/"
+        if path.EndsWith "/" then
+            path
+        else
+            path + "/"
 
     static let endsWithDirectorySeparator (path: string) =
-        if path.Length = 0 then false
+        if path.Length = 0 then
+            false
         else
             let endChar = path.[path.Length - 1]
-            endChar = Path.DirectorySeparatorChar || endChar = Path.AltDirectorySeparatorChar
+
+            endChar = Path.DirectorySeparatorChar
+            || endChar = Path.AltDirectorySeparatorChar
 
     static let reportConflictingWellKnownMetadata (log: TaskLoggingHelper) (l: ITaskItem) (r: ITaskItem) =
         for name in knownMetadataNames do
             match l.GetMetadata name, r.GetMetadata name with
             | HasValue lValue, HasValue rValue when lValue <> rValue ->
-                log.LogWarning(FSBuild.SR.mapSourceRootsContainsDuplicate(r.ItemSpec, name, lValue, rValue))
+                log.LogWarning(FSBuild.SR.mapSourceRootsContainsDuplicate (r.ItemSpec, name, lValue, rValue))
             | _, _ -> ()
 
-
-    static member PerformMapping (log: TaskLoggingHelper) (sourceRoots: ITaskItem []) deterministic =
+    static member PerformMapping (log: TaskLoggingHelper) (sourceRoots: ITaskItem[]) deterministic =
         let mappedSourceRoots = ResizeArray<_>()
-        let rootByItemSpec = Dictionary<string, ITaskItem>();
+        let rootByItemSpec = Dictionary<string, ITaskItem>()
 
         for sourceRoot in sourceRoots do
             // The SourceRoot is required to have a trailing directory separator.
             // We do not append one implicitly as we do not know which separator to append on Windows.
             // The usage of SourceRoot might be sensitive to what kind of separator is used (e.g. in SourceLink where it needs
             // to match the corresponding separators used in paths given to the compiler).
-            if not (endsWithDirectorySeparator sourceRoot.ItemSpec)
-            then
+            if not (endsWithDirectorySeparator sourceRoot.ItemSpec) then
                 log.LogError(FSBuild.SR.mapSourceRootsPathMustEndWithSlashOrBackslash sourceRoot.ItemSpec)
 
             match rootByItemSpec.TryGetValue sourceRoot.ItemSpec with
@@ -95,24 +105,24 @@ type MapSourceRoots () =
                 rootByItemSpec.[sourceRoot.ItemSpec] <- sourceRoot
                 mappedSourceRoots.Add sourceRoot
 
-        if log.HasLoggedErrors
-        then None
+        if log.HasLoggedErrors then
+            None
         else
-            if deterministic
-            then
-                let topLevelMappedPaths = Dictionary<_,_>()
+            if deterministic then
+                let topLevelMappedPaths = Dictionary<_, _>()
+
                 let setTopLevelMappedPaths isSourceControlled =
 
                     let mapNestedRootIfEmpty (root: ITaskItem) =
                         let localPath = root.ItemSpec
+
                         match root.GetMetadata NestedRoot with
                         | NullOrEmpty ->
                             // root isn't nested
-                            if topLevelMappedPaths.ContainsKey(localPath)
-                            then
-                                log.LogError(FSBuild.SR.mapSourceRootsContainsDuplicate(localPath, NestedRoot, "", ""));
+                            if topLevelMappedPaths.ContainsKey(localPath) then
+                                log.LogError(FSBuild.SR.mapSourceRootsContainsDuplicate (localPath, NestedRoot, "", ""))
                             else
-                                let index = topLevelMappedPaths.Count;
+                                let index = topLevelMappedPaths.Count
                                 let mappedPath = "/_" + (if index = 0 then "" else string index) + "/"
                                 topLevelMappedPaths.[localPath] <- mappedPath
                                 root.SetMetadata(MappedPath, mappedPath)
@@ -130,8 +140,7 @@ type MapSourceRoots () =
                 // then assign mapped paths to other source-controlled top-level roots:
                 setTopLevelMappedPaths false
 
-                if topLevelMappedPaths.Count = 0
-                then
+                if topLevelMappedPaths.Count = 0 then
                     log.LogError(FSBuild.SR.mapSourceRootsNoTopLevelSourceRoot ())
                 else
                     // finally, calculate mapped paths of nested roots:
@@ -144,18 +153,18 @@ type MapSourceRoots () =
                                 // Since the paths in ItemSpec have backslashes replaced with slashes on non-Windows platforms we need to do the same for ContainingRoot.
                                 match topLevelMappedPaths.TryGetValue(Utilities.FixFilePath(containingRoot)) with
                                 | true, mappedTopLevelPath ->
-                                    root.SetMetadata(MappedPath, mappedTopLevelPath + ensureEndsWithSlash(nestedRoot.Replace('\\', '/')));
-                                | false, _ ->
-                                    log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot containingRoot)
-                            | NullOrEmpty ->
-                                log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot "")
+                                    root.SetMetadata(MappedPath, mappedTopLevelPath + ensureEndsWithSlash (nestedRoot.Replace('\\', '/')))
+                                | false, _ -> log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot containingRoot)
+                            | NullOrEmpty -> log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot "")
                         | NullOrEmpty -> ()
             else
                 for root in mappedSourceRoots do
                     root.SetMetadata(MappedPath, root.ItemSpec)
 
-            if log.HasLoggedErrors then None else Some (mappedSourceRoots.ToArray())
-
+            if log.HasLoggedErrors then
+                None
+            else
+                Some(mappedSourceRoots.ToArray())
 
     /// <summary>
     /// SourceRoot items with the following optional well-known metadata:
@@ -166,7 +175,7 @@ type MapSourceRoots () =
     /// </list>
     /// </summary>
     [<Required>]
-    member val SourceRoots: ITaskItem[] = [| |] with get, set
+    member val SourceRoots: ITaskItem[] = [||] with get, set
 
     /// <summary>
     /// True if the mapped paths should be deterministic.
@@ -178,12 +187,11 @@ type MapSourceRoots () =
     /// Items listed in <see cref="SourceRoots"/> that have the same ItemSpec will be merged into a single item in this list.
     /// </summary>
     [<Output>]
-    member val MappedSourceRoots: ITaskItem[] = [| |] with get, set
+    member val MappedSourceRoots: ITaskItem[] = [||] with get, set
 
     override this.Execute() =
         match MapSourceRoots.PerformMapping this.Log this.SourceRoots this.Deterministic with
-        | None ->
-            false
+        | None -> false
         | Some mappings ->
             this.MappedSourceRoots <- mappings
             true
