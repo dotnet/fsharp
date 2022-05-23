@@ -85,7 +85,7 @@ val (|ERefLocal|ERefNonLocal|): x: EntityRef -> Choice<NonNullSlot<Entity>, NonL
 
 val mkLocalTyconRef: x: NonNullSlot<Entity> -> EntityRef
 
-val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string [] -> NonLocalEntityRef
+val mkNonLocalEntityRef: ccu: CcuThunk -> mp: string[] -> NonLocalEntityRef
 
 val mkNestedNonLocalEntityRef: nleref: NonLocalEntityRef -> id: string -> NonLocalEntityRef
 
@@ -170,7 +170,7 @@ val tyconRefUsesLocalXmlDoc: compilingFSharpCore: bool -> x: TyconRef -> bool
 
 val entityRefInThisAssembly: compilingFSharpCore: bool -> x: EntityRef -> bool
 
-val arrayPathEq: y1: string [] -> y2: string [] -> bool
+val arrayPathEq: y1: string[] -> y2: string[] -> bool
 
 val nonLocalRefEq: NonLocalEntityRef -> NonLocalEntityRef -> bool
 

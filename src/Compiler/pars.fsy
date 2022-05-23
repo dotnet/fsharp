@@ -4201,12 +4201,14 @@ declExpr:
 
 dynamicArg:
   | IDENT
-      { let con = SynConst.String ($1, SynStringKind.Regular, rhs parseState 1)
-        let arg2 = SynExpr.Const (con, con.Range (rhs parseState 1)) 
-        arg2 }
+      { let m = rhs parseState 1
+        SynExpr.Ident(Ident($1, m)) }
 
   | LPAREN typedSequentialExpr rparen
-      { $2 }
+      { let lpr = rhs parseState 1
+        let rpr = rhs parseState 3
+        let m = unionRanges lpr rpr
+        SynExpr.Paren($2, lpr, Some rpr, m) }
 
 withClauses:
   | WITH withPatternClauses       
@@ -4475,8 +4477,10 @@ atomicExpr:
         SynExpr.LongIdent (true, SynLongIdent([ident], [], [trivia]), None, rhs parseState 2), false }
 
   | atomicExpr QMARK dynamicArg
-      { let arg1, hpa1 = $1
-        mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1 }
+      { let m = rhs2 parseState 1 3
+        let mQmark = rhs parseState 2
+        let arg1, hpa1 = $1
+        SynExpr.Dynamic(arg1, mQmark, $3, m), hpa1 }
 
   | GLOBAL
       { let m = rhs parseState 1

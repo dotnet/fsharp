@@ -13,10 +13,10 @@ type IResolveDependenciesResult =
     abstract Success: bool
 
     /// The resolution output log
-    abstract StdOut: string []
+    abstract StdOut: string[]
 
     /// The resolution error log (process stderr)
-    abstract StdError: string []
+    abstract StdError: string[]
 
     /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
@@ -53,7 +53,7 @@ type IDependencyManagerProvider =
     abstract Key: string
 
     /// The help messages for this dependency manager inster
-    abstract HelpMessages: string []
+    abstract HelpMessages: string[]
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
     abstract ResolveDependencies:
@@ -94,7 +94,7 @@ type DependencyProvider =
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
-    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string []
+    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string

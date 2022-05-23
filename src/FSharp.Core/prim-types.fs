@@ -557,7 +557,6 @@ namespace Microsoft.FSharp.Core
             [<ValueAsStaticProperty>]
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
-        [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
         module IntrinsicOperators =        
             //-------------------------------------------------------------------------
             // Lazy and/or.  Laziness added by the F# compiler.
@@ -586,7 +585,7 @@ namespace Microsoft.FSharp.Core
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
 
         open IntrinsicOperators
-        [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK
+
         module IntrinsicFunctions =        
             
             // Unboxing, type casts, type tests
@@ -2083,7 +2082,6 @@ namespace Microsoft.FSharp.Core
         let Float32IEquality = MakeGenericEqualityComparer<float32>()
         let DecimalIEquality = MakeGenericEqualityComparer<decimal>()
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericEqualityComparerTable<'T>() = 
             static let f : IEqualityComparer<'T> = 
                 match typeof<'T> with 
@@ -2164,7 +2162,6 @@ namespace Microsoft.FSharp.Core
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericComparerTable<'T>() = 
 
             // The CLI implementation of mscorlib optimizes array sorting
@@ -2437,7 +2434,6 @@ namespace Microsoft.FSharp.Core
 
         let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
             
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -2461,7 +2457,6 @@ namespace Microsoft.FSharp.Core
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericOneDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -3419,75 +3414,104 @@ namespace Microsoft.FSharp.Core
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
-        [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(converter : Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(converter : Func<_,_>) : ('T -> 'Res) =
+            (fun t -> converter.Invoke(t))
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
-        [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(func : ('T -> 'Res) ) =  new Func<'T,'Res>(func)
+        static member op_Implicit(func : ('T -> 'Res) ) =
+            new Func<'T,'Res>(func)
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(f : Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member op_Implicit(f : Converter<_,_>) : ('T -> 'Res) =
+            (fun t -> f.Invoke(t))
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
+        static member op_Implicit (func : ('T -> 'Res) ) =
+            new Converter<'T,'Res>(func)
 
-        static member FromConverter (converter: Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member FromConverter (converter: Converter<_,_>) : ('T -> 'Res) =
+            (fun t -> converter.Invoke(t))
 
-        static member ToConverter (func: ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
+        static member ToConverter (func: ('T -> 'Res) ) =
+            new Converter<'T,'Res>(func)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res) =
+            OptimizedClosures.invokeFast2(func, arg1, arg2) 
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3) =
+            OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4) =
+            OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+        [<DebuggerStepThrough>]
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) =
+            OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
 
-        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
+        static member inline ToFSharpFunc (action: Action<_>) =
+            (fun t -> action.Invoke(t))
 
-        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+        static member inline ToFSharpFunc (converter : Converter<_,_>) =
+            (fun t -> converter.Invoke(t))
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
-        static member  inline ToFSharpFunc (converter: Func<_, _>) = (fun t -> converter.Invoke(t))
+        static member inline ToFSharpFunc (converter: Func<_, _>) =
+            (fun t -> converter.Invoke(t))
 
-        static member  inline FromFunc (func: Func<_>) = (fun () -> func.Invoke())
+        static member inline FromFunc (func: Func<_>) =
+            (fun () -> func.Invoke())
 
-        static member  inline FromFunc (func: Func<_, _>) = (fun t -> func.Invoke(t))
+        static member inline FromFunc (func: Func<_, _>) =
+            (fun t -> func.Invoke(t))
 
-        static member  inline FromFunc (func: Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+        static member inline FromFunc (func: Func<_, _, _>) =
+            (fun t1 t2 -> func.Invoke(t1,t2))
 
-        static member  inline FromFunc (func: Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+        static member inline FromFunc (func: Func<_, _, _, _>) =
+            (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
 
-        static member  inline FromFunc (func: Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+        static member inline FromFunc (func: Func<_, _, _, _, _>) =
+            (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromFunc (func: Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+        static member inline FromFunc (func: Func<_, _, _, _, _, _>) =
+            (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
 
-        static member  inline FromAction (action: Action) = (fun () -> action.Invoke())
+        static member inline FromAction (action: Action) =
+            (fun () -> action.Invoke())
 
-        static member  inline FromAction (action: Action<_>) = (fun t -> action.Invoke(t))
+        static member inline FromAction (action: Action<_>) =
+            (fun t -> action.Invoke(t))
 
-        static member  inline FromAction (action: Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+        static member inline FromAction (action: Action<_, _>) =
+            (fun t1 t2 -> action.Invoke(t1,t2))
 
-        static member  inline FromAction (action: Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+        static member inline FromAction (action: Action<_, _, _>) =
+            (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
 
-        static member  inline FromAction (action: Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+        static member inline FromAction (action: Action<_, _, _, _>) =
+            (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromAction (action: Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+        static member inline FromAction (action: Action<_, _, _, _, _>) =
+            (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) =
+            (fun a b -> func (a, b))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) =
+            (fun a b c -> func (a, b, c))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) =
+            (fun a b c d -> func (a, b, c, d))
 
-        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) =
+            (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs
@@ -3513,7 +3537,6 @@ namespace Microsoft.FSharp.Core
     [<DefaultAugmentation(false)>]
     [<DebuggerDisplay("{get_DebugDisplay(this),nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-    [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpOption`1")>]
     type Option<'T> = 
@@ -3609,7 +3632,6 @@ namespace Microsoft.FSharp.Collections
     [<DefaultAugmentation(false)>]
     [<DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
-    [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
     type List<'T> = 
@@ -3847,7 +3869,6 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Collections
 
-    [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
 
         [<CompiledName("CreateSequence")>]
@@ -3961,12 +3982,10 @@ namespace Microsoft.FSharp.Core
         let inline failwith message = raise (Failure(message))
 
         [<CompiledName("InvalidArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline invalidArg (argumentName:string) (message:string) = 
             raise (new ArgumentException(message,argumentName))
 
         [<CompiledName("NullArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline nullArg (argumentName:string) = 
             raise (new ArgumentNullException(argumentName))        
 
@@ -3979,7 +3998,6 @@ namespace Microsoft.FSharp.Core
 #endif
 
         [<CompiledName("InvalidOp")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline invalidOp message = raise (InvalidOperationException(message))
 
         [<CompiledName("Rethrow")>]
@@ -3991,18 +4009,15 @@ namespace Microsoft.FSharp.Core
         let inline reraise() = unbox(# "rethrow ldnull" : Object #)
 
         [<CompiledName("Fst")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline fst (a, _) = a
 
         [<CompiledName("Snd")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline snd (_, b) = b
 
         [<CompiledName("Ignore")>]
         let inline ignore _ = ()
 
         [<CompiledName("Ref")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let ref value = { contents = value }
 
         let (:=) cell value = cell.contents <- value
@@ -4945,7 +4960,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Hash")>]
         let inline hash (obj: 'T) = LanguagePrimitives.GenericHash obj
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline limitedHash (limit:int) (obj: 'T) =
             LanguagePrimitives.GenericLimitedHash limit obj
 
@@ -5634,46 +5648,32 @@ namespace Microsoft.FSharp.Core
                 loop n
 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowByte (x:byte) n = ComputePowerGenericInlined  1uy Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowSByte (x:sbyte) n = ComputePowerGenericInlined  1y Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowInt16 (x:int16) n = ComputePowerGenericInlined  1s Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowUInt16 (x:uint16) n = ComputePowerGenericInlined  1us Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowInt32 (x:int32) n = ComputePowerGenericInlined  1 Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowUInt32 (x:uint32) n = ComputePowerGenericInlined  1u Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowInt64 (x:int64) n = ComputePowerGenericInlined  1L Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowUInt64 (x:uint64) n = ComputePowerGenericInlined  1UL Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowIntPtr (x:nativeint) n = ComputePowerGenericInlined  1n Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowUIntPtr (x:unativeint) n = ComputePowerGenericInlined  1un Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowSingle (x:float32) n = ComputePowerGenericInlined  1.0f Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowDouble (x:float) n = ComputePowerGenericInlined  1.0 Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowDecimal (x:decimal) n = ComputePowerGenericInlined  1.0M Checked.( * ) x n 
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowGeneric (one, mul, value: 'T, exponent) = ComputePowerGenericInlined  one mul value exponent 
 
             let inline ComputeSlice bound start finish length =
@@ -6264,7 +6264,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : float       = Math.Pow((retype x : float), (retype y: float))
                  when ^T : float32     = Math.Pow(toFloat (retype x), toFloat(retype y)) |> toFloat32
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type AbsDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6279,7 +6278,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Abs" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type AcosDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6288,7 +6286,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Acos" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type AsinDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6297,7 +6294,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Asin" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type AtanDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6306,7 +6302,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Atan" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type Atan2DynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'T -> 'U) = 
                     let aty = typeof<'T>
@@ -6315,7 +6310,6 @@ namespace Microsoft.FSharp.Core
                     else BinaryDynamicImpl "Atan2"
                 static member Result : ('T -> 'T -> 'U) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type CeilingDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6324,7 +6318,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Ceiling" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type ExpDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6333,7 +6326,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Exp" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type FloorDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6342,7 +6334,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Floor" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type TruncateDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6351,7 +6342,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Truncate" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type RoundDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6360,7 +6350,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Round" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type SignDynamicImplTable<'T>() = 
                 static let result : ('T -> int) = 
                     let aty = typeof<'T>
@@ -6375,7 +6364,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Sign" 
                 static member Result : ('T -> int) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type LogDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6384,7 +6372,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Log" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type Log10DynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6393,7 +6380,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Log10" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type SqrtDynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'U) = 
                     let aty = typeof<'T>
@@ -6402,7 +6388,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Sqrt" 
                 static member Result : ('T -> 'U) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type CosDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6411,7 +6396,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Cos" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type CoshDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6420,7 +6404,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Cosh" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type SinDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6429,7 +6412,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Sin" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type SinhDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6438,7 +6420,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Sinh" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type TanDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6447,7 +6428,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Tan" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type TanhDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -6456,7 +6436,6 @@ namespace Microsoft.FSharp.Core
                     else UnaryDynamicImpl "Tanh" 
                 static member Result : ('T -> 'T) = result
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             type PowDynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'U -> 'T) = 
                     let aty = typeof<'T>
@@ -6465,27 +6444,47 @@ namespace Microsoft.FSharp.Core
                     else BinaryDynamicImpl "Pow" 
                 static member Result : ('T -> 'U -> 'T) = result
 
-            let AbsDynamic x            = AbsDynamicImplTable<_>.Result x
-            let AcosDynamic x           = AcosDynamicImplTable<_>.Result x
-            let AsinDynamic x           = AsinDynamicImplTable<_>.Result x
-            let AtanDynamic x           = AtanDynamicImplTable<_>.Result x
-            let Atan2Dynamic y x        = Atan2DynamicImplTable<_,_>.Result y x
-            let CeilingDynamic x        = CeilingDynamicImplTable<_>.Result x 
-            let ExpDynamic x            = ExpDynamicImplTable<_>.Result x 
-            let FloorDynamic x          = FloorDynamicImplTable<_>.Result x 
-            let TruncateDynamic x       = TruncateDynamicImplTable<_>.Result x 
-            let RoundDynamic x          = RoundDynamicImplTable<_>.Result x 
-            let SignDynamic x           = SignDynamicImplTable<_>.Result x 
-            let LogDynamic x            = LogDynamicImplTable<_>.Result x 
-            let Log10Dynamic x          = Log10DynamicImplTable<_>.Result x 
-            let SqrtDynamic x           = SqrtDynamicImplTable<_,_>.Result x 
-            let CosDynamic x            = CosDynamicImplTable<_>.Result x 
-            let CoshDynamic x           = CoshDynamicImplTable<_>.Result x 
-            let SinDynamic x            = SinDynamicImplTable<_>.Result x 
-            let SinhDynamic x           = SinhDynamicImplTable<_>.Result x 
-            let TanDynamic x            = TanDynamicImplTable<_>.Result x 
-            let TanhDynamic x           = TanhDynamicImplTable<_>.Result x 
-            let PowDynamic x y          = PowDynamicImplTable<_,_>.Result x y
+            let AbsDynamic x = AbsDynamicImplTable<_>.Result x
+
+            let AcosDynamic x = AcosDynamicImplTable<_>.Result x
+
+            let AsinDynamic x = AsinDynamicImplTable<_>.Result x
+
+            let AtanDynamic x = AtanDynamicImplTable<_>.Result x
+
+            let Atan2Dynamic y x = Atan2DynamicImplTable<_,_>.Result y x
+
+            let CeilingDynamic x = CeilingDynamicImplTable<_>.Result x 
+
+            let ExpDynamic x = ExpDynamicImplTable<_>.Result x 
+
+            let FloorDynamic x = FloorDynamicImplTable<_>.Result x 
+
+            let TruncateDynamic x = TruncateDynamicImplTable<_>.Result x 
+
+            let RoundDynamic x = RoundDynamicImplTable<_>.Result x 
+
+            let SignDynamic x = SignDynamicImplTable<_>.Result x 
+
+            let LogDynamic x = LogDynamicImplTable<_>.Result x 
+
+            let Log10Dynamic x = Log10DynamicImplTable<_>.Result x 
+
+            let SqrtDynamic x = SqrtDynamicImplTable<_,_>.Result x 
+
+            let CosDynamic x = CosDynamicImplTable<_>.Result x 
+
+            let CoshDynamic x = CoshDynamicImplTable<_>.Result x 
+
+            let SinDynamic x = SinDynamicImplTable<_>.Result x 
+
+            let SinhDynamic x = SinhDynamicImplTable<_>.Result x 
+
+            let TanDynamic x = TanDynamicImplTable<_>.Result x 
+
+            let TanhDynamic x = TanhDynamicImplTable<_>.Result x 
+
+            let PowDynamic x y = PowDynamicImplTable<_,_>.Result x y
 
         open OperatorIntrinsics
                    

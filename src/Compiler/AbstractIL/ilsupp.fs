@@ -878,16 +878,13 @@ let pdbInitialize (binaryName: string) (pdbName: string) =
     { symWriter = writer }
 
 
-[<assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", Scope="member", Target="FSharp.Compiler.AbstractIL.Support.#pdbClose(FSharp.Compiler.AbstractIL.Support+PdbWriter)", MessageId="System.GC.Collect")>]
-do()
-
 let pdbCloseDocument(documentWriter: PdbDocumentWriter) =
     Marshal.ReleaseComObject (documentWriter.symDocWriter)
     |> ignore
 
-[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001: AvoidCallingProblematicMethods", MessageId="System.GC.Collect")>]
 let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
     writer.symWriter.Close()
+
     // CorSymWriter objects (ISymUnmanagedWriter) lock the files they're operating
     // on (both the pdb and the binary).  The locks are released only when their ref
     // count reaches zero, but since we're dealing with RCWs, there's no telling when
@@ -897,6 +894,7 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
     // interface, which the SymWriter class, unfortunately, does not.
     // Right now, take the same approach as mdbg, and manually forcing a collection.
     let rc = Marshal.ReleaseComObject(writer.symWriter)
+
     for i = 0 to (rc - 1) do
       Marshal.ReleaseComObject(writer.symWriter) |> ignore
 

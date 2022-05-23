@@ -20,7 +20,7 @@
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
     <EmbeddedText Include="..\Compiler\Facilities\UtilsStrings.txt" />
-    <Compile Include="..\Compiler\Facilities\CompilerLocationUtils.fs" />
+    <Compile Include="..\Compiler\Facilities\CompilerLocation.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />

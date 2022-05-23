@@ -27,20 +27,22 @@ val toolingCompatiblePaths: unit -> string list
 
 /// Carries information about the type provider resolution environment.
 type ResolutionEnvironment =
-    { /// The folder from which an extension provider is resolving from. This is typically the project folder.
-      ResolutionFolder: string
+    {
+        /// The folder from which an extension provider is resolving from. This is typically the project folder.
+        ResolutionFolder: string
 
-      /// Output file name
-      OutputFile: string option
+        /// Output file name
+        OutputFile: string option
 
-      /// Whether or not the --showextensionresolution flag was supplied to the compiler.
-      ShowResolutionMessages: bool
+        /// Whether or not the --showextensionresolution flag was supplied to the compiler.
+        ShowResolutionMessages: bool
 
-      /// All referenced assemblies, including the type provider itself, and possibly other type providers.
-      ReferencedAssemblies: string []
+        /// All referenced assemblies, including the type provider itself, and possibly other type providers.
+        ReferencedAssemblies: string[]
 
-      /// The folder for temporary files
-      TemporaryFolder: string }
+        /// The folder for temporary files
+        TemporaryFolder: string
+    }
 
 /// Find and instantiate the set of ITypeProvider components for the given assembly reference
 val GetTypeProvidersOfAssembly:
@@ -108,7 +110,7 @@ type ProvidedType =
 
     member IsArray: bool
 
-    member GetInterfaces: unit -> ProvidedType []
+    member GetInterfaces: unit -> ProvidedType[]
 
     member Assembly: ProvidedAssembly
 
@@ -116,27 +118,27 @@ type ProvidedType =
 
     member GetNestedType: string -> ProvidedType
 
-    member GetNestedTypes: unit -> ProvidedType []
+    member GetNestedTypes: unit -> ProvidedType[]
 
-    member GetAllNestedTypes: unit -> ProvidedType []
+    member GetAllNestedTypes: unit -> ProvidedType[]
 
-    member GetMethods: unit -> ProvidedMethodInfo []
+    member GetMethods: unit -> ProvidedMethodInfo[]
 
-    member GetFields: unit -> ProvidedFieldInfo []
+    member GetFields: unit -> ProvidedFieldInfo[]
 
     member GetField: string -> ProvidedFieldInfo
 
-    member GetProperties: unit -> ProvidedPropertyInfo []
+    member GetProperties: unit -> ProvidedPropertyInfo[]
 
     member GetProperty: string -> ProvidedPropertyInfo
 
-    member GetEvents: unit -> ProvidedEventInfo []
+    member GetEvents: unit -> ProvidedEventInfo[]
 
     member GetEvent: string -> ProvidedEventInfo
 
-    member GetConstructors: unit -> ProvidedConstructorInfo []
+    member GetConstructors: unit -> ProvidedConstructorInfo[]
 
-    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo []
+    member GetStaticParameters: ITypeProvider -> ProvidedParameterInfo[]
 
     member GetGenericTypeDefinition: unit -> ProvidedType
 
@@ -170,7 +172,7 @@ type ProvidedType =
 
     member GetElementType: unit -> ProvidedType
 
-    member GetGenericArguments: unit -> ProvidedType []
+    member GetGenericArguments: unit -> ProvidedType[]
 
     member GetArrayRank: unit -> int
 
@@ -186,7 +188,7 @@ type ProvidedType =
 
     member MakeArrayType: rank: int -> ProvidedType
 
-    member MakeGenericType: args: ProvidedType [] -> ProvidedType
+    member MakeGenericType: args: ProvidedType[] -> ProvidedType
 
     member AsProvidedVar: name: string -> ProvidedVar
 
@@ -214,7 +216,7 @@ type IProvidedCustomAttributeProvider =
 
     abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string * int * int) option
 
-    abstract GetXmlDocAttributes: provider: ITypeProvider -> string []
+    abstract GetXmlDocAttributes: provider: ITypeProvider -> string[]
 
     abstract GetAttributeConstructorArgs:
         provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
@@ -228,7 +230,7 @@ type ProvidedAssembly =
 
     member FullName: string
 
-    member GetManifestModuleContents: ITypeProvider -> byte []
+    member GetManifestModuleContents: ITypeProvider -> byte[]
 
     member Handle: System.Reflection.Assembly
 
@@ -273,11 +275,11 @@ type ProvidedMethodBase =
 
     member IsConstructor: bool
 
-    member GetParameters: unit -> ProvidedParameterInfo []
+    member GetParameters: unit -> ProvidedParameterInfo[]
 
-    member GetGenericArguments: unit -> ProvidedType []
+    member GetGenericArguments: unit -> ProvidedType[]
 
-    member GetStaticParametersForMethod: ITypeProvider -> ProvidedParameterInfo []
+    member GetStaticParametersForMethod: ITypeProvider -> ProvidedParameterInfo[]
 
     static member TaintedGetHashCode: Tainted<ProvidedMethodBase> -> int
 
@@ -361,7 +363,7 @@ type ProvidedPropertyInfo =
 
     member GetSetMethod: unit -> ProvidedMethodInfo
 
-    member GetIndexParameters: unit -> ProvidedParameterInfo []
+    member GetIndexParameters: unit -> ProvidedParameterInfo[]
 
     member CanRead: bool
 
@@ -400,17 +402,17 @@ type ProvidedConstructorInfo =
 
 type ProvidedExprType =
 
-    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr []
+    | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 
 #if PROVIDED_ADDRESS_OF
     | ProvidedAddressOfExpr of ProvidedExpr
 #endif
 
-    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr []
+    | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
 
     | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
 
-    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar [] * ProvidedExpr
+    | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
 
     | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
 
@@ -422,13 +424,13 @@ type ProvidedExprType =
 
     | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
 
-    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr []
+    | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
 
     | ProvidedConstantExpr of obj * ProvidedType
 
     | ProvidedDefaultExpr of ProvidedType
 
-    | ProvidedNewTupleExpr of ProvidedExpr []
+    | ProvidedNewTupleExpr of ProvidedExpr[]
 
     | ProvidedTupleGetExpr of ProvidedExpr * int
 
@@ -474,33 +476,29 @@ type ProvidedVar =
     override GetHashCode: unit -> int
 
 /// Get the provided expression for a particular use of a method.
-val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar [] -> ProvidedExpr
+val GetInvokerExpression: ITypeProvider * ProvidedMethodBase * ProvidedVar[] -> ProvidedExpr
 
 /// Validate that the given provided type meets some of the rules for F# provided types
 val ValidateProvidedTypeAfterStaticInstantiation:
-    m: range * st: Tainted<ProvidedType> * expectedPath: string [] * expectedName: string -> unit
+    m: range * st: Tainted<ProvidedType> * expectedPath: string[] * expectedName: string -> unit
 
 /// Try to apply a provided type to the given static arguments. If successful also return a function
 /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
 /// after other checks are made).
 val TryApplyProvidedType:
-    typeBeforeArguments: Tainted<ProvidedType> *
-    optGeneratedTypePath: string list option *
-    staticArgs: obj [] *
-    range ->
+    typeBeforeArguments: Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs: obj[] * range ->
         (Tainted<ProvidedType> * (unit -> unit)) option
 
 /// Try to apply a provided method to the given static arguments.
 val TryApplyProvidedMethod:
-    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: obj [] * range -> Tainted<ProvidedMethodBase> option
+    methBeforeArgs: Tainted<ProvidedMethodBase> * staticArgs: obj[] * range -> Tainted<ProvidedMethodBase> option
 
 /// Try to resolve a type in the given extension type resolver
-val TryResolveProvidedType:
-    Tainted<ITypeProvider> * range * string [] * typeName: string -> Tainted<ProvidedType> option
+val TryResolveProvidedType: Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
 
 /// Try to resolve a type in the given extension type resolver
 val TryLinkProvidedType:
-    Tainted<ITypeProvider> * string [] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
+    Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
 /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
 val GetProvidedNamespaceAsPath: range * Tainted<ITypeProvider> * string -> string list
@@ -526,9 +524,11 @@ type ProviderGeneratedType =
 /// The table of information recording remappings from type names in the provided assembly to type
 /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
 type ProvidedAssemblyStaticLinkingMap =
-    { /// The table of remappings from type names in the provided assembly to type
-      /// names in the statically linked, embedded assembly.
-      ILTypeMap: Dictionary<ILTypeRef, ILTypeRef> }
+    {
+        /// The table of remappings from type names in the provided assembly to type
+        /// names in the statically linked, embedded assembly.
+        ILTypeMap: Dictionary<ILTypeRef, ILTypeRef>
+    }
 
     /// Create a new static linking map, ready to populate with data.
     static member CreateNew: unit -> ProvidedAssemblyStaticLinkingMap

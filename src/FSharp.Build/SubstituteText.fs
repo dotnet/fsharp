@@ -3,12 +3,10 @@
 namespace FSharp.Build
 
 open System
-open System.Collections
 open System.IO
 open Microsoft.Build.Framework
-open Microsoft.Build.Utilities
 
-type SubstituteText () =
+type SubstituteText() =
 
     let mutable _buildEngine: IBuildEngine MaybeNull = null
     let mutable _hostObject: ITaskHost MaybeNull = null
@@ -18,21 +16,20 @@ type SubstituteText () =
 
     [<Required>]
     member _.EmbeddedResources
-        with get() = embeddedResources
-         and set(value) = embeddedResources <- value
+        with get () = embeddedResources
+        and set (value) = embeddedResources <- value
 
     [<Output>]
-    member _.CopiedFiles
-        with get() = copiedFiles.ToArray()
+    member _.CopiedFiles = copiedFiles.ToArray()
 
     interface ITask with
         member _.BuildEngine
-            with get() = _buildEngine
-             and set(value) = _buildEngine <- value
+            with get () = _buildEngine
+            and set (value) = _buildEngine <- value
 
         member _.HostObject
-            with get() = _hostObject
-             and set(value) = _hostObject <- value
+            with get () = _hostObject
+            and set (value) = _hostObject <- value
 
         member _.Execute() =
             copiedFiles.Clear()
@@ -45,7 +42,7 @@ type SubstituteText () =
 
                     // Is there any replacement to do?
                     if not (String.IsNullOrWhiteSpace(pattern1) && String.IsNullOrWhiteSpace(pattern2)) then
-                        if not(String.IsNullOrWhiteSpace(sourcePath)) then
+                        if not (String.IsNullOrWhiteSpace(sourcePath)) then
                             try
                                 let getTargetPathFrom key =
                                     let md = item.GetMetadata(key)
@@ -55,12 +52,13 @@ type SubstituteText () =
                                     target
 
                                 // Copy from the location specified in Identity
-                                let sourcePath=item.GetMetadata("Identity")
+                                let sourcePath = item.GetMetadata("Identity")
 
                                 // Copy to the location specified in TargetPath unless no TargetPath is provided, then use Identity
-                                let targetPath=
+                                let targetPath =
                                     let identityPath = getTargetPathFrom "Identity"
                                     let intermediateTargetPath = item.GetMetadata("IntermediateTargetPath")
+
                                     if not (String.IsNullOrWhiteSpace(intermediateTargetPath)) then
                                         let fileName = Path.GetFileName(identityPath)
                                         let target = Path.Combine(intermediateTargetPath, fileName)
@@ -72,20 +70,24 @@ type SubstituteText () =
 
                                 // Transform file
                                 let mutable contents = File.ReadAllText(sourcePath)
+
                                 if not (String.IsNullOrWhiteSpace(pattern1)) then
                                     let replacement = item.GetMetadata("Replacement1")
                                     contents <- contents.Replace(pattern1, replacement)
+
                                 if not (String.IsNullOrWhiteSpace(pattern2)) then
                                     let replacement = item.GetMetadata("Replacement2")
                                     contents <- contents.Replace(pattern2, replacement)
 
                                 let directory = Path.GetDirectoryName(targetPath)
-                                if not(Directory.Exists(directory)) then
-                                    Directory.CreateDirectory(directory) |>ignore
+
+                                if not (Directory.Exists(directory)) then
+                                    Directory.CreateDirectory(directory) |> ignore
 
                                 File.WriteAllText(targetPath, contents)
                             with
                             | _ -> ()
 
                     copiedFiles.Add(item)
+
             true
