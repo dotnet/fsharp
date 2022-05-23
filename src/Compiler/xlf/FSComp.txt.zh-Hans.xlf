@@ -157,6 +157,11 @@
         <target state="translated">无点 float32 文本</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
+        <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
+        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多类型支持度量单位</target>
