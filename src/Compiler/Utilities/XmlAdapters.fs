@@ -7,12 +7,11 @@ let s_escapeChars = [| '<'; '>'; '\"'; '\''; '&' |]
 
 let getEscapeSequence c =
     match c with
-    | '<'  -> "&lt;"
-    | '>'  -> "&gt;"
+    | '<' -> "&lt;"
+    | '>' -> "&gt;"
     | '\"' -> "&quot;"
     | '\'' -> "&apos;"
-    | '&'  -> "&amp;"
+    | '&' -> "&amp;"
     | _ as ch -> ch.ToString()
 
 let escape str = String.collect getEscapeSequence str
-
