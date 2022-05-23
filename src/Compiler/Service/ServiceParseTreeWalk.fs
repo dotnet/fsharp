@@ -472,6 +472,8 @@ module SyntaxTraversal =
 
                 | SynExpr.DebugPoint (_, _, synExpr) -> traverseSynExpr synExpr
 
+                | SynExpr.Dynamic _ -> None
+                
                 | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                     if isInfix then
                         [dive synExpr2 synExpr2.Range traverseSynExpr

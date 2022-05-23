@@ -1,33 +1,58 @@
-**/*.fs
-**/*.fsx
+# Explicitly unformatted directories
 
-# absil  (to investigate)
-**/ilread.fsi
+buildtools/
+docs/
+eng/
+fcs-samples/
+scripts/
+service/
+setup/
+tests/
+vsintegration/
 
-# fsharp  (to investigate)
-**/range.fsi
+# Explicitly unformatted implementation files
 
-# utils  (to investigate)
-**/prim-parsing.fsi
-**/TaggedCollections.fsi
+src/FSharp.Core/**/*.fs
+src/Compiler/AbstractIL/**/*.fs
+src/Compiler/Checking/**/*.fs
+src/Compiler/CodeGen/**/*.fs
+src/Compiler/DependencyManager/**/*.fs
+src/Compiler/Driver/**/*.fs
+src/Compiler/Facilities/**/*.fs
+src/Compiler/Interactive/**/*.fs
+src/Compiler/Legacy/**/*.fs
+src/Compiler/Optimize/**/*.fs
+src/Compiler/Service/**/*.fs
+src/Compiler/Symbols/**/*.fs
+src/Compiler/SyntaxTree/**/*.fs
+src/Compiler/TypedTree/**/*.fs
+src/Microsoft.FSharp.Compiler/**/*.fs
 
-# https://github.com/fsprojects/fantomas/issues/1974
-**/ParseHalpers.fsi
+# Fantomas limitations on implementation files  (to investigate)
 
-# service  (to investigate)
-**/ServiceDeclarationLists.fsi
+src/Compiler/Utilities/lib.fs
 
-# FSharp.Core (to investigate)
-**/fslib-extra-pervasives.fsi
-**/Nullable.fsi
-**/prim-types-prelude.fsi
-**/prim-types.fsi
-**/list.fsi
-**/Query.fsi
-**/resumable.fsi
-**/async.fsi
+# Fantomas limitations on signature files  (to investigate)
 
-## https://github.com/fsprojects/fantomas/issues/2230
-**/array.fsi
-**/tasks.fsi
-**/seq.fsi
+src/Compiler/AbstractIL/ilread.fsi
+src/Compiler/Utilities/range.fsi
+src/Compiler/Facilities/prim-parsing.fsi
+src/Compiler/Utilities/TaggedCollections.fsi
+src/Compiler/Service/ServiceDeclarationLists.fsi
+
+# Fantomas limitations on signature files in FSharp.Core (to investigate)
+
+src/FSharp.Core/fslib-extra-pervasives.fsi
+src/FSharp.Core/Nullable.fsi
+src/FSharp.Core/prim-types-prelude.fsi
+src/FSharp.Core/prim-types.fsi
+src/FSharp.Core/list.fsi
+src/FSharp.Core/Query.fsi
+src/FSharp.Core/resumable.fsi
+src/FSharp.Core/async.fsi
+
+# Fantomas limitations on signature files in FSharp.Core (https://github.com/fsprojects/fantomas/issues/2230)
+
+src/FSharp.Core/array.fsi
+src/FSharp.Core/tasks.fsi
+src/FSharp.Core/seq.fsi

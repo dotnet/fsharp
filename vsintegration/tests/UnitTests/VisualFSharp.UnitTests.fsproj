@@ -24,8 +24,8 @@
       <Link>Internal.Utilities.Collections.fs</Link>
     </Compile>
     <EmbeddedText Include="$(FSharpSourcesRoot)\Compiler\Facilities\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocationUtils.fs">
-      <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)\Compiler\Facilities\CompilerLocation.fs">
+      <Link>Internal.Utilities.CompilerLocation.fs</Link>
     </Compile>
     <Compile Include="TestLib.Utils.fs" />
     <Compile Include="TestLib.Salsa.fs" />
