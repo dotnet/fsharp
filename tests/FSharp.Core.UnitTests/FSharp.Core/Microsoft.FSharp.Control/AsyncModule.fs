@@ -770,7 +770,7 @@ type AsyncModule() =
         let gen (i : int) = async {
             if i <> 0 then do! Async.Sleep i
             else return failwith (string i) }
-        let count = 1800
+        let count = 3600
         let comps = Seq.init count gen
         let result = Async.Parallel(comps, 16) |> Async.Catch |> Async.RunSynchronously
         match result with
