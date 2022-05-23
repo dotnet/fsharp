@@ -769,10 +769,10 @@ type AsyncModule() =
     member _.``Async.Parallel blows stack when cancelling many`` () =
         let gen (i : int) = async {
             if i <> 0 then do! Async.Sleep i
-            else return failwith (string i) }
+            else return failwith "OK"}
         let count = 3600
         let comps = Seq.init count gen
         let result = Async.Parallel(comps, 16) |> Async.Catch |> Async.RunSynchronously
         match result with
-        | Choice2Of2 e -> ()
+        | Choice2Of2 e -> Assert.AreEqual("OK", e.Message)
         | x -> failwithf "unexpected %A" x
