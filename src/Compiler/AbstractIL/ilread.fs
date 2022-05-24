@@ -3223,6 +3223,7 @@ and customAttrsReader ctxtH tag : ILAttributesStored =
                     seekReadCustomAttributeRow ctxt mdv i &row
 
                 member _.GetKey(attrRow) = attrRow.parentIndex
+
                 member _.CompareKey(key) = hcaCompare (TaggedIndex(tag, idx)) key
 
                 member _.ConvertRow(attrRow) =

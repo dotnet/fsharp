@@ -2201,14 +2201,23 @@ type ILEventDef
         )
 
     member _.EventType = eventType
+
     member _.Name = name
+
     member _.Attributes = attributes
+
     member _.AddMethod = addMethod
+
     member _.RemoveMethod = removeMethod
+
     member _.FireMethod = fireMethod
+
     member _.OtherMethods = otherMethods
+
     member _.CustomAttrsStored = customAttrsStored
+
     member _.MetadataIndex = metadataIndex
+
     member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
 
     member x.With(?eventType, ?name, ?attributes, ?addMethod, ?removeMethod, ?fireMethod, ?otherMethods, ?customAttrs) =
@@ -2637,20 +2646,35 @@ type ILTypeDef
         )
 
     member _.Name = name
+
     member _.Attributes = attributes
+
     member _.GenericParams = genericParams
+
     member _.Layout = layout
+
     member _.NestedTypes = nestedTypes
+
     member _.Implements = implements
+
     member _.Extends = extends
+
     member _.Methods = methods
+
     member _.SecurityDeclsStored = securityDeclsStored
+
     member _.Fields = fields
+
     member _.MethodImpls = methodImpls
+
     member _.Events = events
+
     member _.Properties = properties
+
     member _.IsKnownToBeAttribute = isKnownToBeAttribute
+
     member _.CustomAttrsStored = customAttrsStored
+
     member _.MetadataIndex = metadataIndex
 
     member x.With
@@ -3357,23 +3381,41 @@ type ILGlobals
     member x.primaryAssemblyName = x.primaryAssemblyRef.Name
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
+
     member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+
     member val typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
+
     member val typ_Type = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Type))
+
     member val typ_SByte = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_SByte))
+
     member val typ_Int16 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Int16))
+
     member val typ_Int32 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Int32))
+
     member val typ_Int64 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Int64))
+
     member val typ_Byte = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+
     member val typ_UInt16 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
+
     member val typ_UInt32 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt32))
+
     member val typ_UInt64 = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UInt64))
+
     member val typ_Single = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Single))
+
     member val typ_Double = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Double))
+
     member val typ_Bool = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Bool))
+
     member val typ_Char = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_Char))
+
     member val typ_IntPtr = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_IntPtr))
+
     member val typ_UIntPtr = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
+
     member val typ_TypedReference = ILType.Value(mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
     member _.fsharpCoreAssemblyScopeRef = fsharpCoreAssemblyScopeRef

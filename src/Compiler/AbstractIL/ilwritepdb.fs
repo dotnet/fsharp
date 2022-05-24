@@ -27,22 +27,33 @@ type BlobBuildingStream() =
     let builder = BlobBuilder(chunkSize)
 
     override _.CanWrite = true
+
     override _.CanRead = false
+
     override _.CanSeek = false
+
     override _.Length = int64 builder.Count
 
     override _.Write(buffer: byte array, offset: int, count: int) =
         builder.WriteBytes(buffer, offset, count)
 
     override _.WriteByte(value: byte) = builder.WriteByte value
+
     member _.WriteInt32(value: int) = builder.WriteInt32 value
+
     member _.ToImmutableArray() = builder.ToImmutableArray()
+
     member _.TryWriteBytes(stream: Stream, length: int) = builder.TryWriteBytes(stream, length)
 
     override _.Flush() = ()
+
     override _.Dispose(_disposing: bool) = ()
+
     override _.Seek(_offset: int64, _origin: SeekOrigin) = raise (NotSupportedException())
+
     override _.Read(_buffer: byte array, _offset: int, _count: int) = raise (NotSupportedException())
+
+
     override _.SetLength(_value: int64) = raise (NotSupportedException())
     override val Position = 0L with get, set
 
