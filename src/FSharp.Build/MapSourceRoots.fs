@@ -153,12 +153,8 @@ type MapSourceRoots() =
                                 // Since the paths in ItemSpec have backslashes replaced with slashes on non-Windows platforms we need to do the same for ContainingRoot.
                                 match topLevelMappedPaths.TryGetValue(Utilities.FixFilePath(containingRoot)) with
                                 | true, mappedTopLevelPath ->
-                                    root.SetMetadata(
-                                        MappedPath,
-                                        mappedTopLevelPath + ensureEndsWithSlash (nestedRoot.Replace('\\', '/'))
-                                    )
-                                | false, _ ->
-                                    log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot containingRoot)
+                                    root.SetMetadata(MappedPath, mappedTopLevelPath + ensureEndsWithSlash (nestedRoot.Replace('\\', '/')))
+                                | false, _ -> log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot containingRoot)
                             | NullOrEmpty -> log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot "")
                         | NullOrEmpty -> ()
             else

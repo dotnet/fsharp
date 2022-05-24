@@ -1470,21 +1470,21 @@ type Async =
                                 if innerCTS.Token.IsCancellationRequested then
                                     let cexn = OperationCanceledException (innerCTS.Token)
                                     recordFailure (Choice2Of2 cexn) |> unfake
-                                    worker trampolineHolder |> unfake
+                                    worker trampolineHolder
                                 else
                                     let taskCtxt =
                                         AsyncActivation.Create
                                             innerCTS.Token
                                             trampolineHolder
-                                            (fun res -> recordSuccess j res |> unfake; worker trampolineHolder)
-                                            (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker trampolineHolder)
-                                            (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker trampolineHolder)
+                                            (fun res -> recordSuccess j res |> unfake; worker trampolineHolder |> fake)
+                                            (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker trampolineHolder |> fake)
+                                            (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker trampolineHolder |> fake)
                                     computations.[j].Invoke taskCtxt |> unfake
-                        fake()
+
                     for x = 1 to maxDegreeOfParallelism do
                         let trampolineHolder = TrampolineHolder()
                         trampolineHolder.QueueWorkItemWithTrampoline (fun () ->
-                            worker trampolineHolder)
+                            worker trampolineHolder |> fake)
                         |> unfake
 
                 fake()))
