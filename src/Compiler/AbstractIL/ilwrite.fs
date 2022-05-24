@@ -4088,13 +4088,13 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
 
           // .RELOC SECTION base reloc table: 0x0c size
           let relocSectionPhysLoc = nextPhys
-          let relocSectionAddr = next
-          let baseRelocTableChunk, next = chunk 0x0c next
+          let relocSectionAddr =  if hasEntryPointStub then next else 0x00
+          let baseRelocTableChunk, next =  if hasEntryPointStub then chunk 0x0c next else nochunk next
 
-          let relocSectionSize = next - relocSectionAddr
-          let nextPhys = align alignPhys (relocSectionPhysLoc + relocSectionSize)
-          let relocSectionPhysSize = nextPhys - relocSectionPhysLoc
-          let next = align alignVirt (relocSectionAddr + relocSectionSize)
+          let relocSectionSize = if hasEntryPointStub then next - relocSectionAddr else 0x00
+          let nextPhys = if hasEntryPointStub then align alignPhys (relocSectionPhysLoc + relocSectionSize) else nextPhys
+          let relocSectionPhysSize = if hasEntryPointStub then nextPhys - relocSectionPhysLoc else 0x00
+          let next = if hasEntryPointStub then align alignVirt (relocSectionAddr + relocSectionSize) else align alignVirt next
 
          // Now we know where the data section lies we can fix up the
          // references into the data section from the metadata tables.
