@@ -9,6 +9,7 @@ service/
 setup/
 tests/
 vsintegration/
+artifacts/
 
 # Explicitly unformatted implementation files
 
