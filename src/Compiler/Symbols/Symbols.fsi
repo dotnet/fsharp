@@ -990,7 +990,6 @@ type FSharpParameter =
     /// Indicate this is an optional argument
     member IsOptionalArg: bool
 
-
 /// A subtype of FSharpSymbol that represents a single case within an active pattern
 [<Class>]
 type FSharpActivePatternCase =

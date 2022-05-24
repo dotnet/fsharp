@@ -306,7 +306,6 @@ type ProvidedFieldInfo =
 
     inherit ProvidedMemberInfo
 
-
     member IsInitOnly: bool
 
     member IsStatic: bool

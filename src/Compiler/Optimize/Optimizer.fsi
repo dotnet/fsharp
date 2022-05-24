@@ -42,7 +42,6 @@ type OptimizationSettings =
         reportTotalSizes: bool
     }
 
-
     member JitOptimizationsEnabled: bool
 
     member LocalOptimizationsEnabled: bool
