@@ -1495,7 +1495,7 @@ let CompilePatternBasic
                         []
 
                 | DecisionTreeTest.IsNull _ ->
-                    match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 with
+                    match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
                     | Implication.Nothing -> [frontier]
@@ -1509,7 +1509,7 @@ let CompilePatternBasic
 
                 match discrim with
                 | DecisionTreeTest.IsInst (_srcTy, tgtTy2) ->
-                    match computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 with
+                    match computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy2 tgtTy1 with
                     | Implication.Succeeds -> 
                         match pbindOpt with
                         | Some pbind ->
@@ -1531,7 +1531,7 @@ let CompilePatternBasic
                         [frontier]
 
                 | DecisionTreeTest.IsNull _ ->
-                    match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 with
+                    match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
                     | Implication.Nothing -> [frontier]
@@ -1548,7 +1548,7 @@ let CompilePatternBasic
                 | DecisionTreeTest.IsNull ->
                     [Frontier (i, newActives, valMap)]
                 | DecisionTreeTest.IsInst (_, tgtTy) -> 
-                    match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy with
+                    match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
                     | Implication.Nothing -> [frontier]
