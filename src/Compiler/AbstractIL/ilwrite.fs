@@ -1593,7 +1593,7 @@ type CodeBuffer =
       /// data for exception handling clauses
       mutable seh: ExceptionClauseSpec list
 
-      debugPoints: ResizeArray<PdbDebugPoint>
+      seqpoints: ResizeArray<PdbDebugPoint>
     }
 
     interface IDisposable with
@@ -1606,16 +1606,16 @@ type CodeBuffer =
           reqdBrFixups=[]
           reqdStringFixupsInMethod=[]
           availBrFixups = Dictionary<_, _>(10, HashIdentity.Structural)
-          debugPoints = ResizeArray<_>(10)
+          seqpoints = ResizeArray<_>(10)
         }
 
     member codebuf.EmitExceptionClause seh = codebuf.seh <- seh :: codebuf.seh
 
-    member codebuf.EmitDebugPoint cenv (m: ILDebugPoint) =
+    member codebuf.EmitSeqPoint cenv (m: ILDebugPoint) =
         if cenv.generatePdb then
           // table indexes are 1-based, document array indexes are 0-based
           let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1
-          codebuf.debugPoints.Add
+          codebuf.seqpoints.Add
             { Document=doc
               Offset= codebuf.code.Position
               Line=m.Line
@@ -1910,7 +1910,7 @@ module Codebuf =
         | I_brcmp (cmp, tg1) ->
             codebuf.RecordReqdBrFixup ((Lazy.force ILCmpInstrMap)[cmp], Some (Lazy.force ILCmpInstrRevMap).[cmp]) tg1
         | I_br tg -> codebuf.RecordReqdBrFixup (i_br, Some i_br_s) tg
-        | I_seqpoint s -> codebuf.EmitDebugPoint cenv s
+        | I_seqpoint s -> codebuf.EmitSeqPoint cenv s
         | I_leave tg -> codebuf.RecordReqdBrFixup (i_leave, Some i_leave_s) tg
         | I_call (tl, mspec, varargs) ->
             emitTailness cenv codebuf tl
@@ -2280,7 +2280,7 @@ module Codebuf =
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
         let origAvailBrFixups = codebuf.availBrFixups
         let origReqdBrFixups = codebuf.reqdBrFixups
-        let origSeqPoints = codebuf.debugPoints.ToArray()
+        let origSeqPoints = codebuf.seqpoints.ToArray()
 
         let newCode, newReqdStringFixups, newExnClauses, newSeqPoints, newScopes =
             applyBrFixups origCode origExnClauses origReqdStringFixups origAvailBrFixups origReqdBrFixups origSeqPoints origScopes
@@ -2338,7 +2338,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         [| |]
 
     let imports = GenPdbImports cenv il.DebugImports
-    let requiredStringFixups, seh, code, debugPoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
+    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
     let codeSize = code.Length
     use methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format?
@@ -2350,7 +2350,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
         methbuf.EmitBytes code
         methbuf.EmitPadding codePadding
-        0x0, (requiredStringFixups', methbuf.AsMemory().ToArray()), debugPoints, scopes
+        0x0, (requiredStringFixups', methbuf.AsMemory().ToArray()), seqpoints, scopes
     else
         // Use Fat format
         let flags =
@@ -2424,7 +2424,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 
         let requiredStringFixups' = (12, requiredStringFixups)
 
-        localToken, (requiredStringFixups', methbuf.AsMemory().ToArray()), debugPoints, scopes
+        localToken, (requiredStringFixups', methbuf.AsMemory().ToArray()), seqpoints, scopes
 
 // --------------------------------------------------------------------
 // ILFieldDef --> FieldDef Row
@@ -2619,7 +2619,7 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
             else
                 ilmbodyLazy.Value
           let addr = cenv.nextCodeAddr
-          let localToken, code, debugPoints, rootScope = GenILMethodBody mdef.Name cenv env ilmbody
+          let localToken, code, seqpoints, rootScope = GenILMethodBody mdef.Name cenv env ilmbody
 
           // Now record the PDB record for this method - we write this out later.
           if cenv.generatePdb then
@@ -2642,7 +2642,7 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
                               Line=m.EndLine
                               Column=m.EndColumn })
                   | _ -> None
-                DebugPoints=debugPoints }
+                DebugPoints=seqpoints }
           cenv.AddCode code
           addr
       | MethodBody.Abstract
@@ -2972,24 +2972,24 @@ and GenManifestPass3 cenv m =
         else cenv.entrypoint <- Some (false, GetModuleRefAsIdx cenv mref)
     | None -> ()
 
-and newGuid (ilModule: ILModuleDef) =
+and newGuid (modul: ILModuleDef) =
     let n = timestamp
     let m = hash n
-    let m2 = hash ilModule.Name
+    let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and deterministicGuid (ilModule: ILModuleDef) =
+and deterministicGuid (modul: ILModuleDef) =
     let n = 16909060
-    let m2 = Seq.sum (Seq.mapi (fun i x -> i + int x) ilModule.Name) // use a stable hash
+    let m2 = Seq.sum (Seq.mapi (fun i x -> i + int x) modul.Name) // use a stable hash
     [| b0 n; b1 n; b2 n; b3 n; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow (cenv: cenv) (ilModule: ILModuleDef) =
+and GetModuleAsRow (cenv: cenv) (modul: ILModuleDef) =
     // Store the generated MVID in the environment (needed for generating debug information)
-    let modulGuid = if cenv.deterministic then deterministicGuid ilModule else newGuid ilModule
+    let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
     UnsharedRow
         [| UShort (uint16 0x0)
-           StringE (GetStringHeapIdx cenv ilModule.Name)
+           StringE (GetStringHeapIdx cenv modul.Name)
            Guid (GetGuidIdx cenv modulGuid)
            Guid 0
            Guid 0 |]
@@ -3013,19 +3013,19 @@ let SortTableRows tab (rows: GenericRow[]) =
         |> Array.ofList
         //|> Array.map SharedRow
 
-let GenModule (cenv : cenv) (ilModule: ILModuleDef) =
-    let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv ilModule)
-    List.iter (GenResourcePass3 cenv) (ilModule.Resources.AsList())
-    let tdefs = destTypeDefsWithGlobalFunctionsFirst cenv.ilg ilModule.TypeDefs
+let GenModule (cenv : cenv) (modul: ILModuleDef) =
+    let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
+    List.iter (GenResourcePass3 cenv) (modul.Resources.AsList())
+    let tdefs = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
     reportTime cenv.showTimes "Module Generation Preparation"
     GenTypeDefsPass1 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 1"
     GenTypeDefsPass2 0 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 2"
-    (match ilModule.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
+    (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
     GenTypeDefsPass3 [] cenv tdefs
     reportTime cenv.showTimes "Module Generation Pass 3"
-    GenCustomAttrsPass3Or4 cenv (hca_Module, midx) ilModule.CustomAttrs
+    GenCustomAttrsPass3Or4 cenv (hca_Module, midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes).
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params.
     // Note this mutates the rows in a table. 'SetRowsOfTable' clears
@@ -3239,7 +3239,7 @@ let writeILMetadataAndCode (
     referenceAssemblyOnly,
     referenceAssemblyAttribOpt,
     allGivenSources,
-    ilModule,
+    modul,
     cilStartAddress,
     normalizeAssemblyRefs
 ) =
@@ -3262,7 +3262,7 @@ let writeILMetadataAndCode (
           referenceAssemblyOnly,
           referenceAssemblyAttribOpt,
           allGivenSources,
-          ilModule,
+          modul,
           cilStartAddress,
           normalizeAssemblyRefs)
 
@@ -3831,17 +3831,17 @@ type options =
      referenceAssemblyAttribOpt: ILAttribute option
      pathMap: PathMap }
 
-let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssemblyRefs) =
+let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
 
     reportTime options.showTimes "Write Started"
-    let isDll = ilModule.IsDLL
+    let isDll = modul.IsDLL
     let ilg = options.ilg
 
     let signer =
-        match options.signer, ilModule.Manifest with
+        match options.signer, modul.Manifest with
         | Some _, _ -> options.signer
         | _, None -> options.signer
         | None, Some {PublicKey=Some pubkey} ->
@@ -3855,7 +3855,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
         | _ -> options.signer
 
-    let ilModule =
+    let modul =
         let pubkey =
           match signer with
           | None -> None
@@ -3864,22 +3864,22 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
              with exn ->
                failwith ("A call to StrongNameGetPublicKey failed (" + exn.Message + ")")
                None
-        match ilModule.Manifest with
+        match modul.Manifest with
         | None -> ()
         | Some m ->
            if m.PublicKey <> None && m.PublicKey <> pubkey then
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
-        { ilModule with Manifest = match ilModule.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
+        { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
 
           let os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
 
-          let imageBaseReal = ilModule.ImageBase // FIXED CHOICE
-          let alignVirt = ilModule.VirtualAlignment // FIXED CHOICE
-          let alignPhys = ilModule.PhysicalAlignment // FIXED CHOICE
+          let imageBaseReal = modul.ImageBase // FIXED CHOICE
+          let alignVirt = modul.VirtualAlignment // FIXED CHOICE
+          let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
 
-          let isItanium = ilModule.Platform = Some IA64
+          let isItanium = modul.Platform = Some IA64
 
           let numSections = 3 // .text, .sdata, .reloc
 
@@ -3898,7 +3898,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           let peFileHeaderSize = 0x14
           let peFileHeaderChunk, next = chunk peFileHeaderSize next
 
-          let peOptionalHeaderSize = if ilModule.Is64Bit then 0xf0 else 0xe0
+          let peOptionalHeaderSize = if modul.Is64Bit then 0xf0 else 0xe0
           let peOptionalHeaderChunk, next = chunk peOptionalHeaderSize next
 
           let textSectionHeaderSize = 0x28
@@ -3927,8 +3927,8 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           let cliHeaderChunk, next = chunk 0x48 next
 
           let desiredMetadataVersion =
-            if ilModule.MetadataVersion <> "" then
-                parseILVersion ilModule.MetadataVersion
+            if modul.MetadataVersion <> "" then
+                parseILVersion modul.MetadataVersion
             else
                 match ilg.primaryAssemblyScopeRef with
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local"
@@ -3951,7 +3951,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
                   options.referenceAssemblyOnly,
                   options.referenceAssemblyAttribOpt,
                   options.allGivenSources,
-                  ilModule,
+                  modul,
                   next,
                   normalizeAssemblyRefs
               )
@@ -4057,7 +4057,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
           let nativeResources =
-            match ilModule.NativeResources with
+            match modul.NativeResources with
             | [] -> [||]
             | resources ->
                 let unlinkedResources =
@@ -4144,7 +4144,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
 
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |]
 
-          if (ilModule.Platform = Some AMD64) then
+          if (modul.Platform = Some AMD64) then
             writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64
           elif isItanium then
             writeInt32AsUInt16 os 0x200
@@ -4192,7 +4192,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           // 64bit: IMAGE_FILE_32BIT_MACHINE ||| IMAGE_FILE_LARGE_ADDRESS_AWARE
           // 32bit: IMAGE_FILE_32BIT_MACHINE
           // Yes, 32BIT_MACHINE is set for AMD64...
-          let iMachineCharacteristic = match ilModule.Platform with | Some IA64 -> 0x20 | Some AMD64 -> 0x0120 | _ -> 0x0100
+          let iMachineCharacteristic = match modul.Platform with | Some IA64 -> 0x20 | Some AMD64 -> 0x0120 | _ -> 0x0100
 
           writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic)
 
@@ -4201,7 +4201,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           let peOptionalHeaderByte = peOptionalHeaderByteByCLRVersion desiredMetadataVersion
 
           write (Some peOptionalHeaderChunk.addr) os "pe optional header" [| |]
-          if ilModule.Is64Bit then
+          if modul.Is64Bit then
               writeInt32AsUInt16 os 0x020B // Magic number is 0x020B for 64-bit
           else
               writeInt32AsUInt16 os 0x010b // Always 0x10B (see Section 23.1).
@@ -4213,7 +4213,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           writeInt32 os entrypointCodeChunk.addr     // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000
           writeInt32 os textSectionAddr              // e.g. 0x0002000
        // 000000b0
-          if ilModule.Is64Bit then
+          if modul.Is64Bit then
               writeInt64 os (int64 imageBaseReal)    // REVIEW: For 64-bit, we should use a 64-bit image base
           else
               writeInt32 os dataSectionAddr // e.g. 0x0000c000
@@ -4226,7 +4226,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           writeInt32AsUInt16 os 0x00 // OS Minor Always 0 (see Section 23.1).
           writeInt32AsUInt16 os 0x00 // User Major Always 0 (see Section 23.1).
           writeInt32AsUInt16 os 0x00 // User Minor Always 0 (see Section 23.1).
-          let major, minor = ilModule.SubsystemVersion
+          let major, minor = modul.SubsystemVersion
           writeInt32AsUInt16 os major
           writeInt32AsUInt16 os minor
           writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1).
@@ -4234,7 +4234,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           writeInt32 os imageEndAddr // Image Size: Size, in bytes, of image, including all headers and padding
           writeInt32 os headerSectionPhysSize // Header Size Combined size of MS-DOS Header, PE Header, PE Optional Header and padding
           writeInt32 os 0x00 // File Checksum Always 0 (see Section 23.1). QUERY: NOT ALWAYS ZERO
-          writeInt32AsUInt16 os ilModule.SubSystemFlags // SubSystem Subsystem required to run this image.
+          writeInt32AsUInt16 os modul.SubSystemFlags // SubSystem Subsystem required to run this image.
           // DLL Flags Always 0x400 (no unmanaged windows exception handling - see Section 23.1).
           //  Itanium: see notes at end of file
           //  IMAGE_DLLCHARACTERISTICS_NX_COMPAT: See FSharp 1.0 bug 5019 and http://blogs.msdn.com/ed_maurer/archive/2007/12/14/nxcompat-and-the-c-compiler.aspx
@@ -4243,21 +4243,21 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           // x64 : IMAGE_DLLCHARACTERISTICS_ NO_SEH | IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE | IMAGE_DLLCHARACTERISTICS_NX_COMPAT
           let dllCharacteristics =
             let flags =
-                if ilModule.Is64Bit then (if isItanium then 0x8540 else 0x540)
+                if modul.Is64Bit then (if isItanium then 0x8540 else 0x540)
                 else 0x540
-            if ilModule.UseHighEntropyVA then flags ||| 0x20 // IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
+            if modul.UseHighEntropyVA then flags ||| 0x20 // IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA
             else flags
           writeInt32AsUInt16 os dllCharacteristics
        // 000000e0
           // Note that the defaults differ between x86 and x64
-          if ilModule.Is64Bit then
-            let size = defaultArg ilModule.StackReserveSize 0x400000 |> int64
+          if modul.Is64Bit then
+            let size = defaultArg modul.StackReserveSize 0x400000 |> int64
             writeInt64 os size // Stack Reserve Size Always 0x400000 (4Mb) (see Section 23.1).
             writeInt64 os 0x4000L // Stack Commit Size Always 0x4000 (16Kb) (see Section 23.1).
             writeInt64 os 0x100000L // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1).
             writeInt64 os 0x2000L // Heap Commit Size Always 0x800 (8Kb) (see Section 23.1).
           else
-            let size = defaultArg ilModule.StackReserveSize 0x100000
+            let size = defaultArg modul.StackReserveSize 0x100000
             writeInt32 os size // Stack Reserve Size Always 0x100000 (1Mb) (see Section 23.1).
             writeInt32 os 0x1000 // Stack Commit Size Always 0x1000 (4Kb) (see Section 23.1).
             writeInt32 os 0x100000 // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1).
@@ -4367,9 +4367,9 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           // e.g. 0x0208
 
           let flags =
-            (if ilModule.IsILOnly then 0x01 else 0x00) |||
-            (if ilModule.Is32Bit then 0x02 else 0x00) |||
-            (if ilModule.Is32BitPreferred then 0x00020003 else 0x00) |||
+            (if modul.IsILOnly then 0x01 else 0x00) |||
+            (if modul.Is32Bit then 0x02 else 0x00) |||
+            (if modul.Is32BitPreferred then 0x00020003 else 0x00) |||
             (if (match signer with None -> false | Some s -> s.IsFullySigned) then 0x08 else 0x00)
 
           let headerVersionMajor, headerVersionMinor = headerVersionSupportedByCLRVersion desiredMetadataVersion
@@ -4491,7 +4491,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
           let entrypointFixupAddr = entrypointCodeChunk.addr + 0x02
           let entrypointFixupBlock = (entrypointFixupAddr / 4096) * 4096
           let entrypointFixupOffset = entrypointFixupAddr - entrypointFixupBlock
-          let reloc = (if ilModule.Is64Bit then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
+          let reloc = (if modul.Is64Bit then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
           // For the itanium, you need to set a relocation entry for the global pointer
           let reloc2 =
               if not isItanium then
@@ -4511,7 +4511,7 @@ let writeBinaryAux (stream: Stream, options: options, ilModule, normalizeAssembl
     reportTime options.showTimes "Writing Image"
     pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
-let writeBinaryFiles (options: options, ilModule, normalizeAssemblyRefs) =
+let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     let stream =
         try
@@ -4525,7 +4525,7 @@ let writeBinaryFiles (options: options, ilModule, normalizeAssemblyRefs) =
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
             try
-                writeBinaryAux(stream, options, ilModule, normalizeAssemblyRefs)
+                writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
             finally
                 stream.Close()
 
@@ -4551,12 +4551,12 @@ let writeBinaryFiles (options: options, ilModule, normalizeAssemblyRefs) =
 
     mappings
 
-let writeBinaryInMemory (options: options, ilModule, normalizeAssemblyRefs) =
+let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
     let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None }
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
-        writeBinaryAux(stream, options, ilModule, normalizeAssemblyRefs)
+        writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
 
     let reopenOutput () = stream
 
