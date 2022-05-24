@@ -1002,8 +1002,7 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
              let stackGuard = StackGuard(100)
              // Write the scopes
              let rec writePdbScope parent sco =
-                 stackGuard.Guard
-                 <| fun () ->
+                 stackGuard.Guard(fun () ->
                      if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
                          // Only nest scopes if the child scope is a different size from
                          let nested =
@@ -1020,7 +1019,7 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
                          sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
 
                          if nested then
-                             pdbCloseScope pdbw sco.EndOffset
+                             pdbCloseScope pdbw sco.EndOffset)
 
              match minfo.RootScope with
              | None -> ()
@@ -1245,8 +1244,7 @@ and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
     (acc, scopes) ||> Array.fold allNamesOfScope
 
 let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
-    stackGuard.Guard
-    <| fun () ->
+    stackGuard.Guard(fun () ->
         // Check if child scopes are properly nested
         if scope.Children
            |> Array.forall (fun child -> child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
@@ -1301,7 +1299,7 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
                 let splitsParent = renamed.Length > 0
                 [| { scope with Locals = localsToPush2 } |], splitsParent
         else
-            [| scope |], false
+            [| scope |], false)
 
 // Check to see if a scope has a local with the same name as any of its children
 //
