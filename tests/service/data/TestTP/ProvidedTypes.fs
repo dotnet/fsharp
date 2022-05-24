@@ -10819,7 +10819,7 @@ namespace ProviderImplementation.ProvidedTypes
             member codebuf.EmitExceptionClause seh = codebuf.seh.Add(seh)
 
 #if DEBUG_INFO
-            member codebuf.EmitDebugPoint cenv (m:ILDebugPoint)  = ()
+            member codebuf.EmitSeqPoint cenv (m:ILDebugPoint)  = ()
                 if cenv.generatePdb then 
                   // table indexes are 1-based, document array indexes are 0-based 
                   let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1  
@@ -11131,7 +11131,7 @@ namespace ProviderImplementation.ProvidedTypes
                     codebuf.RecordReqdBrFixup (ILCmpInstrMap.Value[cmp], Some ILCmpInstrRevMap.Value[cmp]) tg1
                 | I_br tg -> codebuf.RecordReqdBrFixup (i_br, Some i_br_s) tg
 #if EMIT_DEBUG_INFO
-                | I_seqpoint s ->   codebuf.EmitDebugPoint cenv s
+                | I_seqpoint s ->   codebuf.EmitSeqPoint cenv s
 #endif
                 | I_leave tg -> codebuf.RecordReqdBrFixup (i_leave, Some i_leave_s) tg
                 | I_call  (tl, mspec, varargs)      -> 
