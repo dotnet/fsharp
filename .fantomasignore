@@ -17,7 +17,6 @@ src/FSharp.Core/**/*.fs
 src/Compiler/Checking/**/*.fs
 src/Compiler/CodeGen/**/*.fs
 src/Compiler/DependencyManager/**/*.fs
-src/Compiler/Driver/**/*.fs
 src/Compiler/Facilities/**/*.fs
 src/Compiler/Interactive/**/*.fs
 src/Compiler/Legacy/**/*.fs
