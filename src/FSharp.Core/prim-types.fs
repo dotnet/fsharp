@@ -1061,7 +1061,7 @@ namespace Microsoft.FSharp.Core
                  GenericComparisonWithComparerIntrinsic comp x y
 
                  when 'T : bool   =
-                    // bool is alread 1 for True or 0 for False
+                    // bool is already 1 for True or 0 for False
                     // x - y gives:
                     // compare true  false -> 1 - 0 ->  1
                     // compare false true  -> 0 - 1 -> -1
@@ -1147,7 +1147,7 @@ namespace Microsoft.FSharp.Core
                  GenericComparisonIntrinsic x y
                     
                  when 'T : bool   = 
-                    // bool is alread 1 for True or 0 for False
+                    // bool is already 1 for True or 0 for False
                     // x - y gives:
                     // compare true  false -> 1 - 0 ->  1
                     // compare false true  -> 0 - 1 -> -1
@@ -4788,7 +4788,7 @@ namespace Microsoft.FSharp.Core
             let inline compare (e1: ^T) (e2: ^T) : int = 
                  (if e1 < e2 then -1 elif e1 > e2 then 1 else 0)
                  when ^T : bool   =
-                    // bool is alread 1 for true or 0 for false
+                    // bool is already 1 for true or 0 for false
                     // e1 - e2 gives:
                     // compare true  false -> 1 - 0 ->  1
                     // compare false true  -> 0 - 1 -> -1
