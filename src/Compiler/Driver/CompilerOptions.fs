@@ -126,13 +126,12 @@ let PrintPublicOptions (heading, opts) =
     List.iter PrintCompilerOption opts
 
 let PrintCompilerOptionBlocks blocks =
-  let equals x y = x=y
-  let publicBlocks = List.choose (function PrivateOptions _ -> None | PublicOptions (heading, opts) -> Some (heading, opts)) blocks
+  let publicBlocks = blocks |> List.choose (function PrivateOptions _ -> None | PublicOptions (heading, opts) -> Some (heading, opts))
   let consider doneHeadings (heading, _opts) =
     if Set.contains heading doneHeadings then
       doneHeadings
     else
-      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.collect snd
+      let headingOptions = publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
       PrintPublicOptions (heading, headingOptions)
       Set.add heading doneHeadings
   List.fold consider Set.empty publicBlocks |> ignore<Set<string>>

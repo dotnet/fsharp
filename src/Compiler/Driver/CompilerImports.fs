@@ -333,7 +333,7 @@ type TcConfig with
                         FileSystem.IsPathRootedShim r.FileName
 
                     if isPoundRReference m then
-                        yield Path.GetDirectoryName(m.FileName)
+                        Path.GetDirectoryName(m.FileName)
                 }
 
             let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
@@ -572,11 +572,11 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
 
             if not tcConfig.compilingFSharpCore then
-                yield tcConfig.CoreLibraryDllReference()
+                tcConfig.CoreLibraryDllReference()
                 if assumeDotNetFramework then
                     // When building desktop then we need these additional dependencies
-                    yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
-                    yield AssemblyReference(rangeStartup, "System.dll", None)
+                    AssemblyReference(rangeStartup, "System.Numerics.dll", None)
+                    AssemblyReference(rangeStartup, "System.dll", None)
                     let asm = AssemblyReference(rangeStartup, "netstandard.dll", None)
                     let found =
                         if tcConfig.useSimpleResolution then
@@ -586,12 +586,12 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                         else
                             let resolutions = tcConfig.MsBuildResolve([|asm.Text, ""|], ResolveAssemblyReferenceMode.Speculative, rangeStartup, (*showMessages*)false)
                             resolutions.Length = 1
-                    if found then yield asm
+                    if found then asm
 
             if tcConfig.implicitlyReferenceDotNetAssemblies then
                 let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib)
                 for s in references do
-                    yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
+                    AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             yield! tcConfig.referencedDLLs
         ]
@@ -677,7 +677,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then
                         let ccuName = GetSignatureDataResourceName iresource
-                        yield (ccuName, fun () -> iresource.GetBytes()) ]
+                        (ccuName, fun () -> iresource.GetBytes()) ]
 
             let sigDataReaders =
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then
@@ -740,7 +740,7 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
             [ for iresource in resources do
                 if IsSignatureDataResource iresource then
                     let ccuName = GetSignatureDataResourceName iresource
-                    yield (ccuName, fun () -> iresource.GetBytes()) ]
+                    (ccuName, fun () -> iresource.GetBytes()) ]
 
          member _.GetRawFSharpOptimizationData(_, _, _) =
             ilModule.Resources.AsList()
@@ -894,7 +894,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 if ccuThunk.IsUnresolvedReference then
                     func()
                 if ccuThunk.IsUnresolvedReference then
-                    yield (ccuThunk, func) ]
+                    (ccuThunk, func) ]
         ccuThunks <- ResizeArray unsuccessful
 
     let availableToOptionalCcu = function
@@ -1908,7 +1908,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // These are the DLLs we can search for well-known types
         let sysCcus =
              [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                   yield ccu |]
+                   ccu |]
 
         let tryFindSysTypeCcu path typeName =
             sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)

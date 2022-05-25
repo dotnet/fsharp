@@ -537,7 +537,7 @@ type TcConfigBuilder =
             yield! tcConfigB.includes
             yield! tcConfigB.compilerToolPaths
             yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
-            yield tcConfigB.implicitIncludeDir
+            tcConfigB.implicitIncludeDir
         }
         |> Seq.distinct
 
@@ -1215,8 +1215,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member tcConfig.GetSearchPathsForLibraryFiles() =
         [ yield! tcConfig.GetTargetFrameworkDirectories()
           yield! List.map tcConfig.MakePathAbsolute tcConfig.includes
-          yield tcConfig.implicitIncludeDir
-          yield tcConfig.fsharpBinariesDir ]
+          tcConfig.implicitIncludeDir
+          tcConfig.fsharpBinariesDir ]
 
     member _.MakePathAbsolute path =
         makePathAbsolute path

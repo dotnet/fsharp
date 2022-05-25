@@ -297,12 +297,12 @@ module MainModuleBuilder =
         let manifestAttrs =
             mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then
-                       yield mkILCustomAttribute (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
+                       mkILCustomAttribute (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
                    yield! sigDataAttributes
                    yield! codegenResults.ilAssemAttrs
 
                    if Option.isSome pdbfile then
-                       yield (tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) ))
+                       tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )
                    yield! reflectedDefinitionAttrs ]
 
         // Make the manifest of the assembly
@@ -328,23 +328,23 @@ module MainModuleBuilder =
                          let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
                          let bytes = FileSystem.OpenFileForReadShim(file).ReadAllBytes()
                          name, bytes, pub
-                 yield { Name=name
-                         // TODO: We probably can directly convert ByteMemory to ByteStorage, without reading all bytes.
-                         Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
-                         Access=pub
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-                         MetadataIndex = NoMetadataIdx }
+                 { Name=name
+                   // TODO: We probably can directly convert ByteMemory to ByteStorage, without reading all bytes.
+                   Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
+                   Access=pub
+                   CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
+                   MetadataIndex = NoMetadataIdx }
 
               yield! reflectedDefinitionResources
               yield! sigDataResources
               yield! optDataResources
               for ri in tcConfig.linkResources do
                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
-                 yield { Name=name
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
-                         Access=pub
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-                         MetadataIndex = NoMetadataIdx } ]
+                 { Name=name
+                   Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
+                   Access=pub
+                   CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
+                   MetadataIndex = NoMetadataIdx } ]
 
         let assemblyVersion =
             match tcConfig.version with
@@ -378,11 +378,11 @@ module MainModuleBuilder =
                      // specify the major language, and the high-order 6 bits specify the sublanguage.
                      // For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
-                      [ ("000004b0", [ yield ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
-                                       yield ("FileVersion", (sprintf "%d.%d.%d.%d" fileVersionInfo.Major fileVersionInfo.Minor fileVersionInfo.Build fileVersionInfo.Revision))
-                                       yield ("ProductVersion", productVersionString)
+                      [ ("000004b0", [ ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
+                                       ("FileVersion", (sprintf "%d.%d.%d.%d" fileVersionInfo.Major fileVersionInfo.Minor fileVersionInfo.Build fileVersionInfo.Revision))
+                                       ("ProductVersion", productVersionString)
                                        match tcConfig.outputFile with
-                                       | Some f -> yield ("OriginalFilename", Path.GetFileName f)
+                                       | Some f -> ("OriginalFilename", Path.GetFileName f)
                                        | None -> ()
                                        yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute"
                                        yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute"
@@ -465,18 +465,18 @@ module MainModuleBuilder =
 
         let nativeResources =
             [ for av in assemblyVersionResources assemblyVersion do
-                  yield ILNativeResource.Out av
+                  ILNativeResource.Out av
               if not(tcConfig.win32res = "") then
-                  yield ILNativeResource.Out (FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
+                  ILNativeResource.Out (FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
-                  yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
-                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
+                   ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
+                                           yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
                   use iconStream = FileSystem.OpenFileForReadShim(tcConfig.win32icon)
                   Win32ResourceConversions.AppendIconToResourceStream(ms, iconStream)
-                  yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
-                                                yield! ms.ToArray() |] ]
+                  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
+                                          yield! ms.ToArray() |] ]
 
         // Add attributes, version number, resources etc.
         {mainModule with

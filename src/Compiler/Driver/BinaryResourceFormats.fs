@@ -20,7 +20,7 @@ module BinaryGenerationUtilities =
     let Padded initialAlignment (v: byte[]) =
         [| yield! v
            for _ in 1..(4 - (initialAlignment + v.Length) % 4) % 4 do
-               yield 0x0uy |]
+               0x0uy |]
 
 // Generate nodes in a .res file format. These are then linked by Abstract IL using linkNativeResources
 module ResFileFormat =
@@ -89,7 +89,7 @@ module VersionResourceFormat =
 
         let children =
             [| for string in strings do
-                   yield String string |]
+                   String string |]
         VersionInfoElement(wType, szKey, None, children, false)
 
     let StringFileInfo(stringTables: #seq<string * #seq<string * string> >) =
@@ -98,7 +98,7 @@ module VersionResourceFormat =
         // Contains an array of one or more StringTable structures.
         let children =
             [| for stringTable in stringTables do
-                   yield StringTable stringTable |]
+                   StringTable stringTable |]
         VersionInfoElement(wType, szKey, None, children, false)
 
     let VarFileInfo(vars: #seq<int32 * int32>) =
@@ -108,8 +108,8 @@ module VersionResourceFormat =
         let children =
             [| for lang, codePage in vars do
                    let szKey = Bytes.stringAsUnicodeNullTerminated "Translation"
-                   yield VersionInfoElement(0x0, szKey, Some([| yield! i16 lang
-                                                                yield! i16 codePage |]), [| |], false) |]
+                   VersionInfoElement(0x0, szKey, Some([| yield! i16 lang
+                                                          yield! i16 codePage |]), [| |], false) |]
         VersionInfoElement(wType, szKey, None, children, false)
 
     let VS_FIXEDFILEINFO(fileVersion: ILVersionInfo,
@@ -209,8 +209,8 @@ module VersionResourceFormat =
         let szKey = Bytes.stringAsUnicodeNullTerminated "VS_VERSION_INFO" // Contains the Unicode string VS_VERSION_INFO
         let value = VS_FIXEDFILEINFO fixedFileInfo
         let children =
-            [| yield StringFileInfo stringFileInfo
-               yield VarFileInfo varFileInfo
+            [| StringFileInfo stringFileInfo
+               VarFileInfo varFileInfo
             |]
         VersionInfoElement(wType, szKey, Some value, children, false)
 

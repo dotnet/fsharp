@@ -177,7 +177,7 @@ let GetScopedPragmasForHashDirective hd =
               | ParsedHashDirectiveArgument.String (s, _, _) ->
                   match GetWarningNumber(m, s) with
                   | None -> ()
-                  | Some n -> yield ScopedPragma.WarningOff(m, n)
+                  | Some n -> ScopedPragma.WarningOff(m, n)
       | _ -> () ]
 
 let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComments: range list) =

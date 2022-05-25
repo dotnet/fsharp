@@ -381,13 +381,13 @@ module ScriptPreprocessClosure =
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                     yield! loop subSource
                             else
-                                yield ClosureFile(subFile, m, None, [], [], [])
-                        yield ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics, noWarns)
+                                ClosureFile(subFile, m, None, [], [], [])
+                        ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics, noWarns)
 
                     else
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" fileName
-                        yield ClosureFile(fileName, m, None, [], [], []) ]
+                        ClosureFile(fileName, m, None, [], [], []) ]
 
         let sources = closureSources |> List.collect loop
         let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
