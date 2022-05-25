@@ -1069,7 +1069,7 @@ namespace Microsoft.FSharp.Core
                     // compare false false -> 0 - 0 ->  0
                     (# "" x : int #) - (# "" y : int #)
                  when 'T : sbyte  = (# "" x : int #) - (# "" y : int #)
-                 when 'T : int16  = (# "" x y : int #) - (# "" x y : int #)
+                 when 'T : int16  = (# "" x : int #) - (# "" y : int #)
                  when 'T : int32  = (# "cgt" x y : int #) - (# "clt" x y : int #)
                  when 'T : int64  = (# "cgt" x y : int #) - (# "clt" x y : int #)
                  when 'T : nativeint  = (# "cgt" x y : int #) - (# "clt" x y : int #)
