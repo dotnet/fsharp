@@ -25,6 +25,8 @@ type ILPlatform =
     | X86
     | AMD64
     | IA64
+    | ARM
+    | ARM64
 
 /// Debug info.  Values of type "source" can be attached at sequence
 /// points and some other locations.
@@ -1724,30 +1726,29 @@ type ILNativeResource =
 /// An assembly is built by joining together a "main" module plus
 /// several auxiliary modules.
 type ILModuleDef =
-    {
-        Manifest: ILAssemblyManifest option
-        Name: string
-        TypeDefs: ILTypeDefs
-        SubsystemVersion: int * int
-        UseHighEntropyVA: bool
-        SubSystemFlags: int32
-        IsDLL: bool
-        IsILOnly: bool
-        Platform: ILPlatform option
-        StackReserveSize: int32 option
-        Is32Bit: bool
-        Is32BitPreferred: bool
-        Is64Bit: bool
-        VirtualAlignment: int32
-        PhysicalAlignment: int32
-        ImageBase: int32
-        MetadataVersion: string
-        Resources: ILResources
-        /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
-        NativeResources: ILNativeResource list
-        CustomAttrsStored: ILAttributesStored
-        MetadataIndex: int32
-    }
+    { Manifest: ILAssemblyManifest option
+      Name: string
+      TypeDefs: ILTypeDefs
+      SubsystemVersion: int * int
+      UseHighEntropyVA: bool
+      SubSystemFlags: int32
+      IsDLL: bool
+      IsILOnly: bool
+      Platform: ILPlatform option
+      StackReserveSize: int32 option
+      Is32Bit: bool
+      Is32BitPreferred: bool
+      Is64Bit: bool
+      IsAMD64Bit: bool
+      VirtualAlignment: int32
+      PhysicalAlignment: int32
+      ImageBase: int32
+      MetadataVersion: string
+      Resources: ILResources
+      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+      NativeResources: ILNativeResource list
+      CustomAttrsStored: ILAttributesStored
+      MetadataIndex: int32 }
 
     member ManifestOfAssembly: ILAssemblyManifest
 

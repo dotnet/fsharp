@@ -1114,6 +1114,8 @@ type ILPlatform =
     | X86
     | AMD64
     | IA64
+    | ARM
+    | ARM64
 
 type ILSourceDocument =
     {
@@ -2992,29 +2994,29 @@ type ILNativeResource =
     | Out of unlinkedResource: byte[]
 
 type ILModuleDef =
-    {
-        Manifest: ILAssemblyManifest option
-        Name: string
-        TypeDefs: ILTypeDefs
-        SubsystemVersion: int * int
-        UseHighEntropyVA: bool
-        SubSystemFlags: int32
-        IsDLL: bool
-        IsILOnly: bool
-        Platform: ILPlatform option
-        StackReserveSize: int32 option
-        Is32Bit: bool
-        Is32BitPreferred: bool
-        Is64Bit: bool
-        VirtualAlignment: int32
-        PhysicalAlignment: int32
-        ImageBase: int32
-        MetadataVersion: string
-        Resources: ILResources
-        /// e.g. win32 resources
-        NativeResources: ILNativeResource list
-        CustomAttrsStored: ILAttributesStored
-        MetadataIndex: int32
+    { Manifest: ILAssemblyManifest option
+      Name: string
+      TypeDefs: ILTypeDefs
+      SubsystemVersion : int * int
+      UseHighEntropyVA : bool
+      SubSystemFlags: int32
+      IsDLL: bool
+      IsILOnly: bool
+      Platform: ILPlatform option
+      StackReserveSize: int32 option
+      Is32Bit: bool
+      Is32BitPreferred: bool
+      Is64Bit: bool
+      IsAMD64Bit: bool
+      VirtualAlignment: int32
+      PhysicalAlignment: int32
+      ImageBase: int32
+      MetadataVersion: string
+      Resources: ILResources
+      /// e.g. win32 resources
+      NativeResources: ILNativeResource list
+      CustomAttrsStored: ILAttributesStored
+      MetadataIndex: int32
     }
 
     member x.ManifestOfAssembly =
@@ -4251,49 +4253,43 @@ let mkILSimpleModule
     metadataVersion
     =
     let manifest =
-        {
-            Name = assemblyName
-            AuxModuleHashAlgorithm =
-                match hashalg with
-                | Some alg -> alg
-                | _ -> 0x8004 // SHA1
-            SecurityDeclsStored = emptyILSecurityDeclsStored
-            PublicKey = None
-            Version = None
-            Locale = locale
-            CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-            AssemblyLongevity = ILAssemblyLongevity.Unspecified
-            DisableJitOptimizations = 0 <> (flags &&& 0x4000)
-            JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-            IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
-            Retargetable = (0 <> (flags &&& 0x100))
-            ExportedTypes = exportedTypes
-            EntrypointElsewhere = None
-            MetadataIndex = NoMetadataIdx
-        }
-
-    {
-        Manifest = Some manifest
-        CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-        Name = moduleName
-        NativeResources = []
-        TypeDefs = tdefs
-        SubsystemVersion = subsystemVersion
-        UseHighEntropyVA = useHighEntropyVA
-        SubSystemFlags = defaultSubSystem
-        IsDLL = dll
-        IsILOnly = true
-        Platform = None
-        StackReserveSize = None
-        Is32Bit = false
-        Is32BitPreferred = false
-        Is64Bit = false
-        PhysicalAlignment = defaultPhysAlignment
-        VirtualAlignment = defaultVirtAlignment
-        ImageBase = defaultImageBase
-        MetadataVersion = metadataVersion
-        Resources = mkILResources []
-        MetadataIndex = NoMetadataIdx
+        { Name=assemblyName
+          AuxModuleHashAlgorithm= match hashalg with | Some alg -> alg | _ -> 0x8004 // SHA1
+          SecurityDeclsStored=emptyILSecurityDeclsStored
+          PublicKey= None
+          Version= None
+          Locale=locale
+          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
+          AssemblyLongevity=ILAssemblyLongevity.Unspecified
+          DisableJitOptimizations = 0 <> (flags &&& 0x4000)
+          JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
+          IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
+          Retargetable = (0 <> (flags &&& 0x100))
+          ExportedTypes=exportedTypes
+          EntrypointElsewhere=None
+          MetadataIndex = NoMetadataIdx }
+    { Manifest= Some manifest
+      CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
+      Name=moduleName
+      NativeResources=[]
+      TypeDefs=tdefs
+      SubsystemVersion = subsystemVersion
+      UseHighEntropyVA = useHighEntropyVA
+      SubSystemFlags=defaultSubSystem
+      IsDLL=dll
+      IsILOnly=true
+      Platform=None
+      StackReserveSize=None
+      Is32Bit=false
+      Is32BitPreferred=false
+      Is64Bit=false
+      IsAMD64Bit=false
+      PhysicalAlignment=defaultPhysAlignment
+      VirtualAlignment=defaultVirtAlignment
+      ImageBase=defaultImageBase
+      MetadataVersion=metadataVersion
+      Resources=mkILResources []
+      MetadataIndex = NoMetadataIdx
     }
 
 //-----------------------------------------------------------------------

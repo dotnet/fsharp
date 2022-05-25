@@ -5008,8 +5008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">이 코드를 실행할 수 있는 플랫폼을 x86, Itanium, x64, anycpu32bitpreferred 또는 anycpu로 제한합니다. 기본값은 anycpu입니다.</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">이 코드를 실행할 수 있는 플랫폼을 x86, Itanium, x64, anycpu32bitpreferred 또는 anycpu로 제한합니다. 기본값은 anycpu입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5303,8 +5303,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">인식할 수 없는 플랫폼 '{0}'입니다. 올바른 값은 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다.</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">인식할 수 없는 플랫폼 '{0}'입니다. 올바른 값은 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

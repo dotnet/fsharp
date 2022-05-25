@@ -4144,12 +4144,12 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
 
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |]
 
-          if (modul.Platform = Some AMD64) then
-            writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64
-          elif isItanium then
-            writeInt32AsUInt16 os 0x200
-          else
-            writeInt32AsUInt16 os 0x014c   // Machine - IMAGE_FILE_MACHINE_I386
+          match modul.Platform with
+          | Some AMD64 -> writeInt32AsUInt16 os 0x8664      // Machine - IMAGE_FILE_MACHINE_AMD64
+          | Some IA64 -> writeInt32AsUInt16 os 0x200        // Machine - IMAGE_FILE_MACHINE_IA64
+          | Some ARM64 -> writeInt32AsUInt16 os 0xaa64      // Machine - IMAGE_FILE_MACHINE_ARM64
+          | Some ARM -> writeInt32AsUInt16 os 0x1c0         // Machine - IMAGE_FILE_MACHINE_ARM
+          | _ ->  writeInt32AsUInt16 os 0x014c              // Machine - IMAGE_FILE_MACHINE_I386
 
           writeInt32AsUInt16 os numSections
 
@@ -4491,7 +4491,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let entrypointFixupAddr = entrypointCodeChunk.addr + 0x02
           let entrypointFixupBlock = (entrypointFixupAddr / 4096) * 4096
           let entrypointFixupOffset = entrypointFixupAddr - entrypointFixupBlock
-          let reloc = (if modul.Is64Bit then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
+          let reloc = (if isItaniumOrAMD then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
           // For the itanium, you need to set a relocation entry for the global pointer
           let reloc2 =
               if not isItanium then

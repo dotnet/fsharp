@@ -5008,8 +5008,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">Limite em quais plataformas este código pode ser executado: x86, Itanium, x64, anycpu32bitpreferred ou anycpu. O padrão é anycpu.</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">Limite em quais plataformas este código pode ser executado: x86, Itanium, x64, anycpu32bitpreferred ou anycpu. O padrão é anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5303,8 +5303,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">Plataforma não reconhecida '{0}', os valores válidos são 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' e 'anycpu'</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">Plataforma não reconhecida '{0}', os valores válidos são 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' e 'anycpu'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

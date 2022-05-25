@@ -18,12 +18,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-		<Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-	</None>
-	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-		<Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-	</None>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -93,8 +87,8 @@
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
-    <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
+    <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
@@ -117,6 +111,7 @@
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
+    <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
     <Compile Include="EmittedIL\SerializableAttribute\SerializableAttribute.fs" />
     <Compile Include="EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs" />
@@ -160,8 +155,8 @@
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
-	<Compile Include="Interop\SimpleInteropTests.fs" />
-	<Compile Include="Interop\StaticsInInterfaces.fs" />
+    <Compile Include="Interop\SimpleInteropTests.fs" />
+    <Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
@@ -184,6 +179,12 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
   <ItemGroup>
