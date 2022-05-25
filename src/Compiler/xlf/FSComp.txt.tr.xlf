@@ -412,6 +412,11 @@
         <target state="translated">{0} uzaklığında başlayan kaynak üst bilgisi hatalı biçimlendirilmiş.</target>
         <note />
       </trans-unit>
+      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
+        <source>No argument are allowed in delegate primary constructor.</source>
+        <target state="new">No argument are allowed in delegate primary constructor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">Bu ifade bir fonksiyon değildir ve uygulanamaz. Dizin oluşturucuya “expr[index]” aracılığıyla mı erişmeyi düşündünüz?</target>

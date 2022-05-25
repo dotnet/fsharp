@@ -412,6 +412,11 @@
         <target state="translated">Der Ressourcenheader, der am Offset {0} beginnt, ist fehlerhaft formatiert.</target>
         <note />
       </trans-unit>
+      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
+        <source>No argument are allowed in delegate primary constructor.</source>
+        <target state="new">No argument are allowed in delegate primary constructor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">Dieser Ausdruck ist keine Funktion und kann nicht angewendet werden. Wollten Sie auf den Indexer stattdessen über "expr[index]" zugreifen?</target>

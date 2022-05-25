@@ -412,6 +412,11 @@
         <target state="translated">El encabezado de los recursos que comienza en el desplazamiento {0} está mal formado.</target>
         <note />
       </trans-unit>
+      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
+        <source>No argument are allowed in delegate primary constructor.</source>
+        <target state="new">No argument are allowed in delegate primary constructor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">Esta expresión no es una función y no se puede aplicar. ¿Quería acceder al indexador a través de "expr[index]"?</target>

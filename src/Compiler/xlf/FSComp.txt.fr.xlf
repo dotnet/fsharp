@@ -412,6 +412,11 @@
         <target state="translated">L'en-tête de ressource commençant au décalage {0} est mal formé.</target>
         <note />
       </trans-unit>
+      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
+        <source>No argument are allowed in delegate primary constructor.</source>
+        <target state="new">No argument are allowed in delegate primary constructor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">Cette expression n'est pas une fonction et ne peut pas être appliquée. Souhaitiez-vous accéder à l'indexeur via « expr[index] »?</target>

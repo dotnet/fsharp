@@ -412,6 +412,11 @@
         <target state="translated">O cabeçalho do recurso que começa no deslocamento {0} está malformado.</target>
         <note />
       </trans-unit>
+      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
+        <source>No argument are allowed in delegate primary constructor.</source>
+        <target state="new">No argument are allowed in delegate primary constructor.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">Essa expressão não é uma função e não pode ser aplicada. Você pretendia acessar o indexador por meio do 'expr[index]'?</target>
