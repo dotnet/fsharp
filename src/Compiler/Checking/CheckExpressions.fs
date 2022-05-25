@@ -1314,13 +1314,16 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
 
     let isInstance = MemberIsCompiledAsInstance g tcref isExtrinsic memberInfo attrs
 
-    if (memberFlags.IsDispatchSlot || not (isNil intfSlotTys)) then
-        if not isInstance then
-          errorR(VirtualAugmentationOnNullValuedType(id.idRange))
+    let hasUseNullAsTrueAttr = TyconHasUseNullAsTrueValueAttribute g tcref.Deref
 
-    elif not memberFlags.IsOverrideOrExplicitImpl && memberFlags.IsInstance then
-        if not isExtrinsic && not isInstance then
-            warning(NonVirtualAugmentationOnNullValuedType(id.idRange))
+    if hasUseNullAsTrueAttr then
+        if (memberFlags.IsDispatchSlot || not (isNil intfSlotTys)) then
+            if not isInstance then
+              errorR(VirtualAugmentationOnNullValuedType(id.idRange))
+
+        elif not memberFlags.IsOverrideOrExplicitImpl && memberFlags.IsInstance then
+            if not isExtrinsic && not isInstance then
+                warning(NonVirtualAugmentationOnNullValuedType(id.idRange))
 
     let compiledName =
         if isExtrinsic then

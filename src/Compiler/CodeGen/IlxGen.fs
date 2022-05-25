@@ -4644,11 +4644,17 @@ and GenFormalSlotsig m cenv eenv slotsig =
     let ilRet = GenFormalReturnType m cenv eenvForSlotSig returnTy
     ilTy, ilParams, ilRet
 
-and GenOverridesSpec cenv eenv slotsig m =
+and GenOverridesSpec cenv eenv slotsig m isInstance =
     let (TSlotSig(nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
     let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig
     let ilOverrideTyRef = ilOverrideTy.TypeRef
-    let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methodTypars), typesOfILParams ilOverrideParams, ilOverrideRet.Type)
+    let callingConv =
+        if isInstance then
+            ILCallingConv.Instance
+        else
+            ILCallingConv.Static
+
+    let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, callingConv, nameOfOverridenMethod, List.length (DropErasedTypars methodTypars), typesOfILParams ilOverrideParams, ilOverrideRet.Type)
     OverridesSpec(ilOverrideMethRef, ilOverrideTy)
 
 and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
@@ -4686,8 +4692,8 @@ and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     else
         nameOfOverridenMethod
 
-and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m =
-    let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m
+and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m isInstance =
+    let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m isInstance
 
     let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
     nameOfOverridingMethod,
@@ -4696,7 +4702,12 @@ and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m =
         let ilParamsOfOverridingMethod, ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvForOverrideBy slotsig methTyparsOfOverridingMethod []
         let ilOverrideMethGenericParams = GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
-        let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+        let ilOverrideBy =
+            if isInstance then
+                mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+            else
+                mkILStaticMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+
         { Overrides = ilOverridesSpec
           OverrideBy = ilOverrideBy })
 
@@ -4745,7 +4756,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
 
         let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
-        let nameOfOverridingMethod, methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range
+        let nameOfOverridingMethod, methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
 
         let mdef =
             mkILGenericVirtualMethod
@@ -4868,7 +4879,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
 
             let slotsig = implementedMeth.GetSlotSig(amap, m)
-            let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m
+            let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m mdef.CallingConv.IsInstance
             let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
             { Overrides = ilOverridesSpec
               OverrideBy = ilOverrideBy } ]
@@ -7936,7 +7947,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                                  let useMethodImpl = true
                                  let eenvUnderTypars = EnvForTypars memberParentTypars eenv
-                                 let _, methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m
+                                 let _, methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
                                  if useMethodImpl then
                                      yield methodImplGenerator (ilThisTy, memberMethodTypars)
 

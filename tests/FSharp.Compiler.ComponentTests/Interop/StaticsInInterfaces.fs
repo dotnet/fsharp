@@ -117,7 +117,40 @@ type MyRepeatSequence() =
         |> shouldSucceed
         |> verifyIL [
         """
-foo
+.class public abstract auto ansi sealed StaticsTesting
+   extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .class auto ansi serializable nested public MyRepeatSequence
+     extends [runtime]System.Object
+     implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
+  {
+.custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+.method public specialname rtspecialname 
+        instance void  .ctor() cil managed
+{
+  
+  .maxstack  8
+  IL_0000:  ldarg.0
+  IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+  IL_0006:  ldarg.0
+  IL_0007:  pop
+  IL_0008:  ret
+} 
+
+.method public static class StaticsTesting/MyRepeatSequence 
+        'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
+{
+  .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
+  
+  .maxstack  8
+  IL_0000:  ldarg.0
+  IL_0001:  ret
+} 
+
+  } 
+
+}
         """]
     
 #if !NETCOREAPP
