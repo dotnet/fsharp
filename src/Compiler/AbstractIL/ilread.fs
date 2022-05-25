@@ -1920,7 +1920,6 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
       Is32Bit = only32
       Is32BitPreferred = is32bitpreferred
       Is64Bit = only64
-      IsAMD64Bit = platform = Some ILPlatform.AMD64
       IsDLL=isDll
       VirtualAlignment = alignVirt
       PhysicalAlignment = alignPhys

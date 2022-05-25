@@ -1739,7 +1739,6 @@ type ILModuleDef =
       Is32Bit: bool
       Is32BitPreferred: bool
       Is64Bit: bool
-      IsAMD64Bit: bool
       VirtualAlignment: int32
       PhysicalAlignment: int32
       ImageBase: int32
