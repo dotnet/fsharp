@@ -188,13 +188,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Remove="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\Override01.fsx" />
-    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
-    <None Remove="Conformance\UnionTypes\E_DuplicateUnionCase01.fsx" />
-    <None Remove="EmittedIL\Platform\AssemblyNameForExe - Copy.fs" />
-    <None Remove="EmittedIL\Platform\AssemblyNameForExe.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
