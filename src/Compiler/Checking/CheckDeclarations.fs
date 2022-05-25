@@ -3985,7 +3985,14 @@ module EstablishTypeDefinitionCores =
                 match fields' with 
                 | rf :: _ -> errorR (Error(FSComp.SR.tcInterfaceTypesAndDelegatesCannotContainFields(), rf.Range))
                 | _ -> ()
-
+            
+            let primaryConstructorInDelegateCheck(tyCon: Tycon, implicitCtorSynPats : SynSimplePats option) =
+                match implicitCtorSynPats with 
+                | None -> ()
+                | Some spats ->
+                    if tyCon.IsFSharpDelegateTycon then
+                        let ctorArgNames, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
+                        if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.noArgumentsAreAllowedInDelegatePrimaryConstructor(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
@@ -4182,6 +4189,7 @@ module EstablishTypeDefinitionCores =
                                   noAllowNullLiteralAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
+                                  primaryConstructorInDelegateCheck(tycon, implicitCtorSynPats)
                                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty
                                   let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateSynValInfo m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
