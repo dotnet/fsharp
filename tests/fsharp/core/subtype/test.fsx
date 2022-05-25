@@ -1968,6 +1968,496 @@ module TestInheritFunc3 =
 
     check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
 
+module TestSubtypeMatching1 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+
+    let toName (x: obj) =
+        match x with
+        | :? A -> "A"
+        | :? B -> "B"
+        | :? C -> "C"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName (A())) "A"
+    check "cnwcki4cewweq2" (toName (B())) "A"
+    check "cnwcki4cewweq3" (toName (C())) "A"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestSubtypeMatching2 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+
+    let toName (x: obj) =
+        match x with
+        | :? A when false -> "A fail"
+        | :? B -> "B"
+        | :? C -> "C"
+        | _ -> "other"
+
+    check "cnwcki4cewweq5" (toName (A())) "other"
+    check "cnwcki4cewweq6" (toName (B())) "B"
+    check "cnwcki4cewweq7" (toName (C())) "C"
+    check "cnwcki4cewweq8" (toName (obj())) "other"
+
+
+module TestSubtypeMatching3 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+
+    let toName (x: obj) =
+        match x with
+        | :? A -> "A"
+        | :? B when false -> "B fail"
+        | :? C -> "C"
+        | _ -> "other"
+
+    check "cnwcki4cewweq10" (toName (A())) "A"
+    check "cnwcki4cewweq11" (toName (B())) "A"
+    check "cnwcki4cewweq12" (toName (C())) "A"
+    check "cnwcki4cewweq13" (toName (obj())) "other"
+
+module TestSubtypeMatching4 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+
+    let toName (x: obj) =
+        match x with
+        | :? C -> "C"
+        | :? B when false -> "B fail"
+        | :? A -> "A"
+        | _ -> "other"
+
+    check "cnwcki4cewweq14" (toName (A())) "A"
+    check "cnwcki4cewweq15" (toName (B())) "A"
+    check "cnwcki4cewweq16" (toName (C())) "C"
+    check "cnwcki4cewweq17" (toName (obj())) "other"
+
+// Test interface matching
+module TestSubtypeMatching5 =
+    type IA = interface end
+    type IB = inherit IA
+    type IC = inherit IA
+    type A() =
+        interface IA
+    type B() =
+        interface IB
+    type C() =
+        interface IC
+
+    let toName (x: obj) =
+        match x with
+        | :? IA when false -> "IA fail"
+        | :? IB -> "IB"
+        | :? IC -> "IC"
+        | _ -> "other"
+
+    check "cnwcki4cewweq18" (toName (A())) "other"
+    check "cnwcki4cewweq19" (toName (B())) "IB"
+    check "cnwcki4cewweq20" (toName (C())) "IC"
+    check "cnwcki4cewweq21" (toName (obj())) "other"
+
+// Multi-column with no 'when'
+module TestSubtypeMatching6 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | (:? A), :? A -> "AA"
+        | (:? B), :? B -> "BB"
+        | (:? C), :? C -> "CC"
+        | _ -> "other"
+
+    check "cnwcki4ce1" (toName (A(), A())) "AA"
+    check "cnwcki4ce2" (toName (A(), B())) "AA"
+    check "cnwcki4ce3" (toName (A(), C())) "AA"
+    check "cnwcki4ce4" (toName (B(), A())) "AA"
+    check "cnwcki4ce5" (toName (B(), B())) "AA"
+    check "cnwcki4ce6" (toName (B(), C())) "AA"
+    check "cnwcki4ce7" (toName (C(), A())) "AA"
+    check "cnwcki4ce8" (toName (C(), B())) "AA"
+    check "cnwcki4ce9" (toName (C(), C())) "AA"
+    check "cnwcki4ce10" (toName (obj(), obj())) "other"
+
+// Multi-column with failing 'when' and some sealed types
+module TestSubtypeMatching7 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+    [<Sealed>]
+    type D() = inherit A()
+    [<Sealed>]
+    type E() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | (:? A), :? A when false -> "AA"
+        | (:? B), :? B -> "BB"
+        | (:? C), :? C -> "CC"
+        | (:? D), :? D -> "DD"
+        | (:? E), :? E -> "EE"
+        | _ -> "other"
+
+    check "cnwcki4ce11" (toName (obj(), obj())) "other"
+    check "cnwcki4ce12" (toName (obj(), A())) "other"
+    check "cnwcki4ce13" (toName (obj(), B())) "other"
+    check "cnwcki4ce14" (toName (obj(), D())) "other"
+    check "cnwcki4ce15" (toName (obj(), C())) "other"
+    check "cnwcki4ce16" (toName (obj(), E())) "other"
+
+    check "cnwcki4ce17" (toName (A(), obj())) "other"
+    check "cnwcki4ce18" (toName (A(), A())) "other"
+    check "cnwcki4ce19" (toName (A(), B())) "other"
+    check "cnwcki4ce20" (toName (A(), C())) "other"
+    check "cnwcki4ce21" (toName (A(), D())) "other"
+    check "cnwcki4ce22" (toName (A(), E())) "other"
+
+    check "cnwcki4ce23" (toName (B(), obj())) "other"
+    check "cnwcki4ce24" (toName (B(), A())) "other"
+    check "cnwcki4ce25" (toName (B(), B())) "BB"
+    check "cnwcki4ce26" (toName (B(), D())) "other"
+    check "cnwcki4ce27" (toName (B(), C())) "other"
+    check "cnwcki4ce28" (toName (B(), E())) "other"
+
+    check "cnwcki4ce29" (toName (C(), obj())) "other"
+    check "cnwcki4ce30" (toName (C(), A())) "other"
+    check "cnwcki4ce31" (toName (C(), B())) "other"
+    check "cnwcki4ce32" (toName (C(), C())) "CC"
+    check "cnwcki4ce33" (toName (C(), D())) "other"
+    check "cnwcki4ce34" (toName (C(), E())) "other"
+
+    check "cnwcki4ce35" (toName (D(), obj())) "other"
+    check "cnwcki4ce36" (toName (D(), A())) "other"
+    check "cnwcki4ce37" (toName (D(), B())) "other"
+    check "cnwcki4ce38" (toName (D(), C())) "other"
+    check "cnwcki4ce39" (toName (D(), D())) "DD"
+    check "cnwcki4ce40" (toName (D(), E())) "other"
+
+    check "cnwcki4ce41" (toName (E(), obj())) "other"
+    check "cnwcki4ce42" (toName (E(), A())) "other"
+    check "cnwcki4ce43" (toName (E(), B())) "other"
+    check "cnwcki4ce44" (toName (E(), C())) "other"
+    check "cnwcki4ce45" (toName (E(), D())) "other"
+    check "cnwcki4ce46" (toName (E(), E())) "EE"
+
+// Moving the 'when false' clause around shouldn't matter
+module TestSubtypeMatching8 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+    [<Sealed>]
+    type D() = inherit A()
+    [<Sealed>]
+    type E() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | (:? B), :? B -> "BB"
+        | (:? A), :? A when false -> "AA"
+        | (:? C), :? C -> "CC"
+        | (:? D), :? D -> "DD"
+        | (:? E), :? E -> "EE"
+        | _ -> "other"
+
+    check "cnwcki4cf11" (toName (obj(), obj())) "other"
+    check "cnwcki4cf12" (toName (obj(), A())) "other"
+    check "cnwcki4cf13" (toName (obj(), B())) "other"
+    check "cnwcki4cf14" (toName (obj(), D())) "other"
+    check "cnwcki4cf15" (toName (obj(), C())) "other"
+    check "cnwcki4cf16" (toName (obj(), E())) "other"
+
+    check "cnwcki4cf17" (toName (A(), obj())) "other"
+    check "cnwcki4cf18" (toName (A(), A())) "other"
+    check "cnwcki4cf19" (toName (A(), B())) "other"
+    check "cnwcki4cf20" (toName (A(), C())) "other"
+    check "cnwcki4cf21" (toName (A(), D())) "other"
+    check "cnwcki4cf22" (toName (A(), E())) "other"
+
+    check "cnwcki4cf23" (toName (B(), obj())) "other"
+    check "cnwcki4cf24" (toName (B(), A())) "other"
+    check "cnwcki4cf25" (toName (B(), B())) "BB"
+    check "cnwcki4cf26" (toName (B(), D())) "other"
+    check "cnwcki4cf27" (toName (B(), C())) "other"
+    check "cnwcki4cf28" (toName (B(), E())) "other"
+
+    check "cnwcki4cf29" (toName (C(), obj())) "other"
+    check "cnwcki4cf30" (toName (C(), A())) "other"
+    check "cnwcki4cf31" (toName (C(), B())) "other"
+    check "cnwcki4cf32" (toName (C(), C())) "CC"
+    check "cnwcki4cf33" (toName (C(), D())) "other"
+    check "cnwcki4cf34" (toName (C(), E())) "other"
+
+    check "cnwcki4cf35" (toName (D(), obj())) "other"
+    check "cnwcki4cf36" (toName (D(), A())) "other"
+    check "cnwcki4cf37" (toName (D(), B())) "other"
+    check "cnwcki4cf38" (toName (D(), C())) "other"
+    check "cnwcki4cf39" (toName (D(), D())) "DD"
+    check "cnwcki4cf40" (toName (D(), E())) "other"
+
+    check "cnwcki4cf41" (toName (E(), obj())) "other"
+    check "cnwcki4cf42" (toName (E(), A())) "other"
+    check "cnwcki4cf43" (toName (E(), B())) "other"
+    check "cnwcki4cf44" (toName (E(), C())) "other"
+    check "cnwcki4cf45" (toName (E(), D())) "other"
+    check "cnwcki4cf46" (toName (E(), E())) "EE"
+
+// Multi-column in order from most specific to least specific
+module TestSubtypeMatching9 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+    [<Sealed>]
+    type D() = inherit A()
+    [<Sealed>]
+    type E() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | (:? E), :? E -> "EE"
+        | (:? D), :? D -> "DD"
+        | (:? C), :? C -> "CC"
+        | (:? B), :? B -> "BB"
+        | (:? A), :? A -> "AA"
+        | _ -> "other"
+
+    check "cnwcki4cg11" (toName (obj(), obj())) "other"
+    check "cnwcki4cg12" (toName (obj(), A())) "other"
+    check "cnwcki4cg13" (toName (obj(), B())) "other"
+    check "cnwcki4cg14" (toName (obj(), D())) "other"
+    check "cnwcki4cg15" (toName (obj(), C())) "other"
+    check "cnwcki4cg16" (toName (obj(), E())) "other"
+
+    check "cnwcki4cg17" (toName (A(), obj())) "other"
+    check "cnwcki4cg18" (toName (A(), A())) "AA"
+    check "cnwcki4cg19" (toName (A(), B())) "AA"
+    check "cnwcki4cg20" (toName (A(), C())) "AA"
+    check "cnwcki4cg21" (toName (A(), D())) "AA"
+    check "cnwcki4cg22" (toName (A(), E())) "AA"
+
+    check "cnwcki4cg23" (toName (B(), obj())) "other"
+    check "cnwcki4cg24" (toName (B(), A())) "AA"
+    check "cnwcki4cg25" (toName (B(), B())) "BB"
+    check "cnwcki4cg26" (toName (B(), D())) "AA"
+    check "cnwcki4cg27" (toName (B(), C())) "AA"
+    check "cnwcki4cg28" (toName (B(), E())) "AA"
+
+    check "cnwcki4cg29" (toName (C(), obj())) "other"
+    check "cnwcki4cg30" (toName (C(), A())) "AA"
+    check "cnwcki4cg31" (toName (C(), B())) "AA"
+    check "cnwcki4cg32" (toName (C(), C())) "CC"
+    check "cnwcki4cg33" (toName (C(), D())) "AA"
+    check "cnwcki4cg34" (toName (C(), E())) "AA"
+
+    check "cnwcki4cg35" (toName (D(), obj())) "other"
+    check "cnwcki4cg36" (toName (D(), A())) "AA"
+    check "cnwcki4cg37" (toName (D(), B())) "AA"
+    check "cnwcki4cg38" (toName (D(), C())) "AA"
+    check "cnwcki4cg39" (toName (D(), D())) "DD"
+    check "cnwcki4cg40" (toName (D(), E())) "AA"
+
+    check "cnwcki4cg41" (toName (E(), obj())) "other"
+    check "cnwcki4cg42" (toName (E(), A())) "AA"
+    check "cnwcki4cg43" (toName (E(), B())) "AA"
+    check "cnwcki4cg44" (toName (E(), C())) "AA"
+    check "cnwcki4cg45" (toName (E(), D())) "AA"
+    check "cnwcki4cg46" (toName (E(), E())) "EE"
+
+// Multi-column in order from most specific to least specific on second column
+module TestSubtypeMatching10 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+    [<Sealed>]
+    type D() = inherit A()
+    [<Sealed>]
+    type E() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | (:? A), :? E -> "AE"
+        | (:? B), :? D -> "BD"
+        | (:? C), :? C -> "CC"
+        | (:? D), :? B -> "DB"
+        | (:? E), :? A -> "EA"
+        | _ -> "other"
+
+    check "cnwcki4ch11" (toName (obj(), obj())) "other"
+    check "cnwcki4ch12" (toName (obj(), A())) "other"
+    check "cnwcki4ch13" (toName (obj(), B())) "other"
+    check "cnwcki4ch14" (toName (obj(), D())) "other"
+    check "cnwcki4ch15" (toName (obj(), C())) "other"
+    check "cnwcki4ch16" (toName (obj(), E())) "other"
+
+    check "cnwcki4ch17" (toName (A(), obj())) "other"
+    check "cnwcki4ch18" (toName (A(), A())) "other"
+    check "cnwcki4ch19" (toName (A(), B())) "other"
+    check "cnwcki4ch20" (toName (A(), C())) "other"
+    check "cnwcki4ch21" (toName (A(), D())) "other"
+    check "cnwcki4ch22" (toName (A(), E())) "AE"
+
+    check "cnwcki4ch23" (toName (B(), obj())) "other"
+    check "cnwcki4ch24" (toName (B(), A())) "other"
+    check "cnwcki4ch25" (toName (B(), B())) "other"
+    check "cnwcki4ch26" (toName (B(), D())) "BD"
+    check "cnwcki4ch27" (toName (B(), C())) "other"
+    check "cnwcki4ch28" (toName (B(), E())) "AE"
+
+    check "cnwcki4ch29" (toName (C(), obj())) "other"
+    check "cnwcki4ch30" (toName (C(), A())) "other"
+    check "cnwcki4ch31" (toName (C(), B())) "other"
+    check "cnwcki4ch32" (toName (C(), C())) "CC"
+    check "cnwcki4ch33" (toName (C(), D())) "other"
+    check "cnwcki4ch34" (toName (C(), E())) "AE"
+
+    check "cnwcki4ch35" (toName (D(), obj())) "other"
+    check "cnwcki4ch36" (toName (D(), A())) "other"
+    check "cnwcki4ch37" (toName (D(), B())) "DB"
+    check "cnwcki4ch38" (toName (D(), C())) "other"
+    check "cnwcki4ch39" (toName (D(), D())) "other"
+    check "cnwcki4ch40" (toName (D(), E())) "AE"
+
+    check "cnwcki4ch41" (toName (E(), obj())) "other"
+    check "cnwcki4ch42" (toName (E(), A())) "EA"
+    check "cnwcki4ch43" (toName (E(), B())) "EA"
+    check "cnwcki4ch44" (toName (E(), C())) "EA"
+    check "cnwcki4ch45" (toName (E(), D())) "EA"
+    check "cnwcki4ch46" (toName (E(), E())) "AE"
+
+// Add null to the matrix of multi-column (most specific to least specific on second column)
+module TestSubtypeMatching11 =
+    type A() = class end
+    type B() = inherit A()
+    type C() = inherit A()
+    [<Sealed>]
+    type D() = inherit A()
+    [<Sealed>]
+    type E() = inherit A()
+
+    let toName (x: obj * obj) =
+        match x with
+        | null, :? E -> "0E"
+        | (:? A), :? E -> "AE"
+        | (:? B), :? D -> "BD"
+        | (:? C), :? C -> "CC"
+        | (:? D), :? B -> "DB"
+        | (:? E), :? A -> "EA"
+        | (:? E), null -> "E0"
+        | _ -> "other"
+
+    check "cnwcki4ci11" (toName (null, obj())) "other"
+    check "cnwcki4ci12" (toName (null, A())) "other"
+    check "cnwcki4ci13" (toName (null, B())) "other"
+    check "cnwcki4ci14" (toName (null, D())) "other"
+    check "cnwcki4ci15" (toName (null, C())) "other"
+    check "cnwcki4ci16" (toName (null, E())) "0E"
+    check "cnwcki4ci17" (toName (null, null)) "other"
+
+    check "cnwcki4ci18" (toName (obj(), obj())) "other"
+    check "cnwcki4ci19" (toName (obj(), A())) "other"
+    check "cnwcki4ci20" (toName (obj(), B())) "other"
+    check "cnwcki4ci21" (toName (obj(), D())) "other"
+    check "cnwcki4ci22" (toName (obj(), C())) "other"
+    check "cnwcki4ci23" (toName (obj(), E())) "other"
+    check "cnwcki4ci24" (toName (obj(), null)) "other"
+
+    check "cnwcki4ci25" (toName (A(), obj())) "other"
+    check "cnwcki4ci26" (toName (A(), A())) "other"
+    check "cnwcki4ci27" (toName (A(), B())) "other"
+    check "cnwcki4ci28" (toName (A(), C())) "other"
+    check "cnwcki4ci29" (toName (A(), D())) "other"
+    check "cnwcki4ci30" (toName (A(), E())) "AE"
+    check "cnwcki4ci31" (toName (A(), null)) "other"
+
+    check "cnwcki4ci32" (toName (B(), obj())) "other"
+    check "cnwcki4ci33" (toName (B(), A())) "other"
+    check "cnwcki4ci34" (toName (B(), B())) "other"
+    check "cnwcki4ci35" (toName (B(), D())) "BD"
+    check "cnwcki4ci36" (toName (B(), C())) "other"
+    check "cnwcki4ci37" (toName (B(), E())) "AE"
+    check "cnwcki4ci38" (toName (B(), null)) "other"
+
+    check "cnwcki4ci39" (toName (C(), obj())) "other"
+    check "cnwcki4ci40" (toName (C(), A())) "other"
+    check "cnwcki4ci41" (toName (C(), B())) "other"
+    check "cnwcki4ci42" (toName (C(), C())) "CC"
+    check "cnwcki4ci43" (toName (C(), D())) "other"
+    check "cnwcki4ci44" (toName (C(), E())) "AE"
+    check "cnwcki4ci45" (toName (C(), null)) "other"
+
+    check "cnwcki4ci46" (toName (D(), obj())) "other"
+    check "cnwcki4ci47" (toName (D(), A())) "other"
+    check "cnwcki4ci48" (toName (D(), B())) "DB"
+    check "cnwcki4ci49" (toName (D(), C())) "other"
+    check "cnwcki4ci50" (toName (D(), D())) "other"
+    check "cnwcki4ci51" (toName (D(), E())) "AE"
+    check "cnwcki4ci52" (toName (D(), null)) "other"
+
+    check "cnwcki4ci53" (toName (E(), obj())) "other"
+    check "cnwcki4ci54" (toName (E(), A())) "EA"
+    check "cnwcki4ci55" (toName (E(), B())) "EA"
+    check "cnwcki4ci56" (toName (E(), C())) "EA"
+    check "cnwcki4ci57" (toName (E(), D())) "EA"
+    check "cnwcki4ci58" (toName (E(), E())) "AE"
+    check "cnwcki4ci59" (toName (E(), null)) "E0"
+
+// Test interface matching with 'null'
+module TestSubtypeMatching12 =
+    type IA = interface end
+    type IB = inherit IA
+    type IC = inherit IA
+    type A() =
+        interface IA
+    type B() =
+        interface IB
+    type C() =
+        interface IC
+
+    let toName (x: obj) =
+        match x with
+        | null -> "null"
+        | :? IA when false -> "IA fail"
+        | :? IB -> "IB"
+        | :? IC -> "IC"
+        | _ -> "other"
+
+    check "cnwcki4c0" (toName null) "null"
+    check "cnwcki4c1" (toName (A())) "other"
+    check "cnwcki4c2" (toName (B())) "IB"
+    check "cnwcki4c3" (toName (C())) "IC"
+    check "cnwcki4c4" (toName (obj())) "other"
+
+// Test interface matching with 'null when false'
+module TestSubtypeMatching13 =
+    type IA = interface end
+    type IB = inherit IA
+    type IC = inherit IA
+    type A() =
+        interface IA
+    type B() =
+        interface IB
+    type C() =
+        interface IC
+
+    let toName (x: obj) =
+        match x with
+        | null when false -> "null"
+        | :? IA -> "IA"
+        | :? IB -> "IB"
+        | :? IC -> "IC"
+        | _ -> "other"
+
+    check "cnwcki4d0" (toName null) "other"
+    check "cnwcki4d1" (toName (A())) "IA"
+    check "cnwcki4d2" (toName (B())) "IA"
+    check "cnwcki4d3" (toName (C())) "IA"
+    check "cnwcki4d4" (toName (obj())) "other"
+
 #if !NETCOREAPP
 module TestConverter =
     open System

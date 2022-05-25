@@ -28,7 +28,10 @@ module internal IEnumerator =
 
           interface IEnumerator with
               member _.Current = unbox<'T> e.Current :> obj
+
+              [<DebuggerStepThrough>]
               member _.MoveNext() = e.MoveNext()
+
               member _.Reset() = noReset()
 
           interface System.IDisposable with
@@ -51,6 +54,7 @@ module internal IEnumerator =
                 check started
                 (alreadyFinished() : obj)
 
+            [<DebuggerStepThrough>]
             member _.MoveNext() =
                 if not started then started <- true
                 false
@@ -107,6 +111,8 @@ module internal IEnumerator =
 
         interface IEnumerator with
             member _.Current = box (getCurr())
+
+            [<DebuggerStepThrough>]
             member _.MoveNext() =
                 start()
                 match state.Value with
@@ -132,7 +138,10 @@ module internal IEnumerator =
 
         interface IEnumerator with
             member _.Current = box v
+
+            [<DebuggerStepThrough>]
             member _.MoveNext() = if started then false else (started <- true; true)
+
             member _.Reset() = noReset()
 
         interface System.IDisposable with
@@ -146,7 +155,10 @@ module internal IEnumerator =
 
           interface IEnumerator with
               member _.Current = (e :> IEnumerator).Current
+
+              [<DebuggerStepThrough>]
               member _.MoveNext() = e.MoveNext()
+
               member _.Reset() = noReset()
 
           interface System.IDisposable with
@@ -188,6 +200,7 @@ module RuntimeHelpers =
     [<Struct; NoComparison; NoEquality>]
     type internal StructBox<'T when 'T:equality>(value:'T) =
         member x.Value = value
+
         static member Comparer =
             let gcomparer = HashIdentity.Structural<'T>
             { new IEqualityComparer<StructBox<'T>> with
@@ -294,6 +307,7 @@ module RuntimeHelpers =
         interface IEnumerator with
             member x.Current = box (x.GetCurrent())
 
+            [<DebuggerStepThrough>]
             member x.MoveNext() =
                if not started then started <- true
                if finished then false
@@ -329,6 +343,8 @@ module RuntimeHelpers =
             member _.Reset() = IEnumerator.noReset()
 
         interface System.IDisposable with
+
+            [<DebuggerStepThrough>]
             member x.Dispose() =
                 if not finished then
                     x.Finish()
@@ -353,8 +369,11 @@ module RuntimeHelpers =
            (mkSeq (fun () ->
                 { new IEnumerator<_> with
                       member x.Current = getCurr()
+
                    interface IEnumerator with
                       member x.Current = box (getCurr())
+
+                      [<DebuggerStepThrough>]
                       member x.MoveNext() =
                            start()
                            let keepGoing = (try guard() with e -> finish (); reraise ()) in
@@ -362,7 +381,9 @@ module RuntimeHelpers =
                                curr <- Some(source); true
                            else
                                finish(); false
+
                       member x.Reset() = IEnumerator.noReset()
+
                    interface System.IDisposable with
                       member x.Dispose() = () }))
 
@@ -414,9 +435,14 @@ type GeneratedSequenceBase<'T>() =
                  redirectTo <-
                        { new GeneratedSequenceBase<'T>() with
                              member x.GetFreshEnumerator() = e
+
+                             [<DebuggerStepThrough>]
                              member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
+
                              member x.Close() = try e.Dispose() finally active.Close()
+
                              member x.CheckClose = true
+
                              member x.LastGenerated = e.Current }
              redirect <- true
              x.MoveNextImpl()
@@ -436,9 +462,10 @@ type GeneratedSequenceBase<'T>() =
         member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
 
     interface IEnumerator with
+
         member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)
 
-        //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
+        [<DebuggerStepThrough>]
         member x.MoveNext() = x.MoveNextImpl()
 
         member _.Reset() = raise <| new System.NotSupportedException()
