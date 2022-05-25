@@ -182,7 +182,7 @@ module ResponseFile =
             use stream = FileSystem.OpenFileForReadShim(path)
             use reader = new StreamReader(stream, true)
             let data =
-                seq { while not reader.EndOfStream do yield reader.ReadLine () }
+                seq { while not reader.EndOfStream do reader.ReadLine () }
                 |> Seq.choose parseLine
                 |> List.ofSeq
             Choice1Of2 data
@@ -952,18 +952,18 @@ let SetTargetProfile (tcConfigB: TcConfigBuilder) v =
 
 let advancedFlagsBoth tcConfigB =
     [
-        yield codePageFlag tcConfigB
-        yield utf8OutputFlag tcConfigB
-        yield preferredUiLang tcConfigB
-        yield fullPathsFlag tcConfigB
-        yield libFlag tcConfigB
-        yield CompilerOption
+        codePageFlag tcConfigB
+        utf8OutputFlag tcConfigB
+        preferredUiLang tcConfigB
+        fullPathsFlag tcConfigB
+        libFlag tcConfigB
+        CompilerOption
                  ("simpleresolution",
                   tagNone,
                   OptionUnit (fun () -> tcConfigB.useSimpleResolution<-true), None,
                   Some (FSComp.SR.optsSimpleresolution()))
 
-        yield CompilerOption
+        CompilerOption
                  ("targetprofile", tagString,
                   OptionString (SetTargetProfile tcConfigB), None,
                   Some(FSComp.SR.optsTargetProfile()))
@@ -981,18 +981,18 @@ let noFrameworkFlag isFsc tcConfigB =
 let advancedFlagsFsi tcConfigB =
     advancedFlagsBoth tcConfigB  @
     [
-        yield noFrameworkFlag false tcConfigB
+        noFrameworkFlag false tcConfigB
     ]
 
 let advancedFlagsFsc tcConfigB =
     advancedFlagsBoth tcConfigB @
     [
-        yield CompilerOption
+        CompilerOption
                   ("baseaddress", tagAddress,
                    OptionString (fun s -> tcConfigB.baseAddress <- Some(int32 s)), None,
                    Some (FSComp.SR.optsBaseaddress()))
 
-        yield CompilerOption
+        CompilerOption
                   ("checksumalgorithm", tagAlgorithm,
                    OptionString (fun s ->
                        tcConfigB.checksumAlgorithm <-
@@ -1002,9 +1002,9 @@ let advancedFlagsFsc tcConfigB =
                         | _ -> error(Error(FSComp.SR.optsUnknownChecksumAlgorithm s, rangeCmdArgs))), None,
                         Some (FSComp.SR.optsChecksumAlgorithm()))
 
-        yield noFrameworkFlag true tcConfigB
+        noFrameworkFlag true tcConfigB
 
-        yield CompilerOption
+        CompilerOption
                   ("standalone", tagNone,
                    OptionUnit (fun _ ->
                         tcConfigB.openDebugInformationForLaterStaticLinking <- true
@@ -1012,7 +1012,7 @@ let advancedFlagsFsc tcConfigB =
                         tcConfigB.implicitlyResolveAssemblies <- true), None,
                    Some (FSComp.SR.optsStandalone()))
 
-        yield CompilerOption
+        CompilerOption
                   ("staticlink", tagFile,
                    OptionString (fun s ->
                        tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]
@@ -1021,28 +1021,28 @@ let advancedFlagsFsc tcConfigB =
 
 #if ENABLE_MONO_SUPPORT
         if runningOnMono then
-            yield CompilerOption
+            CompilerOption
                       ("resident", tagFile,
                        OptionUnit (fun () -> ()), None,
                        Some (FSComp.SR.optsResident()))
 #endif
 
-        yield CompilerOption
+        CompilerOption
                   ("pdb", tagString,
                    OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), None,
                    Some (FSComp.SR.optsPdb()))
 
-        yield CompilerOption
+        CompilerOption
                   ("highentropyva", tagNone,
                    OptionSwitch (useHighEntropyVASwitch tcConfigB), None,
                    Some (FSComp.SR.optsUseHighEntropyVA()))
 
-        yield CompilerOption
+        CompilerOption
                   ("subsystemversion", tagString,
                    OptionString (subSystemVersionSwitch tcConfigB), None,
                    Some (FSComp.SR.optsSubSystemVersion()))
 
-        yield CompilerOption
+        CompilerOption
                   ("quotations-debug", tagNone,
                    OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On), None,
                    Some(FSComp.SR.optsEmitDebugInfoInQuotations()))
