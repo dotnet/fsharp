@@ -197,8 +197,8 @@ type public Fsc() as this =
             | "ANYCPU", _, _ -> "anycpu"
             | "X86", _, _ -> "x86"
             | "X64", _, _ -> "x64"
-            | "ARM",  _, _  -> "arm"
-            | "ARM64",  _, _  -> "arm64"
+            | "ARM", _, _ -> "arm"
+            | "ARM64", _, _ -> "arm64"
             | _ -> null
         )
 

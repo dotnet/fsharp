@@ -1903,29 +1903,33 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
     let ilModuleName = readStringHeap ctxt nameIdx
     let nativeResources = readNativeResources pectxtEager
 
-    { Manifest =
-         if ctxt.getNumRows TableNames.Assembly > 0 then Some (seekReadAssemblyManifest ctxt pectxtEager 1)
-         else None
-      CustomAttrsStored = ctxt.customAttrsReader_Module
-      MetadataIndex = idx
-      Name = ilModuleName
-      NativeResources=nativeResources
-      TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt)
-      SubSystemFlags = int32 subsys
-      IsILOnly = ilOnly
-      SubsystemVersion = subsysversion
-      UseHighEntropyVA = useHighEntropyVA
-      Platform = platform
-      StackReserveSize = None  // TODO
-      Is32Bit = only32
-      Is32BitPreferred = is32bitpreferred
-      Is64Bit = only64
-      IsDLL=isDll
-      VirtualAlignment = alignVirt
-      PhysicalAlignment = alignPhys
-      ImageBase = imageBaseReal
-      MetadataVersion = ilMetadataVersion
-      Resources = seekReadManifestResources ctxt canReduceMemory mdv pectxtEager pevEager }
+    {
+        Manifest =
+            if ctxt.getNumRows TableNames.Assembly > 0 then
+                Some(seekReadAssemblyManifest ctxt pectxtEager 1)
+            else
+                None
+        CustomAttrsStored = ctxt.customAttrsReader_Module
+        MetadataIndex = idx
+        Name = ilModuleName
+        NativeResources = nativeResources
+        TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt)
+        SubSystemFlags = int32 subsys
+        IsILOnly = ilOnly
+        SubsystemVersion = subsysversion
+        UseHighEntropyVA = useHighEntropyVA
+        Platform = platform
+        StackReserveSize = None // TODO
+        Is32Bit = only32
+        Is32BitPreferred = is32bitpreferred
+        Is64Bit = only64
+        IsDLL = isDll
+        VirtualAlignment = alignVirt
+        PhysicalAlignment = alignPhys
+        ImageBase = imageBaseReal
+        MetadataVersion = ilMetadataVersion
+        Resources = seekReadManifestResources ctxt canReduceMemory mdv pectxtEager pevEager
+    }
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
     let mdview = ctxt.mdfile.GetView()
