@@ -93,7 +93,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
-    <Compile Include="Conformance\DelegateTypes\InvalidDelegateDefinition.fs" />
+    <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
