@@ -9,11 +9,11 @@ service/
 setup/
 tests/
 vsintegration/
+artifacts/
 
 # Explicitly unformatted implementation files
 
 src/FSharp.Core/**/*.fs
-src/Compiler/AbstractIL/**/*.fs
 src/Compiler/Checking/**/*.fs
 src/Compiler/CodeGen/**/*.fs
 src/Compiler/DependencyManager/**/*.fs
@@ -30,6 +30,7 @@ src/Microsoft.FSharp.Compiler/**/*.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 
+src/Compiler/AbstractIL/ilwrite.fs
 src/Compiler/Utilities/lib.fs
 
 # Fantomas limitations on signature files  (to investigate)
