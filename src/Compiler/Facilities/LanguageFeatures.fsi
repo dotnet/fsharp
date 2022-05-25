@@ -38,6 +38,7 @@ type LanguageFeature =
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
+    | ErrorOnDeprecatedRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion =

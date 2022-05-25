@@ -9,11 +9,10 @@ service/
 setup/
 tests/
 vsintegration/
+artifacts/
 
 # Explicitly unformatted implementation files
 
-src/Compiler/**/*.fs
-src/Compiler/AbstractIL/**/*.fs
 src/Compiler/Checking/**/*.fs
 src/Compiler/CodeGen/**/*.fs
 src/Compiler/DependencyManager/**/*.fs
@@ -26,7 +25,6 @@ src/Compiler/Service/**/*.fs
 src/Compiler/Symbols/**/*.fs
 src/Compiler/SyntaxTree/**/*.fs
 src/Compiler/TypedTree/**/*.fs
-src/Compiler/Utilities/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
 
 # Fantomas limitations on implementation files in FSharp.Core (to investigate)
@@ -43,7 +41,13 @@ src/FSharp.Core/Query.fs
 src/FSharp.Core/seqcore.fs
 
 # Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
+
 src/FSharp.Core/SI.fs
+
+# Fantomas limitations on implementation files  (to investigate)
+
+src/Compiler/AbstractIL/ilwrite.fs
+src/Compiler/Utilities/lib.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
