@@ -3,120 +3,134 @@
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
+open System.Runtime.InteropServices
 
 module Platform =
 
-    let verifyPlatformedExe compilation =
-        compilation
-        |> asExe
-        |> withName "platformedExe.exe"
-        |> PEVerifier.verifyPEFile
+    let isArm =
+        match System.Runtime.InteropServices.Architecture() with
+        | Architecture.Arm | Architecture.Arm64 -> true
+        | _ -> false
 
-    let verifyPlatformedDll compilation =
-        compilation
+    let buildPlatformedDll =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PlatformedDll.fs")
         |> asLibrary
-        |> withName "platformedDll.dll"
-        |> PEVerifier.verifyPEFile
+        |> withName "PlatformedDll.dll"
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    let buildPlatformedExe =
+        FsFromPath (__SOURCE_DIRECTORY__ ++ "PlatformedExe.fs")
+        |> asExe
+        |> withName "PlatformedExe.exe"
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeAnyCpuDefault compilation =
         compilation
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Anycpu ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeAnyCpu32BitPreferred compilation =
         compilation
-        |> withPlatform ExecutionPlatform.AnyCpu32bitPreferred
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.AnyCpu32bitPreferred ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeArm compilation =
         compilation
-        |> withPlatform ExecutionPlatform.Arm
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Arm ]
+        |>  if isArm then compileExeAndRun else compile
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeArm64 compilation =
         compilation
+        |> asExe
         |> withPlatform ExecutionPlatform.Arm64
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Arm64 ]
+        |>  if isArm then compileExeAndRun else compile
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeItanium compilation =
         compilation
-        |> withPlatform ExecutionPlatform.Itanium
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.Itanium ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeX86 compilation =
         compilation
-        |> withPlatform ExecutionPlatform.X86
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.X86 ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedExeBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForExe.fs"|])>]
     let platformExeX64 compilation =
         compilation
-        |> withPlatform ExecutionPlatform.X64
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedExe |> withPlatform ExecutionPlatform.X64 ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllDefault compilation =
         compilation
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllAnyCpuDefault compilation =
         compilation
-        |> withPlatform ExecutionPlatform.Anycpu
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Anycpu ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
-    let platformDllAnyCpu32BitPreferred compilation =
-        compilation
-        |> withPlatform ExecutionPlatform.AnyCpu32bitPreferred
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
-
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllArm compilation =
         compilation
-        |> withPlatform ExecutionPlatform.Arm
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Arm ]
+        |>  if isArm then compileExeAndRun else compile
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllArm64 compilation =
         compilation
+        |> asExe
         |> withPlatform ExecutionPlatform.Arm64
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Arm64 ]
+        |>  if isArm then compileExeAndRun else compile
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllItanium compilation =
         compilation
-        |> withPlatform ExecutionPlatform.Itanium
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.Itanium ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllX86 compilation =
         compilation
-        |> withPlatform ExecutionPlatform.X86
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.X86 ]
+        |> compileExeAndRun
+        |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PlatformedDllBody.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyNameForDll.fs"|])>]
     let platformDllX64 compilation =
         compilation
-        |> withPlatform ExecutionPlatform.X64
-        |> verifyPlatformedExe
-        |> PEVerifier.shouldSucceed
+        |> asExe
+        |> withReferences [ buildPlatformedDll |> withPlatform ExecutionPlatform.X64 ]
+        |> compileExeAndRun
+        |> shouldSucceed

@@ -3875,16 +3875,16 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
 
           let os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
 
-          let imageBaseReal = modul.ImageBase // FIXED CHOICE
-          let alignVirt = modul.VirtualAlignment // FIXED CHOICE
-          let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
+          let imageBaseReal = modul.ImageBase       // FIXED CHOICE
+          let alignVirt = modul.VirtualAlignment    // FIXED CHOICE
+          let alignPhys = modul.PhysicalAlignment   // FIXED CHOICE
 
           let isItanium = modul.Platform = Some IA64
           let isItaniumOrAMD = match modul.Platform with | Some IA64 | Some AMD64 -> true | _ -> false
           let hasEntryPointStub = match modul.Platform with | Some ARM64 | Some ARM -> false | _ -> true
           let numSections =
-              if hasEntryPointStub then 3 // .text, .sdata, .reloc
-              else 2 // .text, .sdata
+              if hasEntryPointStub then 3           // .text, .sdata, .reloc
+              else 2                                // .text, .sdata
 
           // HEADERS
           let next = 0x0
@@ -3892,26 +3892,13 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let headerAddr = next
           let next = headerAddr
 
-          let msdosHeaderSize = 0x80
-          let msdosHeaderChunk, next = chunk msdosHeaderSize next
-
-          let peSignatureSize = 0x04
-          let peSignatureChunk, next = chunk peSignatureSize next
-
-          let peFileHeaderSize = 0x14
-          let peFileHeaderChunk, next = chunk peFileHeaderSize next
-
-          let peOptionalHeaderSize = if modul.Is64Bit then 0xf0 else 0xe0
-          let peOptionalHeaderChunk, next = chunk peOptionalHeaderSize next
-
-          let textSectionHeaderSize = 0x28
-          let textSectionHeaderChunk, next = chunk textSectionHeaderSize next
-
-          let dataSectionHeaderSize = 0x28
-          let dataSectionHeaderChunk, next = chunk dataSectionHeaderSize next
-
-          let relocSectionHeaderSize = 0x28
-          let relocSectionHeaderChunk, next = if hasEntryPointStub then chunk relocSectionHeaderSize next else nochunk next
+          let msdosHeaderChunk, next = chunk 0x80 next
+          let peSignatureChunk, next = chunk 0x04 next
+          let peFileHeaderChunk, next = chunk 0x14 next
+          let peOptionalHeaderChunk, next = chunk (if modul.Is64Bit then 0xf0 else 0xe0) next
+          let textSectionHeaderChunk, next = chunk 0x28 next
+          let dataSectionHeaderChunk, next = chunk 0x28 next
+          let relocSectionHeaderChunk, next = if hasEntryPointStub then chunk 0x28 next else nochunk next
 
           let headerSize = next - headerAddr
           let nextPhys = align alignPhys (headerSectionPhysLoc + headerSize)
@@ -3924,7 +3911,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let textSectionAddr = next
           let next = textSectionAddr
 
-          // @@@@@@@@@@@@@ IAT not for ARM
+          // IAT not for ARM
           let importAddrTableChunk, next = if hasEntryPointStub then chunk 0x08 next else nochunk next
           let cliHeaderPadding = (if isItanium then (align 16 next) else next) - next
           let next = next + cliHeaderPadding
@@ -3986,9 +3973,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let next = if hasEntryPointStub then align 0x10 (next + 0x05) - 0x05 else next
           let importTableChunk = { addr=importTableChunk.addr; size = next - importTableChunk.addr}
           let importTableChunkPadding = if hasEntryPointStub then importTableChunk.size - (0x28 + 0x14 + 0x0e + 0x0c) else importTableChunk.size
-
-          let next = if hasEntryPointStub then next + 0x03 else next
-          let entrypointCodeChunk, next = if hasEntryPointStub then chunk 0x06 next else nochunk next
+          let entrypointCodeChunk, next = if hasEntryPointStub then chunk 0x06 (next + 0x03) else nochunk next
           let globalpointerCodeChunk, next = chunk (if isItanium then 0x8 else 0x0) next
 
           let pdbInfoOpt =
@@ -4191,37 +4176,35 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           writeInt32 os 0x00 // Pointer to Symbol Table Always 0
        // 00000090
           writeInt32 os 0x00 // Number of Symbols Always 0
-          writeInt32AsUInt16 os peOptionalHeaderSize // Size of the optional header, the format is described below.
+          writeInt32AsUInt16 os peOptionalHeaderChunk.size                      // Format is described below.
 
-          // 64bit: IMAGE_FILE_32BIT_MACHINE ||| IMAGE_FILE_LARGE_ADDRESS_AWARE
+          // 64bit: IMAGE_FILE_LARGE_ADDRESS_AWARE
           // 32bit: IMAGE_FILE_32BIT_MACHINE
-          // Yes, 32BIT_MACHINE is set for AMD64...
-          let iMachineCharacteristic = match modul.Platform with | Some IA64 -> 0x20 | Some AMD64 -> 0x0120 | _ -> 0x0100
+          let iMachineCharacteristic = match modul.Platform with | Some IA64 | Some AMD64 | Some ARM64 -> 0x20 | _ -> 0x0100
 
-          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic)
+          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| iMachineCharacteristic)
 
        // Now comes optional header
-
           let peOptionalHeaderByte = peOptionalHeaderByteByCLRVersion desiredMetadataVersion
 
           write (Some peOptionalHeaderChunk.addr) os "pe optional header" [| |]
           if modul.Is64Bit then
-              writeInt32AsUInt16 os 0x020B // Magic number is 0x020B for 64-bit
+              writeInt32AsUInt16 os 0x020B              // Magic number is 0x020B for 64-bit
           else
-              writeInt32AsUInt16 os 0x010b // Always 0x10B (see Section 23.1).
-          writeInt32AsUInt16 os peOptionalHeaderByte // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8
-          writeInt32 os textSectionPhysSize          // Size of the code (text) section, or the sum of all code sections if there are multiple sections.
+              writeInt32AsUInt16 os 0x010b              // Always 0x10B (see Section 23.1).
+          writeInt32AsUInt16 os peOptionalHeaderByte    // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8
+          writeInt32 os textSectionPhysSize             // Size of the code (text) section, or the sum of all code sections if there are multiple sections.
         // 000000a0
-          writeInt32 os dataSectionPhysSize          // Size of the initialized data section
-          writeInt32 os 0x00                         // Size of the uninitialized data section
-          writeInt32 os entrypointCodeChunk.addr     // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000
-          writeInt32 os textSectionAddr              // e.g. 0x0002000
+          writeInt32 os dataSectionPhysSize             // Size of the initialized data section
+          writeInt32 os 0x00                            // Size of the uninitialized data section
+          writeInt32 os entrypointCodeChunk.addr        // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000
+          writeInt32 os textSectionAddr                 // e.g. 0x0002000
        // 000000b0
           if modul.Is64Bit then
-              writeInt64 os (int64 imageBaseReal)    // REVIEW: For 64-bit, we should use a 64-bit image base
+              writeInt64 os (int64 imageBaseReal)
           else
-              writeInt32 os dataSectionAddr // e.g. 0x0000c000
-              writeInt32 os imageBaseReal // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000
+              writeInt32 os dataSectionAddr             // e.g. 0x0000c000
+              writeInt32 os (int32 imageBaseReal)       // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000
 
           writeInt32 os alignVirt //  Section Alignment Always 0x2000 (see Section 23.1).
           writeInt32 os alignPhys // File Alignment Either 0x200 or 0x1000.
