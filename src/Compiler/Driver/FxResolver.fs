@@ -778,23 +778,23 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     member _.GetSystemAssemblies() = systemAssemblies
 
     member _.IsInReferenceAssemblyPackDirectory fileName =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
 
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
             let path = Path.GetDirectoryName(fileName)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-        | _ -> false
+        | _ -> false)
 
     member _.TryGetSdkDir() =
-      fxlock.AcquireLock (fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         tryGetSdkDir() |> replayWarnings)
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() =
-      fxlock.AcquireLock (fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         // Interactive processes read their own configuration to find the running tfm
 

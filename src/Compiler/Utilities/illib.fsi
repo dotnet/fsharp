@@ -154,6 +154,8 @@ module internal List =
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
+    val tryFrontAndBack: l: 'a list -> ('a list * 'a) option
+
     val tryRemove: f: ('a -> bool) -> inp: 'a list -> ('a * 'a list) option
 
     val zip4: l1: 'a list -> l2: 'b list -> l3: 'c list -> l4: 'd list -> ('a * 'b * 'c * 'd) list

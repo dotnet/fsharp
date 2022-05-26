@@ -466,6 +466,11 @@ module List =
 
         loop [] l
 
+    let tryFrontAndBack l =
+        match l with
+        | [] -> None
+        | _ -> Some (frontAndBack l)
+
     let tryRemove f inp =
         let rec loop acc l =
             match l with

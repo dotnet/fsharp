@@ -315,7 +315,8 @@ module ScriptPreprocessClosure =
                 let managerOpt = dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError m, packageManagerKey)
                 match managerOpt with
                 | Null ->
-                    errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
+                    let err = dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError m)
+                    errorR(Error(err, m))
 
                 | NonNull dependencyManager ->
                     yield! resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager ]
@@ -407,30 +408,34 @@ module ScriptPreprocessClosure =
         let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
         sources, tcConfig, packageReferences
 
+    /// Mark the last file as isLastCompiland.
+    let MarkLastCompiland(tcConfig: TcConfig, lastClosureFile) =
+        let (ClosureFile (fileName, m, lastParsedInput, parseDiagnostics, metaDiagnostics, nowarns)) = lastClosureFile
+        match lastParsedInput with
+        | Some(ParsedInput.ImplFile lastParsedImplFile) ->
+
+            let (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia)) = lastParsedImplFile
+            let isLastCompiland = (true, tcConfig.target.IsExe)
+            let lastParsedImplFileR = ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia)
+            let lastClosureFileR =
+                ClosureFile
+                    (fileName, m,
+                        Some(ParsedInput.ImplFile lastParsedImplFileR),
+                        parseDiagnostics, metaDiagnostics, nowarns)
+            lastClosureFileR
+        | _ ->
+            lastClosureFile
+
     /// Reduce the full directive closure into LoadClosure
     let GetLoadClosure(rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences, earlierDiagnostics) =
 
         // Mark the last file as isLastCompiland.
         let closureFiles =
-            if isNil closureFiles then
-                closureFiles
-            else
-                let rest, lastClosureFile = List.frontAndBack closureFiles
-                let (ClosureFile (fileName, m, lastParsedInput, parseDiagnostics, metaDiagnostics, nowarns)) = lastClosureFile
-                match lastParsedInput with
-                | Some(ParsedInput.ImplFile lastParsedImplFile) ->
-
-                    let (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia)) = lastParsedImplFile
-                    let isLastCompiland = (true, tcConfig.target.IsExe)
-                    let lastParsedImplFileR = ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia)
-                    let lastClosureFileR =
-                        ClosureFile
-                            (fileName, m,
-                             Some(ParsedInput.ImplFile lastParsedImplFileR),
-                             parseDiagnostics, metaDiagnostics, nowarns)
-                    rest @ [ lastClosureFileR ]
-
-                | _ -> closureFiles
+            match List.tryFrontAndBack closureFiles with
+            | None -> closureFiles
+            | Some (rest, lastClosureFile) ->
+                let lastClosureFileR = MarkLastCompiland(tcConfig, lastClosureFile)
+                rest @ [ lastClosureFileR ]
 
         // Get all source files.
         let sourceFiles = [ for ClosureFile(fileName, m, _, _, _, _) in closureFiles -> (fileName, m) ]
