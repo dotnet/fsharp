@@ -142,8 +142,16 @@ are updated using scripts or utilities that allow the following environment vari
 
 Windows:
 
+CMD:
+
 ```shell
 set TEST_UPDATE_BSL=1
+```
+
+PowerShell:
+
+```shell
+$env:TEST_UPDATE_BSL=1
 ```
 
 Linux/macOS:
@@ -151,6 +159,14 @@ Linux/macOS:
 ```shell
 export TEST_UPDATE_BSL=1
 ```
+
+Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
+
+```shell
+./Build.cmd -c Release -testCoreClr
+```
+
+to update Release CoreCLR baselines.
 
 ## Automated Source Code Formatting
 
