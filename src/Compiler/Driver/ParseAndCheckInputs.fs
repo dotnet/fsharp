@@ -271,14 +271,18 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe), trivia)) ->
-        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
-        let inputT = ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput (fileName, isScript, qualNameOfFileT, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe), trivia))
-        inputT, moduleNamesDictT
-    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia)) ->
-        let qualNameOfFileT, moduleNamesDictT = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
-        let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules, trivia))
-        inputT, moduleNamesDictT
+    | ParsedInput.ImplFile implFile ->
+        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia)) = implFile
+        let qualNameOfFileR, moduleNamesDictR = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let implFileR = ParsedImplFileInput (fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia)
+        let inputR = ParsedInput.ImplFile implFileR
+        inputR, moduleNamesDictR
+    | ParsedInput.SigFile sigFile ->
+        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia)) = sigFile
+        let qualNameOfFileR, moduleNamesDictR = DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
+        let sigFileR = ParsedSigFileInput (fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia)
+        let inputT = ParsedInput.SigFile sigFileR
+        inputT, moduleNamesDictR
 
 let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, diagnosticsLogger: DiagnosticsLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, fileName, isLastCompiland) =
     // The assert below is almost ok, but it fires in two cases:
