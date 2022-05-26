@@ -1,5 +1,6 @@
 root = true
 
+# max_line_length is set to 140. At some point we will reduce it to 120 for as many files as reasonable.
 [*.fs]
 max_line_length=140
 fsharp_newline_between_type_definition_and_members=true
@@ -16,8 +17,12 @@ fsharp_keep_max_number_of_blank_lines=1
 fsharp_newline_between_type_definition_and_members=true
 fsharp_keep_max_number_of_blank_lines=1
 
+# These files contains many imperative if-then expressions which are not clearer on one line
+# Reducing fsharp_max_if_then_else_short_width back to its default formats these over multiple lines.
 [src/FSharp.Build/*.fs]
 fsharp_max_if_then_else_short_width=40
 
+# This file contains a long list of one-line function definitions. Increasing
+# fsharp_max_function_binding_width formats these over a single line.
 [src/Compiler/Driver/CompilerDiagnostics.fs]
 fsharp_max_function_binding_width=70
