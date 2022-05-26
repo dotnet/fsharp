@@ -291,41 +291,20 @@ type PackageManagerLine =
 
     static member AddLineWithKey (packageKey: string) (directive:Directive) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
         let path = PackageManagerLine.StripDependencyManagerKey packageKey line
-        let map =
-            let mutable found = false
-            let result =
-                packageManagerLines
-                |> Map.map(fun key lines ->
-                    if key = packageKey then
-                        found <- true
-                        lines |> List.append [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
-                    else
-                        lines)
-            if found then
-                result
-            else
-                result.Add(packageKey, [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
-        map
+        let newLine = {Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}
+        let oldLines = MultiMap.find packageKey packageManagerLines
+        let newLines = oldLines @ [newLine]
+        packageManagerLines.Add(packageKey, newLines)
 
     static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
-        let map =
-            packageManagerLines
-            |> Map.map(fun key lines ->
-                if key = packageKey then
-                    lines |> List.filter(fun line -> line.LineStatus=LStatus.Processed)
-                else
-                    lines)
-        map
+        let oldLines = MultiMap.find packageKey packageManagerLines
+        let newLines = oldLines |> List.filter (fun line -> line.LineStatus=LStatus.Processed)
+        packageManagerLines.Add(packageKey, newLines)
 
     static member SetLinesAsProcessed (packageKey:string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
-        let map =
-            packageManagerLines
-            |> Map.map(fun key lines ->
-                if key = packageKey then
-                    lines |> List.map(fun line -> {line with LineStatus = LStatus.Processed;})
-                else
-                    lines)
-        map
+        let oldLines = MultiMap.find packageKey packageManagerLines
+        let newLines = oldLines |> List.map (fun line -> {line with LineStatus = LStatus.Processed})
+        packageManagerLines.Add(packageKey, newLines)
 
     static member StripDependencyManagerKey (packageKey: string) (line: string): string =
         line.Substring(packageKey.Length + 1).Trim()
