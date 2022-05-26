@@ -291,15 +291,33 @@ type TcImportsLock = Lock<TcImportsLockToken>
 
 let RequireTcImportsLock (_tcitok: TcImportsLockToken, _thingProtected: 'T) = ()
 
+// if this is a #r reference (not from dummy range), make sure the directory of the declaring
+// file is included in the search path. This should ideally already be one of the search paths, but
+// during some global checks it won't be. We append to the end of the search list so that this is the last
+// place that is checked.
+let isHashRReference (r: range) =
+    not (equals r range0) &&
+    not (equals r rangeStartup) &&
+    not (equals r rangeCmdArgs) &&
+    FileSystem.IsPathRootedShim r.FileName
+
+let IsNetModule fileName =
+    let ext = Path.GetExtension fileName
+    String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase)=0
+
+let IsDLL fileName =
+    let ext = Path.GetExtension fileName
+    String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase)=0
+
+let IsExe fileName =
+    let ext = Path.GetExtension fileName
+    String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase)=0
+
 type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories (r: AssemblyReference) =
         let m, nm = r.Range, r.Text
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        // Only want to resolve certain extensions (otherwise, 'System.Xml' is ambiguous).
-        // MSBuild resolution is limited to .exe and .dll so do the same here.
-        let ext = Path.GetExtension nm
-        let isNetModule = String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase)=0
 
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with
@@ -314,25 +332,15 @@ type TcConfig with
                   ilAssemblyRef = None }
         | None ->
 
-        if String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase)=0
-           || String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase)=0
-           || isNetModule then
+        // Only want to resolve certain extensions (otherwise, 'System.Xml' is ambiguous).
+        // MSBuild resolution is limited to .exe and .dll so do the same here.
+        if IsDLL nm || IsExe nm || IsNetModule nm then
 
             let searchPaths =
                 seq {
                     yield! tcConfig.GetSearchPathsForLibraryFiles()
 
-                    // if this is a #r reference (not from dummy range), make sure the directory of the declaring
-                    // file is included in the search path. This should ideally already be one of the search paths, but
-                    // during some global checks it won't be. We append to the end of the search list so that this is the last
-                    // place that is checked.
-                    let isPoundRReference (r: range) =
-                        not (equals r range0) &&
-                        not (equals r rangeStartup) &&
-                        not (equals r rangeCmdArgs) &&
-                        FileSystem.IsPathRootedShim r.FileName
-
-                    if isPoundRReference m then
+                    if isHashRReference m then
                         Path.GetDirectoryName(m.FileName)
                 }
 
@@ -345,7 +353,7 @@ type TcConfig with
                       resolvedPath = resolved
                       prepareToolTip = (fun () ->
                             let fusionName = System.Reflection.AssemblyName.GetAssemblyName(resolved).ToString()
-                            let line(append: string) = append.Trim([|' '|])+"\n"
+                            let line(append: string) = append.Trim(' ')+"\n"
                             line resolved + line fusionName)
                       sysdir = sysdir
                       ilAssemblyRef = None }
@@ -355,14 +363,9 @@ type TcConfig with
     member tcConfig.ResolveLibWithDirectories (ccuLoadFailureAction, r: AssemblyReference) =
         let m, nm = r.Range, r.Text
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        // test for both libraries and executables
-        let ext = Path.GetExtension nm
-        let isExe = (String.Compare(ext, ".exe", StringComparison.OrdinalIgnoreCase) = 0)
-        let isDLL = (String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase) = 0)
-        let isNetModule = (String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase) = 0)
 
         let rs =
-            if isExe || isDLL || isNetModule then
+            if IsExe nm || IsDLL nm || IsNetModule nm then
                 [r]
             else
                 [AssemblyReference(m, nm+".dll", None);AssemblyReference(m, nm+".exe", None);AssemblyReference(m, nm+".netmodule", None)]
@@ -441,55 +444,53 @@ type TcConfig with
             let groupedReferences =
                 originalReferences
                 |> List.indexed
-                |> Seq.groupBy(fun (_, reference) -> reference.Text)
-                |> Seq.map(fun (assemblyName, assemblyAndIndexGroup)->
+                |> List.groupBy(fun (_, reference) -> reference.Text)
+                |> List.map(fun (assemblyName, assemblyAndIndexGroup)->
                     let assemblyAndIndexGroup = assemblyAndIndexGroup |> List.ofSeq
                     let highestPosition = assemblyAndIndexGroup |> List.maxBy fst |> fst
                     let assemblyGroup = assemblyAndIndexGroup |> List.map snd
                     assemblyName, highestPosition, assemblyGroup)
-                |> Array.ofSeq
+                |> Array.ofList
 
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile =
-                groupedReferences
-                |> Array.map(fun (_filename, maxIndexOfReference, references)->
-                                let assemblyResolution = references |> List.choose (fun r -> tcConfig.TryResolveLibWithDirectories r)
-                                (maxIndexOfReference, assemblyResolution))
-                |> Array.filter(fun (_, refs)->refs |> isNil |> not)
+                [| for (_filename, maxIndexOfReference, references) in groupedReferences do
+                    let assemblyResolution = references |> List.choose (fun r -> tcConfig.TryResolveLibWithDirectories r)
+                    if not assemblyResolution.IsEmpty then
+                        (maxIndexOfReference, assemblyResolution) |]
 
-            let toMsBuild = [|0..groupedReferences.Length-1|]
-                             |> Array.map(fun i->(p13 groupedReferences[i]), (p23 groupedReferences[i]), i)
-                             |> Array.filter (fun (_, i0, _)->resolvedAsFile|>Array.exists(fun (i1, _) -> i0=i1)|>not)
-                             |> Array.map(fun (ref, _, i)->ref, string i)
+            let toMsBuild =
+                [| for i in 0..groupedReferences.Length-1 do
+                    let ref, i0, _ = groupedReferences[i]
+                    if resolvedAsFile |> Array.exists(fun (i1, _) -> i0=i1) |> not then
+                        ref, string i |]
 
             let resolutions = tcConfig.MsBuildResolve(toMsBuild, mode, errorAndWarningRange, true)
 
             // Map back to original assembly resolutions.
             let resolvedByMsbuild =
-                resolutions
-                    |> Array.map(fun resolvedFile ->
-                                    let i = int resolvedFile.baggage
-                                    let _, maxIndexOfReference, ms = groupedReferences[i]
-                                    let assemblyResolutions =
-                                        ms|>List.map(fun originalReference ->
-                                                    Debug.Assert(FileSystem.IsPathRootedShim(resolvedFile.itemSpec), sprintf "msbuild-resolved path is not absolute: '%s'" resolvedFile.itemSpec)
-                                                    let canonicalItemSpec = FileSystem.GetFullPathShim(resolvedFile.itemSpec)
-                                                    { originalReference=originalReference
-                                                      resolvedPath=canonicalItemSpec
-                                                      prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
-                                                      sysdir= tcConfig.IsSystemAssembly canonicalItemSpec
-                                                      ilAssemblyRef = None })
-                                    (maxIndexOfReference, assemblyResolutions))
+                [| for resolvedFile in resolutions do
+                    let i = int resolvedFile.baggage
+                    let _, maxIndexOfReference, ms = groupedReferences[i]
+                    let assemblyResolutions =
+                        [ for originalReference in ms do
+                            let canonicalItemSpec = FileSystem.GetFullPathShim(resolvedFile.itemSpec)
+                            { originalReference=originalReference
+                              resolvedPath=canonicalItemSpec
+                              prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
+                              sysdir= tcConfig.IsSystemAssembly canonicalItemSpec
+                              ilAssemblyRef = None } ]
+                    (maxIndexOfReference, assemblyResolutions) |]
 
             // When calculating the resulting resolutions, we're going to use the index of the reference
             // in the original specification and resort it to match the ordering that we had.
             let resultingResolutions =
-                    [resolvedByMsbuild;resolvedAsFile]
-                    |> Array.concat
-                    |> Array.sortBy fst
-                    |> Array.map snd
-                    |> List.ofArray
-                    |> List.concat
+                [resolvedByMsbuild;resolvedAsFile]
+                |> Array.concat
+                |> Array.sortBy fst
+                |> Array.map snd
+                |> List.ofArray
+                |> List.concat
 
             // O(N^2) here over a small set of referenced assemblies.
             let IsResolved(originalName: string) =
@@ -503,17 +504,16 @@ type TcConfig with
 
             let unresolvedReferences =
                     groupedReferences
-                    //|> Array.filter(p13 >> IsNotFileOrIsAssembly)
                     |> Array.filter(p13 >> IsResolved >> not)
                     |> List.ofArray
+
+            let unresolved = [ for (name, _, r) in unresolvedReferences -> UnresolvedAssemblyReference (name, r) ]
 
             // If mode=Speculative, then we haven't reported any errors.
             // We report the error condition by returning an empty list of resolutions
             if mode = ResolveAssemblyReferenceMode.Speculative && unresolvedReferences.Length > 0 then
-                let unresolved = [ for (name, _, r) in groupedReferences -> UnresolvedAssemblyReference (name, r) ]
                 [], unresolved
             else
-                let unresolved = [ for (name, _, r) in unresolvedReferences -> UnresolvedAssemblyReference (name, r) ]
                 resultingResolutions, unresolved
 
 [<Sealed>]
