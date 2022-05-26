@@ -33,22 +33,22 @@
 }
 .mresource public FSharpSignatureData.Compare04
 {
-  // Offset: 0x00000000 Length: 0x0000026E
+  // Offset: 0x00000000 Length: 0x0000025A
   // WARNING: managed resource file FSharpSignatureData.Compare04 created
 }
 .mresource public FSharpOptimizationData.Compare04
 {
-  // Offset: 0x00000278 Length: 0x000000B9
+  // Offset: 0x00000260 Length: 0x000000B9
   // WARNING: managed resource file FSharpOptimizationData.Compare04 created
 }
 .module Compare04.exe
-// MVID: {624FC26D-B3E3-57E7-A745-03836DC24F62}
+// MVID: {628F4C90-160D-7101-A745-0383904C8F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001F437780000
+// Image base: 0x000001C008340000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static int32  f4_tuple5() cil managed
     {
-      // Code size       210 (0xd2)
+      // Code size       216 (0xd8)
       .maxstack  5
       .locals init (int32 V_0,
                int32 V_1,
@@ -77,98 +77,104 @@
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br         IL_00c5
+      IL_0006:  br         IL_00cb
 
       IL_000b:  ldc.i4.1
       IL_000c:  ldc.i4.1
       IL_000d:  cgt
-      IL_000f:  stloc.2
-      IL_0010:  ldloc.2
-      IL_0011:  brfalse.s  IL_001a
+      IL_000f:  ldc.i4.0
+      IL_0010:  sub
+      IL_0011:  stloc.2
+      IL_0012:  ldloc.2
+      IL_0013:  brfalse.s  IL_001c
 
-      IL_0013:  ldloc.2
-      IL_0014:  nop
-      IL_0015:  br         IL_00c0
+      IL_0015:  ldloc.2
+      IL_0016:  nop
+      IL_0017:  br         IL_00c6
 
-      IL_001a:  ldc.i4.2
-      IL_001b:  ldc.i4.2
-      IL_001c:  cgt
-      IL_001e:  stloc.3
-      IL_001f:  ldloc.3
-      IL_0020:  brfalse.s  IL_0029
+      IL_001c:  ldc.i4.2
+      IL_001d:  ldc.i4.2
+      IL_001e:  cgt
+      IL_0020:  ldc.i4.0
+      IL_0021:  sub
+      IL_0022:  stloc.3
+      IL_0023:  ldloc.3
+      IL_0024:  brfalse.s  IL_002d
 
-      IL_0022:  ldloc.3
-      IL_0023:  nop
-      IL_0024:  br         IL_00c0
+      IL_0026:  ldloc.3
+      IL_0027:  nop
+      IL_0028:  br         IL_00c6
 
-      IL_0029:  ldc.i4.4
-      IL_002a:  ldc.i4.4
-      IL_002b:  cgt
-      IL_002d:  stloc.s    V_4
-      IL_002f:  ldloc.s    V_4
-      IL_0031:  brfalse.s  IL_003b
+      IL_002d:  ldc.i4.4
+      IL_002e:  ldc.i4.4
+      IL_002f:  cgt
+      IL_0031:  ldc.i4.0
+      IL_0032:  sub
+      IL_0033:  stloc.s    V_4
+      IL_0035:  ldloc.s    V_4
+      IL_0037:  brfalse.s  IL_0041
 
-      IL_0033:  ldloc.s    V_4
-      IL_0035:  nop
-      IL_0036:  br         IL_00c0
+      IL_0039:  ldloc.s    V_4
+      IL_003b:  nop
+      IL_003c:  br         IL_00c6
 
-      IL_003b:  ldstr      "5"
-      IL_0040:  ldstr      "5"
-      IL_0045:  call       int32 [netstandard]System.String::CompareOrdinal(string,
+      IL_0041:  ldstr      "5"
+      IL_0046:  ldstr      "5"
+      IL_004b:  call       int32 [netstandard]System.String::CompareOrdinal(string,
                                                                             string)
-      IL_004a:  stloc.s    V_5
-      IL_004c:  ldloc.s    V_5
-      IL_004e:  brfalse.s  IL_0055
+      IL_0050:  stloc.s    V_5
+      IL_0052:  ldloc.s    V_5
+      IL_0054:  brfalse.s  IL_005b
 
-      IL_0050:  ldloc.s    V_5
-      IL_0052:  nop
-      IL_0053:  br.s       IL_00c0
+      IL_0056:  ldloc.s    V_5
+      IL_0058:  nop
+      IL_0059:  br.s       IL_00c6
 
-      IL_0055:  ldc.r8     6.0999999999999996
-      IL_005e:  ldc.r8     7.0999999999999996
-      IL_0067:  clt
-      IL_0069:  brfalse.s  IL_006f
+      IL_005b:  ldc.r8     6.0999999999999996
+      IL_0064:  ldc.r8     7.0999999999999996
+      IL_006d:  clt
+      IL_006f:  brfalse.s  IL_0075
 
-      IL_006b:  ldc.i4.m1
-      IL_006c:  nop
-      IL_006d:  br.s       IL_00c0
+      IL_0071:  ldc.i4.m1
+      IL_0072:  nop
+      IL_0073:  br.s       IL_00c6
 
-      IL_006f:  ldc.r8     6.0999999999999996
-      IL_0078:  ldc.r8     7.0999999999999996
-      IL_0081:  cgt
-      IL_0083:  brfalse.s  IL_0089
+      IL_0075:  ldc.r8     6.0999999999999996
+      IL_007e:  ldc.r8     7.0999999999999996
+      IL_0087:  cgt
+      IL_0089:  brfalse.s  IL_008f
 
-      IL_0085:  ldc.i4.1
-      IL_0086:  nop
-      IL_0087:  br.s       IL_00c0
+      IL_008b:  ldc.i4.1
+      IL_008c:  nop
+      IL_008d:  br.s       IL_00c6
 
-      IL_0089:  ldc.r8     6.0999999999999996
-      IL_0092:  ldc.r8     7.0999999999999996
-      IL_009b:  ceq
-      IL_009d:  brfalse.s  IL_00a3
+      IL_008f:  ldc.r8     6.0999999999999996
+      IL_0098:  ldc.r8     7.0999999999999996
+      IL_00a1:  ceq
+      IL_00a3:  brfalse.s  IL_00a9
 
-      IL_009f:  ldc.i4.0
-      IL_00a0:  nop
-      IL_00a1:  br.s       IL_00c0
+      IL_00a5:  ldc.i4.0
+      IL_00a6:  nop
+      IL_00a7:  br.s       IL_00c6
 
-      IL_00a3:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_00a8:  ldc.r8     6.0999999999999996
-      IL_00b1:  ldc.r8     7.0999999999999996
-      IL_00ba:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
+      IL_00a9:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_00ae:  ldc.r8     6.0999999999999996
+      IL_00b7:  ldc.r8     7.0999999999999996
+      IL_00c0:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<float64>(class [System.Runtime]System.Collections.IComparer,
                                                                                                                                                     !!0,
                                                                                                                                                     !!0)
-      IL_00bf:  nop
-      IL_00c0:  stloc.0
-      IL_00c1:  ldloc.1
-      IL_00c2:  ldc.i4.1
-      IL_00c3:  add
-      IL_00c4:  stloc.1
-      IL_00c5:  ldloc.1
-      IL_00c6:  ldc.i4     0x989681
-      IL_00cb:  blt        IL_000b
+      IL_00c5:  nop
+      IL_00c6:  stloc.0
+      IL_00c7:  ldloc.1
+      IL_00c8:  ldc.i4.1
+      IL_00c9:  add
+      IL_00ca:  stloc.1
+      IL_00cb:  ldloc.1
+      IL_00cc:  ldc.i4     0x989681
+      IL_00d1:  blt        IL_000b
 
-      IL_00d0:  ldloc.0
-      IL_00d1:  ret
+      IL_00d6:  ldloc.0
+      IL_00d7:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f4_tuple5
 
   } // end of class CompareMicroPerfAndCodeGenerationTests
@@ -192,4 +198,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\GenericComparison\Compare04_fsx\Compare04.res
+// WARNING: Created Win32 resource file C:\dev\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\GenericComparison\Compare04_fsx\Compare04.res
