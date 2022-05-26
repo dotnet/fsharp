@@ -175,7 +175,8 @@ module ScriptPreprocessClosure =
                 tryGetMetadataSnapshot,
                 sdkDirOverride,
                 rangeForErrors)
-        tcConfigB.SetPrimaryAssembly (if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+        let primaryAssembly = if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+        tcConfigB.SetPrimaryAssembly primaryAssembly
         tcConfigB.SetUseSdkRefs useSdkRefs
 
         applyCommandLineArgs tcConfigB
@@ -192,7 +193,8 @@ module ScriptPreprocessClosure =
                 // If the user requested .NET Core scripting but something went wrong and we reverted to
                 // .NET Framework scripting then we must adjust both the primaryAssembly and fxResolver
                 if useDotNetFramework <> assumeDotNetFramework then
-                    tcConfigB.SetPrimaryAssembly (if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+                    let primaryAssembly = if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+                    tcConfigB.SetPrimaryAssembly primaryAssembly
 
                 // Add script references
                 for reference in references do
@@ -247,9 +249,9 @@ module ScriptPreprocessClosure =
 
         let tcConfigB = tcConfig.CloneToBuilder()
         let mutable nowarns = []
-        let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
-        let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
-        let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
+        let getWarningNumber () (m, s) = nowarns <- (s, m) :: nowarns
+        let addReferenceDirective () (m, s, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
+        let addLoadedSource () (m, s) = tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try
             ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
@@ -262,6 +264,11 @@ module ScriptPreprocessClosure =
             // Recover by using a default TcConfig.
             let tcConfigB = tcConfig.CloneToBuilder()
             TcConfig.Create(tcConfigB, validate=false), nowarns
+
+    let getDirective d =
+        match d with
+        | Directive.Resolution -> "r"
+        | Directive.Include -> "i"
 
     let FindClosureFiles
         (
@@ -281,77 +288,84 @@ module ScriptPreprocessClosure =
 
         // Resolve the packages
         let rec resolveDependencyManagerSources scriptName =
-            if not (loadScripts.Contains scriptName) then
-                [ for kv in tcConfig.packageManagerLines do
+            [ if not (loadScripts.Contains scriptName) then
+                  for kv in tcConfig.packageManagerLines do
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
-                    | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
-                        let reportError =
-                            ResolvingErrorReport (fun errorType err msg ->
-                                let error = err, msg
-                                match errorType with
-                                | ErrorReportType.Warning -> warning(Error(error, m))
-                                | ErrorReportType.Error -> errorR(Error(error, m)))
+                    | packageManagerLine :: _ ->
+                        let m = packageManagerLine.Range
+                        yield! processPackageManagerLines m packageManagerLines scriptName packageManagerKey ]
 
-                        match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
-                        | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
-                        | _ ->
-                            let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
-                            match dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
-                            | Null ->
-                                errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
+        and reportError m =
+            ResolvingErrorReport (fun errorType err msg ->
+                let error = err, msg
+                match errorType with
+                | ErrorReportType.Warning -> warning(Error(error, m))
+                | ErrorReportType.Error -> errorR(Error(error, m)))
 
-                            | NonNull dependencyManager ->
-                                let directive d =
-                                    match d with
-                                    | Directive.Resolution -> "r"
-                                    | Directive.Include -> "i"
+        and processPackageManagerLines m packageManagerLines scriptName packageManagerKey =
+            [
 
-                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
-                                let tfm, rid = tcConfig.FxResolver.GetTfmAndRid()
-                                let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, tfm, rid, tcConfig.implicitIncludeDir, mainFile, scriptName)
-                                if result.Success then
-                                    // Resolution produced no errors
-                                    //Write outputs in F# Interactive and compiler
-                                    if codeContext <> CodeContext.Editing then
-                                        for line in result.StdOut do Console.Out.WriteLine(line)
-                                        for line in result.StdError do Console.Error.WriteLine(line)
+            match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
+            | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
+            | _ ->
+                let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
+                
+                let managerOpt = dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError m, packageManagerKey)
+                match managerOpt with
+                | Null ->
+                    errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
 
-                                    packageReferences[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
-                                    if not (Seq.isEmpty result.Roots) then
-                                        let tcConfigB = tcConfig.CloneToBuilder()
-                                        for folder in result.Roots do
-                                            tcConfigB.AddIncludePath(m, folder, "")
-                                        tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
-                                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)
+                | NonNull dependencyManager ->
+                    yield! resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager ]
 
-                                    if not (Seq.isEmpty result.Resolutions) then
-                                        let tcConfigB = tcConfig.CloneToBuilder()
-                                        for resolution in result.Resolutions do
-                                            tcConfigB.AddReferencedAssemblyByPath(m, resolution)
-                                        tcConfig <- TcConfig.Create(tcConfigB, validate = false)
+        and resolvePackageManagerLines m packageManagerLines scriptName packageManagerKey dependencyManager =
+            [
+                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> getDirective l.Directive, l.Line)
+                let tfm, rid = tcConfig.FxResolver.GetTfmAndRid()
+                let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tfm, rid, tcConfig.implicitIncludeDir, mainFile, scriptName)
+                if result.Success then
+                    // Resolution produced no errors
+                    //Write outputs in F# Interactive and compiler
+                    if codeContext <> CodeContext.Editing then
+                        for line in result.StdOut do Console.Out.WriteLine(line)
+                        for line in result.StdError do Console.Error.WriteLine(line)
 
-                                    for script in result.SourceFiles do
-                                        use stream = FileSystem.OpenFileForReadShim(script)
-                                        let scriptText = stream.ReadAllText()
-                                        loadScripts.Add script |> ignore
-                                        let iSourceText = SourceText.ofString scriptText
-                                        yield! loop (ClosureSource(script, m, iSourceText, true))
+                    packageReferences[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
+                    if not (Seq.isEmpty result.Roots) then
+                        let tcConfigB = tcConfig.CloneToBuilder()
+                        for folder in result.Roots do
+                            tcConfigB.AddIncludePath(m, folder, "")
+                        tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
+                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)
 
-                                else
-                                    // Send outputs via diagnostics
-                                    if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
-                                        for line in Array.append result.StdOut result.StdError do
-                                            errorR(Error(FSComp.SR.packageManagerError(line), m))
-                                    // Resolution produced errors update packagerManagerLines entries to note these failure
-                                    // failed resolutions will no longer be considered
-                                    let tcConfigB = tcConfig.CloneToBuilder()
-                                    tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
-                                    tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
-            else []
+                    if not (Seq.isEmpty result.Resolutions) then
+                        let tcConfigB = tcConfig.CloneToBuilder()
+                        for resolution in result.Resolutions do
+                            tcConfigB.AddReferencedAssemblyByPath(m, resolution)
+                        tcConfig <- TcConfig.Create(tcConfigB, validate = false)
 
-        and loop (ClosureSource(fileName, m, sourceText, parseRequired)) =
+                    for script in result.SourceFiles do
+                        use stream = FileSystem.OpenFileForReadShim(script)
+                        let scriptText = stream.ReadAllText()
+                        loadScripts.Add script |> ignore
+                        let iSourceText = SourceText.ofString scriptText
+                        yield! processClosureSource (ClosureSource(script, m, iSourceText, true))
+
+                else
+                    // Send outputs via diagnostics
+                    if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
+                        for line in Array.append result.StdOut result.StdError do
+                            errorR(Error(FSComp.SR.packageManagerError(line), m))
+                    // Resolution produced errors update packagerManagerLines entries to note these failure
+                    // failed resolutions will no longer be considered
+                    let tcConfigB = tcConfig.CloneToBuilder()
+                    tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
+                    tcConfig <- TcConfig.Create(tcConfigB, validate=false)
+            ]
+
+        and processClosureSource (ClosureSource(fileName, m, sourceText, parseRequired)) =
             [   if not (observedSources.HaveSeen(fileName)) then
                     observedSources.SetSeen(fileName)
                     //printfn "visiting %s" fileName
@@ -379,7 +393,7 @@ module ScriptPreprocessClosure =
                         for m, subFile in sources do
                             if IsScript subFile then
                                 for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
-                                    yield! loop subSource
+                                    yield! processClosureSource subSource
                             else
                                 ClosureFile(subFile, m, None, [], [], [])
                         ClosureFile(fileName, m, Some parseResult, parseDiagnostics, diagnosticsLogger.Diagnostics, noWarns)
@@ -389,7 +403,7 @@ module ScriptPreprocessClosure =
                         printfn "yielding non-script source %s" fileName
                         ClosureFile(fileName, m, None, [], [], []) ]
 
-        let sources = closureSources |> List.collect loop
+        let sources = closureSources |> List.collect processClosureSource
         let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
         sources, tcConfig, packageReferences
 
@@ -401,17 +415,20 @@ module ScriptPreprocessClosure =
             if isNil closureFiles then
                 closureFiles
             else
-                match List.frontAndBack closureFiles with
-                | rest, ClosureFile
-                           (fileName, m,
-                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia))),
-                            parseDiagnostics, metaDiagnostics, nowarns) ->
+                let rest, lastClosureFile = List.frontAndBack closureFiles
+                let (ClosureFile (fileName, m, lastParsedInput, parseDiagnostics, metaDiagnostics, nowarns)) = lastClosureFile
+                match lastParsedInput with
+                | Some(ParsedInput.ImplFile lastParsedImplFile) ->
 
+                    let (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia)) = lastParsedImplFile
                     let isLastCompiland = (true, tcConfig.target.IsExe)
-                    rest @ [ClosureFile
-                                (fileName, m,
-                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia))),
-                                 parseDiagnostics, metaDiagnostics, nowarns)]
+                    let lastParsedImplFileR = ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia)
+                    let lastClosureFileR =
+                        ClosureFile
+                            (fileName, m,
+                             Some(ParsedInput.ImplFile lastParsedImplFileR),
+                             parseDiagnostics, metaDiagnostics, nowarns)
+                    rest @ [ lastClosureFileR ]
 
                 | _ -> closureFiles
 
@@ -419,11 +436,14 @@ module ScriptPreprocessClosure =
         let sourceFiles = [ for ClosureFile(fileName, m, _, _, _, _) in closureFiles -> (fileName, m) ]
 
         let sourceInputs =
-            [  for ClosureFile(fileName, _, input, parseDiagnostics, metaDiagnostics, _nowarns) in closureFiles ->
-                   ({ FileName=fileName
+            [  for closureFile in closureFiles ->
+                   let (ClosureFile(fileName, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) = closureFile
+                   let closureInput : LoadClosureInput =
+                    { FileName=fileName
                       SyntaxTree=input
                       ParseDiagnostics=parseDiagnostics
-                      MetaCommandDiagnostics=metaDiagnostics } : LoadClosureInput) ]
+                      MetaCommandDiagnostics=metaDiagnostics }
+                   closureInput ]
 
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_, _, _, _, _, noWarns)) -> noWarns)
 

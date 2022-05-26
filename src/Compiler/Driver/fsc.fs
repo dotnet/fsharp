@@ -208,11 +208,13 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
 
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            tcConfigB.SetPrimaryAssembly (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+            let primaryAssembly = if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+            tcConfigB.SetPrimaryAssembly primaryAssembly
 
             if tcConfigB.implicitlyReferenceDotNetAssemblies then
                 let references = closure.References |> List.collect snd
-                references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
+                for reference in references do
+                    tcConfigB.AddReferencedAssemblyByPath(reference.originalReference.Range, reference.resolvedPath)
 
         else AddIfNotPresent fileName
 
@@ -305,7 +307,7 @@ module InterfaceFileWriter =
             if tcConfig.printSignatureFile <> "" then os.Dispose()
 
         let extensionForFile (filePath: string) =
-            if (List.exists (FileSystemUtils.checkSuffix filePath) mlCompatSuffixes) then
+            if (List.exists (FileSystemUtils.checkSuffix filePath) FSharpMLCompatFileSuffixes) then
                 ".mli"
             else
                 ".fsi"
@@ -339,7 +341,9 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
         if not (FileSystem.FileExistsShim dest) || (FileSystem.GetCreationTimeShim src <> FileSystem.GetCreationTimeShim dest) then
             FileSystem.CopyShim(src, dest, true)
 
-    match referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase)) with
+    let fsharpCoreReferences = referencedDlls |> Seq.tryFind (fun dll -> String.Equals(Path.GetFileName(dll.Text), fsharpCoreAssemblyName, StringComparison.CurrentCultureIgnoreCase))
+    
+    match fsharpCoreReferences with
     | Some referencedFsharpCoreDll -> copyFileIfDifferent referencedFsharpCoreDll.Text fsharpCoreDestinationPath
     | None ->
         let executionLocation =

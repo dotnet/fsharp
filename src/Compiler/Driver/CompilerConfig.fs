@@ -38,13 +38,11 @@ let (++) x s = x @ [s]
 
 let FSharpSigFileSuffixes = [".mli";".fsi"]
 
-let mlCompatSuffixes = [".mli";".ml"]
+let FSharpMLCompatFileSuffixes = [".mli";".ml"]
 
 let FSharpImplFileSuffixes = [".ml";".fs";".fsscript";".fsx"]
 
 let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
-
-let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
 
 let FSharpIndentationAwareSyntaxFileSuffixes = [ ".fs";".fsscript";".fsx";".fsi" ]
 

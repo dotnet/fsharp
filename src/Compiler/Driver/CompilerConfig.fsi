@@ -854,6 +854,4 @@ val FSharpScriptFileSuffixes: string list
 /// File suffixes where #light is the default
 val FSharpIndentationAwareSyntaxFileSuffixes: string list
 
-val doNotRequireNamespaceOrModuleSuffixes: string list
-
-val mlCompatSuffixes: string list
+val FSharpMLCompatFileSuffixes: string list

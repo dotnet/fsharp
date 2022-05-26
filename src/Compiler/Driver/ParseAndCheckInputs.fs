@@ -47,6 +47,9 @@ let CanonicalizeFilename fileName =
 let IsScript fileName =
     FSharpScriptFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
 
+let IsMLCompatFile fileName =
+    FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
 let QualFileNameOfModuleName m fileName modname =
@@ -88,10 +91,13 @@ let PrependPathToInput x inp =
     | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia)) ->
         ParsedInput.SigFile (ParsedSigFileInput (b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia))
 
+let IsLegalScriptImplicitModuleName (modname: string) =
+    modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')
+
 let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
     let modname = CanonicalizeFilename fileName
-    if check && not (modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')) then
-          if not (fileName.EndsWith("fsx", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith("fsscript", StringComparison.OrdinalIgnoreCase)) then
+    if check && IsLegalScriptImplicitModuleName modname then
+          if not (IsScript fileName) then
               warning(Error(FSComp.SR.buildImplicitModuleIsNotLegalIdentifier(modname, (FileSystemUtils.fileNameOfPath fileName)), m))
     let combined =
       match defaultNamespace with
@@ -102,6 +108,9 @@ let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
         let fileName = m.FileName
         mkRange fileName pos0 pos0
     pathToSynLid anonymousModuleNameRange (splitNamespace combined)
+
+let FileRequiresModuleOrNamespaceDecl isLast isExe fileName =
+    not (isLast && isExe) && not (IsScript fileName || IsMLCompatFile fileName)
 
 let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) =
     match impl with
@@ -116,7 +125,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
     | ParsedImplFileFragment.AnonModule (defs, m)->
         let isLast, isExe = isLastCompiland
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)) then
+        if FileRequiresModuleOrNamespaceDecl isLast isExe fileName then
             match defs with
             | SynModuleDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
@@ -129,7 +138,8 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
-                rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
+                let kind = if rest.IsEmpty then SynModuleOrNamespaceKind.GlobalNamespace else kind
+                rest, kind
             | _ -> lid, kind
         SynModuleOrNamespace(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
@@ -146,7 +156,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
     | ParsedSigFileFragment.AnonModule (defs, m) ->
         let isLast, isExe = isLastCompiland
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)) then
+        if FileRequiresModuleOrNamespaceDecl isLast isExe fileName then
             match defs with
             | SynModuleSigDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
@@ -159,7 +169,8 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
         let lid, kind =
             match lid with
             | id :: rest when id.idText = MangledGlobalName ->
-                rest, if List.isEmpty rest then SynModuleOrNamespaceKind.GlobalNamespace else kind
+                let kind = if rest.IsEmpty then SynModuleOrNamespaceKind.GlobalNamespace else kind
+                rest, kind
             | _ -> lid, kind
         SynModuleOrNamespaceSig(lid, isRecursive, kind, decls, xmlDoc, attributes, None, range, trivia)
 
@@ -187,7 +198,8 @@ let private collectCodeComments (lexbuf: UnicodeLexing.Lexbuf) (tripleSlashComme
         | CommentTrivia.BlockComment r -> r.StartLine, r.StartColumn)
 
 let PostParseModuleImpls (defaultNamespace, fileName, isLastCompiland, ParsedImplFile (hashDirectives, impls), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
-    match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(longId = lid)) -> Some lid | _ -> None) with
+    let othersWithSameName = impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(longId = lid)) -> Some lid | _ -> None)
+    match othersWithSameName with
     | Some lid when impls.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ ->
@@ -212,7 +224,8 @@ let PostParseModuleImpls (defaultNamespace, fileName, isLastCompiland, ParsedImp
     ParsedInput.ImplFile (ParsedImplFileInput (fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
 
 let PostParseModuleSpecs (defaultNamespace, fileName, isLastCompiland, ParsedSigFile (hashDirectives, specs), lexbuf: UnicodeLexing.Lexbuf, tripleSlashComments: range list) =
-    match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(longId = lid)) -> Some lid | _ -> None) with
+    let othersWithSameName = specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(longId = lid)) -> Some lid | _ -> None)
+    match othersWithSameName with
     | Some lid when specs.Length > 1 ->
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ ->
@@ -283,7 +296,7 @@ let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, diagnosticsLog
     let mutable scopedPragmas = []
     try
         let input =
-            if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
+            if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     errorR(Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
                 else

@@ -958,7 +958,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable)
 
     member tcImports.GetDllInfos() : ImportedBinary list =
-      tciLock.AcquireLock (tcitok ->
+      tciLock.AcquireLock (fun tcitok ->
         CheckDisposed()
         RequireTcImportsLock(tcitok, dllInfos)
         match importsBase with
@@ -1808,6 +1808,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
 #endif
+       )
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list =
         CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, assemblyReference, mode))
