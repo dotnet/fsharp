@@ -340,8 +340,9 @@ module MainModuleBuilder =
               yield! optDataResources
               for ri in tcConfig.linkResources do
                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
+                 let location = ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
                  { Name=name
-                   Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
+                   Location=location
                    Access=pub
                    CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
                    MetadataIndex = NoMetadataIdx } ]
@@ -378,8 +379,8 @@ module MainModuleBuilder =
                      // specify the major language, and the high-order 6 bits specify the sublanguage.
                      // For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
-                      [ ("000004b0", [ ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
-                                       ("FileVersion", (sprintf "%d.%d.%d.%d" fileVersionInfo.Major fileVersionInfo.Minor fileVersionInfo.Build fileVersionInfo.Revision))
+                      [ ("000004b0", [ ("Assembly Version", $"%d{assemblyVersion.Major}.%d{assemblyVersion.Minor}.%d{assemblyVersion.Build}.%d{assemblyVersion.Revision}")
+                                       ("FileVersion", $"%d{fileVersionInfo.Major}.%d{fileVersionInfo.Minor}.%d{fileVersionInfo.Build}.%d{fileVersionInfo.Revision}")
                                        ("ProductVersion", productVersionString)
                                        match tcConfig.outputFile with
                                        | Some f -> ("OriginalFilename", Path.GetFileName f)
@@ -430,7 +431,8 @@ module MainModuleBuilder =
                     let dwFileType = 0x01 // REVIEW: HARDWIRED
                     let dwFileSubtype = 0x00 // REVIEW: HARDWIRED
                     let lwFileDate = 0x00L // REVIEW: HARDWIRED
-                    (fileVersionInfo, productVersionString |> ConvertProductVersionToILVersionInfo, dwFileFlagsMask, dwFileFlags, dwFileOS, dwFileType, dwFileSubtype, lwFileDate)
+                    let ilProductVersion = productVersionString |> ConvertProductVersionToILVersionInfo
+                    (fileVersionInfo, ilProductVersion, dwFileFlagsMask, dwFileFlags, dwFileOS, dwFileType, dwFileSubtype, lwFileDate)
 
                 let vsVersionInfoResource =
                     VersionResourceFormat.VS_VERSION_INFO_RESOURCE(fixedFileInfo, stringFileInfo, varFileInfo)
@@ -478,23 +480,30 @@ module MainModuleBuilder =
                   ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                           yield! ms.ToArray() |] ]
 
-        // Add attributes, version number, resources etc.
-        {mainModule with
-              StackReserveSize = tcConfig.stackReserveSize
-              Name = (if tcConfig.target = CompilerTarget.Module then FileSystemUtils.fileNameOfPath outfile else mainModule.Name)
-              SubSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3)
-              Resources= resources
-              ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b)
-              IsDLL=(tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
-              Platform = tcConfig.platform
-              Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false)
-              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)
-              Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
-              CustomAttrsStored=
+        let name = if tcConfig.target = CompilerTarget.Module then FileSystemUtils.fileNameOfPath outfile else mainModule.Name
+        let imageBase = match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b
+        let isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
+        let is32bit = match tcConfig.platform with Some X86 -> true | _ -> false
+        let is64bit = match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false
+        let is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
+        let attribs =
                   storeILCustomAttrs
                     (mkILCustomAttrs
                       [ if tcConfig.target = CompilerTarget.Module then
                            yield! sigDataAttributes
                         yield! codegenResults.ilNetModuleAttrs ])
+        // Add attributes, version number, resources etc.
+        {mainModule with
+              StackReserveSize = tcConfig.stackReserveSize
+              Name = name
+              SubSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3)
+              Resources= resources
+              ImageBase = imageBase
+              IsDLL=isDLL
+              Platform = tcConfig.platform
+              Is32Bit=is32bit
+              Is64Bit=is64bit
+              Is32BitPreferred = is32BitPreferred
+              CustomAttrsStored= attribs
               NativeResources=nativeResources
               Manifest = manifest }

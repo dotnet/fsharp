@@ -788,13 +788,13 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         | _ -> false
 
     member _.TryGetSdkDir() =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
-        tryGetSdkDir() |> replayWarnings
+        tryGetSdkDir() |> replayWarnings)
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         // Interactive processes read their own configuration to find the running tfm
 
@@ -837,24 +837,24 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             | Architecture.Arm64 -> baseRid + "-arm64"
             | _ -> baseRid + "-arm"
 
-        tfm, runningRid
+        tfm, runningRid)
 
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
     member _.GetFrameworkRefsPackDirectory() =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
-        tryGetSdkRefsPackDirectory() |> replayWarnings
+        tryGetSdkRefsPackDirectory() |> replayWarnings)
 
     member _.TryGetDesiredDotNetSdkVersionForDirectory() =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
-        tryGetDesiredDotNetSdkVersionForDirectoryInfo()
+        tryGetDesiredDotNetSdkVersionForDirectoryInfo())
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
     member _.GetDefaultReferences useFsiAuxLib =
-      fxlock.AcquireLock <| fun fxtok -> 
+      fxlock.AcquireLock (fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =
             if assumeDotNetFramework then
@@ -894,4 +894,4 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                             getDotNetFrameworkDefaultReferences useFsiAuxLib, true
                 else
                     getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
-        defaultReferences
+        defaultReferences)
