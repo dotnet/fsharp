@@ -99,7 +99,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
 type AssemblyReference =
-    | AssemblyReference of range * string * IProjectReference option
+    | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
     member Range: range
 

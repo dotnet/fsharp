@@ -227,7 +227,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
 type AssemblyReference =
-    | AssemblyReference of range * string * IProjectReference option
+    | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
     member x.Range = (let (AssemblyReference(m, _, _)) = x in m)
 
