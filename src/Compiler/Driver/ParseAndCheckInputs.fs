@@ -91,13 +91,12 @@ let PrependPathToInput x inp =
     | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia)) ->
         ParsedInput.SigFile (ParsedSigFileInput (b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia))
 
-let IsLegalScriptImplicitModuleName (modname: string) =
+let IsValidAnonModuleName (modname: string) =
     modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')
 
 let ComputeAnonModuleName check defaultNamespace fileName (m: range) =
     let modname = CanonicalizeFilename fileName
-    if check && IsLegalScriptImplicitModuleName modname then
-          if not (IsScript fileName) then
+    if check && not (IsValidAnonModuleName modname) && not (IsScript fileName) then
               warning(Error(FSComp.SR.buildImplicitModuleIsNotLegalIdentifier(modname, (FileSystemUtils.fileNameOfPath fileName)), m))
     let combined =
       match defaultNamespace with
