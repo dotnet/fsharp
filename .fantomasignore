@@ -30,7 +30,6 @@ src/Microsoft.FSharp.Compiler/**/*.fs
 # Fantomas limitations on implementation files  (to investigate)
 
 src/Compiler/AbstractIL/ilwrite.fs
-src/Compiler/Driver/CompilerImports.fs
 src/Compiler/Utilities/lib.fs
 
 # Fantomas limitations on signature files  (to investigate)

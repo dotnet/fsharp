@@ -1233,6 +1233,15 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.GetImportMap() =
         CheckDisposed()
         let loaderInterface =
+#if NO_TYPEPROVIDERS
+            { new AssemblyLoader with
+                 member _.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
+                     tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
+
+                 member _.TryFindXmlDocumentationInfo assemblyName =
+                    tcImports.TryFindXmlDocumentationInfo(assemblyName)
+            }
+#else
             { new AssemblyLoader with
                  member _.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
@@ -1240,14 +1249,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                  member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
 
-#if !NO_TYPEPROVIDERS
                  member _.GetProvidedAssemblyInfo (ctok, m, assembly) =
                      tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
 
                  member _.RecordGeneratedTypeRoot root =
                      tcImports.RecordGeneratedTypeRoot root
-#endif
              }
+#endif
         ImportMap(tcImports.GetTcGlobals(), loaderInterface)
 
     // Note the tcGlobals are only available once mscorlib and fslib have been established. For TcImports,
