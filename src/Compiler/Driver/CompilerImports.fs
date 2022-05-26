@@ -1496,13 +1496,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         assert dllinfo.RawMetadata.TryGetILModuleDef().IsSome
         let ilModule = dllinfo.RawMetadata.TryGetILModuleDef().Value
         let ilScopeRef = dllinfo.ILScopeRef
-        let aref =
-            match ilScopeRef with
-            | ILScopeRef.Assembly aref -> aref
-            | _ -> error(InternalError("cannot reference .NET netmodules directly, reference the assembly instead", m))
-
-        let nm = aref.Name
-
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
         let invalidateCcu = Event<_>()
         let ccu = ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some fileName, ilModule, invalidateCcu.Publish)
