@@ -162,11 +162,14 @@ export TEST_UPDATE_BSL=1
 
 Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
 
-```shell
-./Build.cmd -c Release -testCoreClr
-```
+`./Build.cmd -c Release -testCoreClr` to update Release CoreCLR baselines.
 
-to update Release CoreCLR baselines.
+or
+
+`./Build.cmd -c Release -testDesktop` to update Release .NET Framework baselines.
+
+> **Note**
+> Please note, that by default, **Release** version of IL baseline baseline tests will be running in CI, so when updating baseline files, make sure to add `-c Release` flag to the build command.
 
 ## Automated Source Code Formatting
 
