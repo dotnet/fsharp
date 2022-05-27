@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project Sdk="Microsoft.NET.Sdk">
+<Project>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472</TargetFrameworks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetExt>.exe</TargetExt>
-    <NoWarn>$(NoWarn);44;45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <NGenBinary>true</NGenBinary>
-    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <UseAppHost>true</UseAppHost>
+    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\fsc\fscmain.fs">
-      <Link>fscmain.fs</Link>
-    </Compile>
-    <NoneSubstituteText Include="App.config">
+    <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
+    <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Build/FSharp.Build.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
