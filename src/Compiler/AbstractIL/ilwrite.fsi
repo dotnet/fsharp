@@ -16,6 +16,7 @@ type options =
       embeddedPDB: bool
       embedAllSource: bool
       embedSourceList: string list
+      allGivenSources: ILSourceDocument list
       sourceLink: string
       checksumAlgorithm: HashAlgorithm
       signer: ILStrongNameSigner option
