@@ -1950,9 +1950,13 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
                         member _.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+
                         member _.NotifyFormatSpecifierLocation(_, _) = ()
+
                         member _.NotifyOpenDeclaration _ = ()
+
                         member _.CurrentSourceText = None
+
                         member _.FormatStringCheckContext = None }
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)

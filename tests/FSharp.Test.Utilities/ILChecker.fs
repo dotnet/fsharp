@@ -83,11 +83,19 @@ module ILChecker =
                     RegexOptions.Singleline)
             pass3
 
+        let unifyImageBase ilCode =
+            Regex.Replace(
+                ilCode,
+                "\.imagebase\s*0x\d*",".imagebase {value}",
+                RegexOptions.Singleline)
+
         let unifyIlText (text:string) =
             let unifyingAssemblyNames (text:string)=
                 let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
                 text.Replace(asmName, "assembly")
                 |> unifyRuntimeAssemblyName
+                |> unifyImageBase
+
             text.Trim() |> stripComments |> unifyingAssemblyNames
 
         let raw = File.ReadAllText(ilFilePath)

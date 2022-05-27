@@ -1445,6 +1445,8 @@ type internal FsiDynamicCompiler(
               embeddedPDB = false
               embedAllSource = tcConfig.embedAllSource
               embedSourceList = tcConfig.embedSourceList
+              // we don't add additional source files to the debug document set
+              allGivenSources = []
               sourceLink = tcConfig.sourceLink
               checksumAlgorithm = tcConfig.checksumAlgorithm
               signer = None

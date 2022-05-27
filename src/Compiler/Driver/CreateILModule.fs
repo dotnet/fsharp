@@ -487,8 +487,8 @@ module MainModuleBuilder =
               ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b)
               IsDLL=(tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
               Platform = tcConfig.platform
-              Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false)
-              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)
+              Is32Bit=(match tcConfig.platform with Some X86 | Some ARM -> true | _ -> false)
+              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 | Some ARM64 -> true | _ -> false)
               Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
               CustomAttrsStored=
                   storeILCustomAttrs

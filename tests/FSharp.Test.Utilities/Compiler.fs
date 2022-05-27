@@ -272,10 +272,13 @@ module rec Compiler =
         fsFromString (SourceFromPath path) |> FS
 
     let Fs (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        fsFromString (FsSource source) |> FS
+
+    let Fsi (source: string) : CompilationUnit =
+        fsFromString (FsiSource source) |> FS
 
     let FSharp (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        Fs source
 
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
@@ -449,7 +452,7 @@ module rec Compiler =
                 match platform with
                 | ExecutionPlatform.Anycpu -> "anycpu"
                 | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
-                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.Itanium -> "Itanium"
                 | ExecutionPlatform.X64 -> "x64"
                 | ExecutionPlatform.X86 -> "x86"
                 | ExecutionPlatform.Arm -> "arm"
@@ -876,6 +879,7 @@ module rec Compiler =
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
+    | VerifyDocuments of string list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -941,12 +945,30 @@ module rec Compiler =
         if sequencePoints <> expectedSequencePoints then
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
 
+    let private verifyDocuments (reader: MetadataReader) expectedDocuments =
+
+        let documents = 
+            [ for doc in reader.Documents do
+                if not doc.IsNil then
+                    let di = reader.GetDocument doc
+                    let nmh = di.Name
+                    if not nmh.IsNil then
+                        let name = reader.GetString nmh
+                        name ]
+            |> List.sort
+        
+        let expectedDocuments = expectedDocuments |> List.sort
+
+        if documents <> expectedDocuments then
+            failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
+
 
     let private verifyPdbOptions reader options =
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
+            | VerifyDocuments docs -> verifyDocuments reader docs
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
