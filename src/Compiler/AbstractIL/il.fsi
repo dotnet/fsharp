@@ -25,6 +25,8 @@ type ILPlatform =
     | X86
     | AMD64
     | IA64
+    | ARM
+    | ARM64
 
 /// Debug info.  Values of type "source" can be attached at sequence
 /// points and some other locations.
