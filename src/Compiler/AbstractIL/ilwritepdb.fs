@@ -53,7 +53,6 @@ type BlobBuildingStream() =
 
     override _.Read(_buffer: byte array, _offset: int, _count: int) = raise (NotSupportedException())
 
-
     override _.SetLength(_value: int64) = raise (NotSupportedException())
     override val Position = 0L with get, set
 

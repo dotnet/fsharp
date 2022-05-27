@@ -452,7 +452,7 @@ module rec Compiler =
                 match platform with
                 | ExecutionPlatform.Anycpu -> "anycpu"
                 | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
-                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.Itanium -> "Itanium"
                 | ExecutionPlatform.X64 -> "x64"
                 | ExecutionPlatform.X86 -> "x86"
                 | ExecutionPlatform.Arm -> "arm"

@@ -405,6 +405,8 @@ type TcConfig with
             | None -> "MSIL"
             | Some X86 -> "x86"
             | Some AMD64 -> "amd64"
+            | Some ARM -> "arm"
+            | Some ARM64 -> "arm64"
             | Some IA64 -> "ia64"
 
         try
