@@ -707,6 +707,8 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
                     match s with
                     | "x86" -> Some X86
                     | "x64" -> Some AMD64
+                    | "arm" -> Some ARM
+                    | "arm64" -> Some ARM64
                     | "Itanium" -> Some IA64
                     | "anycpu32bitpreferred" ->
                         tcConfigB.prefer32Bit <- true

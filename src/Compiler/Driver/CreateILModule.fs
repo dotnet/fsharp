@@ -483,8 +483,8 @@ module MainModuleBuilder =
         let name = if tcConfig.target = CompilerTarget.Module then FileSystemUtils.fileNameOfPath outfile else mainModule.Name
         let imageBase = match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b
         let isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
-        let is32bit = match tcConfig.platform with Some X86 -> true | _ -> false
-        let is64bit = match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false
+        let is32bit = match tcConfig.platform with Some X86 | Some ARM -> true | _ -> false
+        let is64bit = match tcConfig.platform with Some AMD64 | Some IA64 | Some ARM64 -> true | _ -> false
         let is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
         let attribs =
                   storeILCustomAttrs
