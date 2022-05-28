@@ -1114,6 +1114,8 @@ type ILPlatform =
     | X86
     | AMD64
     | IA64
+    | ARM
+    | ARM64
 
 type ILSourceDocument =
     {
