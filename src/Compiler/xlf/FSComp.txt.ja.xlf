@@ -412,11 +412,6 @@
         <target state="translated">オフセット {0} で始まるリソース ヘッダーの形式に誤りがあります。</target>
         <note />
       </trans-unit>
-      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
-        <source>No argument are allowed in delegate primary constructor.</source>
-        <target state="new">No argument are allowed in delegate primary constructor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">この式は関数ではないため、適用できません。'expr[index]' によってインデクサーにアクセスしようとしましたか?</target>

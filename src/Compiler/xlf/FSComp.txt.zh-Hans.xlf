@@ -412,11 +412,6 @@
         <target state="translated">以偏移量 {0} 开始的资源标头格式不正确。</target>
         <note />
       </trans-unit>
-      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
-        <source>No argument are allowed in delegate primary constructor.</source>
-        <target state="new">No argument are allowed in delegate primary constructor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">此表达式不是函数，无法应用。是否曾打算通过 expr[index] 访问索引器?</target>

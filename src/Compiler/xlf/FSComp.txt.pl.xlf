@@ -412,11 +412,6 @@
         <target state="translated">Nagłówek zasobu rozpoczynający się od przesunięcia {0} jest nieprawidłowo sformułowany.</target>
         <note />
       </trans-unit>
-      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
-        <source>No argument are allowed in delegate primary constructor.</source>
-        <target state="new">No argument are allowed in delegate primary constructor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">To wyrażenie nie jest funkcją i nie można go zastosować. Spróbuj uzyskać dostęp do indeksatora za pośrednictwem wyrażenia „expr[index]”?</target>

@@ -412,11 +412,6 @@
         <target state="translated">從位移 {0} 開始的資源標頭格式錯誤。</target>
         <note />
       </trans-unit>
-      <trans-unit id="noArgumentsAreAllowedInDelegatePrimaryConstructor">
-        <source>No argument are allowed in delegate primary constructor.</source>
-        <target state="new">No argument are allowed in delegate primary constructor.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
         <target state="translated">此運算式並非函式，因而無法套用。您要用 'expr[index]' 存取索引子嗎?</target>
