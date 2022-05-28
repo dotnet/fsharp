@@ -17,8 +17,8 @@ namespace FSharpTest
         """
         |> compile
         |> shouldFail
-        |> withErrorCode 3524
-        |> withErrorMessage "No argument are allowed in delegate primary constructor."
+        |> withErrorCode 552
+        |> withErrorMessage "Only class types may take value arguments"
         
     [<Fact>]
     let ``Delegate definition with primary constructor no argument.`` () =
@@ -30,8 +30,8 @@ namespace FSharpTest
         """
         |> compile
         |> shouldFail
-        |> withErrorCode 3524
-        |> withErrorMessage "No argument are allowed in delegate primary constructor."
+        |> withErrorCode 552
+        |> withErrorMessage "Only class types may take value arguments"
 
     [<Fact>]
     let ``Delegate definition`` () =

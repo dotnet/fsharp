@@ -3991,7 +3991,7 @@ module EstablishTypeDefinitionCores =
                 | None -> ()
                 | Some spats ->
                     let ctorArgNames, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
-                    if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.noArgumentsAreAllowedInDelegatePrimaryConstructor(), m))
+                    if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
