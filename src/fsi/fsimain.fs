@@ -139,8 +139,7 @@ let internal TrySetUnhandledExceptionMode () =
 
     try
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
-    with
-    | _ ->
+    with _ ->
         decr i
         ()
 
@@ -155,8 +154,7 @@ let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
                 //printf "FSI-SERVER: received CTRL-C request...\n"
                 try
                     fsiSession.Interrupt()
-                with
-                | _ ->
+                with _ ->
                     // Final sanity check! - catch all exns - but not expected
                     assert false
                     ()
@@ -200,8 +198,7 @@ let evaluateSession (argv: string[]) =
                         let _ = Console.ForegroundColor
                         let _ = Console.CursorLeft <- Console.CursorLeft
                         true
-                    with
-                    | _ ->
+                    with _ ->
                         //if progress then fprintfn outWriter "probe failed, we have no console..."
                         false
                 else
@@ -248,8 +245,7 @@ let evaluateSession (argv: string[]) =
             lazy
                 try
                     Some(WinFormsEventLoop())
-                with
-                | e ->
+                with e ->
                     printfn "Your system doesn't seem to support WinForms correctly. You will"
                     printfn "need to set fsi.EventLoop use GUI windows from F# Interactive."
                     printfn "You can set different event loops for MonoMac, Gtk#, WinForms and other"
@@ -341,8 +337,8 @@ let evaluateSession (argv: string[]) =
         if fsiSession.IsGui then
             try
                 Application.EnableVisualStyles()
-            with
-            | _ -> ()
+            with _ ->
+                ()
 
             // Route GUI application exceptions to the exception handlers
             Application.add_ThreadException (
@@ -352,14 +348,14 @@ let evaluateSession (argv: string[]) =
             let runningOnMono =
                 try
                     System.Type.GetType("Mono.Runtime") <> null
-                with
-                | e -> false
+                with e ->
+                    false
 
             if not runningOnMono then
                 try
                     TrySetUnhandledExceptionMode()
-                with
-                | _ -> ()
+                with _ ->
+                    ()
 
             fsiWinFormsLoop.Value |> Option.iter (fun l -> l.LCID <- fsiSession.LCID)
 #endif
@@ -400,8 +396,8 @@ let MainMain argv =
             member _.Dispose() =
                 try
                     Console.SetOut(savedOut)
-                with
-                | _ -> ()
+                with _ ->
+                    ()
         }
 
 #if !FX_NO_APP_DOMAINS

@@ -5143,8 +5143,8 @@ let decodeILAttribData (ca: ILAttribute) =
                     try
                         let parser = ILTypeSigParser n
                         parser.ParseTypeSpec(), sigptr
-                    with
-                    | exn -> failwith (sprintf "decodeILAttribData: error parsing type in custom attribute blob: %s" exn.Message)
+                    with exn ->
+                        failwith (sprintf "decodeILAttribData: error parsing type in custom attribute blob: %s" exn.Message)
             | ILType.Boxed tspec when tspec.Name = "System.Object" ->
                 let et, sigptr = sigptr_get_u8 bytes sigptr
 

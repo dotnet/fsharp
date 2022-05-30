@@ -88,8 +88,8 @@ module internal ProjectFile =
                     .ReadAllText(resolutionsFile)
                     .Split([| '\r'; '\n' |], StringSplitOptions.None)
                 |> Array.filter (fun line -> not (String.IsNullOrEmpty(line)))
-            with
-            | _ -> [||]
+            with _ ->
+                [||]
 
         [|
             for line in lines do

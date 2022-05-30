@@ -118,8 +118,7 @@ module internal {1} =
                 File.WriteAllText(sourcePath, body.ToString())
                 printMessage <| sprintf "Done: %s" sourcePath
                 Some(sourcePath)
-        with
-        | e ->
+        with e ->
             printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
             None
 
