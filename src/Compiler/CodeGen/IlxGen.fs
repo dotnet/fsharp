@@ -4725,6 +4725,9 @@ and renameMethodDef nameOfOverridingMethod (mdef: ILMethodDef) =
 and fixupMethodImplFlags (mdef: ILMethodDef) =
     mdef.WithAccess(ILMemberAccess.Private).WithHideBySig().WithFinal(true).WithNewSlot
 
+and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) =
+    mdef.WithHideBySig(true)
+
 and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
     let g = cenv.g
 
@@ -6643,6 +6646,22 @@ and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
        | Some nm -> renameMethodDef nm
        | None -> () ]
 
+and ComputeMethodImplNameFixupForStaticMemberBinding cenv (v: Val) =
+    if isNil v.ImplementedSlotSigs then
+        None
+    else
+        let slotsig = v.ImplementedSlotSigs |> List.last
+        let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (false, slotsig)
+        Some nameOfOverridingMethod
+
+and ComputeFlagFixupsForStaticMemberBinding _cenv (_v: Val) =
+    [ 
+      fixupStaticAbstractSlotFlags
+      (*match ComputeMethodImplNameFixupForStaticMemberBinding cenv v with
+      | Some nm -> renameMethodDef nm
+      | None -> ()*) 
+    ]
+
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
     let implflags =
@@ -6875,8 +6894,16 @@ and GenMethodForBinding
            else
                let mdef =
                    if not compileAsInstance then
-                       mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                       if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                           mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                       else // We want to get potential fixups and hidebysig for abstract statics:
+                           let flagFixups = ComputeFlagFixupsForStaticMemberBinding cenv v
+                           let mdef = mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                           let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
+                           // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
+                           mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
+                           mdef
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
 
