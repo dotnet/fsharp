@@ -131,7 +131,7 @@ dotnet build src\Compiler /t:UpdateXlf
 If you are on a Mac, you can run this command from the root of the repository:
 
 ```shell
-sudo sh build.sh -c Release
+sh build.sh -c Release
 ```
 
 ## Updating baselines in tests
