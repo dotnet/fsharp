@@ -68,7 +68,7 @@ module MapTree =
         traceCount <- traceCount + 1
 
         if traceCount % 1000000 = 0 then
-            System.Console.WriteLine(
+            Console.WriteLine(
                 "#MapOne = {0}, #MapNode = {1}, #Add = {2}, #Remove = {3}, #Unions = {4}, #Lookups = {5}, avMapTreeSizeOnNodeCreation = {6}, avMapSizeOnCreation = {7}, avMapSizeOnLookup = {8}",
                 numOnes,
                 numNodes,
@@ -81,7 +81,7 @@ module MapTree =
                 (totalSizeOnMapLookup / float numLookups)
             )
 
-            System.Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
+            Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
 
     let MapTree (k, v) =
         report ()

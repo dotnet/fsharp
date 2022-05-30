@@ -8,8 +8,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Control
-open System.Reflection
+open System
 open System.Diagnostics
+open System.Reflection
 
 module private Atomic =
     open System.Threading
@@ -98,7 +99,7 @@ type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate 
     // CreateDelegate creates a delegate that is fast to invoke.
     static let invoker =
         if argTypes.Length = 1 then
-            (System.Delegate.CreateDelegate(typeof<EventWrapper<'Delegate, 'Args>>, mi) :?> EventWrapper<'Delegate, 'Args>)
+            (Delegate.CreateDelegate(typeof<EventWrapper<'Delegate, 'Args>>, mi) :?> EventWrapper<'Delegate, 'Args>)
         else
             null
 
@@ -153,7 +154,7 @@ type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate 
                   let obj = new EventDelegee<'Args>(observer)
 
                   let h =
-                      System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
+                      Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 

@@ -2373,7 +2373,8 @@ module Patterns =
                 if v = bv then
                     let v2 = new Var(v.Name, v.Type)
                     let v2exp = E(VarTerm v2)
-                    EA(LambdaTerm(v2, substituteInExpr bvs (fun v -> if v = bv then Some v2exp else tmsubst v) b), e.CustomAttributes)
+                    let b2 = substituteInExpr bvs (fun v -> if v = bv then Some v2exp else tmsubst v) b
+                    EA(LambdaTerm(v2, b2), e.CustomAttributes)
                 else
                     reraise ()
         | HoleTerm _ -> e
@@ -2416,6 +2417,9 @@ module Patterns =
             lock reflectedDefinitionTable (fun () -> reflectedDefinitionTable.Add(key, Entry exprBuilder)))
 
         decodedTopResources.Add((assem, resourceName), 0)
+        
+    let isReflectedDefinitionResourceName (resourceName: string) =
+        resourceName.StartsWith(ReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
 
     /// Get the reflected definition at the given (always generic) instantiation
     let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type[]) =
@@ -2448,7 +2452,7 @@ module Patterns =
                         [
                             for resourceName in resources do
                                 if
-                                    resourceName.StartsWith(ReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
+                                    isReflectedDefinitionResourceName resourceName
                                     && not (decodedTopResources.ContainsKey((assem, resourceName)))
                                 then
 

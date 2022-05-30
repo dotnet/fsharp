@@ -83,9 +83,10 @@ module internal Impl =
     let compilePropGetterFunc (prop: PropertyInfo) =
         let param = Expression.Parameter(typeof<obj>, "param")
 
+        let propExpr = Expression.Property(Expression.Convert(param, prop.DeclaringType), prop)
         let expr =
             Expression.Lambda<Func<obj, obj>>(
-                Expression.Convert(Expression.Property(Expression.Convert(param, prop.DeclaringType), prop), typeof<obj>),
+                Expression.Convert(propExpr, typeof<obj>),
                 param
             )
 
@@ -125,7 +126,8 @@ module internal Impl =
                             for paramIndex in 0 .. ctorParams.Length - 1 do
                                 let p = ctorParams.[paramIndex]
 
-                                Expression.Convert(Expression.ArrayAccess(paramArray, Expression.Constant paramIndex), p.ParameterType)
+                                let accessExpr = Expression.ArrayAccess(paramArray, Expression.Constant paramIndex)
+                                Expression.Convert(accessExpr, p.ParameterType)
                                 :> Expression
                         ]
                     ),
@@ -149,7 +151,8 @@ module internal Impl =
                             for paramIndex in 0 .. methodParams.Length - 1 do
                                 let p = methodParams.[paramIndex]
 
-                                Expression.Convert(Expression.ArrayAccess(paramArray, Expression.Constant paramIndex), p.ParameterType)
+                                let accessExpr = Expression.ArrayAccess(paramArray, Expression.Constant paramIndex)
+                                Expression.Convert(accessExpr, p.ParameterType)
                                 :> Expression
                         ]
                     ),
@@ -241,14 +244,14 @@ module internal Impl =
                 Expression.Block(
                     [ outputArray ],
                     [
-                        yield
-                            Expression.Assign(
+                        let arrayBounds = Expression.NewArrayBounds(typeof<obj>, Expression.Constant(outputLength tupleEncField typ))
+                        Expression.Assign(
                                 outputArray,
-                                Expression.NewArrayBounds(typeof<obj>, Expression.Constant(outputLength tupleEncField typ))
+                                arrayBounds
                             )
                             :> Expression
                         yield! writeTupleIntoArray typ (Expression.Convert(param, typ)) outputArray 0
-                        yield outputArray :> Expression
+                        outputArray :> Expression
                     ]
                 ),
                 param
@@ -263,7 +266,9 @@ module internal Impl =
         match attrs with
         | null
         | [||] -> None
-        | [| res |] -> let a = (res :?> CompilationMappingAttribute) in Some(a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
+        | [| res |] ->
+            let a = (res :?> CompilationMappingAttribute)
+            Some(a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
         | _ -> invalidOp (SR.GetString(SR.multipleCompilationMappings))
 
     let findCompilationMappingAttribute (attrs: obj[]) =
@@ -287,12 +292,24 @@ module internal Impl =
 
                     let flags =
                         match args.Count with
-                        | 1 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), 0, 0)
-                        | 2 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), 0)
+                        | 1 ->
+                            let arg0 = args.[0]
+                            let v0 = arg0.Value :?> SourceConstructFlags
+                            (v0, 0, 0)
+                        | 2 ->
+                            let arg0 = args.[0]
+                            let v0 = arg0.Value :?> SourceConstructFlags
+                            let arg1 = args.[1]
+                            let v1 = arg1.Value :?> int
+                            (v0, v1, 0)
                         | 3 ->
-                            ((let x = args.[0] in x.Value :?> SourceConstructFlags),
-                             (let x = args.[1] in x.Value :?> int),
-                             (let x = args.[2] in x.Value :?> int))
+                            let arg0 = args.[0]
+                            let v0 = arg0.Value :?> SourceConstructFlags
+                            let arg1 = args.[1]
+                            let v1 = arg1.Value :?> int
+                            let arg2 = args.[2]
+                            let v2 = arg2.Value :?> int
+                            (v0, v1, v2)
                         | _ -> (enum 0, 0, 0)
 
                     res <- Some flags
@@ -579,12 +596,14 @@ module internal Impl =
                 "New" + constrname
 
         match typ.GetMethod(methname, BindingFlags.Static ||| bindingFlags) with
-        | null -> invalidOp (String.Format(SR.GetString(SR.constructorForUnionCaseNotFound), methname))
+        | null ->
+            let msg = String.Format(SR.GetString(SR.constructorForUnionCaseNotFound), methname)
+            invalidOp msg
         | meth -> meth
 
     let getUnionCaseConstructor (typ: Type, tag: int, bindingFlags) =
         let meth = getUnionCaseConstructorMethod (typ, tag, bindingFlags)
-        (fun args -> meth.Invoke(null, BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags, null, args, null))
+        (fun args ->meth.Invoke(null, BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags, null, args, null))
 
     let getUnionCaseConstructorCompiled (typ: Type, tag: int, bindingFlags) =
         let meth = getUnionCaseConstructorMethod (typ, tag, bindingFlags)
@@ -595,9 +614,11 @@ module internal Impl =
 
         if not (isUnionType (unionType, bindingFlags)) then
             if isUnionType (unionType, bindingFlags ||| BindingFlags.NonPublic) then
-                invalidArg "unionType" (String.Format(SR.GetString(SR.privateUnionType), unionType.FullName))
+                let msg = String.Format(SR.GetString(SR.privateUnionType), unionType.FullName)
+                invalidArg "unionType" msg
             else
-                invalidArg "unionType" (String.Format(SR.GetString(SR.notAUnionType), unionType.FullName))
+                let msg = String.Format(SR.GetString(SR.notAUnionType), unionType.FullName)
+                invalidArg "unionType" msg
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
@@ -718,7 +739,8 @@ module internal Impl =
 
     let rec getTupleTypeInfo (typ: Type) =
         if not (isTupleType typ) then
-            invalidArg "typ" (String.Format(SR.GetString(SR.notATupleType), typ.FullName))
+            let msg = String.Format(SR.GetString(SR.notATupleType), typ.FullName)
+            invalidArg "typ" msg
 
         let tyargs = typ.GetGenericArguments()
 
@@ -807,7 +829,9 @@ module internal Impl =
                 typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null, props |> Array.map (fun p -> p.PropertyType), null)
 
         match ctor with
-        | null -> raise (ArgumentException(String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined), typ.FullName)))
+        | null ->
+            let msg = String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined)
+            raise (ArgumentException(msg, typ.FullName)))
         | _ -> ()
 
         ctor
@@ -869,7 +893,8 @@ module internal Impl =
 
     let getTupleReaderInfo (typ: Type, index: int) =
         if index < 0 then
-            invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
+            let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+            invalidArg "index" msg
 
         let get index =
             if typ.IsValueType then
@@ -878,7 +903,8 @@ module internal Impl =
                     |> orderTupleProperties
 
                 if index >= props.Length then
-                    invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
+                    let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+                    invalidArg "index" msg
 
                 props.[index]
             else
@@ -887,7 +913,8 @@ module internal Impl =
                     |> orderTupleProperties
 
                 if index >= props.Length then
-                    invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
+                    let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+                    invalidArg "index" msg
 
                 props.[index]
 
@@ -948,8 +975,8 @@ module internal Impl =
 
         match ctor with
         | null ->
-            raise
-            <| ArgumentException(String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName))
+            let msg = String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName)
+            raise (ArgumentException(msg))
         | _ -> ()
 
         ctor
@@ -1001,24 +1028,29 @@ module internal Impl =
     let checkExnType (exceptionType, bindingFlags) =
         if not (isExceptionRepr (exceptionType, bindingFlags)) then
             if isExceptionRepr (exceptionType, bindingFlags ||| BindingFlags.NonPublic) then
-                invalidArg "exceptionType" (String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName))
+                let msg = String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName)
+                invalidArg "exceptionType" msg
             else
-                invalidArg "exceptionType" (String.Format(SR.GetString(SR.notAnExceptionType), exceptionType.FullName))
+                let msg = String.Format(SR.GetString(SR.notAnExceptionType), exceptionType.FullName)
+                invalidArg "exceptionType" msg
 
     let checkRecordType (argName, recordType, bindingFlags) =
         checkNonNull argName recordType
 
         if not (isRecordType (recordType, bindingFlags)) then
             if isRecordType (recordType, bindingFlags ||| BindingFlags.NonPublic) then
-                invalidArg argName (String.Format(SR.GetString(SR.privateRecordType), recordType.FullName))
+                let msg = String.Format(SR.GetString(SR.privateRecordType), recordType.FullName)
+                invalidArg argName msg
             else
-                invalidArg argName (String.Format(SR.GetString(SR.notARecordType), recordType.FullName))
+                let msg = String.Format(SR.GetString(SR.notARecordType), recordType.FullName)
+                invalidArg argName msg
 
     let checkTupleType (argName, (tupleType: Type)) =
         checkNonNull argName tupleType
 
         if not (isTupleType tupleType) then
-            invalidArg argName (String.Format(SR.GetString(SR.notATupleType), tupleType.FullName))
+            let msg = String.Format(SR.GetString(SR.notATupleType), tupleType.FullName)
+            invalidArg argName msg
 
 [<Sealed>]
 type UnionCaseInfo(typ: System.Type, tag: int) =
@@ -1228,7 +1260,8 @@ type FSharpValue =
         checkNonNull "functionType" functionType
 
         if not (isFunctionType functionType) then
-            invalidArg "functionType" (String.Format(SR.GetString(SR.notAFunctionType), functionType.FullName))
+            let msg = String.Format(SR.GetString(SR.notAFunctionType), functionType.FullName)
+            invalidArg "functionType" msg
 
         checkNonNull "implementation" implementation
         let domain, range = getFunctionTypeInfo functionType
@@ -1248,7 +1281,8 @@ type FSharpValue =
         let typ = tuple.GetType()
 
         if not (isTupleType typ) then
-            invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName))
+            let msg = String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName)
+            invalidArg "tuple" msg
 
         getTupleReader typ tuple
 
@@ -1257,12 +1291,14 @@ type FSharpValue =
         let typ = tuple.GetType()
 
         if not (isTupleType typ) then
-            invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName))
+            let msg = String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName)
+            invalidArg "tuple" msg
 
         let fields = getTupleReader typ tuple
 
         if index < 0 || index >= fields.Length then
-            invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString()))
+            let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString())
+            invalidArg "index" msg
 
         fields.[index]
 

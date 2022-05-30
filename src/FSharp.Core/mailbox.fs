@@ -454,8 +454,8 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             // Nothing to dispose, no wait handles used
             let resultCell = new ResultCell<_>()
 
-            let msg =
-                buildMessage (new AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply, reuseThread = false) |> ignore))
+            let channel = AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
+            let msg = buildMessage channel
 
             mailbox.Post msg
             resultCell.AwaitResult_NoDirectCancelOrTimeout

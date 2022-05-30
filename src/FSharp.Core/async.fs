@@ -1074,7 +1074,7 @@ module AsyncPrimitives =
                 (typeof<FuncDelegate<'T>>)
                     .GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
 
-            System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
+            Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
 
     [<DebuggerHidden>]
     let QueueAsync cancellationToken cont econt ccont computation =
