@@ -196,8 +196,7 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then
-                    eq <- false
+                if not (inp[i] === res[i]) then eq <- false
 
                 i <- i + 1
 
@@ -403,11 +402,7 @@ module List =
     let rec findi n f l =
         match l with
         | [] -> None
-        | h :: t ->
-            if f h then
-                Some(h, n)
-            else
-                findi (n + 1) f t
+        | h :: t -> if f h then Some(h, n) else findi (n + 1) f t
 
     let splitChoose select l =
         let rec ch acc1 acc2 l =
@@ -437,10 +432,7 @@ module List =
             let h2a = f h1a
             let h2b = f h1b
 
-            if h1a === h2a && h1b === h2b then
-                inp
-            else
-                [ h2a; h2b ]
+            if h1a === h2a && h1b === h2b then inp else [ h2a; h2b ]
         | [ h1a; h1b; h1c ] ->
             let h2a = f h1a
             let h2b = f h1b
@@ -468,17 +460,13 @@ module List =
     let tryFrontAndBack l =
         match l with
         | [] -> None
-        | _ -> Some (frontAndBack l)
+        | _ -> Some(frontAndBack l)
 
     let tryRemove f inp =
         let rec loop acc l =
             match l with
             | [] -> None
-            | h :: t ->
-                if f h then
-                    Some(h, List.rev acc @ t)
-                else
-                    loop (h :: acc) t
+            | h :: t -> if f h then Some(h, List.rev acc @ t) else loop (h :: acc) t
 
         loop [] inp
 
@@ -503,11 +491,7 @@ module List =
         let rec loop acc l =
             match l with
             | [] -> List.rev acc, []
-            | x :: xs ->
-                if p x then
-                    List.rev acc, l
-                else
-                    loop (x :: acc) xs
+            | x :: xs -> if p x then List.rev acc, l else loop (x :: acc) xs
 
         loop [] l
 
@@ -548,11 +532,7 @@ module List =
         let rec mn i =
             function
             | [] -> []
-            | x :: xs ->
-                if i = n then
-                    f x :: xs
-                else
-                    x :: mn (i + 1) xs
+            | x :: xs -> if i = n then f x :: xs else x :: mn (i + 1) xs
 
         mn 0 xs
 
@@ -750,20 +730,14 @@ module String =
     let split options (separator: string[]) (value: string) = value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.StartsWithOrdinal pattern then
-            Some()
-        else
-            None
+        if String.IsNullOrWhiteSpace value then None
+        elif value.StartsWithOrdinal pattern then Some()
+        else None
 
     let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.Contains pattern then
-            Some()
-        else
-            None
+        if String.IsNullOrWhiteSpace value then None
+        elif value.Contains pattern then Some()
+        else None
 
     let getLines (str: string) =
         use reader = new StringReader(str)

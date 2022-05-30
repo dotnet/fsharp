@@ -130,10 +130,7 @@ module SequencePoint =
         else
             let c1 = compare sp1.Line sp2.Line
 
-            if c1 <> 0 then
-                c1
-            else
-                compare sp1.Column sp2.Column
+            if c1 <> 0 then c1 else compare sp1.Column sp2.Column
 
     let orderByOffset sp1 sp2 = compare sp1.Offset sp2.Offset
 
@@ -377,11 +374,7 @@ type PortablePdbGenerator
 
         let s1, s2 = '/', '\\'
 
-        let separator =
-            if (count name s1) >= (count name s2) then
-                s1
-            else
-                s2
+        let separator = if (count name s1) >= (count name s2) then s1 else s2
 
         let writer = BlobBuilder()
         writer.WriteByte(byte separator)
@@ -445,12 +438,7 @@ type PortablePdbGenerator
     let documentIndex =
         let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
 
-        let docLength =
-            docs.Length
-            + if String.IsNullOrEmpty sourceLink then
-                  1
-              else
-                  0
+        let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
 
         metadata.SetCapacity(TableIndex.Document, docLength)
 
@@ -1020,16 +1008,14 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
                              | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                              | None -> true
 
-                         if nested then
-                             pdbOpenScope pdbw sco.StartOffset
+                         if nested then pdbOpenScope pdbw sco.StartOffset
 
                          sco.Locals
                          |> Array.iter (fun v -> pdbDefineLocalVariable pdbw v.Name v.Signature v.Index)
 
                          sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
 
-                         if nested then
-                             pdbCloseScope pdbw sco.EndOffset)
+                         if nested then pdbCloseScope pdbw sco.EndOffset)
 
              match minfo.RootScope with
              | None -> ()

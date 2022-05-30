@@ -630,16 +630,11 @@ module Display =
         Breaks(next + 1, outer, stack)
 
     let popBreak (Breaks (next, outer, stack)) =
-        if next = 0 then
-            raise (Failure "popBreak: underflow")
+        if next = 0 then raise (Failure "popBreak: underflow")
 
         let topBroke = stack[next - 1] < 0
 
-        let outer =
-            if outer = next then
-                outer - 1
-            else
-                outer // if all broken, unwind
+        let outer = if outer = next then outer - 1 else outer // if all broken, unwind
 
         let next = next - 1
         Breaks(next, outer, stack), topBroke
@@ -977,10 +972,7 @@ module Display =
         let exceededPrintSize () = size <= 0
 
         let countNodes n =
-            if size > 0 then
-                size <- size - n
-            else
-                () // no need to keep decrementing (and avoid wrap around)
+            if size > 0 then size <- size - n else () // no need to keep decrementing (and avoid wrap around)
 
         let stopShort _ = exceededPrintSize () // for unfoldL
 
@@ -1295,10 +1287,7 @@ module Display =
                     |> makeListL
 
                 let project1 x =
-                    if x >= (b1 + n1) then
-                        None
-                    else
-                        Some(x, x + 1)
+                    if x >= (b1 + n1) then None else Some(x, x + 1)
 
                 let rowsL = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
 
@@ -1340,11 +1329,7 @@ module Display =
                 let itemLs =
                     boundedUnfoldL
                         possibleKeyValueL
-                        (fun () ->
-                            if it.MoveNext() then
-                                Some(it.Current, ())
-                            else
-                                None)
+                        (fun () -> if it.MoveNext() then Some(it.Current, ()) else None)
                         stopShort
                         ()
                         (1 + opts.PrintLength / 12)

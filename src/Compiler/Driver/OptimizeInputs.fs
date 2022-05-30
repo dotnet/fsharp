@@ -20,11 +20,16 @@ open FSharp.Compiler.TypedTreeOps
 
 let mutable showTermFileCount = 0
 
-let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
+let PrintWholeAssemblyImplementation g (tcConfig: TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let fileName = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
+
+            use f =
+                FileSystem
+                    .OpenFileForWriteShim(fileName + "-" + string showTermFileCount + "-" + header, FileMode.Create)
+                    .GetWriter()
+
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else
@@ -37,13 +42,24 @@ let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly)
     | None -> optEnv
     | Some data -> Optimizer.BindCcu ccuinfo.FSharpViewOfMetadata data optEnv tcGlobals
 
-let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
+let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
     let ccuinfos = tcImports.GetImportedAssemblies()
     let optEnv = Optimizer.IncrementalOptimizationEnv.Empty
     let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos
     optEnv
 
-let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =
+let ApplyAllOptimizations
+    (
+        tcConfig: TcConfig,
+        tcGlobals,
+        tcVal,
+        outfile,
+        importMap,
+        isIncrementalFragment,
+        optEnv,
+        ccu: CcuThunk,
+        implFiles
+    ) =
     // NOTE: optEnv - threads through
     //
     // Always optimize once - the results of this step give the x-module optimization
@@ -52,7 +68,9 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then
-        dprintf "Expression prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
+        dprintf
+            "Expression prior to optimization:\n%s\n"
+            (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
 
     if tcConfig.showOptimizationData then
         dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
@@ -63,8 +81,16 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
     // Only do abstract_big_targets on the first pass!  Only do it when TLR is on!
     let optSettings = tcConfig.optSettings
-    let optSettings = { optSettings with abstractBigTargets = tcConfig.doTLR }
-    let optSettings = { optSettings with reportingPhase = true }
+
+    let optSettings =
+        { optSettings with
+            abstractBigTargets = tcConfig.doTLR
+        }
+
+    let optSettings =
+        { optSettings with
+            reportingPhase = true
+        }
 
     let results, (optEnvFirstLoop, _, _, _) =
         ((optEnv0, optEnv0, optEnv0, SignatureHidingInfo.Empty), implFiles)
@@ -73,18 +99,33 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             //ReportTime tcConfig ("Initial simplify")
             let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen =
-                Optimizer.OptimizeImplFile
-                   (optSettings, ccu, tcGlobals, tcVal, importMap,
-                    optEnvFirstLoop, isIncrementalFragment, tcConfig.fsiMultiAssemblyEmit,
-                    tcConfig.emitTailcalls, hidden, implFile)
+                Optimizer.OptimizeImplFile(
+                    optSettings,
+                    ccu,
+                    tcGlobals,
+                    tcVal,
+                    importMap,
+                    optEnvFirstLoop,
+                    isIncrementalFragment,
+                    tcConfig.fsiMultiAssemblyEmit,
+                    tcConfig.emitTailcalls,
+                    hidden,
+                    implFile
+                )
 
             let implFile = LowerLocalMutables.TransformImplFile tcGlobals importMap implFile
 
             // Only do this on the first pass!
-            let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }
+            let optSettings =
+                { optSettings with
+                    abstractBigTargets = false
+                    reportingPhase = false
+                }
 #if DEBUG
             if tcConfig.showOptimizationData then
-                dprintf "Optimization implFileOptData:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
+                dprintf
+                    "Optimization implFileOptData:\n%s\n"
+                    (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
 #endif
 
             let implFile, optEnvExtraLoop =
@@ -92,10 +133,19 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
                     //ReportTime tcConfig ("Extra simplification loop")
                     let (optEnvExtraLoop, implFile, _, _), _ =
-                        Optimizer.OptimizeImplFile
-                           (optSettings, ccu, tcGlobals, tcVal, importMap,
-                            optEnvExtraLoop, isIncrementalFragment, tcConfig.fsiMultiAssemblyEmit,
-                            tcConfig.emitTailcalls, hidden, implFile)
+                        Optimizer.OptimizeImplFile(
+                            optSettings,
+                            ccu,
+                            tcGlobals,
+                            tcVal,
+                            importMap,
+                            optEnvExtraLoop,
+                            isIncrementalFragment,
+                            tcConfig.fsiMultiAssemblyEmit,
+                            tcConfig.emitTailcalls,
+                            hidden,
+                            implFile
+                        )
 
                     //PrintWholeAssemblyImplementation tcConfig outfile (sprintf "extra-loop-%d" n) implFile
                     implFile, optEnvExtraLoop
@@ -108,24 +158,36 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     let implFile = implFile |> Detuple.DetupleImplFile ccu tcGlobals
                     //PrintWholeAssemblyImplementation tcConfig outfile "post-detuple" implFile
                     implFile
-                else implFile
+                else
+                    implFile
 
             let implFile =
                 if tcConfig.doTLR then
-                    implFile |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
-                else implFile
+                    implFile
+                    |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
+                else
+                    implFile
 
-            let implFile =
-                LowerCalls.LowerImplFile tcGlobals implFile
+            let implFile = LowerCalls.LowerImplFile tcGlobals implFile
 
             let implFile, optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then
 
                     //ReportTime tcConfig ("Final simplify pass")
                     let (optEnvFinalSimplify, implFile, _, _), _ =
-                        Optimizer.OptimizeImplFile
-                           (optSettings, ccu, tcGlobals, tcVal, importMap, optEnvFinalSimplify,
-                            isIncrementalFragment, tcConfig.fsiMultiAssemblyEmit, tcConfig.emitTailcalls, hidden, implFile)
+                        Optimizer.OptimizeImplFile(
+                            optSettings,
+                            ccu,
+                            tcGlobals,
+                            tcVal,
+                            importMap,
+                            optEnvFinalSimplify,
+                            isIncrementalFragment,
+                            tcConfig.fsiMultiAssemblyEmit,
+                            tcConfig.emitTailcalls,
+                            hidden,
+                            implFile
+                        )
 
                     //PrintWholeAssemblyImplementation tcConfig outfile "post-rec-opt" implFile
                     implFile, optEnvFinalSimplify
@@ -133,8 +195,10 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     implFile, optEnvFinalSimplify
 
             let implFile =
-                { ImplFile = implFile
-                  OptimizeDuringCodeGen = optimizeDuringCodeGen }
+                {
+                    ImplFile = implFile
+                    OptimizeDuringCodeGen = optimizeDuringCodeGen
+                }
 
             (implFile, implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
 
@@ -149,17 +213,20 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 // ILX generation
 //----------------------------------------------------------------------------
 
-let CreateIlxAssemblyGenerator (_tcConfig:TcConfig, tcImports:TcImports, tcGlobals, tcVal, generatedCcu) =
-    let ilxGenerator = IlxAssemblyGenerator(tcImports.GetImportMap(), tcGlobals, tcVal, generatedCcu)
+let CreateIlxAssemblyGenerator (_tcConfig: TcConfig, tcImports: TcImports, tcGlobals, tcVal, generatedCcu) =
+    let ilxGenerator =
+        IlxAssemblyGenerator(tcImports.GetImportMap(), tcGlobals, tcVal, generatedCcu)
+
     let ccus = tcImports.GetCcusInDeclOrder()
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator
 
-let GenerateIlxCode (
+let GenerateIlxCode
+    (
         ilxBackend,
         isInteractiveItExpr,
         isInteractiveOnMono,
-        tcConfig:TcConfig,
+        tcConfig: TcConfig,
         topAttrs: TopAttribs,
         optimizedImpls,
         fragName,
@@ -167,35 +234,39 @@ let GenerateIlxCode (
     ) =
 
     let mainMethodInfo =
-        if (tcConfig.target = CompilerTarget.Dll) || (tcConfig.target = CompilerTarget.Module) then
-           None
-        else Some topAttrs.mainMethodAttrs
+        if (tcConfig.target = CompilerTarget.Dll)
+           || (tcConfig.target = CompilerTarget.Module) then
+            None
+        else
+            Some topAttrs.mainMethodAttrs
 
     let ilxGenOpts: IlxGenOptions =
-        { generateFilterBlocks = tcConfig.generateFilterBlocks
-          emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
-          workAroundReflectionEmitBugs = tcConfig.isInteractive
-          generateDebugSymbols = tcConfig.debuginfo
-          fragName = fragName
-          localOptimizationsEnabled= tcConfig.optSettings.LocalOptimizationsEnabled
-          testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
-          mainMethodInfo= mainMethodInfo
-          ilxBackend = ilxBackend
-          fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
-          isInteractive = tcConfig.isInteractive
-          isInteractiveItExpr = isInteractiveItExpr
-          alwaysCallVirt = tcConfig.alwaysCallVirt }
+        {
+            generateFilterBlocks = tcConfig.generateFilterBlocks
+            emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
+            workAroundReflectionEmitBugs = tcConfig.isInteractive
+            generateDebugSymbols = tcConfig.debuginfo
+            fragName = fragName
+            localOptimizationsEnabled = tcConfig.optSettings.LocalOptimizationsEnabled
+            testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
+            mainMethodInfo = mainMethodInfo
+            ilxBackend = ilxBackend
+            fsiMultiAssemblyEmit = tcConfig.fsiMultiAssemblyEmit
+            isInteractive = tcConfig.isInteractive
+            isInteractiveItExpr = isInteractiveItExpr
+            alwaysCallVirt = tcConfig.alwaysCallVirt
+        }
 
-    ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
+    ilxGenerator.GenerateCode(ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports: TcImports) scoref =
     let normalizeAssemblyRefByName nm =
-        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, nm, lookupOnly=false) with
+        match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, nm, lookupOnly = false) with
         | Some dllInfo -> dllInfo.ILScopeRef
         | None -> scoref
 
@@ -205,7 +276,12 @@ let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scor
     | ILScopeRef.PrimaryAssembly -> normalizeAssemblyRefByName ilGlobals.primaryAssemblyName
     | ILScopeRef.Assembly aref -> normalizeAssemblyRefByName aref.Name
 
-let GetGeneratedILModuleName (t:CompilerTarget) (s:string) =
+let GetGeneratedILModuleName (t: CompilerTarget) (s: string) =
     // return the name of the file as a module name
-    let ext = match t with CompilerTarget.Dll -> "dll" | CompilerTarget.Module -> "netmodule" | _ -> "exe"
+    let ext =
+        match t with
+        | CompilerTarget.Dll -> "dll"
+        | CompilerTarget.Module -> "netmodule"
+        | _ -> "exe"
+
     s + "." + ext
