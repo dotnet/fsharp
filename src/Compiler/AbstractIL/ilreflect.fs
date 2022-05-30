@@ -646,8 +646,8 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
             try
                 System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty
                 |> ignore
-            with
-            | _ -> ()
+            with _ ->
+                ()
 #endif
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap
@@ -1117,8 +1117,8 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
                     (null: ParameterModifier[])
                 )
             // This can fail if there is an ambiguity w.r.t. return type
-            with
-            | _ -> null
+            with _ ->
+                null
 
         if (isNotNull methInfo && equalTypes resT methInfo.ReturnType) then
             methInfo
@@ -2759,8 +2759,8 @@ let EmitDynamicAssemblyFragment
         try
             ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [||]))
             None
-        with
-        | :? TargetInvocationException as exn -> Some exn.InnerException
+        with :? TargetInvocationException as exn ->
+            Some exn.InnerException
 
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts

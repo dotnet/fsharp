@@ -236,8 +236,7 @@ type FSharpEmbedResourceText() =
                 let str =
                     try
                         System.String.Format(Unquote(txt.Substring i)) // Format turns e.g '\n' into that char, but also requires that we 'escape' curlies in the original .txt file, e.g. "{{"
-                    with
-                    | e ->
+                    with e ->
                         Err(
                             fileName,
                             lineNum,
@@ -551,8 +550,7 @@ open Printf
                 xd.Save outXmlStream
                 printMessage (sprintf "Done %s" outFileName)
                 Some(fileName, outFileName, outXmlFileName)
-        with
-        | e ->
+        with e ->
             PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
             None
 

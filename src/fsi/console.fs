@@ -76,8 +76,7 @@ module internal Utils =
     let guard (f) =
         try
             f ()
-        with
-        | e ->
+        with e ->
             warning (
                 Failure(
                     sprintf
@@ -197,8 +196,8 @@ type internal ReadLineConsole() =
                 |> Seq.iter (fun option -> optionsCache.Add(option))
 
                 optionsCache.Root <- root
-            with
-            | _ -> optionsCache.Clear()
+            with _ ->
+                optionsCache.Clear()
 
             optionsCache, true
         else

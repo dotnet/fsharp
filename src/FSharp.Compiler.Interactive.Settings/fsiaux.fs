@@ -52,8 +52,8 @@ type internal SimpleEventLoop() =
                         result <-
                             try
                                 Some(f ())
-                            with
-                            | _ -> None)
+                            with _ ->
+                                None)
 
                     setSignal doneSignal
                     run ()

@@ -71,8 +71,7 @@ module internal PervasiveAutoOpens =
         // "How can I detect if am running in Mono?" section
         try
             Type.GetType "Mono.Runtime" <> null
-        with
-        | _ ->
+        with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
             // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
@@ -373,8 +372,8 @@ module Option =
     let attempt (f: unit -> 'T) =
         try
             Some(f ())
-        with
-        | _ -> None
+        with _ ->
+            None
 
 module List =
 
@@ -996,8 +995,8 @@ module Cancellable =
                 match f ct with
                 | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
                 | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-            with
-            | err -> ValueOrCancelled.Value(Choice2Of2 err))
+            with err ->
+                ValueOrCancelled.Value(Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
     let inline tryFinally comp compensation =
@@ -1167,8 +1166,7 @@ type LazyWithContext<'T, 'Ctxt> =
                 x.value <- res
                 x.funcOrException <- null
                 res
-            with
-            | exn ->
+            with exn ->
                 x.funcOrException <- box (LazyWithContextFailure(exn))
                 reraise ()
         | _ -> failwith "unreachable"
@@ -1286,8 +1284,8 @@ module NameMap =
             (fun n x2 acc ->
                 try
                     f n (Map.find n m1) x2 acc
-                with
-                | :? KeyNotFoundException -> errf n x2)
+                with :? KeyNotFoundException ->
+                    errf n x2)
             m2
             acc
 

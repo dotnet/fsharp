@@ -363,8 +363,8 @@ type Range(code1: int64, code2: int64) =
                     |> Seq.take (m.EndLine - m.StartLine + 1)
                     |> String.concat "\n"
                     |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
-            with
-            | e -> e.ToString()
+            with e ->
+                e.ToString()
 
     member m.ToShortString() =
         sprintf "(%d,%d--%d,%d)" m.StartLine m.StartColumn m.EndLine m.EndColumn
@@ -542,5 +542,5 @@ module Range =
                 match nonEmptyLine with
                 | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
                 | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
-        with
-        | _ -> mkRange file (mkPos 1 0) (mkPos 1 80)
+        with _ ->
+            mkRange file (mkPos 1 0) (mkPos 1 80)

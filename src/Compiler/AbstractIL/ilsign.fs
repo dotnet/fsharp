@@ -704,8 +704,7 @@ type ILStrongNameSigner =
         let pkSignatureSize pk =
             try
                 signerSignatureSize pk
-            with
-            | exn ->
+            with exn ->
                 failwith ("A call to StrongNameSignatureSize failed (" + exn.Message + ")")
                 0x80
 
