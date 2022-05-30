@@ -278,11 +278,7 @@ let evaluateSession (argv: string[]) =
 
                 member _.EventLoopRun() =
 #if !FX_NO_WINFORMS
-                    match (if fsiSession.IsGui then
-                               fsiWinFormsLoop.Value
-                           else
-                               None)
-                        with
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with
                     | Some l -> (l :> IEventLoop).Run()
                     | _ ->
 #endif
@@ -290,11 +286,7 @@ let evaluateSession (argv: string[]) =
 
                 member _.EventLoopInvoke(f) =
 #if !FX_NO_WINFORMS
-                    match (if fsiSession.IsGui then
-                               fsiWinFormsLoop.Value
-                           else
-                               None)
-                        with
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with
                     | Some l -> (l :> IEventLoop).Invoke(f)
                     | _ ->
 #endif
@@ -302,11 +294,7 @@ let evaluateSession (argv: string[]) =
 
                 member _.EventLoopScheduleRestart() =
 #if !FX_NO_WINFORMS
-                    match (if fsiSession.IsGui then
-                               fsiWinFormsLoop.Value
-                           else
-                               None)
-                        with
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with
                     | Some l -> (l :> IEventLoop).ScheduleRestart()
                     | _ ->
 #endif

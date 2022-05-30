@@ -221,28 +221,14 @@ let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] =
         bw.Write(int (modulusLength + BLOBHEADER_LENGTH)) // CLRHeader.KeyLength
 
         // Write out the BLOBHEADER
-        bw.Write(
-            byte (
-                if isPrivate = true then
-                    PRIVATEKEYBLOB
-                else
-                    PUBLICKEYBLOB
-            )
-        ) // BLOBHEADER.bType
+        bw.Write(byte (if isPrivate = true then PRIVATEKEYBLOB else PUBLICKEYBLOB)) // BLOBHEADER.bType
 
         bw.Write(byte BLOBHEADER_CURRENT_BVERSION) // BLOBHEADER.bVersion
         bw.Write(int16 0) // BLOBHEADER.wReserved
         bw.Write(int CALG_RSA_SIGN) // BLOBHEADER.aiKeyAlg
 
         // Write the RSAPubKey header
-        bw.Write(
-            int (
-                if isPrivate then
-                    RSA_PRIV_MAGIC
-                else
-                    RSA_PUB_MAGIC
-            )
-        ) // RSAPubKey.magic
+        bw.Write(int (if isPrivate then RSA_PRIV_MAGIC else RSA_PUB_MAGIC)) // RSAPubKey.magic
 
         bw.Write(int (modulusLength * 8)) // RSAPubKey.bitLen
 
@@ -580,10 +566,7 @@ let legacySignerCloseKeyContainer kc =
 
 let legacySignerSignatureSize (pk: byte[]) =
     if runningOnMono then
-        if pk.Length > 32 then
-            pk.Length - 32
-        else
-            128
+        if pk.Length > 32 then pk.Length - 32 else 128
     else
         let mutable pSize = 0u
         let iclrSN = getICLRStrongName ()

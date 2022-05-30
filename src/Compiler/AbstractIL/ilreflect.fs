@@ -1101,11 +1101,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
 
         let stat = mref.CallingConv.IsStatic
 
-        let cconv =
-            (if stat then
-                 BindingFlags.Static
-             else
-                 BindingFlags.Instance)
+        let cconv = (if stat then BindingFlags.Static else BindingFlags.Instance)
 
         let methInfo =
             try
@@ -2568,8 +2564,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
 
                     match emEnv.emTypMap.TryFind typeRef with
                     | Some (_, tb, _, _) ->
-                        if not (tb.IsCreated()) then
-                            tb.CreateTypeAndLog() |> ignore
+                        if not (tb.IsCreated()) then tb.CreateTypeAndLog() |> ignore
 
                         tb.Assembly
                     | None -> null)
@@ -2595,8 +2590,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
     traverseTypeRef tref
 
 let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef: ILTypeDef) =
-    if verbose2 then
-        dprintf "buildTypeDefPass4 %s\n" tdef.Name
+    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name
 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     createTypeRef (visited, created) emEnv tref
