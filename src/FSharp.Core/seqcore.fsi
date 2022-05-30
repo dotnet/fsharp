@@ -100,8 +100,8 @@ module RuntimeHelpers =
     /// <param name="source">The input sequence.</param>
     ///
     /// <returns>The result sequence.</returns>
-    val EnumerateUsing: resource: 'T -> source: ('T -> 'Collection) -> seq<'U>
-        when 'T :> IDisposable and 'Collection :> seq<'U>
+    val EnumerateUsing:
+        resource: 'T -> source: ('T -> 'Collection) -> seq<'U> when 'T :> IDisposable and 'Collection :> seq<'U>
 
     /// <summary>Creates an anonymous event with the given handlers.</summary>
     ///

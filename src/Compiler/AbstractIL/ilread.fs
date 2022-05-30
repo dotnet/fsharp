@@ -41,15 +41,15 @@ let _ =
 let noStableFileHeuristic =
     try
         (Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null)
-    with
-    | _ -> false
+    with _ ->
+        false
 
 let alwaysMemoryMapFSC =
     try
         (Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler")
          <> null)
-    with
-    | _ -> false
+    with _ ->
+        false
 
 let stronglyHeldReaderCacheSizeDefault = 30
 
@@ -58,8 +58,8 @@ let stronglyHeldReaderCacheSize =
         (match Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with
          | null -> stronglyHeldReaderCacheSizeDefault
          | s -> int32 s)
-    with
-    | _ -> stronglyHeldReaderCacheSizeDefault
+    with _ ->
+        stronglyHeldReaderCacheSizeDefault
 
 let singleOfBits (x: int32) =
     BitConverter.ToSingle(BitConverter.GetBytes x, 0)
@@ -3804,8 +3804,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                                     [] (* <REVIEW> scopes fail for mscorlib </REVIEW> scopes rootScope *)
                                 // REVIEW: look through sps to get ranges? Use GetRanges?? Change AbsIL??
                                 (localPdbInfos, None, seqpoints)
-                            with
-                            | e ->
+                            with e ->
                                 // "* Warning: PDB info for method "+nm+" could not be read and will be ignored: "+e.Message
                                 [], None, []
 #endif
@@ -4222,8 +4221,7 @@ let getPdbReader pdbDirPath fileName =
                 | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
 
             Some(pdbr, docfun)
-        with
-        | e ->
+        with e ->
             dprintn ("* Warning: PDB file could not be read and will be ignored: " + e.Message)
             None
 #endif
@@ -5111,8 +5109,8 @@ let stableFileHeuristicApplies fileName =
     not noStableFileHeuristic
     && try
         FileSystem.IsStableFileHeuristic fileName
-       with
-       | _ -> false
+       with _ ->
+           false
 
 let createByteFileChunk opts fileName chunk =
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
@@ -5184,8 +5182,7 @@ let OpenILModuleReader fileName opts =
                 ILModuleReaderCacheKey(fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
 
             key, true
-        with
-        | exn ->
+        with exn ->
             Debug.Assert(
                 false,
                 sprintf

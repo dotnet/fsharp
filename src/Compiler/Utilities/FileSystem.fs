@@ -381,12 +381,11 @@ module MemoryMappedFileExtensions =
                     use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                     copyTo stream
                     Some mmf
-                with
-                | _ ->
+                with _ ->
                     mmf.Dispose()
                     None
-            with
-            | _ -> None
+            with _ ->
+                None
 
     type MemoryMappedFile with
 
@@ -615,8 +614,8 @@ type DefaultFileSystem() as this =
                 ifs.GetFullPathShim path
             else
                 path
-        with
-        | _ -> path
+        with _ ->
+            path
 
     abstract IsInvalidPathShim: path: string -> bool
 
