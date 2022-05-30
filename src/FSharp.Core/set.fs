@@ -571,13 +571,21 @@ module internal SetTree =
                     compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
                 else
                     let x1n = asNode x1
-                    compareStacks comparer (x1n.Left :: (SetTreeNode(x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1) l2
+
+                    compareStacks
+                        comparer
+                        (x1n.Left :: (SetTreeNode(x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1)
+                        l2
             | _, (x2 :: t2) when not (isEmpty x2) ->
                 if x2.Height = 1 then
                     compareStacks comparer l1 (empty :: SetTree x2.Key :: t2)
                 else
                     let x2n = asNode x2
-                    compareStacks comparer l1 (x2n.Left :: (SetTreeNode(x2n.Key, empty, x2n.Right, 0) :> SetTree<'T>) :: t2)
+
+                    compareStacks
+                        comparer
+                        l1
+                        (x2n.Left :: (SetTreeNode(x2n.Key, empty, x2n.Right, 0) :> SetTree<'T>) :: t2)
             | _ -> unexpectedstateInSetTreeCompareStacks ()
 
         match l1, l2 with

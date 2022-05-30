@@ -203,7 +203,8 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
 
                     match ok with
                     | Choice1Of2 true -> return! scan timeoutAsync timeoutCts
-                    | Choice1Of2 false -> return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
+                    | Choice1Of2 false ->
+                        return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
                     | Choice2Of2 () ->
                         lock syncRoot (fun () ->
                             // Cancel the outstanding wait for messages installed by waitOneWithCancellation
@@ -454,7 +455,9 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
             // Nothing to dispose, no wait handles used
             let resultCell = new ResultCell<_>()
 
-            let channel = AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
+            let channel =
+                AsyncReplyChannel<_>(fun reply -> resultCell.RegisterResult(reply, reuseThread = false) |> ignore)
+
             let msg = buildMessage channel
 
             mailbox.Post msg

@@ -58,21 +58,37 @@ type TaskBuilderBase() =
     /// Chains together a step with its following step.
     /// Note that this requires that the first step has no result.
     /// This prevents constructs like `task { return 1; return 2; }`.
-    member inline _.Combine(task1: TaskCode<'TOverall, unit>, task2: TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+    member inline _.Combine
+        (
+            task1: TaskCode<'TOverall, unit>,
+            task2: TaskCode<'TOverall, 'T>
+        ) : TaskCode<'TOverall, 'T> =
         ResumableCode.Combine(task1, task2)
 
     /// Builds a step that executes the body while the condition predicate is true.
-    member inline _.While([<InlineIfLambda>] condition: unit -> bool, body: TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
+    member inline _.While
+        (
+            [<InlineIfLambda>] condition: unit -> bool,
+            body: TaskCode<'TOverall, unit>
+        ) : TaskCode<'TOverall, unit> =
         ResumableCode.While(condition, body)
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryWith(body: TaskCode<'TOverall, 'T>, catch: exn -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+    member inline _.TryWith
+        (
+            body: TaskCode<'TOverall, 'T>,
+            catch: exn -> TaskCode<'TOverall, 'T>
+        ) : TaskCode<'TOverall, 'T> =
         ResumableCode.TryWith(body, catch)
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    member inline _.TryFinally(body: TaskCode<'TOverall, 'T>, [<InlineIfLambda>] compensation: unit -> unit) : TaskCode<'TOverall, 'T> =
+    member inline _.TryFinally
+        (
+            body: TaskCode<'TOverall, 'T>,
+            [<InlineIfLambda>] compensation: unit -> unit
+        ) : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinally(
             body,
             ResumableCode<_, _>(fun _sm ->
@@ -84,7 +100,11 @@ type TaskBuilderBase() =
         ResumableCode.For(sequence, body)
 
 #if NETSTANDARD2_1
-    member inline internal this.TryFinallyAsync(body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask) : TaskCode<'TOverall, 'T> =
+    member inline internal this.TryFinallyAsync
+        (
+            body: TaskCode<'TOverall, 'T>,
+            compensation: unit -> ValueTask
+        ) : TaskCode<'TOverall, 'T> =
         ResumableCode.TryFinallyAsync(
             body,
             ResumableCode<_, _>(fun sm ->
@@ -344,7 +364,11 @@ module LowPriority =
                         sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                         false
                 else
-                    TaskBuilderBase.BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall>(&sm, task, continuation)
+                    TaskBuilderBase.BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall>(
+                        &sm,
+                        task,
+                        continuation
+                    )
             //-- RESUMABLE CODE END
             )
 
@@ -370,7 +394,12 @@ module HighPriority =
     // High priority extensions
     type TaskBuilderBase with
 
-        static member BindDynamic(sm: byref<_>, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : bool =
+        static member BindDynamic
+            (
+                sm: byref<_>,
+                task: Task<'TResult1>,
+                continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
+            ) : bool =
             let mutable awaiter = task.GetAwaiter()
 
             let cont =

@@ -244,7 +244,11 @@ module Array =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let countByRefType (projection: 'T -> 'Key) (array: 'T[]) =
-        countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(projection t)) (fun sb -> sb.Value) array
+        countByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (fun sb -> sb.Value)
+            array
 
     [<CompiledName("CountBy")>]
     let countBy (projection: 'T -> 'Key) (array: 'T[]) =
@@ -570,7 +574,11 @@ module Array =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (array: 'T[]) =
-        groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(keyf t)) (fun sb -> sb.Value) array
+        groupByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(keyf t))
+            (fun sb -> sb.Value)
+            array
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (array: 'T[]) =
@@ -822,7 +830,12 @@ module Array =
 
             count
 
-        let private createMask<'a> (f: 'a -> bool) (src: array<'a>) (maskArrayOut: byref<array<uint32>>) (leftoverMaskOut: byref<uint32>) =
+        let private createMask<'a>
+            (f: 'a -> bool)
+            (src: array<'a>)
+            (maskArrayOut: byref<array<uint32>>)
+            (leftoverMaskOut: byref<uint32>)
+            =
             let maskArrayLength = src.Length / 0x20
 
             // null when there are less than 32 items in src array.
@@ -1208,7 +1221,10 @@ module Array =
 
             if len % chunkSize <> 0 then
                 res.[chunkCount - 1] <-
-                    Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
+                    Microsoft.FSharp.Primitives.Basics.Array.subUnchecked
+                        ((chunkCount - 1) * chunkSize)
+                        (len % chunkSize)
+                        array
 
             res
 
@@ -1776,7 +1792,11 @@ module Array =
 
             for j in 1 .. len - 1 do
                 if lenInner <> array.[j].Length then
-                    invalidArgDifferentArrayLength "array.[0]" lenInner (String.Format("array.[{0}]", j)) array.[j].Length
+                    invalidArgDifferentArrayLength
+                        "array.[0]"
+                        lenInner
+                        (String.Format("array.[{0}]", j))
+                        array.[j].Length
 
             let result: 'T[][] =
                 Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked lenInner

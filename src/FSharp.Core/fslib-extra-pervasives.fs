@@ -37,12 +37,20 @@ module ExtraTopLevelOperators =
         dummyArray.Length |> ignore // pretty stupid way to avoid tail call, would be better if attribute existed, but this should be inlineable by the JIT
         result
 
-    let inline ICollection_Contains<'collection, 'item when 'collection :> ICollection<'item>> (collection: 'collection) (item: 'item) =
+    let inline ICollection_Contains<'collection, 'item when 'collection :> ICollection<'item>>
+        (collection: 'collection)
+        (item: 'item)
+        =
         collection.Contains item
 
     [<DebuggerDisplay("Count = {Count}")>]
     [<DebuggerTypeProxy(typedefof<DictDebugView<_, _, _>>)>]
-    type DictImpl<'SafeKey, 'Key, 'T>(t: Dictionary<'SafeKey, 'T>, makeSafeKey: 'Key -> 'SafeKey, getKey: 'SafeKey -> 'Key) =
+    type DictImpl<'SafeKey, 'Key, 'T>
+        (
+            t: Dictionary<'SafeKey, 'T>,
+            makeSafeKey: 'Key -> 'SafeKey,
+            getKey: 'SafeKey -> 'Key
+        ) =
 #if NETSTANDARD
         static let emptyEnumerator =
             (Array.empty<KeyValuePair<'Key, 'T>> :> seq<_>).GetEnumerator()
@@ -512,7 +520,8 @@ type ITypeProvider =
 
     abstract GetStaticParameters: typeWithoutArguments: Type -> ParameterInfo[]
 
-    abstract ApplyStaticArguments: typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments: obj[] -> Type
+    abstract ApplyStaticArguments:
+        typeWithoutArguments: Type * typePathWithArguments: string[] * staticArguments: obj[] -> Type
 
     abstract GetInvokerExpression: syntheticMethodBase: MethodBase * parameters: Expr[] -> Expr
 

@@ -256,12 +256,16 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
                     eq t1 (CombTerm(InstanceMethodCallOp(minfo2), obj2 :: args2WithoutWitnesses))
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | CombTerm (StaticMethodCallWOp (minfo1, _minfoW1, nWitnesses1), args1), _ when nWitnesses1 <= args1.Length ->
+                | CombTerm (StaticMethodCallWOp (minfo1, _minfoW1, nWitnesses1), args1), _ when
+                    nWitnesses1 <= args1.Length
+                    ->
                     let argsWithoutWitnesses1 = List.skip nWitnesses1 args1
                     eq (CombTerm(StaticMethodCallOp(minfo1), argsWithoutWitnesses1)) t2
 
                 // We strip off StaticMethodCallWOp to ensure that CallWithWitness = Call
-                | _, CombTerm (StaticMethodCallWOp (minfo2, _minfoW2, nWitnesses2), args2) when nWitnesses2 <= args2.Length ->
+                | _, CombTerm (StaticMethodCallWOp (minfo2, _minfoW2, nWitnesses2), args2) when
+                    nWitnesses2 <= args2.Length
+                    ->
                     let argsWithoutWitnesses2 = List.skip nWitnesses2 args2
                     eq t1 (CombTerm(StaticMethodCallOp(minfo2), argsWithoutWitnesses2))
 
@@ -383,11 +387,14 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
         | CombTerm (ValueOp (v, _, None), []) -> combL "Value" [ objL v ]
         | CombTerm (WithValueOp (v, _), [ defn ]) -> combL "WithValue" [ objL v; expr defn ]
 
-        | CombTerm (InstanceMethodCallOp (minfo), obj :: args) -> combL "Call" [ someL obj; minfoL minfo; listL (exprs args) ]
+        | CombTerm (InstanceMethodCallOp (minfo), obj :: args) ->
+            combL "Call" [ someL obj; minfoL minfo; listL (exprs args) ]
 
         | CombTerm (StaticMethodCallOp (minfo), args) -> combL "Call" [ noneL; minfoL minfo; listL (exprs args) ]
 
-        | CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj) when nWitnesses <= argsWithoutObj.Length ->
+        | CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj) when
+            nWitnesses <= argsWithoutObj.Length
+            ->
             let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
             combL "Call" [ someL obj; minfoL minfo; listL (exprs argsWithoutWitnesses) ]
 
@@ -395,9 +402,11 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
             let argsWithoutWitnesses = List.skip nWitnesses args
             combL "Call" [ noneL; minfoL minfo; listL (exprs argsWithoutWitnesses) ]
 
-        | CombTerm (InstancePropGetOp (pinfo), (obj :: args)) -> combL "PropertyGet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
+        | CombTerm (InstancePropGetOp (pinfo), (obj :: args)) ->
+            combL "PropertyGet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
         | CombTerm (StaticPropGetOp (pinfo), args) -> combL "PropertyGet" [ noneL; pinfoL pinfo; listL (exprs args) ]
-        | CombTerm (InstancePropSetOp (pinfo), (obj :: args)) -> combL "PropertySet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
+        | CombTerm (InstancePropSetOp (pinfo), (obj :: args)) ->
+            combL "PropertySet" [ someL obj; pinfoL pinfo; listL (exprs args) ]
         | CombTerm (StaticPropSetOp (pinfo), args) -> combL "PropertySet" [ noneL; pinfoL pinfo; listL (exprs args) ]
         | CombTerm (InstanceFieldGetOp (finfo), [ obj ]) -> combL "FieldGet" [ someL obj; finfoL finfo ]
         | CombTerm (StaticFieldGetOp (finfo), []) -> combL "FieldGet" [ noneL; finfoL finfo ]
@@ -415,7 +424,8 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
             combL "ForIntegerRangeLoop" [ varL v; expr e1; expr e2; expr e3 ]
         | CombTerm (WhileLoopOp, args) -> combL "WhileLoop" (exprs args)
         | CombTerm (TryFinallyOp, args) -> combL "TryFinally" (exprs args)
-        | CombTerm (TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ]) -> combL "TryWith" [ expr e1; varL v1; expr e2; varL v2; expr e3 ]
+        | CombTerm (TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ]) ->
+            combL "TryWith" [ expr e1; varL v1; expr e2; varL v2; expr e3 ]
         | CombTerm (SequentialOp, args) -> combL "Sequential" (exprs args)
 
         | CombTerm (NewDelegateOp ty, [ e ]) ->
@@ -764,7 +774,9 @@ module Patterns =
             Some(None, minfo, List.skip nWitnesses args)
 
         // A InstanceMethodCallWOp matches as if it were a InstanceMethodCallOp
-        | E (CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj)) when nWitnesses <= argsWithoutObj.Length ->
+        | E (CombTerm (InstanceMethodCallWOp (minfo, _minfoW, nWitnesses), obj :: argsWithoutObj)) when
+            nWitnesses <= argsWithoutObj.Length
+            ->
             let argsWithoutWitnesses = List.skip nWitnesses argsWithoutObj
             Some(Some obj, minfo, argsWithoutWitnesses)
 
@@ -854,7 +866,8 @@ module Patterns =
 
         match cases |> Array.tryFind (fun ucase -> ucase.Name = unionCaseName) with
         | Some case -> case
-        | _ -> invalidArg "unionCaseName" (String.Format(SR.GetString(SR.QmissingUnionCase), ty.FullName, unionCaseName))
+        | _ ->
+            invalidArg "unionCaseName" (String.Format(SR.GetString(SR.QmissingUnionCase), ty.FullName, unionCaseName))
 
     let getUnionCaseInfoField (unionCase: UnionCaseInfo, index) =
         let fields = unionCase.GetFields()
@@ -981,7 +994,8 @@ module Patterns =
             invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
 
         List.iter2
-            (fun (p: ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
+            (fun (p: ParameterInfo) a ->
+                checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
             (paramInfos |> Array.toList)
             args
     // todo: shouldn't this be "strong" type check? sometimes?
@@ -1140,7 +1154,8 @@ module Patterns =
             invalidArg "args" (SR.GetString(SR.QincompatibleRecordLength))
 
         List.iter2
-            (fun (minfo: PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord)))
+            (fun (minfo: PropertyInfo) a ->
+                checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord)))
             (Array.toList mems)
             args
 
@@ -1157,7 +1172,8 @@ module Patterns =
             invalidArg "args" (SR.GetString(SR.QunionNeedsDiffNumArgs))
 
         List.iter2
-            (fun (minfo: PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "sum" (SR.GetString(SR.QtmmIncorrectArgForUnion)))
+            (fun (minfo: PropertyInfo) a ->
+                checkTypesSR minfo.PropertyType (typeOf a) "sum" (SR.GetString(SR.QtmmIncorrectArgForUnion)))
             (Array.toList sargs)
             args
 
@@ -1894,7 +1910,10 @@ module Patterns =
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
             match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with
             | Some ty -> ty
-            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName))
+            | None ->
+                invalidArg
+                    "tcName"
+                    (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, assembly.FullName))
         | ty -> ty
 
     let decodeNamedTy genericType tsR =
@@ -2151,7 +2170,8 @@ module Patterns =
     and instModuleDefnOp r tyargs _ =
         match r with
         | StaticMethodCallOp (minfo) -> StaticMethodCallOp(instMeth (minfo, tyargs))
-        | StaticMethodCallWOp (minfo, minfoW, n) -> StaticMethodCallWOp(instMeth (minfo, tyargs), instMeth (minfoW, tyargs), n)
+        | StaticMethodCallWOp (minfo, minfoW, n) ->
+            StaticMethodCallWOp(instMeth (minfo, tyargs), instMeth (minfoW, tyargs), n)
         // OK to throw away the tyargs here since this only non-generic values in modules get represented by static properties
         | x -> x
 
@@ -2313,7 +2333,8 @@ module Patterns =
             let h = l.[idx]
 
             match typeOf h with
-            | expected when expected <> ty -> invalidArg "receivedType" (String.Format(SR.GetString(SR.QtmmRaw), expected, ty))
+            | expected when expected <> ty ->
+                invalidArg "receivedType" (String.Format(SR.GetString(SR.QtmmRaw), expected, ty))
             | _ -> h
 
     let rec freeInExprAcc bvs acc (E t) =
@@ -2417,7 +2438,7 @@ module Patterns =
             lock reflectedDefinitionTable (fun () -> reflectedDefinitionTable.Add(key, Entry exprBuilder)))
 
         decodedTopResources.Add((assem, resourceName), 0)
-        
+
     let isReflectedDefinitionResourceName (resourceName: string) =
         resourceName.StartsWith(ReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
 
@@ -2463,7 +2484,8 @@ module Patterns =
                                         | x -> x)
                                         |> Array.tryPick (fun ca ->
                                             match ca with
-                                            | :? CompilationMappingAttribute as cma when cma.ResourceName = resourceName -> Some cma
+                                            | :? CompilationMappingAttribute as cma when cma.ResourceName = resourceName ->
+                                                Some cma
                                             | _ -> None)
 
                                     let resourceBytes = readToEnd (assem.GetManifestResourceStream resourceName)
@@ -2485,7 +2507,8 @@ module Patterns =
                             |> List.iter (fun (resourceName, defns) ->
                                 defns
                                 |> List.iter (fun (methodBase, exprBuilder) ->
-                                    reflectedDefinitionTable.[ReflectedDefinitionTableKey.GetKey methodBase] <- Entry exprBuilder)
+                                    reflectedDefinitionTable.[ReflectedDefinitionTableKey.GetKey methodBase] <-
+                                        Entry exprBuilder)
 
                                 decodedTopResources.[(assem, resourceName)] <- 0)
                         // we know it's in the table now, if it's ever going to be there
@@ -2585,7 +2608,14 @@ type Expr with
         checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
         mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses @ arguments)
 
-    static member CallWithWitnesses(obj: Expr, methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnesses, arguments) =
+    static member CallWithWitnesses
+        (
+            obj: Expr,
+            methodInfo: MethodInfo,
+            methodInfoWithWitnesses: MethodInfo,
+            witnesses,
+            arguments
+        ) =
         checkNonNull "methodInfo" methodInfo
         checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
         mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses @ arguments)
@@ -2992,7 +3022,8 @@ module ExprShape =
             | StaticMethodCallOp minfo, _ -> mkStaticMethodCall (minfo, arguments)
             | InstanceMethodCallOp minfo, obj :: args -> mkInstanceMethodCall (obj, minfo, args)
             | StaticMethodCallWOp (minfo, minfoW, n), _ -> mkStaticMethodCallW (minfo, minfoW, n, arguments)
-            | InstanceMethodCallWOp (minfo, minfoW, n), obj :: args -> mkInstanceMethodCallW (obj, minfo, minfoW, n, args)
+            | InstanceMethodCallWOp (minfo, minfoW, n), obj :: args ->
+                mkInstanceMethodCallW (obj, minfo, minfoW, n, args)
             | CoerceOp ty, [ arg ] -> mkCoerce (ty, arg)
             | NewArrayOp ty, _ -> mkNewArray (ty, arguments)
             | NewDelegateOp ty, [ arg ] -> mkNewDelegate (ty, arg)

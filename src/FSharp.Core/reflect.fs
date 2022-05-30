@@ -83,12 +83,11 @@ module internal Impl =
     let compilePropGetterFunc (prop: PropertyInfo) =
         let param = Expression.Parameter(typeof<obj>, "param")
 
-        let propExpr = Expression.Property(Expression.Convert(param, prop.DeclaringType), prop)
+        let propExpr =
+            Expression.Property(Expression.Convert(param, prop.DeclaringType), prop)
+
         let expr =
-            Expression.Lambda<Func<obj, obj>>(
-                Expression.Convert(propExpr, typeof<obj>),
-                param
-            )
+            Expression.Lambda<Func<obj, obj>>(Expression.Convert(propExpr, typeof<obj>), param)
 
         expr.Compile()
 
@@ -104,7 +103,8 @@ module internal Impl =
                     Expression.NewArrayInit(
                         typeof<obj>,
                         [
-                            for prop in props -> Expression.Convert(Expression.Property(typedParam, prop), typeof<obj>) :> Expression
+                            for prop in props ->
+                                Expression.Convert(Expression.Property(typedParam, prop), typeof<obj>) :> Expression
                         ]
                     )
                 ),
@@ -127,8 +127,7 @@ module internal Impl =
                                 let p = ctorParams.[paramIndex]
 
                                 let accessExpr = Expression.ArrayAccess(paramArray, Expression.Constant paramIndex)
-                                Expression.Convert(accessExpr, p.ParameterType)
-                                :> Expression
+                                Expression.Convert(accessExpr, p.ParameterType) :> Expression
                         ]
                     ),
                     typeof<obj>
@@ -152,8 +151,7 @@ module internal Impl =
                                 let p = methodParams.[paramIndex]
 
                                 let accessExpr = Expression.ArrayAccess(paramArray, Expression.Constant paramIndex)
-                                Expression.Convert(accessExpr, p.ParameterType)
-                                :> Expression
+                                Expression.Convert(accessExpr, p.ParameterType) :> Expression
                         ]
                     ),
                     typeof<obj>
@@ -187,14 +185,20 @@ module internal Impl =
                         if paramIndex = tupleEncField then
                             constituentTuple genericArg elements (startIndex + paramIndex) :> Expression
                         else
-                            Expression.Convert(Expression.ArrayAccess(elements, Expression.Constant(startIndex + paramIndex)), genericArg)
+                            Expression.Convert(
+                                Expression.ArrayAccess(elements, Expression.Constant(startIndex + paramIndex)),
+                                genericArg
+                            )
                 ]
             )
 
         let elements = Expression.Parameter(typeof<obj[]>, "elements")
 
         let expr =
-            Expression.Lambda<Func<obj[], obj>>(Expression.Convert(constituentTuple typ elements 0, typeof<obj>), elements)
+            Expression.Lambda<Func<obj[], obj>>(
+                Expression.Convert(constituentTuple typ elements 0, typeof<obj>),
+                elements
+            )
 
         expr.Compile()
 
@@ -204,9 +208,11 @@ module internal Impl =
                 let elements =
                     match getTupleElementAccessors typ with
                     // typ is a struct tuple and its elements are accessed via fields
-                    | Choice1Of2 (fi: FieldInfo[]) -> fi |> Array.map (fun fi -> Expression.Field(tuple, fi), fi.FieldType)
+                    | Choice1Of2 (fi: FieldInfo[]) ->
+                        fi |> Array.map (fun fi -> Expression.Field(tuple, fi), fi.FieldType)
                     // typ is a class tuple and its elements are accessed via properties
-                    | Choice2Of2 (pi: PropertyInfo[]) -> pi |> Array.map (fun pi -> Expression.Property(tuple, pi), pi.PropertyType)
+                    | Choice2Of2 (pi: PropertyInfo[]) ->
+                        pi |> Array.map (fun pi -> Expression.Property(tuple, pi), pi.PropertyType)
 
                 for index, (element, elementType) in elements |> Array.indexed do
                     if index = tupleEncField then
@@ -244,12 +250,10 @@ module internal Impl =
                 Expression.Block(
                     [ outputArray ],
                     [
-                        let arrayBounds = Expression.NewArrayBounds(typeof<obj>, Expression.Constant(outputLength tupleEncField typ))
-                        Expression.Assign(
-                                outputArray,
-                                arrayBounds
-                            )
-                            :> Expression
+                        let arrayBounds =
+                            Expression.NewArrayBounds(typeof<obj>, Expression.Constant(outputLength tupleEncField typ))
+
+                        Expression.Assign(outputArray, arrayBounds) :> Expression
                         yield! writeTupleIntoArray typ (Expression.Convert(param, typ)) outputArray 0
                         outputArray :> Expression
                     ]
@@ -603,7 +607,9 @@ module internal Impl =
 
     let getUnionCaseConstructor (typ: Type, tag: int, bindingFlags) =
         let meth = getUnionCaseConstructorMethod (typ, tag, bindingFlags)
-        (fun args ->meth.Invoke(null, BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags, null, args, null))
+
+        (fun args ->
+            meth.Invoke(null, BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags, null, args, null))
 
     let getUnionCaseConstructorCompiled (typ: Type, tag: int, bindingFlags) =
         let meth = getUnionCaseConstructorMethod (typ, tag, bindingFlags)
@@ -823,22 +829,35 @@ module internal Impl =
                 let fields =
                     typ.GetFields(instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields
 
-                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null, fields |> Array.map (fun fi -> fi.FieldType), null)
+                typ.GetConstructor(
+                    BindingFlags.Public ||| BindingFlags.Instance,
+                    null,
+                    fields |> Array.map (fun fi -> fi.FieldType),
+                    null
+                )
             else
                 let props = typ.GetProperties() |> orderTupleProperties
-                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null, props |> Array.map (fun p -> p.PropertyType), null)
+
+                typ.GetConstructor(
+                    BindingFlags.Public ||| BindingFlags.Instance,
+                    null,
+                    props |> Array.map (fun p -> p.PropertyType),
+                    null
+                )
 
         match ctor with
         | null ->
-            let msg = String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined)
-            raise (ArgumentException(msg, typ.FullName)))
+            let msg = String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined))
+            raise (ArgumentException(msg, typ.FullName))
         | _ -> ()
 
         ctor
 
     let getTupleCtor (typ: Type) =
         let ctor = getTupleConstructorMethod typ
-        (fun (args: obj[]) -> ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
+
+        (fun (args: obj[]) ->
+            ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 
     let getTupleElementAccessors (typ: Type) =
         if typ.IsValueType then
@@ -893,7 +912,9 @@ module internal Impl =
 
     let getTupleReaderInfo (typ: Type, index: int) =
         if index < 0 then
-            let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+            let msg =
+                String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+
             invalidArg "index" msg
 
         let get index =
@@ -903,7 +924,9 @@ module internal Impl =
                     |> orderTupleProperties
 
                 if index >= props.Length then
-                    let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+                    let msg =
+                        String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+
                     invalidArg "index" msg
 
                 props.[index]
@@ -913,7 +936,9 @@ module internal Impl =
                     |> orderTupleProperties
 
                 if index >= props.Length then
-                    let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+                    let msg =
+                        String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString())
+
                     invalidArg "index" msg
 
                 props.[index]
@@ -971,11 +996,18 @@ module internal Impl =
         let props = fieldPropsOfRecordType (typ, bindingFlags)
 
         let ctor =
-            typ.GetConstructor(BindingFlags.Instance ||| bindingFlags, null, props |> Array.map (fun p -> p.PropertyType), null)
+            typ.GetConstructor(
+                BindingFlags.Instance ||| bindingFlags,
+                null,
+                props |> Array.map (fun p -> p.PropertyType),
+                null
+            )
 
         match ctor with
         | null ->
-            let msg = String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName)
+            let msg =
+                String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName)
+
             raise (ArgumentException(msg))
         | _ -> ()
 
@@ -983,7 +1015,9 @@ module internal Impl =
 
     let getRecordConstructor (typ: Type, bindingFlags) =
         let ctor = getRecordConstructorMethod (typ, bindingFlags)
-        (fun (args: obj[]) -> ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
+
+        (fun (args: obj[]) ->
+            ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
 
     let getRecordConstructorCompiled (typ: Type, bindingFlags) =
         let ctor = getRecordConstructorMethod (typ, bindingFlags)
@@ -1028,7 +1062,9 @@ module internal Impl =
     let checkExnType (exceptionType, bindingFlags) =
         if not (isExceptionRepr (exceptionType, bindingFlags)) then
             if isExceptionRepr (exceptionType, bindingFlags ||| BindingFlags.NonPublic) then
-                let msg = String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName)
+                let msg =
+                    String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName)
+
                 invalidArg "exceptionType" msg
             else
                 let msg = String.Format(SR.GetString(SR.notAnExceptionType), exceptionType.FullName)
@@ -1297,7 +1333,9 @@ type FSharpValue =
         let fields = getTupleReader typ tuple
 
         if index < 0 || index >= fields.Length then
-            let msg = String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString())
+            let msg =
+                String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString())
+
             invalidArg "index" msg
 
         fields.[index]
@@ -1457,7 +1495,11 @@ module FSharpReflectionExtensions =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagReader(unionType, bindingFlags)
 
-        static member PreComputeUnionReader(unionCase: UnionCaseInfo, ?allowAccessToPrivateRepresentation) : (obj -> obj[]) =
+        static member PreComputeUnionReader
+            (
+                unionCase: UnionCaseInfo,
+                ?allowAccessToPrivateRepresentation
+            ) : (obj -> obj[]) =
             let bindingFlags = getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionReader(unionCase, bindingFlags)
 

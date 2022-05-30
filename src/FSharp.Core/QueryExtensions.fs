@@ -37,8 +37,7 @@ type Grouping<'K, 'T>(key: 'K, values: seq<'T>) =
 module internal Adapters =
 
     let memoize f =
-        let d =
-            new ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
+        let d = new ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
 
         fun x -> d.GetOrAdd(x, (fun r -> f r))
 
@@ -76,7 +75,8 @@ module internal Adapters =
         let rec propSetList acc x =
             match x with
             // detect " v.X <- y"
-            | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg -> propSetList (p :: acc) xs
+            | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
+                propSetList (p :: acc) xs
             // skip unit values
             | (Patterns.Value (v, _)) :: xs when v = null -> propSetList acc xs
             // detect "v"
@@ -193,8 +193,7 @@ module internal Adapters =
             let fields =
                 Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(
                     typ,
-                    BindingFlags.Public
-                    ||| BindingFlags.NonPublic
+                    BindingFlags.Public ||| BindingFlags.NonPublic
                 )
 
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with
@@ -260,14 +259,14 @@ module internal Adapters =
         let mhandle =
             (methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x))
 
-        let minfo =
-            (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
+        let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 
         let gmd = minfo.GetGenericMethodDefinition()
 
         (fun tm ->
             match tm with
-            | Patterns.Call (_obj, minfo2, _args) -> minfo2.IsGenericMethod && (gmd = minfo2.GetGenericMethodDefinition())
+            | Patterns.Call (_obj, minfo2, _args) ->
+                minfo2.IsGenericMethod && (gmd = minfo2.GetGenericMethodDefinition())
             | _ -> false)
 
     /// Cleanup the use of property-set object constructions in leaf expressions that form parts of F# queries.
@@ -309,7 +308,8 @@ module internal Adapters =
         // rewrite bottom-up
         let e =
             match e with
-            | ExprShape.ShapeCombination (comb, args) -> ExprShape.RebuildShapeCombination(comb, List.map SimplifyConsumingExpr args)
+            | ExprShape.ShapeCombination (comb, args) ->
+                ExprShape.RebuildShapeCombination(comb, List.map SimplifyConsumingExpr args)
             | ExprShape.ShapeLambda (v, body) -> Expr.Lambda(v, SimplifyConsumingExpr body)
             | ExprShape.ShapeVar _ -> e
 
