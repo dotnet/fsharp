@@ -184,8 +184,8 @@ let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
 
         let checkSum = alg.ComputeHash file
         Some(guid, checkSum)
-    with
-    | _ -> None
+    with _ ->
+        None
 
 //---------------------------------------------------------------------
 // Portable PDB Writer
@@ -935,14 +935,14 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
 
     try
         FileSystem.FileDeleteShim pdbfile
-    with
-    | _ -> ()
+    with _ ->
+        ()
 
     let pdbw =
         try
             pdbInitialize outfile pdbfile
-        with
-        | _ -> error (Error(FSComp.SR.ilwriteErrorCreatingPdb pdbfile, rangeCmdArgs))
+        with _ ->
+            error (Error(FSComp.SR.ilwriteErrorCreatingPdb pdbfile, rangeCmdArgs))
 
     match info.EntryPoint with
     | None -> ()
@@ -1119,16 +1119,16 @@ let writeMdbInfo fmdb f info =
     // Note, if we can't delete it code will fail later
     try
         FileSystem.FileDeleteShim fmdb
-    with
-    | _ -> ()
+    with _ ->
+        ()
 
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically
     // Report an error if the assembly is not available.
     let wr =
         try
             createWriter f
-        with
-        | _ -> error (Error(FSComp.SR.ilwriteErrorCreatingMdb (), rangeCmdArgs))
+        with _ ->
+            error (Error(FSComp.SR.ilwriteErrorCreatingMdb (), rangeCmdArgs))
 
     // NOTE: MonoSymbolWriter doesn't need information about entrypoints, so 'info.EntryPoint' is unused here.
     // Write information about Documents. Returns '(SourceFileEntry*CompileUnitEntry)[]'

@@ -253,8 +253,8 @@ type COFFResourceReader() =
 
             if int64 relocLastAddress > stream.Length then
                 raise <| ResourceException "CoffResourceInvalidRelocation"
-        with
-        | :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidRelocation"))
+        with :? OverflowException ->
+            (raise <| ResourceException("CoffResourceInvalidRelocation"))
 
         let mutable relocationOffsets = Array.zeroCreate (int rsrc1.NumberOfRelocations)
 
@@ -284,8 +284,8 @@ type COFFResourceReader() =
 
             if lastSymAddress > stream.Length then
                 raise <| ResourceException "CoffResourceInvalidSymbol"
-        with
-        | :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidSymbol"))
+        with :? OverflowException ->
+            (raise <| ResourceException("CoffResourceInvalidSymbol"))
 
         let mutable outputStream = new MemoryStream(imageResourceSectionBytes)
         let mutable writer = new BinaryWriter(outputStream)
