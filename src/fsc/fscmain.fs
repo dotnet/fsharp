@@ -81,8 +81,8 @@ let main (argv) =
                 member _.Exit(n) =
                     try
                         exit n
-                    with
-                    | _ -> ()
+                    with _ ->
+                        ()
 
                     failwithf "%s" (FSComp.SR.elSysEnvExitDidntExit ())
             }
@@ -116,8 +116,7 @@ let main (argv) =
 
         0
 
-    with
-    | e ->
+    with e ->
         // Last-chance error recovery (note, with a poor error range)
         errorRecovery e Range.range0
         1

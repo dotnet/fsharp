@@ -8571,10 +8571,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
 
 
 let CodegenAssembly cenv eenv mgbuf implFiles =
-    if not (isNil implFiles) then
-        let a, b = List.frontAndBack implFiles
-        let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
-        let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv b
+    match List.tryFrontAndBack implFiles with
+    | None -> ()
+    | Some (firstImplFiles, lastImplFile) -> 
+        let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
+        let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.

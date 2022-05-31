@@ -175,12 +175,7 @@ type FSharpEmbedResourceText() =
                     | 'f' -> AddHole "System.Double"
                     | 's' -> AddHole "System.String"
                     | '%' -> sb.Append('%') |> ignore
-                    | c ->
-                        Err(
-                            fileName,
-                            lineNum,
-                            sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c
-                        )
+                    | c -> Err(fileName, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c)
 
                 i <- i + 2
             else
@@ -219,11 +214,7 @@ type FSharpEmbedResourceText() =
             i <- i + 1
         // parse short identifier
         if i < txt.Length && not (System.Char.IsLetter(txt.[i])) then
-            Err(
-                fileName,
-                lineNum,
-                sprintf "The first character in the short identifier should be a letter, but found '%c'" txt.[i]
-            )
+            Err(fileName, lineNum, sprintf "The first character in the short identifier should be a letter, but found '%c'" txt.[i])
 
         while i < txt.Length && System.Char.IsLetterOrDigit txt.[i] do
             identB.Append txt.[i] |> ignore
@@ -240,17 +231,12 @@ type FSharpEmbedResourceText() =
             i <- i + 1
 
             if i = txt.Length then
-                Err(
-                    fileName,
-                    lineNum,
-                    sprintf "After the identifier '%s' and comma, there should be the quoted string resource" ident
-                )
+                Err(fileName, lineNum, sprintf "After the identifier '%s' and comma, there should be the quoted string resource" ident)
             else
                 let str =
                     try
                         System.String.Format(Unquote(txt.Substring i)) // Format turns e.g '\n' into that char, but also requires that we 'escape' curlies in the original .txt file, e.g. "{{"
-                    with
-                    | e ->
+                    with e ->
                         Err(
                             fileName,
                             lineNum,
@@ -405,13 +391,7 @@ open Printf
                 && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
 
             if condition5 then
-                printMessage (
-                    sprintf
-                        "Skipping generation of %s and %s from %s since up-to-date"
-                        outFileName
-                        outXmlFileName
-                        fileName
-                )
+                printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName)
 
                 Some(fileName, outFileName, outXmlFileName)
             else
@@ -543,9 +523,7 @@ open Printf
                 printMessage (sprintf "Generating .resx for %s" outFileName)
                 fprintfn out ""
                 // gen validation method
-                fprintfn
-                    out
-                    "    /// Call this method once to validate that all known resources are valid; throws if not"
+                fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
 
                 fprintfn out "    static member RunStartupValidation() ="
 
@@ -572,8 +550,7 @@ open Printf
                 xd.Save outXmlStream
                 printMessage (sprintf "Done %s" outFileName)
                 Some(fileName, outFileName, outXmlFileName)
-        with
-        | e ->
+        with e ->
             PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
             None
 
