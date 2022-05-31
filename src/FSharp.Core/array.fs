@@ -72,10 +72,7 @@ module Array =
     let tryHead (array: 'T[]) =
         checkNonNull "array" array
 
-        if array.Length = 0 then
-            None
-        else
-            Some array.[0]
+        if array.Length = 0 then None else Some array.[0]
 
     [<CompiledName("IsEmpty")>]
     let isEmpty (array: 'T[]) =
@@ -1096,12 +1093,9 @@ module Array =
         checkNonNull "array" array
 
         let rec loop i =
-            if i >= array.Length then
-                indexNotFound ()
-            else if predicate array.[i] then
-                array.[i]
-            else
-                loop (i + 1)
+            if i >= array.Length then indexNotFound ()
+            else if predicate array.[i] then array.[i]
+            else loop (i + 1)
 
         loop 0
 
@@ -1110,12 +1104,9 @@ module Array =
         checkNonNull "array" array
 
         let rec loop i =
-            if i >= array.Length then
-                None
-            else if predicate array.[i] then
-                Some array.[i]
-            else
-                loop (i + 1)
+            if i >= array.Length then None
+            else if predicate array.[i] then Some array.[i]
+            else loop (i + 1)
 
         loop 0
 
@@ -1761,10 +1752,7 @@ module Array =
     let tryExactlyOne (array: 'T[]) =
         checkNonNull "array" array
 
-        if array.Length = 1 then
-            Some array.[0]
-        else
-            None
+        if array.Length = 1 then Some array.[0] else None
 
     let transposeArrays (array: 'T[][]) =
         let len = array.Length
@@ -1818,8 +1806,7 @@ module Array =
         let length = source.Length - 1
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-        if index > 0 then
-            Array.Copy(source, result, index)
+        if index > 0 then Array.Copy(source, result, index)
 
         if length - index > 0 then
             Array.Copy(source, index + 1, result, index, length - index)
@@ -1836,8 +1823,7 @@ module Array =
         let length = source.Length - count
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-        if index > 0 then
-            Array.Copy(source, result, index)
+        if index > 0 then Array.Copy(source, result, index)
 
         if length - index > 0 then
             Array.Copy(source, index + count, result, index, length - index)
@@ -1854,8 +1840,7 @@ module Array =
         let length = source.Length
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-        if length > 0 then
-            Array.Copy(source, result, length)
+        if length > 0 then Array.Copy(source, result, length)
 
         result.[index] <- value
 
@@ -1871,8 +1856,7 @@ module Array =
         let length = source.Length + 1
         let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-        if index > 0 then
-            Array.Copy(source, result, index)
+        if index > 0 then Array.Copy(source, result, index)
 
         result.[index] <- value
 
@@ -1896,8 +1880,7 @@ module Array =
             let length = source.Length + valuesArray.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            if index > 0 then
-                Array.Copy(source, result, index)
+            if index > 0 then Array.Copy(source, result, index)
 
             Array.Copy(valuesArray, 0, result, index, valuesArray.Length)
 

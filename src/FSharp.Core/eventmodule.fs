@@ -30,11 +30,7 @@ module Event =
         let ev1 = new Event<_>()
         let ev2 = new Event<_>()
 
-        sourceEvent.Add(fun x ->
-            if predicate x then
-                ev1.Trigger x
-            else
-                ev2.Trigger x)
+        sourceEvent.Add(fun x -> if predicate x then ev1.Trigger x else ev2.Trigger x)
 
         ev1.Publish, ev2.Publish
 

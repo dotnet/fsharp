@@ -681,11 +681,7 @@ module internal Impl =
                 | 8 -> asm.GetType(tupleFullName 8)
                 | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
-            let tables =
-                if isStruct then
-                    valueTupleTypes
-                else
-                    refTupleTypes
+            let tables = if isStruct then valueTupleTypes else refTupleTypes
 
             match lock dictionaryLock (fun () -> tables.TryGetValue asm) with
             | false, _ ->

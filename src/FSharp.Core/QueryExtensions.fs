@@ -196,11 +196,7 @@ module internal Adapters =
 
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with
             | None -> None
-            | Some i ->
-                if i < els.Length then
-                    Some els.[i]
-                else
-                    None
+            | Some i -> if i < els.Length then Some els.[i] else None
         | _ -> None
 
     /// The generic MethodInfo for Select function

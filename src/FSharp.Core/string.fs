@@ -99,10 +99,7 @@ module String =
             // We also don't pre-allocate SB here, to allow for less mem pressure when filter result is small.
             let res = StringBuilder()
 
-            str
-            |> iter (fun c ->
-                if predicate c then
-                    res.Append c |> ignore)
+            str |> iter (fun c -> if predicate c then res.Append c |> ignore)
 
             res.ToString()
 

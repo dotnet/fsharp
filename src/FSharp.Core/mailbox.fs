@@ -284,10 +284,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
                         // Wait until we have been notified about a message. When that happens, rescan the arrivals
                         let! ok = waitOne timeout
 
-                        if ok then
-                            return! processFirstArrival ()
-                        else
-                            return None
+                        if ok then return! processFirstArrival () else return None
                 | res -> return res
             }
 
@@ -331,8 +328,7 @@ type Mailbox<'Msg>(cancellationSupported: bool) =
 
     interface System.IDisposable with
         member _.Dispose() =
-            if isNotNull pulse then
-                (pulse :> IDisposable).Dispose()
+            if isNotNull pulse then (pulse :> IDisposable).Dispose()
 
 #if DEBUG
     member x.UnsafeContents = (x.inbox, arrivals, pulse, savedCont) |> box
@@ -437,11 +433,7 @@ type MailboxProcessor<'Msg>(body, ?cancellationToken) =
                 use _disposeCell = resultCell
                 let! ok = Async.AwaitWaitHandle(resultCell.GetWaitHandle(), millisecondsTimeout = timeout)
 
-                let res =
-                    (if ok then
-                         Some(resultCell.GrabResult())
-                     else
-                         None)
+                let res = (if ok then Some(resultCell.GrabResult()) else None)
 
                 return res
             }

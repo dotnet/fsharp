@@ -143,12 +143,9 @@ module internal SetTree =
 
             if t.Height = 1 then
                 // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated
-                if c < 0 then
-                    SetTreeNode(k, empty, t, 2) :> SetTree<'T>
-                elif c = 0 then
-                    t
-                else
-                    SetTreeNode(k, t, empty, 2) :> SetTree<'T>
+                if c < 0 then SetTreeNode(k, empty, t, 2) :> SetTree<'T>
+                elif c = 0 then t
+                else SetTreeNode(k, t, empty, 2) :> SetTree<'T>
             else
                 let tn = asNode t
 
@@ -334,18 +331,11 @@ module internal SetTree =
         if isEmpty t then
             acc
         else if t.Height = 1 then
-            if f t.Key then
-                add comparer t.Key acc
-            else
-                acc
+            if f t.Key then add comparer t.Key acc else acc
         else
             let tn = asNode t
 
-            let acc =
-                if f tn.Key then
-                    add comparer tn.Key acc
-                else
-                    acc
+            let acc = if f tn.Key then add comparer tn.Key acc else acc
 
             filterAux comparer f tn.Left (filterAux comparer f tn.Right acc)
 
@@ -396,10 +386,7 @@ module internal SetTree =
         if isEmpty t then
             acc
         else if t.Height = 1 then
-            if mem comparer t.Key b then
-                add comparer t.Key acc
-            else
-                acc
+            if mem comparer t.Key b then add comparer t.Key acc else acc
         else
             let tn = asNode t
             let acc = intersectionAux comparer b tn.Right acc
@@ -586,20 +573,14 @@ module internal SetTree =
         | _, [] -> 1
         | (x1 :: t1), (x2 :: t2) ->
             if isEmpty x1 then
-                if isEmpty x2 then
-                    compareStacks comparer t1 t2
-                else
-                    cont ()
+                if isEmpty x2 then compareStacks comparer t1 t2 else cont ()
             elif isEmpty x2 then
                 cont ()
             else if x1.Height = 1 then
                 if x2.Height = 1 then
                     let c = comparer.Compare(x1.Key, x2.Key)
 
-                    if c <> 0 then
-                        c
-                    else
-                        compareStacks comparer t1 t2
+                    if c <> 0 then c else compareStacks comparer t1 t2
                 else
                     let x2n = asNode x2
 

@@ -191,10 +191,7 @@ module MapTree =
     let tryFind (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
 
-        if tryGetValue comparer k &v m then
-            Some v
-        else
-            None
+        if tryGetValue comparer k &v m then Some v else None
 
     let partition1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v (acc1, acc2) =
         if f.Invoke(k, v) then
@@ -217,10 +214,7 @@ module MapTree =
         partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m (empty, empty)
 
     let filter1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v acc =
-        if f.Invoke(k, v) then
-            add comparer k v acc
-        else
-            acc
+        if f.Invoke(k, v) then add comparer k v acc else acc
 
     let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc =
         if isEmpty m then
@@ -460,11 +454,7 @@ module MapTree =
                 let cLoKey = comparer.Compare(lo, mn.Key)
                 let cKeyHi = comparer.Compare(mn.Key, hi)
 
-                let x =
-                    if cLoKey < 0 then
-                        foldFromTo f mn.Left x
-                    else
-                        x
+                let x = if cLoKey < 0 then foldFromTo f mn.Left x else x
 
                 let x =
                     if cLoKey <= 0 && cKeyHi <= 0 then
@@ -472,18 +462,11 @@ module MapTree =
                     else
                         x
 
-                let x =
-                    if cKeyHi < 0 then
-                        foldFromTo f mn.Right x
-                    else
-                        x
+                let x = if cKeyHi < 0 then foldFromTo f mn.Right x else x
 
                 x
 
-        if comparer.Compare(lo, hi) = 1 then
-            x
-        else
-            foldFromTo f m x
+        if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
 
     let foldSection (comparer: IComparer<'Key>) lo hi f m x =
         foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
@@ -1180,10 +1163,7 @@ module Map =
         |> Seq.pick (fun kvp ->
             let k = kvp.Key in
 
-            if predicate k kvp.Value then
-                Some k
-            else
-                None)
+            if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("TryFindKey")>]
     let tryFindKey predicate (table: Map<_, _>) =
@@ -1191,10 +1171,7 @@ module Map =
         |> Seq.tryPick (fun kvp ->
             let k = kvp.Key in
 
-            if predicate k kvp.Value then
-                Some k
-            else
-                None)
+            if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("OfList")>]
     let ofList (elements: ('Key * 'Value) list) =

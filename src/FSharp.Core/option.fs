@@ -147,10 +147,7 @@ module Option =
 
     [<CompiledName("OfNullable")>]
     let ofNullable (value: System.Nullable<'T>) =
-        if value.HasValue then
-            Some value.Value
-        else
-            None
+        if value.HasValue then Some value.Value else None
 
     [<CompiledName("OfObj")>]
     let ofObj value =
@@ -284,11 +281,7 @@ module ValueOption =
     let filter predicate voption =
         match voption with
         | ValueNone -> ValueNone
-        | ValueSome x ->
-            if predicate x then
-                ValueSome x
-            else
-                ValueNone
+        | ValueSome x -> if predicate x then ValueSome x else ValueNone
 
     [<CompiledName("ToArray")>]
     let toArray voption =
@@ -310,10 +303,7 @@ module ValueOption =
 
     [<CompiledName("OfNullable")>]
     let ofNullable (value: System.Nullable<'T>) =
-        if value.HasValue then
-            ValueSome value.Value
-        else
-            ValueNone
+        if value.HasValue then ValueSome value.Value else ValueNone
 
     [<CompiledName("OfObj")>]
     let ofObj value =

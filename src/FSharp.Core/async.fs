@@ -510,10 +510,7 @@ module AsyncPrimitives =
         finally
             if not ok then ctxt.OnExceptionRaised()
 
-        if ok then
-            Invoke result ctxt
-        else
-            fake ()
+        if ok then Invoke result ctxt else fake ()
 
     /// Like `CallThenInvoke` but does not do a hijack check for historical reasons (exact code compat)
     [<DebuggerHidden>]
@@ -777,12 +774,7 @@ module AsyncPrimitives =
         if guardFunc () then
             let mutable whileAsync = Unchecked.defaultof<_>
 
-            whileAsync <-
-                CreateBindAsync computation (fun () ->
-                    if guardFunc () then
-                        whileAsync
-                    else
-                        unitAsync)
+            whileAsync <- CreateBindAsync computation (fun () -> if guardFunc () then whileAsync else unitAsync)
 
             whileAsync
         else
@@ -1113,13 +1105,11 @@ module AsyncPrimitives =
         match res with
         | None -> // timed out
             // issue cancellation signal
-            if innerCTS.IsSome then
-                innerCTS.Value.Cancel()
+            if innerCTS.IsSome then innerCTS.Value.Cancel()
             // wait for computation to quiesce; drop result on the floor
             resultCell.TryWaitForResultSynchronously() |> ignore
             // dispose the CancellationTokenSource
-            if innerCTS.IsSome then
-                innerCTS.Value.Dispose()
+            if innerCTS.IsSome then innerCTS.Value.Dispose()
 
             raise (System.TimeoutException())
         | Some res ->
@@ -1676,8 +1666,7 @@ type Async =
                                 else
                                     fake ()
 
-                        if Interlocked.Decrement &count = 0 then
-                            innerCts.Dispose()
+                        if Interlocked.Decrement &count = 0 then innerCts.Dispose()
 
                         result
 
@@ -1689,8 +1678,7 @@ type Async =
                             else
                                 fake ()
 
-                        if Interlocked.Decrement &count = 0 then
-                            innerCts.Dispose()
+                        if Interlocked.Decrement &count = 0 then innerCts.Dispose()
 
                         result
 
@@ -1702,8 +1690,7 @@ type Async =
                             else
                                 fake ()
 
-                        if Interlocked.Decrement &count = 0 then
-                            innerCts.Dispose()
+                        if Interlocked.Decrement &count = 0 then innerCts.Dispose()
 
                         result
 
@@ -2284,12 +2271,9 @@ module WebExtensions =
                         if userToken = args.UserState then
                             event.RemoveHandler handle
 
-                            if args.Cancelled then
-                                ccont (OperationCanceledException())
-                            elif isNotNull args.Error then
-                                econt args.Error
-                            else
-                                cont (result args)
+                            if args.Cancelled then ccont (OperationCanceledException())
+                            elif isNotNull args.Error then econt args.Error
+                            else cont (result args)
 
                     and handle = handler delegate'
                     event.AddHandler handle
