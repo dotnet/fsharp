@@ -401,7 +401,7 @@ stages:
               packageType: sdk
               useGlobalJson: true
               includePreviewVersions: false
-              workingDirectory: $(Build.SourcesDirectory)/service
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Build.SourcesDirectory)/.dotnet
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
@@ -454,7 +454,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -486,7 +486,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -518,7 +518,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln

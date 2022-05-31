@@ -1445,6 +1445,8 @@ type internal FsiDynamicCompiler(
               embeddedPDB = false
               embedAllSource = tcConfig.embedAllSource
               embedSourceList = tcConfig.embedSourceList
+              // we don't add additional source files to the debug document set
+              allGivenSources = []
               sourceLink = tcConfig.sourceLink
               checksumAlgorithm = tcConfig.checksumAlgorithm
               signer = None
@@ -1904,7 +1906,8 @@ type internal FsiDynamicCompiler(
 
                 match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
                 | Null ->
-                    errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
+                    let err = fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m)
+                    errorR(Error(err, m))
                     istate
                 | NonNull dependencyManager ->
                     let directive d =

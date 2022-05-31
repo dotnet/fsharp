@@ -9,19 +9,44 @@ service/
 setup/
 tests/
 vsintegration/
+artifacts/
 
 # Explicitly unformatted implementation files
 
-src/FSharp.Core/**/*.fs
-src/Compiler/**/*.fs
-src/fsc/**/*.fs
-src/fscAnyCpu/**/*.fs
-src/FSharp.Build/**/*.fs
-src/FSharp.Compiler.Server.Shared/**/*.fs
-src/FSharp.DependencyManager.Nuget/**/*.fs
-src/fsi/**/*.fs
-src/fsiAnyCpu/**/*.fs
+src/Compiler/Checking/**/*.fs
+src/Compiler/CodeGen/**/*.fs
+src/Compiler/DependencyManager/**/*.fs
+src/Compiler/Facilities/**/*.fs
+src/Compiler/Interactive/**/*.fs
+src/Compiler/Legacy/**/*.fs
+src/Compiler/Optimize/**/*.fs
+src/Compiler/Service/**/*.fs
+src/Compiler/Symbols/**/*.fs
+src/Compiler/SyntaxTree/**/*.fs
+src/Compiler/TypedTree/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
+
+# Fantomas limitations on implementation files in FSharp.Core (to investigate)
+
+src/FSharp.Core/array2.fs
+src/FSharp.Core/array3.fs
+src/FSharp.Core/Linq.fs
+src/FSharp.Core/local.fs
+src/FSharp.Core/nativeptr.fs
+src/FSharp.Core/prim-types-prelude.fs
+src/FSharp.Core/prim-types.fs
+src/FSharp.Core/printf.fs
+src/FSharp.Core/Query.fs
+src/FSharp.Core/seqcore.fs
+
+# Fantomas limitation https://github.com/fsprojects/fantomas/issues/2264
+
+src/FSharp.Core/SI.fs
+
+# Fantomas limitations on implementation files  (to investigate)
+
+src/Compiler/AbstractIL/ilwrite.fs
+src/Compiler/Utilities/lib.fs
 
 # Fantomas limitations on signature files  (to investigate)
 

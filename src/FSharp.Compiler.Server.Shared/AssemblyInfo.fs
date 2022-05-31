@@ -5,5 +5,5 @@ namespace Microsoft.FSharp
 open System.Reflection
 open System.Runtime.InteropServices
 
-[<assembly:ComVisible(false)>]
-do()
+[<assembly: ComVisible(false)>]
+do ()

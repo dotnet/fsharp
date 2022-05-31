@@ -6,24 +6,25 @@ open System.IO
 
 // Package reference information
 type PackageReference =
-    { Include:string
-      Version:string
-      RestoreSources:string
-      Script:string
+    {
+        Include: string
+        Version: string
+        RestoreSources: string
+        Script: string
     }
 
 // Resolved assembly information
 type internal Resolution =
-    { NugetPackageId : string
-      NugetPackageVersion : string
-      PackageRoot : string
-      FullPath : string
-      AssetType: string
-      IsNotImplementationReference: string
-      InitializeSourcePath : string
-      NativePath : string
+    {
+        NugetPackageId: string
+        NugetPackageVersion: string
+        PackageRoot: string
+        FullPath: string
+        AssetType: string
+        IsNotImplementationReference: string
+        InitializeSourcePath: string
+        NativePath: string
     }
-
 
 module internal ProjectFile =
 
@@ -31,84 +32,91 @@ module internal ProjectFile =
 
     let csxExt = ".csx"
 
-    let findLoadsFromResolutions (resolutions:Resolution[]) =
+    let findLoadsFromResolutions (resolutions: Resolution[]) =
         resolutions
-        |> Array.filter(fun r ->
-            not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                String.IsNullOrEmpty(r.InitializeSourcePath)) &&
-            File.Exists(r.InitializeSourcePath))
-        |> Array.map(fun r -> r.InitializeSourcePath)
+        |> Array.filter (fun r ->
+            not (
+                String.IsNullOrEmpty(r.NugetPackageId)
+                || String.IsNullOrEmpty(r.InitializeSourcePath)
+            )
+            && File.Exists(r.InitializeSourcePath))
+        |> Array.map (fun r -> r.InitializeSourcePath)
         |> Array.distinct
 
-    let findReferencesFromResolutions (resolutions:Resolution array) =
+    let findReferencesFromResolutions (resolutions: Resolution array) =
 
-        let equals (s1:string) (s2:string) =
+        let equals (s1: string) (s2: string) =
             String.Compare(s1, s2, StringComparison.InvariantCultureIgnoreCase) = 0
 
         resolutions
-        |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                                     String.IsNullOrEmpty(r.FullPath)) &&
-                                     not (equals r.IsNotImplementationReference "true") &&
-                                     File.Exists(r.FullPath) &&
-                                     equals r.AssetType "runtime")
-        |> Array.map(fun r -> r.FullPath)
+        |> Array.filter (fun r ->
+            not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.FullPath))
+            && not (equals r.IsNotImplementationReference "true")
+            && File.Exists(r.FullPath)
+            && equals r.AssetType "runtime")
+        |> Array.map (fun r -> r.FullPath)
         |> Array.distinct
 
-
-    let findIncludesFromResolutions (resolutions:Resolution[]) =
+    let findIncludesFromResolutions (resolutions: Resolution[]) =
         let managedRoots =
             resolutions
-            |> Array.filter(fun r ->
-                not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                    String.IsNullOrEmpty(r.PackageRoot)) &&
-                Directory.Exists(r.PackageRoot))
-            |> Array.map(fun r -> r.PackageRoot)
+            |> Array.filter (fun r ->
+                not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.PackageRoot))
+                && Directory.Exists(r.PackageRoot))
+            |> Array.map (fun r -> r.PackageRoot)
 
         let nativeRoots =
             resolutions
-            |> Array.filter(fun r ->
-                not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                    String.IsNullOrEmpty(r.NativePath)))
-            |> Array.map(fun r ->
-                            if Directory.Exists(r.NativePath) then Some r.NativePath
-                            elif File.Exists(r.NativePath) then Some (Path.GetDirectoryName(r.NativePath).Replace('\\', '/'))
-                            else None)
-            |> Array.filter(fun r -> r.IsSome)
-            |> Array.map(fun r -> r.Value)
+            |> Array.filter (fun r -> not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.NativePath)))
+            |> Array.map (fun r ->
+                if Directory.Exists(r.NativePath) then
+                    Some r.NativePath
+                elif File.Exists(r.NativePath) then
+                    Some(Path.GetDirectoryName(r.NativePath).Replace('\\', '/'))
+                else
+                    None)
+            |> Array.filter (fun r -> r.IsSome)
+            |> Array.map (fun r -> r.Value)
 
-        Array.concat [|managedRoots; nativeRoots|] |> Array.distinct
-
+        Array.concat [| managedRoots; nativeRoots |] |> Array.distinct
 
     let getResolutionsFromFile resolutionsFile =
 
         let lines =
             try
-                File.ReadAllText(resolutionsFile).Split([| '\r'; '\n'|], StringSplitOptions.None)
-                |> Array.filter(fun line -> not(String.IsNullOrEmpty(line)))
-            with
-            | _ -> [||]
+                File
+                    .ReadAllText(resolutionsFile)
+                    .Split([| '\r'; '\n' |], StringSplitOptions.None)
+                |> Array.filter (fun line -> not (String.IsNullOrEmpty(line)))
+            with _ ->
+                [||]
 
-        [| for line in lines do
-            let fields = line.Split(',')
-            if fields.Length < 8 then raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
-            else
-                { NugetPackageId = fields[0]
-                  NugetPackageVersion = fields[1]
-                  PackageRoot = fields[2]
-                  FullPath = fields[3]
-                  AssetType = fields[4]
-                  IsNotImplementationReference = fields[5]
-                  InitializeSourcePath = fields[6]
-                  NativePath = fields[7]
-                }
+        [|
+            for line in lines do
+                let fields = line.Split(',')
+
+                if fields.Length < 8 then
+                    raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+                else
+                    {
+                        NugetPackageId = fields[0]
+                        NugetPackageVersion = fields[1]
+                        PackageRoot = fields[2]
+                        FullPath = fields[3]
+                        AssetType = fields[4]
+                        IsNotImplementationReference = fields[5]
+                        InitializeSourcePath = fields[6]
+                        NativePath = fields[7]
+                    }
         |]
 
-    let makeScriptFromReferences (references:string seq) poundRprefix =
+    let makeScriptFromReferences (references: string seq) poundRprefix =
         let expandReferences =
             references
-            |> Seq.fold(fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
+            |> Seq.fold (fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
 
-        let projectTemplate ="""
+        let projectTemplate =
+            """
 // Generated from #r "nuget:Package References"
 // ============================================
 //
@@ -121,9 +129,11 @@ module internal ProjectFile =
 $(POUND_R)
 
 """
+
         projectTemplate.Replace("$(POUND_R)", expandReferences)
 
-    let generateProjectBody = """
+    let generateProjectBody =
+        """
 <Project Sdk='Microsoft.NET.Sdk'>
 
   <PropertyGroup>
