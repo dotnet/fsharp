@@ -267,8 +267,8 @@ type FSharpDependencyManager(outputDirectory: string option) =
                     Directory.CreateDirectory(directory) |> ignore
 
                 directory
-            with
-            | _ -> directory
+            with _ ->
+                directory
 
     let deleteScripts () =
         try
@@ -279,16 +279,16 @@ type FSharpDependencyManager(outputDirectory: string option) =
 #else
             ()
 #endif
-        with
-        | _ -> ()
+        with _ ->
+            ()
 
     let emitFile fileName (body: string) =
         try
             // Create a file to write to
             use sw = File.CreateText(fileName)
             sw.WriteLine(body)
-        with
-        | _ -> ()
+        with _ ->
+            ()
 
     let prepareDependencyResolutionFiles
         (

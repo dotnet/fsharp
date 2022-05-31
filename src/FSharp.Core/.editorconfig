@@ -1,0 +1,6 @@
+# FSharp.Core uses more "conservative" settings - more lines etc.
+
+[*.fs]
+max_line_length=120
+fsharp_max_function_binding_width=1
+fsharp_max_if_then_else_short_width=40

@@ -5816,16 +5816,17 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
         warning(Error(FSComp.SR.tcAttributeAutoOpenWasIgnored(p, ccu.AssemblyName), scopem))
         [], env
     let p = splitNamespace p 
-    if isNil p then warn() else
-    let h, t = List.frontAndBack p 
-    let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h)) t
-    match modref.TryDeref with 
-    | ValueNone -> warn()
-    | ValueSome _ -> 
-        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
-        let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
-        let envinner = OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
-        [openDecl], envinner
+    match List.tryFrontAndBack p with
+    | None -> warn()
+    | Some (h, t) ->
+        let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h)) t
+        match modref.TryDeref with 
+        | ValueNone -> warn()
+        | ValueSome _ -> 
+            let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
+            let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
+            let envinner = OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+            [openDecl], envinner
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv (g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisibleToAttributes) = 

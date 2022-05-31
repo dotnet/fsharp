@@ -16,9 +16,9 @@
         "*.fs": "${capture}.fsi"
     },
     "FSharp.suggestGitignore": false,
-    "FSharp.enableMSBuildProjectGraph": true,
-    "FSharp.workspacePath": "service/FSharp.Compiler.Service.sln",
-    "FSharp.workspaceModePeekDeepLevel": 2,
+    "FSharp.enableMSBuildProjectGraph": false,
+    "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
+    "FSharp.workspaceModePeekDeepLevel": 1,
     "FSharp.enableBackgroundServices": false,
     "FSharp.excludeProjectDirectories": [
         ".git",
@@ -35,7 +35,7 @@
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
     "omnisharp.autoStart": false,
-    "omnisharp.defaultLaunchSolution": "service/FSharp.Compiler.Service.sln",
+    "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "omnisharp.enableRoslynAnalyzers": false,

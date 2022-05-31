@@ -80,10 +80,7 @@ let jaro (s1: string) (s2: string) =
         / 3.0
 
     // This is for cases where |s1|, |s2| or m are zero
-    if Double.IsNaN result then
-        0.0
-    else
-        result
+    if Double.IsNaN result then 0.0 else result
 
 /// Calculates the Jaro-Winkler edit distance between two strings.
 /// The edit distance is a metric that allows to measure the amount of similarity between two strings.

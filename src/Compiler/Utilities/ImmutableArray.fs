@@ -18,8 +18,7 @@ module ImmutableArray =
         | 0 -> ImmutableArray.Empty
         | 1 -> ImmutableArray.Create(f 0)
         | n ->
-            if n < 0 then
-                invalidArg "n" "Below zero."
+            if n < 0 then invalidArg "n" "Below zero."
 
             let builder = ImmutableArray.CreateBuilder(n)
 
@@ -144,12 +143,9 @@ module ImmutableArray =
 
     let tryFind predicate (arr: ImmutableArray<'T>) =
         let rec loop i =
-            if i >= arr.Length then
-                None
-            else if predicate arr[i] then
-                Some arr[i]
-            else
-                loop (i + 1)
+            if i >= arr.Length then None
+            else if predicate arr[i] then Some arr[i]
+            else loop (i + 1)
 
         loop 0
 
@@ -184,8 +180,7 @@ module ImmutableArray =
         let builder = ImmutableArray.CreateBuilder(arr.Length)
 
         for i = 0 to arr.Length - 1 do
-            if predicate arr[i] then
-                builder.Add(arr[i])
+            if predicate arr[i] then builder.Add(arr[i])
 
         builder.Capacity <- builder.Count
         builder.MoveToImmutable()
@@ -204,8 +199,7 @@ module ImmutableArray =
         for i = 0 to arr.Length - 1 do
             let result = chooser arr[i]
 
-            if result.IsSome then
-                builder.Add(result.Value)
+            if result.IsSome then builder.Add(result.Value)
 
         builder.Capacity <- builder.Count
         builder.MoveToImmutable()
