@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.ConstraintSolver
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test
+open FSharp.Test.Compiler
 
 module PrimitiveConstraints =
 
@@ -13,7 +13,7 @@ module PrimitiveConstraints =
     /// This suggestion was resolved as by design,
     /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/typecheck/constructors", Includes=[|"neg_invalid_constructor.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"neg_invalid_constructor.fs"|])>]
     let ``Invalid object constructor`` compilation = // Regression test for FSharp1.0:4189
         compilation
         |> verifyBaseline

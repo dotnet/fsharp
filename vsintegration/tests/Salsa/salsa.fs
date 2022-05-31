@@ -25,8 +25,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 open Microsoft.Build.Evaluation
 
@@ -200,11 +200,11 @@ module internal Salsa =
                 let capturedFlags, capturedSources = host.Results
                 {flags = capturedFlags |> Array.toList 
                  sources = capturedSources |> Array.toList }
-            let Canonicalize (filename:string) = 
-                if System.IO.Path.IsPathRooted(filename) then
-                    System.IO.Path.GetFullPath(filename)
+            let Canonicalize (fileName:string) = 
+                if System.IO.Path.IsPathRooted(fileName) then
+                    System.IO.Path.GetFullPath(fileName)
                 else
-                    System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.FullPath),filename))
+                    System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.FullPath),fileName))
             { flags = result.flags 
               sources = result.sources |> List.map Canonicalize }
             
@@ -719,9 +719,9 @@ module internal Salsa =
                     let hier = VsMocks.createHier(projectSiteFactory)
                     VsMocks.setHierRoot hier projdir projectname
                     hier
-                member x.AddFileToHierarchyHook(filename, hier)  = 
+                member x.AddFileToHierarchyHook(fileName, hier)  = 
                     let itemid = nextItemId()
-                    VsMocks.addRootChild hier itemid filename
+                    VsMocks.addRootChild hier itemid fileName
                 member x.BuildHook (baseName, target, outputWindowPane) = MSBuild.Build(baseName, (if target = null then "Build" else target), Conf(), Plat())
                 member x.GetMainOutputAssemblyHook baseName = MSBuild.GetMainOutputAssembly(baseName, Conf(), Plat())
                 member x.SaveHook() = ()
@@ -778,13 +778,13 @@ module internal Salsa =
                     p
                 | Some(p) -> p
                 
-            member vs.NewFile(filename:string,buildAction:BuildAction,lines:string list,behaviorHooks:ProjectBehaviorHooks) =
+            member vs.NewFile(fileName:string,buildAction:BuildAction,lines:string list,behaviorHooks:ProjectBehaviorHooks) =
                 let p : IOpenProject = upcast vs.InvisibleProject(behaviorHooks)
-                p.AddFileFromText(filename,filename,buildAction,lines)
+                p.AddFileFromText(fileName,fileName,buildAction,lines)
                 
-            member vs.OpenFileViaOpenFile(filename:string,behaviorHooks:ProjectBehaviorHooks) =
+            member vs.OpenFileViaOpenFile(fileName:string,behaviorHooks:ProjectBehaviorHooks) =
                 let p : IOpenProject = upcast vs.InvisibleProject(behaviorHooks)
-                p.OpenFile(filename)
+                p.OpenFile(fileName)
                 
             member vs.LanguageService 
                 with get() = 
@@ -977,23 +977,23 @@ module internal Salsa =
                     with get() = directory
                 member project.ProjectFile = Path.Combine(directory,projectName)
                 member project.AddFileFromText(filenameOnDisk, filenameInProject, buildAction, lines) = 
-                    // Record the filename without path.
+                    // Record the fileName without path.
                     filenames <- (filenameInProject,buildAction,None)::filenames
                     // Create the physical file.
-                    let filename = Path.Combine(directory, filenameOnDisk)
-                    File.WriteAllLines(filename, Array.ofList lines)
+                    let fileName = Path.Combine(directory, filenameOnDisk)
+                    File.WriteAllLines(fileName, Array.ofList lines)
                     CreateProjectFile()
-                    solution.Vs.PushUndo(DeleteFile(filename))
-                    SimpleFile(filename) :> File
+                    solution.Vs.PushUndo(DeleteFile(fileName))
+                    SimpleFile(fileName) :> File
                 member project.AddLinkedFileFromText(filenameOnDisk, includeFilenameInProject, linkFilenameInProject, buildAction, lines) = 
-                    // Record the filename without path.
+                    // Record the fileName without path.
                     filenames <- (includeFilenameInProject,buildAction, Some linkFilenameInProject)::filenames
                     // Create the physical file.
-                    let filename = Path.Combine(directory, filenameOnDisk)
-                    File.WriteAllLines(filename, Array.ofList lines)
+                    let fileName = Path.Combine(directory, filenameOnDisk)
+                    File.WriteAllLines(fileName, Array.ofList lines)
                     CreateProjectFile()
-                    solution.Vs.PushUndo(DeleteFile(filename))
-                    SimpleFile(filename) :> File
+                    solution.Vs.PushUndo(DeleteFile(fileName))
+                    SimpleFile(fileName) :> File
                 member project.Build(target) = 
                     let outputWindowPane = solution.Vs.OutputWindowPane
                     outputWindowPane.Clear() |> ignore
@@ -1030,26 +1030,26 @@ module internal Salsa =
                 member project.SetOtherFlags(flags) = 
                     otherFlags <- flags
                     CreateProjectFile()                    
-                member project.OpenFile(filename) = 
-                    let filename = Path.Combine(directory, filename)
+                member project.OpenFile(fileName) = 
+                    let fileName = Path.Combine(directory, fileName)
                     
                     // Opening a file that is already open does not create a new file it just opens that same file.
-                    match files |> List.tryFind(fun (opf:SimpleOpenFile)->opf.Filename = filename) with
+                    match files |> List.tryFind(fun (opf:SimpleOpenFile)->opf.Filename = fileName) with
                     | Some(opf) -> 
                         let file = opf :> OpenFile
                         opf.EnsureInitiallyFocusedInVs()
                         file
                     | None ->   
                         // Create the file with IVsTextView
-                        let lines = File.ReadAllLines(filename)
+                        let lines = File.ReadAllLines(fileName)
                         let view = VsMocks.createTextView()
                         let linestarts = Array.create (lines.Length+1) 0 // One extra to save the state at the end of the file.
-                        VsMocks.setFileText filename view lines (RecolorizeLines view solution.Vs.GetColorizer lines linestarts) (fun line->linestarts.[line])
+                        VsMocks.setFileText fileName view lines (RecolorizeLines view solution.Vs.GetColorizer lines linestarts) (fun line->linestarts.[line])
                         
                         // The invisible project does not have a hiearchy.
                         if hier <> null then 
                             // Put the file in the hierarchy
-                            behaviorHooks.AddFileToHierarchyHook(filename, hier)
+                            behaviorHooks.AddFileToHierarchyHook(fileName, hier)
                         
                         // Put the file in the text manager
                         VsMocks.setActiveView (solution.Vs.LanguageService.ServiceProvider.TextManager) view                    
@@ -1057,14 +1057,14 @@ module internal Salsa =
                         // We no longer need the RDT, but keeping it compiling in Salsa/VsMocks in case we ever need it again
                         // Put the document in the RDT
                         let rdtId = nextRdtID()
-                        VsMocks.openDocumentInRdt (solution.Vs.LanguageService.ServiceProvider.RunningDocumentTable) rdtId filename view hier
+                        VsMocks.openDocumentInRdt (solution.Vs.LanguageService.ServiceProvider.RunningDocumentTable) rdtId fileName view hier
                         // product no longer uses RDT
                         // solution.Vs.LanguageService.OnAfterFirstDocumentLock rdtId 1u 1u
 
                         // Create the 'Source'
-                        let file = SimpleOpenFile(project,filename,lines,view,linestarts,rdtId) 
+                        let file = SimpleOpenFile(project,fileName,lines,view,linestarts,rdtId) 
 
-                        let source = Source.CreateSourceTestable_DEPRECATED(file.RecolorizeWholeFile,file.RecolorizeLine,(fun () -> filename),file.IsClosed,project.Solution.Vs.FileChangeEx, solution.Vs.LanguageService :> IDependencyFileChangeNotify_DEPRECATED)
+                        let source = Source.CreateSourceTestable_DEPRECATED(file.RecolorizeWholeFile,file.RecolorizeLine,(fun () -> fileName),file.IsClosed,project.Solution.Vs.FileChangeEx, solution.Vs.LanguageService :> IDependencyFileChangeNotify_DEPRECATED)
                         let _,buf = view.GetBuffer()
                         solution.Vs.AddSourceForBuffer(buf,source)                 
                         let source = solution.Vs.LanguageService.CreateSource_DEPRECATED(buf)
@@ -1088,21 +1088,21 @@ module internal Salsa =
                                                         and set(s) = 
                                                             configuration <- s
                                                             behaviorHooks.ModifyConfigurationAndPlatformHook(s)
-        and internal SimpleFile(filename:string) =
+        and internal SimpleFile(fileName:string) =
             interface File
             member file.DeleteFileFromDisk() =
-                File.Delete(filename)
-        and internal SimpleOpenFile(project:SimpleOpenProject,filename:string,lines:string array,view:IVsTextView,scanlines:int[],rdtId) = 
+                File.Delete(fileName)
+        and internal SimpleOpenFile(project:SimpleOpenProject,fileName:string,lines:string array,view:IVsTextView,scanlines:int[],rdtId) = 
             let mutable lines  = lines
             let mutable scanlines = scanlines
             let mutable cursor:Point = {line=1;col=1}
             let mutable isClosed = false
             let mutable combinedLines:string = null
             
-            member file.GetFileName() = filename
+            member file.GetFileName() = fileName
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
-                |> Async.RunSynchronously
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(fileName, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
+                |> Async.RunImmediate
                 |> fst // drop diagnostics
                  
             member file.RecolorizeWholeFile() = ()
@@ -1316,7 +1316,7 @@ module internal Salsa =
                 
                 let declarations = 
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunSynchronously
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunImmediate
                 match declarations with 
                 | null -> [||]
                 | declarations ->
@@ -1335,7 +1335,7 @@ module internal Salsa =
                 let currentAuthoringScope = file.DoIntellisenseRequest(BackgroundRequestReason.MemberSelect)
                 let declarations = 
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunSynchronously
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunImmediate
                 match declarations with 
                 | null -> None
                 | declarations -> 
@@ -1364,12 +1364,12 @@ module internal Salsa =
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                 let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
                 file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
-              let keyword = ref None
+              let mutable keyword = None
               let span = new Microsoft.VisualStudio.TextManager.Interop.TextSpan(iStartIndex=col,iStartLine=row,iEndIndex=col,iEndLine=row)
-              let context = Salsa.VsMocks.Vs.VsUserContext (fun (_,key,value) -> (if key = "keyword" then keyword := Some value); VSConstants.S_OK)
+              let context = Salsa.VsMocks.Vs.VsUserContext (fun (_,key,value) -> (if key = "keyword" then keyword <- Some value); VSConstants.S_OK)
                 
               currentAuthoringScope.GetF1KeywordString(span, context) 
-              !keyword
+              keyword
 
             /// grab a particular line from a file
             member file.GetLineNumber n =
@@ -1443,16 +1443,16 @@ module internal Salsa =
             let documentationProvider = 
                 { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText processedXml)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
-                    override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Filename:%s]" filename))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[Signature:%s]" signature))
-                        appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText processedXml)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
+                    override doc.AppendDocumentation(appendTo,fileName:string,signature:string, showExceptions, showReturns, paramName) = 
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Filename:%s]" fileName))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                         if paramName.IsSome then
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
-                            appendTo.Add(FSharp.Compiler.TextLayout.TaggedText.lineBreak)
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(FSharp.Compiler.Text.TaggedText.lineBreak)
                 } 
 
             let sp2 = 
@@ -1492,7 +1492,7 @@ module internal Salsa =
             member ops.CloseSolution (solution) = SolutionImpl(solution).Close()
             member ops.CreateProject (solution,projectBaseName) = SolutionImpl(solution).CreateProjectFlavor behaviorHooks projectBaseName
             member ops.CreateProjectWithHooks (solution,hooks,projectBaseName) = SolutionImpl(solution).CreateProjectFlavor hooks projectBaseName
-            member ops.NewFile (vs,filename,buildAction,lines) = VsSimpl(vs).NewFile(filename,buildAction,lines,behaviorHooks)
+            member ops.NewFile (vs,fileName,buildAction,lines) = VsSimpl(vs).NewFile(fileName,buildAction,lines,behaviorHooks)
             member ops.DeleteFileFromDisk (file:File) = FileSimpl(file).DeleteFileFromDisk()
             member ops.AddFileFromText (project:OpenProject,filenameOnDisk,filenameInProject,buildAction,lines) = ProjectImpl(project).AddFileFromText(filenameOnDisk,filenameInProject,buildAction,lines)
             member ops.AddLinkedFileFromText (project:OpenProject,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)=ProjectImpl(project).AddLinkedFileFromText(filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)
@@ -1508,8 +1508,8 @@ module internal Salsa =
             member ops.BuildProject (project,target) = ProjectImpl(project).Build(target)
             member ops.GetMainOutputAssembly project = ProjectImpl(project).GetMainOutputAssembly()
             member ops.SaveProject project = ProjectImpl(project).Save()                
-            member ops.OpenFileViaOpenFile (vs,filename) = VsSimpl(vs).OpenFileViaOpenFile(filename,behaviorHooks)
-            member ops.OpenFile (project,filename) = ProjectImpl(project).OpenFile(filename)
+            member ops.OpenFileViaOpenFile (vs,fileName) = VsSimpl(vs).OpenFileViaOpenFile(fileName,behaviorHooks)
+            member ops.OpenFile (project,fileName) = ProjectImpl(project).OpenFile(fileName)
             member ops.SetProjectDefines (project,defines) = ProjectImpl(project).SetProjectDefines(defines)
             member ops.PlaceIntoProjectFileBeforeImport (project,xml) = ProjectImpl(project).PlaceIntoProjectFileBeforeImport(xml)
             member ops.GetOpenFiles project = ProjectImpl(project).GetOpenFiles()
@@ -1546,8 +1546,8 @@ module internal Salsa =
             member ops.CleanUp vs = VsImpl(vs).CleanUp()
             member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             member ops.AutoCompleteMemberDataTipsThrowsScope message = 
-                SymbolHelpers.ToolTipFault <- Some message
-                { new System.IDisposable with member x.Dispose() = SymbolHelpers.ToolTipFault <- None }
+                DeclarationListHelpers.ToolTipFault <- Some message
+                { new System.IDisposable with member x.Dispose() = DeclarationListHelpers.ToolTipFault <- None }
             member ops.OutOfConeFilesAreAddedAsLinks = false                
             member ops.SupportsOutputWindowPane = false
             member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()

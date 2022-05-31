@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Globalization
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 module EditDistance =
     open Internal.Utilities.EditDistance
@@ -23,5 +23,5 @@ module EditDistance =
     [<InlineData("MARTHA", "MARHTA", 1)>]
     [<InlineData("'T", "'u", 1)>]
     let EditDistanceTest (str1 : string, str2 : string, expected : int) : unit =
-        CalcEditDistance(str1,str2)
+        CalculateEditDistance(str1,str2)
         |> Assert.shouldBe expected

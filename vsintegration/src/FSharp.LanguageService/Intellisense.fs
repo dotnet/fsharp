@@ -8,18 +8,24 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop 
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 module internal TaggedText =
     let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
+    let toString (tts: TaggedText[]) =
+        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
  
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
@@ -28,19 +34,19 @@ module internal TaggedText =
 // functionality and thus have considerable value, they should ony be deleted if we are sure this 
 // is not the case.
 //
-type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
+type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: MethodGroupItem[], nwpl: ParameterLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
     inherit MethodListForAMethodTip_DEPRECATED() 
 
     // Compute the tuple end points
     let tupleEnds = 
-        let oneColAfter ((l,c): Pos01) = (l,c+1)
-        let oneColBefore ((l,c): Pos01) = (l,c-1)
-        [| yield Pos.toZ nwpl.LongIdStartLocation
-           yield Pos.toZ nwpl.LongIdEndLocation
-           yield oneColAfter (Pos.toZ nwpl.OpenParenLocation)
+        let oneColAfter ((l,c): Position01) = (l,c+1)
+        let oneColBefore ((l,c): Position01) = (l,c-1)
+        [| yield Position.toZ nwpl.LongIdStartLocation
+           yield Position.toZ nwpl.LongIdEndLocation
+           yield oneColAfter (Position.toZ nwpl.OpenParenLocation)
            for i in 0..nwpl.TupleEndLocations.Length-2 do
-                yield Pos.toZ nwpl.TupleEndLocations.[i]
-           let last = Pos.toZ nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1]
+                yield Position.toZ nwpl.TupleEndLocations.[i]
+           let last = Position.toZ nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1]
            yield if nwpl.IsThereACloseParen then oneColBefore last else last  |]
 
     let safe i dflt f = if 0 <= i && i < methods.Length then f methods.[i] else dflt
@@ -52,7 +58,7 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
                 let span = ss.CreateTrackingSpan(MakeSpan(ss,sl,sc,el,ec), SpanTrackingMode.EdgeInclusive)
                 yield span  |]
 
-    let getParameters (m : FSharpMethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
+    let getParameters (m : MethodGroupItem) =  if isThisAStaticArgumentsTip then m.StaticParameters else m.Parameters
 
     do assert(methods.Length > 0)
 
@@ -60,7 +66,7 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
 
     override x.IsThereACloseParen() = nwpl.IsThereACloseParen
 
-    override x.GetNoteworthyParamInfoLocations() = tupleEnds
+    override x.GetParameterLocations() = tupleEnds
 
     override x.GetParameterNames() = nwpl.NamedParamNames |> Array.map Option.toObj
 
@@ -70,16 +76,16 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
 
     override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> 
         let buf = Text.StringBuilder()
-        XmlDocumentation.BuildMethodOverloadTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.StructuredDescription, true)
+        XmlDocumentation.BuildMethodOverloadTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.Description, true)
         buf.ToString()
         )
             
-    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText |> TaggedText.toString)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
     override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
-        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, p.Display )
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, TaggedText.toString p.Display )
            
         nameOut <- name
         displayOut <- display
@@ -116,7 +122,7 @@ type internal ObsoleteGlyph =
 // functionality and thus have considerable value, they should ony be deleted if we are sure this 
 // is not the case.
 //
-type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: FSharpDeclarationListItem[], reason: BackgroundRequestReason) = 
+type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: DeclarationListItem[], reason: BackgroundRequestReason) = 
         
     inherit Declarations_DEPRECATED()  
 
@@ -125,7 +131,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
     let mutable lastBestMatch = ""
     let isEmpty = (declarations.Length = 0)
 
-    let tab = Dictionary<string,FSharpDeclarationListItem[]>()
+    let tab = Dictionary<string,DeclarationListItem[]>()
 
     // Given a prefix, narrow the items to the include the ones containing that prefix, and store in a lookaside table
     // attached to this declaration set.
@@ -183,7 +189,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionTextAsync |> Async.RunSynchronously) 
+            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].Description) 
             buf.ToString()
         else ""
 
@@ -213,6 +219,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
             | FSharpGlyph.Field
             | FSharpGlyph.Delegate
             | FSharpGlyph.Variable
+            | FSharpGlyph.TypeParameter
             | FSharpGlyph.Error -> None
             |> Option.defaultValue ObsoleteGlyph.Class
             |> int
@@ -224,7 +231,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         // We intercept this call only to get the initial extent
         // of what was committed to the source buffer.
         let result = decl.GetName(filterText, index)
-        FSharpKeywords.QuoteIdentifierIfNeeded result
+        PrettyNaming.AddBackticksToIdentifierIfNeeded result
 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...
@@ -314,7 +321,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
           if provideMethodList then 
             try
                 // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
-                let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Pos.fromZ brLine brCol)
+                let noteworthyParamInfoLocations = untypedResults.FindParameterLocations(Position.fromZ brLine brCol)
 
                 // we need some typecheck info, even if stale, in order to look up e.g. method overload types/xmldocs
                 if typedResults.HasFullTypeCheckInfo then 
@@ -344,7 +351,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             // both point to the same longId.  However we can look at the character at the 'OpenParen' location and see if it is a '(' or a '<' and then
                             // filter the "methods" list accordingly.
                             let isThisAStaticArgumentsTip =
-                                let parenLine, parenCol = Pos.toZ nwpl.OpenParenLocation 
+                                let parenLine, parenCol = Position.toZ nwpl.OpenParenLocation 
                                 let textAtOpenParenLocation =
                                     if brSnapshot=null then
                                         // we are unit testing, use the view
@@ -418,10 +425,10 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipText(Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
+                            let dataTip = typedResults.GetToolTip(Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
 
                             match dataTip with
-                            | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
+                            | ToolTipText.ToolTipText [] when makeSecondAttempt -> getDataTip true
                             | _ -> 
                                 let buf = Text.StringBuilder()
                                 XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)
@@ -449,7 +456,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
             | BackgroundRequestReason.MethodTip // param info...
             | BackgroundRequestReason.MatchBracesAndMethodTip // param info...
             | BackgroundRequestReason.CompleteWord | BackgroundRequestReason.MemberSelect | BackgroundRequestReason.DisplayMemberList // and intellisense-completion...
-                -> true // ...require a sync parse (so as to call FindNoteworthyParamInfoLocations and GetRangeOfExprLeftOfDot, respectively)
+                -> true // ...require a sync parse (so as to call FindParameterLocations and GetRangeOfExprLeftOfDot, respectively)
             | _ -> false
 
         /// Implements the corresponding abstract member from IntellisenseInfo in MPF.

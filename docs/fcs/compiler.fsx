@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Hosting the compiler
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 900
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -29,8 +37,7 @@ First, we need to reference the libraries that contain F# interactive service:
 
 #r "FSharp.Compiler.Service.dll"
 open System.IO
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.CodeAnalysis
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()

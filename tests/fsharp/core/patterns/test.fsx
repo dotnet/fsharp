@@ -1345,8 +1345,387 @@ module MatchBangActivePattern =
     |> Async.RunSynchronously
 
 
+module StructActivePatternTest =
+    open System
+    [<return: Struct>]
+    let (|InvariantEqual|_|) str arg = 
+        if String.Compare (str, arg, StringComparison.OrdinalIgnoreCase) = 0 then
+            ValueSome ()
+        else
+            ValueNone
+
+    match "a" with
+    | InvariantEqual "A" -> printfn "a"
+    | _ -> ()
 
 (* check for failure else sign off "ok" *)
+
+
+let TestOneColumnOfTypeTestsWithSealedTypes(x: obj) =
+    match x with
+    | :? string -> 1
+    | :? int -> 2
+    | :? bool -> 3
+    | :? float -> 4
+    | :? char -> 5
+    | _ -> 6
+
+check "clkjcepw321" (TestOneColumnOfTypeTestsWithSealedTypes (box "a")) 1
+check "clkjcepw322" (TestOneColumnOfTypeTestsWithSealedTypes (box 1)) 2
+check "clkjcepw323" (TestOneColumnOfTypeTestsWithSealedTypes (box true)) 3
+check "clkjcepw324" (TestOneColumnOfTypeTestsWithSealedTypes (box 5.0)) 4
+check "clkjcepw325" (TestOneColumnOfTypeTestsWithSealedTypes (box 'a')) 5
+check "clkjcepw326" (TestOneColumnOfTypeTestsWithSealedTypes (box 5.0f)) 6
+
+
+
+let TestTwoColumnsOfTypeTestsWithSealedTypes(x: obj, y: obj) =
+    match x, y with
+    | :? string, :? string -> 1
+    | :? int, :? int -> 2
+    | :? bool, :? bool -> 3
+    | :? float, :? float -> 4
+    | :? char, :? char -> 5
+    | _ -> 6
+
+check "clkjcepw3211" (TestTwoColumnsOfTypeTestsWithSealedTypes (box "a", box "a")) 1
+check "clkjcepw3222" (TestTwoColumnsOfTypeTestsWithSealedTypes (box 1, box 1)) 2
+check "clkjcepw3233" (TestTwoColumnsOfTypeTestsWithSealedTypes (box true, box true)) 3
+check "clkjcepw3244" (TestTwoColumnsOfTypeTestsWithSealedTypes (box 5.0, box 5.0)) 4
+check "clkjcepw3255" (TestTwoColumnsOfTypeTestsWithSealedTypes (box 'a', box 'a')) 5
+check "clkjcepw3266" (TestTwoColumnsOfTypeTestsWithSealedTypes (box 5.0, box 2)) 6
+check "clkjcepw3267" (TestTwoColumnsOfTypeTestsWithSealedTypes (box 5.0, box "a")) 6
+check "clkjcepw3268" (TestTwoColumnsOfTypeTestsWithSealedTypes (null, box "a")) 6
+
+let TestColumnOfTypeTestsWithSealedTypesAndBind(x: obj, y: obj) =
+    match x, y with
+    | :? string as s1, (:? string as s2) -> s1.Length + s2.Length
+    | :? int as i1, (:? int as i2) -> i1 + i2
+    | :? bool as b1, (:? bool as b2) -> (if b1 then 1 else 0) + (if b2 then 1 else 0)
+    | :? float as f1, (:? float as f2) -> int f2 + int f2
+    | :? char as c1, (:? char as c2) -> int c1 + int c2
+    | _ -> 6
+
+check "clkjcepwx3211" (TestColumnOfTypeTestsWithSealedTypesAndBind (box "a", box "a")) 2
+check "clkjcepwx3222" (TestColumnOfTypeTestsWithSealedTypesAndBind (box 1, box 1)) 2
+check "clkjcepwx3233" (TestColumnOfTypeTestsWithSealedTypesAndBind (box true, box true)) 2
+check "clkjcepwx3244" (TestColumnOfTypeTestsWithSealedTypesAndBind (box 5.0, box 5.0)) 10
+check "clkjcepwx3255" (TestColumnOfTypeTestsWithSealedTypesAndBind (box 'a', box 'a')) 194
+check "clkjcepwx3266" (TestColumnOfTypeTestsWithSealedTypesAndBind (box 5.0, box 2)) 6
+check "clkjcepwx3267" (TestColumnOfTypeTestsWithSealedTypesAndBind (box 5.0, box "a")) 6
+check "clkjcepwx3268" (TestColumnOfTypeTestsWithSealedTypesAndBind (null, box "a")) 6
+
+module TypeTests = 
+    type A() = 
+        member _.Code = 10
+
+    type B1() =
+        inherit A()
+        member _.Code = 11
+
+    type B2() =
+        inherit A()
+        interface System.IComparable with member _.CompareTo(y) = 0
+        member _.Code = 12
+
+    [<Sealed>]
+    type C1() =
+        inherit B1()
+        member _.Code = 13
+
+    [<Sealed>]
+    type C2() =
+        inherit B2()
+        interface System.IComparable with member _.CompareTo(y) = 0
+        member _.Code = 14
+
+    [<Sealed>]
+    type D() =
+        interface System.IComparable with member _.CompareTo(y) = 0
+        member _.Code = 15
+
+    let TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes(x: obj) =
+        match x with
+        | null -> 0
+        | :? C1 -> 1
+        | :? C2 -> 2
+        | :? B1 -> 3 
+        | :? B2 -> 4 
+        | :? A -> 5
+        | _ -> 6
+
+    check "aclkjcepw321" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes null) 0
+    check "aclkjcepw321" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes (C1())) 1
+    check "aclkjcepw322" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes (C2())) 2
+    check "aclkjcepw323" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes (B1())) 3
+    check "aclkjcepw324" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes (B2())) 4
+    check "aclkjcepw325" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes (A())) 5
+    check "aclkjcepw326" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypes "") 6
+
+
+    let TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind(x: obj) =
+        match x with
+        | null -> 0
+        | :? C1 as v -> v.Code
+        | :? C2 as v -> v.Code
+        | :? B1 as v -> v.Code
+        | :? B2 as v -> v.Code
+        | :? A as v -> v.Code
+        | _ -> 6
+
+    check "waclkjcepw321" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind null) 0
+    check "waclkjcepw321" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind (C1())) 13
+    check "waclkjcepw322" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind (C2())) 14
+    check "waclkjcepw323" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind (B1())) 11
+    check "waclkjcepw324" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind (B2())) 12
+    check "waclkjcepw325" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind (A())) 10
+    check "waclkjcepw326" (TestOneColumnOfTypeTestsWithNullWithUnSealedClassTypesAndBind "") 6
+
+    let TestOneColumnOfTypeTestsWithUnSealedClassTypes(x: obj) =
+        match x with
+        | :? C1 -> 1
+        | :? C2 -> 2
+        | :? B1 -> 3 
+        | :? B2 -> 4 
+        | :? A -> 5
+        | _ -> 6
+
+    check "eaclkjcepw321" (TestOneColumnOfTypeTestsWithUnSealedClassTypes null) 6
+    check "eaclkjcepw321" (TestOneColumnOfTypeTestsWithUnSealedClassTypes (C1())) 1
+    check "eaclkjcepw322" (TestOneColumnOfTypeTestsWithUnSealedClassTypes (C2())) 2
+    check "eaclkjcepw323" (TestOneColumnOfTypeTestsWithUnSealedClassTypes (B1())) 3
+    check "eaclkjcepw324" (TestOneColumnOfTypeTestsWithUnSealedClassTypes (B2())) 4
+    check "eaclkjcepw325" (TestOneColumnOfTypeTestsWithUnSealedClassTypes (A())) 5
+    check "eaclkjcepw326" (TestOneColumnOfTypeTestsWithUnSealedClassTypes "") 6
+
+
+    let TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes(x: obj, y: obj) =
+        match x, y with
+        | null, null -> 0
+        | :? C1, :? C1 -> 1
+        | :? C2, :? C2 -> 2
+        | :? B1, :? B1 -> 3 
+        | :? B2, :? B2 -> 4 
+        | :? A, :? A -> 5
+        | _ -> 6
+
+    check "rclkjcepwx3211a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, null)) 0
+    check "rclkjcepwx3211a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (box (C1()), box (C1()))) 1
+    check "rclkjcepwx3222a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (box (C2()), box (C2()))) 2
+    check "rclkjcepwx3233a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (box (B1()), box (B1()))) 3
+    check "rclkjcepwx3244a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (box (B2()), box (B2()))) 4
+    check "rclkjcepwx3255a" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (box (A()), box (A()))) 5
+    check "rclkjcepwx3211b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box (C1()))) 6
+    check "rclkjcepwx3211b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box (C2()))) 6
+    check "rclkjcepwx3211b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box (B1()))) 6
+    check "rclkjcepwx3211b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box (B2()))) 6
+    check "rclkjcepwx3211b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box (A()))) 6
+    check "rclkjcepwx3268b" (TestTwoColumnOfTypeTestsWithNullAndUnSealedClassTypes (null, box "a")) 6
+
+    let TestTwoColumnOfTypeTestsWithUnSealedClassTypes(x: obj, y: obj) =
+        match x, y with
+        | :? C1, :? C1 -> 1
+        | :? C2, :? C2 -> 2
+        | :? B1, :? B1 -> 3 
+        | :? B2, :? B2 -> 4 
+        | :? A, :? A -> 5
+        | _ -> 6
+
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, null)) 6
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (box (C1()), box (C1()))) 1
+    check "trclkjcepwx3222" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (box (C2()), box (C2()))) 2
+    check "trclkjcepwx3233" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (box (B1()), box (B1()))) 3
+    check "trclkjcepwx3244" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (box (B2()), box (B2()))) 4
+    check "trclkjcepwx3255" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (box (A()), box (A()))) 5
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box (C1()))) 6
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box (C2()))) 6
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box (B1()))) 6
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box (B2()))) 6
+    check "trclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box (A()))) 6
+    check "trclkjcepwx3268" (TestTwoColumnOfTypeTestsWithUnSealedClassTypes (null, box "a")) 6
+
+    let TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind(x: obj, y: obj) =
+        match x, y with
+        | :? C1 as v1, (:? C1 as v2) -> v1.Code + v2.Code
+        | :? C2 as v1, (:? C2 as v2) -> v1.Code + v2.Code
+        | :? B1 as v1, (:? B1 as v2) -> v1.Code + v2.Code
+        | :? B1 as v1, (:? B2 as v2) -> v1.Code + v2.Code
+        | :? B2 as v1, (:? B1 as v2) -> v1.Code + v2.Code
+        | :? B2 as v1, (:? B2 as v2) -> v1.Code + v2.Code
+        | :? A as v1, (:? A as v2) -> v1.Code + v2.Code
+        | _ -> 6
+
+    check "ytrclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (C1()), box (C1()))) 26
+    check "ytrclkjcepwx3222" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (C2()), box (C2()))) 28
+    check "ytrclkjcepwx3233" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (B1()), box (B1()))) 22
+    check "ytrclkjcepwx3233" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (B1()), box (B2()))) 23
+    check "ytrclkjcepwx3233" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (B2()), box (B1()))) 23
+    check "ytrclkjcepwx3244" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (B2()), box (B2()))) 24
+    check "ytrclkjcepwx3255" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (A()), box (B1()))) 20
+    check "ytrclkjcepwx3255" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (A()), box (A()))) 20
+    check "ytrclkjcepwx3255" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (box (B1()), box (A()))) 20
+    check "ytrclkjcepwx3211" (TestTwoColumnOfTypeTestsWithUnSealedClassTypesWithBind (null, null)) 6
+
+    let TestOneColumnOfTypeTestsWithNullTrueValue(x: obj) =
+        match x with
+        | null -> 100
+        | :? option<int> -> 200
+        | :? option<string> -> 300
+        | _ -> 500
+
+    check "vwewevwe11" (TestOneColumnOfTypeTestsWithNullTrueValue null) 100
+    check "vwewevwe12" (TestOneColumnOfTypeTestsWithNullTrueValue (None: option<int>)) 100
+    check "vwewevwe13" (TestOneColumnOfTypeTestsWithNullTrueValue (None: option<string>)) 100
+    check "vwewevwe14" (TestOneColumnOfTypeTestsWithNullTrueValue (Some(3))) 200
+    check "vwewevwe15" (TestOneColumnOfTypeTestsWithNullTrueValue (Some("3"))) 300
+    check "vwewevwe16" (TestOneColumnOfTypeTestsWithNullTrueValue (Some(3.4))) 500
+
+    let TestTwoColumnsOfTypeTestsWithNullTrueValue(x: obj, y :obj) =
+        match x, y with
+        | null, null -> 100
+        | :? option<int>, :? option<int> -> 200
+        | :? option<string>, :? option<string> -> 300
+        | :? option<int8>, :? option<int8> -> 400
+        | _ -> 500
+
+    check "vwewevwe111" (TestTwoColumnsOfTypeTestsWithNullTrueValue (null, null)) 100
+    check "vwewevwe122" (TestTwoColumnsOfTypeTestsWithNullTrueValue ((None: option<int>), (None: option<int>))) 100
+    check "vwewevwe133" (TestTwoColumnsOfTypeTestsWithNullTrueValue ((None: option<int>), (None: option<string>))) 100
+    check "vwewevwe144" (TestTwoColumnsOfTypeTestsWithNullTrueValue (Some(3), Some(3))) 200
+    check "vwewevwe155" (TestTwoColumnsOfTypeTestsWithNullTrueValue (Some("3"), Some("3"))) 300
+    check "vwewevwe166" (TestTwoColumnsOfTypeTestsWithNullTrueValue (Some(3.4), Some(3.4))) 500
+
+    let TestColumnOfTypeTestsWithNullAfterFirst(x: obj) =
+        match x with
+        | :? string -> 100
+        | null -> 200 
+        | _ -> 500
+
+    check "vwewevwe1221" (TestColumnOfTypeTestsWithNullAfterFirst "a") 100
+    check "vwewevwe1112" (TestColumnOfTypeTestsWithNullAfterFirst null) 200
+    check "vwewevwe1333" (TestColumnOfTypeTestsWithNullAfterFirst 3) 500
+
+    let OneColumnOfTypeTestsInvolvingInterfacesAndSealed (x: obj) =
+        match x with
+        | :? string -> 1
+        | :? System.IComparable -> 2
+        | g -> 3
+
+    check "vwewevwe122t" (OneColumnOfTypeTestsInvolvingInterfacesAndSealed "a") 1
+    check "vwewevwe133t" (OneColumnOfTypeTestsInvolvingInterfacesAndSealed 3) 2
+    check "vwewevwe133t" (OneColumnOfTypeTestsInvolvingInterfacesAndSealed 3.14) 2
+    check "vwewevwe111t" (OneColumnOfTypeTestsInvolvingInterfacesAndSealed null) 3
+
+    /// Note, some expansion does occur in this case.  The first column-based type-test [A, IComparable] yields little frontier reduction 
+    ///    Failing A can't rule out IComparable (of course)
+    ///    Succeeding A can't rule out IComparable (not sealed)
+    /// So IComparable frontiers end up duplicated
+    let TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (x: obj, y: obj) =
+        match x, y with
+        | :? A, :? A -> 1
+        | :? System.IComparable, :? System.IComparable -> 2
+        | :? A, :? System.IComparable -> 3
+        | _ -> 4
+
+    // Note -
+    //   A doesn't support IComparable
+    //   B1 is a subtype of A and doesn't support IComparable
+    //   B2 is a subtype of A and does support IComparable
+    //   D is unrelated class and does support IComparable
+    check "vwewevwe122t1" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (A(), A())) 1
+    check "vwewevwe122t2" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (A(), B1())) 1
+    check "vwewevwe122t3" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (A(), B2())) 1
+    check "vwewevwe122t4" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (B2(), B2())) 1
+    check "vwewevwe122t5" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (C2(), B2())) 1
+    check "vwewevwe122t6" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (B2(), D())) 2
+    check "vwewevwe122t7" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (A(), D())) 3
+    check "vwewevwe122t8" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (D(), A())) 4
+    check "vwewevwe122t9" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (D(), D())) 2
+    check "vwewevwe111tA" (TwoColumnOfTypeTestsInvolvingInterfacesAndUnsealed (null, null)) 4
+
+module ExampleThatGeneratedExponentialCode =
+    type Foo = | Foo
+    type Bar = | Bar
+    type Baz = | Baz
+    type Alpha = | Alpha
+    type Beta = | Beta
+    type Gamma = | Gamma
+    type Delta = | Delta
+
+    type TypeA<'a> = 
+        | A of 'a
+
+    type TypeB<'a> = 
+        | B of 'a
+
+    type IntA = TypeA<int>
+    type IntB = TypeB<int>
+
+    type FloatA = TypeA<float>
+    type FloatB = TypeB<float>
+
+    type StringA = TypeA<string>
+    type StringB = TypeB<string>
+
+    type DecimalA = TypeA<decimal>
+    type DecimalB = TypeB<decimal>
+
+    type ByteA = TypeA<byte>
+    type ByteB = TypeB<byte>
+
+    type Int64A = TypeA<int64>
+    type Int64B = TypeB<int64>
+
+    type Float32A = TypeA<float32>
+    type Float32B = TypeB<float32>
+
+    type CharA = TypeA<char>
+    type CharB = TypeB<char>
+
+    type FooA = TypeA<Foo>
+    type FooB = TypeB<Foo>
+
+    type BarA = TypeA<Bar>
+    type BarB = TypeB<Bar>
+
+    type BazA = TypeA<Baz>
+    type BazB = TypeB<Baz>
+
+    type AlphaA = TypeA<Alpha>
+    type AlphaB = TypeB<Alpha>
+
+    type BetaA = TypeA<Beta>
+    type BetaB = TypeB<Beta>
+
+    type GammaA = TypeA<Gamma>
+    type GammaB = TypeB<Gamma>
+
+    type DeltaA = TypeA<Delta>
+    type DeltaB = TypeB<Delta>
+
+    let performMatch valueA valueB = 
+        match box valueA, box valueB with
+        | :? IntA as a, :? IntB as b -> "1"
+        | :? FloatA as a, :? FloatB as b -> "2"
+        | :? StringA as a, :? StringB as b -> "3"
+        | :? DecimalA as a, :? DecimalB as b -> "4"
+        | :? ByteA as a, :? ByteB as b -> "5"
+        | :? Int64A as a, :? Int64B as b -> "6"
+        | :? Float32A as a, :? Float32B as b -> "2"
+        | :? CharA as a, :? CharB as b -> "8"
+        | :? FooA as a, :? FooB as b -> "9"
+        | :? BarA as a, :? BarB as b -> "A"
+        | :? BazA as a, :? BazB as b -> "B"
+        | :? AlphaA as a, :? AlphaB as b -> "C"
+        | :? BetaB as a, :? BetaB as b -> "D"
+        | :? GammaA as a, :? GammaB as b -> "E"
+        | :? DeltaA as a, :? DeltaB as b -> "F" //Comment out this line and the code runs as expected
+        | _ -> "Failed"
+
+    let x = A Delta
+    let y = B Delta
+
+    check "f3wev" (performMatch x y) "F"
 
 
 #if TESTS_AS_APP

@@ -94,7 +94,7 @@ type UsingMSBuild() as this =
                 (errorTexts.ToString())
 
     //Verify the warning list Count
-    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -102,7 +102,7 @@ type UsingMSBuild() as this =
         Assert.AreEqual(expectedNum,warnList.Length)
 
     //verify no the error list 
-    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -113,7 +113,7 @@ type UsingMSBuild() as this =
         Assert.IsTrue(errorList.IsEmpty)
     
     //Verify the error list containd the expected string
-    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : list<string>) =
+    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -212,8 +212,8 @@ let g (t : T) = t.Count()
 Known type of argument: float
 
 Available overloads:
- - new : bool -> X // Argument at index 1 doesn't match
- - new : int -> X // Argument at index 1 doesn't match""" ]
+ - new: bool -> X // Argument at index 1 doesn't match
+ - new: int -> X // Argument at index 1 doesn't match""" ]
 
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
@@ -294,11 +294,11 @@ let x =
         """
         let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Known type of argument: 'a0 when 'a0 : null
+Known type of argument: 'a0 when 'a0: null
 
 Candidates:
- - System.Console.WriteLine(buffer: char []) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit
+ - System.Console.WriteLine(buffer: char[]) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj[]) : unit
  - System.Console.WriteLine(value: obj) : unit
  - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
@@ -320,8 +320,8 @@ b.Do(1, 1)
 Known types of arguments: int * int
 
 Candidates:
- - member A.Do : a:int * b:'T -> unit
- - member A.Do : a:int * b:int -> unit""" ]
+ - member A.Do: a: int * b: 'T -> unit
+ - member A.Do: a: int * b: int -> unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]
@@ -541,7 +541,7 @@ but here has type
          this.VerifyWarningListCountAtOpenProject(
             fileContents = """
                             type foo = N1.T< 
-                                const "Hello World",2>""",
+                           const "Hello World",2>""",
             expectedNum = 1,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
@@ -571,8 +571,8 @@ but here has type
         Assert.IsTrue(errorList.IsEmpty)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
-    member public this.``UnicodeCharactors``() = 
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
+    member public this.``UnicodeCharacters``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"新規baApplication5")

@@ -13,16 +13,19 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Imaging
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 
-type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph
+type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private Glyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 
 [<RequireQualifiedAccess>]
@@ -55,16 +58,13 @@ type internal SymbolLookupKind =
 module internal Tokenizer =
 
 
-    let (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
-        match a with
-        | None -> Public
-        | Some a ->
-            if a.IsPublic then Public
-            elif a.IsInternal then Internal
-            elif a.IsPrivate then Private
-            else Protected
+    let (|Public|Internal|Protected|Private|) (a: FSharpAccessibility) =
+        if a.IsPublic then Public
+        elif a.IsInternal then Internal
+        elif a.IsPrivate then Private
+        else Protected
 
-    let FSharpGlyphToRoslynGlyph (glyph: FSharpGlyph, accessibility: FSharpAccessibility option) =
+    let FSharpGlyphToRoslynGlyph (glyph: FSharpGlyph, accessibility: FSharpAccessibility) =
         match glyph with
         | FSharpGlyph.Class
         | FSharpGlyph.Exception
@@ -147,6 +147,7 @@ module internal Tokenizer =
             | Private -> Glyph.StructurePrivate
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
+        | FSharpGlyph.TypeParameter -> Glyph.TypeParameter
 
     let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =
         let imageId =
@@ -158,7 +159,7 @@ module internal Tokenizer =
                 | Some symbol ->
                 match symbol with
                 | :? FSharpUnionCase as x ->
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> KnownImageIds.EnumerationPublic
                     | Internal -> KnownImageIds.EnumerationInternal
                     | Protected -> KnownImageIds.EnumerationProtected
@@ -166,13 +167,13 @@ module internal Tokenizer =
                 | :? FSharpActivePatternCase -> KnownImageIds.EnumerationPublic
                 | :? FSharpField as x ->
                 if x.IsLiteral then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> KnownImageIds.ConstantPublic
                     | Internal -> KnownImageIds.ConstantInternal
                     | Protected -> KnownImageIds.ConstantProtected
                     | Private -> KnownImageIds.ConstantPrivate
                 else
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> KnownImageIds.FieldPublic
                     | Internal -> KnownImageIds.FieldInternal
                     | Protected -> KnownImageIds.FieldProtected
@@ -180,57 +181,57 @@ module internal Tokenizer =
                 | :? FSharpParameter -> KnownImageIds.Parameter
                 | :? FSharpMemberOrFunctionOrValue as x ->
                     if x.LiteralValue.IsSome then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.ConstantPublic
                         | Internal -> KnownImageIds.ConstantInternal
                         | Protected -> KnownImageIds.ConstantProtected
                         | Private -> KnownImageIds.ConstantPrivate
                     elif x.IsExtensionMember then KnownImageIds.ExtensionMethod
                     elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.PropertyPublic
                         | Internal -> KnownImageIds.PropertyInternal
                         | Protected -> KnownImageIds.PropertyProtected
                         | Private -> KnownImageIds.PropertyPrivate
                     elif x.IsEvent then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.EventPublic
                         | Internal -> KnownImageIds.EventInternal
                         | Protected -> KnownImageIds.EventProtected
                         | Private -> KnownImageIds.EventPrivate
                     else
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.MethodPublic
                         | Internal -> KnownImageIds.MethodInternal
                         | Protected -> KnownImageIds.MethodProtected
                         | Private -> KnownImageIds.MethodPrivate
                 | :? FSharpEntity as x ->
                     if x.IsValueType then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.StructurePublic
                         | Internal -> KnownImageIds.StructureInternal
                         | Protected -> KnownImageIds.StructureProtected
                         | Private -> KnownImageIds.StructurePrivate
                     elif x.IsFSharpModule then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.ModulePublic
                         | Internal -> KnownImageIds.ModuleInternal
                         | Protected -> KnownImageIds.ModuleProtected
                         | Private -> KnownImageIds.ModulePrivate
                     elif x.IsEnum || x.IsFSharpUnion then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.EnumerationPublic
                         | Internal -> KnownImageIds.EnumerationInternal
                         | Protected -> KnownImageIds.EnumerationProtected
                         | Private -> KnownImageIds.EnumerationPrivate
                     elif x.IsInterface then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.InterfacePublic
                         | Internal -> KnownImageIds.InterfaceInternal
                         | Protected -> KnownImageIds.InterfaceProtected
                         | Private -> KnownImageIds.InterfacePrivate
                     elif x.IsDelegate then
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.DelegatePublic
                         | Internal -> KnownImageIds.DelegateInternal
                         | Protected -> KnownImageIds.DelegateProtected
@@ -238,11 +239,12 @@ module internal Tokenizer =
                     elif x.IsNamespace then
                         KnownImageIds.Namespace
                     else
-                        match Some x.Accessibility with
+                        match x.Accessibility with
                         | Public -> KnownImageIds.ClassPublic
                         | Internal -> KnownImageIds.ClassInternal
                         | Protected -> KnownImageIds.ClassProtected
                         | Private -> KnownImageIds.ClassPrivate
+                | :? FSharpGenericParameter -> KnownImageIds.Type
                 | _ -> KnownImageIds.None
         if imageId = KnownImageIds.None then
             None
@@ -255,7 +257,7 @@ module internal Tokenizer =
         | _ ->
             match symbol with
             | :? FSharpUnionCase as x ->
-                match Some x.Accessibility with
+                match x.Accessibility with
                 | Public -> Glyph.EnumPublic
                 | Internal -> Glyph.EnumInternal
                 | Protected -> Glyph.EnumProtected
@@ -263,13 +265,13 @@ module internal Tokenizer =
             | :? FSharpActivePatternCase -> Glyph.EnumPublic
             | :? FSharpField as x ->
             if x.IsLiteral then
-                match Some x.Accessibility with
+                match x.Accessibility with
                 | Public -> Glyph.ConstantPublic
                 | Internal -> Glyph.ConstantInternal
                 | Protected -> Glyph.ConstantProtected
                 | Private -> Glyph.ConstantPrivate
             else
-                match Some x.Accessibility with
+                match x.Accessibility with
                 | Public -> Glyph.FieldPublic
                 | Internal -> Glyph.FieldInternal
                 | Protected -> Glyph.FieldProtected
@@ -277,62 +279,62 @@ module internal Tokenizer =
             | :? FSharpParameter -> Glyph.Parameter
             | :? FSharpMemberOrFunctionOrValue as x ->
                 if x.LiteralValue.IsSome then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.ConstantPublic
                     | Internal -> Glyph.ConstantInternal
                     | Protected -> Glyph.ConstantProtected
                     | Private -> Glyph.ConstantPrivate
                 elif x.IsExtensionMember then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.ExtensionMethodPublic
                     | Internal -> Glyph.ExtensionMethodInternal
                     | Protected -> Glyph.ExtensionMethodProtected
                     | Private -> Glyph.ExtensionMethodPrivate
                 elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.PropertyPublic
                     | Internal -> Glyph.PropertyInternal
                     | Protected -> Glyph.PropertyProtected
                     | Private -> Glyph.PropertyPrivate
                 elif x.IsEvent then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.EventPublic
                     | Internal -> Glyph.EventInternal
                     | Protected -> Glyph.EventProtected
                     | Private -> Glyph.EventPrivate
                 else
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.MethodPublic
                     | Internal -> Glyph.MethodInternal
                     | Protected -> Glyph.MethodProtected
                     | Private -> Glyph.MethodPrivate
             | :? FSharpEntity as x ->
                 if x.IsValueType then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.StructurePublic
                     | Internal -> Glyph.StructureInternal
                     | Protected -> Glyph.StructureProtected
                     | Private -> Glyph.StructurePrivate
                 elif x.IsFSharpModule then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.ModulePublic
                     | Internal -> Glyph.ModuleInternal
                     | Protected -> Glyph.ModuleProtected
                     | Private -> Glyph.ModulePrivate
                 elif x.IsEnum || x.IsFSharpUnion then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.EnumPublic
                     | Internal -> Glyph.EnumInternal
                     | Protected -> Glyph.EnumProtected
                     | Private -> Glyph.EnumPrivate
                 elif x.IsInterface then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.InterfacePublic
                     | Internal -> Glyph.InterfaceInternal
                     | Protected -> Glyph.InterfaceProtected
                     | Private -> Glyph.InterfacePrivate
                 elif x.IsDelegate then
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.DelegatePublic
                     | Internal -> Glyph.DelegateInternal
                     | Protected -> Glyph.DelegateProtected
@@ -340,11 +342,12 @@ module internal Tokenizer =
                 elif x.IsNamespace then
                     Glyph.Namespace
                 else
-                    match Some x.Accessibility with
+                    match x.Accessibility with
                     | Public -> Glyph.ClassPublic
                     | Internal -> Glyph.ClassInternal
                     | Protected -> Glyph.ClassProtected
                     | Private -> Glyph.ClassPrivate
+            | :? FSharpGenericParameter -> Glyph.TypeParameter
             | _ -> Glyph.None
 
 
@@ -723,8 +726,8 @@ module internal Tokenizer =
                     Ident(identStr, 
                         Range.mkRange 
                             fileName 
-                            (Pos.mkPos (linePos.Line + 1) token.LeftColumn)
-                            (Pos.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
+                            (Position.mkPos (linePos.Line + 1) token.LeftColumn)
+                            (Position.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
                 FullIsland = partialName.QualifyingIdents @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
@@ -848,7 +851,7 @@ module internal Tokenizer =
         | _, :? FSharpActivePatternCase -> 
             // Different from union cases, active patterns don't accept double-backtick identifiers
             isFixableIdentifier name && not (String.IsNullOrEmpty name) && Char.IsUpper(name.[0]) 
-        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorName name
+        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorDisplayName name
         | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
         | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
         | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name

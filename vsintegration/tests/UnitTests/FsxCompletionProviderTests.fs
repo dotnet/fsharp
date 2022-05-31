@@ -1,23 +1,7 @@
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\FsxCompletionProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
-
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+//
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
+
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -33,12 +17,11 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open UnitTests.TestLib.LanguageService
 
 // AppDomain helper
 type Worker () =
-    inherit MarshalByRefObject()
 
     let filePath = "C:\\test.fsx"
     let projectOptions = {
@@ -52,66 +35,15 @@ type Worker () =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 
-    let formatCompletions(completions : string seq) =
-        "\n\t" + String.Join("\n\t", completions)
-
-    let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
-        let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let results = 
-            FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
-            |> Async.RunSynchronously 
-            |> Option.defaultValue (ResizeArray())
-            |> Seq.map(fun result -> result.DisplayText)
-
-        let expectedFound =
-            expected
-            |> Seq.filter results.Contains
-
-        let expectedNotFound =
-            expected
-            |> Seq.filter (expectedFound.Contains >> not)
-
-        let unexpectedNotFound =
-            unexpected
-            |> Seq.filter (results.Contains >> not)
-
-        let unexpectedFound =
-            unexpected
-            |> Seq.filter (unexpectedNotFound.Contains >> not)
-
-        // If either of these are true, then the test fails.
-        let hasExpectedNotFound = not (Seq.isEmpty expectedNotFound)
-        let hasUnexpectedFound = not (Seq.isEmpty unexpectedFound)
-
-        if hasExpectedNotFound || hasUnexpectedFound then
-            let expectedNotFoundMsg = 
-                if hasExpectedNotFound then
-                    sprintf "\nExpected completions not found:%s\n" (formatCompletions expectedNotFound)
-                else
-                    String.Empty
-
-            let unexpectedFoundMsg = 
-                if hasUnexpectedFound then
-                    sprintf "\nUnexpected completions found:%s\n" (formatCompletions unexpectedFound)
-                else
-                    String.Empty
-
-            let completionsMsg = sprintf "\nin Completions:%s" (formatCompletions results)
-
-            let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
-
-            Assert.Fail(msg)
-
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
-
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
-            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
                     |> Async.RunSynchronously 
             x |> Option.defaultValue (ResizeArray())
             |> Seq.toList
@@ -128,17 +60,7 @@ type Worker () =
 
 module FsxCompletionProviderTests =
 
-    let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
-
-    let getWorker () =
-
-        let adSetup =
-            let setup = new System.AppDomainSetup ()
-            setup.PrivateBinPath <- pathToThisDll
-            setup
-
-        let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+    let getWorker () = Worker()
 
     [<Test>]
     let fsiShouldTriggerCompletionInFsxFile() =

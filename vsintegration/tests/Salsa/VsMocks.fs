@@ -63,7 +63,7 @@ module internal VsMocks =
 
     type VsFileChangeEx() = 
         let fileToEvents = new Dictionary<string,IVsFileChangeEvents list>()
-        let Canonicalize (filename:string) = System.IO.Path.GetFullPath(filename)
+        let Canonicalize (fileName:string) = System.IO.Path.GetFullPath(fileName)
         
         member c.AddedFile(file) =
 //            printfn "VsMocks.VsFileChangeEx: Added file %s " file
@@ -321,12 +321,12 @@ module internal VsMocks =
             }
             
         static member MakeTextLineMarker() =
-            let markerSpan = ref (new TextSpan(iStartLine = 0, iEndLine = 0, iStartIndex = 0, iEndIndex = 0))
+            let mutable markerSpan = new TextSpan(iStartLine = 0, iEndLine = 0, iStartIndex = 0, iEndIndex = 0)
             {new IVsTextLineMarker with
                 member tl.DrawGlyph(hdc, pRect) = notimpl()
                 member tl.ExecMarkerCommand(iItem) = notimpl()
                 member tl.GetBehavior(pdwBehavior) = notimpl()
-                member tl.GetCurrentSpan(pSpan) = pSpan.[0] <- !markerSpan ; 0
+                member tl.GetCurrentSpan(pSpan) = pSpan.[0] <- markerSpan ; 0
                 member tl.GetLineBuffer(ppBuffer) = notimpl()
                 member tl.GetMarkerCommandInfo(iItem, pbstrText, pcmdf) = notimpl()
                 member tl.GetPriorityIndex(piPriorityIndex) = notimpl()
@@ -335,7 +335,7 @@ module internal VsMocks =
                 member tl.GetVisualStyle(pdwFlags) = notimpl()
                 member tl.Invalidate() = 0
                 member tl.ResetSpan(iSL, iSI, iEL, iEI) = 
-                    markerSpan := new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ; 
+                    markerSpan <- new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ; 
                     0
                 member tl.SetBehavior(dwBehavior) = notimpl()
                 member tl.SetType(iMarkerType) = notimpl()
@@ -695,42 +695,42 @@ module internal VsMocks =
             }
             
         static member DelegateHierarchy(oldh:IVsHierarchy, ?getCanonicalName, ?getProperty) = 
-            let inner = ref oldh
+            let mutable inner = oldh
             {new IVsHierarchy with            
-                member h.SetSite(psp) = (!inner).SetSite(psp)
-                member h.GetSite(ppSP) = (!inner).GetSite(ref ppSP)
-                member h.QueryClose(pfCanClose) = (!inner).QueryClose(ref pfCanClose)
-                member h.Close() = (!inner).Close()
-                member h.GetGuidProperty(itemid, propid, pguid) = (!inner).GetGuidProperty(itemid, propid, ref pguid)
-                member h.SetGuidProperty(itemid, propid, rguid) = (!inner).SetGuidProperty(itemid, propid, ref rguid)
+                member h.SetSite(psp) = inner.SetSite(psp)
+                member h.GetSite(ppSP) = inner.GetSite(ref ppSP)
+                member h.QueryClose(pfCanClose) = inner.QueryClose(ref pfCanClose)
+                member h.Close() = inner.Close()
+                member h.GetGuidProperty(itemid, propid, pguid) = inner.GetGuidProperty(itemid, propid, ref pguid)
+                member h.SetGuidProperty(itemid, propid, rguid) = inner.SetGuidProperty(itemid, propid, ref rguid)
                 member h.GetProperty(itemid, propid, pvar) = 
                     let propid:__VSHPROPID  = enum propid
-                    let next itemid propid = (!inner).GetProperty(itemid, int32 propid)
+                    let next itemid propid = inner.GetProperty(itemid, int32 propid)
                     let hr,var = impl2 getProperty next itemid propid
                     pvar<-var
                     hr
-                member h.SetProperty(itemid, propid, var) = (!inner).SetProperty(itemid, propid, var)
-                member h.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = (!inner).GetNestedHierarchy(itemid,ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
-                /// For project files, returns the fully qualified path to the file including the filename itself.
+                member h.SetProperty(itemid, propid, var) = inner.SetProperty(itemid, propid, var)
+                member h.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = inner.GetNestedHierarchy(itemid,ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
+                /// For project files, returns the fully qualified path to the file including the fileName itself.
                 member h.GetCanonicalName(itemid, pbstrName) = 
-                    let next itemid = (!inner).GetCanonicalName(itemid)
+                    let next itemid = inner.GetCanonicalName(itemid)
                     let hr,n = impl1 getCanonicalName next itemid
                     pbstrName<-n
                     hr                     
-                member h.ParseCanonicalName(pszName, pitemid) = (!inner).ParseCanonicalName(pszName, ref pitemid)
-                member h.Unused0() = (!inner).Unused0()
-                member h.AdviseHierarchyEvents(pEventSink, pdwCookie) = (!inner).AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-                member h.UnadviseHierarchyEvents(dwCookie) = (!inner).UnadviseHierarchyEvents(dwCookie)
-                member h.Unused1() = (!inner).Unused1()
-                member h.Unused2() = (!inner).Unused2()
-                member h.Unused3() = (!inner).Unused3()
-                member h.Unused4() = (!inner).Unused4()
+                member h.ParseCanonicalName(pszName, pitemid) = inner.ParseCanonicalName(pszName, ref pitemid)
+                member h.Unused0() = inner.Unused0()
+                member h.AdviseHierarchyEvents(pEventSink, pdwCookie) = inner.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+                member h.UnadviseHierarchyEvents(dwCookie) = inner.UnadviseHierarchyEvents(dwCookie)
+                member h.Unused1() = inner.Unused1()
+                member h.Unused2() = inner.Unused2()
+                member h.Unused3() = inner.Unused3()
+                member h.Unused4() = inner.Unused4()
              interface IDelegable<IVsHierarchy> with
-                member id.GetInner() = !inner
-                member id.SetInner(i) = inner := i
+                member id.GetInner() = inner
+                member id.SetInner(i) = inner <- i
                 
              interface IProvideProjectSite with
-                member x.GetProjectSite() = ((!inner) :?> IProvideProjectSite).GetProjectSite()
+                member x.GetProjectSite() = (inner :?> IProvideProjectSite).GetProjectSite()
 
              }       
              
@@ -832,8 +832,8 @@ module internal VsMocks =
         
     // IVsTextView ---------------------------------------------------------------------------------------------------------        
     let createTextView() : IVsTextView = Vs.DelegateTextView(Vs.MakeTextView())
-    let setFileText (filename:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) = 
-        let filename = System.IO.Path.GetFullPath(filename)
+    let setFileText (fileName:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) = 
+        let fileName = System.IO.Path.GetFullPath(fileName)
         let inner = getInner tv
         let lineCount = lines.Length
         let getLineCount() = Some(ok, lines.Length)
@@ -854,7 +854,7 @@ module internal VsMocks =
         let vsBufferMoniker = Guid("978A8E17-4DF8-432A-9623-D530A26452BC")
             
         let getData (riidKey:Guid ref) =            
-            if !riidKey = vsBufferMoniker then Some(ok, box filename)
+            if !riidKey = vsBufferMoniker then Some(ok, box fileName)
             else None
                         
         let tl = Vs.DelegateTextLines(Vs.MakeTextLines(),
@@ -881,11 +881,11 @@ module internal VsMocks =
     let createRdt() = 
         let unadviseRunningDocTableEvents _ = Some(ok)
         Vs.DelegateRunningDocumentTable (Vs.MakeRunningDocumentTable(),unadviseRunningDocTableEvents=unadviseRunningDocTableEvents)
-    let openDocumentInRdt rdt cookie filename (textview:IVsTextView) hier = 
-        let filename = System.IO.Path.GetFullPath(filename) 
+    let openDocumentInRdt rdt cookie fileName (textview:IVsTextView) hier = 
+        let fileName = System.IO.Path.GetFullPath(fileName) 
         let inner = getInner rdt
         let _hr, textlines = textview.GetBuffer()
-        let getDocumentInfoResult = (Some(ok,0u,0u,0u,filename,hier,cookie,Marshal.GetIUnknownForObject(textlines)))
+        let getDocumentInfoResult = (Some(ok,0u,0u,0u,fileName,hier,cookie,Marshal.GetIUnknownForObject(textlines)))
         let refGetDocumentInfoResult = ref getDocumentInfoResult
         let getDocumentInfo c =
             if cookie = c then !refGetDocumentInfoResult
@@ -893,7 +893,7 @@ module internal VsMocks =
         let findAndLockDocumentResult = (Some(ok,hier,0u,Marshal.GetIUnknownForObject(textlines),0u))
         let refFindAndLockDocumentResult = ref findAndLockDocumentResult
         let findAndLockDocument _dwRDTLockType pszMkDocument = 
-            if pszMkDocument = filename then !refFindAndLockDocumentResult
+            if pszMkDocument = fileName then !refFindAndLockDocumentResult
             else None
         let inner = Vs.DelegateRunningDocumentTable(inner,getDocumentInfo=getDocumentInfo,findAndLockDocument=findAndLockDocument)
         setInner rdt inner
@@ -929,12 +929,12 @@ module internal VsMocks =
             getLastSiblingId hier (uint32 nid)
         else last
         
-    let addChild (hier:IVsHierarchy) parentItemId childItemId filename =
+    let addChild (hier:IVsHierarchy) parentItemId childItemId fileName =
         let hr, child = hier.GetProperty(parentItemId, int32 __VSHPROPID.VSHPROPID_FirstChild)
         let inner = getInner hier
         let cid = (int32)childItemId // VS is confused about whether it wants item IDs to be signed or unsigned.
         let getCanonicalName id = 
-            if id = childItemId then Some(ok,filename)
+            if id = childItemId then Some(ok,fileName)
             else None            
         if hr = VSConstants.S_OK then
             // There's already a first child, add as a sibling
@@ -947,7 +947,7 @@ module internal VsMocks =
                     | _ -> None
                 else if id = childItemId then
                     match prop with
-                    | __VSHPROPID.VSHPROPID_Name-> Some(ok, box filename)
+                    | __VSHPROPID.VSHPROPID_Name-> Some(ok, box fileName)
                     | __VSHPROPID.VSHPROPID_NextSibling -> Some(fail, null)
                     | _ -> None
                 else None
@@ -961,15 +961,15 @@ module internal VsMocks =
                     | _ -> None
                 else if id = childItemId then
                     match prop with
-                    | __VSHPROPID.VSHPROPID_Name-> Some(ok, box filename)
+                    | __VSHPROPID.VSHPROPID_Name-> Some(ok, box fileName)
                     | __VSHPROPID.VSHPROPID_NextSibling -> Some(fail, null)
                     | _ -> None
                 else None
             let inner = Vs.DelegateHierarchy(inner, getProperty=getProperty, getCanonicalName=getCanonicalName)
             setInner hier inner
     
-    let addRootChild hier childItemId filename = 
-        addChild hier VSConstants.VSITEMID_ROOT childItemId filename 
+    let addRootChild hier childItemId fileName = 
+        addChild hier VSConstants.VSITEMID_ROOT childItemId fileName 
         
     // IVsTextManager ---------------------------------------------------------------------------------------------------------        
     let createTextManager() = Vs.DelegateTextManager (Vs.MakeTextManager())
@@ -1130,7 +1130,7 @@ module internal VsMocks =
 
     // peekhole to IVsTrackProjectDocuments2 - allows to receive notifications about removed files
     type public IVsTrackProjectDocuments2Listener = 
-        abstract member OnAfterRemoveFiles : IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
+        abstract member OnAfterRemoveFiles: IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
 
 
     let vsTrackProjectDocuments2 = 
@@ -1647,12 +1647,12 @@ module internal VsActual =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
             if String.IsNullOrEmpty var then
                 Environment.GetEnvironmentVariable("VSAPPIDDIR")
             else
                 var
-        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
+        if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =

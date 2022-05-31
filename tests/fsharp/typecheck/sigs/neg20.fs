@@ -49,7 +49,7 @@ module BiGenericFunctionTests =
 
 
 module NoSubsumptionOnApplication = 
-    (fun (x:A) -> 1)  (new B())  // no: subsumption comes from de-condensation, not application!
+    (fun (x:A) -> 1)  (new B())  // now permitted
     (fun (x:System.ValueType) -> 1)  1  // coercion on application!
 
 
@@ -73,7 +73,7 @@ module NoSubsumptionForLists =
     // Q: how about on sequence expressions?
     let controls2 = [ yield (new B())
                       yield (new C()) ]
-    StaticClass2.DisplayControls controls2 // bang
+    StaticClass2.DisplayControls controls2
 
     // Q: how about on sequence expressions?
     let controls3 = [ yield! [new B()]
@@ -81,14 +81,14 @@ module NoSubsumptionForLists =
     StaticClass2.DisplayControls controls3 // bang
 
     let controls4 = if true then new B() else new C()
-    StaticClass2.DisplayControls [controls4] // bang
+    StaticClass2.DisplayControls [controls4] // allowed
 
-    // Q: how about on matches? Not covered. Decision: disallow
+    // Q: how about on matches? allowed
     let controls5 = match 1 with 1 -> new B() | _ -> new C()
-    StaticClass2.DisplayControls [controls5] // bang
+    StaticClass2.DisplayControls [controls5] // allowed
 
 
-    // Q. subsumption on 'let v = expr'? Not covered. Disallow
+    // Q. subsumption on 'let v = expr'? Allowed
     let x76 : A = new B()
 
 module NoSubsumptionForLists2 = 
@@ -126,7 +126,7 @@ module BiGenericMethodsInGenericClassTests =
     let str = ""
 
     C<obj>.M3("a",obj)  // this is not permitted since 'b is inferred to be "string". Fair enough
-    C<obj>.M3(obj,"a") 
+    C<obj>.M3(obj,"a") // now permitted
 
     C<obj>.OM3("a",obj)  // this is not permitted since 'b is inferred to be "string". Fair enough
 
@@ -443,3 +443,36 @@ module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors =
     let t3 = 3 |> OverloadedClassName.S // NO ERROR EXPECTED
     let t4 = 3 |> OverloadedClassName.S2 // expected error -  The field, constructor or member 'S2' is not defined
 
+module OptionTypeOpImplicitsIgnored =
+    let x1 : int option = 3
+    let x2 : string option = "a"
+
+module InterfacesOfMeasureAnnotatedTypes =
+    open System
+    type IDerivedComparable<'T> =
+        inherit IComparable<'T>
+
+    type IRandomOtherInterface<'T> =
+        abstract M: 'T -> 'T
+
+    type IDerivedEquatable<'T> =
+        inherit IEquatable<'T>
+
+    type Prim() =
+        interface IComparable with 
+            member x.CompareTo(y) = 0
+        interface IDerivedComparable<Prim> with 
+            member x.CompareTo(y) = 0
+        interface IDerivedEquatable<Prim> with 
+            member x.Equals(y) = true
+        interface IRandomOtherInterface<Prim> with 
+            member x.M(y) = y
+        override x.Equals(y) = true
+        override x.GetHashCode() = 0
+
+    [<MeasureAnnotatedAbbreviation>]
+    type Prim<[<Measure>] 'm> = Prim
+
+    // Check that Prim<'m> does not suppor interfaces in any way derived from IComparable and IEquatable
+    let f2 (x: Prim<'m>) = (x :> IDerivedComparable<Prim<'m>>)
+    let f4 (x: Prim<'m>) = (x :> IDerivedEquatable<Prim<'m>>)

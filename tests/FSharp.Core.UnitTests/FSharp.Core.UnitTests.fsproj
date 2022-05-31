@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -31,15 +31,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="TestFrameworkHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscriminatedUnionType.fs" />
     <Compile Include="FSharp.Core\RecordTypes.fs" />
+    <Compile Include="FSharp.Core\RefStructs.fs" />
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />
     <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />
+    <Compile Include="FSharp.Core\NativeInterop.fs" />
 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
@@ -74,9 +77,12 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ResultTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ExtraTopLevelOperatorsTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventTypes.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Tasks.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\TasksDynamic.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
@@ -94,7 +100,7 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 </Project>

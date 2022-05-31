@@ -1,4 +1,4 @@
-Microsoft (R) F# Compiler version 10.6.0.0 for F# 4.7
+Microsoft (R) F# Compiler version 12.0.0.0 for F# 6.0
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
@@ -20,11 +20,10 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --doc:<file>                             Write the xmldoc of the assembly to
                                          the given file
 --keyfile:<file>                         Specify a strong name key file
---keycontainer:<string>                  Specify a strong name key container
 --platform:<string>                      Limit which platforms this code can
-                                         run on: x86, Itanium, x64,
-                                         anycpu32bitpreferred, or anycpu. The
-                                         default is anycpu.
+                                         run on: x86, x64, Arm, Arm64,
+                                         Itanium, anycpu32bitpreferred, or
+                                         anycpu. The default is anycpu.
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.
@@ -35,8 +34,16 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          F#-specific metadata
 --sig:<file>                             Print the inferred interface of the
                                          assembly to a file
+--allsigs                                Print the inferred interfaces of all
+                                         compilation files to associated
+                                         signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the
                                          produced binaries
+--refonly[+|-]                           Produce a reference assembly,
+                                         instead of a full assembly, as the
+                                         primary output
+--refout:<file>                          Produce a reference assembly with
+                                         the specified file path.
 
 
 		- INPUT FILES -
@@ -48,6 +55,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
 		- RESOURCES -
+--win32icon:<file>                       Specify a Win32 icon file (.ico)
 --win32res:<file>                        Specify a Win32 resource file (.res)
 --win32manifest:<file>                   Specify a Win32 manifest file
 --nowin32manifest                        Do not include the default Win32

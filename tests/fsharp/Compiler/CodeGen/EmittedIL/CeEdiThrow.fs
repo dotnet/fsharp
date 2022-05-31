@@ -3,14 +3,14 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<TestFixture>]
 module CeEdiThrow =
 
     [<Test>]
     let ``Emits EDI.Throw``() =
-        CompilerAssert.CompileLibraryAndVerifyIL
+        CompilerAssert.CompileLibraryAndVerifyIL(
             """
 module CE
 
@@ -26,7 +26,7 @@ let foo = Try(){
     try return invalidOp "Ex"
     with :? ArgumentException -> return 1
 }
-            """
+            """,
             (fun verifier -> verifier.VerifyIL [
             """
   .method public strict virtual instance int32
@@ -51,4 +51,4 @@ let foo = Try(){
     IL_0018:  ret
  }
             """
-            ])
+            ]))

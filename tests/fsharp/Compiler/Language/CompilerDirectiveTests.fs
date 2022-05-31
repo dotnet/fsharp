@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Test
+open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]
 module ``Test Compiler Directives`` =
@@ -15,7 +15,7 @@ module ``Test Compiler Directives`` =
 #r ""
 """
         CompilerAssert.CompileWithErrors(
-            Compilation.Create(source, Fsx, Library),
+            Compilation.Create("test.fsx", source, Library),
             [|
                 FSharpDiagnosticSeverity.Warning, 213, (2,1,2,6), "'' is not a valid assembly name"
             |])
@@ -26,7 +26,7 @@ module ``Test Compiler Directives`` =
 #r "    "
 """
         CompilerAssert.CompileWithErrors(
-            Compilation.Create(source, Fsx, Library),
+            Compilation.Create("test.fsx", source, Library),
             [|
                 FSharpDiagnosticSeverity.Warning, 213, (2,1,2,10), "'' is not a valid assembly name"
             |])

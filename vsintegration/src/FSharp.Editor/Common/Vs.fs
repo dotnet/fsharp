@@ -15,19 +15,19 @@ module internal Com =
         ErrorHandler.ThrowOnFailure(hr)  |> ignore
         
     let ThrowOnFailure1(hr,res) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res
         
     let ThrowOnFailure2(hr,res1,res2) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2
         
     let ThrowOnFailure3(hr,res1,res2,res3) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2,res3
 
     let ThrowOnFailure4(hr,res1,res2,res3,res4) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2,res3,res4
         
     let Succeeded hr = 
@@ -54,7 +54,7 @@ module internal VsTextLines =
     /// Get the color state
     let TextColorState (buffer:IVsTextLines) : IVsTextColorState= unbox(box(buffer))
 
-    /// Get the filename of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
+    /// Get the file name of the given buffer (via IVsUserData). Not all buffers have a file. This will be an exception.
     let GetFilename(buffer : IVsTextLines) =
         let ud = (box buffer) :?> IVsUserData
         VsUserData.GetBufferMonker(ud)

@@ -1191,7 +1191,7 @@ namespace ProviderImplementation.ProvidedTypes
         static member Product (measure1, measure2) = typedefof<CompilerServices.MeasureProduct<_,_>>.MakeGenericType [| measure1;measure2 |]
         static member Inverse denominator = typedefof<CompilerServices.MeasureInverse<_>>.MakeGenericType [| denominator |]
         static member Ratio (numerator, denominator) = ProvidedMeasureBuilder.Product(numerator, ProvidedMeasureBuilder.Inverse denominator)
-        static member Square m = ProvidedMeasureBuilder.Product(m, m)
+        static member Square ``measure`` = ProvidedMeasureBuilder.Product(``measure``, ``measure``)
 
         // If the unit is not a valid type, instead
         // of assuming it's a type abbreviation, which may not be the case and cause a
@@ -6554,7 +6554,7 @@ namespace ProviderImplementation.ProvidedTypes
     // implementation must support the operations used by the F# compiler to interrogate the reflection objects.
     //
     //     For a System.Assembly, the information must be sufficient to allow the Assembly --> ILScopeRef conversion
-    //     in ExtensionTyping.fs of the F# compiler. This requires:
+    //     in TypeProviders.fs of the F# compiler. This requires:
     //         Assembly.GetName()
     //
     //     For a System.Type representing a reference to a named type definition, the information must be sufficient
@@ -7723,9 +7723,6 @@ namespace ProviderImplementation.ProvidedTypes
             txTable.Get inp.Token (fun () -> 
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes,
                 // which fortunately also correspond to element types. We just use the design-time types instead.
-                // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
-                // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 | USome "System", "Void"->  typeof<Void>
                 (*

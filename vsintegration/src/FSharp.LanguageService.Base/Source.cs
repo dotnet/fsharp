@@ -1248,8 +1248,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 						if (methods != null)
 						{
 							TextSpan spanNotToObscureWithTipPopup = new TextSpan();
-							spanNotToObscureWithTipPopup.iStartLine = methods.GetNoteworthyParamInfoLocations()[0].Item1;
-							spanNotToObscureWithTipPopup.iStartIndex = methods.GetNoteworthyParamInfoLocations()[0].Item2;
+							spanNotToObscureWithTipPopup.iStartLine = methods.GetParameterLocations()[0].Item1;
+							spanNotToObscureWithTipPopup.iStartIndex = methods.GetParameterLocations()[0].Item2;
 							spanNotToObscureWithTipPopup.iEndLine = req.Line;
 							spanNotToObscureWithTipPopup.iEndIndex = req.Col;
 							this.methodData.Refresh(req.View, methods, spanNotToObscureWithTipPopup, req.MethodTipMiscellany);
@@ -1671,7 +1671,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             IVsEnumHiddenRegions ppenum;
             TextSpan[] aspan = new TextSpan[1];
             aspan[0] = GetDocumentSpan();
-            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (uint)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
+            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (System.IntPtr)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
             uint fetched;
             IVsHiddenRegion[] aregion = new IVsHiddenRegion[1];
             while (ppenum.Next(1, aregion, out fetched) == NativeMethods.S_OK && fetched == 1)
@@ -1687,7 +1687,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             IVsEnumHiddenRegions ppenum;
             TextSpan[] aspan = new TextSpan[1];
             aspan[0] = GetDocumentSpan();
-            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (uint)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
+            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (System.IntPtr)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
             uint fetched;
             IVsHiddenRegion[] aregion = new IVsHiddenRegion[1];
             using (new CompoundAction(this, "ToggleAllRegions"))
@@ -2328,7 +2328,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             // this is an approximate test, that is good enough in practice
             return (a.GetName(0) != b.GetName(0))
                 || (a.GetCount() != b.GetCount())
-                || (!(a.GetNoteworthyParamInfoLocations()[0].Equals(b.GetNoteworthyParamInfoLocations()[0])));
+                || (!(a.GetParameterLocations()[0].Equals(b.GetParameterLocations()[0])));
         }
 
         private static HashSet<string> FormalParamNames(MethodListForAMethodTip_DEPRECATED m, int index)
@@ -2448,7 +2448,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
                 var actualParamNames = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Where(this.methods.GetParameterNames(), s => null != s));
 
-                int numOfParamsUserHasSoFar = methods.GetNoteworthyParamInfoLocations().Length - 3; // -3 because first 3 ranges are [LID.start, LID.end, Paren], rest are params
+                int numOfParamsUserHasSoFar = methods.GetParameterLocations().Length - 3; // -3 because first 3 ranges are [LID.start, LID.end, Paren], rest are params
                 // however note that this is never zero, "foo(" and "foo(x"  both report 1
 
                 int curMeth = this.currentMethod;  // start wherever the user already is.  the methods are already ordered in increasing order-of-params; only can increase of user has longer param list.

@@ -20,7 +20,9 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.OLE.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
@@ -89,7 +91,7 @@ type internal FSharpSourceTestable_DEPRECATED
         let mutable projectSite : IProjectSite option = None
 
         let mutable isDisposed = false
-        let lastDependencies = new Dictionary<string,uint32>()  // filename, cookie
+        let lastDependencies = new Dictionary<string,uint32>()  // file name, cookie
         let fileChangeFlags = 
             uint32 (_VSFILECHANGEFLAGS.VSFILECHG_Add ||| 
                     // _VSFILECHANGEFLAGS.VSFILECHG_Del ||| // don't listen for deletes - if a file (such as a 'Clean'ed project reference) is deleted, just keep using stale info
@@ -334,12 +336,12 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         let iSource = new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource_DEPRECATED
 
-        override source.NormalizeErrorString(message) = FSharpDiagnostic.NormalizeErrorString message
-        override source.NewlineifyErrorString(message) = FSharpDiagnostic.NewlineifyErrorString message
+        override _.NormalizeErrorString(message) = FSharpDiagnostic.NormalizeErrorString message
+        override _.NewlineifyErrorString(message) = FSharpDiagnostic.NewlineifyErrorString message
 
-        override source.GetExpressionAtPosition(line, col) = 
+        override _.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match UntypedParseImpl.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
+            match ParsedInput.TryFindExpressionIslandInPosition(Position.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
@@ -353,6 +355,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                         yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
+                    yield "--define:COMPILED"
 
                 |]
             // get a sync parse of the file
@@ -367,13 +370,12 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
                   UnresolvedReferences = None
                   OriginalLoadReferences = []
-                  ExtraProjectInfo=None 
                   Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunImmediate
 
-        override source.GetCommentFormat() = 
+        override _.GetCommentFormat() = 
             let mutable info = new CommentInfo()
             info.BlockEnd<-"(*"
             info.BlockStart<-"*)"
@@ -445,7 +447,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
+                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(Position.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then
@@ -492,7 +494,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                           source.ResetFSharpIntelliSenseToAppearAdornment()
                   } |> Async.StartImmediate
 
-        member source.PreFixupSpan(origSpan : TextSpan) =            
+        member _.PreFixupSpan(origSpan : TextSpan) =            
             let mutable span = new TextSpan(iEndIndex = origSpan.iEndIndex, iEndLine = origSpan.iEndLine, iStartIndex = origSpan.iStartIndex, iStartLine = origSpan.iStartLine)
             // if at start of next line, treat like end of previous line
             if span.iEndIndex = 0 && not(span.iEndLine = span.iStartLine) then
@@ -532,23 +534,23 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
             edit.Apply() |> ignore
             source.PostFixupSpan(span)
 
-        override source.CommentSpan(span) =
+        override _.CommentSpan(span) =
             base.CommentSpan(span) |> ignore
             lastCommentSpan
             
-        override source.RecordChangeToView() = iSource.RecordChangeToView()
-        override source.RecordViewRefreshed() = iSource.RecordViewRefreshed()
-        override source.NeedsVisualRefresh = iSource.NeedsVisualRefresh
+        override _.RecordChangeToView() = iSource.RecordChangeToView()
+        override _.RecordViewRefreshed() = iSource.RecordViewRefreshed()
+        override _.NeedsVisualRefresh = iSource.NeedsVisualRefresh
             
-        override source.ChangeCount
+        override _.ChangeCount
             with get() = iSource.ChangeCount
             and set(value) = iSource.ChangeCount <- value                
             
-        override source.DirtyTime
+        override _.DirtyTime
             with get() = iSource.DirtyTime
             and set(value) = iSource.DirtyTime <- value                
                             
-        override source.Dispose() =
+        override _.Dispose() =
             try 
                 base.Dispose()       
             finally
@@ -556,11 +558,11 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 vsFileWatch<-null
                 textLines<-null
 
-        override source.OnUserDataChange(riidKey, _vtNewValue) =
-            let newfileName = VsTextLines.GetFilename textLines
-            if not (String.Equals(fileName, newfileName, StringComparison.InvariantCultureIgnoreCase)) then
-                // the filename of the text buffer is changing, could be changing e.g. .fsx to .fs or vice versa
-                fileName <- newfileName
+        override _.OnUserDataChange(riidKey, _vtNewValue) =
+            let newFileName = VsTextLines.GetFilename textLines
+            if not (String.Equals(fileName, newFileName, StringComparison.InvariantCultureIgnoreCase)) then
+                // the file name of the text buffer is changing, could be changing e.g. .fsx to .fs or vice versa
+                fileName <- newFileName
                 iSource.RecolorizeWholeFile()
 
         // Just forward to IFSharpSource_DEPRECATED  
@@ -584,8 +586,8 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 
 module internal Source = 
         /// This is the ideal implementation of the Source concept abstracted from MLS.  
-        let CreateSourceTestable_DEPRECATED (recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) = 
-            new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource_DEPRECATED
+        let CreateSourceTestable_DEPRECATED (recolorizeWholeFile, recolorizeLine, fileName, isClosed, vsFileWatch, depFileChangeNotify) = 
+            new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile, recolorizeLine, fileName, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource_DEPRECATED
 
         let CreateSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) =
             new FSharpSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) :> IFSharpSource_DEPRECATED

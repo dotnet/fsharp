@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 
 open UnitTests.TestLib.LanguageService
@@ -35,15 +35,14 @@ type DocumentDiagnosticAnalyzerTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Syntax) 
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Semantic) 
+            let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         } |> Async.RunSynchronously
 
@@ -54,7 +53,8 @@ type DocumentDiagnosticAnalyzerTests()  =
                                 | Some(flags) -> {projectOptions with OtherOptions = Array.append projectOptions.OtherOptions flags}
 
         let errors = getDiagnostics fileContents
-        Assert.AreEqual(0, errors.Length, "There should be no errors generated")
+        if not errors.IsEmpty then
+            Assert.Fail("There should be no errors generated", errors)
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors = getDiagnostics fileContents |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray
@@ -392,7 +392,7 @@ let g (t : T) = t.Count()
             
     [<Test>]
     member public this.DocumentDiagnosticsDontReportProjectErrors_Bug1596() =
-        // https://github.com/Microsoft/visualfsharp/issues/1596
+        // https://github.com/dotnet/fsharp/issues/1596
         this.VerifyNoErrors(
             fileContents = """
 let x = 3

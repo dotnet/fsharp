@@ -12,14 +12,29 @@
         <target state="translated">누락된 'fun' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">누락된 인스턴스 멤버 매개 변수 추가</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">형식 주석 추가</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">익명 레코드로 변환</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">같지 않음 검사에 '&lt;&gt;' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -38,8 +53,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
-        <target state="translated">F# 삭제 가능한 값(최상위)</target>
+        <source>F# Disposable Values (top-level)</source>
+        <target state="translated">F# 삭제 가능한 값(최상위 수준)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -87,6 +102,11 @@
         <target state="translated">'return!' 제거</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="translated">사용되지 않는 바인딩 제거</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
         <target state="translated">'yield' 제거</target>
@@ -109,7 +129,7 @@
       </trans-unit>
       <trans-unit id="NameCanBeSimplified">
         <source>Name can be simplified.</source>
-        <target state="translated">이름을 간단하게 줄일 수 있습니다.</target>
+        <target state="translated">이름은 간단하게 줄일 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpMutableVarsClassificationType">
@@ -237,6 +257,16 @@
         <target state="translated">'&lt;-'를 사용하여 값 변경</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">'nameof' 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="new">Use triple quoted string interpolation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">'upcast' 사용</target>
@@ -250,6 +280,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">식을 부정하려면 'not' 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="translated">식을 역참조하려면 '.Value' 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

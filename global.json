@@ -1,10 +1,11 @@
 {
   "sdk": {
-    "version": "5.0.100",
+    "version": "6.0.200",
+    "allowPrerelease": true,
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "5.0.100",
+    "dotnet": "6.0.200",
     "vs": {
       "version": "16.8",
       "components": [
@@ -12,8 +13,11 @@
       ]
     }
   },
+  "native-tools": {
+    "perl": "5.32.1.1"
+  },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "6.0.0-beta.21058.3",
+    "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22259.5",
     "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
   }
 }

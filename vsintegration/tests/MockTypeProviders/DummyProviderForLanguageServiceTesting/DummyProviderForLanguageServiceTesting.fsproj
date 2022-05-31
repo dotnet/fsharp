@@ -5,11 +5,11 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OtherFlags>--nowarn:3390 --nowarn:3218</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

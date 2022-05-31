@@ -2,7 +2,6 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.CodeAnalysisExtensions
 
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 open System.IO
 
@@ -12,12 +11,10 @@ type Project with
     member this.GetDependentProjectIds () =
         this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject this.Id
 
-
     /// Returns all projects within the same solution that directly reference this project.
     member this.GetDependentProjects () =
         this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject this.Id
         |> Seq.map this.Solution.GetProject
-
 
     /// Returns the ProjectIds of all of the projects that this project directly or transitively depneds on
     member this.GetProjectIdsOfAllProjectsThisProjectDependsOn () =
@@ -25,15 +22,18 @@ type Project with
         let transitiveDependencies = graph.GetProjectsThatThisProjectTransitivelyDependsOn this.Id
         let directDependencies = graph.GetProjectsThatThisProjectDirectlyDependsOn this.Id
         Seq.append directDependencies transitiveDependencies
-        
 
     /// The list all of the projects that this project directly or transitively depneds on
     member this.GetAllProjectsThisProjectDependsOn () =
         this.GetProjectIdsOfAllProjectsThisProjectDependsOn ()
         |> Seq.map this.Solution.GetProject
 
-
 type Solution with 
+
+    /// Checks if the file path is associated with a document in the solution.
+    member self.ContainsDocumentWithFilePath filePath =
+        self.GetDocumentIdsWithFilePath(filePath).IsEmpty
+        |> not
 
     /// Try to get a document inside the solution using the document's name
     member self.TryGetDocumentNamed docName =
@@ -56,22 +56,18 @@ type Solution with
        |> Seq.filter (fun x -> x.ProjectId = projId)
        |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
 
-
     /// Try to get a project inside the solution using the project's id
     member self.TryGetProject (projId:ProjectId) =
         if self.ContainsProject projId then Some (self.GetProject projId) else None
-
 
     /// Returns the projectIds of all projects within this solution that directly reference the provided project
     member self.GetDependentProjects (projectId:ProjectId) =
         self.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject projectId
         |> Seq.map self.GetProject
 
-
     /// Returns the projectIds of all projects within this solution that directly reference the provided project
     member self.GetDependentProjectIds (projectId:ProjectId) =
         self.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject projectId
-
 
     /// Returns the ProjectIds of all of the projects that directly or transitively depends on
     member self.GetProjectIdsOfAllProjectReferences (projectId:ProjectId) =
@@ -80,12 +76,10 @@ type Solution with
         let directDependencies = graph.GetProjectsThatThisProjectDirectlyDependsOn projectId
         Seq.append directDependencies transitiveDependencies
 
-
     /// Returns all of the projects that this project that directly or transitively depends on
     member self.GetAllProjectsThisProjectDependsOn (projectId:ProjectId) =
         self.GetProjectIdsOfAllProjectReferences projectId
         |> Seq.map self.GetProject
-
 
     /// Try to retrieve the corresponding DocumentId for the range's file in the solution
     /// and if a projectId is provided, only try to find the document within that project
@@ -109,7 +103,6 @@ type Solution with
             | None -> Some docId
 
         self.GetDocumentIdsWithFilePath filePath |> List.ofSeq |> matchingDoc 
-
 
     /// Try to retrieve the corresponding Document for the range's file in the solution
     /// and if a projectId is provided, only try to find the document within that project

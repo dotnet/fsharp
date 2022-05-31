@@ -1,22 +1,5 @@
 
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
@@ -31,7 +14,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -46,7 +29,6 @@ let internal projectOptions opts = {
     LoadTime = DateTime.MaxValue
     OriginalLoadReferences = []
     UnresolvedReferences = None
-    ExtraProjectInfo = None
     Stamp = None
 }
 
@@ -55,8 +37,9 @@ let formatCompletions(completions : string seq) =
 
 let VerifyCompletionListWithOptions(fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions opts, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -105,9 +88,9 @@ let VerifyCompletionList(fileContents, marker, expected, unexpected) =
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    
+    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions [| |], filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -457,7 +440,7 @@ let _ = new A(Setta)
     let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
+[<Test;Ignore("https://github.com/dotnet/fsharp/issues/3954")>]
 let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
     let fileContents = """
 module M =
@@ -634,11 +617,37 @@ let _ = fun (p) -> ()
     VerifyNoCompletionList(fileContents, "let _ = fun (p")
 
 [<Test>]
-let ``Provide completion on lambda argument type hint``() =
+let ``No completion on lambda argument name2``() =
     let fileContents = """
-let _ = fun (p:i) -> ()
+let _ = fun (p: int) -> ()
 """
-    VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+    VerifyNoCompletionList(fileContents, "let _ = fun (p")
+
+[<Test>]
+let ``Completions on lambda argument type hint contain modules and types but not keywords or functions``() =
+    let fileContents = """
+let _ = fun (p:l) -> ()
+"""
+    VerifyCompletionList(fileContents, "let _ = fun (p:l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completions in match clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+match box 5 with
+| :? l as x -> ()
+| _ -> ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completions in catch clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+try
+    ()
+with :? l as x ->
+    ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
 let ``Extensions.Bug5162``() =
@@ -735,6 +744,121 @@ let ``Completion list span works with last of multiple enclosed backtick identif
 let x = A.``B C`` + D.``E F``
 """
     VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
+
+[<Test>]
+let ``No completion on record field identifier at declaration site``() =
+    let fileContents = """
+type A = { le: string }
+"""
+    VerifyNoCompletionList(fileContents, "le")
+
+[<Test>]
+let ``Completion list on record field type at declaration site contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+type A<'lType> = { Field: l }
+"""
+    VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on record stub with no fields at declaration site``() =
+    let fileContents = """
+type A = {  }
+"""
+    VerifyNoCompletionList(fileContents, "{ ")
+
+[<Test>]
+let ``No completion on record outside of all fields at declaration site``() =
+    let fileContents = """
+type A = { Field: string; }
+"""
+    VerifyNoCompletionList(fileContents, "; ")
+
+[<Test>]
+let ``No completion on union case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C of string
+"""
+    VerifyNoCompletionList(fileContents, "| C")
+
+[<Test>]
+let ``No completion on union case field identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | Case of blah: int * str: int
+"""
+    VerifyNoCompletionList(fileContents, "str")
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+type A<'lType> =
+    | Case of blah: int * str: l
+"""
+    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions2``() =
+    let fileContents = """
+type A<'lType> =
+    | Case of l
+"""
+    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains type parameter``() =
+    let fileContents = """
+type A<'keyType> =
+    | Case of key
+"""
+    VerifyCompletionList(fileContents, "of key", ["keyType"], [])
+
+[<Test>]
+let ``Completion list on type alias contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A = l
+"""
+    VerifyCompletionList(fileContents, "= l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on enum case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C = 0
+"""
+    VerifyNoCompletionList(fileContents, "| C")
+
+[<Test>]
+let ``Completion list in generic function body contains type parameter``() =
+    let fileContents = """
+let Null<'wrappedType> () =
+    Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic method body contains type parameter``() =
+    let fileContents = """
+type A () =
+    member _.Null<'wrappedType> () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic class method body contains type parameter``() =
+    let fileContents = """
+type A<'wrappedType> () =
+    member _.Null () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in type application contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+let emptyMap<'keyType, 'lValueType> () =
+    Map.empty<'keyType, l>
+"""
+    VerifyCompletionList(fileContents, ", l", ["LanguagePrimitives"; "List"; "lValueType"], ["let"; "log"])
 
 #if EXE
 ShouldDisplaySystemNamespace()

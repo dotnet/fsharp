@@ -5,32 +5,6 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\LiteralValue
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
-CodeGen01,NoMT,CodeGen,NoHostedCompiler,SerializableAttribute				CodeGen\EmittedIL\SerializableAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
-CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
-CodeGen01,NoMT,CodeGen				CodeGen\Structure
-
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
@@ -57,9 +31,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\times
-CompilerOptions01,NoMT				CompilerOptions\fsc\warn
-CompilerOptions01,NoMT				CompilerOptions\fsc\warnaserror
-CompilerOptions01,NoMT				CompilerOptions\fsc\warnon
+CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT,help				CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
@@ -100,7 +72,6 @@ Conformance02			Conformance\DeclarationElements\FieldMembers
 Conformance02			Conformance\DeclarationElements\ImportDeclarations
 Conformance02			Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations
 Conformance02			Conformance\DeclarationElements\LetBindings\ActivePatternBindings
-Conformance02			Conformance\DeclarationElements\LetBindings\ArityInference
 Conformance02			Conformance\DeclarationElements\LetBindings\Basic
 Conformance02			Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters
 Conformance02			Conformance\DeclarationElements\LetBindings\TypeFunctions
@@ -243,15 +214,11 @@ Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
 Conformance08			Conformance\Expressions\DataExpressions\NameOf
 
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyVersion
 Misc01			Diagnostics\async
 Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
 Misc01			Diagnostics\ParsingAtEOF
 Misc01			EntryPoint
-Misc01			Globalization
 Misc01,NoMT		Import
 Misc01,NoMT		..\..\..\testsprivate\fsharpqa\Source\InteractiveSession\AssemblyLoading
 Misc01,NoMT		InteractiveSession\Misc
@@ -269,11 +236,6 @@ Misc01			Warnings
 Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
-Misc02			OCamlCompat
-Misc02,CodeGen			Optimizations\AssemblyBoundary
-Misc02,CodeGen			Optimizations\ForLoop
-Misc02,CodeGen			Optimizations\GenericComparison
-Misc02,CodeGen			Optimizations\Inlining
 Misc02,NoMT		Printing
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents

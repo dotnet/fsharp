@@ -2,20 +2,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>nunit</UnitTestType>
-    <OtherFlags>--nowarn:3390 --nowarn:3218</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="TestTP.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="..\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 

@@ -20,7 +20,6 @@ exit 1
 //<Expects id="FS0043" span="(11,25-11,26)" status="error">The type 'int' does not match the type 'string'</Expects>
 //<Expects id="FS0001" span="(12,18-12,26)" status="error">The type 'byte' does not match the type 'string'</Expects>
 //<Expects id="FS0043" span="(12,15-12,16)" status="error">The type 'byte' does not match the type 'string'</Expects>
-//<Expects id="FS0001" span="(13,19-13,20)" status="error">This expression was expected to have type.    'float'    .but here has type.    'int'</Expects>
 //<Expects id="FS0001" span="(13,32-13,33)" status="error">The type 'int' does not match the type 'float'</Expects>
 //<Expects id="FS0043" span="(13,30-13,31)" status="error">The type 'int' does not match the type 'float'</Expects>
 //<Expects status="error" span="(14,32-14,38)" id="FS0001">The type 'decimal<Kg>' does not match the type 'float32<Kg>'</Expects>

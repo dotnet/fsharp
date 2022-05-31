@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+
+  <PropertyGroup>
+    <PreRelease>true</PreRelease>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
+    <NuspecProperty Include="fSharpCorePackageVersion=$(FSCorePackageVersionValue)" />
+    <NuspecProperty Include="fSharpCompilerServicePackagePreviewPackageVersion=$(FSharpCompilerServicePackageVersion)-$(VersionSuffix)" />
+    <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
+    <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
+  </ItemGroup>
+
+  <Target Name="Build" />
+
+</Project>

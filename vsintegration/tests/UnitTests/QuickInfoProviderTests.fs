@@ -2,25 +2,7 @@
 
 // ------------------------------------------------------------------------------------------------------------------------
 //
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
-//
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 // ------------------------------------------------------------------------------------------------------------------------
 
 
@@ -79,23 +61,23 @@ let private getQuickInfoText (FSharpToolTipText elements) : string =
 [<Test>]
 let ShouldShowQuickInfoAtCorrectPositions() =
     let testCases = 
-       [ "x", Some "val x : int\nFull name: Test.x"
-         "y", Some "val y : int\nFull name: Test.y"
+       [ "x", Some "val x: int\nFull name: Test.x"
+         "y", Some "val y: int\nFull name: Test.y"
          "1", None
          "2", None
-         "x +", Some "val x : int\nFull name: Test.x"
+         "x +", Some "val x: int\nFull name: Test.x"
          "System", Some "namespace System"
          "Console", Some "type Console =
-  static member BackgroundColor : ConsoleColor with get, set
-  static member Beep : unit -> unit + 1 overload
-  static member BufferHeight : int with get, set
-  static member BufferWidth : int with get, set
-  static member CapsLock : bool
-  static member Clear : unit -> unit
-  static member CursorLeft : int with get, set
-  static member CursorSize : int with get, set
-  static member CursorTop : int with get, set
-  static member CursorVisible : bool with get, set
+  static member BackgroundColor: ConsoleColor with get, set
+  static member Beep: unit -> unit + 1 overload
+  static member BufferHeight: int with get, set
+  static member BufferWidth: int with get, set
+  static member CapsLock: bool
+  static member Clear: unit -> unit
+  static member CursorLeft: int with get, set
+  static member CursorSize: int with get, set
+  static member CursorTop: int with get, set
+  static member CursorVisible: bool with get, set
   ...
 Full name: System.Console"
          "WriteLine", Some "System.Console.WriteLine(value: int) : unit" ]
@@ -164,19 +146,19 @@ Full name: Microsoft.FSharp.Core.Operators.( |> )
 'U is int list");
          ("let res3 = [1] |> List.map id",
           Some
-            "val id : x:'T -> 'T
+            "val id: x: 'T -> 'T
 Full name: Microsoft.FSharp.Core.Operators.id
 'T is int");
          ("let res4 = (1.0,[1]) ||>",
           Some
-            "val ( ||> ) : arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
+            "val ( ||> ): arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.( ||> )
 'T1 is float
 'T2 is int list
 'U is float");
          ("let res4 = (1.0,[1]) ||> List.fold",
           Some
-            "val fold : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
+            "val fold: folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
 'T is int
 'State is float");
@@ -203,12 +185,12 @@ Full name: Microsoft.FSharp.Core.Operators.( + )
 'T3 is System.DateTime");
          ("let res7 = sin",
           Some
-            "val sin : value:'T -> 'T (requires member Sin)
+            "val sin: value: 'T -> 'T (requires member Sin)
 Full name: Microsoft.FSharp.Core.Operators.sin
 'T is float");
          ("let res8 = abs",
           Some
-            "val abs : value:'T -> 'T (requires member Abs)
+            "val abs: value: 'T -> 'T (requires member Abs)
 Full name: Microsoft.FSharp.Core.Operators.abs
 'T is int")]    
     let actualForAllTests = 

@@ -9,8 +9,8 @@ module Tests.Service.StructureTests
 
 open System.IO
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.EditorServices.Structure
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open System.Text
@@ -23,10 +23,10 @@ type Range = Line * Col * Line * Col
 let (=>) (source: string) (expectedRanges: (Range * Range) list) =
     let lines =
         use reader = new StringReader(source)
-        [| let line = ref (reader.ReadLine())
-           while not (isNull !line) do
-               yield !line
-               line := reader.ReadLine()
+        [| let mutable line = reader.ReadLine()
+           while not (isNull line) do
+               yield line
+               line <- reader.ReadLine()
            if source.EndsWith "\n" then
                // last trailing space not returned
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
@@ -42,18 +42,15 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
 
     let ast = parseSourceCode(fileName, source)
     try
-        match ast with
-        | Some tree ->
-            let actual =
-                Structure.getOutliningRanges lines tree
-                |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
-                |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
-                |> Seq.sort
-                |> List.ofSeq
-            let expected = List.sort expectedRanges
-            if actual <> expected then
-                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
-        | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
+        let actual =
+            getOutliningRanges lines ast
+            |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
+            |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
+            |> Seq.sort
+            |> List.ofSeq
+        let expected = List.sort expectedRanges
+        if actual <> expected then
+            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
     with _ ->
         printfn "AST:\n%+A" ast
         reraise()
@@ -518,10 +515,13 @@ module M =
     let f x = x
 """
     => [ (2, 0, 3, 10), (2, 0, 3, 10)
-         (4, 0, 13, 15), (4, 8, 13, 15)
+         (2, 0, 13, 15), (4, 8, 13, 15)
          (5, 4, 6, 14), (5, 4, 6, 14)
-         (7, 9, 11, 19), (7, 11, 11, 19)
-         (8, 8, 10, 18), (8, 8, 10, 18) ]
+         (5, 4, 11, 19), (7, 11, 11, 19)
+         (8, 8, 10, 18), (8, 8, 10, 18)
+         (8, 8, 11, 19), (11, 15, 11, 19)
+         (12, 4, 13, 15), (13, 11, 13, 15)
+         (12, 4, 13, 15), (13, 11, 13, 15) ]
          
 [<Test>]
 let ``regular comments``() =
@@ -654,11 +654,11 @@ type T() =
 """
     => [ (2, 5, 11, 12), (2, 7, 11, 12)
          (3, 4, 4, 12), (3, 7, 4, 12)
-         (3, 4, 4, 12), (4, 8, 4, 12)
+         (3, 4, 4, 12), (3, 10, 4, 12)
          (6, 4, 7, 12), (6, 16, 7, 12)
-         (6, 4, 7, 12), (7, 8, 7, 12)
+         (6, 4, 7, 12), (6, 19, 7, 12)
          (9, 4, 11, 12), (10, 7, 11, 12)
-         (9, 4, 11, 12), (11, 8, 11, 12) ]
+         (9, 4, 11, 12), (10, 10, 11, 12) ]
 
 
 [<Test>]

@@ -266,8 +266,7 @@ type Miscellaneous() =
              this.MSBuildProjectBoilerplate "Library", 
              (fun project ccn projFileName ->
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                File.AppendAllText(fooPath, "#light")
-                File.AppendAllText(fooPath, "module Foo")
+                File.AppendAllLines(fooPath, ["#light"; "module Foo"])
                 
                 //ccn((project :> IVsHierarchy), "Debug|Any CPU")
                 let configName = "Debug"                
@@ -278,14 +277,17 @@ type Miscellaneous() =
                 let buildableCfg = vsBuildableCfg :?> BuildableProjectConfig
                 AssertEqual VSConstants.S_OK hr
                 
-                let success = ref false
+                let mutable isCleaning = false
+                let mutable success = false
                 use event = new System.Threading.ManualResetEvent(false)
                 let (hr, cookie) = 
                     buildableCfg.AdviseBuildStatusCallback(
                         { new IVsBuildStatusCallback with
                             member this.BuildBegin pfContinue = pfContinue <- 1; VSConstants.S_OK
                             member this.BuildEnd fSuccess =
-                                success := fSuccess <> 0
+                                success <- fSuccess <> 0
+                                printfn "Build %s, code %i, phase: %s." (if success then "succeeded" else "failed") fSuccess (if isCleaning then "Cleaning" else "Build")
+
                                 event.Set() |> Assert.IsTrue
                                 VSConstants.S_OK
                             member this.Tick pfContinue = pfContinue <- 1; VSConstants.S_OK
@@ -295,20 +297,25 @@ type Miscellaneous() =
                     let buildMgrAccessor = project.Site.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
                     let output = VsMocks.vsOutputWindowPane(ref [])
                     let doBuild target =
-                        success := false
+                        success <- false
                         event.Reset() |> Assert.IsTrue
                         buildMgrAccessor.BeginDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
                         buildableCfg.Build(0u, output, target)
                         event.WaitOne() |> Assert.IsTrue
                         buildMgrAccessor.EndDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
-                        AssertEqual true !success    
-                    printfn "building..."
-                    doBuild "Build"                    
+                        AssertEqual true success
+
+                    printfn "Building..."
+                    doBuild "Build"
                     AssertEqual true (File.Exists (Path.Combine(project.ProjectFolder, "bin\\Debug\\Blah.dll")))
+                    printfn "Output files present."
                     
-                    printfn "cleaning..."
+                    isCleaning <- true
+                    printfn "Cleaning..."
                     doBuild "Clean"
+                    printfn "Finished build-then-clean."
                     AssertEqual false (File.Exists (Path.Combine(project.ProjectFolder, "bin\\Debug\\Blah.dll")))
+                    printfn "Files were cleaned."
                 finally
                     buildableCfg.UnadviseBuildStatusCallback(cookie) |> AssertEqual VSConstants.S_OK
         ))

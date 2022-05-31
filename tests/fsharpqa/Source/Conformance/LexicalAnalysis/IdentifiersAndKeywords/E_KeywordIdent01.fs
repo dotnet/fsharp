@@ -2,7 +2,7 @@
 #light
 
 //<Expects id="FS0010" status="error">Unexpected keyword 'type' in binding</Expects>
-//<Expects id="FS0010" status="error">Unexpected keyword 'class' in pattern</Expects>
+//<Expects id="FS0010" status="error">Unexpected keyword 'class' in binding. Expected '=' or other token.</Expects>
 
 let type = 2
 

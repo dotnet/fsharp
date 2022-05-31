@@ -121,7 +121,7 @@ type internal FsiToolWindow() as this =
     //  Create the stream on top of the text buffer.
     let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines), contentTypeRegistry)
     let synchronizationContext = System.Threading.SynchronizationContext.Current
-    let win32win = { new System.Windows.Forms.IWin32Window with member this.Handle = textView.GetWindowHandle()}
+    let win32win = { new System.Windows.Forms.IWin32Window with member _.Handle = textView.GetWindowHandle()}
     let mutable textView       = textView
     let mutable textLines      = textLines
     let mutable commandService = null
@@ -339,7 +339,7 @@ type internal FsiToolWindow() as this =
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand       
         if command <> null then
-            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
+            command.Supported <- not source.IsCompletorActive && isCurrentPositionAtStartOfInputArea()
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
@@ -491,6 +491,9 @@ type internal FsiToolWindow() as this =
     // checks if current session is configured such that debugging will work well
     // if not, pops a dialog warning the user
     let checkDebuggability () =       
+        if not sessions.Alive then
+            sessions.Restart(null)
+
         // debug experience is good when optimizations are off and debug info is produced
         if ArgParsing.debugInfoEnabled sessions.ProcessArgs && not (ArgParsing.optimizationsEnabled sessions.ProcessArgs) then
             true
@@ -619,15 +622,15 @@ type internal FsiToolWindow() as this =
     do  this.BitmapIndex      <- 0  
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
-    member this.MLSendSelection(obj,e) = onMLSendSelection obj e
-    member this.MLSendLine(obj,e) = onMLSendLine obj e
-    member this.MLDebugSelection(obj,e) = onMLDebugSelection obj e
+    member _.MLSendSelection(obj,e) = onMLSendSelection obj e
+    member _.MLSendLine(obj,e) = onMLSendLine obj e
+    member _.MLDebugSelection(obj,e) = onMLDebugSelection obj e
 
-    member this.GetDebuggerState() =
+    member _.GetDebuggerState() =
         let (state, _) = getDebuggerState ()
         state
 
-    member this.AddReferences(references : string[]) = 
+    member _.AddReferences(references : string[]) = 
         let text = 
             references
             |> Array.map (sprintf "#r @\"%s\"")
@@ -675,7 +678,7 @@ type internal FsiToolWindow() as this =
                     else
                         new OleMenuCommandService(this, originalFilter)
 
-            let addCommand guid cmdId handler guard=
+            let addCommand guid cmdId handler guard =
                 let id  = new CommandID(guid,cmdId)
                 let cmd = new OleMenuCommand(new EventHandler(handler),id)
                 match guard with
@@ -735,29 +738,30 @@ type internal FsiToolWindow() as this =
                  
     interface ITestVFSI with
         /// Send a string; the ';;' will be added to the end; does not interact with history
-        member this.SendTextInteraction(s:string) =
+        member _.SendTextInteraction(s:string) =
             let dummyLineNum = 1
             executeInteraction false (System.IO.Path.GetTempPath()) "DummyTestFilename.fs" 1 s
+
         /// Returns the n most recent lines in the view.  After SendTextInteraction, can poll for a prompt to know when interaction finished.
-        member this.GetMostRecentLines(n:int) : string[] =
+        member _.GetMostRecentLines(n:int) : string[] =
             lock textLines (fun () ->
                 try
-                    let lineCount = ref 0
-                    textLines.GetLineCount(&lineCount.contents) |> throwOnFailure0            
+                    let mutable lineCount = 0
+                    textLines.GetLineCount(&lineCount) |> throwOnFailure0            
 
-                    let lastLineLen = ref 0
-                    textLines.GetLengthOfLine(!lineCount - 1, &lastLineLen.contents) |> throwOnFailure0            
+                    let mutable lastLineLen = 0
+                    textLines.GetLengthOfLine(lineCount - 1, &lastLineLen) |> throwOnFailure0            
 
-                    let text = ref ""
+                    let mutable text = ""
 
                     // Cap number of lines returned to the total number of lines
-                    let mutable startLine = max (!lineCount - 1 - n) 0
-                    let mutable endLine   = max (!lineCount - 1) 0
+                    let mutable startLine = max (lineCount - 1 - n) 0
+                    let mutable endLine   = max (lineCount - 1) 0
                     let mutable startCol  = 0
-                    let mutable endCol    = max (!lastLineLen - 1) 0
+                    let mutable endCol    = max (lastLineLen - 1) 0
 
-                    textLines.GetLineText(startLine, startCol, endLine, endCol, &text.contents) |> throwOnFailure0            
-                    (!text).Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.RemoveEmptyEntries) 
+                    textLines.GetLineText(startLine, startCol, endLine, endCol, &text) |> throwOnFailure0            
+                    text.Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.RemoveEmptyEntries) 
                 with 
                 | ex -> 
                     let returnVal = [| "Unhandled Exception"; ex.Message |]
@@ -765,7 +769,7 @@ type internal FsiToolWindow() as this =
             )
             
     interface IOleCommandTarget with
-        member this.QueryStatus (guid, cCmds, prgCmds, pCmdText)=
+        member _.QueryStatus (guid, cCmds, prgCmds, pCmdText)=
 
             // Added to prevent command processing when the zoom control in the margin is focused
             let wpfTextView = textViewAdapter.GetWpfTextView(textView)
@@ -797,7 +801,7 @@ type internal FsiToolWindow() as this =
                 let target : IOleCommandTarget = upcast commandService
                 target.QueryStatus(&guid, cCmds, prgCmds, pCmdText)
        
-        member this.Exec (guid, nCmdId, nCmdExcept, pIn, pOut) =
+        member _.Exec (guid, nCmdId, nCmdExcept, pIn, pOut) =
             let target : IOleCommandTarget = upcast commandService
                
             // for typing, Delete and Paste:
@@ -825,29 +829,29 @@ type internal FsiToolWindow() as this =
         false
 
     interface IVsUIElementPane with
-        member this.CloseUIElementPane() =
+        member _.CloseUIElementPane() =
             let mutable hr = VSConstants.S_OK
             if null <> textView then
                 hr <- (textView :?> IVsUIElementPane).CloseUIElementPane()
             this.Dispose(true)
             hr
 
-        member this.CreateUIElementPane o =
+        member _.CreateUIElementPane o =
             (textView :?> IVsUIElementPane).CreateUIElementPane(&o)
             
-        member this.GetDefaultUIElementSize(pSize:SIZE[]) =
+        member _.GetDefaultUIElementSize(pSize:SIZE[]) =
             (textView :?> IVsUIElementPane).GetDefaultUIElementSize(pSize)
 
-        member this.LoadUIElementState(pStream:IStream) =
+        member _.LoadUIElementState(pStream:IStream) =
             (textView :?> IVsUIElementPane).LoadUIElementState(pStream)
 
-        member this.SaveUIElementState(pStream:IStream) =
+        member _.SaveUIElementState(pStream:IStream) =
             (textView :?> IVsUIElementPane).SaveUIElementState(pStream)
 
-        member this.SetUIElementSite(psp:Microsoft.VisualStudio.OLE.Interop.IServiceProvider) =
+        member _.SetUIElementSite(psp:Microsoft.VisualStudio.OLE.Interop.IServiceProvider) =
             (textView :?> IVsUIElementPane).SetUIElementSite(psp)
 
-        member this.TranslateUIElementAccelerator(lpmsg:MSG[]) =
+        member _.TranslateUIElementAccelerator(lpmsg:MSG[]) =
             (textView :?> IVsUIElementPane).TranslateUIElementAccelerator(lpmsg)
 
     // This follows directly the IronPython sample.
@@ -859,22 +863,22 @@ type internal FsiToolWindow() as this =
             this.Dispose(true)
             hr
 
-        member this.CreatePaneWindow(hwndParent:IntPtr,x:int,y:int,cx:int,cy:int,hwnd:IntPtr byref) =
+        member _.CreatePaneWindow(hwndParent:IntPtr,x:int,y:int,cx:int,cy:int,hwnd:IntPtr byref) =
             (textView :?> IVsWindowPane).CreatePaneWindow(hwndParent, x, y, cx, cy, &hwnd)
 
-        member this.GetDefaultSize(pSize:SIZE[]) =
+        member _.GetDefaultSize(pSize:SIZE[]) =
             (textView :?> IVsWindowPane).GetDefaultSize(pSize)
 
-        member this.LoadViewState(pStream:IStream) =
+        member _.LoadViewState(pStream:IStream) =
             (textView :?> IVsWindowPane).LoadViewState(pStream)
 
-        member this.SaveViewState(pStream:IStream) =
+        member _.SaveViewState(pStream:IStream) =
             (textView :?> IVsWindowPane).SaveViewState(pStream)
 
-        member this.SetSite(psp:Microsoft.VisualStudio.OLE.Interop.IServiceProvider) =
+        member _.SetSite(psp:Microsoft.VisualStudio.OLE.Interop.IServiceProvider) =
             (textView :?> IVsWindowPane).SetSite(psp)
 
-        member this.TranslateAccelerator(lpmsg:MSG[]) =
+        member _.TranslateAccelerator(lpmsg:MSG[]) =
             (textView :?> IVsWindowPane).TranslateAccelerator(lpmsg)
 
 

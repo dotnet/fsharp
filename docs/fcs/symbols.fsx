@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Symbols
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 400
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -18,7 +26,8 @@ of `FSharpChecker`:
 
 open System
 open System.IO
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
@@ -33,7 +42,7 @@ We now perform type checking on the specified input:
 let parseAndTypeCheckSingleFile (file, input) = 
     // Get context representing a stand-alone (script) file
     let projOptions, errors = 
-        checker.GetProjectOptionsFromScript(file, input)
+        checker.GetProjectOptionsFromScript(file, input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     let parseFileResults, checkFileResults = 
@@ -101,13 +110,13 @@ Now get the value that corresponds to the function defined in the code:
 let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
 
 (**
-Now look around at the properties describing the function value. All of the following evaluate to `true`:
+Now look around at the properties describing the function value:
 *)
-fnVal.Attributes.Count = 1
+fnVal.Attributes.Count // 1
 fnVal.CurriedParameterGroups.Count // 1
 fnVal.CurriedParameterGroups.[0].Count // 2
-fnVal.CurriedParameterGroups.[0].[0].Name // "x"
-fnVal.CurriedParameterGroups.[0].[1].Name // "y"
+fnVal.CurriedParameterGroups.[0].[0].Name // Some "x"
+fnVal.CurriedParameterGroups.[0].[1].Name // Some "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
 fnVal.DeclaringEntity.Value.DisplayName // "Test"
@@ -195,7 +204,7 @@ a specification of a larger project.
 *)
 let parseAndCheckScript (file, input) = 
     let projOptions, errors = 
-        checker.GetProjectOptionsFromScript(file, input)
+        checker.GetProjectOptionsFromScript(file, input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) |> Async.RunSynchronously
@@ -216,9 +225,9 @@ Now look at the results:
 
 let assemblySig = projectResults.AssemblySignature
     
-assemblySig.Entities.Count = 1  // one entity
-assemblySig.Entities.[0].Namespace  // one entity
-assemblySig.Entities.[0].DisplayName // "Tmp28D0"
-assemblySig.Entities.[0].MembersFunctionsAndValues.Count // 1 
-assemblySig.Entities.[0].MembersFunctionsAndValues.[0].DisplayName // "foo" 
+printfn $"#entities = {assemblySig.Entities.Count}" // 1
+printfn $"namespace = {assemblySig.Entities.[0].Namespace}"  // one entity
+printfn $"entity name = {assemblySig.Entities.[0].DisplayName}" // "Tmp28D0"
+printfn $"#members = {assemblySig.Entities.[0].MembersFunctionsAndValues.Count}" // 1 
+printfn $"member name = {assemblySig.Entities.[0].MembersFunctionsAndValues.[0].DisplayName}" // "foo" 
     

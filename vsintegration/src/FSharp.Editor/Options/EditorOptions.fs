@@ -3,17 +3,11 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
-open System.Windows
-open System.Windows.Controls
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.UIResources
+open Microsoft.CodeAnalysis
 
-module DefaultTuning = 
-    let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
-    let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
-    let SimplifyNameInitialDelay = 2000 (* milliseconds *)
-    let SimplifyNameEachItemDelay = 0 (* milliseconds *)
-
+module DefaultTuning =
     /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
     /// Re-tokenizing is fast so we don't need to save this data long.
     let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
@@ -57,7 +51,7 @@ type CodeFixesOptions =
       SuggestNamesForErrors: bool }
     static member Default =
       { // We have this off by default, disable until we work out how to make this low priority 
-        // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
+        // See https://github.com/dotnet/fsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
@@ -100,14 +94,14 @@ type AdvancedOptions =
 type FormattingOptions =
     { FormatOnPaste: bool }
     static member Default =
-        { FormatOnPaste = true }
+        { FormatOnPaste = false }
 
 [<Export>]
 [<Export(typeof<IPersistSettings>)>]
 type EditorOptions 
     [<ImportingConstructor>] 
     (
-      [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
     ) =
 
     let store = SettingsStore(serviceProvider)
@@ -134,13 +128,6 @@ type EditorOptions
     interface IPersistSettings with
         member _.LoadSettings() = store.LoadSettings()
         member _.SaveSettings(settings) = store.SaveSettings(settings)
-
-
-[<AutoOpen>]
-module internal WorkspaceSettingFromDocumentExtension =
-    type Microsoft.CodeAnalysis.Document with
-        member this.FSharpOptions =
-            this.Project.Solution.Workspace.Services.GetService() : EditorOptions
 
 module internal OptionsUI =
 
@@ -201,3 +188,56 @@ module internal OptionsUI =
         inherit AbstractOptionPage<FormattingOptions>()
         override _.CreateView() =
             upcast FormattingOptionsControl()
+
+[<AutoOpen>]
+module EditorOptionsExtensions =
+
+    type Project with
+
+        member this.AreFSharpInMemoryCrossProjectReferencesEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> true
+            | _ -> editorOptions.LanguageServicePerformance.EnableInMemoryCrossProjectReferences
+
+        member this.IsFSharpCodeFixesAlwaysPlaceOpensAtTopLevelEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel
+
+        member this.IsFSharpCodeFixesUnusedDeclarationsEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.CodeFixes.UnusedDeclarations
+
+        member this.IsFSharpStaleCompletionResultsEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.LanguageServicePerformance.AllowStaleCompletionResults
+
+        member this.FSharpTimeUntilStaleCompletion =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> 0
+            | _ -> editorOptions.LanguageServicePerformance.TimeUntilStaleCompletion
+
+        member this.IsFSharpCodeFixesSimplifyNameEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.CodeFixes.SimplifyName
+
+        member this.IsFSharpCodeFixesUnusedOpensEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.CodeFixes.UnusedOpens
+
+        member this.IsFSharpBlockStructureEnabled =
+            let editorOptions = this.Solution.Workspace.Services.GetService<EditorOptions>()
+            match box editorOptions with
+            | null -> false
+            | _ -> editorOptions.Advanced.IsBlockStructureEnabled

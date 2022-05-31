@@ -8,22 +8,21 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "ReplaceWithSuggestionCodeFix"
     let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
-    let checker = checkerProvider.Checker
         
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -32,8 +31,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             do! Option.guard settings.CodeFixes.SuggestNamesForErrors
 
             let document = context.Document
-            let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpReplaceWithSuggestionCodeFixProvider)) |> liftAsync
 
             // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)
@@ -42,9 +40,10 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             let caretLinePos = sourceText.Lines.GetLinePosition(pos)            
             let caretLine = sourceText.Lines.GetLineFromPosition(pos)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line
-            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLinePos.Character - 1)
+            let lineText = caretLine.ToString()
+            let partialName = QuickParse.GetPartialLongNameEx(lineText, caretLinePos.Character - 1)
                 
-            let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, caretLine.ToString(), partialName)
+            let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
             let addNames (addToBuffer:string -> unit) = 
                 for item in declInfo.Items do
                     addToBuffer item.Name
@@ -54,11 +53,11 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
-            for suggestion in ErrorResolutionHints.getSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = FSharpKeywords.QuoteIdentifierIfNeeded suggestion
+            for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
+                let replacement = PrettyNaming.AddBackticksToIdentifierIfNeeded suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
-                        CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion),
+                        CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
                         context,
                         (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
                 

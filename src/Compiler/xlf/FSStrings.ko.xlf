@@ -1,0 +1,1657 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../FSStrings.resx">
+    <body>
+      <trans-unit id="HashLoadedSourceHasIssues0">
+        <source>One or more informational messages in loaded file.\n</source>
+        <target state="translated">로드된 파일에 하나 이상의 정보 메시지가 있습니다.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">기호 '..^'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="translated">보간 문자열</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="translated">보간 문자열(첫 번째 부분)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="translated">보간 문자열(마지막 부분)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="translated">보간 문자열(부분)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SeeAlso">
+        <source>. See also {0}.</source>
+        <target state="translated">{0}도 참조하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverTupleDiffLengths">
+        <source>The tuples have differing lengths of {0} and {1}</source>
+        <target state="translated">튜플의 길이가 {0}과(와) {1}(으)로 서로 다릅니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverInfiniteTypes">
+        <source>The types '{0}' and '{1}' cannot be unified.</source>
+        <target state="translated">형식 '{0}' 및 '{1}'을(를) 통합할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverMissingConstraint">
+        <source>A type parameter is missing a constraint '{0}'</source>
+        <target state="translated">형식 매개 변수에 제약 조건 '{0}'이(가) 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation1">
+        <source>The unit of measure '{0}' does not match the unit of measure '{1}'</source>
+        <target state="translated">측정 단위 '{0}'이(가) 측정 단위 '{1}'과(와) 일치하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation2">
+        <source>The type '{0}' does not match the type '{1}'</source>
+        <target state="translated">{0}' 형식이 '{1}' 형식과 일치하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverTypesNotInSubsumptionRelation">
+        <source>The type '{0}' is not compatible with the type '{1}'{2}</source>
+        <target state="translated">{0}' 형식이 '{1}'{2} 형식과 호환되지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation1">
+        <source>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</source>
+        <target state="translated">이 식에는\n    '{1}' 형식이 필요하지만    \n여기에서는\n    '{0}' 형식이 지정되었습니다.    {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquation2">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
+        <target state="translated">형식이 일치하지 않습니다.\n    '{0}'이(가)    \n필요하지만\n    '{1}'이(가) 지정되었습니다.    {2}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromApplyingDefault1">
+        <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
+        <target state="translated">형식 유추 변수의 기본 형식 '{0}'을(를) 적용할 때 형식 제약 조건이 일치하지 않았습니다. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromApplyingDefault2">
+        <source> Consider adding further type constraints</source>
+        <target state="translated"> 형식 제약 조건을 더 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorsFromAddingSubsumptionConstraint">
+        <source>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</source>
+        <target state="translated">형식 제약 조건이 일치하지 않습니다. \n    '{0}'    \n형식이\n    '{1}' 형식과 호환되지 않습니다.    {2}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpperCaseIdentifierInPattern">
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="translated">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 열려 있는 선언이 없거나 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructor">
+        <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
+        <target state="translated">구분된 공용 구조체 케이스 및 예외 레이블은 대문자로 된 식별자여야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FunctionExpected">
+        <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
+        <target state="translated">이 함수는 너무 많은 인수를 사용하거나 함수가 필요하지 않은 컨텍스트에서 사용되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BakedInMemberConstraintName">
+        <source>Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</source>
+        <target state="translated">이름이 '{0}'인 멤버 제약 조건에는 F# 컴파일러에 의해 특수한 상태가 지정됩니다(특정 .NET 형식은 이 멤버를 사용하여 암시적으로 확대될 수 있음). 이로 인해 사용자 코드로부터 멤버 제약 조건을 호출할 경우 런타임 오류가 발생할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BadEventTransformation">
+        <source>A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</source>
+        <target state="translated">.NET 이벤트로 컴파일될 정의의 형식이 필요한 형식이 아닙니다. 속성 멤버만 .NET 이벤트로 컴파일될 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ParameterlessStructCtor">
+        <source>Implicit object constructors for structs must take at least one argument</source>
+        <target state="translated">구조체에 대한 암시적 개체 생성자는 하나 이상의 인수를 사용해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InterfaceNotRevealed">
+        <source>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</source>
+        <target state="translated">형식이 '{0}' 인터페이스를 구현하지만 이 사실이 시그니처에 의해 표시되지 않습니다. 시그니처에 인터페이스를 나열해야 합니다. 이렇게 하면 동적 형식 캐스팅 및/또는 리플렉션을 통해 인터페이스를 검색할 수 있게 됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TyconBadArgs">
+        <source>The type '{0}' expects {1} type argument(s) but is given {2}</source>
+        <target state="translated">{0}' 형식에 {1}개의 형식 인수가 필요한데 {2}개를 받았습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateType">
+        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
+        <target state="translated">이 프로그램 지점 전의 정보를 기반으로 하는 확인할 수 없는 형식의 개체를 대상으로 조회를 수행합니다. 개체의 형식을 제한하기 위해 이 프로그램 지점 전에 형식 주석이 필요할 수 있습니다. 이를 통해 조회가 확인될 수도 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameClash1">
+        <source>Duplicate definition of {0} '{1}'</source>
+        <target state="translated">{0} '{1}'의 정의가 중복되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameClash2">
+        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <target state="translated">이름 '{2}'이(가) 이 형식 또는 모듈의 {3} '{4}'과(와) 충돌하므로 {0} '{1}'을(를) 정의할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Duplicate1">
+        <source>Two members called '{0}' have the same signature</source>
+        <target state="translated">'{0}'(이)라는 두 멤버의 시그니처가 같습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Duplicate2">
+        <source>Duplicate definition of {0} '{1}'</source>
+        <target state="translated">{0} '{1}'의 정의가 중복되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UndefinedName2">
+        <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
+        <target state="translated"> 이 이름의 구문을 FSharp.PowerPack.dll에서 찾았습니다. 이 DLL에는 일부 이전 버전의 F#에서 암시적으로 참조된 모듈 및 형식이 일부 포함되어 있습니다. 이 코드를 컴파일하려면 이 DLL에 대한 명시적 참조를 추가해야 할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FieldNotMutable">
+        <source>This field is not mutable</source>
+        <target state="translated">이 필드는 변경할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FieldsFromDifferentTypes">
+        <source>The fields '{0}' and '{1}' are from different types</source>
+        <target state="translated">{0}' 필드와 '{1}' 필드의 소스 형식이 서로 다릅니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="VarBoundTwice">
+        <source>'{0}' is bound twice in this pattern</source>
+        <target state="translated">'{0}'은(는) 이 패턴에서 두 번 바인딩되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Recursion">
+        <source>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</source>
+        <target state="translated">{0}' 함수의 사용이 다른 위치에서 유추된 형식과 일치하지 않습니다. 함수의 유추 형식은\n    {1}입니다.    \n여기서 필요한 함수의 형식은\n    {2}입니다.    {3}\n이 오류는 'let rec' 컬렉션 또는 클래스 그룹 내에서 제네릭 재귀와 관련된 제한으로 인해 발생할 수 있습니다. 인수 및 반환 형식 모두에 대한 형식 주석을 비롯하여 재귀적 호출의 대상에 전체 형식 시그니처를 지정하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRuntimeCoercion">
+        <source>Invalid runtime coercion or type test from type {0} to {1}\n{2}</source>
+        <target state="translated">런타임 강제 변환 또는 형식 테스트(소스: {0} 형식, 대상: {1} 형식)가 잘못되었습니다.\n{2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateRuntimeCoercion">
+        <source>This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</source>
+        <target state="translated">이 런타임 강제 변환 또는 형식 테스트(소스:\n    {0} 형식,    \n대상: \n    {1} 형식)를    \n수행하려면 이 프로그램 지점 전의 정보를 기반으로 하는 확인할 수 없는 형식이 필요합니다. 일부 형식의 경우 런타임 형식 테스트가 허용되지 않습니다. 형식 주석이 더 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateStaticCoercion">
+        <source>The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</source>
+        <target state="translated">정적 강제 변환(소스:\n    {0} 형식,    \n대상: \n    {1} 형식)을    \n수행하려면 이 프로그램 지점 전의 정보를 기반으로 하는 확인할 수 없는 형식이 필요합니다. 일부 형식의 경우 정적 강제 변환이 허용되지 않습니다. 형식 주석이 더 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StaticCoercionShouldUseBox">
+        <source>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</source>
+        <target state="translated">값 형식 \n    {0}을(를)    \n{1} 형식으로 \n    강제 변환하려면    \nboxing이 필요합니다. 대신 'box'를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TypeIsImplicitlyAbstract">
+        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="translated">일부 추상 멤버에 구현이 지정되지 않았으므로 이 형식은 'abstract'입니다. 의도적으로 구현을 지정하지 않은 경우에는 형식에 '[&lt;AbstractClass&gt;]' 특성을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar1">
+        <source>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</source>
+        <target state="translated">이 구문을 사용하면 코드가 해당 형식 주석에 표시된 것보다 일반적이지 않게 됩니다. '{0}' 또는 이 근처에서 '#', '_' 또는 기타 형식 주석을 사용하여 암시된 형식 변수가 '{1}' 형식으로 제한되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar2">
+        <source>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</source>
+        <target state="translated">이 구문을 사용하면 코드가 해당 형식 주석에 표시된 것보다 일반적이지 않게 됩니다. 측정 단위 변수 '{0}'은(는) 측정값 '{1}'(으)로 제한되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar3">
+        <source>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</source>
+        <target state="translated">이 구문을 사용하면 코드가 해당 형식 주석에 표시된 것보다 일반적이지 않게 됩니다. 형식 변수 '{0}'은(는) '{1}' 형식으로 제한되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IDENT">
+        <source>identifier</source>
+        <target state="translated">식별자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INT">
+        <source>integer literal</source>
+        <target state="translated">정수 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FLOAT">
+        <source>floating point literal</source>
+        <target state="translated">부동 소수점 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DECIMAL">
+        <source>decimal literal</source>
+        <target state="translated">10진 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CHAR">
+        <source>character literal</source>
+        <target state="translated">문자 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BASE">
+        <source>keyword 'base'</source>
+        <target state="translated">'base' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LPAREN.STAR.RPAREN">
+        <source>symbol '(*)'</source>
+        <target state="translated">'(*)' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOLLAR">
+        <source>symbol '$'</source>
+        <target state="translated">'$' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.STAR.STAR.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.COMPARE.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.GREATER">
+        <source>symbol ':&gt;'</source>
+        <target state="translated">기호 ':&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.COLON">
+        <source>symbol '::'</source>
+        <target state="translated">'::' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PERCENT.OP">
+        <source>symbol '{0}</source>
+        <target state="translated">'{0}' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.AT.HAT.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.BAR.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PLUS.MINUS.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PREFIX.OP">
+        <source>prefix operator</source>
+        <target state="translated">전위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
+        <source>symbol ':?&gt;'</source>
+        <target state="translated">기호 ':?&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.AMP.OP">
+        <source>infix operator</source>
+        <target state="translated">중위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AMP">
+        <source>symbol '&amp;'</source>
+        <target state="translated">기호 '&amp;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AMP.AMP">
+        <source>symbol '&amp;&amp;'</source>
+        <target state="translated">기호 '&amp;&amp;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.BAR">
+        <source>symbol '||'</source>
+        <target state="translated">'||' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LESS">
+        <source>symbol '&lt;'</source>
+        <target state="translated">기호 '&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER">
+        <source>symbol '&gt;'</source>
+        <target state="translated">기호 '&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QMARK">
+        <source>symbol '?'</source>
+        <target state="translated">'?' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QMARK.QMARK">
+        <source>symbol '??'</source>
+        <target state="translated">'??' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.QMARK">
+        <source>symbol ':?'</source>
+        <target state="translated">':?' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INT32.DOT.DOT">
+        <source>integer..</source>
+        <target state="translated">정수..</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT">
+        <source>symbol '..'</source>
+        <target state="translated">'..' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QUOTE">
+        <source>quote symbol</source>
+        <target state="translated">인용 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STAR">
+        <source>symbol '*'</source>
+        <target state="translated">'*' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
+        <source>type application </source>
+        <target state="translated">형식 적용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON">
+        <source>symbol ':'</source>
+        <target state="translated">':' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.EQUALS">
+        <source>symbol ':='</source>
+        <target state="translated">':=' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LARROW">
+        <source>symbol '&lt;-'</source>
+        <target state="translated">기호 '&lt;-'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EQUALS">
+        <source>symbol '='</source>
+        <target state="translated">'=' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
+        <source>symbol '&gt;|]'</source>
+        <target state="translated">기호 '&gt;|]'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MINUS">
+        <source>symbol '-'</source>
+        <target state="translated">'-' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ADJACENT.PREFIX.OP">
+        <source>prefix operator</source>
+        <target state="translated">전위 연산자</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUNKY.OPERATOR.NAME">
+        <source>operator name</source>
+        <target state="translated">연산자 이름</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COMMA">
+        <source>symbol ','</source>
+        <target state="translated">',' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT">
+        <source>symbol '.'</source>
+        <target state="translated">'.' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR">
+        <source>symbol '|'</source>
+        <target state="translated">'|' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HASH">
+        <source>symbol #</source>
+        <target state="translated"># 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.UNDERSCORE">
+        <source>symbol '_'</source>
+        <target state="translated">'_' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SEMICOLON">
+        <source>symbol ';'</source>
+        <target state="translated">';' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SEMICOLON.SEMICOLON">
+        <source>symbol ';;'</source>
+        <target state="translated">';;' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LPAREN">
+        <source>symbol '('</source>
+        <target state="translated">'(' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RPAREN">
+        <source>symbol ')'</source>
+        <target state="translated">')' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SPLICE.SYMBOL">
+        <source>symbol 'splice'</source>
+        <target state="translated">'splice' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LQUOTE">
+        <source>start of quotation</source>
+        <target state="translated">인용구의 시작</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK">
+        <source>symbol '['</source>
+        <target state="translated">'[' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.BAR">
+        <source>symbol '[|'</source>
+        <target state="translated">'[|' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.LESS">
+        <source>symbol '[&lt;'</source>
+        <target state="translated">기호 '[&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE">
+        <source>symbol '{'</source>
+        <target state="translated">'{' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.LESS">
+        <source>symbol '{&lt;'</source>
+        <target state="translated">기호 '{&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACK">
+        <source>symbol '|]'</source>
+        <target state="translated">'|]' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
+        <source>symbol '&gt;}'</source>
+        <target state="translated">기호 '&gt;}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
+        <source>symbol '&gt;]'</source>
+        <target state="translated">기호 '&gt;]'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE">
+        <source>end of quotation</source>
+        <target state="translated">인용구의 끝</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RBRACK">
+        <source>symbol ']'</source>
+        <target state="translated">']' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RBRACE">
+        <source>symbol '}'</source>
+        <target state="translated">'}' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PUBLIC">
+        <source>keyword 'public'</source>
+        <target state="translated">'public' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PRIVATE">
+        <source>keyword 'private'</source>
+        <target state="translated">'private' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERNAL">
+        <source>keyword 'internal'</source>
+        <target state="translated">'internal' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FIXED">
+        <source>keyword 'fixed'</source>
+        <target state="translated">키워드 '수정됨'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONSTRAINT">
+        <source>keyword 'constraint'</source>
+        <target state="translated">'constraint' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INSTANCE">
+        <source>keyword 'instance'</source>
+        <target state="translated">'instance' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DELEGATE">
+        <source>keyword 'delegate'</source>
+        <target state="translated">'delegate' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INHERIT">
+        <source>keyword 'inherit'</source>
+        <target state="translated">'inherit' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONSTRUCTOR">
+        <source>keyword 'constructor'</source>
+        <target state="translated">'constructor' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DEFAULT">
+        <source>keyword 'default'</source>
+        <target state="translated">'default' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OVERRIDE">
+        <source>keyword 'override'</source>
+        <target state="translated">'override' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ABSTRACT">
+        <source>keyword 'abstract'</source>
+        <target state="translated">'abstract' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CLASS">
+        <source>keyword 'class'</source>
+        <target state="translated">'class' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MEMBER">
+        <source>keyword 'member'</source>
+        <target state="translated">'member' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STATIC">
+        <source>keyword 'static'</source>
+        <target state="translated">'static' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NAMESPACE">
+        <source>keyword 'namespace'</source>
+        <target state="translated">'namespace' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OBLOCKBEGIN">
+        <source>start of structured construct</source>
+        <target state="translated">구조적 구문의 시작</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OBLOCKEND">
+        <source>incomplete structured construct at or before this point</source>
+        <target state="translated">이 지점 또는 이 지점 전의 불완전한 구조적 구문</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BlockEndSentence">
+        <source>Incomplete structured construct at or before this point</source>
+        <target state="translated">이 지점 또는 이 지점 전에서 구조적 구문이 완전하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OTHEN">
+        <source>keyword 'then'</source>
+        <target state="translated">'then' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OELSE">
+        <source>keyword 'else'</source>
+        <target state="translated">'else' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OLET">
+        <source>keyword 'let' or 'use'</source>
+        <target state="translated">'let' 또는 'use' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BINDER">
+        <source>binder keyword</source>
+        <target state="translated">바인더 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODO">
+        <source>keyword 'do'</source>
+        <target state="translated">'do' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONST">
+        <source>keyword 'const'</source>
+        <target state="translated">키워드 'const'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OWITH">
+        <source>keyword 'with'</source>
+        <target state="translated">'with' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OFUNCTION">
+        <source>keyword 'function'</source>
+        <target state="translated">'function' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OFUN">
+        <source>keyword 'fun'</source>
+        <target state="translated">'fun' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ORESET">
+        <source>end of input</source>
+        <target state="translated">입력의 끝</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODUMMY">
+        <source>internal dummy token</source>
+        <target state="translated">내부 더미 토큰</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODO.BANG">
+        <source>keyword 'do!'</source>
+        <target state="translated">'do!' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.YIELD">
+        <source>yield</source>
+        <target state="translated">yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.YIELD.BANG">
+        <source>yield!</source>
+        <target state="translated">yield!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OINTERFACE.MEMBER">
+        <source>keyword 'interface'</source>
+        <target state="translated">'interface' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ELIF">
+        <source>keyword 'elif'</source>
+        <target state="translated">'elif' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RARROW">
+        <source>symbol '-&gt;'</source>
+        <target state="translated">기호 '-&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SIG">
+        <source>keyword 'sig'</source>
+        <target state="translated">'sig' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRUCT">
+        <source>keyword 'struct'</source>
+        <target state="translated">'struct' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.UPCAST">
+        <source>keyword 'upcast'</source>
+        <target state="translated">'upcast' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOWNCAST">
+        <source>keyword 'downcast'</source>
+        <target state="translated">'downcast' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NULL">
+        <source>keyword 'null'</source>
+        <target state="translated">'null' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RESERVED">
+        <source>reserved keyword</source>
+        <target state="translated">예약된 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MODULE">
+        <source>keyword 'module'</source>
+        <target state="translated">'module' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND">
+        <source>keyword 'and'</source>
+        <target state="translated">'and' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AS">
+        <source>keyword 'as'</source>
+        <target state="translated">'as' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ASSERT">
+        <source>keyword 'assert'</source>
+        <target state="translated">'assert' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ASR">
+        <source>keyword 'asr'</source>
+        <target state="translated">'asr' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOWNTO">
+        <source>keyword 'downto'</source>
+        <target state="translated">'downto' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EXCEPTION">
+        <source>keyword 'exception'</source>
+        <target state="translated">'exception' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FALSE">
+        <source>keyword 'false'</source>
+        <target state="translated">'false' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FOR">
+        <source>keyword 'for'</source>
+        <target state="translated">'for' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUN">
+        <source>keyword 'fun'</source>
+        <target state="translated">'fun' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUNCTION">
+        <source>keyword 'function'</source>
+        <target state="translated">'function' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FINALLY">
+        <source>keyword 'finally'</source>
+        <target state="translated">'finally' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LAZY">
+        <source>keyword 'lazy'</source>
+        <target state="translated">'lazy' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH">
+        <source>keyword 'match'</source>
+        <target state="translated">'match' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">'match!' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MUTABLE">
+        <source>keyword 'mutable'</source>
+        <target state="translated">'mutable' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NEW">
+        <source>keyword 'new'</source>
+        <target state="translated">'new' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OF">
+        <source>keyword 'of'</source>
+        <target state="translated">'of' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OPEN">
+        <source>keyword 'open'</source>
+        <target state="translated">'open' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OR">
+        <source>keyword 'or'</source>
+        <target state="translated">'or' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.VOID">
+        <source>keyword 'void'</source>
+        <target state="translated">'void' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EXTERN">
+        <source>keyword 'extern'</source>
+        <target state="translated">'extern' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERFACE">
+        <source>keyword 'interface'</source>
+        <target state="translated">'interface' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.REC">
+        <source>keyword 'rec'</source>
+        <target state="translated">'rec' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TO">
+        <source>keyword 'to'</source>
+        <target state="translated">'to' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TRUE">
+        <source>keyword 'true'</source>
+        <target state="translated">'true' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TRY">
+        <source>keyword 'try'</source>
+        <target state="translated">'try' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TYPE">
+        <source>keyword 'type'</source>
+        <target state="translated">'type' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.VAL">
+        <source>keyword 'val'</source>
+        <target state="translated">'val' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INLINE">
+        <source>keyword 'inline'</source>
+        <target state="translated">'inline' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHEN">
+        <source>keyword 'when'</source>
+        <target state="translated">'when' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHILE">
+        <source>keyword 'while'</source>
+        <target state="translated">'while' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WITH">
+        <source>keyword 'with'</source>
+        <target state="translated">'with' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IF">
+        <source>keyword 'if'</source>
+        <target state="translated">'if' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DO">
+        <source>keyword 'do'</source>
+        <target state="translated">'do' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GLOBAL">
+        <source>keyword 'global'</source>
+        <target state="translated">'global' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DONE">
+        <source>keyword 'done'</source>
+        <target state="translated">'done' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IN">
+        <source>keyword 'in'</source>
+        <target state="translated">'in' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP">
+        <source>symbol '('</source>
+        <target state="translated">'(' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP">
+        <source>symbol'['</source>
+        <target state="translated">'[' 기호</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BEGIN">
+        <source>keyword 'begin'</source>
+        <target state="translated">'begin' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.END">
+        <source>keyword 'end'</source>
+        <target state="translated">'end' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HASH.ENDIF">
+        <source>directive</source>
+        <target state="translated">지시문</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INACTIVECODE">
+        <source>inactive code</source>
+        <target state="translated">비활성 코드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LEX.FAILURE">
+        <source>lex failure</source>
+        <target state="translated">lex 실패</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHITESPACE">
+        <source>whitespace</source>
+        <target state="translated">공백</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COMMENT">
+        <source>comment</source>
+        <target state="translated">주석</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LINE.COMMENT">
+        <source>line comment</source>
+        <target state="translated">줄 주석</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRING.TEXT">
+        <source>string text</source>
+        <target state="translated">문자열 텍스트</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.KEYWORD_STRING">
+        <source>compiler generated literal</source>
+        <target state="translated">컴파일러 생성 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BYTEARRAY">
+        <source>byte array literal</source>
+        <target state="translated">바이트 배열 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRING">
+        <source>string literal</source>
+        <target state="translated">문자열 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EOF">
+        <source>end of input</source>
+        <target state="translated">입력의 끝</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEndOfInput">
+        <source>Unexpected end of input</source>
+        <target state="translated">예기치 않은 입력의 끝입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unexpected">
+        <source>Unexpected {0}</source>
+        <target state="translated">예기치 않은 {0}입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.interaction">
+        <source> in interaction</source>
+        <target state="translated"> 상호 작용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.hashDirective">
+        <source> in directive</source>
+        <target state="translated"> 지시문</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.fieldDecl">
+        <source> in field declaration</source>
+        <target state="translated"> 필드 선언</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.unionCaseRepr">
+        <source> in discriminated union case declaration</source>
+        <target state="translated"> 구분된 공용 구조체 케이스 선언</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.localBinding">
+        <source> in binding</source>
+        <target state="translated"> 바인딩</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.hardwhiteLetBindings">
+        <source> in binding</source>
+        <target state="translated"> 바인딩</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classDefnMember">
+        <source> in member definition</source>
+        <target state="translated"> 멤버 정의</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.defnBindings">
+        <source> in definitions</source>
+        <target state="translated"> 정의</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfn">
+        <source> in member signature</source>
+        <target state="translated"> 멤버 시그니처</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.valSpfn">
+        <source> in value signature</source>
+        <target state="translated"> 값 시그니처</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.tyconSpfn">
+        <source> in type signature</source>
+        <target state="translated"> 형식 시그니처</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.anonLambdaExpr">
+        <source> in lambda expression</source>
+        <target state="translated"> 람다 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.attrUnionCaseDecl">
+        <source> in union case</source>
+        <target state="translated"> 공용 구조체 케이스</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.cPrototype">
+        <source> in extern declaration</source>
+        <target state="translated"> extern 선언</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.objectImplementationMembers">
+        <source> in object expression</source>
+        <target state="translated"> 개체 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.ifExprCases">
+        <source> in if/then/else expression</source>
+        <target state="translated"> if/then/else 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.openDecl">
+        <source> in open declaration</source>
+        <target state="translated"> 열려 있는 선언</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.fileModuleSpec">
+        <source> in module or namespace signature</source>
+        <target state="translated"> 모듈 또는 네임스페이스 시그니처</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.patternClauses">
+        <source> in pattern matching</source>
+        <target state="translated"> 패턴 일치</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.beginEndExpr">
+        <source> in begin/end expression</source>
+        <target state="translated"> begin/end 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.recdExpr">
+        <source> in record expression</source>
+        <target state="translated"> 레코드 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.tyconDefn">
+        <source> in type definition</source>
+        <target state="translated"> 형식 정의</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.exconCore">
+        <source> in exception definition</source>
+        <target state="translated"> 예외 정의</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeNameInfo">
+        <source> in type name</source>
+        <target state="translated"> 형식 이름</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.attributeList">
+        <source> in attribute list</source>
+        <target state="translated"> 특성 목록</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.quoteExpr">
+        <source> in quotation literal</source>
+        <target state="translated"> 인용구 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeConstraint">
+        <source> in type constraint</source>
+        <target state="translated"> 형식 제약 조건</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.ImplementationFile">
+        <source> in implementation file</source>
+        <target state="translated"> 구현 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Definition">
+        <source> in definition</source>
+        <target state="translated"> 정의</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.SignatureFile">
+        <source> in signature file</source>
+        <target state="translated"> 시그니처 파일</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Pattern">
+        <source> in pattern</source>
+        <target state="translated"> 패턴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Expr">
+        <source> in expression</source>
+        <target state="translated"> 식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Type">
+        <source> in type</source>
+        <target state="translated"> 형식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeArgsActual">
+        <source> in type arguments</source>
+        <target state="translated"> 형식 인수</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FixKeyword">
+        <source>keyword </source>
+        <target state="translated">키워드 </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FixSymbol">
+        <source>symbol </source>
+        <target state="translated">기호 </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FixReplace">
+        <source> (due to indentation-aware syntax)</source>
+        <target state="translated"> (들여쓰기 인식 구문 때문)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1">
+        <source>. Expected {0} or other token.</source>
+        <target state="translated">{0} 또는 기타 토큰이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1TokenName2">
+        <source>. Expected {0}, {1} or other token.</source>
+        <target state="translated">{0}, {1} 또는 기타 토큰이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1TokenName2TokenName3">
+        <source>. Expected {0}, {1}, {2} or other token.</source>
+        <target state="translated">{0}, {1}, {2} 또는 기타 토큰이 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuntimeCoercionSourceSealed1">
+        <source>The type '{0}' cannot be used as the source of a type test or runtime coercion</source>
+        <target state="translated">'{0}' 형식은 형식 테스트 또는 런타임 강제 변환의 소스로 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuntimeCoercionSourceSealed2">
+        <source>The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</source>
+        <target state="translated">'{0}' 형식에 적절한 하위 형식이 없으며 해당 형식을 형식 테스트 또는 런타임 강제 변환의 소스로 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CoercionTargetSealed">
+        <source>The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</source>
+        <target state="translated">'{0}' 형식에 적절한 하위 형식이 없으며 해당 형식을 정적 강제 변환의 대상으로 사용할 필요가 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpcastUnnecessary">
+        <source>This upcast is unnecessary - the types are identical</source>
+        <target state="translated">이 업캐스트는 불필요합니다. 형식이 동일합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TypeTestUnnecessary">
+        <source>This type test or downcast will always hold</source>
+        <target state="translated">이 형식 테스트 또는 다운캐스트는 항상 보류됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride1">
+        <source>The member '{0}' does not have the correct type to override any given virtual method</source>
+        <target state="translated">'{0}' 멤버에 임의의 지정된 가상 메서드를 재정의하기 위한 올바른 형식이 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride2">
+        <source>The member '{0}' does not have the correct type to override the corresponding abstract method.</source>
+        <target state="translated">'{0}' 멤버에 해당하는 추상 메서드를 재정의하기 위한 올바른 형식이 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride3">
+        <source> The required signature is '{0}'.</source>
+        <target state="translated"> 필요한 시그니처는 '{0}'입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride4">
+        <source>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</source>
+        <target state="translated">'{0}' 멤버가 'unit'으로 특수화되었지만 'unit'은 반환 형식에 대한 매개 변수가 있는 추상 메서드의 반환 형식으로 사용될 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseWrongArguments">
+        <source>This constructor is applied to {0} argument(s) but expects {1}</source>
+        <target state="translated">이 생성자는 {0}개의 인수에 적용되었지만 {1}개를 필요로 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionPatternsBindDifferentNames">
+        <source>The two sides of this 'or' pattern bind different sets of variables</source>
+        <target state="translated">이 'or' 패턴의 양쪽이 서로 다른 변수 집합을 바인딩합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueNotContained">
+        <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</source>
+        <target state="translated">{0}' 모듈에\n    {1}이(가) 포함되어 있지만    \n해당 시그니처는\n    {2}을(를) 지정합니다.    \n{3}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RequiredButNotSpecified">
+        <source>Module '{0}' requires a {1} '{2}'</source>
+        <target state="translated">{0}' 모듈에는 {1} '{2}'이(가) 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseOfAddressOfOperator">
+        <source>The use of native pointers may result in unverifiable .NET IL code</source>
+        <target state="translated">기본 포인터를 사용하면 확인할 수 없는 .NET IL 코드가 생성될 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefensiveCopyWarning">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DeprecatedThreadStaticBindingWarning">
+        <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
+        <target state="translated">Thread 정적 및 Context 정적 'let' 바인딩은 사용되지 않습니다. 대신 클래스에 'static val mutable &lt;ident&gt; : &lt;type&gt;' 형식의 선언을 사용하세요. 값이 각 새 스레드에서 기본값으로 초기화됨을 나타내려면 'DefaultValue' 특성을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FunctionValueUnexpected">
+        <source>This expression is a function value, i.e. is missing arguments. Its type is {0}.</source>
+        <target state="translated">이 식은 함수 값입니다. 즉, 인수가 없습니다. 해당 형식은 {0}입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpected">
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">이 식의 결과는 '{0}' 형식이며 암시적으로 무시됩니다. 'ignore'를 사용하여 이 값을 명시적으로 버리거나(예: 'expr |&gt; ignore'), 'let'을 사용하여 결과를 이름에 바인딩하세요(예: 'let result = expr').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithEquality">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">이 같음 식의 결과는 ‘{0}’ 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 속성으로 설정하려면 '&lt;-' 연산자를 사용하세요(예: '{1}.{2} &lt;- expression').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 값을 'mutable'로 표시하고 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RecursiveUseCheckedAtRuntime">
+        <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
+        <target state="translated">이러한 재귀적 사용은 런타임에 초기화 적합성이 확인됩니다. 이 경고는 일반적으로 무해하며 '#nowarn "21"' 또는 '--nowarn:21'을 사용하여 표시하지 않을 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsound1">
+        <source>The value '{0}' will be evaluated as part of its own definition</source>
+        <target state="translated">값 '{0}'은(는) 자체 정의의 일부로 계산됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsound2">
+        <source>This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</source>
+        <target state="translated">이 값은 결국 자체 정의의 일부로 계산됩니다. 값을 지연 값 또는 함수로 만들어야 할 수 있습니다. 값 '{0}'{1}입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsoundInner">
+        <source> will evaluate '{0}'</source>
+        <target state="translated"> '{0}'을(를) 계산합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecEvaluatedOutOfOrder">
+        <source>Bindings may be executed out-of-order because of this forward reference.</source>
+        <target state="translated">이 전방 참조로 인해 바인딩을 순서에 상관없이 실행할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecCheckedAtRuntime">
+        <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
+        <target state="translated">이 재귀 참조와 정의 대상 개체에 대한 기타 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 이는 사용자가 재귀 함수 대신 하나 이상의 재귀적 개체를 정의하기 때문입니다. 이 경고는 '#nowarn "40"' 또는 '--nowarn:40'을 사용하여 표시하지 않을 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SelfRefObjCtor1">
+        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
+        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 멤버 또는 '&lt;ctor-expr&gt; then &lt;expr&gt;' 형식의 후행 식 내에 자기 참조를 배치하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SelfRefObjCtor2">
+        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
+        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 생성 시퀀스의 'do' 문 내에서 마지막 'let' 바인딩 다음에 자기 참조를 배치하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="VirtualAugmentationOnNullValuedType">
+        <source>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</source>
+        <target state="translated">포함하는 형식은 'null'을 해당 nullary 공용 구조체 케이스에 대한 표현 값으로 사용할 수 있습니다. null 값에 대해 추상 또는 가상 멤버나 인터페이스 구현을 호출하면 예외가 발생합니다. 필요한 경우 nullary 생성자에 더미 데이터 값을 추가하여 'null'이 이 형식의 표현으로 사용되지 않게 하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonVirtualAugmentationOnNullValuedType">
+        <source>The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</source>
+        <target state="translated">포함하는 형식은 'null'을 해당 nullary 공용 구조체 케이스에 대한 표현 값으로 사용할 수 있습니다. 이 멤버는 정적 멤버로 컴파일됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot1">
+        <source>The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</source>
+        <target state="translated">'{0}' 멤버는 이름 및 인수 수만 볼 때 고유한 추상 슬롯에 해당하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot2">
+        <source>. Multiple implemented interfaces have a member with this name and argument count</source>
+        <target state="translated">구현된 여러 인터페이스에 이 이름 및 인수 수가 지정된 멤버가 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot3">
+        <source>. Consider implementing interfaces '{0}' and '{1}' explicitly.</source>
+        <target state="translated">'{0}' 및 '{1}' 인터페이스를 명시적으로 구현하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot4">
+        <source>. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</source>
+        <target state="translated">관련 재정의를 나타내기 위해 추가 형식 주석이 필요할 수 있습니다. 이 경고는 '#nowarn "70"' 또는 '--nowarn:70'을 통해 사용할 수 없도록 설정할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure1">
+        <source>parse error</source>
+        <target state="translated">구문 분석 오류</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure2">
+        <source>parse error: unexpected end of file</source>
+        <target state="translated">구문 분석 오류: 예기치 않은 파일의 끝입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure3">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure4">
+        <source>internal error: {0}</source>
+        <target state="translated">내부 오류: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullAbstraction">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncomplete1">
+        <source>Incomplete pattern matches on this expression.</source>
+        <target state="translated">이 식의 패턴 일치가 완전하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncomplete2">
+        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s).</source>
+        <target state="translated"> 예를 들어, 값 '{0}'은(는) 패턴에 포함되지 않은 케이스를 나타낼 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncomplete3">
+        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</source>
+        <target state="translated"> 예를 들어, 값 '{0}'은(는) 패턴에 포함되지 않은 케이스를 나타낼 수 있습니다. 그러나 'when' 절이 있는 패턴 규칙은 이 값과 성공적으로 일치할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncomplete4">
+        <source> Unmatched elements will be ignored.</source>
+        <target state="translated"> 일치하지 않는 요소는 무시됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">열거형이 알려진 사례를 벗어난 값을 사용할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuleNeverMatched">
+        <source>This rule will never be matched</source>
+        <target state="translated">이 규칙은 일치시킬 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutable">
+        <source>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</source>
+        <target state="translated">이 값은 변경할 수 없습니다. 변경 가능한 키워드(예: 'let mutable {0} = expression')를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotLocal">
+        <source>This value is not local</source>
+        <target state="translated">로컬 값이 아닙니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Obsolete1">
+        <source>This construct is deprecated</source>
+        <target state="translated">이 구문은 사용되지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Obsolete2">
+        <source>. {0}</source>
+        <target state="translated">. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental">
+        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
+        <target state="translated">{0}. 이 경고는 '--nowarn:57' 또는 '#nowarn "57"'을 통해 사용할 수 없도록 설정할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PossibleUnverifiableCode">
+        <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
+        <target state="translated">이 구문을 사용하면 확인할 수 없는 .NET IL 코드가 생성될 수 있습니다. 이 경고는 '--nowarn:9' 또는 '#nowarn "9"'를 통해 사용할 수 없도록 설정할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Deprecated">
+        <source>This construct is deprecated: {0}</source>
+        <target state="translated">이 구문은 사용되지 않습니다. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LibraryUseOnly">
+        <source>This construct is deprecated: it is only for use in the F# library</source>
+        <target state="translated">이 구문은 사용되지 않으며 F# 라이브러리에서만 사용할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MissingFields">
+        <source>The following fields require values: {0}</source>
+        <target state="translated">다음 필드에는 값이 필요합니다. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction1">
+        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction2">
+        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'을(를) 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction3">
+        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
+        <target state="translated">값 제한이 있습니다. 이 멤버는 제네릭 형식\n    {0}을(를) 가지는 것으로 유추되었습니다.    \n생성자 및 속성 getter/setter는 바깥쪽 형식보다 일반적일 수 없습니다. 형식 주석을 추가하여 관련 형식을 정확히 나타내세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction4">
+        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction5">
+        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'을(를) 단순 데이터 용어로 정의하거나, 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RecoverableParseError">
+        <source>syntax error</source>
+        <target state="translated">구문 오류입니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReservedKeyword">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndentationProblem">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideInIntrinsicAugmentation">
+        <source>Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</source>
+        <target state="translated">확대의 재정의 구현은 이제 사용되지 않습니다. 재정의 구현은 초기 형식 선언의 일부로 지정해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideInExtrinsicAugmentation">
+        <source>Override implementations should be given as part of the initial declaration of a type.</source>
+        <target state="translated">재정의 구현은 초기 형식 선언의 일부로 지정해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntfImplInIntrinsicAugmentation">
+        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
+        <target state="translated">확대의 인터페이스 구현은 이제 사용되지 않습니다. 인터페이스 구현은 초기 형식 선언 시 지정해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntfImplInExtrinsicAugmentation">
+        <source>Interface implementations should be given on the initial declaration of a type.</source>
+        <target state="translated">인터페이스 구현은 초기 형식 선언 시 지정해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnresolvedReferenceNoRange">
+        <source>A required assembly reference is missing. You must add a reference to assembly '{0}'.</source>
+        <target state="translated">필요한 어셈블리 참조가 없습니다. '{0}' 어셈블리에 대한 참조를 추가해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnresolvedPathReferenceNoRange">
+        <source>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</source>
+        <target state="translated">{0}'을(를) 통해 참조되는 형식이 참조되지 않는 어셈블리에 정의되어 있습니다. '{1}' 어셈블리에 대한 참조를 추가해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashIncludeNotAllowedInNonScript">
+        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#I 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 발생할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나, 이 참조에 대한 '-I' 컴파일러 옵션을 추가하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashReferenceNotAllowedInNonScript">
+        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">#r 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 발생할 수 있습니다. 이 코드를 스크립트 파일로 이동하거나 이 참조를 '-r' 컴파일러 옵션으로 바꾸세요. 이 지시문이 사용자 입력으로 실행되는 경우 지시문을 '#if INTERACTIVE'/'#endif'로 구분할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashDirectiveNotAllowedInNonScript">
+        <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="translated">이 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 사용할 수 있습니다. 지시문을 제거하거나, 이 코드를 스크립트 파일로 이동하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameNotResolved">
+        <source>Unable to find the file '{0}' in any of\n {1}</source>
+        <target state="translated">다음에서 '{0}' 파일을 찾을 수 없습니다.\n {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AssemblyNotResolved">
+        <source>Assembly reference '{0}' was not found or is invalid</source>
+        <target state="translated">어셈블리 참조 '{0}'이(가) 없거나 잘못되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedSourceHasIssues1">
+        <source>One or more warnings in loaded file.\n</source>
+        <target state="translated">로드된 파일에 하나 이상의 경고가 있습니다.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedSourceHasIssues2">
+        <source>One or more errors in loaded file.\n</source>
+        <target state="translated">로드된 파일에 하나 이상의 오류가 있습니다.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedScriptConsideredSource">
+        <source>Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</source>
+        <target state="translated">로드된 파일은 F# 소스 파일(확장명 .fs)일 수만 있습니다. 이 F# 스크립트 파일(.fsx 또는 .fsscript)은 F# 소스 파일로 처리됩니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidInternalsVisibleToAssemblyName1">
+        <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</source>
+        <target state="translated">{1}에 있는 InternalsVisibleTo 특성의 어셈블리 이름 '{0}'이(가) 잘못되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidInternalsVisibleToAssemblyName2">
+        <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</source>
+        <target state="translated">InternalsVisibleTo 특성의 어셈블리 이름 '{0}'이(가) 잘못되었습니다. 어셈블리 파일 이름을 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LoadedSourceNotFoundIgnoring">
+        <source>Could not load file '{0}' because it does not exist or is inaccessible</source>
+        <target state="translated">'{0}' 파일이 없거나 이 파일에 액세스할 수 없으므로 파일을 로드할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MSBuildReferenceResolutionError">
+        <source>{0} (Code={1})</source>
+        <target state="translated">{0}(코드={1})</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetInvocationExceptionWrapper">
+        <source>internal error: {0}</source>
+        <target state="translated">내부 오류: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="translated">기호 '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="translated">기호 '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">키워드 'and!'</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

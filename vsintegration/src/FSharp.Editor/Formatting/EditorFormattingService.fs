@@ -6,13 +6,13 @@ open System.Composition
 open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Tokenization
 open System.Threading
 open System.Windows.Forms
 
@@ -20,8 +20,6 @@ open System.Windows.Forms
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     
@@ -42,7 +40,7 @@ type internal FSharpEditorFormattingService
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
@@ -153,8 +151,8 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, parsingOptions, position)
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
             return textChange |> Option.toList |> toIList
         }
         
@@ -164,7 +162,7 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document) 
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
             let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }

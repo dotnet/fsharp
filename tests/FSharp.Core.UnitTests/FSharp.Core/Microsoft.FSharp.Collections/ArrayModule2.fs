@@ -780,91 +780,89 @@ type ArrayModule2() =
     member this.Sum() =
         // empty integer array 
         let resultEptInt = Array.sum ([||]:int[]) 
-        if resultEptInt <> 0 then Assert.Fail()    
+        if resultEptInt <> 0 then Assert.Fail(sprintf "int: should 0 but is %i" resultEptInt)
         
         // empty float32 array
         let emptyFloatArray = Array.empty<System.Single> 
         let resultEptFloat = Array.sum emptyFloatArray 
-        if resultEptFloat <> 0.0f then Assert.Fail()
+        if resultEptFloat <> 0.0f then Assert.Fail(sprintf "float32: should be 0 but is %.10f" resultEptFloat)
         
         // empty double array
         let emptyDoubleArray = Array.empty<System.Double> 
-        let resultDouEmp = Array.sum emptyDoubleArray 
-        if resultDouEmp <> 0.0 then Assert.Fail()
+        let resultEptDouble = Array.sum emptyDoubleArray 
+        if resultEptDouble <> 0.0 then Assert.Fail(sprintf "float: should be 0 but is %.10f" resultEptDouble)
         
         // empty decimal array
         let emptyDecimalArray = Array.empty<System.Decimal> 
-        let resultDecEmp = Array.sum emptyDecimalArray 
-        if resultDecEmp <> 0M then Assert.Fail()
+        let resultEptDec = Array.sum emptyDecimalArray 
+        if resultEptDec <> 0M then Assert.Fail(sprintf "decimal: should be 0 but is %M" resultEptDec)
 
         // integer array  
         let resultInt = Array.sum [|1..10|] 
-        if resultInt <> 55 then Assert.Fail()  
+        if resultInt <> 55 then Assert.Fail(sprintf "int: should 55 but is %i" resultInt)
         
         // float32 array
         let floatArray: float32[] = [| 1.1f; 1.1f; 1.1f |]
         let resultFloat = Array.sum floatArray
-        if resultFloat < 3.3f - 0.001f || resultFloat > 3.3f + 0.001f then
-            Assert.Fail()
+        if abs (resultFloat - 3.3f) > 0.000001f then Assert.Fail(sprintf "float32: should be 3.3 but is %.10f" resultFloat)
         
         // double array
         let doubleArray: System.Double[] = [| 1.0; 8.0 |]
         let resultDouble = Array.sum doubleArray
-        if resultDouble <> 9.0 then Assert.Fail()
+        if resultDouble <> 9.0 then Assert.Fail(sprintf "float: should be 9.0 but is %.10f" resultDouble)
         
         // decimal array
         let decimalArray: decimal[] = [| 0M; 19M; 19.03M |]
         let resultDecimal = Array.sum decimalArray
-        if resultDecimal <> 38.03M then Assert.Fail()      
+        if resultDecimal <> 38.03M then Assert.Fail(sprintf "decimal: should be 38.03 but is %M" resultDecimal)
  
         // null array
         let nullArr = null:double[]    
-        CheckThrowsArgumentNullException (fun () -> Array.sum  nullArr  |> ignore) 
+        CheckThrowsArgumentNullException (fun () -> Array.sum nullArr |> ignore) 
         ()
 
     [<Fact>]
     member this.SumBy() =
-        // empty integer array         
-        let resultEptInt = Array.sumBy int ([||]:int[]) 
-        if resultEptInt <> 0 then Assert.Fail()    
+        // empty integer array
+        let resultEptInt = Array.sumBy int ([||]:int[])
+        if resultEptInt <> 0 then Assert.Fail(sprintf "int: should 0 but is %i" resultEptInt)
         
         // empty float32 array
-        let emptyFloatArray = Array.empty<System.Single> 
-        let resultEptFloat = Array.sumBy float32 emptyFloatArray 
-        if resultEptFloat <> 0.0f then Assert.Fail()
+        let emptyFloatArray = Array.empty<System.Single>
+        let resultEptFloat = Array.sumBy float32 emptyFloatArray
+        if resultEptFloat <> 0.0f then Assert.Fail(sprintf "float32: should be 0 but is %.10f" resultEptFloat)
         
         // empty double array
-        let emptyDoubleArray = Array.empty<System.Double> 
-        let resultDouEmp = Array.sumBy float emptyDoubleArray 
-        if resultDouEmp <> 0.0 then Assert.Fail()
+        let emptyDoubleArray = Array.empty<System.Double>
+        let resultEptDouble = Array.sumBy float emptyDoubleArray
+        if resultEptDouble <> 0.0 then Assert.Fail(sprintf "float: should be 0 but is %.10f" resultEptDouble)
         
         // empty decimal array
-        let emptyDecimalArray = Array.empty<System.Decimal> 
-        let resultDecEmp = Array.sumBy decimal emptyDecimalArray 
-        if resultDecEmp <> 0M then Assert.Fail()
+        let emptyDecimalArray = Array.empty<System.Decimal>
+        let resultEptDec = Array.sumBy decimal emptyDecimalArray
+        if resultEptDec <> 0M then Assert.Fail(sprintf "decimal: should be 0 but is %M" resultEptDec)
 
-        // integer array  
-        let resultInt = Array.sumBy int [|1..10|] 
-        if resultInt <> 55 then Assert.Fail()  
+        // integer array
+        let resultInt = Array.sumBy int [|1..10|]
+        if resultInt <> 55 then Assert.Fail(sprintf "int: should 55 but is %i" resultInt)
         
         // float32 array
         let floatArray: string[] = [| "1.2";"3.5";"6.7" |]
         let resultFloat = Array.sumBy float32 floatArray
-        if resultFloat <> 11.4f then Assert.Fail()
+        if abs (resultFloat - 11.4f) > 0.000001f then Assert.Fail(sprintf "float32: should be 11.4 but is %.10f" resultFloat)
         
         // double array
         let doubleArray: System.Double[] = [| 1.0;8.0 |]
         let resultDouble = Array.sumBy float doubleArray
-        if resultDouble <> 9.0 then Assert.Fail()
+        if resultDouble <> 9.0 then Assert.Fail(sprintf "float: should be 9.0 but is %.10f" resultDouble)
         
         // decimal array
         let decimalArray: decimal[] = [| 0M;19M;19.03M |]
         let resultDecimal = Array.sumBy decimal decimalArray
-        if resultDecimal <> 38.03M then Assert.Fail()      
-        
+        if resultDecimal <> 38.03M then Assert.Fail(sprintf "decimal: should be 38.03 but is %M" resultDecimal)
         // null array
-        let nullArr = null:double[]    
-        CheckThrowsArgumentNullException (fun () -> Array.sumBy float32  nullArr  |> ignore) 
+        let nullArr = null:double[]
+        CheckThrowsArgumentNullException (fun () -> Array.sumBy float32 nullArr |> ignore)
         ()
 
     [<Fact>]
@@ -1332,3 +1330,88 @@ type ArrayModule2() =
         // Index greater than length
         let resultIndexGreater = Array.tryItem 14 [| 3;1;6;2 |]
         Assert.AreEqual(None, resultIndexGreater)
+    
+    [<Fact>]
+    member this.RemoveAt() =
+        // integer list
+        Assert.AreEqual([|2; 3; 4; 5|], (Array.removeAt 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 4; 5|], (Array.removeAt 2 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4|], (Array.removeAt 4 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"2"; "3"; "4"; "5"|], (Array.removeAt 0 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "4"; "5"|], (Array.removeAt 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"|], (Array.removeAt 4 [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.removeAt 0 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeAt -1 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeAt 2 [|1|] |> ignore)
+        
+    [<Fact>]
+    member this.RemoveManyAt() =
+        // integer list
+        Assert.AreEqual([|3; 4; 5|], (Array.removeManyAt 0 2 [|1..5|]))
+        Assert.AreEqual([|1; 2; 5|], (Array.removeManyAt 2 2 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3|], (Array.removeManyAt 3 2 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"3"; "4"; "5"|], (Array.removeManyAt 0 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "5"|], (Array.removeManyAt 2 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"|], (Array.removeManyAt 3 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt 0 2 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt -1 2 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt 2 2 [|1|] |> ignore)
+        
+    [<Fact>]
+    member this.UpdateAt() =
+        // integer list
+        Assert.AreEqual([|0; 2; 3; 4; 5|], (Array.updateAt 0 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 4; 5|], (Array.updateAt 2 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0|], (Array.updateAt 4 0 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "2"; "3"; "4"; "5"|], (Array.updateAt 0 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "4"; "5"|], (Array.updateAt 2 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"|], (Array.updateAt 4 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.updateAt 0 0 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateAt -1 0 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateAt 2 0 [|1|] |> ignore)
+        
+    [<Fact>]
+    member this.InsertAt() =
+        // integer list
+        Assert.AreEqual([|0; 1; 2; 3; 4; 5|], (Array.insertAt 0 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 3; 4; 5|], (Array.insertAt 2 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0; 5|], (Array.insertAt 4 0 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "1"; "2"; "3"; "4"; "5"|], (Array.insertAt 0 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "3"; "4"; "5"|], (Array.insertAt 2 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"; "5"|], (Array.insertAt 4 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0], Array.insertAt 0 0 [||])
+        CheckThrowsArgumentException (fun () -> Array.insertAt -1 0 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.insertAt 2 0 [|1|] |> ignore)
+        
+    [<Fact>]
+    member this.InsertManyAt() =
+        // integer list
+        Assert.AreEqual([|0; 0; 1; 2; 3; 4; 5|], (Array.insertManyAt 0 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 0; 3; 4; 5|], (Array.insertManyAt 2 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0; 0; 5|], (Array.insertManyAt 4 [0; 0] [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "0"; "1"; "2"; "3"; "4"; "5"|], (Array.insertManyAt 0 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "0"; "3"; "4"; "5"|], (Array.insertManyAt 2 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"; "0"; "5"|], (Array.insertManyAt 4 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0; 0], Array.insertManyAt 0 [0; 0] [||])
+        CheckThrowsArgumentException (fun () -> Array.insertManyAt -1 [0; 0] [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.insertManyAt 2 [0; 0] [|1|] |> ignore)

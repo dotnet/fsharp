@@ -11,46 +11,46 @@ module FSharp.Compiler.Service.Tests.PerfTests
 open NUnit.Framework
 open FsUnit
 open System.IO
-
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
-
 open FSharp.Compiler.Service.Tests.Common
+open TestFramework
 
-// Create an interactive checker instance 
+// Create an interactive checker instance
 let internal checker = FSharpChecker.Create()
 
-module internal Project1 = 
+module internal Project1 =
 
-    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
-    let base2 = Path.GetTempFileName()
+    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")) ]
+    let base2 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do File.WriteAllText(f, text)
-    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
+    let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]
+    for f,text in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
+    let fileSources2 = [ for i,f in fileSources -> SourceText.ofString f ]
 
-    let fileNames = [ for (_,f) in fileNamesI -> f ]
+    let fileNames = [ for _,f in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
 
 [<Test>]
-let ``Test request for parse and check doesn't check whole project`` () = 
+let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "starting test..."
-    let backgroundParseCount = ref 0 
-    let backgroundCheckCount = ref 0 
+    let backgroundParseCount = ref 0
+    let backgroundCheckCount = ref 0
     checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
     checker.FileParsed.Add (fun x -> incr backgroundParseCount)
 
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    let pB, tB = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
+    let pB, tB = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
 
     printfn "ParseFile()..."
-    let parseResults1 = checker.ParseFile(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.parsingOptions)  |> Async.RunSynchronously
-    let pC, tC = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
+    let parseResults1 = checker.ParseFile(Project1.fileNames[5], Project1.fileSources2[5], Project1.parsingOptions)  |> Async.RunImmediate
+    let pC, tC = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     (pC - pB) |> shouldEqual 1
     (tC - tB) |> shouldEqual 0
     printfn "checking backgroundParseCount.Value = %d" backgroundParseCount.Value
@@ -59,8 +59,8 @@ let ``Test request for parse and check doesn't check whole project`` () =
     backgroundCheckCount.Value |> shouldEqual 0
 
     printfn "CheckFileInProject()..."
-    let checkResults1 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[5], 0, Project1.fileSources2.[5], Project1.options)  |> Async.RunSynchronously
-    let pD, tD = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
+    let checkResults1 = checker.CheckFileInProject(parseResults1, Project1.fileNames[5], 0, Project1.fileSources2[5], Project1.options)  |> Async.RunImmediate
+    let pD, tD = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
 
     printfn "checking background parsing happened...., backgroundParseCount.Value = %d" backgroundParseCount.Value
     (backgroundParseCount.Value  >= 5) |> shouldEqual true // but note, the project does not get reparsed
@@ -78,8 +78,8 @@ let ``Test request for parse and check doesn't check whole project`` () =
     (tD - tC) |> shouldEqual 1
 
     printfn "CheckFileInProject()..."
-    let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunSynchronously
-    let pE, tE = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
+    let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames[7], 0, Project1.fileSources2[7], Project1.options)  |> Async.RunImmediate
+    let pE, tE = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     printfn "checking no extra  foreground parsing...., (pE - pD) = %d" (pE - pD)
     (pE - pD) |> shouldEqual 0
     printfn "checking one foreground typecheck...., tE - tD = %d" (tE - tD)
@@ -91,8 +91,8 @@ let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "ParseAndCheckFileInProject()..."
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
-    let checkResults2 = checker.ParseAndCheckFileInProject(Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunSynchronously
-    let pF, tF = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
+    let checkResults2 = checker.ParseAndCheckFileInProject(Project1.fileNames[7], 0, Project1.fileSources2[7], Project1.options)  |> Async.RunImmediate
+    let pF, tF = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     printfn "checking no extra foreground parsing...."
     (pF - pE) |> shouldEqual 0  // note, no new parse of the file
     printfn "checking no extra foreground typechecks...."
@@ -102,4 +102,3 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
     (backgroundCheckCount.Value <= 10) |> shouldEqual true // only two extra typechecks of files
     ()
-

@@ -1,23 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 //
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\GoToDefinitionServiceTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
@@ -29,7 +12,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
@@ -40,26 +24,22 @@ module GoToDefinitionServiceTests =
 
     let private findDefinition
         (
-            checker: FSharpChecker, 
-            documentKey: DocumentId, 
-            sourceText: SourceText, 
-            filePath: string, 
+            document: Document,
+            sourceText: SourceText,
             position: int,
-            defines: string list, 
-            options: FSharpProjectOptions, 
-            textVersionHash: int
+            defines: string list 
         ) : range option = 
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash,  sourceText, options, LanguageServicePerformanceOptions.Default, userOpName=userOpName)  |> Async.RunSynchronously
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(userOpName)) |> Async.RunSynchronously
 
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
             match declarations with
-            | FSharpFindDeclResult.DeclFound range -> return range
+            | FindDeclResult.DeclFound range -> return range
             | _ -> return! None
         }
 
@@ -75,20 +55,18 @@ module GoToDefinitionServiceTests =
             LoadTime = DateTime.MaxValue
             OriginalLoadReferences = []
             UnresolvedReferences = None
-            ExtraProjectInfo = None
             Stamp = None
         }
 
     let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
         let filePath = Path.GetTempFileName() + ".fs"
-        let options = makeOptions filePath [| |]
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
         let actual = 
-           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
+           findDefinition(document, sourceText, caretPosition, []) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 

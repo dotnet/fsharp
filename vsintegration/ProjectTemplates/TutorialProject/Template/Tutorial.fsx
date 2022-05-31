@@ -1,4 +1,4 @@
-﻿// @@@SampleHeader|This sample will guide you through elements of the F# language.@@@
+// @@@SampleHeader|This sample will guide you through elements of the F# language.@@@
 //
 // *******************************************************************************************************
 //   @@@Instructions-Line1|To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click@@@
@@ -986,12 +986,3 @@ module Events =
 
     // @@@TriggerEventWithArgs|Next, trigger this event (note that sender argument should be set).@@@
     eventForDelegateType.Trigger(null, EventArgs.Empty)
-
-
-
-#if COMPILED
-module BoilerPlateForForm =
-    [<System.STAThread>]
-    do ()
-    do System.Windows.Forms.Application.Run()
-#endif

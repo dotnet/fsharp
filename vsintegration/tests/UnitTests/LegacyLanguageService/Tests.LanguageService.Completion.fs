@@ -29,7 +29,7 @@ module StandardSettings =
 type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
-    let createFile (code : list<string>) fileKind refs otherFlags = 
+    let createFile (code : string list) fileKind refs otherFlags = 
         let (_, _, file) = 
             match code with
             | [code] when code.IndexOfAny([|'\r'; '\n'|]) <> -1 ->
@@ -38,7 +38,7 @@ type UsingMSBuild() as this  =
                 this.CreateSingleFileProject(code, fileKind = fileKind, references = refs, ?otherFlags=otherFlags)
         file
 
-    let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : list<string>) marker f  =        
+    let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =        
         // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint valdiation etc. 
         // This might be before the before the background builder is ready to process the foreground typecheck.
         // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
@@ -53,11 +53,11 @@ type UsingMSBuild() as this  =
         gpatcc.AssertExactly(0,0)
 
 
-    let DoWithAutoComplete coffeeBreak fileKind reason otherFlags (code : list<string>) marker f  =
+    let DoWithAutoComplete coffeeBreak fileKind reason otherFlags (code : string list) marker f  =
         DoWithAutoCompleteUsingExtraRefs [] otherFlags coffeeBreak fileKind reason code marker f
 
-    let AssertAutoCompleteContainsAux coffeeBreak filename reason otherFlags code marker  should shouldnot  =        
-        DoWithAutoComplete coffeeBreak filename reason otherFlags code marker (fun completions ->
+    let AssertAutoCompleteContainsAux coffeeBreak fileName reason otherFlags code marker  should shouldnot  =        
+        DoWithAutoComplete coffeeBreak fileName reason otherFlags code marker (fun completions ->
             AssertCompListContainsAll(completions, should)
             AssertCompListDoesNotContainAny(completions, shouldnot))
 
@@ -134,7 +134,7 @@ type UsingMSBuild() as this  =
 
 
     // There are some dot completion tests in this type as well, in the systematic tests for queries
-    member private this.VerifyDotCompListContainAllAtStartOfMarker(fileContents : string, marker : string, list :string list, ?addtlRefAssy:list<string>, ?coffeeBreak:bool) =
+    member private this.VerifyDotCompListContainAllAtStartOfMarker(fileContents : string, marker : string, list :string list, ?addtlRefAssy:string list, ?coffeeBreak:bool) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         //to add references
@@ -143,7 +143,7 @@ type UsingMSBuild() as this  =
         AssertCompListContainsAll(completions, list)
 
     // There are some quickinfo tests in this file as well, in the systematic tests for queries
-    member public this.InfoInDeclarationTestQuickInfoImpl(code : string,marker,expected,atStart, ?addtlRefAssy : list<string>) =
+    member public this.InfoInDeclarationTestQuickInfoImpl(code : string,marker,expected,atStart, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(code, ?references = addtlRefAssy)
 
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -156,7 +156,7 @@ type UsingMSBuild() as this  =
         AssertContains(tooltip, expected) 
         gpatcc.AssertExactly(0,0)
 
-    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : list<string>) =
+    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : string list) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,false,?addtlRefAssy=addtlRefAssy)
     static member charExpectedCompletions = [
         "CompareTo"; // Members defined on System.Char
@@ -207,7 +207,7 @@ type UsingMSBuild() as this  =
           [ ] // should not contain   
 
     //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
-    member private this.AssertCtrlSpaceCompletionContains(fileContents : list<string>, marker, expected, ?addtlRefAssy: list<string>)  = 
+    member private this.AssertCtrlSpaceCompletionContains(fileContents : string list, marker, expected, ?addtlRefAssy: string list)  = 
         this.AssertCtrlSpaceCompletion(
             fileContents,
             marker,
@@ -222,19 +222,19 @@ type UsingMSBuild() as this  =
         )
 
    //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
-    member private this.AssertCtrlSpaceCompletion(fileContents : list<string>, marker, checkCompletion: (CompletionItem array -> unit), ?addtlRefAssy: list<string>)  = 
+    member private this.AssertCtrlSpaceCompletion(fileContents : string list, marker, checkCompletion: (CompletionItem array -> unit), ?addtlRefAssy: string list)  = 
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         MoveCursorToEndOfMarker(file,marker)
         let completions = CtrlSpaceCompleteAtCursor file
         checkCompletion completions
 
-    member private this.AutoCompletionListNotEmpty (fileContents : list<string>) marker  = 
+    member private this.AutoCompletionListNotEmpty (fileContents : string list) marker  = 
         let (_, _, file) = this.CreateSingleFileProject(fileContents)
         MoveCursorToEndOfMarker(file,marker)
         let completions = AutoCompleteAtCursor file
         Assert.AreNotEqual(0,completions.Length)
 
-    member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : list<string>) secondSrc marker =     
+    member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : string list) secondSrc marker =     
         let (_, _, file) = this.CreateSingleFileProject(firstSrc)
         MoveCursorToEndOfMarker(file,marker)
 
@@ -257,14 +257,14 @@ type UsingMSBuild() as this  =
         AssertCompListContainsAll(completions, list)
 
         //DoesNotContainAny At Start Of Marker Helper Function 
-    member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : list<string>) =
+    member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         let completions = DotCompletionAtStartOfMarker file marker
         AssertCompListDoesNotContainAny(completions, list)
 
         //DotCompList Is Empty At Start Of Marker Helper Function
-    member private this.VerifyDotCompListIsEmptyAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : list<string>) =
+    member private this.VerifyDotCompListIsEmptyAtStartOfMarker(fileContents : string, marker : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
         let completions = DotCompletionAtStartOfMarker file marker
@@ -786,15 +786,15 @@ for i in 0..a."]
             ]
         let useCases = 
             [
-                "let _ = (* MARKER*){X", "(* MARKER*){X", [], ["XX"]
+                "let _ = (* MARKER*){X  }", "(* MARKER*){X", [], ["XX"]
                 "let _ = {(* MARKER*)Mod. = 1; O", "(* MARKER*)Mod.", ["XX"; "YY"], ["System"]
                 "let _ = {(* MARKER*)Mod.Rec. ", "(* MARKER*)Mod.Rec.", ["XX"; "YY"], ["System"]
+                "let _ = (* MARKER*){Mod.XX = 1;  }", "(* MARKER*){Mod.XX = 1; ", ["Mod"], ["XX"; "abs"]
             ]
 
         for (code, marker, should, shouldnot) in useCases do
             let code = prologue @ [code]
-            let shouldnot = shouldnot @ ["abs"]
-            AssertCtrlSpaceCompleteContains code marker should ["abs"]
+            AssertCtrlSpaceCompleteContains code marker should shouldnot
     
     [<Test>]
     [<Category("Records")>]
@@ -832,8 +832,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -853,8 +853,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val _field1 : int"
-                "   val _field2 : string"
+                "   val _field1: int"
+                "   val _field2: string"
             ]
 
         let useCases = 
@@ -939,8 +939,8 @@ for i in 0..a."]
                 "type A = class end"
                 "type B = "
                 "   inherit A"
-                "   val f1 : int"
-                "   val f2 : int"
+                "   val f1: int"
+                "   val f2: int"
             ]
         
         let useCases = 
@@ -980,55 +980,13 @@ for i in 0..a."]
 
     [<Test>]
     [<Category("Records")>]
-    member public this.``Records.WRONG.MissingBindings``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A = 1; _;  }"], "; _;", ["AAA"; "BBB"]
-                ["let _ = {A = 1; _=; }"], " _=;", ["AAA"; "BBB"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-
-
-    [<Test>]
-    [<Category("Records")>]
-    member public this.``Records.WRONG.IncorrectNameResEnv``() = 
-        // this test should be removed after fixing 279738
-        let prologue = 
-            [
-                "type R = {AAA : int; BBB : bool; CCC : int}"
-            ]
-        let useCases =
-            [
-                ["let _ = {A}"], "_ = {A", ["AAA"; "BBB"; "CCC"]
-                ["let _ = {AAA = 1; }"], "_ = {AAA = 1;", ["AAA"; "BBB"; "CCC"]
-            ]
-
-        for (code, marker, shouldNot) in useCases do
-            let code = prologue @ code
-            printfn "running:"
-            printfn "%s" (String.concat "\r\n" code)
-            AssertCtrlSpaceCompleteContains code marker [] shouldNot
-
-    [<Test>]
-    [<Category("Records")>]
     member public this.``Records.WRONG.ErrorsInFirstBinding``() =
         // errors in the first binding are critical now
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -1279,7 +1237,7 @@ for i in 0..a."]
         AssertCtrlSpaceCompleteContains code "? y." ["Chars"; "Length"] ["abs"]
 
     [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Query.ForKeywordCanCompleteIntoIdentifier``() = 
         let code = 
             [
@@ -1473,25 +1431,6 @@ let x = new MyClass2(0)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
     [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.Popup``() =
-        // Salsa is no yet capable of determining whether there would be a popup, it can only test what would appear if there were.
-        // So can't do test below.
-//        AssertAutoCompleteContainsNoCoffeeBreak 
-//          [ "System.Console..BackgroundColor" ]
-//          "System.Console.."
-//          [ ] // should be empty - in fact, there is no popup here
-//          [ "abs"; "BackgroundColor" ] // should not contain anything
-        ()
-
-    [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.CtrlSpace``() =
-        AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
-          [ "System.Console..BackgroundColor" ]
-          "System.Console.."
-          [ ] // should contain nothing - .. is not properly used range operator
-          [ "abs" ] // should not contain (from prior System.Console)
-    
-    [<Test>]
     member public this.``DotCompletionInPatternsPartOfLambda``() = 
         let content = ["let _ = fun x . -> x + 1"]
         AssertCtrlSpaceCompletionListIsEmpty content "x ."
@@ -1540,7 +1479,7 @@ let x = new MyClass2(0)
 
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let someCall(x) = null"
@@ -1550,7 +1489,7 @@ let x = new MyClass2(0)
           [ "LastIndexOfAny" ] // should not contain (String)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1.CoffeeBreak``() =
         AssertAutoCompleteContains
           [ "let someCall(x) = null"
@@ -2083,7 +2022,7 @@ let x = new MyClass2(0)
           []
 
     [<Test;Category("Repro")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``CurriedArguments.Regression1``() = 
         AssertCtrlSpaceCompleteContainsNoCoffeeBreak  
            ["let fffff x y = 1"
@@ -2508,7 +2447,7 @@ let x = new MyClass2(0)
     [<Test>]
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``QueryExpressions.QueryAndSequenceExpressionWithForYieldLoopSystematic``() = 
 
         let prefix =  """
@@ -2610,7 +2549,7 @@ let aaaaaa = 0
     [<Test>]
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     /// Incrementally enter query with a 'join' and check for availability of quick info, auto completion and dot completion 
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnSingleLine``() = 
 
@@ -2665,7 +2604,7 @@ let aaaaaa = 0
     /// This is a sanity check that the multiple-line case is much the same as the single-line cae
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnMultipleLine``() = 
 
         let prefix =  """
@@ -2832,7 +2771,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     (* Various parser recovery test cases -------------------------------------------------- *)
 
 //*****************Helper Function*****************
-    member public this.AutoCompleteRecoveryTest(source : list<string>, marker, expected) =
+    member public this.AutoCompleteRecoveryTest(source : string list, marker, expected) =
         let (_, _, file) = this.CreateSingleFileProject(source)
         MoveCursorToEndOfMarker(file, marker)
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
@@ -3127,6 +3066,38 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Array.AfterOperator...Bug65732_B``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue..42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B2``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue.. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B3``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_C``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue..]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_D``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. ]" ]
           ".."       // marker
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
@@ -4245,38 +4216,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain
 
     [<Test>]
-    member public this.``InDeclaration.Bug3176a``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "aa"       // marker
-          [ "aaaa" ] // should contain
-          [ "bbbb" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176b``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "bb"       // marker
-          [ "bbbb" ] // should contain
-          [ "aaaa" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176c``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type C =";
-                      "  val aaaa : int" ]
-          "aa"        // move to marker
-          ["aaaa"] [] // should contain 'aaaa'
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176d``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type DU<'a> =";
-                      "  | DULabel of 'a" ]
-          "DULab"        // move to marker
-          ["DULabel"] [] // should contain 'DULabel'
-          
-    [<Test>]
     member public this.``IncompleteIfClause.Bug4594``() = 
         AssertCtrlSpaceCompleteContains 
           [ "let Bar(xyz) =";
@@ -4526,7 +4465,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         // Save file2
         ReplaceFileInMemory file2 [""]
-        SaveFileToDisk file2      
+        SaveFileToDisk file2    
+        let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
         gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
@@ -4609,7 +4549,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
 
 (*
-/// FEATURE: The filename on disk and the filename in the project can differ in case.
+/// FEATURE: The fileName on disk and the fileName in the project can differ in case.
     [<Test>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 
@@ -5124,6 +5064,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
 
     [<Test>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -5145,7 +5086,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561.Noteworthy.NowWorks``() =        
         let code = [ "123      " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -5168,7 +5109,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =        
         let code = [ "let someCall(x) = null"
                      "let xe = someCall(System.IO.StringReader()  "]
@@ -5211,7 +5152,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor(file)
         AssertCompListContainsAll(completions, list)
 
-    member private this.VerifyCtrlSpaceListContainAllAtStartOfMarker(fileContents : string, marker : string, list : string list, ?coffeeBreak:bool, ?addtlRefAssy:list<string>) =
+    member private this.VerifyCtrlSpaceListContainAllAtStartOfMarker(fileContents : string, marker : string, list : string list, ?coffeeBreak:bool, ?addtlRefAssy:string list) =
         let coffeeBreak = defaultArg coffeeBreak false
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         MoveCursorToStartOfMarker(file, marker)
@@ -6224,7 +6165,7 @@ let rec f l =
             marker = "(*MarkerMethodInType*)",
             list = ["PrivateMethod"])       
 
-    [<Test>]
+//    [<Test>]
     member this.``VariableIdentifier.AsParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6951,7 +6892,7 @@ let rec f l =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
                 type f1(*MarkerType*) = 
-                    val field : int""",
+                    val field: int""",
             marker = "(*MarkerType*)")
 
     [<Test>]
@@ -7126,7 +7067,7 @@ let rec f l =
 
     //Regression test for bug 65740 Fsharp: dot completion is mission after a '#' statement
     [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member this.``Identifier.In#Statement``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -7148,7 +7089,6 @@ let rec f l =
         let (_, _, file) = this.CreateSingleFileProject(code)
 
         TakeCoffeeBreak(this.VS)
-        let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
         // In this case, we quickly type "." and then get dot-completions
         // For "level <- Module" this shows completions from the "Module" (e.g. "Module.Other")
@@ -7161,7 +7101,6 @@ let rec f l =
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Length"])
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
-        gpatcc.AssertExactly(0,0)
 
     [<Test>]
     member this.``SelfParameter.InDoKeywordScope``() =

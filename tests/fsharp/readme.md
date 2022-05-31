@@ -11,7 +11,7 @@ The framework and utilities can be found in test-framework.fs, single-test.fs, c
 test cases look similar to:
 ````
     [<Test>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+    let ``array-FSI`` () = singleTestBuildAndRun "core/array" FSI
 ````
 This test case builds and runs the test case in the folder core/array
 

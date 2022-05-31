@@ -9,7 +9,12 @@
       </trans-unit>
       <trans-unit id="AddMissingFunKeyword">
         <source>Add missing 'fun' keyword</source>
-        <target state="new">Add missing 'fun' keyword</target>
+        <target state="translated">Fehlendes Schlüsselwort "fun" hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">Fehlenden Instanzmemberparameter hinzufügen</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -17,9 +22,19 @@
         <target state="translated">Schlüsselwort "new" hinzufügen</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">Typanmerkung hinzufügen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">In anonymen Datensatz konvertieren</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">"&lt;&gt;" für die Überprüfung auf Ungleichheit verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -38,8 +53,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
-        <target state="translated">Disposable-Werte in F# (oberste Ebene)</target>
+        <source>F# Disposable Values (top-level)</source>
+        <target state="translated">F# Verfügbare Werte (oberste Ebene)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -87,6 +102,11 @@
         <target state="translated">"return!" entfernen</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="translated">Nicht verwendete Bindung entfernen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RemoveYield">
         <source>Remove 'yield'</source>
         <target state="translated">"yield" entfernen</target>
@@ -94,7 +114,7 @@
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
         <source>Remove 'yield!'</source>
-        <target state="new">Remove 'yield!'</target>
+        <target state="translated">"yield!" entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -237,6 +257,16 @@
         <target state="translated">"&lt;-" zum Ändern des Werts verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">"nameof" verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="new">Use triple quoted string interpolation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">"upcast" verwenden</target>
@@ -250,6 +280,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">"not" zum Negieren eines Ausdruck verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="translated">".Value" zum Dereferenzieren eines Ausdrucks verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

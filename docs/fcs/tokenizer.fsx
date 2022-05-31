@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Tokenizing
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 200
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -17,11 +25,10 @@ Creating the tokenizer
 ---------------------
 
 To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
-`SourceCodeServices` namespace:
+`FSharp.Compiler.Tokenization` namespace:
 *)
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 (**
 Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
 arguments - the first is the list of defined symbols and the second is the
@@ -51,7 +58,7 @@ let tokenizer = sourceTok.CreateLineTokenizer("let answer=42")
 (**
 Now, we can write a simple recursive function that calls `ScanToken` on the `tokenizer`
 until it returns `None` (indicating the end of line). When the function succeeds, it 
-returns `FSharpTokenInfo` object with all the interesting details:
+returns an `FSharpTokenInfo` object with all the interesting details:
 *)
 /// Tokenize a single line of F# code
 let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =

@@ -19,11 +19,6 @@ neg20.fs(32,32,32,35): typecheck error FS0001: This expression was expected to h
 but here has type
     'obj'    
 
-neg20.fs(34,24,34,27): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(35,24,35,27): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
@@ -49,48 +44,22 @@ neg20.fs(45,19,45,22): typecheck error FS0001: This expression was expected to h
 but here has type
     'obj'    
 
-neg20.fs(47,11,47,14): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(48,11,48,14): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'obj'    
 
-neg20.fs(52,24,52,31): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
+neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
-neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to have type
-    'System.ValueType'    
-but here has type
-    'int'    
+neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B1'. This element has type 'B2'.
 
-neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'A'.
-
-neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B1'. This element has type 'B2'.
-
-neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'C'. This element has type 'B'.
-
-neg20.fs(66,25,66,32): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'A'. This element has type 'B'.
-
-neg20.fs(67,27,67,34): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'C'.
-
-neg20.fs(70,31,70,38): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'C'.
+neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'C'. This element has type 'B'.
 
 neg20.fs(71,34,71,42): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
 but given a
     'B list'    
 The type 'A' does not match the type 'B'
-
-neg20.fs(75,30,75,37): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'C'    
 
 neg20.fs(76,34,76,43): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
@@ -110,26 +79,12 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'B'. This branch returns a value of type 'C'.
-
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'B'. This branch returns a value of type 'C'.
-
-neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
-
 neg20.fs(96,26,96,33): typecheck error FS0001: This expression was expected to have type
     'B'    
 but here has type
     'A'    
 
-neg20.fs(97,26,97,33): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
-
-neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'A'.
+neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
 neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * B -> 'a'    
@@ -154,54 +109,49 @@ neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'.
 
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C.OM3 : x:'b * y:'b -> int // Argument 'y' doesn't match
- - static member C.OM3 : x:'b * y:int -> int // Argument 'y' doesn't match
+ - static member C.OM3: x: 'b * y: 'b -> int // Argument 'y' doesn't match
+ - static member C.OM3: x: 'b * y: int -> int // Argument 'y' doesn't match
 
 neg20.fs(152,13,152,23): typecheck error FS0033: The type 'Test.BadNumberOfGenericParameters.C<_>' expects 1 type argument(s) but is given 2
 
 neg20.fs(153,13,153,23): typecheck error FS0033: The type 'Test.BadNumberOfGenericParameters.C<_>' expects 1 type argument(s) but is given 2
 
-neg20.fs(154,13,154,25): typecheck error FS0502: The member or object constructor 'SM1' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM1 : unit -> int'.
+neg20.fs(154,13,154,25): typecheck error FS0502: The member or object constructor 'SM1' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM1: unit -> int'.
 
-neg20.fs(155,13,155,26): typecheck error FS0502: The member or object constructor 'SM2' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM2 : y:int -> int'.
+neg20.fs(155,13,155,26): typecheck error FS0502: The member or object constructor 'SM2' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM2: y: int -> int'.
 
-neg20.fs(156,13,156,28): typecheck error FS0502: The member or object constructor 'SM3' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM3 : y:int * z:int -> int'.
+neg20.fs(156,13,156,28): typecheck error FS0502: The member or object constructor 'SM3' takes 0 type argument(s) but is here given 1. The required signature is 'static member C.SM3: y: int * z: int -> int'.
 
-neg20.fs(157,28,157,29): typecheck error FS0495: The member or object constructor 'SM3' has no argument or settable return property 'x'. The required signature is static member C.SM3 : y:int * z:int -> int.
+neg20.fs(157,28,157,29): typecheck error FS0495: The member or object constructor 'SM3' has no argument or settable return property 'x'. The required signature is static member C.SM3: y: int * z: int -> int.
 
-neg20.fs(158,13,158,36): typecheck error FS0502: The member or object constructor 'SM4' takes 1 type argument(s) but is here given 2. The required signature is 'static member C.SM4 : y:'a * z:'b -> int'.
+neg20.fs(158,13,158,36): typecheck error FS0502: The member or object constructor 'SM4' takes 1 type argument(s) but is here given 2. The required signature is 'static member C.SM4: y: 'a * z: 'b -> int'.
 
-neg20.fs(159,13,159,32): typecheck error FS0502: The member or object constructor 'SM5' takes 2 type argument(s) but is here given 1. The required signature is 'static member C.SM5 : y:'a * z:'b -> int'.
+neg20.fs(159,13,159,32): typecheck error FS0502: The member or object constructor 'SM5' takes 2 type argument(s) but is here given 1. The required signature is 'static member C.SM5: y: 'a * z: 'b -> int'.
 
-neg20.fs(162,13,162,24): typecheck error FS0502: The member or object constructor 'M1' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M1 : unit -> int'.
+neg20.fs(162,13,162,24): typecheck error FS0502: The member or object constructor 'M1' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M1: unit -> int'.
 
-neg20.fs(163,13,163,25): typecheck error FS0502: The member or object constructor 'M2' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M2 : y:int -> int'.
+neg20.fs(163,13,163,25): typecheck error FS0502: The member or object constructor 'M2' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M2: y: int -> int'.
 
-neg20.fs(164,13,164,27): typecheck error FS0502: The member or object constructor 'M3' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M3 : y:int * z:int -> int'.
+neg20.fs(164,13,164,27): typecheck error FS0502: The member or object constructor 'M3' takes 0 type argument(s) but is here given 1. The required signature is 'member C.M3: y: int * z: int -> int'.
 
-neg20.fs(165,27,165,28): typecheck error FS0495: The member or object constructor 'M3' has no argument or settable return property 'x'. The required signature is member C.M3 : y:int * z:int -> int.
+neg20.fs(165,27,165,28): typecheck error FS0495: The member or object constructor 'M3' has no argument or settable return property 'x'. The required signature is member C.M3: y: int * z: int -> int.
 
-neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructor 'M4' takes 1 type argument(s) but is here given 2. The required signature is 'member C.M4 : y:'a * z:'b -> int'.
+neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructor 'M4' takes 1 type argument(s) but is here given 2. The required signature is 'member C.M4: y: 'a * z: 'b -> int'.
 
-neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5 : y:'a * z:'b -> int'.
+neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5: y: 'a * z: 'b -> int'.
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'.
 
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string // Argument 'args' doesn't match
- - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string // Argument at index 1 doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument 'args' doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument at index 1 doesn't match
 
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -223,10 +173,11 @@ neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
-    'unit'    
-but here has type
+neg20.fs(183,14,183,41): typecheck error FS0193: Type constraint mismatch. The type 
     'string'    
+is not compatible with type
+    'unit'    
+
 
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -253,8 +204,8 @@ neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method '
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string // Argument 'args' doesn't match
- - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string // Argument at index 1 doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument 'args' doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument at index 1 doesn't match
 
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -276,10 +227,11 @@ neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
+neg20.fs(189,14,189,41): typecheck error FS0193: Type constraint mismatch. The type 
+    'string'    
+is not compatible with type
     'unit'    
-but here has type
-    'string'    
+
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -305,7 +257,7 @@ neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(198,5,198,11): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(202,7,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
+neg20.fs(201,3,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
 
 neg20.fs(204,5,204,14): typecheck error FS0842: This attribute is not valid for use on this language element
 
@@ -382,7 +334,7 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 Known type of argument: 'a0
 
 Candidates:
- - System.String(value: char []) : System.String
+ - System.String(value: char[]) : System.String
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
 
@@ -391,7 +343,7 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 Known type of argument: 'a0
 
 Candidates:
- - System.Guid(b: byte []) : System.Guid
+ - System.Guid(b: byte[]) : System.Guid
  - System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
@@ -408,10 +360,32 @@ neg20.fs(373,22,373,41): typecheck error FS1124: Multiple types exist called 'Ov
 
 neg20.fs(382,19,382,40): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 
-neg20.fs(383,39,383,41): typecheck error FS0039: The type 'OverloadedClassName<T>' does not define the field, constructor or member 'S2'.
+neg20.fs(383,39,383,41): typecheck error FS0039: The type 'OverloadedClassName<_>' does not define the field, constructor or member 'S2'.
 
 neg20.fs(428,19,428,38): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
 neg20.fs(430,22,430,41): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
 neg20.fs(444,39,444,41): typecheck error FS0039: The type 'OverloadedClassName' does not define the field, constructor or member 'S2'.
+
+neg20.fs(447,27,447,28): typecheck error FS0001: This expression was expected to have type
+    'int option'    
+but here has type
+    'int'    
+
+neg20.fs(448,30,448,33): typecheck error FS0001: This expression was expected to have type
+    'string option'    
+but here has type
+    'string'    
+
+neg20.fs(477,29,477,62): typecheck error FS0193: Type constraint mismatch. The type 
+    'Prim<'m>'    
+is not compatible with type
+    'IDerivedComparable<Prim<'m>>'    
+
+
+neg20.fs(478,29,478,61): typecheck error FS0193: Type constraint mismatch. The type 
+    'Prim<'m>'    
+is not compatible with type
+    'IDerivedEquatable<Prim<'m>>'    
+

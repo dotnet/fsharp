@@ -131,10 +131,10 @@ type References() =
                                     "System.Net", true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
@@ -147,10 +147,10 @@ type References() =
                                     "System", true] // one will be ok, but in F# both show up as ok.  Bug?  Not worth the effort to fix.
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
@@ -162,10 +162,10 @@ type References() =
                                     "System.dll", true] // one will be ok
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- (r.NextSibling :?> ReferenceNode)
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
@@ -178,10 +178,10 @@ type References() =
             let expectedRefInfo = [ ssmw, true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-              let r = ref(refContainer.FirstChild :?> ReferenceNode)
-              while !r <> null do
-                  yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                  r := (!r).NextSibling :?> ReferenceNode
+              let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+              while r <> null do
+                  yield (r.Caption, (r.CanShowDefaultIcon()))
+                  r <- r.NextSibling :?> ReferenceNode
               ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
@@ -195,10 +195,10 @@ type References() =
                                     "System.Net", true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
@@ -209,10 +209,11 @@ type References() =
     member public this.ReferenceResolutionHelper(tab : AddReferenceDialogTab, fullPath : string, expectedFsprojRegex : string, targetFrameworkVersion : string, originalReferences : string list) =
         // Trace.Log <- "ProjectSystemReferenceResolution" // can be useful
         this.MakeProjectAndDo(["doesNotMatter.fs"], originalReferences, "", targetFrameworkVersion, (fun project ->
-            let cType = match tab with
-                        | AddReferenceDialogTab.DotNetTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus
-                        | AddReferenceDialogTab.BrowseTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_File
-                        | _ -> failwith "unexpected"
+            let cType = 
+                match tab with
+                | AddReferenceDialogTab.DotNetTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus
+                | AddReferenceDialogTab.BrowseTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_File
+                | _ -> failwith "unexpected"
             let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = cType, bstrFile = fullPath)
             let refContainer = GetReferenceContainerNode(project)
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
@@ -507,10 +508,10 @@ type References() =
             AssertContains contents newPropVal
         )
 
-    // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+    // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
     // On DEV 15 Preview 4 the VS IDE Test fails with :
     //     System.InvalidOperationException : Operation is not valid due to the current state of the object.
-    // [<Test>]     // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+    // [<Test>]     // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
     member public this.``AddReference.COM`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))

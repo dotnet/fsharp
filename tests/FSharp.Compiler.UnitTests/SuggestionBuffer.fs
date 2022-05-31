@@ -2,11 +2,10 @@
 namespace FSharp.Compiler.UnitTests
 
 open Xunit
-open FSharp.Test.Utilities
-
+open FSharp.Test
 
 module SuggestionBuffer =
-    open FSharp.Compiler.ErrorResolutionHints
+    open FSharp.Compiler.DiagnosticResolutionHints
     
     [<Fact>]
     let NewBufferShouldBeEmpty() =

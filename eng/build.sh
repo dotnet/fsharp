@@ -29,6 +29,7 @@ usage()
   echo "  --ci                       Building in CI"
   echo "  --docker                   Run in a docker container if applicable"
   echo "  --skipAnalyzers            Do not run analyzers during build operations"
+  echo "  --skipBuild                Do not run the build"
   echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
   echo "  --sourceBuild              Simulate building for source-build"
   echo ""
@@ -60,6 +61,7 @@ binary_log=false
 force_bootstrap=false
 ci=false
 skip_analyzers=false
+skip_build=false
 prepare_machine=false
 source_build=false
 properties=""
@@ -125,6 +127,9 @@ while [[ $# > 0 ]]; do
       ;;
     --skipanalyzers)
       skip_analyzers=true
+      ;;
+    --skipbuild)
+      skip_build=true
       ;;
     --preparemachine)
       prepare_machine=true
@@ -193,7 +198,7 @@ function TestUsingNUnit() {
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs --blame --results-directory $artifacts_dir/TestResults/$configuration"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -235,50 +240,57 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  bootstrap_config=Proto
-  bootstrap_dir=$artifacts_dir/Bootstrap
-  if [[ "$force_bootstrap" == true ]]; then
-     rm -fr $bootstrap_dir
+  # source_build=true means we are currently in the outer/wrapper source-build,
+  # and building bootstrap needs to wait. The source-build targets will run this
+  # script again without setting source_build=true when it is done setting up
+  # the build environment. See 'eng/SourceBuild.props'.
+  if [[ "$source_build" != true ]]; then
+    bootstrap_config=Proto
+    bootstrap_dir=$artifacts_dir/Bootstrap
+    if [[ "$force_bootstrap" == true ]]; then
+      rm -fr $bootstrap_dir
+    fi
+    if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+      BuildMessage="Error building tools"
+      MSBuild "$repo_root/buildtools/buildtools.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config
+
+      mkdir -p "$bootstrap_dir"
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net6.0 $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net6.0 $bootstrap_dir/fsyacc
+    fi
+    if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+      BuildMessage="Error building bootstrap"
+      MSBuild "$repo_root/proto.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config
+
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net6.0 $bootstrap_dir/fsc
+    fi
   fi
-  if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
-    BuildMessage="Error building tools"
-    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-      /restore \
-      /p:Configuration=$bootstrap_config
 
-    mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsyacc
+  if [[ "$skip_build" != true ]]; then
+    # do real build
+    BuildMessage="Error building solution"
+    MSBuild $toolset_build_proj \
+      $bl \
+      /v:$verbosity \
+      /p:Configuration=$configuration \
+      /p:Projects="$projects" \
+      /p:RepoRoot="$repo_root" \
+      /p:Restore=$restore \
+      /p:Build=$build \
+      /p:Rebuild=$rebuild \
+      /p:Pack=$pack \
+      /p:Publish=$publish \
+      /p:UseRoslynAnalyzers=$enable_analyzers \
+      /p:ContinuousIntegrationBuild=$ci \
+      /p:QuietRestore=$quiet_restore \
+      /p:QuietRestoreBinaryLog="$binary_log" \
+      /p:ArcadeBuildFromSource=$source_build \
+      $properties
   fi
-  if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
-    BuildMessage="Error building bootstrap"
-    MSBuild "$repo_root/proto.proj" \
-      /restore \
-      /p:Configuration=$bootstrap_config \
-
-
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsc
-  fi
-
-  # do real build
-  BuildMessage="Error building solution"
-  MSBuild $toolset_build_proj \
-    $bl \
-    /v:$verbosity \
-    /p:Configuration=$configuration \
-    /p:Projects="$projects" \
-    /p:RepoRoot="$repo_root" \
-    /p:Restore=$restore \
-    /p:Build=$build \
-    /p:Rebuild=$rebuild \
-    /p:Pack=$pack \
-    /p:Publish=$publish \
-    /p:UseRoslynAnalyzers=$enable_analyzers \
-    /p:ContinuousIntegrationBuild=$ci \
-    /p:QuietRestore=$quiet_restore \
-    /p:QuietRestoreBinaryLog="$binary_log" \
-    /p:DotNetBuildFromSource=$source_build \
-    $properties
 }
 
 function TrapAndReportError {
@@ -297,7 +309,7 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=netcoreapp3.1
+  coreclrtestframework=net6.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework

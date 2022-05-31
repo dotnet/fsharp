@@ -13,8 +13,10 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -86,7 +88,7 @@ module internal ColorStateLookup_DEPRECATED =
 type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineTokenizer) =
     let mutable lineTokenizer = makeLineTokenizer ""
 
-    let mutable extraColorizations : IDictionary<Line0, struct (range * SemanticClassificationType)[] > option = None
+    let mutable extraColorizations : IDictionary<Line0, SemanticClassificationItem[] > option = None
 
     /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind =
@@ -121,15 +123,15 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
 
     /// Scan a token from a line. This should only be used in cases where color information is irrelevant.
     /// Used by GetFullLineInfo (and only thus in a small workaroud in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
-    member ws.ScanTokenWithDetails lexState =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
-        lexState := newLexState
+    member ws.ScanTokenWithDetails (lexState: _ ref) =
+        let colorInfoOption, newLexState = lineTokenizer.ScanToken(lexState.Value)
+        lexState.Value <- newLexState
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
-    member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState) =
+    member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState: _ ref) =
         let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
-        lexState := newLexState
+        lexState.Value <- newLexState
         match colorInfoOption with
         | None -> false
         | Some colorInfo ->
@@ -147,11 +149,11 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member _.SetExtraColorizations (tokens: struct (range * SemanticClassificationType)[]) =
+    member _.SetExtraColorizations (tokens: SemanticClassificationItem[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
-            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Line.toZ r.StartLine))
+            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun item -> Line.toZ item.Range.StartLine))
             let oldExtraColorizationsKeyedOpt = extraColorizations
             extraColorizations <- Some newExtraColorizationsKeyed
             let changedLines =
@@ -263,7 +265,6 @@ type internal FSharpColorizer_DEPRECATED
                   | None -> () }
         tokens() |> Array.ofSeq
 
-    [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId="length-1")>] // exceeds EndIndex
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
         let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
         scanner.SetLineText lineText

@@ -3,13 +3,17 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Immutable
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.TaggedText
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.TaggedText
 open System.Collections.Generic
 
 type internal ITaggedTextCollector =
@@ -32,7 +36,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             count <- count + 1
         | _ ->
             isEmpty <- false
-            endsWithLineBreak <- text.Tag = LayoutTag.LineBreak
+            endsWithLineBreak <- text.Tag = TextTag.LineBreak
             if endsWithLineBreak then count <- count + 1
             collector text
     
@@ -61,15 +65,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry TaggedText.lineBreak)
 
     interface ITaggedTextCollector with
-        member this.Add taggedText = 
+        member _.Add taggedText = 
             // TODO: bail out early if line limit is already hit
             match taggedText.Tag with
-            | LayoutTag.Text -> reportTextLines taggedText.Text
+            | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText
 
-        member this.IsEmpty = isEmpty
-        member this.EndsWithLineBreak = isEmpty || endsWithLineBreak
-        member this.StartXMLDoc() = startXmlDoc <- true
+        member _.IsEmpty = isEmpty
+        member _.EndsWithLineBreak = isEmpty || endsWithLineBreak
+        member _.StartXMLDoc() = startXmlDoc <- true
 
 /// XmlDocumentation builder, using the VS interfaces to build documentation.  An interface is used
 /// to allow unit testing to give an alternative implementation which captures the documentation.
@@ -78,8 +82,8 @@ type internal IDocumentationBuilder =
     /// Append the given raw XML formatted into the string builder
     abstract AppendDocumentationFromProcessedXML : xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * processedXml:string * showExceptions:bool * showParameters:bool * paramName:string option-> unit
 
-    /// Appends text for the given filename and signature into the StringBuilder
-    abstract AppendDocumentation : xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * filename: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
+    /// Appends text for the given file name and signature into the StringBuilder
+    abstract AppendDocumentation: xmlCollector: ITaggedTextCollector * exnCollector: ITaggedTextCollector * fileName: string * signature: string * showExceptions: bool * showParameters: bool * paramName: string option-> unit
 
 /// Documentation helpers.
 module internal XmlDocumentation =
@@ -259,7 +263,7 @@ module internal XmlDocumentation =
                               /// ITaggedTextCollector to add to
                               exnCollector: ITaggedTextCollector,
                               /// Name of the library file
-                              filename:string,
+                              fileName:string,
                               /// Signature of the comment
                               signature:string,
                               /// Whether to show exceptions
@@ -270,7 +274,7 @@ module internal XmlDocumentation =
                               paramName:string option                            
                              ) = 
                 try     
-                    match GetMemberIndexOfAssembly(filename) with
+                    match GetMemberIndexOfAssembly(fileName) with
                     | Some(index) ->
                         let _,idx = index.ParseMemberSignature(signature)
                         if idx <> 0u then
@@ -286,10 +290,11 @@ module internal XmlDocumentation =
     let AppendXmlComment(documentationProvider:IDocumentationBuilder, xmlCollector: ITaggedTextCollector, exnCollector: ITaggedTextCollector, xml, showExceptions, showParameters, paramName) =
         match xml with
         | FSharpXmlDoc.None -> ()
-        | FSharpXmlDoc.XmlDocFileSignature(filename,signature) -> 
-            documentationProvider.AppendDocumentation(xmlCollector, exnCollector, filename, signature, showExceptions, showParameters, paramName)
-        | FSharpXmlDoc.Text(_rawText, processedXml) ->
-            let processedXml = ProcessXml("\n\n" + String.concat "\n" processedXml)
+        | FSharpXmlDoc.FromXmlFile(fileName,signature) -> 
+            documentationProvider.AppendDocumentation(xmlCollector, exnCollector, fileName, signature, showExceptions, showParameters, paramName)
+        | FSharpXmlDoc.FromXmlText(xmlDoc) ->
+            let elaboratedXml = xmlDoc.GetElaboratedXmlLines()
+            let processedXml = ProcessXml("\n\n" + String.concat "\n" elaboratedXml)
             documentationProvider.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName)
 
     let private AddSeparator (collector: ITaggedTextCollector) =
@@ -300,7 +305,7 @@ module internal XmlDocumentation =
 
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, 
-                     dataTipText: FSharpStructuredToolTipElement list,
+                     dataTipText: ToolTipElement list,
                      textCollector, xmlCollector,  typeParameterMapCollector, usageCollector, exnCollector,
                      showText, showExceptions, showParameters) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
@@ -314,32 +319,32 @@ module internal XmlDocumentation =
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
-        let ProcessGenericParameters (tps: Layout list) =
+        let ProcessGenericParameters (tps: TaggedText[] list) =
             if not tps.IsEmpty then
                 AppendHardLine typeParameterMapCollector
                 AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
                 for tp in tps do 
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")
-                    LayoutRender.emitL typeParameterMapCollector.Add tp |> ignore
+                    tp |> Array.iter typeParameterMapCollector.Add
 
-        let Process add (dataTipElement: FSharpStructuredToolTipElement) =
+        let Process add (dataTipElement: ToolTipElement) =
 
             match dataTipElement with 
-            | FSharpStructuredToolTipElement.None -> 
+            | ToolTipElement.None -> 
                 false
 
-            | FSharpStructuredToolTipElement.Group (overloads) -> 
+            | ToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = overloads.Length
                 if len >= 1 then
                     addSeparatorIfNecessary add
                     if showText then 
-                        let AppendOverload (item: FSharpToolTipElementData<_>) = 
-                            if not(Layout.isEmptyL item.MainDescription) then
+                        let AppendOverload (item: ToolTipElementData) = 
+                            if TaggedText.toString item.MainDescription <> "" then
                                 if not textCollector.IsEmpty then 
                                     AppendHardLine textCollector
-                                LayoutRender.emitL textCollector.Add item.MainDescription |> ignore
+                                item.MainDescription |> Seq.iter textCollector.Add
 
                         AppendOverload(overloads.[0])
                         if len >= 2 then AppendOverload(overloads.[1])
@@ -353,9 +358,9 @@ module internal XmlDocumentation =
                     let item0 = overloads.[0]
 
                     item0.Remarks |> Option.iter (fun r -> 
-                        if not(Layout.isEmptyL r) then
+                        if TaggedText.toString r <> "" then
                             AppendHardLine usageCollector
-                            LayoutRender.emitL usageCollector.Add r |> ignore)
+                            r |> Seq.iter usageCollector.Add)
 
                     AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 
@@ -366,16 +371,16 @@ module internal XmlDocumentation =
                 else
                     false
 
-            | FSharpStructuredToolTipElement.CompositionError(errText) -> 
+            | ToolTipElement.CompositionError(errText) -> 
                 textCollector.Add(tagText errText)
                 true
 
         List.fold Process false dataTipText |> ignore
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, FSharpToolTipText(dataTipText)) = 
+    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, ToolTipText(dataTipText)) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, true, true, false) 
 
-    let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
+    let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) = 
         BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, xmlCollector, ignore, ignore, false, false, showParams) 
 
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =

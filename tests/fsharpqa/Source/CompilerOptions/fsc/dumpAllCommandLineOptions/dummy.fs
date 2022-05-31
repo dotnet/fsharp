@@ -7,7 +7,6 @@
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=delaysign                      kind=OptionSwitch</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=doc                            kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=keyfile                        kind=OptionString</Expects>
-//<Expects status="success">section='- OUTPUT FILES -         ' ! option=keycontainer                   kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=platform                       kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=nointerfacedata                kind=OptionUnit</Expects>

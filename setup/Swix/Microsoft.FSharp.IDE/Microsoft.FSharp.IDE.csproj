@@ -16,8 +16,7 @@
   <ItemGroup>
     <_Dependency Include="FSharp.Build" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Compiler.Interactive.Settings" Version="$(FSProductVersion)" />
-    <_Dependency Include="FSharp.Compiler.Private" Version="$(FSProductVersion)" />
-    <_Dependency Include="Microsoft.DotNet.DependencyManager" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.Compiler.Service" Version="$(FSharpCompilerServiceVersion)" />
     <_Dependency Include="FSharp.DependencyManager.Nuget" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Compiler.Server.Shared" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Core" Version="$(FSCoreVersion)" />
@@ -32,8 +31,7 @@
     <_Dependency Include="FSharp.VS.FSI" Version="$(VSAssemblyVersion)" />
   </ItemGroup>
 
-  <Target Name="GenerateDependentAssemblyVersions"
-          AfterTargets="Build">
+  <Target Name="GenerateDependentAssemblyVersions" AfterTargets="Build">
     <PropertyGroup>
       <DevDivPackagesDir>$(InsertionDir)\DevDivPackages</DevDivPackagesDir>
       <DependentAssemblyVersionsFile>$(DevDivPackagesDir)\DependentAssemblyVersions.csv</DependentAssemblyVersionsFile>

@@ -3,10 +3,10 @@
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Test
+open FSharp.Test.Compiler
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.AbstractIL
 
 module ``Numeric Literals`` =
 

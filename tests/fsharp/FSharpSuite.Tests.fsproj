@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -11,13 +11,13 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --langversion:preview</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\scripts\scriptlib.fsx">
+    <Compile Include="..\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
     <Compile Include="NUnitHelpers.fs" />
@@ -25,10 +25,21 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="Compiler\Service\MultiProjectTests.fs" />
+    <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DeterministicTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputationExpressionOptimizations.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DelegateAndFuncOptimizations.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\BooleanLogic.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DebugScopes.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ReferenceAssemblyTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ByrefTailcalls.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
@@ -38,6 +49,7 @@
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\InitOnlyPropertyConsumptionTests.fs" />
     <Compile Include="Compiler\Language\WitnessTests.fs" />
     <Compile Include="Compiler\Language\CompilerDirectiveTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
@@ -57,6 +69,7 @@
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
+    <Compile Include="Compiler\Language\StructActivePatternTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\NullableOptionalRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
@@ -87,16 +100,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj"
+                      Condition="'$(TargetFramework)' == 'net472'">
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
     <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
-    <PackageReference Include="StrawberryPerl" Version="$(StrawberryPerlVersion)" ExcludeAssets="all" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />

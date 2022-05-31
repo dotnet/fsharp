@@ -6,10 +6,8 @@
 namespace FSharp.Core.UnitTests.Control
 
 open System
-open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 open System.Threading
-open System.Collections.Generic
 
 type Message = 
     | Increment of int 
@@ -70,16 +68,22 @@ type MailboxProcessorType() =
 
     [<Fact>]
     member this.``Receive handles cancellation token``() =
-        let result = ref None
-
-        // https://github.com/Microsoft/visualfsharp/issues/3337
+        let mutable result = None
+        use mre1 = new ManualResetEventSlim(false)
+        use mre2 = new ManualResetEventSlim(false)
+    
+        // https://github.com/dotnet/fsharp/issues/3337
         let cts = new CancellationTokenSource ()
-
+    
         let addMsg msg =
-            match !result with
-            | Some text -> result := Some(text + " " + msg)
-            | None -> result := Some msg
-
+            match result with
+            | Some text ->
+                //printfn "Got some, adding %s" msg
+                result <- Some(text + " " + msg)
+            | None ->
+                //printfn "got none, setting %s" msg
+                result <- Some msg
+    
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -87,32 +91,41 @@ type MailboxProcessorType() =
                         { new IDisposable with
                             member this.Dispose () =
                                 addMsg "Disposed"
+                                mre2.Set()
                         }
-
+    
                     while true do
-                        let! (msg : int) = inbox.Receive ()
+                        let! (msg : int) = inbox.Receive()
                         addMsg (sprintf "Received %i" msg)
+                        mre1.Set()
                 }, cancellationToken = cts.Token)
+    
+        mb.Post(1)
+        mre1.Wait()
+    
+        cts.Cancel()
+        mre2.Wait()
 
-        mb.Post 1
-        Thread.Sleep 1000
-        cts.Cancel ()
-        Thread.Sleep 4000
-
-        Assert.AreEqual(Some("Received 1 Disposed"), !result)
+        Assert.AreEqual(Some("Received 1 Disposed"), result)
 
     [<Fact>]
     member this.``Receive with timeout argument handles cancellation token``() =
-        let result = ref None
-
-        // https://github.com/Microsoft/visualfsharp/issues/3337
+        let mutable result = None
+        use mre1 = new ManualResetEventSlim(false)
+        use mre2 = new ManualResetEventSlim(false)
+    
+        // https://github.com/dotnet/fsharp/issues/3337
         let cts = new CancellationTokenSource ()
-
+    
         let addMsg msg =
-            match !result with
-            | Some text -> result := Some(text + " " + msg)
-            | None -> result := Some msg
-
+            match result with
+            | Some text ->
+                //printfn "Got some, adding %s" msg
+                result <- Some(text + " " + msg)
+            | None ->
+                //printfn "got none, setting %s" msg
+                result <- Some msg
+    
         let mb =
             MailboxProcessor.Start (
                 fun inbox -> async {
@@ -120,31 +133,40 @@ type MailboxProcessorType() =
                         { new IDisposable with
                             member this.Dispose () =
                                 addMsg "Disposed"
+                                mre2.Set()
                         }
-
+    
                     while true do
-                        let! (msg : int) = inbox.Receive (100000)
+                        let! (msg : int) = inbox.Receive(100000)
                         addMsg (sprintf "Received %i" msg)
+                        mre1.Set()
                 }, cancellationToken = cts.Token)
+    
+        mb.Post(1)
+        mre1.Wait()
+    
+        cts.Cancel()
+        mre2.Wait()
 
-        mb.Post 1
-        Thread.Sleep 1000
-        cts.Cancel ()
-        Thread.Sleep 4000
-
-        Assert.AreEqual(Some("Received 1 Disposed"),!result)
+        Assert.AreEqual(Some("Received 1 Disposed"), result)
 
     [<Fact>]
     member this.``Scan handles cancellation token``() =
-        let result = ref None
+        let mutable result = None
+        use mre1 = new ManualResetEventSlim(false)
+        use mre2 = new ManualResetEventSlim(false)
 
-        // https://github.com/Microsoft/visualfsharp/issues/3337
+        // https://github.com/dotnet/fsharp/issues/3337
         let cts = new CancellationTokenSource ()
 
         let addMsg msg =
-            match !result with
-            | Some text -> result := Some(text + " " + msg)
-            | None -> result := Some msg
+            match result with
+            | Some text ->
+                //printfn "Got some, adding %s" msg
+                result <- Some(text + " " + msg)
+            | None ->
+                //printfn "got none, setting %s" msg
+                result <- Some msg
 
         let mb =
             MailboxProcessor.Start (
@@ -153,19 +175,22 @@ type MailboxProcessorType() =
                         { new IDisposable with
                             member this.Dispose () =
                                 addMsg "Disposed"
+                                mre2.Set()
                         }
 
                     while true do
                         let! (msg : int) = inbox.Scan (fun msg -> Some(async { return msg }) )
                         addMsg (sprintf "Scanned %i" msg)
+                        mre1.Set()
                 }, cancellationToken = cts.Token)
 
-        mb.Post 1
-        Thread.Sleep 1000
-        cts.Cancel ()
-        Thread.Sleep 4000
+        mb.Post(1)
+        mre1.Wait()
 
-        Assert.AreEqual(Some("Scanned 1 Disposed"), !result)
+        cts.Cancel()
+        mre2.Wait()
+
+        Assert.AreEqual(Some("Scanned 1 Disposed"), result)
 
     [<Fact>]
     member this.``Receive Races with Post``() =
@@ -291,7 +316,7 @@ type MailboxProcessorType() =
 
         test()
 
-    //[<Fact>] // need to re-visit this
+    [<Fact(Skip="This test fails all the time in CI, likely due to magic sleeps. Need to re-evaluate.")>]
     member this.PostAndAsyncReply_Cancellation() =
 
         use cancel = new CancellationTokenSource(500)

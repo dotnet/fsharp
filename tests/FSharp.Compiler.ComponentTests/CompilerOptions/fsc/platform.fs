@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.CompilerOptions.fsc
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test
+open FSharp.Test.Compiler
 
 module platform =
 
@@ -48,7 +48,7 @@ module platform =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'ITANIUM', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'ITANIUM', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_03.fs"|])>]
     let ``platform - error_03.fs - --platform:ITANIUM`` compilation =
         compilation
@@ -57,11 +57,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'ITANIUM', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'ITANIUM', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'ANYCPU', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'ANYCPU', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_04.fs"|])>]
     let ``platform - error_04.fs - --platform:ANYCPU`` compilation =
         compilation
@@ -70,11 +70,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'ANYCPU', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'ANYCPU', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'X86', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'X86', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_05.fs"|])>]
     let ``platform - error_05.fs - --platform:X86`` compilation =
         compilation
@@ -83,11 +83,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'X86', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'X86', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'X64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'X64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_06.fs"|])>]
     let ``platform - error_06.fs - --platform:X64`` compilation =
         compilation
@@ -96,11 +96,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'X64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'X64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'IA64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'IA64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_07.fs"|])>]
     let ``platform - error_07.fs - --platform:IA64`` compilation =
         compilation
@@ -109,11 +109,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'IA64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'IA64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'i386', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'i386', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_08.fs"|])>]
     let ``platform - error_08.fs - --platform:i386`` compilation =
         compilation
@@ -122,11 +122,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'i386', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'i386', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'AMD64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'AMD64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_09.fs"|])>]
     let ``platform - error_09.fs - --platform:AMD64`` compilation =
         compilation
@@ -135,11 +135,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'AMD64', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'AMD64', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'PPC', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'PPC', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_10.fs"|])>]
     let ``platform - error_10.fs - --platform:PPC`` compilation =
         compilation
@@ -148,11 +148,11 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'PPC', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'PPC', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
-    //<Expects id="FS1064" status="error">Unrecognized platform 'ARM', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
+    //<Expects id="FS1064" status="error">Unrecognized platform 'ARM', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/platform", Includes=[|"error_15.fs"|])>]
     let ``platform - error_15.fs - --platform:ARM`` compilation =
         compilation
@@ -161,7 +161,7 @@ module platform =
         |> compile
         |> shouldFail
         |> withErrorCode 1064
-        |> withDiagnosticMessageMatches "Unrecognized platform 'ARM', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
+        |> withDiagnosticMessageMatches "Unrecognized platform 'ARM', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/platform)
