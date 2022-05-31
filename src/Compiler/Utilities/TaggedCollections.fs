@@ -106,12 +106,9 @@ module SetTree =
                 // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated
                 let c = comparer.Compare(k, t.Key)
 
-                if c < 0 then
-                    SetTreeNode(k, empty, t, 2) :> SetTree<'T>
-                elif c = 0 then
-                    t
-                else
-                    SetTreeNode(k, t, empty, 2) :> SetTree<'T>
+                if c < 0 then SetTreeNode(k, empty, t, 2) :> SetTree<'T>
+                elif c = 0 then t
+                else SetTreeNode(k, t, empty, 2) :> SetTree<'T>
 
     let rec balance comparer (t1: SetTree<'T>) k (t2: SetTree<'T>) =
         // Given t1 < k < t2 where t1 and t2 are "balanced",
@@ -211,12 +208,9 @@ module SetTree =
 
             match t with
             | :? SetTreeNode<'T> as tn ->
-                if c < 0 then
-                    contains comparer k tn.Left
-                elif c = 0 then
-                    true
-                else
-                    contains comparer k tn.Right
+                if c < 0 then contains comparer k tn.Left
+                elif c = 0 then true
+                else contains comparer k tn.Right
             | _ -> (c = 0)
 
     let rec iter f (t: SetTree<'T>) =
@@ -266,18 +260,10 @@ module SetTree =
         else
             match t with
             | :? SetTreeNode<'T> as tn ->
-                let acc =
-                    if f tn.Key then
-                        add comparer tn.Key acc
-                    else
-                        acc
+                let acc = if f tn.Key then add comparer tn.Key acc else acc
 
                 filterAux comparer f tn.Left (filterAux comparer f tn.Right acc)
-            | _ ->
-                if f t.Key then
-                    add comparer t.Key acc
-                else
-                    acc
+            | _ -> if f t.Key then add comparer t.Key acc else acc
 
     let filter comparer f s = filterAux comparer f s empty
 
@@ -495,10 +481,7 @@ module SetTree =
         | _, [] -> 1
         | x1 :: t1, x2 :: t2 ->
             if isEmpty x1 then
-                if isEmpty x2 then
-                    compareStacks comparer t1 t2
-                else
-                    cont ()
+                if isEmpty x2 then compareStacks comparer t1 t2 else cont ()
             elif isEmpty x2 then
                 cont ()
             else
@@ -540,10 +523,7 @@ module SetTree =
                     | _ ->
                         let c = comparer.Compare(x1.Key, x2.Key)
 
-                        if c <> 0 then
-                            c
-                        else
-                            compareStacks comparer t1 t2
+                        if c <> 0 then c else compareStacks comparer t1 t2
 
     let compare comparer (t1: SetTree<'T>) (t2: SetTree<'T>) =
         if isEmpty t1 then
@@ -648,20 +628,14 @@ type internal Set<'T, 'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer:
             SetTree.intersection a.Comparer a.Tree b.Tree |> refresh a
 
     static member Union(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) : Set<'T, 'ComparerTag> =
-        if SetTree.isEmpty b.Tree then
-            a (* A U 0 = A *)
-        else if SetTree.isEmpty a.Tree then
-            b (* 0 U B = B *)
-        else
-            SetTree.union a.Comparer a.Tree b.Tree |> refresh a
+        if SetTree.isEmpty b.Tree then a (* A U 0 = A *)
+        else if SetTree.isEmpty a.Tree then b (* 0 U B = B *)
+        else SetTree.union a.Comparer a.Tree b.Tree |> refresh a
 
     static member Difference(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) : Set<'T, 'ComparerTag> =
-        if SetTree.isEmpty a.Tree then
-            a (* 0 - B = 0 *)
-        else if SetTree.isEmpty b.Tree then
-            a (* A - 0 = A *)
-        else
-            SetTree.diff a.Comparer a.Tree b.Tree |> refresh a
+        if SetTree.isEmpty a.Tree then a (* 0 - B = 0 *)
+        else if SetTree.isEmpty b.Tree then a (* A - 0 = A *)
+        else SetTree.diff a.Comparer a.Tree b.Tree |> refresh a
 
     static member Equality(a: Set<'T, 'ComparerTag>, b: Set<'T, 'ComparerTag>) =
         (SetTree.compare a.Comparer a.Tree b.Tree = 0)
@@ -852,18 +826,12 @@ module MapTree =
     let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
 
-        if tryGetValue comparer k &v m then
-            v
-        else
-            indexNotFound ()
+        if tryGetValue comparer k &v m then v else indexNotFound ()
 
     let tryFind (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
 
-        if tryGetValue comparer k &v m then
-            Some v
-        else
-            None
+        if tryGetValue comparer k &v m then Some v else None
 
     let partition1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v (acc1, acc2) =
         if f.Invoke(k, v) then
@@ -886,10 +854,7 @@ module MapTree =
         partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m (empty, empty)
 
     let filter1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v acc =
-        if f.Invoke(k, v) then
-            add comparer k v acc
-        else
-            acc
+        if f.Invoke(k, v) then add comparer k v acc else acc
 
     let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc =
         if isEmpty m then
@@ -1061,11 +1026,7 @@ module MapTree =
                     let cLoKey = comparer.Compare(lo, mn.Key)
                     let cKeyHi = comparer.Compare(mn.Key, hi)
 
-                    let x =
-                        if cLoKey < 0 then
-                            foldFromTo f mn.Left x
-                        else
-                            x
+                    let x = if cLoKey < 0 then foldFromTo f mn.Left x else x
 
                     let x =
                         if cLoKey <= 0 && cKeyHi <= 0 then
@@ -1073,11 +1034,7 @@ module MapTree =
                         else
                             x
 
-                    let x =
-                        if cKeyHi < 0 then
-                            foldFromTo f mn.Right x
-                        else
-                            x
+                    let x = if cKeyHi < 0 then foldFromTo f mn.Right x else x
 
                     x
                 | _ ->
@@ -1092,10 +1049,7 @@ module MapTree =
 
                     x
 
-        if comparer.Compare(lo, hi) = 1 then
-            x
-        else
-            foldFromTo f m x
+        if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
 
     let foldSection (comparer: IComparer<'Key>) lo hi f m x =
         foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x

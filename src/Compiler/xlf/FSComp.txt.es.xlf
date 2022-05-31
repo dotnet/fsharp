@@ -627,6 +627,11 @@
         <target state="translated">Esta versión de F# no admite esta característica. Es posible que tenga que agregar /langversion:preview para usarla.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">Este es un registro anónimo incorrecto. Debe tener los campos {0}.</target>
@@ -645,6 +650,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Declaración de tipo de registro anónimo no válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -5008,8 +5018,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">Limitar las plataformas en las que se puede ejecutar este código: x86, Itanium, x64, anycpu32bitpreferred o anycpu. El valor predeterminado es anycpu.</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">Limitar las plataformas en las que se puede ejecutar este código: x86, Itanium, x64, anycpu32bitpreferred o anycpu. El valor predeterminado es anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5303,8 +5313,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">Plataforma '{0}' no reconocida. Los valores válidos son 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' y 'anycpu'</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">Plataforma '{0}' no reconocida. Los valores válidos son 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' y 'anycpu'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

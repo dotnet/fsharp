@@ -627,6 +627,11 @@
         <target state="translated">此版本的 F# 不支持此功能。你可能需要添加 /langversion:preview 才可使用此功能。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">此匿名记录不正确。它应具有字段 {0}。</target>
@@ -645,6 +650,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">匿名记录类型声明无效。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -5008,8 +5018,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">限制可以运行此代码的平台: x86、Itanium、x64、anycpu32bitpreferred 或 anycpu。默认值为 anycpu。</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">限制可以运行此代码的平台: x86、Itanium、x64、anycpu32bitpreferred 或 anycpu。默认值为 anycpu。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5303,8 +5313,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">无法识别的平台“{0}”，有效值为“x86”、“x64”、“Itanium”、“anycpu32bitpreferred”和“anycpu”</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">无法识别的平台“{0}”，有效值为“x86”、“x64”、“Itanium”、“anycpu32bitpreferred”和“anycpu”</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

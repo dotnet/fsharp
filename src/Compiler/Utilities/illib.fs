@@ -71,8 +71,7 @@ module internal PervasiveAutoOpens =
         // "How can I detect if am running in Mono?" section
         try
             Type.GetType "Mono.Runtime" <> null
-        with
-        | _ ->
+        with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
             // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
@@ -197,8 +196,7 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then
-                    eq <- false
+                if not (inp[i] === res[i]) then eq <- false
 
                 i <- i + 1
 
@@ -373,8 +371,8 @@ module Option =
     let attempt (f: unit -> 'T) =
         try
             Some(f ())
-        with
-        | _ -> None
+        with _ ->
+            None
 
 module List =
 
@@ -404,11 +402,7 @@ module List =
     let rec findi n f l =
         match l with
         | [] -> None
-        | h :: t ->
-            if f h then
-                Some(h, n)
-            else
-                findi (n + 1) f t
+        | h :: t -> if f h then Some(h, n) else findi (n + 1) f t
 
     let splitChoose select l =
         let rec ch acc1 acc2 l =
@@ -438,10 +432,7 @@ module List =
             let h2a = f h1a
             let h2b = f h1b
 
-            if h1a === h2a && h1b === h2b then
-                inp
-            else
-                [ h2a; h2b ]
+            if h1a === h2a && h1b === h2b then inp else [ h2a; h2b ]
         | [ h1a; h1b; h1c ] ->
             let h2a = f h1a
             let h2b = f h1b
@@ -466,15 +457,16 @@ module List =
 
         loop [] l
 
+    let tryFrontAndBack l =
+        match l with
+        | [] -> None
+        | _ -> Some(frontAndBack l)
+
     let tryRemove f inp =
         let rec loop acc l =
             match l with
             | [] -> None
-            | h :: t ->
-                if f h then
-                    Some(h, List.rev acc @ t)
-                else
-                    loop (h :: acc) t
+            | h :: t -> if f h then Some(h, List.rev acc @ t) else loop (h :: acc) t
 
         loop [] inp
 
@@ -499,11 +491,7 @@ module List =
         let rec loop acc l =
             match l with
             | [] -> List.rev acc, []
-            | x :: xs ->
-                if p x then
-                    List.rev acc, l
-                else
-                    loop (x :: acc) xs
+            | x :: xs -> if p x then List.rev acc, l else loop (x :: acc) xs
 
         loop [] l
 
@@ -544,11 +532,7 @@ module List =
         let rec mn i =
             function
             | [] -> []
-            | x :: xs ->
-                if i = n then
-                    f x :: xs
-                else
-                    x :: mn (i + 1) xs
+            | x :: xs -> if i = n then f x :: xs else x :: mn (i + 1) xs
 
         mn 0 xs
 
@@ -746,20 +730,14 @@ module String =
     let split options (separator: string[]) (value: string) = value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.StartsWithOrdinal pattern then
-            Some()
-        else
-            None
+        if String.IsNullOrWhiteSpace value then None
+        elif value.StartsWithOrdinal pattern then Some()
+        else None
 
     let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.Contains pattern then
-            Some()
-        else
-            None
+        if String.IsNullOrWhiteSpace value then None
+        elif value.Contains pattern then Some()
+        else None
 
     let getLines (str: string) =
         use reader = new StringReader(str)
@@ -991,8 +969,8 @@ module Cancellable =
                 match f ct with
                 | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
                 | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-            with
-            | err -> ValueOrCancelled.Value(Choice2Of2 err))
+            with err ->
+                ValueOrCancelled.Value(Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
     let inline tryFinally comp compensation =
@@ -1162,8 +1140,7 @@ type LazyWithContext<'T, 'Ctxt> =
                 x.value <- res
                 x.funcOrException <- null
                 res
-            with
-            | exn ->
+            with exn ->
                 x.funcOrException <- box (LazyWithContextFailure(exn))
                 reraise ()
         | _ -> failwith "unreachable"
@@ -1281,8 +1258,8 @@ module NameMap =
             (fun n x2 acc ->
                 try
                     f n (Map.find n m1) x2 acc
-                with
-                | :? KeyNotFoundException -> errf n x2)
+                with :? KeyNotFoundException ->
+                    errf n x2)
             m2
             acc
 

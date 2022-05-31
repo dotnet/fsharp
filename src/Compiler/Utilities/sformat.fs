@@ -589,14 +589,14 @@ module Display =
                 ty.GetMethod("ToString", BindingFlags.Public ||| BindingFlags.Instance, null, [||], null)
 
             methInfo.DeclaringType = typeof<Object>
-        with
-        | _e -> false
+        with _e ->
+            false
 
     let catchExn f =
         try
             Choice1Of2(f ())
-        with
-        | e -> Choice2Of2 e
+        with e ->
+            Choice2Of2 e
 
     // An implementation of break stack.
     // Uses mutable state, relying on linear threading of the state.
@@ -630,16 +630,11 @@ module Display =
         Breaks(next + 1, outer, stack)
 
     let popBreak (Breaks (next, outer, stack)) =
-        if next = 0 then
-            raise (Failure "popBreak: underflow")
+        if next = 0 then raise (Failure "popBreak: underflow")
 
         let topBroke = stack[next - 1] < 0
 
-        let outer =
-            if outer = next then
-                outer - 1
-            else
-                outer // if all broken, unwind
+        let outer = if outer = next then outer - 1 else outer // if all broken, unwind
 
         let next = next - 1
         Breaks(next, outer, stack), topBroke
@@ -977,10 +972,7 @@ module Display =
         let exceededPrintSize () = size <= 0
 
         let countNodes n =
-            if size > 0 then
-                size <- size - n
-            else
-                () // no need to keep decrementing (and avoid wrap around)
+            if size > 0 then size <- size - n else () // no need to keep decrementing (and avoid wrap around)
 
         let stopShort _ = exceededPrintSize () // for unfoldL
 
@@ -1039,8 +1031,7 @@ module Display =
 
                             path.Remove(x) |> ignore
                             res
-            with
-            | e ->
+            with e ->
                 countNodes 1
                 wordL (tagText ("Error: " + e.Message))
 
@@ -1157,8 +1148,8 @@ module Display =
                                                 )
                                             )
                                         )
-                            with
-                            | _ -> None
+                            with _ ->
+                                None
 
                 // Seed with an empty layout with a space to the left for formatting purposes
                 buildObjMessageL txt [ leftL (tagText "") ]
@@ -1296,10 +1287,7 @@ module Display =
                     |> makeListL
 
                 let project1 x =
-                    if x >= (b1 + n1) then
-                        None
-                    else
-                        Some(x, x + 1)
+                    if x >= (b1 + n1) then None else Some(x, x + 1)
 
                 let rowsL = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
 
@@ -1341,11 +1329,7 @@ module Display =
                 let itemLs =
                     boundedUnfoldL
                         possibleKeyValueL
-                        (fun () ->
-                            if it.MoveNext() then
-                                Some(it.Current, ())
-                            else
-                                None)
+                        (fun () -> if it.MoveNext() then Some(it.Current, ()) else None)
                         stopShort
                         ()
                         (1 + opts.PrintLength / 12)
@@ -1463,12 +1447,11 @@ module Display =
                                tagProperty m.Name),
                           (try
                               Some(nestedObjL nDepth Precedence.BracketIfTuple ((getProperty ty obj m.Name), ty))
-                           with
-                           | _ ->
+                           with _ ->
                                try
                                    Some(nestedObjL nDepth Precedence.BracketIfTuple ((getField obj (m :?> FieldInfo)), ty))
-                               with
-                               | _ -> None)))
+                               with _ ->
+                                   None)))
                      |> Array.toList
                      |> makePropertiesL)
 
@@ -1594,8 +1577,7 @@ module Display =
                     match text with
                     | null -> ""
                     | _ -> text
-                with
-                | e ->
+                with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.
                     // This may be informative, e.g. division by zero etc...
                     "<ToString exception: " + e.Message + ">"

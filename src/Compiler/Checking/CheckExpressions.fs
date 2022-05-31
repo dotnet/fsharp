@@ -1949,9 +1949,13 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
                         member _.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+
                         member _.NotifyFormatSpecifierLocation(_, _) = ()
+
                         member _.NotifyOpenDeclaration _ = ()
+
                         member _.CurrentSourceText = None
+
                         member _.FormatStringCheckContext = None }
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
@@ -4659,6 +4663,12 @@ and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
     let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
+
+    // Check for duplicate field IDs
+    unsortedFieldIds
+    |> Array.countBy (fun fieldId -> fieldId.idText)
+    |> Array.iter (fun (idText, count) ->
+        if count > 1 then error (Error (FSComp.SR.tcAnonRecdTypeDuplicateFieldId(idText), m)))
 
     // Sort into canonical order
     let sortedFieldTys, sortedCheckedArgTys = List.zip args argsR |> List.indexed |> List.sortBy (fun (i,_) -> unsortedFieldIds[i].idText) |> List.map snd |> List.unzip
@@ -7516,6 +7526,12 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecd
 
 // Check '{| .... |}'
 and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+
+    // Check for duplicate field IDs
+    unsortedFieldIdsAndSynExprsGiven
+    |> List.countBy (fun (fId, _, _) -> fId.idText)
+    |> List.iter (fun (label, count) ->
+        if count > 1 then error (Error (FSComp.SR.tcAnonRecdDuplicateFieldId(label), mWholeExpr)))
 
     match optOrigSynExpr with
     | None ->

@@ -142,11 +142,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
     member al.Put(tok, key, value) =
         let data = FilterAndHold(tok)
 
-        let data =
-            if Exists(data, key) then
-                RemoveImpl(data, key)
-            else
-                data
+        let data = if Exists(data, key) then RemoveImpl(data, key) else data
 
         let data = Add(data, key, value)
         AssignWithStrength(tok, data) // This will remove extras
@@ -201,11 +197,7 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
 
     member bc.TryGetAny(tok, key) =
         match cache.TryPeekKeyValue(tok, key) with
-        | Some (similarKey, value) ->
-            if areSame (similarKey, key) then
-                Some(value)
-            else
-                None
+        | Some (similarKey, value) -> if areSame (similarKey, key) then Some(value) else None
         | None -> None
 
     member bc.TryGet(tok, key) =
@@ -224,11 +216,7 @@ type internal MruCache<'Token, 'Key, 'Value when 'Value: not struct>
 
     member bc.TryGetSimilar(tok, key) =
         match cache.TryGetKeyValue(tok, key) with
-        | Some (_, value) ->
-            if isStillValid (key, value) then
-                Some value
-            else
-                None
+        | Some (_, value) -> if isStillValid (key, value) then Some value else None
         | None -> None
 
     member bc.Set(tok, key: 'Key, value: 'Value) = cache.Put(tok, key, value)
