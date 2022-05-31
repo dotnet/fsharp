@@ -170,8 +170,7 @@ type internal HashMultiMap<'Key, 'Value>(size: int, comparer: IEqualityComparer<
         member s.Remove(x) =
             match s.TryFind x.Key with
             | Some v ->
-                if Unchecked.equals v x.Value then
-                    s.Remove(x.Key)
+                if Unchecked.equals v x.Value then s.Remove(x.Key)
 
                 true
             | _ -> false

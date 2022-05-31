@@ -611,8 +611,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         let bNil = Bytes.zeroCreate 3
 
         // Align remaining fields on DWORD (nb. poor bit twiddling code taken from ildasm's dres.cpp)
-        if (dwFiller &&& 0x1) <> 0 then
-            SaveChunk(bNil, 2)
+        if (dwFiller &&& 0x1) <> 0 then SaveChunk(bNil, 2)
 
         //---- Constant part of the header: DWORD, WORD, WORD, DWORD, DWORD
         SaveChunk(dwToBytes resHdr.DataVersion)
@@ -628,8 +627,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         dwFiller <- dataEntry.Size &&& 0x3
 
-        if dwFiller <> 0 then
-            SaveChunk(bNil, 4 - dwFiller)
+        if dwFiller <> 0 then SaveChunk(bNil, 4 - dwFiller)
 
         size
 
@@ -1039,8 +1037,8 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
                 FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
 
             false
-        with
-        | _ -> true
+        with _ ->
+            true
 
     let mutable attempts = 0
 
@@ -1072,8 +1070,8 @@ let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
 
         if (checkSum.Length = hashSizeOfMD5) then
             writer.SetCheckSum(guidSourceHashMD5, hashSizeOfMD5, checkSum)
-    with
-    | _ -> ()
+    with _ ->
+        ()
 
 let pdbDefineDocument (writer: PdbWriter) (url: string) =
     //3F5162F8-07C6-11D3-9053-00C04FA302A1
@@ -1204,8 +1202,8 @@ let pdbReadOpen (moduleName: string) (path: string) : PdbReader =
                 )
 
             { symReader = reader :?> ISymbolReader }
-        with
-        | _ -> { symReader = null }
+        with _ ->
+            { symReader = null }
 #else
         let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
 

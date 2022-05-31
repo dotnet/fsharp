@@ -646,8 +646,8 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
             try
                 System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty
                 |> ignore
-            with
-            | _ -> ()
+            with _ ->
+                ()
 #endif
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap
@@ -1101,11 +1101,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
 
         let stat = mref.CallingConv.IsStatic
 
-        let cconv =
-            (if stat then
-                 BindingFlags.Static
-             else
-                 BindingFlags.Instance)
+        let cconv = (if stat then BindingFlags.Static else BindingFlags.Instance)
 
         let methInfo =
             try
@@ -1117,8 +1113,8 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
                     (null: ParameterModifier[])
                 )
             // This can fail if there is an ambiguity w.r.t. return type
-            with
-            | _ -> null
+            with _ ->
+                null
 
         if (isNotNull methInfo && equalTypes resT methInfo.ReturnType) then
             methInfo
@@ -2568,8 +2564,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
 
                     match emEnv.emTypMap.TryFind typeRef with
                     | Some (_, tb, _, _) ->
-                        if not (tb.IsCreated()) then
-                            tb.CreateTypeAndLog() |> ignore
+                        if not (tb.IsCreated()) then tb.CreateTypeAndLog() |> ignore
 
                         tb.Assembly
                     | None -> null)
@@ -2595,8 +2590,7 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
     traverseTypeRef tref
 
 let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef: ILTypeDef) =
-    if verbose2 then
-        dprintf "buildTypeDefPass4 %s\n" tdef.Name
+    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name
 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     createTypeRef (visited, created) emEnv tref
@@ -2759,8 +2753,8 @@ let EmitDynamicAssemblyFragment
         try
             ignore (typB.InvokeMemberAndLog(methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [||]))
             None
-        with
-        | :? TargetInvocationException as exn -> Some exn.InnerException
+        with :? TargetInvocationException as exn ->
+            Some exn.InnerException
 
     let emEnv, entryPts = envPopEntryPts emEnv
     let execs = List.map execEntryPtFun entryPts

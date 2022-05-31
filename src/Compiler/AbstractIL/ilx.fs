@@ -10,10 +10,7 @@ let mkLowerName (nm: string) =
     // Use the lower case name of a field or constructor as the field/parameter name if it differs from the uppercase name
     let lowerName = String.uncapitalize nm
 
-    if lowerName = nm then
-        "_" + nm
-    else
-        lowerName
+    if lowerName = nm then "_" + nm else lowerName
 
 [<Sealed>]
 type IlxUnionCaseField(fd: ILFieldDef) =

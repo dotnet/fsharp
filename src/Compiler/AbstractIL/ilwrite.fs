@@ -768,16 +768,15 @@ and GetTypeDescAsTypeRefIdx cenv (scoref, enc, n) =
     GetTypeRefAsTypeRefIdx cenv (mkILNestedTyRef (scoref, enc, n))
 
 and GetResolutionScopeAsElem cenv (scoref, enc) =
-    if isNil enc then
+    match List.tryFrontAndBack enc with
+    | None ->
         match scoref with
         | ILScopeRef.Local -> (rs_Module, 1)
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
         | ILScopeRef.Module mref -> (rs_ModuleRef, GetModuleRefAsIdx cenv mref)
         | ILScopeRef.PrimaryAssembly -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
-    else
-        let enc2, n2 = List.frontAndBack enc
+    | Some (enc2, n2) ->
         (rs_TypeRef, GetTypeDescAsTypeRefIdx cenv (scoref, enc2, n2))
-
 
 let getTypeInfoAsTypeDefOrRefEncoded cenv (scoref, enc, nm) =
     if isScopeRefLocal scoref then
