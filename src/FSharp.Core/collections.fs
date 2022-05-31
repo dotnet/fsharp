@@ -50,7 +50,8 @@ module ComparisonIdentity =
     let inline Structural<'T when 'T: comparison> : IComparer<'T> =
         LanguagePrimitives.FastGenericComparer<'T>
 
-    let inline NonStructural<'T when 'T: (static member (<): 'T * 'T -> bool) and 'T: (static member (>): 'T * 'T -> bool)> : IComparer<'T> =
+    let inline NonStructural<'T
+        when 'T: (static member (<): 'T * 'T -> bool) and 'T: (static member (>): 'T * 'T -> bool)> : IComparer<'T> =
         { new IComparer<'T> with
             member _.Compare(x, y) =
                 NonStructuralComparison.compare x y

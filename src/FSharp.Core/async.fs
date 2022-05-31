@@ -870,13 +870,15 @@ module AsyncPrimitives =
     ///   - Create Thread and call Start() with exception protection. We don't expect this
     ///     to fail but protect nevertheless.
     let CreateSwitchToNewThreadAsync () =
-        MakeAsyncWithCancelCheck(fun ctxt -> ctxt.ProtectCode(fun () -> ctxt.trampolineHolder.StartThreadWithTrampoline ctxt.cont))
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            ctxt.ProtectCode(fun () -> ctxt.trampolineHolder.StartThreadWithTrampoline ctxt.cont))
 
     ///   - Initial cancellation check
     ///   - Call ThreadPool.QueueUserWorkItem with exception protection. We don't expect this
     ///     to fail but protect nevertheless.
     let CreateSwitchToThreadPoolAsync () =
-        MakeAsyncWithCancelCheck(fun ctxt -> ctxt.ProtectCode(fun () -> ctxt.trampolineHolder.QueueWorkItemWithTrampoline ctxt.cont))
+        MakeAsyncWithCancelCheck(fun ctxt ->
+            ctxt.ProtectCode(fun () -> ctxt.trampolineHolder.QueueWorkItemWithTrampoline ctxt.cont))
 
     /// Post back to the sync context regardless of which continuation is taken
     ///   - Call syncCtxt.Post with exception protection
@@ -917,7 +919,8 @@ module AsyncPrimitives =
             // This logic was added in F# 2.0 though is incorrect from the perspective of
             // how SynchronizationContext is meant to work. However the logic works for
             // mainline scenarios (WinForms/WPF) and for compatibility reasons we won't change it.
-            | _ when Object.Equals(syncCtxt, currentSyncCtxt) && thread.Equals Thread.CurrentThread -> executeImmediately ()
+            | _ when Object.Equals(syncCtxt, currentSyncCtxt) && thread.Equals Thread.CurrentThread ->
+                executeImmediately ()
             | _ -> trampolineHolder.PostOrQueueWithTrampoline syncCtxt action
 
         member _.PostOrQueueWithTrampoline res =
@@ -1074,7 +1077,7 @@ module AsyncPrimitives =
                 (typeof<FuncDelegate<'T>>)
                     .GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
 
-            System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
+            Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
 
     [<DebuggerHidden>]
     let QueueAsync cancellationToken cont econt ccont computation =
@@ -1429,7 +1432,9 @@ type Async =
     static member CancelCheck() =
         unitAsync
 
-    static member FromContinuations(callback: ('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) : Async<'T> =
+    static member FromContinuations
+        (callback: ('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit)
+        : Async<'T> =
         MakeAsyncWithCancelCheck(fun ctxt ->
             let mutable underCurrentThreadStack = true
             let mutable contToTailCall = None
@@ -1451,7 +1456,11 @@ type Async =
                     ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> cont x) |> unfake
 
             try
-                callback (once ctxt.cont, (fun exn -> once ctxt.econt (ExceptionDispatchInfo.RestoreOrCapture exn)), once ctxt.ccont)
+                callback (
+                    once ctxt.cont,
+                    (fun exn -> once ctxt.econt (ExceptionDispatchInfo.RestoreOrCapture exn)),
+                    once ctxt.ccont
+                )
             with exn ->
                 if not (latch.Enter()) then
                     invalidOp (SR.GetString(SR.controlContinuationInvokedMultipleTimes))
@@ -1518,7 +1527,12 @@ type Async =
     static member Parallel(computations: seq<Async<'T>>, ?maxDegreeOfParallelism: int) =
         match maxDegreeOfParallelism with
         | Some x when x < 1 ->
-            raise (System.ArgumentException(String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), x), "maxDegreeOfParallelism"))
+            raise (
+                System.ArgumentException(
+                    String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), x),
+                    "maxDegreeOfParallelism"
+                )
+            )
         | _ -> ()
 
         MakeAsyncWithCancelCheck(fun ctxt ->
@@ -1547,8 +1561,10 @@ type Async =
 
                             match firstExn with
                             | None -> ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.cont results)
-                            | Some (Choice1Of2 exn) -> ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.econt exn)
-                            | Some (Choice2Of2 cexn) -> ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont cexn)
+                            | Some (Choice1Of2 exn) ->
+                                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.econt exn)
+                            | Some (Choice2Of2 cexn) ->
+                                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont cexn)
                         else
                             fake ()
 
@@ -1724,7 +1740,12 @@ type Async =
         let cancellationToken =
             defaultArg cancellationToken defaultCancellationTokenSource.Token
 
-        AsyncPrimitives.StartWithContinuations cancellationToken computation continuation exceptionContinuation cancellationContinuation
+        AsyncPrimitives.StartWithContinuations
+            cancellationToken
+            computation
+            continuation
+            exceptionContinuation
+            cancellationContinuation
 
     static member StartWithContinuations
         (
@@ -1781,7 +1802,8 @@ type Async =
                             DisposeCancellationRegistration &registration
                             DisposeTimer &timer
 
-                            ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont (OperationCanceledException(ctxt.token)))
+                            ctxt.trampolineHolder.ExecuteWithTrampoline(fun () ->
+                                ctxt.ccont (OperationCanceledException(ctxt.token)))
                             |> unfake)
                 )
                 |> Some
@@ -1847,7 +1869,8 @@ type Async =
                                 UnregisterWaitHandle &rwh
 
                                 // Call the cancellation continuation
-                                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () -> ctxt.ccont (OperationCanceledException(ctxt.token)))
+                                ctxt.trampolineHolder.ExecuteWithTrampoline(fun () ->
+                                    ctxt.ccont (OperationCanceledException(ctxt.token)))
                                 |> unfake)
                     )
                     |> Some
@@ -1929,7 +1952,11 @@ type Async =
                         let res = resultCell.GrabResult()
                         return res.Commit()
                     else
-                        let! ok = Async.AwaitWaitHandle(resultCell.GetWaitHandle(), ?millisecondsTimeout = millisecondsTimeout)
+                        let! ok =
+                            Async.AwaitWaitHandle(
+                                resultCell.GetWaitHandle(),
+                                ?millisecondsTimeout = millisecondsTimeout
+                            )
 
                         if ok then
                             let res = resultCell.GrabResult()
@@ -2009,10 +2036,18 @@ type Async =
         Async.FromBeginEnd((fun (iar, state) -> beginAction (arg, iar, state)), endAction, ?cancelAction = cancelAction)
 
     static member FromBeginEnd(arg1, arg2, beginAction, endAction, ?cancelAction) : Async<'T> =
-        Async.FromBeginEnd((fun (iar, state) -> beginAction (arg1, arg2, iar, state)), endAction, ?cancelAction = cancelAction)
+        Async.FromBeginEnd(
+            (fun (iar, state) -> beginAction (arg1, arg2, iar, state)),
+            endAction,
+            ?cancelAction = cancelAction
+        )
 
     static member FromBeginEnd(arg1, arg2, arg3, beginAction, endAction, ?cancelAction) : Async<'T> =
-        Async.FromBeginEnd((fun (iar, state) -> beginAction (arg1, arg2, arg3, iar, state)), endAction, ?cancelAction = cancelAction)
+        Async.FromBeginEnd(
+            (fun (iar, state) -> beginAction (arg1, arg2, arg3, iar, state)),
+            endAction,
+            ?cancelAction = cancelAction
+        )
 
     static member AsBeginEnd<'Arg, 'T>
         (computation: ('Arg -> Async<'T>))
@@ -2267,7 +2302,9 @@ module WebExtensions =
             )
             |> CreateTryWithFilterAsync(fun exn ->
                 match exn with
-                | :? System.Net.WebException as webExn when webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && canceled ->
+                | :? System.Net.WebException as webExn when
+                    webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && canceled
+                    ->
 
                     Some(CreateAsyncResultAsync(AsyncResult.Canceled(OperationCanceledException webExn.Message)))
                 | _ -> None)

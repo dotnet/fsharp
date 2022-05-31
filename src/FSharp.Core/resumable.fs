@@ -92,12 +92,15 @@ module StateMachineHelpers =
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __resumableEntry () : int option =
-        failwith "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
+        failwith
+            "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __resumeAt<'T> (programLabel: int) : 'T =
         ignore programLabel
-        failwith "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
+
+        failwith
+            "__resumeAt should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __stateMachine<'Data, 'Result>
@@ -108,7 +111,9 @@ module StateMachineHelpers =
         ignore moveNextMethod
         ignore setStateMachineMethod
         ignore afterCode
-        failwith "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
+
+        failwith
+            "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
 
 module ResumableCode =
 
@@ -167,13 +172,21 @@ module ResumableCode =
             else
                 CombineDynamic(&sm, code1, code2))
 
-    let rec WhileDynamic (sm: byref<ResumableStateMachine<'Data>>, condition: unit -> bool, body: ResumableCode<'Data, unit>) : bool =
+    let rec WhileDynamic
+        (
+            sm: byref<ResumableStateMachine<'Data>>,
+            condition: unit -> bool,
+            body: ResumableCode<'Data, unit>
+        ) : bool =
         if condition () then
             if body.Invoke(&sm) then
                 WhileDynamic(&sm, condition, body)
             else
                 let rf = GetResumptionFunc &sm
-                sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+
+                sm.ResumptionDynamicInfo.ResumptionFunc <-
+                    (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+
                 false
         else
             true
@@ -189,11 +202,18 @@ module ResumableCode =
             WhileDynamic(&sm, condition, body)
         else
             let rf = GetResumptionFunc &sm
-            sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+
+            sm.ResumptionDynamicInfo.ResumptionFunc <-
+                (ResumptionFunc<'Data>(fun sm -> WhileBodyDynamicAux(&sm, condition, body, rf)))
+
             false
 
     /// Builds a step that executes the body while the condition predicate is true.
-    let inline While ([<InlineIfLambda>] condition: unit -> bool, body: ResumableCode<'Data, unit>) : ResumableCode<'Data, unit> =
+    let inline While
+        (
+            [<InlineIfLambda>] condition: unit -> bool,
+            body: ResumableCode<'Data, unit>
+        ) : ResumableCode<'Data, unit> =
         ResumableCode<'Data, unit>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -225,7 +245,8 @@ module ResumableCode =
                 let rf = GetResumptionFunc &sm
 
                 sm.ResumptionDynamicInfo.ResumptionFunc <-
-                    (ResumptionFunc<'Data>(fun sm -> TryWithDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), handler)))
+                    (ResumptionFunc<'Data>(fun sm ->
+                        TryWithDynamic(&sm, ResumableCode<'Data, 'T>(fun sm -> rf.Invoke(&sm)), handler)))
 
                 false
         with exn ->
@@ -233,7 +254,11 @@ module ResumableCode =
 
     /// Wraps a step in a try/with. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let inline TryWith (body: ResumableCode<'Data, 'T>, catch: exn -> ResumableCode<'Data, 'T>) : ResumableCode<'Data, 'T> =
+    let inline TryWith
+        (
+            body: ResumableCode<'Data, 'T>,
+            catch: exn -> ResumableCode<'Data, 'T>
+        ) : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START
@@ -260,7 +285,12 @@ module ResumableCode =
             else
                 TryWithDynamic(&sm, body, catch))
 
-    let rec TryFinallyCompensateDynamic (sm: byref<ResumableStateMachine<'Data>>, mf: ResumptionFunc<'Data>, savedExn: exn option) : bool =
+    let rec TryFinallyCompensateDynamic
+        (
+            sm: byref<ResumableStateMachine<'Data>>,
+            mf: ResumptionFunc<'Data>,
+            savedExn: exn option
+        ) : bool =
         let mutable fin = false
         fin <- mf.Invoke(&sm)
 
@@ -271,7 +301,10 @@ module ResumableCode =
             | Some exn -> raise exn
         else
             let rf = GetResumptionFunc &sm
-            sm.ResumptionDynamicInfo.ResumptionFunc <- (ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn)))
+
+            sm.ResumptionDynamicInfo.ResumptionFunc <-
+                (ResumptionFunc<'Data>(fun sm -> TryFinallyCompensateDynamic(&sm, rf, savedExn)))
+
             false
 
     let rec TryFinallyAsyncDynamic
@@ -328,7 +361,11 @@ module ResumableCode =
 
     /// Wraps a step in a try/finally. This catches exceptions both in the evaluation of the function
     /// to retrieve the step, and in the continuation of the step (if any).
-    let inline TryFinallyAsync (body: ResumableCode<'Data, 'T>, compensation: ResumableCode<'Data, unit>) : ResumableCode<'Data, 'T> =
+    let inline TryFinallyAsync
+        (
+            body: ResumableCode<'Data, 'T>,
+            compensation: ResumableCode<'Data, unit>
+        ) : ResumableCode<'Data, 'T> =
         ResumableCode<'Data, 'T>(fun sm ->
             if __useResumableCode then
                 //-- RESUMABLE CODE START

@@ -22,7 +22,14 @@ type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value, h: int) =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 [<AllowNullLiteral>]
-type internal MapTreeNode<'Key, 'Value>(k: 'Key, v: 'Value, left: MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
+type internal MapTreeNode<'Key, 'Value>
+    (
+        k: 'Key,
+        v: 'Value,
+        left: MapTree<'Key, 'Value>,
+        right: MapTree<'Key, 'Value>,
+        h: int
+    ) =
     inherit MapTree<'Key, 'Value>(k, v, h)
     member _.Left = left
     member _.Right = right
@@ -68,7 +75,7 @@ module MapTree =
         traceCount <- traceCount + 1
 
         if traceCount % 1000000 = 0 then
-            System.Console.WriteLine(
+            Console.WriteLine(
                 "#MapOne = {0}, #MapNode = {1}, #Add = {2}, #Remove = {3}, #Unions = {4}, #Lookups = {5}, avMapTreeSizeOnNodeCreation = {6}, avMapSizeOnCreation = {7}, avMapSizeOnLookup = {8}",
                 numOnes,
                 numNodes,
@@ -81,7 +88,7 @@ module MapTree =
                 (totalSizeOnMapLookup / float numLookups)
             )
 
-            System.Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
+            Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
 
     let MapTree (k, v) =
         report ()
@@ -202,7 +209,12 @@ module MapTree =
         else
             (acc1, add comparer k v acc2)
 
-    let rec partitionAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc =
+    let rec partitionAux
+        (comparer: IComparer<'Key>)
+        (f: OptimizedClosures.FSharpFunc<_, _, _>)
+        (m: MapTree<'Key, 'Value>)
+        acc
+        =
         if isEmpty m then
             acc
         else if m.Height = 1 then
@@ -222,7 +234,12 @@ module MapTree =
         else
             acc
 
-    let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc =
+    let rec filterAux
+        (comparer: IComparer<'Key>)
+        (f: OptimizedClosures.FSharpFunc<_, _, _>)
+        (m: MapTree<'Key, 'Value>)
+        acc
+        =
         if isEmpty m then
             acc
         else if m.Height = 1 then
@@ -273,7 +290,12 @@ module MapTree =
                 else
                     rebalance mn.Left mn.Key mn.Value (remove comparer k mn.Right)
 
-    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) : MapTree<'Key, 'Value> =
+    let rec change
+        (comparer: IComparer<'Key>)
+        k
+        (u: 'Value option -> 'Value option)
+        (m: MapTree<'Key, 'Value>)
+        : MapTree<'Key, 'Value> =
         if isEmpty m then
             match u None with
             | None -> m
@@ -440,7 +462,14 @@ module MapTree =
     let fold f x m =
         foldOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) x m
 
-    let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
+    let foldSectionOpt
+        (comparer: IComparer<'Key>)
+        lo
+        hi
+        (f: OptimizedClosures.FSharpFunc<_, _, _, _>)
+        (m: MapTree<'Key, 'Value>)
+        x
+        =
         let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
             if isEmpty m then
                 x

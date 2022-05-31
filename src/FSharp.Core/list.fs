@@ -75,7 +75,11 @@ module List =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let countByRefType (projection: 'T -> 'Key) (list: 'T list) =
-        countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(projection t)) (fun sb -> sb.Value) list
+        countByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(projection t))
+            (fun sb -> sb.Value)
+            list
 
     [<CompiledName("CountBy")>]
     let countBy (projection: 'T -> 'Key) (list: 'T list) =
@@ -358,7 +362,13 @@ module List =
             let arrn = arr.Length
             foldArraySubRight f arr 0 (arrn - 2) arr.[arrn - 1]
 
-    let scanArraySubRight<'T, 'State> (f: OptimizedClosures.FSharpFunc<'T, 'State, 'State>) (arr: _[]) start fin initState =
+    let scanArraySubRight<'T, 'State>
+        (f: OptimizedClosures.FSharpFunc<'T, 'State, 'State>)
+        (arr: _[])
+        start
+        fin
+        initState
+        =
         let mutable state = initState
         let mutable res = [ state ]
 
@@ -411,7 +421,8 @@ module List =
             | [], [] -> f.Invoke(h1, k1, state)
             | [ h2 ], [ k2 ] -> f.Invoke(h1, k1, f.Invoke(h2, k2, state))
             | [ h2; h3 ], [ k2; k3 ] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, state)))
-            | [ h2; h3; h4 ], [ k2; k3; k4 ] -> f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, f.Invoke(h4, k4, state))))
+            | [ h2; h3; h4 ], [ k2; k3; k4 ] ->
+                f.Invoke(h1, k1, f.Invoke(h2, k2, f.Invoke(h3, k3, f.Invoke(h4, k4, state))))
             | _ -> foldBack2UsingArrays f list1 list2 state
         | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
@@ -528,7 +539,12 @@ module List =
     let where predicate list =
         Microsoft.FSharp.Primitives.Basics.List.filter predicate list
 
-    let inline groupByImpl (comparer: IEqualityComparer<'SafeKey>) (keyf: 'T -> 'SafeKey) (getKey: 'SafeKey -> 'Key) (list: 'T list) =
+    let inline groupByImpl
+        (comparer: IEqualityComparer<'SafeKey>)
+        (keyf: 'T -> 'SafeKey)
+        (getKey: 'SafeKey -> 'Key)
+        (list: 'T list)
+        =
         Microsoft.FSharp.Primitives.Basics.List.groupBy comparer keyf getKey list
 
     // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
@@ -537,7 +553,11 @@ module List =
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (list: 'T list) =
-        groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(keyf t)) (fun sb -> sb.Value) list
+        groupByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(keyf t))
+            (fun sb -> sb.Value)
+            list
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (list: 'T list) =
