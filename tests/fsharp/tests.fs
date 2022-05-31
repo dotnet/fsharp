@@ -1587,9 +1587,11 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
-//BUGBUG: https://github.com/dotnet/fsharp/issues/6601
-//    [<Test>]
-//    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
+// This requires --multiemit on by default, which is not the case for .NET Framework
+#if NETCOREAPP
+    [<Test>]
+    let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
+#endif
 
     [<Test>]
     let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
@@ -3282,7 +3284,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if NET472
+#if !NETCOREAPP
 [<NonParallelizable>]
 module ProductVersionTest =
 

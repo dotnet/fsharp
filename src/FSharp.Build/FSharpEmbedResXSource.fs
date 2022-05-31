@@ -98,9 +98,7 @@ module internal {1} =
                                 XElement(xname "summary", docComment)
                                     .ToString()
                                     .Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
-                                |> Array.fold
-                                    (fun (sb: StringBuilder) line -> sb.AppendLine("    /// " + line))
-                                    (StringBuilder())
+                                |> Array.fold (fun (sb: StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
                             // add the resource
                             let accessorBody =
                                 match (generateLegacy, generateLiteral) with
@@ -120,8 +118,7 @@ module internal {1} =
                 File.WriteAllText(sourcePath, body.ToString())
                 printMessage <| sprintf "Done: %s" sourcePath
                 Some(sourcePath)
-        with
-        | e ->
+        with e ->
             printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
             None
 
