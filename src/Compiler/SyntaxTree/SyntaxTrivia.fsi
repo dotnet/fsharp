@@ -318,6 +318,9 @@ type SynValSigTrivia =
 
         /// The syntax range of the `with` keyword
         WithKeyword: range option
+
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
     }
 
     static member Zero: SynValSigTrivia
