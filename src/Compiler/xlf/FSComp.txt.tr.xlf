@@ -157,6 +157,11 @@
         <target state="translated">noktasız float32 sabit değeri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
+        <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
+        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">tür daha ölçü birimlerini destekler</target>
@@ -622,6 +627,11 @@
         <target state="translated">Bu özellik, bu F# sürümünde desteklenmiyor. Bu özelliği kullanabilmeniz için /langversion:preview eklemeniz gerekebilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">Bu anonim kayıt yanlış. Kayıt, {0} alanlarını içermelidir.</target>
@@ -640,6 +650,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Anonim Kayıt türü bildirimi geçersiz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -5003,8 +5018,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">Bu kodun üzerinde çalışabileceği platformları sınırlandırın: x86, Itanium, x64, anycpu32bitpreferred veya anycpu. Varsayılan: anycpu.</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">Bu kodun üzerinde çalışabileceği platformları sınırlandırın: x86, Itanium, x64, anycpu32bitpreferred veya anycpu. Varsayılan: anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5298,8 +5313,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">Tanınmayan platform '{0}', geçerli değerler: 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' ve 'anycpu'</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">Tanınmayan platform '{0}', geçerli değerler: 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' ve 'anycpu'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

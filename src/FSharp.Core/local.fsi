@@ -43,8 +43,9 @@ module internal List =
 
     val distinctWithComparer: System.Collections.Generic.IEqualityComparer<'T> -> 'T list -> 'T list
 
-    val distinctByWithComparer: System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list: 'T list -> 'T list
-        when 'Key: equality
+    val distinctByWithComparer:
+        System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list: 'T list -> 'T list
+            when 'Key: equality
 
     val init: int -> (int -> 'T) -> 'T list
     val filter: predicate: ('T -> bool) -> 'T list -> 'T list

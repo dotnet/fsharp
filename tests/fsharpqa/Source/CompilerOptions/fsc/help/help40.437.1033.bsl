@@ -21,9 +21,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          the given file
 --keyfile:<file>                         Specify a strong name key file
 --platform:<string>                      Limit which platforms this code can
-                                         run on: x86, Itanium, x64,
-                                         anycpu32bitpreferred, or anycpu. The
-                                         default is anycpu.
+                                         run on: x86, x64, Arm, Arm64,
+                                         Itanium, anycpu32bitpreferred, or
+                                         anycpu. The default is anycpu.
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.

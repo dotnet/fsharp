@@ -68,8 +68,8 @@ type public Fsc() as this =
         let locationOfThisDll =
             try
                 Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with
-            | _ -> None
+            with _ ->
+                None
 
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
@@ -198,6 +198,8 @@ type public Fsc() as this =
             | "ANYCPU", _, _ -> "anycpu"
             | "X86", _, _ -> "x86"
             | "X64", _, _ -> "x64"
+            | "ARM", _, _ -> "arm"
+            | "ARM64", _, _ -> "arm64"
             | _ -> null
         )
 
@@ -683,8 +685,7 @@ type public Fsc() as this =
 
                 try
                     invokeCompiler baseCallDelegate
-                with
-                | e ->
+                with e ->
                     Debug.Fail(
                         "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "
                         + (e.ToString())
