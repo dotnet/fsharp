@@ -55,7 +55,91 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 The following is a diagram of how the different phases of the F# compiler work:
 
+```mermaid
+stateDiagram-v2
+    state "Compilation phases" as Flow {
+      Lexing: Lexing
+      note left of Lexing
+          FsLex is used for lexing, all related parts can be found in <a href="https://github.com/dotnet/fsharp/tree/main/src/Compiler">src/Compiler</a>:
+            - <a href="https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl">src/Compiler/lex.fsl</a>
+            - <a href="https://github.com/dotnet/fsharp/blob/main/src/Compiler/pplex.fsl">src/Compiler/pplex.fsl</a>
+
+      end note
+      Parsing: Parsing
+      Import: Import
+      Typechecking: Type checking
+      Codegen: Code generation
+      Emit: IL emit
+      Inputs --> Lexing: Source and signature files
+      Inputs --> Import: Referecnces
+      Lexing --> Parsing
+      Parsing --> Typechecking
+      Import --> Typechecking
+      Typechecking --> Codegen
+      Codegen --> Emit
+      state Lexing {
+          BasicLexing: Basic Lexing
+          WhitespaceSensitiveLexing: Whitespace Sensitive Lexing
+          [*] --> BasicLexing
+          BasicLexing --> WhitespaceSensitiveLexing
+          WhitespaceSensitiveLexing --> [*]
+      }
+      state Parsing {
+          Parser: Parsing
+          [*] --> Parser
+          Parser --> [*]
+      }
+      state Import {
+          Resolving: Resolving references
+          ImportNET: Importing .NET references
+          ImportFS: Importing F# references
+          [*] --> Resolving
+          Resolving --> ImportNET
+          Resolving --> ImportFS
+          ImportNET --> [*]
+          ImportFS --> [*]
+      }
+      state Typechecking {
+          SequentialTypechecking: Sequenctially type checking files
+          PatternMatchCompilation: Pattern match compilation
+          ConstraintSolving: Constraint solving
+          PostInferenceChecks: Post inference checks
+          [*] --> SequentialTypechecking
+          SequentialTypechecking --> PatternMatchCompilation
+          PatternMatchCompilation --> ConstraintSolving
+          ConstraintSolving --> PostInferenceChecks
+          PostInferenceChecks --> [*]
+      }
+      state Codegen {
+          QuotationTranslation: Quotation translation
+          Optimization: Optimization
+          Codegeneration: Code generation
+          AbstractILRewrite: Abstract IL rewriting
+          [*] --> QuotationTranslation
+          QuotationTranslation --> Optimization
+          Optimization --> Codegeneration
+          Codegeneration --> AbstractILRewrite
+          AbstractILRewrite --> [*]
+      }
+      state Emit {
+          Binary: Binary emit
+          Reflection: Reflection emit
+          Output: Output (assembly, references, PDBs, etc.)
+          [*] --> Binary
+          [*] --> Reflection
+          Binary --> Output
+          Reflection --> Output
+      }
+  }
+```
+
+<details>
+
+<summary>Previous version of the graph.</summary>
+
 ![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
+
+</details>
 
 The following are the key phases and high-level logical operations of the F# compiler code in its various configurations:
 
