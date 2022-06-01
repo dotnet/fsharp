@@ -59,12 +59,6 @@ The following is a diagram of how the different phases of the F# compiler work:
 stateDiagram-v2
     state "Compilation phases" as Flow {
       Lexing: Lexing
-      note left of Lexing
-          FsLex is used for lexing, all related parts can be found in <a href="https://github.com/dotnet/fsharp/tree/main/src/Compiler">src/Compiler</a>:
-            - <a href="https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl">src/Compiler/lex.fsl</a>
-            - <a href="https://github.com/dotnet/fsharp/blob/main/src/Compiler/pplex.fsl">src/Compiler/pplex.fsl</a>
-
-      end note
       Parsing: Parsing
       Import: Import
       Typechecking: Type checking
@@ -81,13 +75,13 @@ stateDiagram-v2
           BasicLexing: Basic Lexing
           WhitespaceSensitiveLexing: Whitespace Sensitive Lexing
           [*] --> BasicLexing
-          BasicLexing --> WhitespaceSensitiveLexing
-          WhitespaceSensitiveLexing --> [*]
+          BasicLexing --> WhitespaceSensitiveLexing: A token stream from input source text.
+          WhitespaceSensitiveLexing --> [*]: A token stream, augmented per the F# Language Specification.
       }
       state Parsing {
           Parser: Parsing
           [*] --> Parser
-          Parser --> [*]
+          Parser --> [*]: AST per the grammar in the F# Language Specification.
       }
       state Import {
           Resolving: Resolving references
@@ -145,9 +139,9 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Basic lexing_. Produces a token stream from input source file text.
 
-* _White-space sensitive lexing_. Accepts and produces a token stream, augmenting per the F# Language Specification.
+* _White-space sensitive lexing_. Accepts and produces a token stream, augmenting per the [F# Language Specification](https://fsharp.org/specs/language-spec/).
 
-* _Parsing_. Accepts a token stream and produces an AST per the grammar in the F# Language Specification.
+* _Parsing_. Accepts a token stream and produces an AST per the grammar in the [F# Language Specification](https://fsharp.org/specs/language-spec/).
 
 * _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for
