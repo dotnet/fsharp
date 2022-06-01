@@ -1930,6 +1930,49 @@ val a : int
             assertRange (6, 0) (6, 3) mVal
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Equals token is present in SynValSig value`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module Meh
+
+val a : int = 9
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Val(valSig = SynValSig(trivia = { EqualsRange = Some mEquals }); range = mVal)
+            ] ) ])) ->
+            assertRange (4, 12) (4, 13) mEquals
+            assertRange (4, 0) (4, 15) mVal
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Equals token is present in SynValSig member`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module Meh
+
+type X =
+    member a : int = 10
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Types(types = [
+                    SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                        SynMemberSig.Member(memberSig = SynValSig(trivia = { EqualsRange = Some mEquals }); range = mMember)
+                    ]))
+                ])
+            ] ) ])) ->
+            assertRange (5, 19) (5, 20) mEquals
+            assertRange (5, 4) (5, 23) mMember
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynMatchClause =
     [<Test>]
     let ``Range of single SynMatchClause`` () =
