@@ -3881,9 +3881,12 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let isItanium = modul.Platform = Some IA64
           let isItaniumOrAMD = match modul.Platform with | Some IA64 | Some AMD64 -> true | _ -> false
           let hasEntryPointStub = match modul.Platform with | Some ARM64 | Some ARM -> false | _ -> true
+
           let numSections =
-              if hasEntryPointStub then 3           // .text, .sdata, .reloc
-              else 2                                // .text, .sdata
+              let textAndSData = 2 // .text, .sdata
+              let hasMvid = if options.referenceAssemblyOnly then 1 else 0 // .mvid
+              let hasReloc = if hasEntryPointStub then 1 else 0 // /reloc              
+              textAndSData + hasMvid + hasReloc
 
           // HEADERS
           let next = 0x0
@@ -3895,6 +3898,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let peSignatureChunk, next = chunk 0x04 next
           let peFileHeaderChunk, next = chunk 0x14 next
           let peOptionalHeaderChunk, next = chunk (if modul.Is64Bit then 0xf0 else 0xe0) next
+          let mvidSectionHeaderChunk, next = if options.referenceAssemblyOnly then chunk 0x10 next else nochunk next
           let textSectionHeaderChunk, next = chunk 0x28 next
           let dataSectionHeaderChunk, next = chunk 0x28 next
           let relocSectionHeaderChunk, next = if hasEntryPointStub then chunk 0x28 next else nochunk next
@@ -4080,6 +4084,16 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let relocSectionPhysSize = if hasEntryPointStub then nextPhys - relocSectionPhysLoc else 0x00
           let next = if hasEntryPointStub then align alignVirt (relocSectionAddr + relocSectionSize) else align alignVirt next
 
+          // .MVID SECTION base mvid table: 0x10 size
+          let mvidSectionPhysLoc = nextPhys
+          let mvidSectionAddr =  if options.referenceAssemblyOnly then next else 0x00
+          let baseMvidTableChunk, next =  if options.referenceAssemblyOnly then chunk 0x0c next else nochunk next
+
+          let mvidSectionSize = if options.referenceAssemblyOnly then next - mvidSectionAddr else 0x00
+          let nextPhys = if options.referenceAssemblyOnly then align alignPhys (mvidSectionPhysLoc + mvidSectionSize) else nextPhys
+          let mvidSectionPhysSize = if options.referenceAssemblyOnly then nextPhys - mvidSectionPhysLoc else 0x00
+          let next = if options.referenceAssemblyOnly then align alignVirt (mvidSectionAddr + mvidSectionSize) else align alignVirt next
+          
          // Now we know where the data section lies we can fix up the
          // references into the data section from the metadata tables.
           requiredDataFixups |> List.iter
@@ -4340,6 +4354,26 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
               writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
               writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |] //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |
 
+          if options.referenceAssemblyOnly then
+              write (Some mvidSectionHeaderChunk.addr) os "mvid section header" [|  |]
+              // 0x00000178
+              writeBytes os [| 0x2euy; 0x6Duy; 0x76uy; 0x69uy; 0x64uy; 0x00uy; 0x00uy; 0x00uy; |] // ".mvid\000\000"
+              writeInt32 os mvidSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment.
+              writeInt32 os mvidSectionAddr // VirtualAddress For executable images this is the address of the first byte of the section.
+              // 0x00000188
+              writeInt32 os mvidSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes
+              writeInt32 os mvidSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file.
+              // 0x00000190
+              writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section.
+              writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1).
+              // 0x00000198
+              writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused.
+              writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
+              writeBytes os (failwith "I honestly don't know how the Characteristics Flags need to be represented")
+              // It should have Characteristics Flags: CntInitializedData, Alignment (Default), MemDiscardable, MemRead
+
+         // TODO: at some point write the actual mvid guid?
+          
           writePadding os "pad to text begin" (textSectionPhysLoc - headerSize)
 
           // TEXT SECTION: e.g. 0x200
@@ -4494,6 +4528,12 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                      b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
+          // MVID SECTION
+          if options.referenceAssemblyOnly then
+                let mvidV2P v = v - mvidSectionAddr + mvidSectionPhysLoc
+                // I guess write the guid here??
+                ()
+          
           pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
     reportTime options.showTimes "Writing Image"
