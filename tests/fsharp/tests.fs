@@ -31,8 +31,6 @@ let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
-let withCulture culture (cfg: TestConfig) =
-    { cfg with fsc_flags = sprintf "%s --preferreduilang:%s" cfg.fsc_flags culture}
 
 
 [<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
@@ -2109,7 +2107,6 @@ module ToolsTests =
     let bundle () =
         let cfg = 
             testConfig "tools/bundle" 
-            |> withCulture "en-US"
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
@@ -2235,7 +2232,6 @@ module RegressionTests =
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
         let cfg = 
             testConfig "regression/5531"
-            |> withCulture "en-US"
        
 
         let outFile = "compilation.output.test.txt"
@@ -3368,9 +3364,6 @@ module GeneratedSignatureTests =
 [<NonParallelizable>]
 module OverloadResolution =
     module ``fsharpqa migrated tests`` =
-        let testConfig config =
-            testConfig config
-            |> withCulture "en-US"
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
         let [<Test>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03.fsx)`` () = singleNegTest (testConfig "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"
         let [<Test>] ``Conformance\Inference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"

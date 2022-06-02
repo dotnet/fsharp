@@ -14,7 +14,6 @@ module Inlining =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
-        |> withCulture "en-US"
         |> verifyILBaseline
 
     // SOURCE=Match01.fs SCFLAGS="-a --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Match01.dll"	# Match01.fs

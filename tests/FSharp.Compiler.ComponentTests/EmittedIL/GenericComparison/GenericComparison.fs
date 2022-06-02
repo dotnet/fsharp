@@ -14,7 +14,6 @@ module GenericComparison =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
-        |> withCulture "en-US"
         |> verifyILBaseline
 
     // SOURCE=Compare01.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd Compare01.dll"    # Compare01.fs -
