@@ -25,6 +25,10 @@ src/Compiler/Symbols/**/*.fs
 src/Compiler/TypedTree/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
 
+# Explicitly unformatted file that needs more care to get it to format well
+
+src/Compiler/SyntaxTree/LexFilter.fs
+
 # Fantomas limitations on implementation files in FSharp.Core (to investigate)
 
 src/FSharp.Core/array2.fs
