@@ -14,8 +14,8 @@
     -->
     <FSharp_Shim_Present>true</FSharp_Shim_Present>
 
-    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.Interop.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">fsc.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
-    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.Interop.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">fscArm64.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
+    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">fsc.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
+    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">fscArm64.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
     <Fsc_NetFramework_AnyCpu_ToolExe>fscAnyCpu.exe</Fsc_NetFramework_AnyCpu_ToolExe>
 
     <Fsc_DotNet_CompilerPath>$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</Fsc_DotNet_CompilerPath>
