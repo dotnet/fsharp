@@ -75,11 +75,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.2') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.3') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.2
+          MirrorBranch: release/dev17.3
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -185,12 +185,12 @@ stages:
   - ${{ if eq(variables['System.TeamProject'], 'public') }}:
     - template: /eng/common/templates/jobs/jobs.yml
       parameters:
-        enableMicrobuild: true
+        enableMicrobuild: false
         enablePublishBuildArtifacts: false
         enablePublishTestResults: false
         enablePublishBuildAssets: false
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
-        enableSourceBuild: true
+        enableSourceBuild: false
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
