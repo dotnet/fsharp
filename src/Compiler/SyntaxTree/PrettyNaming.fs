@@ -634,16 +634,26 @@ let IsMangledInfixOperator mangled  = (* where mangled is assumed to be a compil
     // The following conditions follow the declExpr infix clauses.
     // The test corresponds to the lexer definition for the token.
     s <> mangled && 
-    (s = ":=" ||                                    // COLON_EQUALS
-     afterSkipStartsWith "|" ||                     // BAR_BAR, INFIX_BAR_OP
-     afterSkipStartsWith "&"  ||                    // AMP, AMP_AMP, INFIX_AMP_OP
-     afterSkipStarts relational ||                  // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
-     s = "$" ||                                     // DOLLAR
-     afterSkipStarts concat ||                      // INFIX_AT_HAT_OP
-     s = "::" ||                                    // COLON_COLON
-     afterSkipStarts plusMinus ||                   // PLUS_MINUS_OP, MINUS
-     afterSkipStarts otherMath ||                   // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
-     s = "**")                                      // INFIX_STAR_STAR_OP
+    (// COLON_EQUALS
+     (s = ":=") ||                                    
+     // BAR_BAR, INFIX_BAR_OP
+     afterSkipStartsWith "|" ||                     
+     // AMP, AMP_AMP, INFIX_AMP_OP
+     afterSkipStartsWith "&"  ||                    
+     // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+     afterSkipStarts relational ||                  
+     // DOLLAR
+     (s = "$") ||                                     
+     // INFIX_AT_HAT_OP
+     afterSkipStarts concat ||                      
+     // COLON_COLON
+     (s = "::") ||                                    
+     // PLUS_MINUS_OP, MINUS
+     afterSkipStarts plusMinus ||                   
+     // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+     afterSkipStarts otherMath ||                   
+     // INFIX_STAR_STAR_OP
+     (s = "**"))                                      
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
