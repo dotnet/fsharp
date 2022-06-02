@@ -5,7 +5,6 @@ docs/
 eng/
 fcs-samples/
 scripts/
-service/
 setup/
 tests/
 vsintegration/
@@ -46,6 +45,10 @@ src/FSharp.Core/SI.fs
 
 src/Compiler/AbstractIL/ilwrite.fs
 src/Compiler/Utilities/lib.fs
+src/Compiler/Service/IncrementalBuild.fs
+src/Compiler/Service/ServiceAssemblyContent.fs
+src/Compiler/Service/ServiceDeclarationLists.fs
+src/Compiler/Service/ServiceErrorResolutionHints.fs
 
 # Fantomas limitations on signature files  (to investigate)
 
