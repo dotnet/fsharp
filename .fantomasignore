@@ -20,7 +20,6 @@ src/Compiler/Facilities/**/*.fs
 src/Compiler/Interactive/**/*.fs
 src/Compiler/Legacy/**/*.fs
 src/Compiler/Optimize/**/*.fs
-src/Compiler/Service/**/*.fs
 src/Compiler/Symbols/**/*.fs
 src/Compiler/SyntaxTree/**/*.fs
 src/Compiler/TypedTree/**/*.fs
