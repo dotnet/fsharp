@@ -15,6 +15,7 @@ module SerializableAttribute =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> withCulture "en-US"
         |> verifyILBaseline
 
     // SOURCE=ToplevelModule.fs    SCFLAGS="-a -g --out:TopLevelModule.dll --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ToplevelModule.dll"		# ToplevelModule.fs - Desktop

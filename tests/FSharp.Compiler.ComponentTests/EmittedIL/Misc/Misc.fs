@@ -15,6 +15,7 @@ module Misc =
         |> withEmbeddedPdb
         |> withEmbedAllSource
         |> ignoreWarnings
+        |> withCulture "en-US"
         |> verifyILBaseline
 
     // SOURCE=AnonRecd.fs                  SCFLAGS="-g --test:EmitFeeFeeAs100001 --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd AnonRecd.exe"	# AnonRecd.fs

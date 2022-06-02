@@ -31,8 +31,11 @@ let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
+let withCulture culture (cfg: TestConfig) =
+    { cfg with fsc_flags = sprintf "%s --preferreduilang:%s" cfg.fsc_flags culture}
 
-[<NonParallelizable>]
+
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -464,7 +467,7 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
-        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+        let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
             use testOkFile = fileguard cfg "test.ok"
@@ -1057,7 +1060,7 @@ module CoreTests =
 
         let rawFileOut = tryCreateTemporaryFileName ()
         let rawFileErr = tryCreateTemporaryFileName ()
-        ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
+        ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
         let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
@@ -2098,13 +2101,15 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
-[<NonParallelizable>]
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let bundle () =
-        let cfg = testConfig "tools/bundle"
+        let cfg = 
+            testConfig "tools/bundle" 
+            |> withCulture "en-US"
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
@@ -2228,7 +2233,10 @@ module RegressionTests =
 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
-        let cfg = testConfig "regression/5531"
+        let cfg = 
+            testConfig "regression/5531"
+            |> withCulture "en-US"
+       
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
@@ -3360,6 +3368,9 @@ module GeneratedSignatureTests =
 [<NonParallelizable>]
 module OverloadResolution =
     module ``fsharpqa migrated tests`` =
+        let testConfig config =
+            testConfig config
+            |> withCulture "en-US"
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
         let [<Test>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03.fsx)`` () = singleNegTest (testConfig "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"
         let [<Test>] ``Conformance\Inference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"

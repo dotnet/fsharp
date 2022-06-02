@@ -14,6 +14,7 @@ module TestFunctions =
         |> withNoOptimize
         |> withEmbeddedPdb
         |> withEmbedAllSource
+        |> withCulture "en-US"
         |> ignoreWarnings
 
     let verifyCompileAndRun compilation =

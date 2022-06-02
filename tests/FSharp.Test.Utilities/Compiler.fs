@@ -464,6 +464,9 @@ module rec Compiler =
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
+    let withCulture culture (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--preferreduilang:%s{culture}" ] "preferreduilang is only supported for F#" cUnit
+
     let rec private asMetadataReference (cUnit: CompilationUnit) reference =
         match reference with
         | CompilationReference (cmpl, _) ->
