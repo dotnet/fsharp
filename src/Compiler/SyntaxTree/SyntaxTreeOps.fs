@@ -58,6 +58,11 @@ let mkSynSimplePatVar isOpt id = SynSimplePat.Id (id, None, false, false, isOpt,
 
 let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false, id.idRange)
 
+let (|SynSingleIdent|_|) x =
+    match x with
+    | SynLongIdent([id], _, _) -> Some id
+    | _ -> None
+
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
 let (|LongOrSingleIdent|_|) inp =
     match inp with
@@ -67,7 +72,7 @@ let (|LongOrSingleIdent|_|) inp =
 
 let (|SingleIdent|_|) inp =
     match inp with
-    | SynExpr.LongIdent (false, SynLongIdent([id], _, _), None, _) -> Some id
+    | SynExpr.LongIdent (false, SynSingleIdent(id), None, _) -> Some id
     | SynExpr.Ident id -> Some id
     | _ -> None
 
@@ -171,7 +176,7 @@ let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, S
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (longDotId=SynLongIdent([_], _, _); argPats=SynArgPats.Pats [arg]) -> Some arg
+    | SynPat.LongIdent (longDotId=SynSingleIdent _; argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -225,7 +230,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
+            | SynPat.LongIdent(longDotId=SynSingleIdent(id); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -250,8 +255,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 Some (fun e ->
                     let clause = SynMatchClause(p, None, e, m, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
                     let artificialMatchRange = (unionRanges m e.Range).MakeSynthetic()
-                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange, { MatchKeyword = artificialMatchRange
-                                                                                                                WithKeyword = artificialMatchRange }))
+                    let trivia = { MatchKeyword = artificialMatchRange; WithKeyword = artificialMatchRange }
+                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange, trivia))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
 
@@ -271,12 +276,13 @@ let rec SimplePatsOfPat synArgNameGenerator p =
     | SynPat.Tuple (false, ps, m)
 
     | SynPat.Paren(SynPat.Tuple (false, ps, _), m) ->
+        let sps = List.map (SimplePatOfPat synArgNameGenerator) ps
         let ps2, laterF =
           List.foldBack
             (fun (p', rhsf) (ps', rhsf') ->
               p':: ps',
               (composeFunOpt rhsf rhsf'))
-            (List.map (SimplePatOfPat synArgNameGenerator) ps)
+            sps
             ([], None)
         SynSimplePats.SimplePats (ps2, m),
         laterF
@@ -403,7 +409,8 @@ let mkSynUnit m = SynExpr.Const (SynConst.Unit, m)
 let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
-    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynCompGenSimplePatVar (mkSynId m "unitVar")], m), e, None, m, SynExprLambdaTrivia.Zero)
+    let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
+    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([svar], m), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
@@ -821,12 +828,13 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.Record (_, origExpr, fs, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
-              walkExprs flds
+              (let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
+               walkExprs flds)
 
           | SynExpr.ObjExpr (bindings=bs; members=ms; extraImpls=is) ->
               let bs = unionBindingAndMembers bs ms
-              walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
+              let binds = [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
+              walkBinds bs || walkBinds binds
 
           | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->
@@ -885,10 +893,11 @@ let rec synExprContainsError inpExpr =
               walkExpr e1 || walkExprs [ for SynExprAndBang(body=e) in es do yield e ] || walkExpr e2
 
           | SynExpr.InterpolatedString (parts, _, _m) ->
-              walkExprs 
-                  (parts |> List.choose (function 
+              parts
+              |> List.choose (function 
                       | SynInterpolatedStringPart.String _ -> None
-                      | SynInterpolatedStringPart.FillExpr (x, _) -> Some x))
+                      | SynInterpolatedStringPart.FillExpr (x, _) -> Some x)
+              |> walkExprs 
 
     walkExpr inpExpr
 
