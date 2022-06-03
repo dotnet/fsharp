@@ -44,9 +44,7 @@ type internal ILegacyReferenceResolver =
     /// Perform assembly resolution on the given references under the given conditions
     abstract Resolve :
         resolutionEnvironment: LegacyResolutionEnvironment *
-        // The actual reference paths or assembly name text, plus baggage
-        references:(string (* baggage *) * string)[] *  
-        // e.g. v4.5.1
+        references:(string * string)[] *  
         targetFrameworkVersion:string *
         targetFrameworkDirectories:string list *
         targetProcessorArchitecture:string *
