@@ -9,7 +9,11 @@
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
     <NoDefaultExcludes>true</NoDefaultExcludes>
-    <_BuildReleasePackagesTargets>$(NuGetPackageRoot)microsoft.dotnet.arcade.sdk\$(ArcadeSdkVersion)\tools\BuildReleasePackages.targets</_BuildReleasePackagesTargets>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ArcadeSdkDir Condition="'$(ArcadeSdkDir)' == ''">$(NuGetPackageRoot)microsoft.dotnet.arcade.sdk\$(ArcadeSdkVersion)\</ArcadeSdkDir>
+    <_BuildReleasePackagesTargets>$(ArcadeSdkDir)tools\BuildReleasePackages.targets</_BuildReleasePackagesTargets>
   </PropertyGroup>
 
   <Import Project="$(_BuildReleasePackagesTargets)" />
@@ -23,27 +27,35 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
+        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
   </ItemGroup>
 
   <Target Name="PackDependentProjectsCore">
-    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="PackDependentProjects"
