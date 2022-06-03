@@ -13,20 +13,19 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe option) as this =
-    let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
+    let loadContextType = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
 
     let loadFromAssemblyPathMethod =
-        assemblyLoadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
+        loadContextType.GetMethod("LoadFromAssemblyPath", [| typeof<string> |])
 
-    let eventInfo, handler, defaultAssemblyLoadContext =
-        let eventInfo = assemblyLoadContextType.GetEvent("Resolving")
-        let mi =
-            let gmi = this.GetType().GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
-            gmi.MakeGenericMethod(assemblyLoadContextType)
-
-        eventInfo,
-        Delegate.CreateDelegate(eventInfo.EventHandlerType, this, mi),
-        assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
+    let eventInfo = loadContextType.GetEvent("Resolving")
+    let handler, defaultAssemblyLoadContext =
+        let ti = typeof<AssemblyResolveHandlerCoreclr>
+        let gmi = ti.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        let mi = gmi.MakeGenericMethod(loadContextType)
+        let del = Delegate.CreateDelegate(eventInfo.EventHandlerType, this, mi)
+        let prop = loadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
+        del, prop
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
@@ -48,7 +47,7 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
             | Some path -> loadAssembly path
             | None -> Unchecked.defaultof<Assembly>
 
-        with | _ -> Unchecked.defaultof<Assembly>
+        with _ -> Unchecked.defaultof<Assembly>
 
     interface IDisposable with
         member _x.Dispose() =
@@ -58,9 +57,6 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let resolveAssemblyNET (assemblyName: AssemblyName): Assembly =
-
-        let loadAssembly assemblyPath =
-            Assembly.LoadFrom(assemblyPath)
 
         let assemblyPaths =
             match assemblyProbingPaths with
@@ -73,7 +69,7 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
             let simpleName = assemblyName.Name
             let assemblyPathOpt = assemblyPaths |> Seq.tryFind(fun path -> Path.GetFileNameWithoutExtension(path) = simpleName)
             match assemblyPathOpt with
-            | Some path -> loadAssembly path
+            | Some path -> Assembly.LoadFrom path
             | None -> Unchecked.defaultof<Assembly>
 
         with | _ -> Unchecked.defaultof<Assembly>
