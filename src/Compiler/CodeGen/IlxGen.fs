@@ -5455,8 +5455,9 @@ and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars e
 
 /// Generate a new delegate construction including a closure class if necessary. This is a lot like generating function closures
 /// and object expression closures, and most of the code is shared.
-and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(TSlotSig(_, delegateTy, _, _, _, _) as slotsig, _attribs, methTyparsOfOverridingMethod, tmvs, body, _), m) sequel =
+and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs, methTyparsOfOverridingMethod, tmvs, body, _), m) sequel =
     let g = cenv.g
+    let (TSlotSig(_, delegateTy, _, _, _, _)) = slotsig
 
     // Get the instantiation of the delegate type
     let ilCtxtDelTy = GenType cenv m eenvouter.tyenv delegateTy
