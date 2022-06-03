@@ -26,3 +26,6 @@ fsharp_max_if_then_else_short_width=40
 # fsharp_max_function_binding_width formats these over a single line.
 [src/Compiler/Driver/CompilerDiagnostics.fs]
 fsharp_max_function_binding_width=70
+
+[src/Compiler/Service/*.fs]
+max_line_length=150
