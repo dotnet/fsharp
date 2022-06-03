@@ -311,7 +311,8 @@ module Structure =
                 elif ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
                    && (match argExpr with SynExpr.ComputationExpr _ -> true | _ -> false) then
                         let collapse = Range.startToEnd argExpr.Range r
-                        rcheck Scope.ComputationExpr Collapse.Same r <| Range.modBoth 1 1 collapse
+                        let collapse = Range.modBoth 1 1 collapse
+                        rcheck Scope.ComputationExpr Collapse.Same r collapse
 
                 parseExpr argExpr
                 parseExpr funcExpr
@@ -321,7 +322,8 @@ module Structure =
                 parseExpr e2
 
             | SynExpr.ArrayOrListComputed (isArray, e, r) ->
-                rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
+                let collapse = Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
+                rcheck Scope.ArrayOrList Collapse.Same r collapse
                 parseExpr e
 
             | SynExpr.ComputationExpr (_, e, _r) as _c ->
@@ -412,7 +414,8 @@ module Structure =
 
             | SynExpr.Quote (_, isRaw, e, _, r) ->
                 // subtract columns so the @@> or @> is not collapsed
-                rcheck Scope.Quote Collapse.Same r (Range.modBoth (if isRaw then 3 else 2) (if isRaw then 3 else 2) r)
+                let collapse = Range.modBoth (if isRaw then 3 else 2) (if isRaw then 3 else 2) r
+                rcheck Scope.Quote Collapse.Same r collapse
                 parseExpr e
 
             | SynExpr.Tuple (_, es, _, r) ->
@@ -431,7 +434,8 @@ module Structure =
                 | _ -> ()
                 recordFields |> List.choose (fun (SynExprRecordField(expr=e)) -> e) |> List.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
-                rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
+                let m = Range.modBoth 1 1 r
+                rcheck Scope.Record Collapse.Same r m
             | _ -> ()
 
         and parseMatchClause (SynMatchClause(pat=synPat; resultExpr=e) as clause) =
@@ -440,7 +444,8 @@ module Structure =
                 | x -> x
 
             let synPat = getLastPat synPat
-            let collapse  = Range.endToEnd synPat.Range clause.Range // Collapse the scope starting with `->`
+            // Collapse the scope starting with `->`
+            let collapse = Range.endToEnd synPat.Range clause.Range
             rcheck Scope.MatchClause Collapse.Same e.Range collapse
             parseExpr e
 
@@ -619,11 +624,13 @@ module Structure =
                 | [r] when r.StartLine = r.EndLine -> None
                 | [r] ->
                     let range = mkRange "" r.Start r.End
-                    Some { Scope = scope; Collapse = Collapse.Same; Range = range ; CollapseRange = range }
+                    let res = { Scope = scope; Collapse = Collapse.Same; Range = range ; CollapseRange = range }
+                    Some res
                 | lastRange :: rest ->
                     let firstRange = Seq.last rest
                     let range = mkRange "" firstRange.Start lastRange.End
-                    Some { Scope = scope; Collapse = Collapse.Same; Range = range; CollapseRange = range }
+                    let res = { Scope = scope; Collapse = Collapse.Same; Range = range; CollapseRange = range }
+                    Some res
 
             decls 
             |> List.choose predicate 
@@ -859,11 +866,13 @@ module Structure =
                 | [r] when r.StartLine = r.EndLine -> None
                 | [r] ->
                     let range = mkRange "" r.Start r.End
-                    Some { Scope = scope; Collapse = Collapse.Same; Range = range ; CollapseRange = range }
+                    let res = { Scope = scope; Collapse = Collapse.Same; Range = range ; CollapseRange = range }
+                    Some res
                 | lastRange :: rest ->
                     let firstRange = Seq.last rest
                     let range = mkRange "" firstRange.Start lastRange.End
-                    Some { Scope = scope; Collapse = Collapse.Same; Range = range; CollapseRange = range }
+                    let res = { Scope = scope; Collapse = Collapse.Same; Range = range; CollapseRange = range }
+                    Some res
 
             decls 
             |> List.choose predicate 
