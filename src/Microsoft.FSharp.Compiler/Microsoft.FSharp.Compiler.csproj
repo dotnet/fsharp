@@ -23,23 +23,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj">
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\Sharp.Core\FSharp.Core.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Build/FSharp.Build.fsproj">
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj">
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj">
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../fsi/fsi.fsproj" />
-    <DependentProjects Include="$(MSBuildThisFileDirectory)../fsc/fsc.fsproj" />
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsi\fsi.fsproj" />
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsc\fsc.fsproj" />
   </ItemGroup>
 
   <Target Name="PackDependentProjectsCore">
