@@ -6124,16 +6124,22 @@ and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
 
 and ComputeMemberAccessRestrictedBySig eenv vspec =
     let isHidden =
-        IsHiddenVal eenv.sigToImplRemapInfo vspec ||  // anything hidden by a signature gets assembly visibility
-        not vspec.IsMemberOrModuleBinding ||          // anything that's not a module or member binding gets assembly visibility
-        vspec.IsIncrClassGeneratedMember              // compiler generated members for class function 'let' bindings get assembly visibility
+        // Anything hidden by a signature gets assembly visibility
+        IsHiddenVal eenv.sigToImplRemapInfo vspec ||  
+        // Anything that's not a module or member binding gets assembly visibility
+        not vspec.IsMemberOrModuleBinding ||          
+        // Compiler generated members for class function 'let' bindings get assembly visibility
+        vspec.IsIncrClassGeneratedMember              
     ComputeMemberAccess isHidden
 
 and ComputeMethodAccessRestrictedBySig eenv vspec =
     let isHidden =
-        IsHiddenVal eenv.sigToImplRemapInfo vspec ||  // anything hidden by a signature gets assembly visibility
-        not vspec.IsMemberOrModuleBinding ||          // anything that's not a module or member binding gets assembly visibility
-        vspec.IsIncrClassGeneratedMember              // compiler generated members for class function 'let' bindings get assembly visibility
+        // Anything hidden by a signature gets assembly visibility
+        IsHiddenVal eenv.sigToImplRemapInfo vspec ||
+        // Anything that's not a module or member binding gets assembly visibility
+        not vspec.IsMemberOrModuleBinding ||          
+        // Compiler generated members for class function 'let' bindings get assembly visibility
+        vspec.IsIncrClassGeneratedMember              
     ComputeMemberAccess isHidden
 
 and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
