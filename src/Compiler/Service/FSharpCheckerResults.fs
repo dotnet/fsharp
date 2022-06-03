@@ -2135,7 +2135,8 @@ type FSharpCheckFileResults
                             cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                             if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                                 let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
-                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range)
+                                let inst = symbolUse.ItemWithInst.TyparInstantiation
+                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range)
                 }
 
     member _.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
@@ -2145,7 +2146,8 @@ type FSharpCheckFileResults
                 [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
                      cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInstantiation, symbolUse.ItemOccurence, symbolUse.Range) |]
+                        let inst = symbolUse.ItemWithInst.TyparInstantiation
+                        FSharpSymbolUse(symbolUse.DisplayEnv, symbol, inst, symbolUse.ItemOccurence, symbolUse.Range) |]
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         match details with
@@ -2343,7 +2345,8 @@ type FSharpCheckProjectResults
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
         let tcConfig = getTcConfig()
         let isIncrementalFragment = false
-        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
+        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
         let mimpls =
             match optimizedImpls with
             | CheckedAssemblyAfterOptimization files ->
@@ -2494,13 +2497,13 @@ type FsiInteractiveChecker(legacyReferenceResolver,
 
             let errors = Array.append parseErrors tcErrors
             let typeCheckResults = FSharpCheckFileResults (fileName, errors, Some tcFileInfo, dependencyFiles, None, false)
+            let details =
+                (tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
+                 Choice2Of2 tcFileInfo.ScopeSymbolUses, None, (fun () -> None), mkSimpleAssemblyRef "stdin",
+                 tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
+                 projectOptions)
             let projectResults =
-                FSharpCheckProjectResults (fileName, Some tcConfig,
-                    keepAssemblyContents, errors,
-                    Some(tcGlobals, tcImports, tcFileInfo.ThisCcu, tcFileInfo.CcuSigForFile,
-                            (Choice2Of2 tcFileInfo.ScopeSymbolUses), None, (fun () -> None), mkSimpleAssemblyRef "stdin",
-                            tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles,
-                            projectOptions))
+                FSharpCheckProjectResults (fileName, Some tcConfig,keepAssemblyContents, errors, Some details)
 
             return parseResults, typeCheckResults, projectResults
         }

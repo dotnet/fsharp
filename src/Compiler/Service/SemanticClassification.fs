@@ -73,7 +73,8 @@ module TcResolutionsExtensions =
     type TcResolutions with
         member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
             DiagnosticsScope.Protect range0 (fun () ->
-                let (|LegitTypeOccurence|_|) = function
+                let (|LegitTypeOccurence|_|) occ =
+                    match occ with
                     | ItemOccurence.UseInType
                     | ItemOccurence.UseInAttribute
                     | ItemOccurence.Use _
@@ -162,17 +163,17 @@ module TcResolutionsExtensions =
 
                 resolutions
                 |> Array.iter (fun cnr ->
-                    match cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range with                        
-                    | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
+                    match cnr.Item, cnr.ItemOccurence, cnr.Range with                        
+                    | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
                         add m SemanticClassificationType.ComputationExpression
 
-                    | Item.Value vref, _, _, _, _, m when isValRefMutable vref ->
+                    | Item.Value vref, _, m when isValRefMutable vref ->
                         add m SemanticClassificationType.MutableVar
 
-                    | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
+                    | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m ->
                         add m SemanticClassificationType.IntrinsicFunction
 
-                    | Item.Value vref, _, _, _, _, m when isForallFunctionTy g vref.Type ->
+                    | Item.Value vref, _, m when isForallFunctionTy g vref.Type ->
                         if isDiscard vref.DisplayName then
                             add m SemanticClassificationType.Plaintext
                         elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
@@ -186,7 +187,7 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.Function
 
-                    | Item.Value vref, _, _, _, _, m ->
+                    | Item.Value vref, _, m ->
                         if isValRefDisposable vref then
                             if vref.IsCompiledAsTopLevel then
                                 add m SemanticClassificationType.DisposableTopLevelValue
@@ -199,7 +200,7 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.Value
 
-                    | Item.RecdField rfinfo, _, _, _, _, m ->
+                    | Item.RecdField rfinfo, _, m ->
                         match rfinfo with
                         | EnumCaseFieldInfo ->
                             add m SemanticClassificationType.Enumeration
@@ -211,7 +212,7 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.RecordField
 
-                    | Item.AnonRecdField(_, tys, idx, m), _, _, _, _, _ ->
+                    | Item.AnonRecdField(_, tys, idx, m), _, _ ->
                         let ty = tys[idx]
 
                         // It's not currently possible for anon record fields to be mutable, but they can be ref cells
@@ -222,11 +223,11 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.RecordField
 
-                    | Item.Property (_, pinfo :: _), _, _, _, _, m ->
+                    | Item.Property (_, pinfo :: _), _, m ->
                         if not pinfo.IsIndexer then
                             add m SemanticClassificationType.Property
 
-                    | Item.CtorGroup (_, minfos), _, _, _, _, m ->
+                    | Item.CtorGroup (_, minfos), _, m ->
                         match minfos with
                         | [] ->
                             add m SemanticClassificationType.ConstructorForReferenceType
@@ -238,10 +239,13 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.ConstructorForReferenceType
 
-                    | (Item.DelegateCtor _ | Item.FakeInterfaceCtor _), _, _, _, _, m ->
+                    | Item.DelegateCtor _, _, m ->
                         add m SemanticClassificationType.ConstructorForReferenceType
 
-                    | Item.MethodGroup (_, minfos, _), _, _, _, _, m ->
+                    | Item.FakeInterfaceCtor _, _, m ->
+                        add m SemanticClassificationType.ConstructorForReferenceType
+
+                    | Item.MethodGroup (_, minfos, _), _, m ->
                         match minfos with
                         | [] ->
                             add m SemanticClassificationType.Method
@@ -252,10 +256,10 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _, _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
-                    | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->
+                    | Item.Types (_, ty :: _), LegitTypeOccurence, m ->
                         let reprToClassificationType repr tcref = 
                             match repr with
                             | TFSharpObjectRepr om -> 
@@ -309,37 +313,46 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.TypeDef                            
 
-                    | Item.TypeVar _, LegitTypeOccurence, _, _, _, m ->
+                    | Item.TypeVar _, LegitTypeOccurence, m ->
                         add m SemanticClassificationType.TypeArgument
 
-                    | Item.ExnCase _, LegitTypeOccurence, _, _, _, m ->
+                    | Item.ExnCase _, LegitTypeOccurence, m ->
                         add m SemanticClassificationType.Exception
 
-                    | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, _, _, _, m ->
+                    | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, m ->
                         if modref.IsNamespace then
                             add m SemanticClassificationType.Namespace
                         else
                             add m SemanticClassificationType.Module
 
-                    | (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m ->
+                    | Item.ActivePatternCase _, _, m ->
                         add m SemanticClassificationType.UnionCase
 
-                    | Item.UnionCaseField _, _, _, _, _, m ->
+                    | Item.UnionCase _, _, m ->
+                        add m SemanticClassificationType.UnionCase
+
+                    | Item.ActivePatternResult _, _, m ->
+                        add m SemanticClassificationType.UnionCase
+
+                    | Item.UnionCaseField _, _, m ->
                         add m SemanticClassificationType.UnionCaseField
 
-                    | Item.ILField _, _, _, _, _, m ->
+                    | Item.ILField _, _, m ->
                         add m SemanticClassificationType.Field
 
-                    | Item.Event _, _, _, _, _, m ->
+                    | Item.Event _, _, m ->
                         add m SemanticClassificationType.Event
 
-                    | (Item.ArgName _ | Item.SetterArg _), _, _, _, _, m ->
+                    | Item.ArgName _, _, m ->
                         add m SemanticClassificationType.NamedArgument
 
-                    | Item.SetterArg _, _, _, _, _, m ->
+                    | Item.SetterArg _, _, m ->
+                        add m SemanticClassificationType.NamedArgument
+
+                    | Item.SetterArg _, _, m ->
                         add m SemanticClassificationType.Property
 
-                    | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, _, _, _, m ->
+                    | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, m ->
                         if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                             add m SemanticClassificationType.Enumeration
                         elif tcref.IsFSharpException then
@@ -373,9 +386,11 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.ReferenceType
 
-                    | _, _, _, _, _, m ->
+                    | _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf))))
+
+                let locs = formatSpecifierLocations |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf)))
+                results.AddRange(locs)
                 results.ToArray()
                ) 
                (fun msg -> 

@@ -21,17 +21,17 @@ module UnusedOpens =
         /// Compute an indexed table of the set of symbols revealed by 'open', on-demand
         let revealedSymbols : Lazy<HashSet<FSharpSymbol>> =
            lazy
-            let symbols = 
+            let symbols : FSharpSymbol[] = 
                [| for ent in entity.NestedEntities do
-                      yield ent :> FSharpSymbol
+                      ent
                       
                       if ent.IsFSharpRecord then
                           for rf in ent.FSharpFields do
-                              yield rf  :> FSharpSymbol
+                              rf
                       
                       if ent.IsFSharpUnion && not (ent.HasAttribute<RequireQualifiedAccessAttribute>()) then
                           for unionCase in ent.UnionCases do
-                              yield unionCase :> FSharpSymbol
+                              unionCase
 
                       if ent.HasAttribute<ExtensionAttribute>() then
                           for fv in ent.MembersFunctionsAndValues do
@@ -39,15 +39,15 @@ module UnusedOpens =
                               // so we have to check Extension attribute instead. 
                               // (note: fv.IsExtensionMember has proper value for symbols returning by GetAllUsesOfAllSymbolsInFile though)
                               if fv.HasAttribute<ExtensionAttribute>() then
-                                  yield fv :> FSharpSymbol
+                                  fv
                       
                   for apCase in entity.ActivePatternCases do
-                      yield apCase :> FSharpSymbol
+                      apCase
 
                   // The IsNamespace and IsFSharpModule cases are handled by looking at DeclaringEntity below
                   if not entity.IsNamespace && not entity.IsFSharpModule then
                       for fv in entity.MembersFunctionsAndValues do 
-                          yield fv :> FSharpSymbol |]
+                          fv |]
 
             HashSet<_>(symbols, symbolHash)
 
