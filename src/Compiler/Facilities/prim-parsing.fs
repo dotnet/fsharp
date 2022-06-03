@@ -119,7 +119,12 @@ type Stack<'a>(n) =
           
 
 module Flags = 
+#if DEBUG
     let mutable debug = false
+#else
+    // Debugging tracing for parsing always off for release code
+    let debug = false
+#endif
 
 module internal Implementation = 
     
