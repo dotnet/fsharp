@@ -20,9 +20,12 @@ src/Compiler/Interactive/**/*.fs
 src/Compiler/Legacy/**/*.fs
 src/Compiler/Optimize/**/*.fs
 src/Compiler/Symbols/**/*.fs
-src/Compiler/SyntaxTree/**/*.fs
 src/Compiler/TypedTree/**/*.fs
 src/Microsoft.FSharp.Compiler/**/*.fs
+
+# Explicitly unformatted file that needs more care to get it to format well
+
+src/Compiler/SyntaxTree/LexFilter.fs
 
 # Fantomas limitations on implementation files in FSharp.Core (to investigate)
 
