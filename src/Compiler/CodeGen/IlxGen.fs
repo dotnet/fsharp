@@ -6654,12 +6654,12 @@ and ComputeMethodImplNameFixupForStaticMemberBinding cenv (v: Val) =
         let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (false, slotsig)
         Some nameOfOverridingMethod
 
-and ComputeFlagFixupsForStaticMemberBinding _cenv (_v: Val) =
+and ComputeFlagFixupsForStaticMemberBinding cenv (v: Val) =
     [ 
       fixupStaticAbstractSlotFlags
-      (*match ComputeMethodImplNameFixupForStaticMemberBinding cenv v with
+      match ComputeMethodImplNameFixupForStaticMemberBinding cenv v with
       | Some nm -> renameMethodDef nm
-      | None -> ()*) 
+      | None -> ()
     ]
 
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
@@ -7972,10 +7972,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                      | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
                                      | None -> [], []
 
-                                 let useMethodImpl = true
+                                 // Don't use method impl for static abstract implementation (IsInstance <> true && IsOverrideOrExplicitImpl = true):
+                                 let isStaticAbstractImpl = (not memberInfo.MemberFlags.IsInstance) && memberInfo.MemberFlags.IsOverrideOrExplicitImpl
+                                 let useMethodImpl =  not isStaticAbstractImpl
                                  let eenvUnderTypars = EnvForTypars memberParentTypars eenv
                                  let _, methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
-                                 if useMethodImpl then
+                                 if useMethodImpl || isStaticAbstractImpl then
                                      yield methodImplGenerator (ilThisTy, memberMethodTypars)
 
                              | _ -> () ]
