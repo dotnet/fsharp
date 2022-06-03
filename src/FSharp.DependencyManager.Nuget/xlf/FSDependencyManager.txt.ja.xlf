@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager がシステム パッケージ '{0}' を参照できません</target>
+        <target state="new">PackageManager can not reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="translated">最新バージョン</target>
+        <target state="new">with the highest version</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="translated">タイムアウト '{0}' の値が無効です。有効な値: なし、-1、および整数 (待機するミリ秒)</target>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="translated">NuGet パッケージの読み込み</target>
+        <target state="new">Load Nuget Package</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="translated">タイムアウトの値がありません</target>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="translated">未使用</target>
+        <target state="new">Not used</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="translated">{0} には値が必要です</target>
+        <target state="new">{0} requires a value</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="translated">ソース ディレクトリ '{0}' が見つかりません</target>
+        <target state="new">The source directory '{0}' not found</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="translated">パッケージの解決中にタイムアウトになりました。プロセス: '{0}' '{1}'</target>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="translated">暗黙的な引数番号 {0} を適用できません</target>
+        <target state="new">Unable to apply implicit argument number {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="translated">バージョン</target>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>

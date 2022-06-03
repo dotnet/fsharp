@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager에서 시스템 패키지 '{0}'을(를) 참조할 수 없습니다.</target>
+        <target state="new">PackageManager can not reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="translated">최상위 버전으로</target>
+        <target state="new">with the highest version</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="translated">시간 제한 '{0}'의 값이 잘못되었습니다. 유효한 값: 없음, -1 및 정수 대기 시간(밀리초)</target>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="translated">NuGet 패키지 로드</target>
+        <target state="new">Load Nuget Package</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="translated">시간 제한 값 누락</target>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="translated">사용 안 함</target>
+        <target state="new">Not used</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="translated">{0}에는 값이 있어야 합니다.</target>
+        <target state="new">{0} requires a value</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="translated">소스 디렉터리 '{0}'을(를) 찾을 수 없음</target>
+        <target state="new">The source directory '{0}' not found</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="translated">패키지를 확인하는 동안 시간이 초과되었습니다. 프로세스: '{0}' '{1}'</target>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="translated">암시적 인수 번호 {0}을(를) 적용할 수 없습니다.</target>
+        <target state="new">Unable to apply implicit argument number {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="translated">버전</target>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>

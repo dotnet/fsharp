@@ -4,27 +4,27 @@
     <body>
       <trans-unit id="mapSourceRootsContainsDuplicate">
         <source>SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</source>
-        <target state="translated">SourceRoot, çakışan '{1}' meta verilerine sahip yinelenen '{0}' öğeleri içeriyor: '{2}' ve '{3}'</target>
+        <target state="new">SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
         <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="translated">SourceRoot.ContainingRoot değeri, SourceRoot öğelerinde bulunamadı veya karşılık gelen öğe, üst düzey kaynak kökü değil: '{0}'</target>
+        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
         <source>SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</source>
-        <target state="translated">DeterministicSourcePaths true olduğunda SourceRoot öğeleri en az bir üst düzey (iç içe geçmemiş) öğe içermelidir</target>
+        <target state="new">SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsPathMustEndWithSlashOrBackslash">
         <source>SourceRoot paths are required to end with a slash or backslash: '{0}'</source>
-        <target state="translated">SourceRoot yolunun sonunda eğik çizgi veya ters eğik çizgi olması gerekir: '{0}'</target>
+        <target state="new">SourceRoot paths are required to end with a slash or backslash: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="translated">ToolPath bilinmiyor; aracın yolunu belirtin.</target>
+        <target state="new">ToolPath is unknown; specify the path to the tool.</target>
         <note />
       </trans-unit>
     </body>
