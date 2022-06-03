@@ -41,7 +41,8 @@ type NavigationEntityKind =
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
 type NavigationItem(uniqueName: string, name: string, kind: NavigationItemKind, glyph: FSharpGlyph, range: range, 
-                                     bodyRange: range, singleTopLevel: bool, enclosingEntityKind: NavigationEntityKind, isAbstract: bool, access: SynAccess option) = 
+                    bodyRange: range, singleTopLevel: bool, enclosingEntityKind: NavigationEntityKind,
+                    isAbstract: bool, access: SynAccess option) = 
     
     member _.bodyRange = bodyRange
     member _.UniqueName = uniqueName
@@ -58,7 +59,8 @@ type NavigationItem(uniqueName: string, name: string, kind: NavigationItemKind, 
     
     member _.WithUniqueName(uniqueName: string) =
       NavigationItem(uniqueName, name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
-    static member Create(name: string, kind, glyph: FSharpGlyph, range: range, bodyRange: range, singleTopLevel: bool, enclosingEntityKind, isAbstract, access: SynAccess option) = 
+
+    static member Create(name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access) = 
       NavigationItem("", name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
 
 /// Represents top-level declarations (that should be in the type drop-down)
@@ -118,21 +120,21 @@ module NavigationImpl =
 
         // Create declaration (for the left dropdown)                
         let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested, enclosingEntityKind, isAbstract, access) =
-            let name = (if baseName <> "" then baseName + "." else "") + (textOfLid lid)
+            let name = (if baseName <> "" then baseName + "." else "") + textOfLid lid
             NavigationItem.Create
-              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), addItemName name, nested
             
         let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested, enclosingEntityKind, isAbstract, access) =
             let name = (if baseName <> "" then baseName + "." else "") + id.idText
             NavigationItem.Create
-              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), addItemName name, nested
          
         // Create member-kind-of-thing for the right dropdown
         let createMemberLid(lid, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
-            NavigationItem.Create(textOfLid lid, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(textOfLid lid))
+            NavigationItem.Create(textOfLid lid, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), addItemName(textOfLid lid)
 
         let createMember(id:Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
-            NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
+            NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), addItemName(id.idText)
 
         // Process let-binding
         let processBinding isMember enclosingEntityKind isAbstract synBinding =
@@ -322,24 +324,23 @@ module NavigationImpl =
                 let other = processNavigationTopLevelDeclarations(baseName, decls)
 
                 // Create explicitly - it can be 'single top level' thing that is hidden
-                match id with
-                | [] -> ()
-                | _ ->
-                    let decl =
-                        NavigationItem.Create
-                            (textOfLid id, (if kind.IsModule then NavigationItemKind.ModuleFile else NavigationItemKind.Namespace),
-                                FSharpGlyph.Module, m, 
-                                unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other), 
-                                singleTopLevel, NavigationEntityKind.Module, false, access), (addItemName(textOfLid id)), nested
-                    yield decl
+                if not (List.isEmpty id) then
+                    let kind = if kind.IsModule then NavigationItemKind.ModuleFile else NavigationItemKind.Namespace
+                    let bodym = unionRangesChecked (rangeOfDecls nested) (moduleRange (rangeOfLid id) other)
+                    let nm = textOfLid id
+                    let item = NavigationItem.Create (nm, kind, FSharpGlyph.Module, m, bodym, singleTopLevel, NavigationEntityKind.Module, false, access)
+                    let decl = (item, addItemName(nm), nested)
+                    decl
 
                 yield! other ]
                   
         let items = 
-            [| for (d, idx, nest) in items do 
-                let nest = nest |> Array.ofList |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
-                nest |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
-                { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nest } |]
+            [| for (d, idx, nested) in items do 
+                let nested = nested |> Array.ofList |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
+
+                nested |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
+
+                { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nested } |]
 
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
 
@@ -363,15 +364,15 @@ module NavigationImpl =
         let createDeclLid(baseName, lid, kind, baseGlyph, m, bodym, nested, enclosingEntityKind, isAbstract, access) =
             let name = (if baseName <> "" then baseName + "." else "") + (textOfLid lid)
             NavigationItem.Create
-              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), addItemName name, nested
             
         let createDecl(baseName, id:Ident, kind, baseGlyph, m, bodym, nested, enclosingEntityKind, isAbstract, access) =
             let name = (if baseName <> "" then baseName + "." else "") + id.idText
             NavigationItem.Create
-              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), (addItemName name), nested
+              (name, kind, baseGlyph, m, bodym, false, enclosingEntityKind, isAbstract, access), addItemName name, nested
          
         let createMember(id:Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
-            NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
+            NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), addItemName(id.idText)
 
         let rec processExnRepr baseName nested inp =
             let (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_); caseType=fldspec), _, _, access, m)) = inp
@@ -497,12 +498,14 @@ module NavigationImpl =
                 yield! other ]
         
         let items = 
-            [| for (d, idx, nest) in items do
-                let nest = nest |> Array.ofList |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
-                nest |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
-                let nest = nest |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.Name, x.Kind) 
+            [| for (d, idx, nested) in items do
+                let nested = nested |> Array.ofList |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
+
+                nested |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
+
+                let nested = nested |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.Name, x.Kind) 
                 
-                { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nest } |]
+                { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nested } |]
 
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
 
