@@ -174,7 +174,8 @@ module NavigationImpl =
         // Process a class declaration or F# type declaration
         let rec processExnDefnRepr baseName nested synExnRepr =
             let (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_); caseType=fldspec), _, _, access, m)) = synExnRepr
-            [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
+            let bodym = fldspecRange fldspec
+            [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, bodym, nested, NavigationEntityKind.Exception, false, access) ] 
 
         // Process a class declaration or F# type declaration
         and processExnDefn baseName synExnDefn =  
