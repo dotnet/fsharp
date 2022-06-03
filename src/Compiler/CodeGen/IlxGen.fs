@@ -4230,7 +4230,7 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa)
     | ([ AI_ceq ],
        [arg1; Expr.Const ((Const.Bool false | Const.SByte 0y| Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy| Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL), _, _) ],
-       CmpThenBrOrContinue(1, [I_brcmp (BI_brfalse | BI_brtrue as bi, label1) ]),
+       CmpThenBrOrContinue(1, [I_brcmp ((BI_brfalse | BI_brtrue) as bi, label1) ]),
        _) ->
 
         let bi = match bi with BI_brtrue -> BI_brfalse | _ -> BI_brtrue
