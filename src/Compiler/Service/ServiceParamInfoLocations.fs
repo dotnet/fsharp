@@ -97,7 +97,7 @@ module internal ParameterLocationsImpl =
         | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
                         SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
                                     SynExpr.LongIdent(longDotId = SynLongIdent(id = [op])),
-                                    SynExpr.LongIdent (true(*isOptional*), SynLongIdent([n], _, _), _ref, _lidrange), _range), 
+                                    SynExpr.LongIdent (true, SynLongIdent([n], _, _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
 

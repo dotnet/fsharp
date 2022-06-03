@@ -139,11 +139,11 @@ module IncrementalBuildSyntaxTree =
                         use text = source.GetTextContainer()
                         match text with
                         | TextContainer.Stream(stream) ->
-                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, (*retryLocked*)false, stream)
+                            ParseOneInputStream(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, false, stream)
                         | TextContainer.SourceText(sourceText) ->
                             ParseOneInputSourceText(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, sourceText)
                         | TextContainer.OnDisk ->
-                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, (*retryLocked*)true)
+                            ParseOneInputFile(tcConfig, lexResourceManager, fileName, isLastCompiland, diagnosticsLogger, true)
 
                 fileParsed.Trigger fileName
 
@@ -589,7 +589,7 @@ type BoundModel private (tcConfig: TcConfig,
                       None)
 
 /// Global service state
-type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
+type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
 
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(size) =
@@ -617,7 +617,8 @@ type FrameworkImportsCache(size) =
         // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
         // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
         // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-        let key = (frameworkDLLsKey,
+        let key =
+            FrameworkImportsCacheKey(frameworkDLLsKey,
                     tcConfig.primaryAssembly.Name,
                     tcConfig.GetTargetFrameworkDirectories(),
                     tcConfig.fsharpBinariesDir,

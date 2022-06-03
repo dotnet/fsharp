@@ -2167,7 +2167,7 @@ let CheckAllTyparsInferrable amap m item =
 /// ultimately calls ResolutionInfo.Method to record it for
 /// later use by Visual Studio.
 type ResolutionInfo =
-    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
+    | ResolutionInfo of revEntityPath: (range * EntityRef) list * reportResult: (ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
 
     static member SendEntityPathToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath, warnings, _), typarChecker) =
         entityPath |> List.iter (fun (m, eref: EntityRef) ->

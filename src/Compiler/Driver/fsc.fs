@@ -624,7 +624,7 @@ let main1
             sourceFiles,
             diagnosticsLogger,
             exiter,
-            createDiagnosticsLogger (*retryLocked*) ,
+            createDiagnosticsLogger,
             false
         )
 
