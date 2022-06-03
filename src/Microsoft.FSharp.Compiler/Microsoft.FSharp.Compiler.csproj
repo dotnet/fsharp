@@ -38,8 +38,8 @@
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
     </DependentProjects>
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsi\fsi.fsproj" />
-    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsc\fsc.fsproj" />
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsi\fsiProject\fsi.fsproj" />
+    <DependentProjects Include="$(MSBuildThisFileDirectory)..\fsc\fscProject\fsc.fsproj" />
   </ItemGroup>
 
   <Target Name="PackDependentProjectsCore">
