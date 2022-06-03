@@ -6,6 +6,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Reflection.Emit
 open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -14,6 +15,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -126,7 +128,7 @@ module CompileHelpers =
         let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers()
         let result = 
             tryCompile diagnosticsLogger (fun exiter -> 
-                CompileFromCommandLineArguments (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
+                CompileFromCommandLineArguments (ctok, argv, legacyReferenceResolver, true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
     
         diagnostics.ToArray(), result
 
@@ -147,7 +149,7 @@ module CompileHelpers =
 
         // Create an assembly builder
         let assemblyName = AssemblyName(Path.GetFileNameWithoutExtension outfile)
-        let flags = System.Reflection.Emit.AssemblyBuilderAccess.Run
+        let flags = AssemblyBuilderAccess.Run
 #if FX_NO_APP_DOMAINS
         let assemblyBuilder = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(assemblyName, flags)
         let moduleBuilder = assemblyBuilder.DefineDynamicModule("IncrementalModule")
@@ -171,7 +173,7 @@ module CompileHelpers =
             | None -> None
 
         // Emit the code
-        let _emEnv,execs = ILDynamicAssemblyWriter.EmitDynamicAssemblyFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILDynamicAssemblyWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
+        let _emEnv,execs = EmitDynamicAssemblyFragment(tcGlobals.ilg, tcConfig.emitTailcalls, emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
 
         // Execute the top-level initialization, if requested
         if execute then 
@@ -245,18 +247,14 @@ type BackgroundCompiler(
     // if the cached incremental builder can be used for the project.
     let dependencyProviderForScripts = new DependencyProvider()
 
-    /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
-    /// creates an incremental builder used by the command line compiler.
-    let CreateOneIncrementalBuilder (options:FSharpProjectOptions, userOpName) = 
-      node {
-        Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
-        let projectReferences =  
+    let getProjectReferences (options: FSharpProjectOptions) userOpName =  
             [ for r in options.ReferencedProjects do
 
                match r with
                | FSharpReferencedProject.FSharpReference(nm,opts) ->
-                   // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
-                   // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
+                   // Don't use cross-project references for FSharp.Core, since various bits of code
+                   // require a concrete FSharp.Core to exist on-disk. The only solutions that have
+                   // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
                    // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
                    if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
@@ -300,51 +298,59 @@ type BackgroundCompiler(
                             member x.TryGetLogicalTimeStamp _ = getStamp() |> Some
                             member x.FileName = nm }
                 ]
+    /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
+    /// creates an incremental builder used by the command line compiler.
+    let CreateOneIncrementalBuilder (options:FSharpProjectOptions, userOpName) = 
+        node {
+            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
+            let projectReferences = getProjectReferences options userOpName
 
-        let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
+            
+            let dependencyProvider = if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None
 
-        let! builderOpt, diagnostics = 
-            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions (
-                legacyReferenceResolver,
-                FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
-                frameworkTcImportsCache,
-                loadClosure,
-                Array.toList options.SourceFiles, 
-                Array.toList options.OtherOptions,
-                projectReferences,
-                options.ProjectDirectory, 
-                options.UseScriptResolutionRules,
-                keepAssemblyContents,
-                keepAllBackgroundResolutions,
-                tryGetMetadataSnapshot,
-                suggestNamesForErrors,
-                keepAllBackgroundSymbolUses,
-                enableBackgroundItemKeyStoreAndSemanticClassification,
-                enablePartialTypeChecking,
-                (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+            let! builderOpt, diagnostics = 
+                IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions (
+                    legacyReferenceResolver,
+                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                    frameworkTcImportsCache,
+                    loadClosure,
+                    Array.toList options.SourceFiles, 
+                    Array.toList options.OtherOptions,
+                    projectReferences,
+                    options.ProjectDirectory, 
+                    options.UseScriptResolutionRules,
+                    keepAssemblyContents,
+                    keepAllBackgroundResolutions,
+                    tryGetMetadataSnapshot,
+                    suggestNamesForErrors,
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enablePartialTypeChecking,
+                    dependencyProvider)
 
-        match builderOpt with 
-        | None -> ()
-        | Some builder -> 
+            match builderOpt with 
+            | None -> ()
+            | Some builder -> 
 
 #if !NO_TYPEPROVIDERS
-            // Register the behaviour that responds to CCUs being invalidated because of type
-            // provider Invalidate events. This invalidates the configuration in the build.
-            builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
+                // Register the behaviour that responds to CCUs being invalidated because of type
+                // provider Invalidate events. This invalidates the configuration in the build.
+                builder.ImportsInvalidatedByTypeProvider.Add(fun () -> self.InvalidateConfiguration(options, userOpName))
 #endif
 
-            // Register the callback called just before a file is typechecked by the background builder (without recording
-            // errors or intellisense information).
-            //
-            // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
-            // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
-            builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options))
-            builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options))
-            builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options))
-            builder.ProjectChecked.Add (fun () -> projectChecked.Trigger options)
+                // Register the callback called just before a file is typechecked by the background builder (without recording
+                // errors or intellisense information).
+                //
+                // This indicates to the UI that the file type check state is dirty. If the file is open and visible then 
+                // the UI will sooner or later request a typecheck of the file, recording errors and intellisense information.
+                builder.BeforeFileChecked.Add (fun file -> beforeFileChecked.Trigger(file, options))
+                builder.FileParsed.Add (fun file -> fileParsed.Trigger(file, options))
+                builder.FileChecked.Add (fun file -> fileChecked.Trigger(file, options))
+                builder.ProjectChecked.Add (fun () -> projectChecked.Trigger options)
 
-        return (builderOpt, diagnostics)
-      }
+            return (builderOpt, diagnostics)
+        }
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
@@ -455,6 +461,10 @@ type BackgroundCompiler(
         | _ ->
             getOrCreateBuilder (options, userOpName)
 
+    static let mutable actualParseFileCount = 0
+
+    static let mutable actualCheckFileCount = 0
+
     /// Should be a fast operation. Ensures that we have only one async lazy object per file and its hash.
     let getCheckFileNode (parseResults,
                           sourceText,
@@ -464,7 +474,7 @@ type BackgroundCompiler(
                           builder,
                           tcPrior,
                           tcInfo,
-                          creationDiags) onComplete =
+                          creationDiags) =
 
         // Here we lock for the creation of the node, not its execution
         parseCacheLock.AcquireLock (fun ltok -> 
@@ -484,16 +494,12 @@ type BackgroundCompiler(
                                 tcPrior,
                                 tcInfo,
                                 creationDiags)
-                        onComplete()
+                        Interlocked.Increment(&actualCheckFileCount) |> ignore
                         return res
                     })
                 checkFileInProjectCache.Set(ltok, key, res)
                 res
         )
-
-    static let mutable actualParseFileCount = 0
-
-    static let mutable actualCheckFileCount = 0
 
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
@@ -503,13 +509,13 @@ type BackgroundCompiler(
             | Some res -> return res
             | None ->
                 Interlocked.Increment(&actualParseFileCount) |> ignore
-                let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, fileName, options, userOpName, suggestNamesForErrors)
-                let res = FSharpParseFileResults(parseDiags, parseTree, anyErrors, options.SourceFiles)
+                let parseDiagnostics, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, fileName, options, userOpName, suggestNamesForErrors)
+                let res = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (fileName, hash, options), res))
                 return res
           else
-            let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, fileName, options, userOpName, false)
-            return FSharpParseFileResults(parseDiags, parseTree, anyErrors, options.SourceFiles)
+            let parseDiagnostics, parseTree, anyErrors = ParseAndCheckFile.parseFile(sourceText, fileName, options, userOpName, false)
+            return FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, options.SourceFiles)
         }
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
@@ -521,9 +527,11 @@ type BackgroundCompiler(
                 let parseTree = EmptyParsedInput(fileName, (false, false))
                 return FSharpParseFileResults(creationDiags, parseTree, true, [| |])
             | Some builder -> 
-                let parseTree,_,_,parseDiags = builder.GetParseResultsForFile fileName
-                let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.diagnosticsOptions, false, fileName, parseDiags, suggestNamesForErrors) |]
-                return FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                let parseTree,_,_,parseDiagnostics = builder.GetParseResultsForFile fileName
+                let parseDiagnostics = DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                let diagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
+                let parseResults = FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                return parseResults
         }
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, fileName, sourceText: ISourceText, options) =
@@ -611,9 +619,6 @@ type BackgroundCompiler(
                 let lazyCheckFile =
                     getCheckFileNode 
                         (parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
-                        (fun () ->
-                            Interlocked.Increment(&actualCheckFileCount) |> ignore
-                        )
 
                 let! _, results, _, _ = lazyCheckFile.GetOrComputeValue()
                 return FSharpCheckFileAnswer.Succeeded results
@@ -697,8 +702,8 @@ type BackgroundCompiler(
                     // Do the parsing.
                     let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                     GraphNode.SetPreferredUILang tcPrior.TcConfig.preferredUiLang
-                    let parseDiags, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
-                    let parseResults = FSharpParseFileResults(parseDiags, parseTree, anyErrors, builder.AllDependenciesDeprecated)
+                    let parseDiagnostics, parseTree, anyErrors = ParseAndCheckFile.parseFile (sourceText, fileName, parsingOptions, userOpName, suggestNamesForErrors)
+                    let parseResults = FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, builder.AllDependenciesDeprecated)
                     let! checkResults = bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
                     Logger.LogBlockMessageStop (fileName + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
@@ -717,7 +722,7 @@ type BackgroundCompiler(
                 let typedResults = FSharpCheckFileResults.MakeEmpty(fileName, creationDiags, true)
                 return (parseResults, typedResults)
             | Some builder -> 
-                let parseTree, _, _, parseDiags = builder.GetParseResultsForFile fileName
+                let parseTree, _, _, parseDiagnostics = builder.GetParseResultsForFile fileName
                 let! tcProj = builder.GetFullCheckResultsAfterFileInProject fileName
 
                 let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
@@ -732,9 +737,11 @@ type BackgroundCompiler(
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
                 let tcDiagnostics = tcInfo.TcDiagnostics
                 let diagnosticsOptions = builder.TcConfig.diagnosticsOptions
-                let parseDiags = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, false, fileName, parseDiags, suggestNamesForErrors) |]
-                let tcDiagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors) |]
-                let parseResults = FSharpParseFileResults(diagnostics=parseDiags, input=parseTree, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
+                let parseDiagnostics = DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, false, fileName, parseDiagnostics, suggestNamesForErrors)
+                let parseDiagnostics = [| yield! creationDiags; yield! parseDiagnostics |]
+                let tcDiagnostics = DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, false, fileName, tcDiagnostics, suggestNamesForErrors)
+                let tcDiagnostics = [| yield! creationDiags; yield! tcDiagnostics |]
+                let parseResults = FSharpParseFileResults(diagnostics=parseDiagnostics, input=parseTree, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
                 let loadClosure = scriptClosureCache.TryGet(AnyCallerThread, options)
                 let typedResults = 
                     FSharpCheckFileResults.Make
@@ -817,7 +824,8 @@ type BackgroundCompiler(
         let! builderOpt,creationDiags = getOrCreateBuilder (options, userOpName)
         match builderOpt with 
         | None -> 
-            return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
+            let emptyResults = FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationDiags, None)
+            return emptyResults
         | Some builder -> 
             let! tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
             let diagnosticsOptions = tcProj.TcConfig.diagnosticsOptions
@@ -831,9 +839,10 @@ type BackgroundCompiler(
             let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
             let tcDiagnostics = tcInfo.TcDiagnostics
             let tcDependencyFiles = tcInfo.tcDependencyFiles
+            let tcDiagnostics = DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors) 
             let diagnostics =
                 [| yield! creationDiags
-                   yield! DiagnosticHelpers.CreateDiagnostics (diagnosticsOptions, true, fileName, tcDiagnostics, suggestNamesForErrors) |]
+                   yield! tcDiagnostics |]
 
             let getAssemblyData() = 
                 match tcAssemblyDataOpt with
