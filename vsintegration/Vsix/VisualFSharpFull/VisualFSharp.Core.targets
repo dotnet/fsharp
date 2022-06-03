@@ -84,22 +84,40 @@
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsiAnyCpu\fsiAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsi\fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsi\fsiArm64Project\fsiArm64.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>False</Private>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>Arm64</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsi\fsiProject\fsi.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fscAnyCpu\fscAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fsc\fscAnyCpuProject\fscAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsc\fsc.fsproj">
+    <ProjectReference Include="..\..\..\src\fsc\fscArm64Project\fscArm64.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>False</Private>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>Arm64</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsc\fscProject\fsc.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
