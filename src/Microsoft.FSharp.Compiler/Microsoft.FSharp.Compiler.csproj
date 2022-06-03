@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <Target Name="PackDependentProjectsCore">
-    <MSBuild Projects="@(DependentProjects)" Targets="Build;Pack" Properties="Restore=true;Pack=true;Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="PackDependentProjects"
