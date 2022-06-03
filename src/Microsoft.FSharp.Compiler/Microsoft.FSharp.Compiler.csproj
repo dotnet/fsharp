@@ -9,7 +9,10 @@
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
     <NoDefaultExcludes>true</NoDefaultExcludes>
+    <_BuildReleasePackagesTargets>$(NuGetPackageRoot)microsoft.dotnet.arcade.sdk\$(ArcadeSdkVersion)\tools\BuildReleasePackages.targets</_BuildReleasePackagesTargets>
   </PropertyGroup>
+
+  <Import Project="$(_BuildReleasePackagesTargets)" />
 
   <ItemGroup>
     <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
@@ -19,6 +22,33 @@
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
   </ItemGroup>
 
-  <Target Name="Build" />
+  <ItemGroup>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Build/FSharp.Build.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj">
+        <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
+    </DependentProjects>
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../fsi/fsi.fsproj" />
+    <DependentProjects Include="$(MSBuildThisFileDirectory)../fsc/fsc.fsproj" />
+  </ItemGroup>
+
+  <Target Name="PackDependentProjectsCore">
+    <MSBuild Projects="@(DependentProjects)" Targets="Build;Pack" Properties="Restore=true;Pack=true;Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+  <Target Name="PackDependentProjects"
+    BeforeTargets="Build"
+    DependsOnTargets="PackDependentProjectsCore;PackageReleasePackages">
+  </Target>
 
 </Project>
