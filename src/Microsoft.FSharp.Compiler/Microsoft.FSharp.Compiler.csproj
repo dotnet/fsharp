@@ -34,23 +34,18 @@
   <ItemGroup>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.1;netstandard2.0</AdditionalProperties>
-        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
-        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
-        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
-        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
     <DependentProjects Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj">
         <AdditionalProperties>TargetFrameworks=netstandard2.0</AdditionalProperties>
-        <SetConfiguration>ShouldUnsetParentConfigurationAndPlatform=false</SetConfiguration>
     </DependentProjects>
   </ItemGroup>
 
