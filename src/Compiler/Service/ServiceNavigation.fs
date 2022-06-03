@@ -45,14 +45,23 @@ type NavigationItem(uniqueName: string, name: string, kind: NavigationItemKind, 
                     isAbstract: bool, access: SynAccess option) = 
     
     member _.bodyRange = bodyRange
+
     member _.UniqueName = uniqueName
+
     member _.Name = name
+
     member _.Glyph = glyph
+
     member _.Kind = kind
+
     member _.Range = range
+
     member _.BodyRange = bodyRange 
+
     member _.IsSingleTopLevel = singleTopLevel
+
     member _.EnclosingEntityKind = enclosingEntityKind
+
     member _.IsAbstract = isAbstract
     
     member _.Access = access
@@ -606,28 +615,34 @@ module NavigateTo =
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
         
-        let addExceptionRepr (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_)), _, _, _, _)) isSig container = 
+        let addExceptionRepr exnRepr isSig container = 
+            let (SynExceptionDefnRepr(_, SynUnionCase(ident=SynIdent(id,_)), _, _, _, _)) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
             { Type = NavigableContainerType.Exception; Name = id.idText }
     
-        let addComponentInfo containerType kind (SynComponentInfo(_, _, _, lid, _, _, _, _)) isSig container = 
+        let addComponentInfo containerType kind info isSig container = 
+            let (SynComponentInfo(_, _, _, lid, _, _, _, _))= info
             match lastInLid lid with
             | Some id -> addIdent kind id isSig container
             | _ -> ()
             { Type = containerType; Name = formatLongIdent lid }
     
-        let addValSig kind (SynValSig(ident=SynIdent(id,_))) isSig container = 
+        let addValSig kind synValSig isSig container = 
+            let (SynValSig(ident=SynIdent(id,_))) = synValSig
             addIdent kind id isSig container
         
-        let addField(SynField(_, _, id, _, _, _, _, _)) isSig container = 
+        let addField synField isSig container = 
+            let (SynField(_, _, id, _, _, _, _, _)) = synField
             match id with
             | Some id -> addIdent NavigableItemKind.Field id isSig container
             | _ -> ()
         
-        let addEnumCase(SynEnumCase(ident=SynIdent(id,_))) isSig = 
+        let addEnumCase inp isSig = 
+            let (SynEnumCase(ident=SynIdent(id,_))) = inp
             addIdent NavigableItemKind.EnumCase id isSig
         
-        let addUnionCase(SynUnionCase(ident=SynIdent(id,_))) isSig container = 
+        let addUnionCase synUnionCase isSig container = 
+            let (SynUnionCase(ident=SynIdent(id,_))) = synUnionCase
             addIdent NavigableItemKind.UnionCase id isSig container
     
         let mapMemberKind mk = 
@@ -639,7 +654,8 @@ module NavigateTo =
             | SynMemberKind.PropertyGetSet -> NavigableItemKind.Property
             | SynMemberKind.Member -> NavigableItemKind.Member
     
-        let addBinding (SynBinding(valData=valData; headPat=headPat)) itemKind container =
+        let addBinding synBinding itemKind container =
+            let (SynBinding(valData=valData; headPat=headPat)) = synBinding
             let (SynValData(memberFlagsOpt, _, _)) = valData
             let kind =
                 match itemKind with
@@ -656,7 +672,8 @@ module NavigateTo =
             | SynPat.LongIdent(longDotId=SynLongIdent([id], _,_)) ->
                 // functions
                 addIdent kind id false container
-            | SynPat.Named (SynIdent(id,_), _, _, _) | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, _, _), _) ->
+            | SynPat.Named (SynIdent(id,_), _, _, _)
+            | SynPat.As(_, SynPat.Named (SynIdent(id,_), _, _, _), _) ->
                 // values
                 addIdent kind id false container
             | _ -> ()
@@ -665,11 +682,12 @@ module NavigateTo =
             let ctor = mapMemberKind memberFlags.MemberKind
             addValSig ctor valSig isSig container
     
-        let rec walkSigFileInput (ParsedSigFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
+        let rec walkSigFileInput (inp: ParsedSigFileInput) = 
+            let (ParsedSigFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespaceSig item { Type = NavigableContainerType.File; Name = fileName }
     
-        and walkSynModuleOrNamespaceSig inp container =
+        and walkSynModuleOrNamespaceSig (inp: SynModuleOrNamespaceSig) container =
             let (SynModuleOrNamespaceSig(longId = lid; kind = kind; decls = decls)) = inp
             let isModule = kind.IsModule
             if isModule then
@@ -680,7 +698,7 @@ module NavigateTo =
             for decl in decls do
                 walkSynModuleSigDecl decl container
     
-        and walkSynModuleSigDecl(decl: SynModuleSigDecl) container = 
+        and walkSynModuleSigDecl (decl: SynModuleSigDecl) container = 
             match decl with
             | SynModuleSigDecl.ModuleAbbrev(lhs, _, _range) ->
                 addModuleAbbreviation lhs true container
@@ -700,7 +718,8 @@ module NavigateTo =
             | SynModuleSigDecl.HashDirective _
             | SynModuleSigDecl.Open _ -> ()
     
-        and walkSynTypeDefnSig (SynTypeDefnSig(typeInfo=componentInfo; typeRepr=repr; members=members)) container = 
+        and walkSynTypeDefnSig (inp: SynTypeDefnSig) container = 
+            let (SynTypeDefnSig(typeInfo=componentInfo; typeRepr=repr; members=members)) = inp
             let container = addComponentInfo NavigableContainerType.Type NavigableItemKind.Type componentInfo true container
             for m in members do
                 walkSynMemberSig m container
@@ -723,12 +742,14 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInput (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
+        and walkImplFileInput (inp: ParsedImplFileInput) = 
+            let (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
             let container = { Type = NavigableContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
     
-        and walkSynModuleOrNamespace(SynModuleOrNamespace(longId = lid; kind = kind; decls = decls)) container =
+        and walkSynModuleOrNamespace inp container =
+            let (SynModuleOrNamespace(longId = lid; kind = kind; decls = decls)) = inp
             let isModule = kind.IsModule
             if isModule then
                 addModule lid false container
@@ -763,7 +784,8 @@ module NavigateTo =
             | SynModuleDecl.HashDirective _
             | SynModuleDecl.Open _ -> ()
     
-        and walkSynTypeDefn(SynTypeDefn(typeInfo=componentInfo; typeRepr=representation; members=members)) container = 
+        and walkSynTypeDefn inp container = 
+            let (SynTypeDefn(typeInfo=componentInfo; typeRepr=representation; members=members)) = inp
             let container = addComponentInfo NavigableContainerType.Type NavigableItemKind.Type componentInfo false container
             walkSynTypeDefnRepr representation container
             for m in members do
