@@ -618,15 +618,7 @@ let main1
         (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
 
     let inputs =
-        ParseInputFiles(
-            tcConfig,
-            lexResourceManager,
-            sourceFiles,
-            diagnosticsLogger,
-            exiter,
-            createDiagnosticsLogger,
-            false
-        )
+        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, exiter, createDiagnosticsLogger, false)
 
     let inputs, _ =
         (Map.empty, inputs)
