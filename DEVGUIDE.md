@@ -128,8 +128,11 @@ If your changes involve modifying the list of language keywords in any way, (e.g
 ```shell
 dotnet build src\Compiler /t:UpdateXlf
 ```
+If you are on a Mac, you can run this command from the root of the repository:
 
-This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
+```shell
+sh build.sh -c Release
+```
 
 ## Updating baselines in tests
 
