@@ -191,22 +191,26 @@ module NavigationImpl =
                 // F# class declaration
                 let members = processMembers membDefns NavigationEntityKind.Class |> snd
                 let nested = members@topMembers
-                ([ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Class, m, bodyRange mb nested, nested, NavigationEntityKind.Class, false, access) ]: (NavigationItem * int * _) list)
+                let bodym = bodyRange mb nested
+                [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Class, m, bodym, nested, NavigationEntityKind.Class, false, access) ]
             | SynTypeDefnRepr.Simple(simple, _) ->
                 // F# type declaration
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
                         [ for SynUnionCase(ident=SynIdent(id,_); caseType=fldspec) in cases -> 
-                            createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, NavigationEntityKind.Union, false, access) ]
+                            let bodym = unionRanges (fldspecRange fldspec) id.idRange
+                            createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, bodym, NavigationEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
-                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
+                    let bodym = bodyRange mb nested
+                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodym, nested, NavigationEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
                         [ for SynEnumCase(ident=SynIdent(id,_); range=m) in cases ->
                             createMember(id, NavigationItemKind.Field, FSharpGlyph.EnumMember, m, NavigationEntityKind.Enum, false, access) ]
                     let nested = cases@topMembers
-                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodyRange mb nested, nested, NavigationEntityKind.Enum, false, access) ]
+                    let bodym = bodyRange mb nested
+                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodym, nested, NavigationEntityKind.Enum, false, access) ]
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for SynField(_, _, id, _, _, _, _, m) in fields do
@@ -216,9 +220,11 @@ module NavigationImpl =
                             | _ -> 
                                 () ]
                     let nested = fields@topMembers
-                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Type, m, bodyRange mb nested, nested, NavigationEntityKind.Record, false, access) ]
+                    let bodym = bodyRange mb nested
+                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Type, m, bodym, nested, NavigationEntityKind.Record, false, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
-                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Typedef, m, bodyRange mb topMembers, topMembers, NavigationEntityKind.Class, false, access) ]
+                    let bodym = bodyRange mb topMembers
+                    [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Typedef, m, bodym, topMembers, NavigationEntityKind.Class, false, access) ]
                           
                 //| SynTypeDefnSimpleRepr.General of TyconKind * (SynType * Range * ident option) list * (valSpfn * MemberFlags) list * fieldDecls * bool * bool * Range 
                 //| SynTypeDefnSimpleRepr.LibraryOnlyILAssembly of ILType * Range
