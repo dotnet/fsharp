@@ -9,10 +9,10 @@
     <Projects Include="src\FSharp.Build\FSharp.Build.fsproj">
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </Projects>
-    <Projects Include="src\fsc\fsc.fsproj">
+    <Projects Include="src\fsc\fscProject\fsc.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=net6.0</AdditionalProperties>
     </Projects>
-    <Projects Include="src\fsi\fsi.fsproj">
+    <Projects Include="src\fsi\fsiProject\fsi.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=net6.0</AdditionalProperties>
     </Projects>
   </ItemGroup>
