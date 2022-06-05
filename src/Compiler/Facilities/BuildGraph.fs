@@ -10,70 +10,95 @@ open System.Globalization
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
-[<NoEquality;NoComparison>]
+[<NoEquality; NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
 
 let wrapThreadStaticInfo computation =
     async {
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
+
         try
-            return! computation 
+            return! computation
         finally
             DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
-            DiagnosticsThreadStatics.BuildPhase <- phase 
+            DiagnosticsThreadStatics.BuildPhase <- phase
     }
 
 type Async<'T> with
 
     static member AwaitNodeCode(node: NodeCode<'T>) =
         match node with
-        | Node(computation) -> wrapThreadStaticInfo computation
+        | Node (computation) -> wrapThreadStaticInfo computation
 
 [<Sealed>]
 type NodeCodeBuilder() =
 
     static let zero = Node(async.Zero())
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.Zero () : NodeCode<unit> = zero
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Zero() : NodeCode<unit> = zero
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.Delay (f: unit -> NodeCode<'T>) = 
-        Node(async.Delay(fun () -> match f() with Node(p) -> p))    
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Delay(f: unit -> NodeCode<'T>) =
+        Node(
+            async.Delay(fun () ->
+                match f () with
+                | Node (p) -> p)
+        )
 
-    [<DebuggerHidden;DebuggerStepThrough>]
+    [<DebuggerHidden; DebuggerStepThrough>]
     member _.Return value = Node(async.Return(value))
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.ReturnFrom (computation: NodeCode<_>) = computation
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.ReturnFrom(computation: NodeCode<_>) = computation
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.Bind (Node(p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
-        Node(async.Bind(p, fun x -> match binder x with Node p -> p))
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Bind(Node (p): NodeCode<'a>, binder: 'a -> NodeCode<'b>) : NodeCode<'b> =
+        Node(
+            async.Bind(
+                p,
+                fun x ->
+                    match binder x with
+                    | Node p -> p
+            )
+        )
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.TryWith(Node(p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
-        Node(async.TryWith(p, fun ex -> match binder ex with Node p -> p))
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.TryWith(Node (p): NodeCode<'T>, binder: exn -> NodeCode<'T>) : NodeCode<'T> =
+        Node(
+            async.TryWith(
+                p,
+                fun ex ->
+                    match binder ex with
+                    | Node p -> p
+            )
+        )
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.TryFinally(Node(p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> =
-        Node(async.TryFinally(p, binder))
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.TryFinally(Node (p): NodeCode<'T>, binder: unit -> unit) : NodeCode<'T> = Node(async.TryFinally(p, binder))
 
-    [<DebuggerHidden;DebuggerStepThrough>]
+    [<DebuggerHidden; DebuggerStepThrough>]
     member _.For(xs: 'T seq, binder: 'T -> NodeCode<unit>) : NodeCode<unit> =
-        Node(async.For(xs, fun x -> match binder x with Node p -> p))
+        Node(
+            async.For(
+                xs,
+                fun x ->
+                    match binder x with
+                    | Node p -> p
+            )
+        )
 
-    [<DebuggerHidden;DebuggerStepThrough>]
-    member _.Combine(Node(p1): NodeCode<unit>, Node(p2): NodeCode<'T>) : NodeCode<'T> =
-        Node(async.Combine(p1, p2))
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Combine(Node (p1): NodeCode<unit>, Node (p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
-    [<DebuggerHidden;DebuggerStepThrough>]
+    [<DebuggerHidden; DebuggerStepThrough>]
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
         Node(
             async {
                 DiagnosticsThreadStatics.DiagnosticsLogger <- value.DiagnosticsLogger
                 DiagnosticsThreadStatics.BuildPhase <- value.BuildPhase
+
                 try
                     return! binder value |> Async.AwaitNodeCode
                 finally
@@ -83,15 +108,15 @@ type NodeCodeBuilder() =
 
 let node = NodeCodeBuilder()
 
-[<AbstractClass;Sealed>]
+[<AbstractClass; Sealed>]
 type NodeCode private () =
 
-    static let cancellationToken =
-        Node(wrapThreadStaticInfo Async.CancellationToken)
+    static let cancellationToken = Node(wrapThreadStaticInfo Async.CancellationToken)
 
-    static member RunImmediate (computation: NodeCode<'T>, ct: CancellationToken) =
+    static member RunImmediate(computation: NodeCode<'T>, ct: CancellationToken) =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
+
         try
             try
                 let work =
@@ -100,20 +125,21 @@ type NodeCode private () =
                         DiagnosticsThreadStatics.BuildPhase <- phase
                         return! computation |> Async.AwaitNodeCode
                     }
-                Async.StartImmediateAsTask(work, cancellationToken=ct).Result
+
+                Async.StartImmediateAsTask(work, cancellationToken = ct).Result
             finally
                 DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
                 DiagnosticsThreadStatics.BuildPhase <- phase
-        with
-        | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
-            raise(ex.InnerExceptions[0])
+        with :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise (ex.InnerExceptions[0])
 
-    static member RunImmediateWithoutCancellation (computation: NodeCode<'T>) =
+    static member RunImmediateWithoutCancellation(computation: NodeCode<'T>) =
         NodeCode.RunImmediate(computation, CancellationToken.None)
 
-    static member StartAsTask_ForTesting (computation: NodeCode<'T>, ?ct: CancellationToken) =
+    static member StartAsTask_ForTesting(computation: NodeCode<'T>, ?ct: CancellationToken) =
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
         let phase = DiagnosticsThreadStatics.BuildPhase
+
         try
             let work =
                 async {
@@ -121,24 +147,24 @@ type NodeCode private () =
                     DiagnosticsThreadStatics.BuildPhase <- phase
                     return! computation |> Async.AwaitNodeCode
                 }
-            Async.StartAsTask(work, cancellationToken=defaultArg ct CancellationToken.None)
+
+            Async.StartAsTask(work, cancellationToken = defaultArg ct CancellationToken.None)
         finally
             DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
             DiagnosticsThreadStatics.BuildPhase <- phase
 
     static member CancellationToken = cancellationToken
 
-    static member FromCancellable(computation: Cancellable<'T>) = 
+    static member FromCancellable(computation: Cancellable<'T>) =
         Node(wrapThreadStaticInfo (Cancellable.toAsync computation))
 
-    static member AwaitAsync(computation: Async<'T>) = 
-        Node(wrapThreadStaticInfo computation)
+    static member AwaitAsync(computation: Async<'T>) = Node(wrapThreadStaticInfo computation)
 
     static member AwaitTask(task: Task<'T>) =
-        Node(wrapThreadStaticInfo(Async.AwaitTask task))
+        Node(wrapThreadStaticInfo (Async.AwaitTask task))
 
     static member AwaitTask(task: Task) =
-        Node(wrapThreadStaticInfo(Async.AwaitTask task))
+        Node(wrapThreadStaticInfo (Async.AwaitTask task))
 
     static member AwaitWaitHandle_ForTesting(waitHandle: WaitHandle) =
         Node(wrapThreadStaticInfo (Async.AwaitWaitHandle(waitHandle)))
@@ -149,14 +175,15 @@ type NodeCode private () =
     static member Sequential(computations: NodeCode<'T> seq) =
         node {
             let results = ResizeArray()
+
             for computation in computations do
                 let! res = computation
                 results.Add(res)
+
             return results.ToArray()
         }
 
-type private AgentMessage<'T> =
-    | GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
+type private AgentMessage<'T> = GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
 
 type private Agent<'T> = MailboxProcessor<AgentMessage<'T>> * CancellationTokenSource
 
@@ -169,13 +196,13 @@ type private GraphNodeAction<'T> =
 [<RequireQualifiedAccess>]
 module GraphNode =
 
-    // We need to store the culture for the VS thread that is executing now, 
+    // We need to store the culture for the VS thread that is executing now,
     // so that when the agent in the async lazy object picks up thread from the thread pool we can set the culture
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
-    let SetPreferredUILang (preferredUiLang: string option) = 
+    let SetPreferredUILang (preferredUiLang: string option) =
         match preferredUiLang with
-        | Some s -> 
+        | Some s ->
             culture <- CultureInfo s
 #if FX_RESHAPED_GLOBALIZATION
             CultureInfo.CurrentUICulture <- culture
@@ -185,7 +212,7 @@ module GraphNode =
         | None -> ()
 
 [<Sealed>]
-type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
+type GraphNode<'T>(retryCompute: bool, computation: NodeCode<'T>) =
 
     let gate = obj ()
     let mutable computation = computation
@@ -194,44 +221,45 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
     let mutable cachedResult: Task<'T> = Unchecked.defaultof<_>
     let mutable cachedResultNode: NodeCode<'T> = Unchecked.defaultof<_>
 
-    let isCachedResultNodeNotNull() =
+    let isCachedResultNodeNotNull () =
         not (obj.ReferenceEquals(cachedResultNode, null))
 
-    let isCachedResultNotNull() =
+    let isCachedResultNotNull () =
         not (obj.ReferenceEquals(cachedResult, null))
 
     // retryCompute indicates that we abandon computations when the originator is
-    // cancelled. 
+    // cancelled.
     //
-    // If retryCompute is 'true', the computation is run directly in the originating requestor's 
+    // If retryCompute is 'true', the computation is run directly in the originating requestor's
     // thread.  If cancelled, other awaiting computations must restart the computation from scratch.
     //
     // If retryCompute is 'false', a MailboxProcessor is used to allow the cancelled originator
     // to detach from the computation, while other awaiting computations continue to wait on the result.
     //
-    // Currently, 'retryCompute' = true for all graph nodes. However, the code for we include the 
+    // Currently, 'retryCompute' = true for all graph nodes. However, the code for we include the
     // code to allow 'retryCompute' = false in case it's needed in the future, and ensure it is under independent
     // unit test.
     let loop (agent: MailboxProcessor<AgentMessage<'T>>) =
         async {
             assert (not retryCompute)
+
             try
                 while true do
                     match! agent.Receive() with
                     | GetValue (replyChannel, callerCancellationToken) ->
 
                         Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
+
                         try
-                            use _reg = 
+                            use _reg =
                                 // When a cancellation has occured, notify the reply channel to let the requester stop waiting for a response.
-                                callerCancellationToken.Register (fun () -> 
+                                callerCancellationToken.Register(fun () ->
                                     let ex = OperationCanceledException() :> exn
-                                    replyChannel.Reply (Result.Error ex)
-                                )
+                                    replyChannel.Reply(Result.Error ex))
 
-                            callerCancellationToken.ThrowIfCancellationRequested ()
+                            callerCancellationToken.ThrowIfCancellationRequested()
 
-                            if isCachedResultNotNull() then
+                            if isCachedResultNotNull () then
                                 replyChannel.Reply(Ok cachedResult.Result)
                             else
                                 // This computation can only be canceled if the requestCount reaches zero.
@@ -239,20 +267,19 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                 cachedResult <- Task.FromResult(result)
                                 cachedResultNode <- node.Return result
                                 computation <- Unchecked.defaultof<_>
+
                                 if not callerCancellationToken.IsCancellationRequested then
                                     replyChannel.Reply(Ok result)
-                        with
-                        | ex ->
+                        with ex ->
                             if not callerCancellationToken.IsCancellationRequested then
                                 replyChannel.Reply(Result.Error ex)
-            with
-            | _ -> 
+            with _ ->
                 ()
         }
 
     let mutable agent: Agent<'T> = Unchecked.defaultof<_>
 
-    let semaphore: SemaphoreSlim = 
+    let semaphore: SemaphoreSlim =
         if retryCompute then
             new SemaphoreSlim(1, 1)
         else
@@ -260,20 +287,22 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
 
     member _.GetOrComputeValue() =
         // fast path
-        if isCachedResultNodeNotNull() then
+        if isCachedResultNodeNotNull () then
             cachedResultNode
         else
             node {
-                if isCachedResultNodeNotNull() then
+                if isCachedResultNodeNotNull () then
                     return! cachedResult |> NodeCode.AwaitTask
                 else
                     let action =
-                        lock gate <| fun () ->
+                        lock gate
+                        <| fun () ->
                             // We try to get the cached result after the lock so we don't spin up a new mailbox processor.
-                            if isCachedResultNodeNotNull() then
+                            if isCachedResultNodeNotNull () then
                                 GraphNodeAction<'T>.CachedValue cachedResult.Result
                             else
                                 requestCount <- requestCount + 1
+
                                 if retryCompute then
                                     GraphNodeAction<'T>.GetValue
                                 else
@@ -290,35 +319,39 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                             agent <- Unchecked.defaultof<_>
                                             PreserveStackTrace exn
                                             raise exn
-                                    | _ -> 
-                                        GraphNodeAction<'T>.GetValueByAgent
+                                    | _ -> GraphNodeAction<'T>.GetValueByAgent
 
                     match action with
                     | GraphNodeAction.CachedValue result -> return result
                     | GraphNodeAction.GetValue ->
                         try
                             let! ct = NodeCode.CancellationToken
-                            
+
                             // We must set 'taken' before any implicit cancellation checks
                             // occur, making sure we are under the protection of the 'try'.
                             // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
                             // implicit cancellation checks even before the try is entered, as do the
                             // de-sugaring of 'do!' and other CodeCode constructs.
                             let mutable taken = false
-                            try
-                                do! 
-                                    semaphore.WaitAsync(ct)
-                                     .ContinueWith(
-                                        (fun _ -> taken <- true),
-                                        (TaskContinuationOptions.NotOnCanceled ||| TaskContinuationOptions.NotOnFaulted ||| TaskContinuationOptions.ExecuteSynchronously)
-                                     ) 
-                                     |> NodeCode.AwaitTask
 
-                                if isCachedResultNotNull() then
+                            try
+                                do!
+                                    semaphore
+                                        .WaitAsync(ct)
+                                        .ContinueWith(
+                                            (fun _ -> taken <- true),
+                                            (TaskContinuationOptions.NotOnCanceled
+                                             ||| TaskContinuationOptions.NotOnFaulted
+                                             ||| TaskContinuationOptions.ExecuteSynchronously)
+                                        )
+                                    |> NodeCode.AwaitTask
+
+                                if isCachedResultNotNull () then
                                     return cachedResult.Result
                                 else
                                     let tcs = TaskCompletionSource<'T>()
-                                    let (Node(p)) = computation
+                                    let (Node (p)) = computation
+
                                     Async.StartWithContinuations(
                                         async {
                                             Thread.CurrentThread.CurrentUICulture <- GraphNode.culture
@@ -328,51 +361,56 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
                                             cachedResult <- Task.FromResult(res)
                                             cachedResultNode <- node.Return res
                                             computation <- Unchecked.defaultof<_>
-                                            tcs.SetResult(res)
-                                        ),
-                                        (fun ex ->
-                                            tcs.SetException(ex)
-                                        ),
-                                        (fun _ ->
-                                            tcs.SetCanceled()
-                                        ),
+                                            tcs.SetResult(res)),
+                                        (fun ex -> tcs.SetException(ex)),
+                                        (fun _ -> tcs.SetCanceled()),
                                         ct
                                     )
+
                                     return! tcs.Task |> NodeCode.AwaitTask
                             finally
-                                if taken then
-                                    semaphore.Release() |> ignore
+                                if taken then semaphore.Release() |> ignore
                         finally
-                            lock gate <| fun () ->
-                                requestCount <- requestCount - 1
+                            lock gate <| fun () -> requestCount <- requestCount - 1
 
-                    | GraphNodeAction.GetValueByAgent -> 
+                    | GraphNodeAction.GetValueByAgent ->
                         assert (not retryCompute)
                         let mbp, cts = agent
+
                         try
                             let! ct = NodeCode.CancellationToken
-                            let! res = mbp.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct)) |> NodeCode.AwaitAsync
+
+                            let! res =
+                                mbp.PostAndAsyncReply(fun replyChannel -> GetValue(replyChannel, ct))
+                                |> NodeCode.AwaitAsync
+
                             match res with
                             | Ok result -> return result
                             | Result.Error ex -> return raise ex
                         finally
-                            lock gate <| fun () ->
+                            lock gate
+                            <| fun () ->
                                 requestCount <- requestCount - 1
+
                                 if requestCount = 0 then
-                                        cts.Cancel() // cancel computation when all requests are cancelled
-                                        try (mbp :> IDisposable).Dispose () with | _ -> ()
-                                        cts.Dispose()
-                                        agent <- Unchecked.defaultof<_>
+                                    cts.Cancel() // cancel computation when all requests are cancelled
+
+                                    try
+                                        (mbp :> IDisposable).Dispose()
+                                    with _ ->
+                                        ()
+
+                                    cts.Dispose()
+                                    agent <- Unchecked.defaultof<_>
             }
 
-        member _.TryPeekValue() = 
-            match box cachedResult with
-            | null -> ValueNone
-            | _ -> ValueSome cachedResult.Result
+    member _.TryPeekValue() =
+        match box cachedResult with
+        | null -> ValueNone
+        | _ -> ValueSome cachedResult.Result
 
-        member _.HasValue = isCachedResultNotNull()
+    member _.HasValue = isCachedResultNotNull ()
 
-        member _.IsComputing = requestCount > 0
+    member _.IsComputing = requestCount > 0
 
-    new(computation) =
-        GraphNode(retryCompute=true, computation=computation)
+    new(computation) = GraphNode(retryCompute = true, computation = computation)
