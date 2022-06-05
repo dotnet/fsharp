@@ -142,8 +142,12 @@ let f (x: int16) (y: int16) = compare x y
                         """
                             IL_0000:  ldarg.0
                             IL_0001:  ldarg.1
-                            IL_0002:  sub
-                            IL_0003:  ret
+                            IL_0002:  cgt
+                            IL_0004:  ldarg.0
+                            IL_0005:  ldarg.1
+                            IL_0006:  clt
+                            IL_0008:  sub
+                            IL_0009:  ret
                         """
                     ]
             )
@@ -167,8 +171,12 @@ let f (x: uint16) (y: uint16) = compare x y
                         """
                             IL_0000:  ldarg.0
                             IL_0001:  ldarg.1
-                            IL_0002:  sub
-                            IL_0003:  ret
+                            IL_0002:  cgt.un
+                            IL_0004:  ldarg.0
+                            IL_0005:  ldarg.1
+                            IL_0006:  clt.un
+                            IL_0008:  sub
+                            IL_0009:  ret
                         """
                     ]
             )
@@ -192,8 +200,12 @@ let f (x: byte) (y: byte) = compare x y
                         """
                             IL_0000:  ldarg.0
                             IL_0001:  ldarg.1
-                            IL_0002:  sub
-                            IL_0003:  ret
+                            IL_0002:  cgt.un
+                            IL_0004:  ldarg.0
+                            IL_0005:  ldarg.1
+                            IL_0006:  clt.un
+                            IL_0008:  sub
+                            IL_0009:  ret
                         """
                     ]
             )
@@ -218,8 +230,12 @@ let f (x: sbyte) (y: sbyte) = compare x y
                         """
                             IL_0000:  ldarg.0
                             IL_0001:  ldarg.1
-                            IL_0002:  sub
-                            IL_0003:  ret
+                            IL_0002:  cgt
+                            IL_0004:  ldarg.0
+                            IL_0005:  ldarg.1
+                            IL_0006:  clt
+                            IL_0008:  sub
+                            IL_0009:  ret
                         """
                     ]
             )
@@ -244,8 +260,12 @@ let f (x: char) (y: char) = compare x y
                         """
                             IL_0000:  ldarg.0
                             IL_0001:  ldarg.1
-                            IL_0002:  sub
-                            IL_0003:  ret
+                            IL_0002:  cgt
+                            IL_0004:  ldarg.0
+                            IL_0005:  ldarg.1
+                            IL_0006:  clt
+                            IL_0008:  sub
+                            IL_0009:  ret
                         """
                     ]
             )
