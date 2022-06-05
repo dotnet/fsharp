@@ -474,7 +474,7 @@ namespace Microsoft.FSharp.Core
         let inline charEq (x:char) (y:char) = (# "ceq" x y : bool #) 
         let inline intOrder (x:int) (y:int) = (# "cgt" x y : int #) - (# "clt" x y : int #)
         let inline int64Order (x:int64) (y:int64) = (# "cgt" x y : int #) - (# "clt" x y : int #)
-        let inline byteOrder (x:byte) (y:byte) = (# "" x: int #) - (# "" y: int #)
+        let inline byteOrder (x:byte) (y:byte) = (# "cgt" x y: int #) - (# "clt" x y: int #)
         let inline byteEq (x:byte) (y:byte) = (# "ceq" x y : bool #) 
         let inline int64 (x:int) = (# "conv.i8" x  : int64 #)
         let inline int32 (x:int64) = (# "conv.i4" x  : int32 #)

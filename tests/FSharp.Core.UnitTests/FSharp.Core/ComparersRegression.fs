@@ -1581,7 +1581,7 @@ module ComparersRegression =
         member inline _.equals             = { new IOperation<'a> with member _.Exec lhs rhs = toint (HashIdentity.Structural.Equals(lhs,rhs)) }
         member inline _.equal              = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs = rhs) }
         member inline _.not_equal          = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs <> rhs) }
-        member inline _.compare            = { new IOperation<'a> with member _.Exec lhs rhs = ComparisonIdentity.Structural.Compare(lhs,rhs) |> sign }
+        member inline _.compare            = { new IOperation<'a> with member _.Exec lhs rhs = ComparisonIdentity.Structural.Compare(lhs,rhs) }
         member inline _.less_than          = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs < rhs) }
         member inline _.less_or_equal      = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs <= rhs) }
         member inline _.greater_than       = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs > rhs) }
