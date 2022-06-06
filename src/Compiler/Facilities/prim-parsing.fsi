@@ -123,9 +123,11 @@ exception internal Accept of obj
 /// Indicates a parse error has occurred and parse recovery is in progress.
 exception internal RecoverableParseError
 
-#if DEBUG
 module internal Flags =
+#if DEBUG
   val mutable debug : bool
+#else
+  val debug : bool
 #endif
 
 /// Helpers used by generated parsers.

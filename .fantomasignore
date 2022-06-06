@@ -13,7 +13,6 @@ artifacts/
 # Explicitly unformatted implementation files
 
 src/Compiler/Checking/**/*.fs
-src/Compiler/CodeGen/**/*.fs
 src/Compiler/DependencyManager/**/*.fs
 src/Compiler/Facilities/**/*.fs
 src/Compiler/Interactive/**/*.fs
@@ -21,7 +20,6 @@ src/Compiler/Legacy/**/*.fs
 src/Compiler/Optimize/**/*.fs
 src/Compiler/Symbols/**/*.fs
 src/Compiler/TypedTree/**/*.fs
-src/Microsoft.FSharp.Compiler/**/*.fs
 
 # Explicitly unformatted file that needs more care to get it to format well
 

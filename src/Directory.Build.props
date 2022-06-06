@@ -15,6 +15,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <PackageOutputPath>$(ArtifactsPackagesDir)\$(Configuration)</PackageOutputPath>
+    <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 
 </Project>
