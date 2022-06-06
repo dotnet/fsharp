@@ -4129,8 +4129,47 @@ module Interpolation =
                              NewArray (Object, Call (None, Box, [Value (1)])),
                              Value (<null>))])"""
 
+module TestQuotationWithIdetnicalStaticInstanceMethods = 
+    type C() =
+        static member M(c: int) = 1 + c
+        member this.M(c: int) = 2 + c
+    let res =
+        <@ C().M(3) @> 
+            |> FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation
+            :?> int
+   
+    check "vewhwveh" res 5
+
+
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
+
+
+module TestTaskQuotationExecution = 
+
+    open System.Threading.Tasks
+
+    let q = <@ task.Run(task.Delay(fun () -> task.Return "bar")) @>
+
+    let task =
+        q
+        |> FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation
+        :?> Task<string>
+
+    check "vewhwveh" task.Result "bar"
+
+module QuotationCapturingMutableThatGetsBoxed =
+
+    // Debug compilation failed
+    type Test () =
+        static member g ([< ReflectedDefinition>] f : Quotations.Expr<unit -> unit>) = printfn "%A" f
+
+    let f () =
+        let mutable x = 0
+        fun _ ->
+            Test.g (fun _ -> x |> ignore)
+
+    f () ()
 
 #if TESTS_AS_APP
 let RUN() = !failures

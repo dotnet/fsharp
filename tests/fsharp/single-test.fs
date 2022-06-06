@@ -29,10 +29,10 @@ let cleanUpFSharpCore cfg =
     { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
 // Generate a project files
-let emitFile filename (body:string) =
+let emitFile fileName (body:string) =
     try
         // Create a file to write to
-        use sw = File.CreateText(filename)
+        use sw = File.CreateText(fileName)
         sw.WriteLine(body)
     with | _ -> ()
 
@@ -208,7 +208,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net5.0"
+    let framework = "net6.0"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -224,7 +224,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
                     if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "FSharp.Cambridge did not find artifacts directory --- has the location changed????"
                     let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Path.GetRandomFileName())
+                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Guid.NewGuid().ToString() + ".tmp")
                     if Directory.Exists(projectDirectory) then
                         loop ()
                     else
@@ -259,7 +259,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
-        let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
+        let projectFileName = Path.Combine(directory, Guid.NewGuid().ToString() + ".tmp" + ".fsproj")
         try
             // Clean up directory
             Directory.CreateDirectory(directory) |> ignore
@@ -304,8 +304,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
 #if NETCOREAPP
-    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" optimized buildOnly
-    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net6.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net6.0" true false
 #else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
             |> List.rev
             |> List.tryFind (fileExists cfg)
 
-        source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
+        source1 |> Option.iter (fun from -> copy cfg from "tmptest.fs")
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
@@ -378,8 +378,8 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
-            fsi_flags = sprintf "%s %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
             }
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)

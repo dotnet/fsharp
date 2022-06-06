@@ -239,7 +239,7 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\src\buildtools\buildtools.proj`""
+    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
 
     $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
@@ -251,9 +251,9 @@ function Make-BootstrapBuild() {
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net5.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net5.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net5.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net6.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net6.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net6.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.proj`""

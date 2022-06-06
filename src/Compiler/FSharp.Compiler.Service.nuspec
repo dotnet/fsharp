@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        $CommonMetadataElements$
+        <language>en-US</language>
+        <dependencies>
+          <group targetFramework=".NETStandard2.0">
+            <dependency id="FSharp.Core" version="$FSharpCorePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="Microsoft.Build.Framework" version="$MicrosoftBuildFrameworkPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="Microsoft.Build.Tasks.Core" version="$MicrosoftBuildTasksCorePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="Microsoft.Build.Utilities.Core" version="$MicrosoftBuildUtilitiesCorePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Buffers" version="$SystemBuffersPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Diagnostics.Process" version="$SystemDiagnosticsProcessPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Diagnostics.TraceSource" version="$SystemDiagnosticsTraceSourcePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Linq.Expressions" version="$SystemLinqExpressionsPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Linq.Queryable" version="$SystemLinqQueryablePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Memory" version="$SystemMemoryPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Net.Requests" version="$SystemNetRequestsPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Net.Security" version="$SystemNetSecurityPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Reflection.Emit" version="$SystemReflectionEmitPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Reflection.Metadata" version="$SystemReflectionMetadataPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Reflection.TypeExtensions" version="$SystemReflectionTypeExtensionsPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime" version="$SystemRuntimePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime.InteropServices" version="$SystemRuntimeInteropServicesPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime.Loader" version="$SystemRuntimeLoaderPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Security.Claims" version="$SystemSecurityClaimsPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Security.Cryptography.Algorithms" version="$SystemSecurityCryptographyAlgorithmsPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Security.Principal" version="$SystemSecurityPrincipalPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Threading.Tasks.Parallel" version="$SystemThreadingTasksParallelPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Threading.Thread" version="$SystemThreadingThreadPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Threading.ThreadPool" version="$SystemThreadingThreadPoolPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime.CompilerServices.Unsafe" version="$SystemRuntimeCompilerServicesUnsafePackageVersion$" exclude="Build,Analyzers" />
+          </group>
+        </dependencies>
+    </metadata>
+    <files>
+        $CommonFileElements$
+
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"                              target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.xml"                              target="lib\netstandard2.0" />
+
+        <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"                target="lib\netstandard2.0" />
+        <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.xml"                target="lib\netstandard2.0" />
+
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\default.win32manifest"                                    target="lib\netstandard2.0" />
+
+
+        <!-- resources -->
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"                 target="lib\netstandard2.0" />
+        <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"   target="lib\netstandard2.0" />
+    </files>
+</package>

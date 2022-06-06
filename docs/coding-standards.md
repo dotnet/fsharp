@@ -10,7 +10,7 @@ The F# compiler code base is slowly being updated to better coding standards. Th
 
 The future work includes
 
-* [ ] Consistent use of fantomas formatting acrossas much of the codebase as feasible
+* [ ] Consistent use of fantomas formatting across as much of the codebase as feasible
 * [ ] Consistent naming conventions
 * [ ] Reduction in line length
 * [ ] Reduction in single-character identifiers
@@ -29,7 +29,7 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `arginfo`                | Argument (parameter) metadata  |
 | `ccu`                | Reference to an F# compilation unit = an F# DLL (possibly including the DLL being compiled)  |
 | `celem`               | Custom attribute element |
-| `cenv`                | Compilation environment. Means different things in different contexts, but usually a parameter for a singlecompilation state object being passed through a set of related functions in a single phase. The compilation state is often mutable. |
+| `cenv`                | Compilation environment. Means different things in different contexts, but usually a parameter for a single compilation state object being passed through a set of related functions in a single phase. The compilation state is often mutable. |
 | `cpath`                | Compilation path, meaning A.B.C for the overall names containing a type or module definition |
 | `css`                | Constraint solver state. |
 | `denv`                | Display Environment. Parameters guiding the formatting of types |
@@ -43,7 +43,7 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `lid`                   | Long Identifier |
 | `m`                   | A source code range marker |
 | `mimpl`               | IL interface method implementation |
-| `minfo`              | An info object for a method (whet a .NET method, an F# method or a provided method) |
+| `minfo`              | An info object for a method (whether a .NET method, an F# method or a provided method) |
 | `modul`                | a Typed Tree structure for a namespace or F# module |
 | `pat`              | Pattern, a syntactic AST node representing part of a pattern in a pattern match |
 | `pinfo`              | An info object for a property  (whether a .NET property, an F# property or a provided property) |
@@ -67,4 +67,3 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `Tc`                  | Type-checker |
 | `IL`                 | Abstract  IL = F# representation of .NET IL |
 | `Ilx`                 | Extended Abstract IL = .NET IL plus a couple of contructs that get erased |
-

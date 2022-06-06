@@ -1,12 +1,6 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
-#if INTERACTIVE
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.Test.Utilities/TestFramework.fs"
-#load "single-test.fs"
-#else
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 module FSharp.Tests.Core
-#endif
 
 open System
 open System.IO
@@ -38,7 +32,8 @@ let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
 
-[<NonParallelizable>]
+
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -470,7 +465,7 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
-        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+        let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
             use testOkFile = fileguard cfg "test.ok"
@@ -819,9 +814,9 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /r:split\a-part1.dll /out:split\a.dll /define:PART2;SPLIT""" ["a.cs"]
 
-        copy_y cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
+        copy cfg ("orig" ++ "b.dll") ("split" ++ "b.dll")
 
-        copy_y cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
+        copy cfg ("orig" ++ "c.dll") ("split" ++ "c.dll")
 
         fsc cfg """-o:orig\test.exe -r:orig\b.dll -r:orig\a.dll""" ["test.fs"]
 
@@ -834,6 +829,22 @@ module CoreTests =
         peverify cfg ("split" ++ "b.dll")
 
         peverify cfg ("split" ++ "c.dll")
+
+    [<Test>]
+    let xmldoc () =
+        let cfg = testConfig "core/xmldoc"
+
+        fsc cfg "%s -a --doc:lib.xml -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
+        let outFile = "lib.xml"
+        let expectedFile = "lib.xml.bsl"
+
+        if not (fileExists cfg expectedFile) then
+            copy cfg outFile expectedFile
+
+        let diffs = fsdiff cfg outFile expectedFile
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
 
     [<Test>]
     let fsfromcs () =
@@ -1026,13 +1037,15 @@ module CoreTests =
     // Debug with
     //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
     // then
-    ///    windiff z.output.test.default.stdout.bsl a.out
-    let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr =
+    ///    windiff output.stdout.bsl a.out
+    let runPrintingTest flag baseFile =
+       let diffFileOut = baseFile + ".stdout.txt"
+       let expectedFileOut = baseFile + ".stdout.bsl"
+       let diffFileErr = baseFile + ".stderr.txt"
+       let expectedFileErr = baseFile + ".stderr.bsl"
        let cfg = testConfig "core/printing"
 
        if requireENCulture () then
-
-        let copy from' = Commands.copy_y cfg.Directory from' >> checkResult
 
         let ``fsi <a >b 2>c`` =
             // "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
@@ -1045,7 +1058,7 @@ module CoreTests =
 
         let rawFileOut = tryCreateTemporaryFileName ()
         let rawFileErr = tryCreateTemporaryFileName ()
-        ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
+        ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
         let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
@@ -1055,12 +1068,11 @@ module CoreTests =
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
 
-        let withDefault default' to' =
-            if not (fileExists cfg to') then copy default' to'
+        let withDefault defaultFile toFile =
+            if not (fileExists cfg toFile) then copy cfg defaultFile toFile
 
         expectedFileOut |> withDefault diffFileOut
         expectedFileErr |> withDefault diffFileErr
-
 
         match fsdiff cfg diffFileOut expectedFileOut with
         | "" -> ()
@@ -1071,40 +1083,47 @@ module CoreTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-default-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
+    let ``printing`` () =
+         runPrintingTest "--multiemit- --debug+" "output"
+
+    // F# 5.0 changed some things printing output
+    [<Test>]
+    let ``printing-langversion47`` () =
+         runPrintingTest "--langversion:4.7" "output.47"
+
+    // Output should not change with optimization off
+    [<Test>]
+    let ``printing-optimizeoff`` () =
+         runPrintingTest "--multiemit- --debug+ --optimize-" "output"
+
+    // Legacy one-dynamic-assembly emit is the default for .NET Framework, which these tests are using
+    // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
+    // as it feeds in many incremental fragments into stdin of the FSI process.
+    [<Test>]
+    let ``printing-multiemit`` () =
+         runPrintingTest "--multiemit+ --debug+" "output.multiemit"
+
+    // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
+    // needs to be tested with optimizations off.  The output should not change.
+    [<Test>]
+    let ``printing-multiemit-optimizeoff`` () =
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.multiemit"
 
     [<Test>]
-    let ``printing-default-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
+    let ``printing-width-1000`` () =
+         runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-1000-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.47.txt" "z.output.test.1000.stdout.47.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
+    let ``printing-width-200`` () =
+         runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
-    let ``printing-1000-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
+    let ``printing-off`` () =
+         runPrintingTest "--use:preludeShowDeclarationValuesFalse.fsx" "output.off"
 
     [<Test>]
-    let ``printing-200-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.47.txt" "z.output.test.200.stdout.47.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
-
-    [<Test>]
-    let ``printing-200-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
-
-    [<Test>]
-    let ``printing-off-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.47.txt" "z.output.test.off.stdout.47.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
-
-    [<Test>]
-    let ``printing-off-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
-
-    [<Test>]
-    let ``printing-quiet-stdout`` () =
-         printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
+    let ``printing-quiet`` () =
+         runPrintingTest "--quiet" "output.quiet"
 
     type SigningType =
         | DelaySigned
@@ -1294,7 +1313,7 @@ module CoreTests =
         exec cfg ("." ++ "main.exe") ""
 
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
+    // Repro for https://github.com/dotnet/fsharp/issues/1298
     [<Test>]
     let fileorder () =
         let cfg = testConfig "core/fileorder"
@@ -1321,7 +1340,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test2.exe") ""
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    // Repro for https://github.com/dotnet/fsharp/issues/2679
     [<Test>]
     let ``add files with same name from different folders`` () =
         let cfg = testConfig "core/samename"
@@ -1366,7 +1385,7 @@ module CoreTests =
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
-        // see https://github.com/Microsoft/visualfsharp/issues/3139
+        // see https://github.com/dotnet/fsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
         let stderrPath = "out.stderr.txt" |> getfullpath cfg
@@ -1569,9 +1588,11 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
-//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
-//    [<Test>]
-//    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
+// This requires --multiemit on by default, which is not the case for .NET Framework
+#if NETCOREAPP
+    [<Test>]
+    let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
+#endif
 
     [<Test>]
     let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
@@ -2078,13 +2099,14 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
-[<NonParallelizable>]
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module ToolsTests =
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let bundle () =
-        let cfg = testConfig "tools/bundle"
+        let cfg = 
+            testConfig "tools/bundle" 
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
@@ -2131,6 +2153,11 @@ module RegressionTests =
 
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
+
+    [<Test >]
+    let ``4715-optimized`` () =
+        let cfg = testConfig "regression/4715"
+        fsc cfg "%s -o:test.exe --optimize+" cfg.fsc_flags ["date.fs"; "env.fs"; "main.fs"]
 
 #if NETCOREAPP
     [<Test >]
@@ -2203,7 +2230,9 @@ module RegressionTests =
 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
-        let cfg = testConfig "regression/5531"
+        let cfg = 
+            testConfig "regression/5531"
+       
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
@@ -2236,7 +2265,7 @@ module RegressionTests =
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``655`` () =
         let cfg = testConfig "regression/655"
@@ -2255,7 +2284,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test >]
     let ``656`` () =
         let cfg = testConfig "regression/656"
@@ -2289,7 +2318,7 @@ module RegressionTests =
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () =
         let cfg = testConfig "regression/struct-measure-bug-1"
@@ -3259,7 +3288,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if NET472
+#if !NETCOREAPP
 [<NonParallelizable>]
 module ProductVersionTest =
 

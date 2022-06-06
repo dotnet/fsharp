@@ -6,11 +6,12 @@ index: 300
 ---
 # Diagnostics
 
-The key types are 
+The key types are:
 
 * `ErrorLogger`
 * `FSharpDiagnosticSeverity`
 * `FSharpDiagnostic`
+* `DiagnosticWithText`
 
 and functions
 
@@ -19,9 +20,7 @@ and functions
 * `error` - emit an error and throw an exception
 * `errorRecovery` - recover from an exception
 
-## Diagnostic messages
-
-For the compiler, a key file is `FSComp.txt` olding most of the messages. There are also a few other similar files including some old error messages in `FSStrings.resx`.
+For the compiler, a key file is `https://github.com/dotnet/fsharp/blob/main/src/Compiler/FSComp.txt` holding most of the messages. There are also a few other similar files including some old error messages in `FSStrings.resx`.
 
 ## Adding Diagnostics
 
@@ -56,4 +55,3 @@ Diagnostics must often format types.
 * When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of infomation to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
 
 * When displaying a type, you have the option of displaying the constraints implied by any type variables mentioned in the types, appended as `when ...`. For example, `NicePrint.layoutPrettifiedTypeAndConstraints`.
-

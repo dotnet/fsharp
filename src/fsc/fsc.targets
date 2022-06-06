@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <NGenBinary>true</NGenBinary>
+    <UseAppHost>true</UseAppHost>
+    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
+    <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
+      <Pattern1>{{FSCoreVersion}}</Pattern1>
+      <Replacement1>$(FSCoreVersion)</Replacement1>
+    </NoneSubstituteText>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Build/FSharp.Build.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Microsoft.FSharp.NetSdk.Shim.props" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.Overrides.NetSdk.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.Portable.FSharp.Shim.targets" CopyToOutputDirectory="PreserveNewest" />
+
+    <NoneSubstituteText Include="Microsoft.FSharp.ShimHelpers.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.ShimHelpers.props</TargetFileName>
+      <Pattern1>{{FSharpCorePreviewPackageVersionValue}}</Pattern1>
+      <Replacement1>$(FSharpCorePreviewPackageVersionValue)</Replacement1>
+    </NoneSubstituteText>
+  </ItemGroup>
+
+</Project>

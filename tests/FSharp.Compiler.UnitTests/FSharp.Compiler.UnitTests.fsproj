@@ -3,19 +3,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net5.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
     <UnitTestType>xunit</UnitTestType>
   </PropertyGroup>
 
-    <ItemGroup>
-        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    </ItemGroup>
+  <ItemGroup>
+      <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
-    <ItemGroup>
+  <ItemGroup>
     <Compile Include="CompilerTestHelpers.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
@@ -48,7 +48,7 @@
     <Compile Include="..\..\tests\service\TokenizerTests.fs">
       <Link>CompilerService\TokenizerTests.fs</Link>
     </Compile>
-    <!-- TODO:  Fix this test
+<!-- TODO:  Fix this test
     <Compile Include="..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
     </Compile>
@@ -80,8 +80,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />

@@ -1086,6 +1086,33 @@ let ShortName = "hi"
 
 System.DayOfWeek.Tuesday
 ;;
+let internal f() = 1;; f();; // should give a warning in multi-assembly interactive emit
+
+
+type internal CInternal() = class end;;
+
+CInternal() |> ignore;; // should give a warning in multi-assembly interactive emit
+
+type internal CPublic() = 
+    member internal _.MInternal() = ();;
+    
+CPublic().MInternal();; // should give a warning in multi-assembly interactive emit
+
+type internal CPublic2() = 
+    let mutable x = 1
+    member _.MPublic() = x;;
+    
+CPublic2().MPublic();; // should give a warning in multi-assembly interactive emit
+
+let inst1 = TestLoadFile.ClassInFile1();; // should load ok
+
+let inst2 = TestLoadFile2.ClassInFile2();; // should load ok
+
+type Test = { A: int; B: string };;
+
+let list = [{ A = 1; B = "a" }];;
+
+let list2 = [ for x in list do x.A ];;
 
 ;; (* ;; needed, to isolate error regressions *)
 

@@ -1,0 +1,41 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <MicrosoftFSharpShimHelpersPropsIncluded>true</MicrosoftFSharpShimHelpersPropsIncluded>
+  </PropertyGroup>
+
+  <!--
+    If FSharpCompilerPath is set, we have nothing else to do, someone has already expressed a preference.
+  -->
+  <PropertyGroup Condition="'$(FSharpCompilerPath)' == '' and '$(DisableAutoSetFscCompilerPath)' != 'true'">
+    <!--
+        Precompute paths to compiler for both netsdk and netframework compilers.  Settings in the project file will allow 
+        Microsoft.FSharp.Targets to select which compiler to use.
+    -->
+    <FSharp_Shim_Present>true</FSharp_Shim_Present>
+
+    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">fsc.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
+    <Fsc_NetFramework_PlatformSpecific_ToolExe Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">fscArm64.exe</Fsc_NetFramework_PlatformSpecific_ToolExe>
+    <Fsc_NetFramework_AnyCpu_ToolExe>fscAnyCpu.exe</Fsc_NetFramework_AnyCpu_ToolExe>
+
+    <Fsc_DotNet_CompilerPath>$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</Fsc_DotNet_CompilerPath>
+    <Fsc_NetFramework_ToolPath>$(VsInstallRoot)/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</Fsc_NetFramework_ToolPath>
+
+    <Fsc_DotNET_ToolPath>$(NetCoreRoot)</Fsc_DotNET_ToolPath>
+    <Fsc_DotNET_ToolExe>dotnet.exe</Fsc_DotNET_ToolExe>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(Fsc_DotNet_CompilerPath)fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <Fsc_DotNET__FSharpCoreLibraryPacksFolder>$(Fsc_DotNet_CompilerPath)library-packs</Fsc_DotNET__FSharpCoreLibraryPacksFolder>
+
+    <FSharpCompilerPath>$(Fsc_NetFramework_ToolPath)</FSharpCompilerPath>
+  </PropertyGroup>
+
+  <Import Condition="Exists('$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props') and '$(FSharp_Shim_Present)'=='true'"
+          Project="$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props" />
+
+  <!-- TBD: Remove before shipping. Temporary workaround to account for F# arriving in VS before an SDK with these updates -->
+  <PropertyGroup Condition="!Exists('$(Fsc_DotNet_CompilerPath)Microsoft.FSharp.Core.NetSdk.props') and '$(FSharp_Shim_Present)'=='true'">
+    <_FSCorePackageVersionSet>true</_FSCorePackageVersionSet>
+    <FSCorePackageVersion>6.0.4</FSCorePackageVersion>
+  </PropertyGroup>
+
+</Project>
