@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.Compare02 created
 }
 .module Compare02.exe
-// MVID: {628F4C90-AD11-81A6-A745-0383904C8F62}
+// MVID: {629F023F-DFF8-1315-A745-03833F029F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001FC72200000
+// Image base: 0x00000285F4090000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,62 +58,29 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f4_triple() cil managed
     {
-      // Code size       57 (0x39)
+      // Code size       23 (0x17)
       .maxstack  4
       .locals init (int32 V_0,
-               int32 V_1,
-               int32 V_2,
-               int32 V_3)
+               int32 V_1)
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       IL_0002:  nop
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br.s       IL_0030
+      IL_0006:  br.s       IL_000e
 
-      IL_0008:  ldc.i4.1
-      IL_0009:  ldc.i4.1
-      IL_000a:  cgt
-      IL_000c:  ldc.i4.0
-      IL_000d:  sub
-      IL_000e:  stloc.2
-      IL_000f:  ldloc.2
-      IL_0010:  brfalse.s  IL_0016
+      IL_0008:  ldc.i4.m1
+      IL_0009:  stloc.0
+      IL_000a:  ldloc.1
+      IL_000b:  ldc.i4.1
+      IL_000c:  add
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.1
+      IL_000f:  ldc.i4     0x989681
+      IL_0014:  blt.s      IL_0008
 
-      IL_0012:  ldloc.2
-      IL_0013:  nop
-      IL_0014:  br.s       IL_002b
-
-      IL_0016:  ldc.i4.2
-      IL_0017:  ldc.i4.2
-      IL_0018:  cgt
-      IL_001a:  ldc.i4.0
-      IL_001b:  sub
-      IL_001c:  stloc.3
-      IL_001d:  ldloc.3
-      IL_001e:  brfalse.s  IL_0024
-
-      IL_0020:  ldloc.3
-      IL_0021:  nop
-      IL_0022:  br.s       IL_002b
-
-      IL_0024:  ldc.i4.3
-      IL_0025:  ldc.i4.4
-      IL_0026:  cgt
-      IL_0028:  ldc.i4.1
-      IL_0029:  sub
-      IL_002a:  nop
-      IL_002b:  stloc.0
-      IL_002c:  ldloc.1
-      IL_002d:  ldc.i4.1
-      IL_002e:  add
-      IL_002f:  stloc.1
-      IL_0030:  ldloc.1
-      IL_0031:  ldc.i4     0x989681
-      IL_0036:  blt.s      IL_0008
-
-      IL_0038:  ret
+      IL_0016:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f4_triple
 
   } // end of class CompareMicroPerfAndCodeGenerationTests

@@ -33,22 +33,22 @@
 }
 .mresource public FSharpSignatureData.Compare03
 {
-  // Offset: 0x00000000 Length: 0x00000276
+  // Offset: 0x00000000 Length: 0x0000025A
   // WARNING: managed resource file FSharpSignatureData.Compare03 created
 }
 .mresource public FSharpOptimizationData.Compare03
 {
-  // Offset: 0x00000280 Length: 0x000000B9
+  // Offset: 0x00000260 Length: 0x000000B9
   // WARNING: managed resource file FSharpOptimizationData.Compare03 created
 }
 .module Compare03.exe
-// MVID: {6290E425-79F4-7F19-A745-038325E49062}
+// MVID: {629F0A77-79F4-7F19-A745-0383770A9F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03380000
+// Image base: 0x03150000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,76 +63,33 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static int32  f4_tuple4() cil managed
     {
-      // Code size       84 (0x54)
+      // Code size       38 (0x26)
       .maxstack  4
       .locals init (int32 V_0,
-               int32 V_1,
-               int32 V_2,
-               int32 V_3,
-               int32 V_4)
+               int32 V_1)
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       IL_0002:  nop
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br.s       IL_004a
+      IL_0006:  br.s       IL_001c
 
-      IL_0008:  ldc.i4.1
-      IL_0009:  ldc.i4.1
-      IL_000a:  cgt
-      IL_000c:  ldc.i4.0
-      IL_000d:  sub
-      IL_000e:  stloc.2
-      IL_000f:  ldloc.2
-      IL_0010:  brfalse.s  IL_0016
-
-      IL_0012:  ldloc.2
-      IL_0013:  nop
-      IL_0014:  br.s       IL_0045
-
-      IL_0016:  ldc.i4.2
-      IL_0017:  ldc.i4.2
-      IL_0018:  cgt
-      IL_001a:  ldc.i4.0
-      IL_001b:  sub
-      IL_001c:  stloc.3
-      IL_001d:  ldloc.3
-      IL_001e:  brfalse.s  IL_0024
-
-      IL_0020:  ldloc.3
-      IL_0021:  nop
-      IL_0022:  br.s       IL_0045
-
-      IL_0024:  ldc.i4.4
-      IL_0025:  ldc.i4.4
-      IL_0026:  cgt
-      IL_0028:  ldc.i4.0
-      IL_0029:  sub
-      IL_002a:  stloc.s    V_4
-      IL_002c:  ldloc.s    V_4
-      IL_002e:  brfalse.s  IL_0035
-
-      IL_0030:  ldloc.s    V_4
-      IL_0032:  nop
-      IL_0033:  br.s       IL_0045
-
-      IL_0035:  ldstr      "five"
-      IL_003a:  ldstr      "5"
-      IL_003f:  call       int32 [netstandard]System.String::CompareOrdinal(string,
+      IL_0008:  ldstr      "five"
+      IL_000d:  ldstr      "5"
+      IL_0012:  call       int32 [netstandard]System.String::CompareOrdinal(string,
                                                                             string)
-      IL_0044:  nop
-      IL_0045:  stloc.0
-      IL_0046:  ldloc.1
-      IL_0047:  ldc.i4.1
-      IL_0048:  add
-      IL_0049:  stloc.1
-      IL_004a:  ldloc.1
-      IL_004b:  ldc.i4     0x989681
-      IL_0050:  blt.s      IL_0008
+      IL_0017:  stloc.0
+      IL_0018:  ldloc.1
+      IL_0019:  ldc.i4.1
+      IL_001a:  add
+      IL_001b:  stloc.1
+      IL_001c:  ldloc.1
+      IL_001d:  ldc.i4     0x989681
+      IL_0022:  blt.s      IL_0008
 
-      IL_0052:  ldloc.0
-      IL_0053:  ret
+      IL_0024:  ldloc.0
+      IL_0025:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f4_tuple4
 
   } // end of class CompareMicroPerfAndCodeGenerationTests
@@ -156,4 +113,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\Users\vlza\code\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net472\tests\EmittedIL\GenericComparison\Compare03_fsx\Compare03.res
+// WARNING: Created Win32 resource file C:\dev\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Compare03_fsx\Compare03.res
