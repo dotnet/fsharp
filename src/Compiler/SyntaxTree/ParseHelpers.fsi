@@ -106,17 +106,18 @@ type LexerStringStyle =
 type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool
-      IsInterpolatedFirst: bool }
+      IsInterpolatedFirst: bool
+      IsDoubleDollarInterpolated: bool }
 
     static member ByteString: LexerStringKind
 
-    static member InterpolatedStringFirst: LexerStringKind
+    static member InterpolatedStringFirst: bool -> LexerStringKind
 
-    static member InterpolatedStringPart: LexerStringKind
+    static member InterpolatedStringPart: bool -> LexerStringKind
 
     static member String: LexerStringKind
 
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * bool * range) list
 
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type LexerContinuation =

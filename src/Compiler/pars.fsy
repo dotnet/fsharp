@@ -142,7 +142,7 @@ let checkEndOfFileError t =
       | (_, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoHashEndIfFound())
       match nesting with 
       | [] -> ()
-      | (_, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill())
+      | (_, _, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill())
 
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 

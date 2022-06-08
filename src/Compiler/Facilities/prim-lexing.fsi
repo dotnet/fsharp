@@ -115,6 +115,9 @@ type internal LexBuffer<'Char> =
     /// Determine if Lexeme contains a specific character
     member LexemeContains: 'Char -> bool
 
+    /// The length of the lexeme.
+    member LexemeLength: int
+
     /// Fast helper to turn the matched characters into a string, avoiding an intermediate array.
     static member LexemeString: LexBuffer<char> -> string
 

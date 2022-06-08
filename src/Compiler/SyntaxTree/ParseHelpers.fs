@@ -274,6 +274,7 @@ type LexerStringKind =
         IsByteString: bool
         IsInterpolated: bool
         IsInterpolatedFirst: bool
+        IsDoubleDollarInterpolated: bool
     }
 
     static member String =
@@ -281,6 +282,7 @@ type LexerStringKind =
             IsByteString = false
             IsInterpolated = false
             IsInterpolatedFirst = false
+            IsDoubleDollarInterpolated = false
         }
 
     static member ByteString =
@@ -288,25 +290,28 @@ type LexerStringKind =
             IsByteString = true
             IsInterpolated = false
             IsInterpolatedFirst = false
+            IsDoubleDollarInterpolated = false
         }
 
-    static member InterpolatedStringFirst =
+    static member InterpolatedStringFirst(isDoubleDollar) =
         {
             IsByteString = false
             IsInterpolated = true
             IsInterpolatedFirst = true
+            IsDoubleDollarInterpolated = isDoubleDollar
         }
 
-    static member InterpolatedStringPart =
+    static member InterpolatedStringPart(isDoubleDollar) =
         {
             IsByteString = false
             IsInterpolated = true
             IsInterpolatedFirst = false
+            IsDoubleDollarInterpolated = isDoubleDollar
         }
 
 /// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
 /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
-type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * bool * range) list
 
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of

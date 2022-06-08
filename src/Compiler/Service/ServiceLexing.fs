@@ -605,23 +605,26 @@ module internal LexerStateEncoding =
             ifdefStackCount <- ifdefStackCount + 1
 
         let stringKindValue =
-            (if stringKind.IsByteString then 0b100 else 0)
+            (if stringKind.IsDoubleDollarInterpolated then 0b1000 else 0)
+            ||| (if stringKind.IsByteString then 0b100 else 0)
             ||| (if stringKind.IsInterpolated then 0b010 else 0)
             ||| (if stringKind.IsInterpolatedFirst then 0b001 else 0)
 
         let nestingValue =
-            let tag1, i1, kind1, rest =
+            let tag1, i1, kind1, b1, rest =
                 match stringNest with
-                | [] -> false, 0, 0, []
-                | (i1, kind1, _) :: rest -> true, i1, encodeStringStyle kind1, rest
-
-            let tag2, i2, kind2 =
+                | [] -> false, 0, 0, false, []
+                | (i1, kind1, b1, _)::rest -> true, i1, encodeStringStyle kind1, b1, rest
+            
+            let tag2, i2, kind2, b2 =
                 match rest with
-                | [] -> false, 0, 0
-                | (i2, kind2, _) :: _ -> true, i2, encodeStringStyle kind2
-
-            (if tag1 then 0b100000000000 else 0)
-            ||| (if tag2 then 0b010000000000 else 0)
+                | [] -> false, 0, 0, false
+                | (i2, kind2, b2, _)::_ -> true, i2, encodeStringStyle kind2, b2
+            
+            (if tag1 then 0b10000000000000 else 0)
+            ||| (if tag2 then 0b01000000000000 else 0)
+            ||| (if b1 then 0b100000000000 else 0)
+            ||| (if b2 then 0b010000000000 else 0)
             ||| ((i1 <<< 7) &&& 0b001110000000)
             ||| ((i2 <<< 4) &&& 0b000001110000)
             ||| ((kind1 <<< 2) &&& 0b000000001100)
@@ -665,6 +668,7 @@ module internal LexerStateEncoding =
 
         let stringKind: LexerStringKind =
             {
+                IsDoubleDollarInterpolated = ((stringKindValue &&& 0b1000) = 0b1000)
                 IsByteString = ((stringKindValue &&& 0b100) = 0b100)
                 IsInterpolated = ((stringKindValue &&& 0b010) = 0b010)
                 IsInterpolatedFirst = ((stringKindValue &&& 0b001) = 0b001)
@@ -675,16 +679,18 @@ module internal LexerStateEncoding =
         let nestingValue = int32 ((bits &&& nestingMask) >>> nestingStart)
 
         let stringNest: LexerInterpolatedStringNesting =
-            let tag1 = ((nestingValue &&& 0b100000000000) = 0b100000000000)
-            let tag2 = ((nestingValue &&& 0b010000000000) = 0b010000000000)
+            let tag1 = ((nestingValue &&& 0b10000000000000) = 0b10000000000000)
+            let tag2 = ((nestingValue &&& 0b01000000000000) = 0b01000000000000)
+            let b1 = ((nestingValue &&& 0b100000000000) = 0b100000000000)
+            let b2 = ((nestingValue &&& 0b010000000000) = 0b010000000000)
             let i1 = ((nestingValue &&& 0b001110000000) >>> 7)
             let i2 = ((nestingValue &&& 0b000001110000) >>> 4)
             let kind1 = ((nestingValue &&& 0b000000001100) >>> 2)
             let kind2 = ((nestingValue &&& 0b000000000011) >>> 0)
 
             [
-                if tag1 then i1, decodeStringStyle kind1, range0
-                if tag2 then i2, decodeStringStyle kind2, range0
+                if tag1 then i1, decodeStringStyle kind1, b1, range0
+                if tag2 then i2, decodeStringStyle kind2, b2, range0
             ]
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest)
