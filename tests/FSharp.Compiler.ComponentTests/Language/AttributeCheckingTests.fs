@@ -42,3 +42,55 @@ type C() =
          |> ignoreWarnings
          |> compile
          |> shouldSucceed
+
+    [<Fact>]
+    let ``ObsoleteAttribute is taken into account when used on a type.`` () =
+        Fsx """
+open System
+
+[<Obsolete("Foo", true)>]
+type Foo() =
+  
+    member _.Bar() = ()
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Foo"
+
+    [<Fact>]
+    let ``ObsoleteAttribute is taken into account when used on member type.`` () =
+        Fsx """
+open System
+
+type Foo() =
+    [<Obsolete("Foo", true)>]
+    member _.Bar() = ()
+
+let foo = Foo()
+foo.Bar()
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Foo"
+
+    [<Fact>]
+    let ``ObsoleteAttribute is taken into account when used on type when invoking member`` () =
+        Fsx """
+open System
+
+[<Obsolete("Foo", true)>]
+type Foo() =
+    member _.Bar() = ()
+
+let foo = Foo()
+foo.Bar()
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [ 101; 101]
+        |> withErrorMessages [ "This construct is deprecated. Foo"; "This construct is deprecated. Foo"]
