@@ -1175,7 +1175,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             // For 'query' check immediately
             if isQuery then
                 match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with 
-                | [NormalizedBinding(_, SynBindingKind.Normal, (*inline*)false, (*mutable*)false, _, _, _, _, _, _, _, _)] when not isRec -> 
+                | [NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _)] when not isRec -> 
                     ()
                 | normalizedBindings -> 
                     let failAt m = error(Error(FSComp.SR.tcNonSimpleLetBindingInQuery(), m))
@@ -1770,7 +1770,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Add a call to 'Quote' if the method is present
     let quotedSynExpr = 
         if isAutoQuote then 
-            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
+            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), false, delayedExpr, true, mWhole) 
         else delayedExpr
             
     // Add a call to 'Run' if the method is present

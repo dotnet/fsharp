@@ -583,7 +583,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
 [<AutoSerializable(false)>]
 type ILDynamicAssemblyEmitEnv =
     {
-        emTypMap: Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) >
+        emTypMap: Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option>
         emConsMap: Zmap<ILMethodRef, ConstructorBuilder>
         emMethMap: Zmap<ILMethodRef, MethodBuilder>
         emFieldMap: Zmap<ILFieldRef, FieldBuilder>
