@@ -44,7 +44,7 @@ type C() =
          |> shouldSucceed
 
     [<Fact>]
-    let ``ObsoleteAttribute is taken into account when used on a type.`` () =
+    let ``ObsoleteAttribute is not taken into account when used on a type.`` () =
         Fsx """
 open System
 
@@ -55,9 +55,7 @@ type Foo() =
         """
         |> ignoreWarnings
         |> compile
-        |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Foo"
+        |> shouldSucceed
 
     [<Fact>]
     let ``ObsoleteAttribute is taken into account when used on member type.`` () =
