@@ -71,7 +71,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// <example id="set-count">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn $"The new set is: {set}"
+    /// printfn $"The set has {set.Count} elements"
     /// </code>
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
