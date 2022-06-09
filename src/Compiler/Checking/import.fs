@@ -525,13 +525,13 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
+                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
                 Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n, info: Lazy<_>) -> 
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
-    let kind = match enc with [] -> Namespace | _ -> ModuleOrType
+    let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
     Construct.NewModuleOrNamespaceType kind entities []
       
 /// Import a table of IL types as a ModuleOrNamespaceType.

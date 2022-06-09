@@ -2116,7 +2116,8 @@ module TastDefinitionPrinting =
                     mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty
 
                 // Check if its an outer module or a nested module
-                if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) && isNil outerPath then 
+                let isNamespace = function | Namespace _ -> true | _ -> false
+                if (outerPath |> List.forall (fun (_, istype) -> isNamespace istype)) && isNil outerPath then
                     // If so print a "module" declaration
                     modNameL
                 elif modIsEmpty then
@@ -2271,7 +2272,8 @@ module InferredSigPrinting =
                 let basic = imdefL denv def
                 let modNameL = wordL (tagKeyword "module") ^^ nmL
                 let modNameEqualsL = modNameL ^^ WordL.equals
-                let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> istype = Namespace) )
+                let isNamespace = function | Namespace _ -> true | _ -> false
+                let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> isNamespace istype) )
                 let basicL =
                     // Check if its an outer module or a nested module
                     if modIsOuter then

@@ -3254,7 +3254,7 @@ module EstablishTypeDefinitionCores =
               () ]
 
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
-        if not isModule then Namespace 
+        if not isModule then (Namespace true)
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
         else ModuleOrType
 
@@ -5863,7 +5863,7 @@ let emptyTcEnv g =
       eAccessRights = ComputeAccessRights cpath [] None // compute this field 
       eInternalsVisibleCompPaths = []
       eContextInfo = ContextInfo.NoContext
-      eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
+      eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType (Namespace true))
       eFamilyType = None
       eCtorInfo = None
       eCallerMemberName = None 
@@ -5992,7 +5992,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
 /// Make the initial type checking environment for a single file with an empty accumulator for the overall contents for the file
 let MakeInitialEnv env = 
     // Note: here we allocate a new module type accumulator 
-    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
+    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType (Namespace false))
     { env with eModuleOrNamespaceTypeAccumulator = moduleTyAcc }, moduleTyAcc
 
 /// Check an entire implementation file

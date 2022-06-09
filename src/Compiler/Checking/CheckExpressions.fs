@@ -869,7 +869,7 @@ let LocateEnv ccu env enclosingNamespacePath =
             eAccessPath = cpath
             // update this computed field
             eAccessRights = ComputeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType }
-    let env = List.fold (fun env id -> MakeInnerEnv false env id Namespace |> fst) env enclosingNamespacePath
+    let env = List.fold (fun env id -> MakeInnerEnv false env id (Namespace true) |> fst) env enclosingNamespacePath
     let env = { env with eNameResEnv = { env.NameEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid env.ePath) } }
     env
 
@@ -1394,13 +1394,19 @@ let PublishValueDefnPrim cenv env (vspec: Val) =
 
 let PublishValueDefn (cenv: cenv) env declKind (vspec: Val) =
     let g = cenv.g
+    let isNamespace =
+        let kind = (GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind
+        match kind with
+        | Namespace _ -> true
+        | _ -> false
+    
     if (declKind = ModuleOrMemberBinding) &&
-       ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) &&
+       isNamespace &&
        (Option.isNone vspec.MemberInfo) then
            errorR(Error(FSComp.SR.tcNamespaceCannotContainValues(), vspec.Range))
 
     if (declKind = ExtrinsicExtensionBinding) &&
-       ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) then
+       isNamespace then
            errorR(Error(FSComp.SR.tcNamespaceCannotContainExtensionMembers(), vspec.Range))
 
     // Publish the value to the module type being generated.

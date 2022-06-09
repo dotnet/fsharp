@@ -301,7 +301,7 @@ type ModuleOrNamespaceKind =
     | ModuleOrType
 
     /// Indicates that a 'module' is really a namespace
-    | Namespace
+    | Namespace of isExplicit: bool
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
