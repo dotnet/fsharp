@@ -4408,10 +4408,10 @@ let wrapModuleOrNamespaceType id cpath mtyp =
 
 let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
-    Construct.NewModuleOrNamespaceType (Namespace true) [ mspec ] [], mspec
+    Construct.NewModuleOrNamespaceType (Namespace false) [ mspec ] [], mspec
 
 let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
-    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace true))
+    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace false))
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 //--------------------------------------------------------------------------
