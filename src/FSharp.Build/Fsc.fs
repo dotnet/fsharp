@@ -45,6 +45,7 @@ type public Fsc() as this =
     let mutable optimize: bool = true
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
+    let mutable outputRefAssembly: string MaybeNull = null
     let mutable pathMap: string MaybeNull = null
     let mutable pdbFile: string MaybeNull = null
     let mutable platform: string MaybeNull = null
@@ -54,6 +55,7 @@ type public Fsc() as this =
     let mutable provideCommandLineArgs: bool = false
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
+    let mutable refOnly: bool = false
     let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution: bool = false
     let mutable sources: ITaskItem[] = [||]
@@ -324,6 +326,12 @@ type public Fsc() as this =
         builder.AppendFileNamesIfNotNull(sources, " ")
         capturedFilenames <- builder.CapturedFilenames()
 
+        // Ref assemblies
+        builder.AppendSwitchIfNotNull("--refout:", outputRefAssembly)
+
+        if refOnly then
+            builder.AppendSwitch("--refonly")
+
         builder
 
     // --baseaddress
@@ -446,6 +454,11 @@ type public Fsc() as this =
         with get () = outputAssembly
         and set (s) = outputAssembly <- s
 
+    // --refout <string>: Name the output ref file
+    member _.OutputRefAssembly
+        with get () = outputRefAssembly
+        and set (s) = outputRefAssembly <- s
+
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
     member _.PathMap
         with get () = pathMap
@@ -492,6 +505,11 @@ type public Fsc() as this =
     member _.ReferencePath
         with get () = referencePath
         and set (s) = referencePath <- s
+
+    // --refonly
+    member _.RefOnly
+        with get () = refOnly
+        and set (b) = refOnly <- b
 
     // --resource <string>: Embed the specified managed resources (.resource).
     //   Produce .resource files from .resx files using resgen.exe or resxc.exe.
