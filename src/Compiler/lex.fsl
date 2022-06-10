@@ -854,6 +854,9 @@ rule token args skip = parse
          // Note, we do not update the 'm', any incomplete-interpolation error
          // will be reported w.r.t. the first '{'
          args.stringNest <- (counter + 1, style, isDoubleDollar, m) :: rest
+       | _ when isDouble ->
+           lexbuf.LexemeLength <- 1
+           lexbuf.EndPos <- lexbuf.EndPos.ShiftColumnBy -1
        | _ -> ()
        // To continue token-by-token lexing may involve picking up the new args.stringNes
        let cont = LexCont.Token(args.ifdefStack, args.stringNest)
@@ -887,6 +890,9 @@ rule token args skip = parse
            RBRACE cont
 
         | _ ->
+           if isDouble then
+               lexbuf.LexemeLength <- 1
+               lexbuf.EndPos <- lexbuf.EndPos.ShiftColumnBy -1
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
            RBRACE cont
      }
