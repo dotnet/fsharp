@@ -264,6 +264,7 @@ this file.
                 $(LoadSource)"
         Outputs="@(DocFileItem);
                  @(IntermediateAssembly);
+                 @(IntermediateRefAssembly);
                  @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
@@ -337,6 +338,7 @@ this file.
               Optimize="$(Optimize)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
+              OutputRefAssembly="@(IntermediateRefAssembly)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
@@ -346,6 +348,7 @@ this file.
               PublicSign="$(PublicSign)"
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
+              RefOnly="$(ProduceOnlyReferenceAssembly)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
