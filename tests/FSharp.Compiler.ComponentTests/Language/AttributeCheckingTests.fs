@@ -44,51 +44,72 @@ type C() =
          |> shouldSucceed
 
     [<Fact>]
-    let ``ObsoleteAttribute is not taken into account when used on a type.`` () =
+    let ``Obsolete attribute is not taken into account when used on on a member and and instantiate the type`` () =
         Fsx """
 open System
 
-[<Obsolete("Foo", true)>]
-type Foo() =
+
+type C() =
   
-    member _.Bar() = ()
+    [<Obsolete("Use B instead", true)>]
+    member _.Update() = ()
+
+let c = C()
         """
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
 
     [<Fact>]
-    let ``ObsoleteAttribute is taken into account when used on member type.`` () =
+    let ``Obsolete attribute is taken into account when used on type and and instantiate the type`` () =
         Fsx """
 open System
 
-type Foo() =
-    [<Obsolete("Foo", true)>]
-    member _.Bar() = ()
+[<Obsolete("Use B instead", true)>]
+type C() =
+  
+    member _.Update() = ()
 
-let foo = Foo()
-foo.Bar()
+let c = C()
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Foo"
+        |> withErrorMessage "This construct is deprecated. Use B instead"
 
     [<Fact>]
-    let ``ObsoleteAttribute is taken into account when used on type when invoking member`` () =
+    let ``Obsolete attribute is taken into account when used on a member and invoking the member`` () =
         Fsx """
 open System
 
-[<Obsolete("Foo", true)>]
-type Foo() =
-    member _.Bar() = ()
+type C() =
+    [<Obsolete("Use B instead", true)>]
+    member _.Update() = ()
 
-let foo = Foo()
-foo.Bar()
+let c = C()
+c.Update()
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on type and invoking the member`` () =
+        Fsx """
+open System
+
+[<Obsolete("Use B instead", true)>]
+type C() =
+    member _.Update() = ()
+
+let c = C()
+c.Update()
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withErrorCodes [ 101; 101]
-        |> withErrorMessages [ "This construct is deprecated. Foo"; "This construct is deprecated. Foo"]
+        |> withErrorMessages [ "This construct is deprecated. Use B instead"; "This construct is deprecated. Use B instead"]
