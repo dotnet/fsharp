@@ -8,10 +8,6 @@ open System.Runtime.InteropServices
 
 module Platform =
 
-    let assemblyHasMvidSection =
-        CsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyHasMvidSection.fs"))
-        |> withName "AssemblyHasMvidSection"
-
     let isArm =
         match System.Runtime.InteropServices.Architecture() with
         | Architecture.Arm | Architecture.Arm64 -> true
@@ -140,11 +136,39 @@ module Platform =
         |> compileExeAndRun
         |> shouldSucceed
 
-    //[<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyHasMvidSection.fs"|])>]
-    //let generatedExeHasMvidSection compilation =
-    //    compilation
-    //    |> asExe
-    //    |> withReferences [assemblyHasMvidSection]
-    //    |> withRefOut "test"
-    //    |> compileExeAndRun
-    //    |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyHasMvidSection.fs"|])>]
+    let withRefOnlyGeneratesMvidSection compilation =
+
+        let mvidReader =
+            CsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "MvidReader.cs"))
+            |> withName "MvidReader"
+
+        let assemblyHasMvidSection =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "SimpleFsProgram.fs"))
+            |> asLibrary
+            |> withRefOnly
+
+        compilation
+        |> asExe
+        |> withReferences [mvidReader]
+        |> withReferences [assemblyHasMvidSection]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyHasMvidSection.fs"|])>]
+    let withoutRefOnlyGeneratesNoMvidSection compilation =
+
+        let mvidReader =
+            CsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "MvidReader.cs"))
+            |> withName "MvidReader"
+
+        let assemblyHasMvidSection =
+            FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "SimpleFsProgram.fs"))
+            |> asLibrary
+
+        compilation
+        |> asExe
+        |> withReferences [mvidReader]
+        |> withReferences [assemblyHasMvidSection]
+        |> compileExeAndRun
+        |> shouldSucceed

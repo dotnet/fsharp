@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Testing
+namespace FSharp.Compiler.ComponentTests.EmittedIL
 {
     public static class MvidReader
     {
@@ -87,7 +87,7 @@ namespace Testing
             for (int i = 0; i < count; i++)
             {
                 // Section: Name (8)
-                if (!ReadBytes(reader, 8, out byte[]? name))
+                if (!ReadBytes(reader, 8, out byte[] name))
                 {
                     return s_empty;
                 }
@@ -138,7 +138,7 @@ namespace Testing
                 return s_empty;
             }
 
-            if (!ReadBytes(reader, 16, out byte[]? guidBytes))
+            if (!ReadBytes(reader, 16, out byte[] guidBytes))
             {
                 return s_empty;
             }
@@ -170,7 +170,7 @@ namespace Testing
             return true;
         }
 
-        private static bool ReadBytes(BinaryReader reader, int count, out byte[]? output)
+        private static bool ReadBytes(BinaryReader reader, int count, out byte[] output)
         {
             if (reader.BaseStream.Position + count >= reader.BaseStream.Length)
             {

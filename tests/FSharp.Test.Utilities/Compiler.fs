@@ -440,6 +440,14 @@ module rec Compiler =
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
 
+    //--refonly[+|-]
+    let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withNoRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly-" ] "withRefOnly is only supported for F#" cUnit
+
     //--refout:<file>                          Produce a reference assembly with the specified file path.
     let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit

@@ -1,8 +1,19 @@
-﻿open System
+﻿module AssemblyHasMvidSection
+
+open System
 open System.IO
 open System.Reflection
-open Testing
+open FSharp.Compiler.ComponentTests.EmittedIL
 
-let pathToMe = Assembly.GetExecutingAssembly().Location
+let  pathToDll =
+    let d = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+    Path.Combine(d, "SimpleFsProgram.dll")
 
-let stream = File.Open(pathToMe, FileMode.Open)
+Console.WriteLine($"Verify mvid section for: {pathToDll}");
+let stream = File.OpenRead(pathToDll);
+let mvid = MvidReader.ReadAssemblyMvidOrEmpty(stream)
+
+let message = $"Mvid for {pathToDll} = {mvid}"
+printfn $"{message}"
+
+if mvid = Guid.Empty then failwith message
