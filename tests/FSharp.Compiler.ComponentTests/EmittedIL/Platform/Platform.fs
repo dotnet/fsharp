@@ -171,4 +171,4 @@ module Platform =
         |> withReferences [mvidReader]
         |> withReferences [assemblyHasMvidSection]
         |> compileExeAndRun
-        |> shouldSucceed
+        |> shouldFail
