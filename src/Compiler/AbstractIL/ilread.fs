@@ -2178,7 +2178,7 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numTypars tidx =
         fst,
         simpleIndexCompare tidx,
         isSorted ctxt TableNames.InterfaceImpl,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject (*ok*) [])
+        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
     )
 
 and seekReadGenericParams ctxt numTypars (a, b) : ILGenericParameterDefs =
@@ -2229,7 +2229,7 @@ and seekReadGenericParamConstraints (ctxt: ILMetadataReader) mdv numTypars gpidx
         fst,
         simpleIndexCompare gpidx,
         isSorted ctxt TableNames.GenericParamConstraint,
-        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject (*ok*) List.empty)
+        (snd >> seekReadTypeDefOrRef ctxt numTypars AsObject [])
     )
 
 and seekReadTypeDefAsType (ctxt: ILMetadataReader) boxity (ginst: ILTypes) idx =

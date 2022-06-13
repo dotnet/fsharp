@@ -540,7 +540,7 @@ type TcConfigBuilder =
         // If true - the compiler will copy FSharp.Core.dll along the produced binaries
         mutable copyFSharpCore: CopyFSharpCoreFlag
 
-        /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
+        /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false, the default
         mutable shadowCopyReferences: bool
 
         mutable useSdkRefs: bool
