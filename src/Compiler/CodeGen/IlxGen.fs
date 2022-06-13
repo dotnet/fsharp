@@ -5687,14 +5687,29 @@ and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m isInstance =
             GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod
 
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
+
         let ilOverrideBy =
             if isInstance then
-                mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+                mkILInstanceMethSpecInTy (
+                    ilTyForOverriding,
+                    nameOfOverridingMethod,
+                    typesOfILParams ilParamsOfOverridingMethod,
+                    ilReturnOfOverridingMethod.Type,
+                    ilOverrideMethGenericArgs
+                )
             else
-                mkILStaticMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
+                mkILStaticMethSpecInTy (
+                    ilTyForOverriding,
+                    nameOfOverridingMethod,
+                    typesOfILParams ilParamsOfOverridingMethod,
+                    ilReturnOfOverridingMethod.Type,
+                    ilOverrideMethGenericArgs
+                )
 
-        { Overrides = ilOverridesSpec
-          OverrideBy = ilOverrideBy })
+        {
+            Overrides = ilOverridesSpec
+            OverrideBy = ilOverrideBy
+        })
 
 and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     match baseValOpt with
@@ -5712,8 +5727,7 @@ and fixupMethodImplFlags (mdef: ILMethodDef) =
     )
         .WithNewSlot
 
-and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) =
-    mdef.WithHideBySig(true)
+and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) = mdef.WithHideBySig(true)
 
 and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
     let g = cenv.g
@@ -5754,7 +5768,8 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let ilMethodBody =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
-        let nameOfOverridingMethod, methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
+        let nameOfOverridingMethod, methodImplGenerator =
+            GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
 
         let mdef =
             mkILGenericVirtualMethod (
@@ -5946,18 +5961,35 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         ]
 
     let mimpls =
-        [ for (_thisVals, _argVals, interfaceTy, imethName, bodyR), mdef in (List.zip methods mdefs) do
-            let m = bodyR.Range
-            let implementedMeth = 
-                match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
-                | [meth] when meth.IsInstance -> meth
-                | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
+        [
+            for (_thisVals, _argVals, interfaceTy, imethName, bodyR), mdef in (List.zip methods mdefs) do
+                let m = bodyR.Range
 
-            let slotsig = implementedMeth.GetSlotSig(amap, m)
-            let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m mdef.CallingConv.IsInstance
-            let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
-            { Overrides = ilOverridesSpec
-              OverrideBy = ilOverrideBy } ]
+                let implementedMeth =
+                    match
+                        InfoReader.TryFindIntrinsicMethInfo
+                            infoReader
+                            m
+                            AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere
+                            imethName
+                            interfaceTy
+                        with
+                    | [ meth ] when meth.IsInstance -> meth
+                    | _ -> error (InternalError(sprintf "expected method %s not found" imethName, m))
+
+                let slotsig = implementedMeth.GetSlotSig(amap, m)
+
+                let ilOverridesSpec =
+                    GenOverridesSpec cenv eenvinner slotsig m mdef.CallingConv.IsInstance
+
+                let ilOverrideBy =
+                    mkILInstanceMethSpecInTy (ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
+
+                {
+                    Overrides = ilOverridesSpec
+                    OverrideBy = ilOverrideBy
+                }
+        ]
 
     let fdefs =
         [ // Fields copied from the template struct
@@ -8995,43 +9027,55 @@ and GenMethodForBinding
         let mdef =
             match v.MemberInfo with
             | Some memberInfo when not v.IsExtensionMember ->
+                let ilMethTypars = ilTypars |> List.skip mspec.DeclaringType.GenericArgs.Length
 
-               let ilMethTypars = ilTypars |> List.skip mspec.DeclaringType.GenericArgs.Length
-               if memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor then
-                   assert (isNil ilMethTypars)
-                   let mdef = mkILCtor (access, ilParams, ilMethodBody)
-                   let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-                   mdef
+                if memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor then
+                    assert (isNil ilMethTypars)
+                    let mdef = mkILCtor (access, ilParams, ilMethodBody)
 
-               elif memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor then
-                   assert (isNil ilMethTypars)
-                   let mdef = mkILClassCtor ilMethodBody
-                   let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
-                   mdef
+                    let mdef =
+                        mdef.With(customAttrs = mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
 
-               // Generate virtual/override methods + method-impl information if needed
-               else
-                   let mdef =
-                       if not compileAsInstance then
-                           if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
-                               mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
-                           else // We want to get potential fixups and hidebysig for abstract statics:
-                               let flagFixups = [ fixupStaticAbstractSlotFlags ]
-                               let mdef = mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
-                               let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
-                               mdef
-                       elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
-                            memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                    mdef
 
-                           let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
-                           let mdef = mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
-                           let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+                elif memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor then
+                    assert (isNil ilMethTypars)
+                    let mdef = mkILClassCtor ilMethodBody
 
-                           // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
-                           mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
-                           mdef
-                       else
-                           mkILGenericNonVirtualMethod (mspec.Name, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                    let mdef =
+                        mdef.With(customAttrs = mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
+
+                    mdef
+
+                // Generate virtual/override methods + method-impl information if needed
+                else
+                    let mdef =
+                        if not compileAsInstance then
+                            if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                                mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                            else // We want to get potential fixups and hidebysig for abstract statics:
+                                let flagFixups = [ fixupStaticAbstractSlotFlags ]
+
+                                let mdef =
+                                    mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+
+                                let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+                                mdef
+                        elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented)
+                             || memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+
+                            let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
+
+                            let mdef =
+                                mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+
+                            let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+
+                            // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
+                            mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
+                            mdef
+                        else
+                            mkILGenericNonVirtualMethod (mspec.Name, access, ilMethTypars, ilParams, ilReturn, ilMethodBody)
 
                     let isAbstract =
                         memberInfo.MemberFlags.IsDispatchSlot
@@ -10387,18 +10431,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                                     match vref.ValReprInfo with
                                     | Some _ ->
-
                                         let memberParentTypars, memberMethodTypars =
                                             match PartitionValRefTypars g vref with
                                             | Some (_, memberParentTypars, memberMethodTypars, _, _) ->
                                                 memberParentTypars, memberMethodTypars
                                             | None -> [], []
 
-                                         let useMethodImpl = true
-                                         let eenvUnderTypars = EnvForTypars memberParentTypars eenv
-                                         let _, methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
-                                         if useMethodImpl then
-                                             yield methodImplGenerator (ilThisTy, memberMethodTypars)
+                                        let useMethodImpl = true
+                                        let eenvUnderTypars = EnvForTypars memberParentTypars eenv
+
+                                        let _, methodImplGenerator =
+                                            GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
+
+                                        if useMethodImpl then
+                                            yield methodImplGenerator (ilThisTy, memberMethodTypars)
                                     | _ -> ()
                 ]
 
