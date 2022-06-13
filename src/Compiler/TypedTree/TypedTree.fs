@@ -870,7 +870,7 @@ type Entity =
     member x.IsNamespace = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> true | _ -> false)
 
     /// Indicates if the entity is an F# module definition
-    member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> true | _ -> true)
+    member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> false | _ -> true)
 #if !NO_TYPEPROVIDERS
 
     /// Indicates if the entity is a provided type or namespace definition
