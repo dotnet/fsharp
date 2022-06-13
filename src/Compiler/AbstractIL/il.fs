@@ -25,9 +25,7 @@ open Internal.Utilities
 
 let logging = false
 
-let _ =
-    if logging then
-        dprintn "* warning: Il.logging is on"
+let _ = if logging then dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
 
@@ -70,19 +68,13 @@ let memoizeNamespaceRightTable =
 let memoizeNamespacePartTable = ConcurrentDictionary<string, string>()
 
 let splitNameAt (nm: string) idx =
-    if idx < 0 then
-        failwith "splitNameAt: idx < 0"
+    if idx < 0 then failwith "splitNameAt: idx < 0"
 
     let last = nm.Length - 1
 
-    if idx > last then
-        failwith "splitNameAt: idx > last"
+    if idx > last then failwith "splitNameAt: idx > last"
 
-    (nm.Substring(0, idx)),
-    (if idx < last then
-         nm.Substring(idx + 1, last - idx)
-     else
-         "")
+    (nm.Substring(0, idx)), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
 
 let rec splitNamespaceAux (nm: string) =
     match nm.IndexOf '.' with
@@ -218,14 +210,10 @@ module SHA1 =
     let inline (>>>&) (x: int) (y: int) = int32 (uint32 x >>> y)
 
     let f (t, b, c, d) =
-        if t < 20 then
-            (b &&& c) ||| ((~~~b) &&& d)
-        elif t < 40 then
-            b ^^^ c ^^^ d
-        elif t < 60 then
-            (b &&& c) ||| (b &&& d) ||| (c &&& d)
-        else
-            b ^^^ c ^^^ d
+        if t < 20 then (b &&& c) ||| ((~~~b) &&& d)
+        elif t < 40 then b ^^^ c ^^^ d
+        elif t < 60 then (b &&& c) ||| (b &&& d) ||| (c &&& d)
+        else b ^^^ c ^^^ d
 
     [<Literal>]
     let k0to19 = 0x5A827999
@@ -563,8 +551,7 @@ type ILAssemblyRef(data) =
                     addC (convDigit (int32 v / 16))
                     addC (convDigit (int32 v % 16))
             // retargetable can be true only for system assemblies that definitely have Version
-            if aref.Retargetable then
-                add ", Retargetable=Yes"
+            if aref.Retargetable then add ", Retargetable=Yes"
 
         b.ToString()
 
@@ -773,17 +760,9 @@ type ILTypeRef =
             else
                 y.ApproxId
 
-        let xScope =
-            if isPrimaryX then
-                primaryScopeRef
-            else
-                x.Scope
+        let xScope = if isPrimaryX then primaryScopeRef else x.Scope
 
-        let yScope =
-            if isPrimaryY then
-                primaryScopeRef
-            else
-                y.Scope
+        let yScope = if isPrimaryY then primaryScopeRef else y.Scope
 
         (xApproxId = yApproxId)
         && (xScope = yScope)
@@ -806,10 +785,7 @@ type ILTypeRef =
                 else
                     let c = compare x.Name y.Name
 
-                    if c <> 0 then
-                        c
-                    else
-                        compare x.Enclosing y.Enclosing
+                    if c <> 0 then c else compare x.Enclosing y.Enclosing
 
     member tref.FullName = String.concat "." (tref.Enclosing @ [ tref.Name ])
 
@@ -883,11 +859,7 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
         && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() =
-        x.TypeRef.ToString()
-        + if isNil x.GenericArgs then
-              ""
-          else
-              "<...>"
+        x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
 and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>] ILType =
     | Void
@@ -1859,20 +1831,13 @@ type ILGenericParameterDefs = ILGenericParameterDef list
 let memberAccessOfFlags flags =
     let f = (flags &&& 0x00000007)
 
-    if f = 0x00000001 then
-        ILMemberAccess.Private
-    elif f = 0x00000006 then
-        ILMemberAccess.Public
-    elif f = 0x00000004 then
-        ILMemberAccess.Family
-    elif f = 0x00000002 then
-        ILMemberAccess.FamilyAndAssembly
-    elif f = 0x00000005 then
-        ILMemberAccess.FamilyOrAssembly
-    elif f = 0x00000003 then
-        ILMemberAccess.Assembly
-    else
-        ILMemberAccess.CompilerControlled
+    if f = 0x00000001 then ILMemberAccess.Private
+    elif f = 0x00000006 then ILMemberAccess.Public
+    elif f = 0x00000004 then ILMemberAccess.Family
+    elif f = 0x00000002 then ILMemberAccess.FamilyAndAssembly
+    elif f = 0x00000005 then ILMemberAccess.FamilyOrAssembly
+    elif f = 0x00000003 then ILMemberAccess.Assembly
+    else ILMemberAccess.CompilerControlled
 
 let convertMemberAccess (ilMemberAccess: ILMemberAccess) =
     match ilMemberAccess with
@@ -2509,12 +2474,9 @@ let typeAccessOfFlags flags =
 let typeEncodingOfFlags flags =
     let f = (flags &&& 0x00030000)
 
-    if f = 0x00020000 then
-        ILDefaultPInvokeEncoding.Auto
-    elif f = 0x00010000 then
-        ILDefaultPInvokeEncoding.Unicode
-    else
-        ILDefaultPInvokeEncoding.Ansi
+    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto
+    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode
+    else ILDefaultPInvokeEncoding.Ansi
 
 [<RequireQualifiedAccess>]
 type ILTypeDefKind =
@@ -3613,32 +3575,20 @@ and rescopeILType scoref ty =
     | ILType.Boxed cr1 ->
         let cr2 = rescopeILTypeSpec scoref cr1
 
-        if cr1 === cr2 then
-            ty
-        else
-            mkILBoxedType cr2
+        if cr1 === cr2 then ty else mkILBoxedType cr2
     | ILType.Array (s, ety1) ->
         let ety2 = rescopeILType scoref ety1
 
-        if ety1 === ety2 then
-            ty
-        else
-            ILType.Array(s, ety2)
+        if ety1 === ety2 then ty else ILType.Array(s, ety2)
     | ILType.Value cr1 ->
         let cr2 = rescopeILTypeSpec scoref cr1
 
-        if cr1 === cr2 then
-            ty
-        else
-            ILType.Value cr2
+        if cr1 === cr2 then ty else ILType.Value cr2
     | ILType.Modified (b, tref, ty) -> ILType.Modified(b, rescopeILTypeRef scoref tref, rescopeILType scoref ty)
     | x -> x
 
 and rescopeILTypes scoref i =
-    if isNil i then
-        i
-    else
-        List.mapq (rescopeILType scoref) i
+    if isNil i then i else List.mapq (rescopeILType scoref) i
 
 and rescopeILCallSig scoref csig =
     mkILCallSig (csig.CallingConv, rescopeILTypes scoref csig.ArgTypes, rescopeILType scoref csig.ReturnType)
@@ -3933,13 +3883,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
             let dict = Dictionary.newWithSize c2.Labels.Count
 
             for kvp in c2.Labels do
-                dict.Add(
-                    kvp.Key,
-                    if kvp.Value = 0 then
-                        0
-                    else
-                        kvp.Value + n
-                )
+                dict.Add(kvp.Key, (if kvp.Value = 0 then 0 else kvp.Value + n))
 
             dict
 
@@ -4013,22 +3957,10 @@ let mkILField (isStatic, nm, ty, init: ILFieldInit option, at: byte[] option, ac
         fieldType = ty,
         attributes =
             (convertFieldAccess access
-             ||| (if isStatic then
-                      FieldAttributes.Static
-                  else
-                      enum 0)
-             ||| (if isLiteral then
-                      FieldAttributes.Literal
-                  else
-                      enum 0)
-             ||| (if init.IsSome then
-                      FieldAttributes.HasDefault
-                  else
-                      enum 0)
-             ||| (if at.IsSome then
-                      FieldAttributes.HasFieldRVA
-                  else
-                      enum 0)),
+             ||| (if isStatic then FieldAttributes.Static else enum 0)
+             ||| (if isLiteral then FieldAttributes.Literal else enum 0)
+             ||| (if init.IsSome then FieldAttributes.HasDefault else enum 0)
+             ||| (if at.IsSome then FieldAttributes.HasFieldRVA else enum 0)),
         literalValue = init,
         data = at,
         offset = None,
@@ -4362,12 +4294,7 @@ let mkCtorMethSpecForDelegate (ilg: ILGlobals) (ty: ILType, useUIntPtr) =
     let argTys =
         [
             rescopeILType scoref ilg.typ_Object
-            rescopeILType
-                scoref
-                (if useUIntPtr then
-                     ilg.typ_UIntPtr
-                 else
-                     ilg.typ_IntPtr)
+            rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr)
         ]
 
     mkILInstanceMethSpecInTy (ty, ".ctor", argTys, ILType.Void, emptyILGenericArgsList)
@@ -5143,8 +5070,8 @@ let decodeILAttribData (ca: ILAttribute) =
                     try
                         let parser = ILTypeSigParser n
                         parser.ParseTypeSpec(), sigptr
-                    with
-                    | exn -> failwith (sprintf "decodeILAttribData: error parsing type in custom attribute blob: %s" exn.Message)
+                    with exn ->
+                        failwith (sprintf "decodeILAttribData: error parsing type in custom attribute blob: %s" exn.Message)
             | ILType.Boxed tspec when tspec.Name = "System.Object" ->
                 let et, sigptr = sigptr_get_u8 bytes sigptr
 
@@ -5605,10 +5532,7 @@ and unscopeILType ty =
     | x -> x
 
 and unscopeILTypes i =
-    if List.isEmpty i then
-        i
-    else
-        List.map unscopeILType i
+    if List.isEmpty i then i else List.map unscopeILType i
 
 and unscopeILCallSig csig =
     mkILCallSig (csig.CallingConv, unscopeILTypes csig.ArgTypes, unscopeILType csig.ReturnType)

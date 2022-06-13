@@ -12,10 +12,7 @@ type Rational =
     }
 
 let rec gcd a (b: BigInteger) =
-    if b = BigInteger.Zero then
-        a
-    else
-        gcd b (a % b)
+    if b = BigInteger.Zero then a else gcd b (a % b)
 
 let lcm a b = (a * b) / (gcd a b)
 
@@ -27,11 +24,7 @@ let mkRational p q =
         let g = gcd q p in
         p / g, q / g
 
-    let p, q =
-        if q > BigInteger.Zero then
-            p, q
-        else
-            -p, -q
+    let p, q = if q > BigInteger.Zero then p, q else -p, -q
 
      in
 
@@ -73,9 +66,6 @@ let GetNumerator p = int p.numerator
 let GetDenominator p = int p.denominator
 
 let SignRational p =
-    if p.numerator < BigInteger.Zero then
-        -1
-    else if p.numerator > BigInteger.Zero then
-        1
-    else
-        0
+    if p.numerator < BigInteger.Zero then -1
+    else if p.numerator > BigInteger.Zero then 1
+    else 0

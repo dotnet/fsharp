@@ -4,6 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
+[<NUnit.Framework.TestFixture; NUnit.Framework.SetUICulture("en-US"); NUnit.Framework.SetCulture("en-US")>]
 module Tests.Service.XmlDocTests.XmlDoc
 #endif
 

@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using Roslyn.Test.Utilities.Desktop;
+using System.Globalization;
 
 namespace PEVerify
 {
@@ -10,6 +11,12 @@ namespace PEVerify
     {
         static int Main(string[] args)
         {
+            // this version of PEVerify is only intended to run F# test suit
+            // force the en-US culture so that tests warning/error message comparision
+            // is not culture dependent
+            var culture = new CultureInfo("en-US");
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
             string assemblyPath = null;
             bool metadataOnly = false;
             foreach (var arg in args)

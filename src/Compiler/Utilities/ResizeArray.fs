@@ -26,8 +26,7 @@ module internal ResizeArray =
         if start2 < 0 then
             invalidArg "start2" "index must be positive"
 
-        if len < 0 then
-            invalidArg "len" "length must be positive"
+        if len < 0 then invalidArg "len" "length must be positive"
 
         if start1 + len > length arr1 then
             invalidArg "start1" "(start1+len) out of range"
@@ -53,8 +52,7 @@ module internal ResizeArray =
         if start < 0 then
             invalidArg "start" "index must be positive"
 
-        if len < 0 then
-            invalidArg "len" "length must be positive"
+        if len < 0 then invalidArg "len" "length must be positive"
 
         if start + len > length arr then
             invalidArg "len" "length must be positive"
@@ -65,8 +63,7 @@ module internal ResizeArray =
         if start < 0 then
             invalidArg "start" "index must be positive"
 
-        if len < 0 then
-            invalidArg "len" "length must be positive"
+        if len < 0 then invalidArg "len" "length must be positive"
 
         if start + len > length arr then
             invalidArg "len" "length must be positive"

@@ -184,8 +184,8 @@ let cattr_ty2ty f (c: ILAttribute) =
             let elems = elems |> List.map (celem_ty2ty f)
             let namedArgs = namedArgs |> List.map (cnamedarg_ty2ty f)
             mkILCustomAttribMethRef (meth, elems, namedArgs)
-        with
-        | _ -> c.WithMethod(meth)
+        with _ ->
+            c.WithMethod(meth)
     else
         c.WithMethod(meth)
 

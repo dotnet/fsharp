@@ -3985,7 +3985,13 @@ module EstablishTypeDefinitionCores =
                 match fields' with 
                 | rf :: _ -> errorR (Error(FSComp.SR.tcInterfaceTypesAndDelegatesCannotContainFields(), rf.Range))
                 | _ -> ()
-
+            
+            let primaryConstructorInDelegateCheck(implicitCtorSynPats : SynSimplePats option) =
+                match implicitCtorSynPats with 
+                | None -> ()
+                | Some spats ->
+                    let ctorArgNames, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
+                    if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
@@ -4182,6 +4188,7 @@ module EstablishTypeDefinitionCores =
                                   noAllowNullLiteralAttributeCheck()
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
+                                  primaryConstructorInDelegateCheck(implicitCtorSynPats)
                                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty
                                   let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateSynValInfo m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
@@ -5816,16 +5823,17 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
         warning(Error(FSComp.SR.tcAttributeAutoOpenWasIgnored(p, ccu.AssemblyName), scopem))
         [], env
     let p = splitNamespace p 
-    if isNil p then warn() else
-    let h, t = List.frontAndBack p 
-    let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h)) t
-    match modref.TryDeref with 
-    | ValueNone -> warn()
-    | ValueSome _ -> 
-        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
-        let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
-        let envinner = OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
-        [openDecl], envinner
+    match List.tryFrontAndBack p with
+    | None -> warn()
+    | Some (h, t) ->
+        let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h)) t
+        match modref.TryDeref with 
+        | ValueNone -> warn()
+        | ValueSome _ -> 
+            let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
+            let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
+            let envinner = OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+            [openDecl], envinner
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv (g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisibleToAttributes) = 

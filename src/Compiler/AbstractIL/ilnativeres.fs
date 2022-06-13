@@ -253,8 +253,8 @@ type COFFResourceReader() =
 
             if int64 relocLastAddress > stream.Length then
                 raise <| ResourceException "CoffResourceInvalidRelocation"
-        with
-        | :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidRelocation"))
+        with :? OverflowException ->
+            (raise <| ResourceException("CoffResourceInvalidRelocation"))
 
         let mutable relocationOffsets = Array.zeroCreate (int rsrc1.NumberOfRelocations)
 
@@ -284,8 +284,8 @@ type COFFResourceReader() =
 
             if lastSymAddress > stream.Length then
                 raise <| ResourceException "CoffResourceInvalidSymbol"
-        with
-        | :? OverflowException -> (raise <| ResourceException("CoffResourceInvalidSymbol"))
+        with :? OverflowException ->
+            (raise <| ResourceException("CoffResourceInvalidSymbol"))
 
         let mutable outputStream = new MemoryStream(imageResourceSectionBytes)
         let mutable writer = new BinaryWriter(outputStream)
@@ -400,10 +400,7 @@ type VersionHelper() =
                 let mutable (values: uint16[]) = Array.zeroCreate 4
 
                 let mutable (lastExplicitValue: int) =
-                    if hasWildcard then
-                        elements.Length - 1
-                    else
-                        elements.Length
+                    if hasWildcard then elements.Length - 1 else elements.Length
 
                 let mutable (parseError: bool) = false
                 let mutable earlyReturn = None
@@ -1147,19 +1144,12 @@ type NativeResourceWriter() =
                             dataWriter.WriteByte 0uy
 
                         false
-                    | e ->
-                        failwithf
-                            "Unknown entry %s"
-                            (if isNull e then
-                                 "<NULL>"
-                             else
-                                 e.GetType().FullName)
+                    | e -> failwithf "Unknown entry %s" (if isNull e then "<NULL>" else e.GetType().FullName)
 
                 if id >= 0 then
                     writer.WriteInt32 id
                 else
-                    if name = Unchecked.defaultof<_> then
-                        name <- String.Empty
+                    if name = Unchecked.defaultof<_> then name <- String.Empty
 
                     writer.WriteUInt32(nameOffset ||| 0x80000000u)
                     dataWriter.WriteUInt16(uint16 name.Length)

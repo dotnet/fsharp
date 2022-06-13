@@ -35,8 +35,8 @@ type CreateFSharpManifestResourceName public () =
                 let runningOnMono =
                     try
                         System.Type.GetType("Mono.Runtime") <> null
-                    with
-                    | e -> false
+                    with e ->
+                        false
 
                 let fileName =
                     if

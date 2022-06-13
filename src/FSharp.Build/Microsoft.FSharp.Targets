@@ -69,7 +69,7 @@ this file.
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
         <FscToolExe Condition="'$(FSharpPrefer64BitTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
-        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_X86_ToolExe)</FscToolExe>
+        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
         <DotnetFscCompilerPath></DotnetFscCompilerPath>
     </PropertyGroup>
 

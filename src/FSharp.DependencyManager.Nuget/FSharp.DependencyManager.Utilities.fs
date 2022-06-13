@@ -35,10 +35,7 @@ module internal Utilities =
             let pos = option.IndexOf('=')
 
             let stringAsOpt text =
-                if String.IsNullOrEmpty(text) then
-                    None
-                else
-                    Some text
+                if String.IsNullOrEmpty(text) then None else Some text
 
             let nameOpt =
                 if pos <= 0 then
@@ -48,12 +45,9 @@ module internal Utilities =
 
             let valueOpt =
                 let valueText =
-                    if pos < 0 then
-                        option
-                    else if pos < option.Length then
-                        option.Substring(pos + 1)
-                    else
-                        ""
+                    if pos < 0 then option
+                    else if pos < option.Length then option.Substring(pos + 1)
+                    else ""
 
                 stringAsOpt (valueText.Trim(trimChars))
 
@@ -210,6 +204,5 @@ module internal Utilities =
                     // So strip off the flags
                     let pos = source.IndexOf(" ")
 
-                    if pos >= 0 then
-                        yield ("i", source.Substring(pos).Trim())
+                    if pos >= 0 then yield ("i", source.Substring(pos).Trim())
         }

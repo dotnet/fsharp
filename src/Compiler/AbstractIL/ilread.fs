@@ -41,15 +41,15 @@ let _ =
 let noStableFileHeuristic =
     try
         (Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null)
-    with
-    | _ -> false
+    with _ ->
+        false
 
 let alwaysMemoryMapFSC =
     try
         (Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler")
          <> null)
-    with
-    | _ -> false
+    with _ ->
+        false
 
 let stronglyHeldReaderCacheSizeDefault = 30
 
@@ -58,8 +58,8 @@ let stronglyHeldReaderCacheSize =
         (match Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with
          | null -> stronglyHeldReaderCacheSizeDefault
          | s -> int32 s)
-    with
-    | _ -> stronglyHeldReaderCacheSizeDefault
+    with _ ->
+        stronglyHeldReaderCacheSizeDefault
 
 let singleOfBits (x: int32) =
     BitConverter.ToSingle(BitConverter.GetBytes x, 0)
@@ -101,12 +101,9 @@ let uncodedTokenToTypeDefOrRefOrSpec (tab, tok) =
 
 let uncodedTokenToMethodDefOrRef (tab, tok) =
     let tag =
-        if tab = TableNames.Method then
-            mdor_MethodDef
-        elif tab = TableNames.MemberRef then
-            mdor_MemberRef
-        else
-            failwith "bad table in uncodedTokenToMethodDefOrRef"
+        if tab = TableNames.Method then mdor_MethodDef
+        elif tab = TableNames.MemberRef then mdor_MemberRef
+        else failwith "bad table in uncodedTokenToMethodDefOrRef"
 
     TaggedIndex(tag, tok)
 
@@ -1382,8 +1379,7 @@ let seekReadGuidIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadId
 let seekReadBlobIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadIdx ctxt.blobsBigness mdv &addr
 
 let seekReadModuleRow (ctxt: ILMetadataReader) mdv idx =
-    if idx = 0 then
-        failwith "cannot read Module table row 0"
+    if idx = 0 then failwith "cannot read Module table row 0"
 
     let mutable addr = ctxt.rowAddr TableNames.Module idx
     let generation = seekReadUInt16Adv mdv &addr
@@ -1695,10 +1691,7 @@ let readStringHeapUncached ctxtH idx =
 let readStringHeap (ctxt: ILMetadataReader) idx = ctxt.readStringHeap idx
 
 let readStringHeapOption (ctxt: ILMetadataReader) idx =
-    if idx = 0 then
-        None
-    else
-        Some(readStringHeap ctxt idx)
+    if idx = 0 then None else Some(readStringHeap ctxt idx)
 
 let readBlobHeapUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
@@ -1713,10 +1706,7 @@ let readBlobHeapUncached ctxtH idx =
 let readBlobHeap (ctxt: ILMetadataReader) idx = ctxt.readBlobHeap idx
 
 let readBlobHeapOption ctxt idx =
-    if idx = 0 then
-        None
-    else
-        Some(readBlobHeap ctxt idx)
+    if idx = 0 then None else Some(readBlobHeap ctxt idx)
 
 //let readGuidHeap ctxt idx = seekReadGuid ctxt.mdv (ctxt.guidsStreamPhysicalLoc + idx)
 
@@ -2210,14 +2200,10 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx (numTypars, a, b)) =
                 let variance_flags = flags &&& 0x0003
 
                 let variance =
-                    if variance_flags = 0x0000 then
-                        NonVariant
-                    elif variance_flags = 0x0001 then
-                        CoVariant
-                    elif variance_flags = 0x0002 then
-                        ContraVariant
-                    else
-                        NonVariant
+                    if variance_flags = 0x0000 then NonVariant
+                    elif variance_flags = 0x0001 then CoVariant
+                    elif variance_flags = 0x0002 then ContraVariant
+                    else NonVariant
 
                 let constraints = seekReadGenericParamConstraints ctxt mdv numTypars gpidx
 
@@ -2522,16 +2508,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numTypars bytes sigptr =
         let struct (n, sigptr) = sigptrGetZInt32 bytes sigptr
         let argTys, sigptr = sigptrFold (sigptrGetTy ctxt numTypars) n bytes sigptr
 
-        seekReadTypeDefOrRef
-            ctxt
-            numTypars
-            (if b0 = et_CLASS then
-                 AsObject
-             else
-                 AsValue)
-            argTys
-            tdorIdx,
-        sigptr
+        seekReadTypeDefOrRef ctxt numTypars (if b0 = et_CLASS then AsObject else AsValue) argTys tdorIdx, sigptr
 
     elif b0 = et_CLASS then
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -2570,10 +2547,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numTypars bytes sigptr =
                      Some(List.item i lobounds)
                  else
                      None),
-                (if i < numSized then
-                     Some(List.item i sizes)
-                 else
-                     None)
+                (if i < numSized then Some(List.item i sizes) else None)
 
             ILArrayShape(List.init rank dim)
 
@@ -2591,8 +2565,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numTypars bytes sigptr =
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         let generic, cc = byteAsCallConv ccByte
 
-        if generic then
-            failwith "fptr sig may not be generic"
+        if generic then failwith "fptr sig may not be generic"
 
         let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
         let retTy, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
@@ -2632,10 +2605,7 @@ and sigptrGetLocal (ctxt: ILMetadataReader) numTypars bytes sigptr =
     let pinned, sigptr =
         let b0, sigptr' = sigptrGetByte bytes sigptr
 
-        if b0 = et_PINNED then
-            true, sigptr'
-        else
-            false, sigptr
+        if b0 = et_PINNED then true, sigptr' else false, sigptr
 
     let ty, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
 
@@ -2844,12 +2814,9 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
             (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
             (fun r -> r),
             (fun (_, ((_, _, _, _, _, methodsIdx), (_, endMethodsIdx))) ->
-                if endMethodsIdx <= idx then
-                    1
-                elif methodsIdx <= idx && idx < endMethodsIdx then
-                    0
-                else
-                    -1),
+                if endMethodsIdx <= idx then 1
+                elif methodsIdx <= idx && idx < endMethodsIdx then 0
+                else -1),
             true,
             fst
         )
@@ -2895,12 +2862,9 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
             (fun i -> i, seekReadTypeDefRowWithExtents ctxt i),
             (fun r -> r),
             (fun (_, ((_, _, _, _, fieldsIdx, _), (endFieldsIdx, _))) ->
-                if endFieldsIdx <= idx then
-                    1
-                elif fieldsIdx <= idx && idx < endFieldsIdx then
-                    0
-                else
-                    -1),
+                if endFieldsIdx <= idx then 1
+                elif fieldsIdx <= idx && idx < endFieldsIdx then 0
+                else -1),
             true,
             fst
         )
@@ -3619,10 +3583,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start s
                     dprintn (
                         "invalid instruction: "
                         + string lastb
-                        + (if lastb = 0xfe then
-                               ", " + string lastb2
-                           else
-                               "")
+                        + (if lastb = 0xfe then ", " + string lastb2 else "")
                     )
 
                     I_ret
@@ -3719,8 +3680,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
         let isFatFormat = (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat
 
         if not isTinyFormat && not isFatFormat then
-            if logging then
-                failwith "unknown format"
+            if logging then failwith "unknown format"
 
             MethodBody.Abstract
         else
@@ -3804,8 +3764,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                                     [] (* <REVIEW> scopes fail for mscorlib </REVIEW> scopes rootScope *)
                                 // REVIEW: look through sps to get ranges? Use GetRanges?? Change AbsIL??
                                 (localPdbInfos, None, seqpoints)
-                            with
-                            | e ->
+                            with e ->
                                 // "* Warning: PDB info for method "+nm+" could not be read and will be ignored: "+e.Message
                                 [], None, []
 #endif
@@ -3965,8 +3924,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                             nextSectionBase <- sectionBase + sectionSize
 
                         // Convert the linear code format to the nested code format
-                        if logging then
-                            dprintn "doing localPdbInfos2"
+                        if logging then dprintn "doing localPdbInfos2"
 
                         let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
 
@@ -3975,8 +3933,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
                         let code = buildILCode nm lab2pc instrs seh localPdbInfos2
 
-                        if logging then
-                            dprintn "done checking code."
+                        if logging then dprintn "done checking code."
 
                         {
                             IsZeroInit = initlocals
@@ -4222,8 +4179,7 @@ let getPdbReader pdbDirPath fileName =
                 | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
 
             Some(pdbr, docfun)
-        with
-        | e ->
+        with e ->
             dprintn ("* Warning: PDB file could not be read and will be ignored: " + e.Message)
             None
 #endif
@@ -5111,8 +5067,8 @@ let stableFileHeuristicApplies fileName =
     not noStableFileHeuristic
     && try
         FileSystem.IsStableFileHeuristic fileName
-       with
-       | _ -> false
+       with _ ->
+           false
 
 let createByteFileChunk opts fileName chunk =
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
@@ -5184,8 +5140,7 @@ let OpenILModuleReader fileName opts =
                 ILModuleReaderCacheKey(fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
 
             key, true
-        with
-        | exn ->
+        with exn ->
             Debug.Assert(
                 false,
                 sprintf
