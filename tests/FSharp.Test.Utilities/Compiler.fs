@@ -265,6 +265,11 @@ module rec Compiler =
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 
+    let CsFromPath (path: string) : CompilationUnit =
+        csFromString (SourceFromPath path)
+        |> CS
+        |> withName (Path.GetFileNameWithoutExtension(path))
+
     let Fsx (source: string) : CompilationUnit =
         fsFromString (FsxSourceCode source) |> FS
 
@@ -434,6 +439,18 @@ module rec Compiler =
     /// Don't add a resource to the generated assembly containing F#-specific metadata
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withNoRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly-" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refout:<file>                          Produce a reference assembly with the specified file path.
+    let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
