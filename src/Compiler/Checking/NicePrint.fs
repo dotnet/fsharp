@@ -2259,16 +2259,16 @@ module InferredSigPrinting =
                     let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
                         match currentContents with
                         | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
-                            Some ([ yield! path; yield mn.DisplayNameCore ], contents)
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
                         | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ] ->
-                            Some ([ yield! path; yield mn.DisplayNameCore ], contents)
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
                         | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
-                            Some ([ mspec.DisplayNameCore ; mn.DisplayNameCore ], nestedModuleContents)
+                            Some ([ mn.DisplayNameCore ], nestedModuleContents)
                         | _ ->
                             None
 
                     match def with
-                    | NestedModule(path, nestedModuleContents) -> path, nestedModuleContents
+                    | NestedModule(path, nestedModuleContents) -> mspec.DisplayNameCore :: path, nestedModuleContents
                     | _ -> [ mspec.DisplayNameCore ], def
                 
                 let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
