@@ -104,7 +104,7 @@ let main (argv) =
         CompileFromCommandLineArguments(
             ctok,
             argv,
-            legacyReferenceResolver (*bannerAlreadyPrinted*) ,
+            legacyReferenceResolver,
             false,
             ReduceMemoryFlag.No,
             CopyFSharpCoreFlag.Yes,
