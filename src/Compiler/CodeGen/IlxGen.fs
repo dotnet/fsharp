@@ -5597,7 +5597,7 @@ and GenFormalSlotsig m cenv eenv slotsig =
     let ilRet = GenFormalReturnType m cenv eenvForSlotSig returnTy
     ilTy, ilParams, ilRet
 
-and GenOverridesSpec cenv eenv slotsig m =
+and GenOverridesSpec cenv eenv slotsig m isInstance =
     let (TSlotSig (nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
 
     let ilOverrideTy, ilOverrideParams, ilOverrideRet =
@@ -5605,10 +5605,16 @@ and GenOverridesSpec cenv eenv slotsig m =
 
     let ilOverrideTyRef = ilOverrideTy.TypeRef
 
+    let callingConv =
+        if isInstance then
+            ILCallingConv.Instance
+        else
+            ILCallingConv.Static
+
     let ilOverrideMethRef =
         mkILMethRef (
             ilOverrideTyRef,
-            ILCallingConv.Instance,
+            callingConv,
             nameOfOverridenMethod,
             List.length (DropErasedTypars methodTypars),
             typesOfILParams ilOverrideParams,
