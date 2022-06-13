@@ -6646,22 +6646,6 @@ and ComputeFlagFixupsForMemberBinding cenv (v: Val) =
        | Some nm -> renameMethodDef nm
        | None -> () ]
 
-and ComputeMethodImplNameFixupForStaticMemberBinding cenv (v: Val) =
-    if isNil v.ImplementedSlotSigs then
-        None
-    else
-        let slotsig = v.ImplementedSlotSigs |> List.last
-        let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (false, slotsig)
-        Some nameOfOverridingMethod
-
-and ComputeFlagFixupsForStaticMemberBinding cenv (v: Val) =
-    [ 
-      fixupStaticAbstractSlotFlags
-      match ComputeMethodImplNameFixupForStaticMemberBinding cenv v with
-      | Some nm -> renameMethodDef nm
-      | None -> ()
-    ]
-
 and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let g = cenv.g
     let implflags =
@@ -6897,12 +6881,9 @@ and GenMethodForBinding
                        if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
                            mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
                        else // We want to get potential fixups and hidebysig for abstract statics:
-                           let flagFixups = ComputeFlagFixupsForStaticMemberBinding cenv v
+                           let flagFixups = [ fixupStaticAbstractSlotFlags ]
                            let mdef = mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
                            let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
-
-                           // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
-                           mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
                            mdef
                    elif (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented) ||
                         memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
@@ -7972,12 +7953,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                      | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
                                      | None -> [], []
 
-                                 // Don't use method impl for static abstract implementation (IsInstance <> true && IsOverrideOrExplicitImpl = true):
-                                 let isStaticAbstractImpl = (not memberInfo.MemberFlags.IsInstance) && memberInfo.MemberFlags.IsOverrideOrExplicitImpl
-                                 let useMethodImpl =  not isStaticAbstractImpl
+                                 let useMethodImpl = true
                                  let eenvUnderTypars = EnvForTypars memberParentTypars eenv
                                  let _, methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
-                                 if useMethodImpl || isStaticAbstractImpl then
+                                 if useMethodImpl then
                                      yield methodImplGenerator (ilThisTy, memberMethodTypars)
 
                              | _ -> () ]

@@ -20,6 +20,12 @@ module ``Static Methods In Interfaces`` =
         {
             static abstract T Next(T other);
         }
+
+        public interface IGetNext2<T> where T : IGetNext2<T>
+        {
+            abstract T Next(T other);
+        }
+
         public record RepeatSequence : IGetNext<RepeatSequence>
         {
             private const char Ch = 'A';
@@ -108,7 +114,12 @@ open StaticsInInterfaces
 
 type MyRepeatSequence() =
     interface IGetNext<MyRepeatSequence> with
-        static member Next(other: MyRepeatSequence) : MyRepeatSequence = other 
+        static member Next(other: MyRepeatSequence) : MyRepeatSequence = other
+
+type MyRepeatSequence2() =
+    static member Next(other: MyRepeatSequence2) = other
+    interface IGetNext<MyRepeatSequence2> with
+        static member Next(other: MyRepeatSequence2) : MyRepeatSequence2 = MyRepeatSequence2.Next(other)
 """
         Fsx fsharpSource
         |> withLangVersionPreview
@@ -117,40 +128,72 @@ type MyRepeatSequence() =
         |> shouldSucceed
         |> verifyIL [
         """
-.class public abstract auto ansi sealed StaticsTesting
+.class auto ansi serializable nested public MyRepeatSequence
 extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested public MyRepeatSequence
-  extends [runtime]System.Object
-  implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
-  {
+implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>
+    {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .method public specialname rtspecialname 
-     instance void  .ctor() cil managed
+instance void  .ctor() cil managed
     {
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
-      IL_0006:  ldarg.0
-      IL_0007:  pop
-      IL_0008:  ret
+          
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  pop
+        IL_0008:  ret
     } 
-
+    
     .method public hidebysig static class StaticsTesting/MyRepeatSequence 
-     'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
+'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence>.Next'(class StaticsTesting/MyRepeatSequence other) cil managed
     {
-      .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
-      
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ret
+        .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence>::Next(!0)
+          
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ret
     } 
-
-  } 
-
-}
+    
+    } 
+    
+    .class auto ansi serializable nested public MyRepeatSequence2
+extends [runtime]System.Object
+implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>
+    {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public specialname rtspecialname 
+instance void  .ctor() cil managed
+    {
+          
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  callvirt   instance void [runtime]System.Object::.ctor()
+        IL_0006:  ldarg.0
+        IL_0007:  pop
+        IL_0008:  ret
+    } 
+    
+    .method public static class StaticsTesting/MyRepeatSequence2 
+Next(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    {
+          
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ret
+    } 
+    
+    .method public hidebysig static class StaticsTesting/MyRepeatSequence2 
+'StaticsInInterfaces.IGetNext<StaticsTesting.MyRepeatSequence2>.Next'(class StaticsTesting/MyRepeatSequence2 other) cil managed
+    {
+        .override  method !0 class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRepeatSequence2>::Next(!0)
+          
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ret
+    } 
+    
+    }
         """]
     
 #if !NETCOREAPP
@@ -168,15 +211,24 @@ open System
 open StaticsInInterfaces
 
 type MyRepeatSequence() =
+    [<DefaultValue>] val mutable Text : string
+
+    override this.ToString() = this.Text
+
+    static member Next(other: MyRepeatSequence) =
+        other.Text <- other.Text + "A"
+        other
+
     interface IGetNext<MyRepeatSequence> with
-        static member Next(other: MyRepeatSequence) : MyRepeatSequence = other 
+        static member Next(other: MyRepeatSequence) : MyRepeatSequence = MyRepeatSequence.Next(other)
 
 [<EntryPoint>]
 let main _ =
 
     let mutable str = MyRepeatSequence ()
+    str.Text <- "A"
     let res = [ for i in 0..10 do
-                    yield string(str)
+                    yield str.ToString()
                     str <- MyRepeatSequence.Next(str) ]
 
     if res <> ["A"; "AA"; "AAA"; "AAAA"; "AAAAA"; "AAAAAA"; "AAAAAAA"; "AAAAAAAA"; "AAAAAAAAA"; "AAAAAAAAAA"; "AAAAAAAAAAA"] then
