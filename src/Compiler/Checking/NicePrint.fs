@@ -2247,11 +2247,38 @@ module InferredSigPrinting =
             let outerPath = mspec.CompilationPath.AccessPath
 
             let denv = denv.AddOpenPath (List.map fst innerPath)
-            let isNamespace =
+
+            let isWrappedNamespace =
                 match mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind with
-                | Namespace false -> false
-                | _ -> mspec.IsNamespace
-            if isNamespace then
+                | Namespace false -> true
+                | _ -> false
+
+            if isWrappedNamespace then
+                // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
+                let fullModuleName, def =
+                    let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
+                        match currentContents with
+                        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
+                            Some ([ yield! path; yield mn.DisplayNameCore ], contents)
+                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ] ->
+                            Some ([ yield! path; yield mn.DisplayNameCore ], contents)
+                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
+                            Some ([ mspec.DisplayNameCore ; mn.DisplayNameCore ], nestedModuleContents)
+                        | _ ->
+                            None
+
+                    match def with
+                    | NestedModule(path, nestedModuleContents) -> path, nestedModuleContents
+                    | _ -> [ mspec.DisplayNameCore ], def
+                
+                let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
+                let nmL = layoutAccessibility denv mspec.Accessibility nmL
+                let denv = denv.AddAccessibility mspec.Accessibility
+                let basic = imdefL denv def
+                let modNameL = wordL (tagKeyword "module") ^^ nmL
+                let basicL = modNameL @@ basic
+                layoutXmlDoc denv true mspec.XmlDoc basicL
+            elif mspec.IsNamespace then
                 let basic = imdefL denv def
                 let basicL =
                     // Check if this namespace contains anything interesting
