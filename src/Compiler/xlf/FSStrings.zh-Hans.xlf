@@ -4,1652 +4,1652 @@
     <body>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
-        <target state="translated">加载文件 .\n 中有一条或多条信息性消息</target>
+        <target state="new">One or more informational messages in loaded file.\n</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="translated">符号 "..^"</target>
+        <target state="new">symbol '..^'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
         <source>interpolated string</source>
-        <target state="translated">内插字符串</target>
+        <target state="new">interpolated string</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
         <source>interpolated string (first part)</source>
-        <target state="translated">内插字符串(第一部分)</target>
+        <target state="new">interpolated string (first part)</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
         <source>interpolated string (final part)</source>
-        <target state="translated">内插字符串(最终部分)</target>
+        <target state="new">interpolated string (final part)</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
-        <target state="translated">内插字符串(部分)</target>
+        <target state="new">interpolated string (part)</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
-        <target state="translated">。请参见 {0}。</target>
+        <target state="new">. See also {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverTupleDiffLengths">
         <source>The tuples have differing lengths of {0} and {1}</source>
-        <target state="translated">元组具有不同长度的 {0} 和 {1}</target>
+        <target state="new">The tuples have differing lengths of {0} and {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverInfiniteTypes">
         <source>The types '{0}' and '{1}' cannot be unified.</source>
-        <target state="translated">类型“{0}”和“{1}”无法联合。</target>
+        <target state="new">The types '{0}' and '{1}' cannot be unified.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverMissingConstraint">
         <source>A type parameter is missing a constraint '{0}'</source>
-        <target state="translated">类型参数缺少约束“{0}”</target>
+        <target state="new">A type parameter is missing a constraint '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverTypesNotInEqualityRelation1">
         <source>The unit of measure '{0}' does not match the unit of measure '{1}'</source>
-        <target state="translated">度量单位“{0}”与度量单位“{1}”不匹配</target>
+        <target state="new">The unit of measure '{0}' does not match the unit of measure '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverTypesNotInEqualityRelation2">
         <source>The type '{0}' does not match the type '{1}'</source>
-        <target state="translated">类型“{0}”与类型“{1}”不匹配</target>
+        <target state="new">The type '{0}' does not match the type '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverTypesNotInSubsumptionRelation">
         <source>The type '{0}' is not compatible with the type '{1}'{2}</source>
-        <target state="translated">类型“{0}”与类型“{1}”{2} 不兼容</target>
+        <target state="new">The type '{0}' is not compatible with the type '{1}'{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation1">
         <source>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</source>
-        <target state="translated">此表达式应具有类型\n    “{1}”    \n而此处具有类型\n    “{0}”    {2}</target>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromAddingTypeEquation2">
         <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
-        <target state="translated">类型不匹配。应为\n    “{0}”    \n而给定的是\n    “{1}”    {2}\n</target>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault1">
         <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">在为类型推理变量应用默认类型“{0}”时，类型约束不匹配。 </target>
+        <target state="new">Type constraint mismatch when applying the default type '{0}' for a type inference variable. </target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
         <source> Consider adding further type constraints</source>
-        <target state="translated"> 请考虑添加更多类型约束</target>
+        <target state="new"> Consider adding further type constraints</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorsFromAddingSubsumptionConstraint">
         <source>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</source>
-        <target state="translated">类型约束不匹配。类型 \n    “{0}”    \n与类型\n    “{1}”    {2} 不兼容\n</target>
+        <target state="new">Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="translated">通常不得在模式中使用大写的变量标识符，存在它们可能表示缺少某个开放声明或某个模式名称拼写错误。</target>
+        <target state="new">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
-        <target state="translated">可区分的联合用例和异常标签必须是大写的标识符</target>
+        <target state="new">Discriminated union cases and exception labels must be uppercase identifiers</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
-        <target state="translated">此函数采用的参数过多，或者用于不需要函数的上下文中</target>
+        <target state="new">This function takes too many arguments, or is used in a context where a function is not expected</target>
         <note />
       </trans-unit>
       <trans-unit id="BakedInMemberConstraintName">
         <source>Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</source>
-        <target state="translated">F# 编译器为名称为“{0}”的成员约束给定了特殊状态，因为使用此成员隐式扩大了某些 .NET 类型。如果您尝试从自己的代码中调用该成员约束，则可能会导致运行时失败。</target>
+        <target state="new">Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</target>
         <note />
       </trans-unit>
       <trans-unit id="BadEventTransformation">
         <source>A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</source>
-        <target state="translated">要编译为 .NET 事件的定义不具有预期格式。只可以将属性成员编译为 .NET 事件。</target>
+        <target state="new">A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</target>
         <note />
       </trans-unit>
       <trans-unit id="ParameterlessStructCtor">
         <source>Implicit object constructors for structs must take at least one argument</source>
-        <target state="translated">结构的隐式对象构造函数必须采用至少一个参数</target>
+        <target state="new">Implicit object constructors for structs must take at least one argument</target>
         <note />
       </trans-unit>
       <trans-unit id="InterfaceNotRevealed">
         <source>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</source>
-        <target state="translated">类型实现了接口“{0}”，而签名未显示此接口。您应在签名中列出此接口，因为通过动态类型强制转换和/或反射将可以发现此接口。</target>
+        <target state="new">The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</target>
         <note />
       </trans-unit>
       <trans-unit id="TyconBadArgs">
         <source>The type '{0}' expects {1} type argument(s) but is given {2}</source>
-        <target state="translated">类型“{0}”需要 {1} 个类型参数，而给定了 {2} 个类型参数</target>
+        <target state="new">The type '{0}' expects {1} type argument(s) but is given {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateType">
         <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">查找基于此程序点之前的信息的不确定类型的对象。在此程序点之前可能需要类型批注来约束对象的类型。这可能允许解析查找。</target>
+        <target state="new">Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash1">
         <source>Duplicate definition of {0} '{1}'</source>
-        <target state="translated">{0}“{1}”的定义重复</target>
+        <target state="new">Duplicate definition of {0} '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="NameClash2">
         <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
-        <target state="translated">无法定义 {0}“{1}”，因为名称“{2}”与此类型或模块中的 {3}“{4}”冲突</target>
+        <target state="new">The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</target>
         <note />
       </trans-unit>
       <trans-unit id="Duplicate1">
         <source>Two members called '{0}' have the same signature</source>
-        <target state="translated">名为“{0}”的两个成员具有相同的签名</target>
+        <target state="new">Two members called '{0}' have the same signature</target>
         <note />
       </trans-unit>
       <trans-unit id="Duplicate2">
         <source>Duplicate definition of {0} '{1}'</source>
-        <target state="translated">{0}“{1}”的定义重复</target>
+        <target state="new">Duplicate definition of {0} '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="UndefinedName2">
         <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
-        <target state="translated"> 在 FSharp.PowerPack.dll 中找到了同名构造，其中包含某些早期版本的 F# 中已隐式引用的一些模块和类型。您可能需要添加对此 DLL 的显式引用以编译此代码。</target>
+        <target state="new"> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotMutable">
         <source>This field is not mutable</source>
-        <target state="translated">此字段是不可变的</target>
+        <target state="new">This field is not mutable</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldsFromDifferentTypes">
         <source>The fields '{0}' and '{1}' are from different types</source>
-        <target state="translated">字段“{0}”和“{1}”来自不同的类型</target>
+        <target state="new">The fields '{0}' and '{1}' are from different types</target>
         <note />
       </trans-unit>
       <trans-unit id="VarBoundTwice">
         <source>'{0}' is bound twice in this pattern</source>
-        <target state="translated">“{0}”在此模式中绑定了两次</target>
+        <target state="new">'{0}' is bound twice in this pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="Recursion">
         <source>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</source>
-        <target state="translated">对函数“{0}”的使用与在其他位置推理出的类型不匹配。推理出的函数的类型为\n    {1}。            \n此时需要使用的函数的类型为\n    {2}    {3}\n此错误可能是由于与一个“let rec”集合或一组类中的泛型递归相关联的限制所导致的。请考虑为递归调用的目标给定完整的类型签名，包括参数和返回类型的类型批注。</target>
+        <target state="new">A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidRuntimeCoercion">
         <source>Invalid runtime coercion or type test from type {0} to {1}\n{2}</source>
-        <target state="translated">从类型 {0} 到 {1} 的运行时强制或类型测试无效\n{2}</target>
+        <target state="new">Invalid runtime coercion or type test from type {0} to {1}\n{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateRuntimeCoercion">
         <source>This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</source>
-        <target state="translated">这个从类型\n    {0}    \n 到 \n    {1}    的运行时强制或\n类型测试涉及一个基于此程序点之前的信息的不确定类型。不允许对某些类型执行运行时类型测试。需要更多的类型批注。</target>
+        <target state="new">This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</target>
         <note />
       </trans-unit>
       <trans-unit id="IndeterminateStaticCoercion">
         <source>The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</source>
-        <target state="translated">这个从类型\n    {0}    \n到 \n    {1}    \n的静态强制涉及一个基于此程序点之前的信息的不确定类型。不允许对某些类型进行静态强制。需要更多的类型批注。</target>
+        <target state="new">The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</target>
         <note />
       </trans-unit>
       <trans-unit id="StaticCoercionShouldUseBox">
         <source>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</source>
-        <target state="translated">从值类型 \n    {0}    \n到类型 \n    {1}    \n的强制将涉及装箱。请考虑改用“box”</target>
+        <target state="new">A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</target>
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">由于未向一些抽象成员提供实现，因此该类型为 "abstract"。如果是故意如此，请向你的类型添加 "[&lt;AbstractClass&gt;]" 属性。</target>
+        <target state="new">This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
         <source>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</source>
-        <target state="translated">此构造导致代码并不像其类型批注指明的那样通用。通过使用“{0}”处或其附近的“#”、“_”或其他类型批注暗示的类型变量已被约束为类型“{1}”。</target>
+        <target state="new">This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar2">
         <source>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</source>
-        <target state="translated">此构造导致代码并不像类型批注指明的那样通用。度量单位变量“{0}”已被约束为度量“{1}”。</target>
+        <target state="new">This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar3">
         <source>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</source>
-        <target state="translated">此构造导致代码并不像类型批注指明的那样通用。类型变量“{0}”已被约束为类型“{1}”。</target>
+        <target state="new">This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.IDENT">
         <source>identifier</source>
-        <target state="translated">标识符</target>
+        <target state="new">identifier</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INT">
         <source>integer literal</source>
-        <target state="translated">整数文本</target>
+        <target state="new">integer literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FLOAT">
         <source>floating point literal</source>
-        <target state="translated">浮点文本</target>
+        <target state="new">floating point literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DECIMAL">
         <source>decimal literal</source>
-        <target state="translated">十进制文本</target>
+        <target state="new">decimal literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CHAR">
         <source>character literal</source>
-        <target state="translated">字符文本</target>
+        <target state="new">character literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BASE">
         <source>keyword 'base'</source>
-        <target state="translated">关键字“base”</target>
+        <target state="new">keyword 'base'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LPAREN.STAR.RPAREN">
         <source>symbol '(*)'</source>
-        <target state="translated">符号“(*)”</target>
+        <target state="new">symbol '(*)'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOLLAR">
         <source>symbol '$'</source>
-        <target state="translated">符号“$”</target>
+        <target state="new">symbol '$'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.STAR.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.COMPARE.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.GREATER">
         <source>symbol ':&gt;'</source>
-        <target state="translated">符号 ":&gt;"</target>
+        <target state="new">symbol ':&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.COLON">
         <source>symbol '::'</source>
-        <target state="translated">符号“::”</target>
+        <target state="new">symbol '::'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.PERCENT.OP">
         <source>symbol '{0}</source>
-        <target state="translated">符号“{0}”</target>
+        <target state="new">symbol '{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.AT.HAT.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.BAR.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.PLUS.MINUS.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.PREFIX.OP">
         <source>prefix operator</source>
-        <target state="translated">前缀运算符</target>
+        <target state="new">prefix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
         <source>symbol ':?&gt;'</source>
-        <target state="translated">符号 ":?&gt;"</target>
+        <target state="new">symbol ':?&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.AMP.OP">
         <source>infix operator</source>
-        <target state="translated">中缀运算符</target>
+        <target state="new">infix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">符号 "&amp;"</target>
+        <target state="new">symbol '&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">符号 "&amp;&amp;"</target>
+        <target state="new">symbol '&amp;&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">
         <source>symbol '||'</source>
-        <target state="translated">符号“||”</target>
+        <target state="new">symbol '||'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LESS">
         <source>symbol '&lt;'</source>
-        <target state="translated">符号 "&lt;"</target>
+        <target state="new">symbol '&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER">
         <source>symbol '&gt;'</source>
-        <target state="translated">符号 "&gt;"</target>
+        <target state="new">symbol '&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QMARK">
         <source>symbol '?'</source>
-        <target state="translated">符号“?”</target>
+        <target state="new">symbol '?'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QMARK.QMARK">
         <source>symbol '??'</source>
-        <target state="translated">符号“??”</target>
+        <target state="new">symbol '??'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK">
         <source>symbol ':?'</source>
-        <target state="translated">符号“:?”</target>
+        <target state="new">symbol ':?'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INT32.DOT.DOT">
         <source>integer..</source>
-        <target state="translated">整数..</target>
+        <target state="new">integer..</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT">
         <source>symbol '..'</source>
-        <target state="translated">符号“..”</target>
+        <target state="new">symbol '..'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QUOTE">
         <source>quote symbol</source>
-        <target state="translated">引用符号</target>
+        <target state="new">quote symbol</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STAR">
         <source>symbol '*'</source>
-        <target state="translated">符号“*”</target>
+        <target state="new">symbol '*'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">类型应用程序 </target>
+        <target state="new">type application </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
         <source>symbol ':'</source>
-        <target state="translated">符号“:”</target>
+        <target state="new">symbol ':'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.EQUALS">
         <source>symbol ':='</source>
-        <target state="translated">符号“:=”</target>
+        <target state="new">symbol ':='</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LARROW">
         <source>symbol '&lt;-'</source>
-        <target state="translated">符号 "&lt;-"</target>
+        <target state="new">symbol '&lt;-'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EQUALS">
         <source>symbol '='</source>
-        <target state="translated">符号“=”</target>
+        <target state="new">symbol '='</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
         <source>symbol '&gt;|]'</source>
-        <target state="translated">符号 "&gt;|]"</target>
+        <target state="new">symbol '&gt;|]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MINUS">
         <source>symbol '-'</source>
-        <target state="translated">符号“-”</target>
+        <target state="new">symbol '-'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ADJACENT.PREFIX.OP">
         <source>prefix operator</source>
-        <target state="translated">前缀运算符</target>
+        <target state="new">prefix operator</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FUNKY.OPERATOR.NAME">
         <source>operator name</source>
-        <target state="translated">运算符名称</target>
+        <target state="new">operator name</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMA">
         <source>symbol ','</source>
-        <target state="translated">符号“,”</target>
+        <target state="new">symbol ','</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT">
         <source>symbol '.'</source>
-        <target state="translated">符号“.”</target>
+        <target state="new">symbol '.'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR">
         <source>symbol '|'</source>
-        <target state="translated">符号“|”</target>
+        <target state="new">symbol '|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HASH">
         <source>symbol #</source>
-        <target state="translated">符号 #</target>
+        <target state="new">symbol #</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.UNDERSCORE">
         <source>symbol '_'</source>
-        <target state="translated">符号“_”</target>
+        <target state="new">symbol '_'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SEMICOLON">
         <source>symbol ';'</source>
-        <target state="translated">符号“;”</target>
+        <target state="new">symbol ';'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SEMICOLON.SEMICOLON">
         <source>symbol ';;'</source>
-        <target state="translated">符号“;;”</target>
+        <target state="new">symbol ';;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LPAREN">
         <source>symbol '('</source>
-        <target state="translated">符号“(”</target>
+        <target state="new">symbol '('</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RPAREN">
         <source>symbol ')'</source>
-        <target state="translated">符号“)”</target>
+        <target state="new">symbol ')'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SPLICE.SYMBOL">
         <source>symbol 'splice'</source>
-        <target state="translated">符号“splice”</target>
+        <target state="new">symbol 'splice'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LQUOTE">
         <source>start of quotation</source>
-        <target state="translated">引用开始</target>
+        <target state="new">start of quotation</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK">
         <source>symbol '['</source>
-        <target state="translated">符号“[”</target>
+        <target state="new">symbol '['</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.BAR">
         <source>symbol '[|'</source>
-        <target state="translated">符号“[|”</target>
+        <target state="new">symbol '[|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.LESS">
         <source>symbol '[&lt;'</source>
-        <target state="translated">符号 "[&lt;"</target>
+        <target state="new">symbol '[&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE">
         <source>symbol '{'</source>
-        <target state="translated">符号“{”</target>
+        <target state="new">symbol '{'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.LESS">
         <source>symbol '{&lt;'</source>
-        <target state="translated">符号 "{&lt;"</target>
+        <target state="new">symbol '{&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACK">
         <source>symbol '|]'</source>
-        <target state="translated">符号“|]”</target>
+        <target state="new">symbol '|]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
         <source>symbol '&gt;}'</source>
-        <target state="translated">符号 "&gt;}"</target>
+        <target state="new">symbol '&gt;}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
         <source>symbol '&gt;]'</source>
-        <target state="translated">符号 "&gt;]"</target>
+        <target state="new">symbol '&gt;]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RQUOTE">
         <source>end of quotation</source>
-        <target state="translated">引用结束</target>
+        <target state="new">end of quotation</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RBRACK">
         <source>symbol ']'</source>
-        <target state="translated">符号“]”</target>
+        <target state="new">symbol ']'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RBRACE">
         <source>symbol '}'</source>
-        <target state="translated">符号“}”</target>
+        <target state="new">symbol '}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.PUBLIC">
         <source>keyword 'public'</source>
-        <target state="translated">关键字“public”</target>
+        <target state="new">keyword 'public'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.PRIVATE">
         <source>keyword 'private'</source>
-        <target state="translated">关键字“private”</target>
+        <target state="new">keyword 'private'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERNAL">
         <source>keyword 'internal'</source>
-        <target state="translated">关键字“internal”</target>
+        <target state="new">keyword 'internal'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FIXED">
         <source>keyword 'fixed'</source>
-        <target state="translated">关键字 "fixed"</target>
+        <target state="new">keyword 'fixed'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CONSTRAINT">
         <source>keyword 'constraint'</source>
-        <target state="translated">关键字“constraint”</target>
+        <target state="new">keyword 'constraint'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INSTANCE">
         <source>keyword 'instance'</source>
-        <target state="translated">关键字“instance”</target>
+        <target state="new">keyword 'instance'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DELEGATE">
         <source>keyword 'delegate'</source>
-        <target state="translated">关键字“delegate”</target>
+        <target state="new">keyword 'delegate'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INHERIT">
         <source>keyword 'inherit'</source>
-        <target state="translated">关键字“inherit”</target>
+        <target state="new">keyword 'inherit'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CONSTRUCTOR">
         <source>keyword 'constructor'</source>
-        <target state="translated">关键字“constructor”</target>
+        <target state="new">keyword 'constructor'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DEFAULT">
         <source>keyword 'default'</source>
-        <target state="translated">关键字“default”</target>
+        <target state="new">keyword 'default'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OVERRIDE">
         <source>keyword 'override'</source>
-        <target state="translated">关键字“override”</target>
+        <target state="new">keyword 'override'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ABSTRACT">
         <source>keyword 'abstract'</source>
-        <target state="translated">关键字“abstract”</target>
+        <target state="new">keyword 'abstract'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CLASS">
         <source>keyword 'class'</source>
-        <target state="translated">关键字“class”</target>
+        <target state="new">keyword 'class'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MEMBER">
         <source>keyword 'member'</source>
-        <target state="translated">关键字“member”</target>
+        <target state="new">keyword 'member'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STATIC">
         <source>keyword 'static'</source>
-        <target state="translated">关键字“static”</target>
+        <target state="new">keyword 'static'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.NAMESPACE">
         <source>keyword 'namespace'</source>
-        <target state="translated">关键字“namespace”</target>
+        <target state="new">keyword 'namespace'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OBLOCKBEGIN">
         <source>start of structured construct</source>
-        <target state="translated">结构化构造开始</target>
+        <target state="new">start of structured construct</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OBLOCKEND">
         <source>incomplete structured construct at or before this point</source>
-        <target state="translated">此点或之前的结构化构造不完整</target>
+        <target state="new">incomplete structured construct at or before this point</target>
         <note />
       </trans-unit>
       <trans-unit id="BlockEndSentence">
         <source>Incomplete structured construct at or before this point</source>
-        <target state="translated">此点或之前的结构化构造不完整</target>
+        <target state="new">Incomplete structured construct at or before this point</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OTHEN">
         <source>keyword 'then'</source>
-        <target state="translated">关键字“then”</target>
+        <target state="new">keyword 'then'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OELSE">
         <source>keyword 'else'</source>
-        <target state="translated">关键字“else”</target>
+        <target state="new">keyword 'else'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OLET">
         <source>keyword 'let' or 'use'</source>
-        <target state="translated">关键字“let”或“use”</target>
+        <target state="new">keyword 'let' or 'use'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BINDER">
         <source>binder keyword</source>
-        <target state="translated">联编程序关键字</target>
+        <target state="new">binder keyword</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ODO">
         <source>keyword 'do'</source>
-        <target state="translated">关键字“do”</target>
+        <target state="new">keyword 'do'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.CONST">
         <source>keyword 'const'</source>
-        <target state="translated">关键字“const”</target>
+        <target state="new">keyword 'const'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OWITH">
         <source>keyword 'with'</source>
-        <target state="translated">关键字“with”</target>
+        <target state="new">keyword 'with'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OFUNCTION">
         <source>keyword 'function'</source>
-        <target state="translated">关键字“function”</target>
+        <target state="new">keyword 'function'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OFUN">
         <source>keyword 'fun'</source>
-        <target state="translated">关键字“fun”</target>
+        <target state="new">keyword 'fun'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ORESET">
         <source>end of input</source>
-        <target state="translated">输入结束</target>
+        <target state="new">end of input</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ODUMMY">
         <source>internal dummy token</source>
-        <target state="translated">内部虚拟标记</target>
+        <target state="new">internal dummy token</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ODO.BANG">
         <source>keyword 'do!'</source>
-        <target state="translated">关键字“do!</target>
+        <target state="new">keyword 'do!'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.YIELD">
         <source>yield</source>
-        <target state="translated">yield</target>
+        <target state="new">yield</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.YIELD.BANG">
         <source>yield!</source>
-        <target state="translated">yield!</target>
+        <target state="new">yield!</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OINTERFACE.MEMBER">
         <source>keyword 'interface'</source>
-        <target state="translated">关键字“interface”</target>
+        <target state="new">keyword 'interface'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ELIF">
         <source>keyword 'elif'</source>
-        <target state="translated">关键字“elif”</target>
+        <target state="new">keyword 'elif'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RARROW">
         <source>symbol '-&gt;'</source>
-        <target state="translated">符号 "-&gt;"</target>
+        <target state="new">symbol '-&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SIG">
         <source>keyword 'sig'</source>
-        <target state="translated">关键字“sig”</target>
+        <target state="new">keyword 'sig'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRUCT">
         <source>keyword 'struct'</source>
-        <target state="translated">关键字“struct”</target>
+        <target state="new">keyword 'struct'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.UPCAST">
         <source>keyword 'upcast'</source>
-        <target state="translated">关键字“upcast”</target>
+        <target state="new">keyword 'upcast'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOWNCAST">
         <source>keyword 'downcast'</source>
-        <target state="translated">关键字“downcast”</target>
+        <target state="new">keyword 'downcast'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.NULL">
         <source>keyword 'null'</source>
-        <target state="translated">关键字“null”</target>
+        <target state="new">keyword 'null'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RESERVED">
         <source>reserved keyword</source>
-        <target state="translated">保留的关键字</target>
+        <target state="new">reserved keyword</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MODULE">
         <source>keyword 'module'</source>
-        <target state="translated">关键字“module”</target>
+        <target state="new">keyword 'module'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND">
         <source>keyword 'and'</source>
-        <target state="translated">关键字“and”</target>
+        <target state="new">keyword 'and'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AS">
         <source>keyword 'as'</source>
-        <target state="translated">关键字“as”</target>
+        <target state="new">keyword 'as'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ASSERT">
         <source>keyword 'assert'</source>
-        <target state="translated">关键字“assert”</target>
+        <target state="new">keyword 'assert'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.ASR">
         <source>keyword 'asr'</source>
-        <target state="translated">关键字“asr”</target>
+        <target state="new">keyword 'asr'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOWNTO">
         <source>keyword 'downto'</source>
-        <target state="translated">关键字“downto”</target>
+        <target state="new">keyword 'downto'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EXCEPTION">
         <source>keyword 'exception'</source>
-        <target state="translated">关键字“exception”</target>
+        <target state="new">keyword 'exception'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FALSE">
         <source>keyword 'false'</source>
-        <target state="translated">关键字“false”</target>
+        <target state="new">keyword 'false'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FOR">
         <source>keyword 'for'</source>
-        <target state="translated">关键字“for”</target>
+        <target state="new">keyword 'for'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FUN">
         <source>keyword 'fun'</source>
-        <target state="translated">关键字“fun”</target>
+        <target state="new">keyword 'fun'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FUNCTION">
         <source>keyword 'function'</source>
-        <target state="translated">关键字“function”</target>
+        <target state="new">keyword 'function'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.FINALLY">
         <source>keyword 'finally'</source>
-        <target state="translated">关键字“finally”</target>
+        <target state="new">keyword 'finally'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LAZY">
         <source>keyword 'lazy'</source>
-        <target state="translated">关键字“lazy”</target>
+        <target state="new">keyword 'lazy'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MATCH">
         <source>keyword 'match'</source>
-        <target state="translated">关键字“match”</target>
+        <target state="new">keyword 'match'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MATCH.BANG">
         <source>keyword 'match!'</source>
-        <target state="translated">关键字“match!”</target>
+        <target state="new">keyword 'match!'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
-        <target state="translated">关键字“mutable”</target>
+        <target state="new">keyword 'mutable'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.NEW">
         <source>keyword 'new'</source>
-        <target state="translated">关键字“new”</target>
+        <target state="new">keyword 'new'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OF">
         <source>keyword 'of'</source>
-        <target state="translated">关键字“of”</target>
+        <target state="new">keyword 'of'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OPEN">
         <source>keyword 'open'</source>
-        <target state="translated">关键字“open”</target>
+        <target state="new">keyword 'open'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.OR">
         <source>keyword 'or'</source>
-        <target state="translated">关键字“or”</target>
+        <target state="new">keyword 'or'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.VOID">
         <source>keyword 'void'</source>
-        <target state="translated">关键字“void”</target>
+        <target state="new">keyword 'void'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EXTERN">
         <source>keyword 'extern'</source>
-        <target state="translated">关键字“extern”</target>
+        <target state="new">keyword 'extern'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERFACE">
         <source>keyword 'interface'</source>
-        <target state="translated">关键字“interface”</target>
+        <target state="new">keyword 'interface'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.REC">
         <source>keyword 'rec'</source>
-        <target state="translated">关键字“rec”</target>
+        <target state="new">keyword 'rec'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.TO">
         <source>keyword 'to'</source>
-        <target state="translated">关键字“to”</target>
+        <target state="new">keyword 'to'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.TRUE">
         <source>keyword 'true'</source>
-        <target state="translated">关键字“true”</target>
+        <target state="new">keyword 'true'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.TRY">
         <source>keyword 'try'</source>
-        <target state="translated">关键字“try”</target>
+        <target state="new">keyword 'try'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.TYPE">
         <source>keyword 'type'</source>
-        <target state="translated">关键字“type”</target>
+        <target state="new">keyword 'type'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.VAL">
         <source>keyword 'val'</source>
-        <target state="translated">关键字“val”</target>
+        <target state="new">keyword 'val'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INLINE">
         <source>keyword 'inline'</source>
-        <target state="translated">关键字“inline”</target>
+        <target state="new">keyword 'inline'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHEN">
         <source>keyword 'when'</source>
-        <target state="translated">关键字“when”</target>
+        <target state="new">keyword 'when'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHILE">
         <source>keyword 'while'</source>
-        <target state="translated">关键字“while”</target>
+        <target state="new">keyword 'while'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WITH">
         <source>keyword 'with'</source>
-        <target state="translated">关键字“with”</target>
+        <target state="new">keyword 'with'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.IF">
         <source>keyword 'if'</source>
-        <target state="translated">关键字“if”</target>
+        <target state="new">keyword 'if'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DO">
         <source>keyword 'do'</source>
-        <target state="translated">关键字“do”</target>
+        <target state="new">keyword 'do'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GLOBAL">
         <source>keyword 'global'</source>
-        <target state="translated">关键字“global”</target>
+        <target state="new">keyword 'global'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DONE">
         <source>keyword 'done'</source>
-        <target state="translated">关键字“done”</target>
+        <target state="new">keyword 'done'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.IN">
         <source>keyword 'in'</source>
-        <target state="translated">关键字“in”</target>
+        <target state="new">keyword 'in'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP">
         <source>symbol '('</source>
-        <target state="translated">符号“(”</target>
+        <target state="new">symbol '('</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP">
         <source>symbol'['</source>
-        <target state="translated">符号“[”</target>
+        <target state="new">symbol'['</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BEGIN">
         <source>keyword 'begin'</source>
-        <target state="translated">关键字“begin”</target>
+        <target state="new">keyword 'begin'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.END">
         <source>keyword 'end'</source>
-        <target state="translated">关键字“end”</target>
+        <target state="new">keyword 'end'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HASH.ENDIF">
         <source>directive</source>
-        <target state="translated">指令</target>
+        <target state="new">directive</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INACTIVECODE">
         <source>inactive code</source>
-        <target state="translated">非活动代码</target>
+        <target state="new">inactive code</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LEX.FAILURE">
         <source>lex failure</source>
-        <target state="translated">lex 失败</target>
+        <target state="new">lex failure</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.WHITESPACE">
         <source>whitespace</source>
-        <target state="translated">空白</target>
+        <target state="new">whitespace</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
         <source>comment</source>
-        <target state="translated">注释</target>
+        <target state="new">comment</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LINE.COMMENT">
         <source>line comment</source>
-        <target state="translated">行注释</target>
+        <target state="new">line comment</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRING.TEXT">
         <source>string text</source>
-        <target state="translated">字符串文本</target>
+        <target state="new">string text</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.KEYWORD_STRING">
         <source>compiler generated literal</source>
-        <target state="translated">编译器生成的文本</target>
+        <target state="new">compiler generated literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BYTEARRAY">
         <source>byte array literal</source>
-        <target state="translated">字节数组文本</target>
+        <target state="new">byte array literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRING">
         <source>string literal</source>
-        <target state="translated">字符串文本</target>
+        <target state="new">string literal</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EOF">
         <source>end of input</source>
-        <target state="translated">输入结束</target>
+        <target state="new">end of input</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEndOfInput">
         <source>Unexpected end of input</source>
-        <target state="translated">意外的输入结束</target>
+        <target state="new">Unexpected end of input</target>
         <note />
       </trans-unit>
       <trans-unit id="Unexpected">
         <source>Unexpected {0}</source>
-        <target state="translated">意外的 {0}</target>
+        <target state="new">Unexpected {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.interaction">
         <source> in interaction</source>
-        <target state="translated"> 在交互中</target>
+        <target state="new"> in interaction</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.hashDirective">
         <source> in directive</source>
-        <target state="translated"> 在指令中</target>
+        <target state="new"> in directive</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.fieldDecl">
         <source> in field declaration</source>
-        <target state="translated"> 在字段声明中</target>
+        <target state="new"> in field declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.unionCaseRepr">
         <source> in discriminated union case declaration</source>
-        <target state="translated"> 在可区分的联合用例声明中</target>
+        <target state="new"> in discriminated union case declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.localBinding">
         <source> in binding</source>
-        <target state="translated"> 在绑定中</target>
+        <target state="new"> in binding</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.hardwhiteLetBindings">
         <source> in binding</source>
-        <target state="translated"> 在绑定中</target>
+        <target state="new"> in binding</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.classDefnMember">
         <source> in member definition</source>
-        <target state="translated"> 在成员定义中</target>
+        <target state="new"> in member definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.defnBindings">
         <source> in definitions</source>
-        <target state="translated"> 在定义中</target>
+        <target state="new"> in definitions</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.classMemberSpfn">
         <source> in member signature</source>
-        <target state="translated"> 在成员签名中</target>
+        <target state="new"> in member signature</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.valSpfn">
         <source> in value signature</source>
-        <target state="translated"> 在值签名中</target>
+        <target state="new"> in value signature</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.tyconSpfn">
         <source> in type signature</source>
-        <target state="translated"> 在类型签名中</target>
+        <target state="new"> in type signature</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.anonLambdaExpr">
         <source> in lambda expression</source>
-        <target state="translated"> 在 lambda 表达式中</target>
+        <target state="new"> in lambda expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.attrUnionCaseDecl">
         <source> in union case</source>
-        <target state="translated"> 在联合用例中</target>
+        <target state="new"> in union case</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.cPrototype">
         <source> in extern declaration</source>
-        <target state="translated"> 在外部声明中</target>
+        <target state="new"> in extern declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.objectImplementationMembers">
         <source> in object expression</source>
-        <target state="translated"> 在对象表达式中</target>
+        <target state="new"> in object expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.ifExprCases">
         <source> in if/then/else expression</source>
-        <target state="translated"> 在 if/then/else 表达式中</target>
+        <target state="new"> in if/then/else expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.openDecl">
         <source> in open declaration</source>
-        <target state="translated"> 在开放的声明中</target>
+        <target state="new"> in open declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.fileModuleSpec">
         <source> in module or namespace signature</source>
-        <target state="translated"> 在模块或命名空间签名中</target>
+        <target state="new"> in module or namespace signature</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.patternClauses">
         <source> in pattern matching</source>
-        <target state="translated"> 在模式匹配中</target>
+        <target state="new"> in pattern matching</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.beginEndExpr">
         <source> in begin/end expression</source>
-        <target state="translated"> 在开始/结束表达式中</target>
+        <target state="new"> in begin/end expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.recdExpr">
         <source> in record expression</source>
-        <target state="translated"> 在记录表达式中</target>
+        <target state="new"> in record expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.tyconDefn">
         <source> in type definition</source>
-        <target state="translated"> 在类型定义中</target>
+        <target state="new"> in type definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.exconCore">
         <source> in exception definition</source>
-        <target state="translated"> 在异常定义中</target>
+        <target state="new"> in exception definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.typeNameInfo">
         <source> in type name</source>
-        <target state="translated"> 在类型名称中</target>
+        <target state="new"> in type name</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.attributeList">
         <source> in attribute list</source>
-        <target state="translated"> 在特性列表中</target>
+        <target state="new"> in attribute list</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.quoteExpr">
         <source> in quotation literal</source>
-        <target state="translated"> 在引用文本中</target>
+        <target state="new"> in quotation literal</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.typeConstraint">
         <source> in type constraint</source>
-        <target state="translated"> 在类型约束中</target>
+        <target state="new"> in type constraint</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.ImplementationFile">
         <source> in implementation file</source>
-        <target state="translated"> 在实现文件中</target>
+        <target state="new"> in implementation file</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.Definition">
         <source> in definition</source>
-        <target state="translated"> 在定义中</target>
+        <target state="new"> in definition</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.SignatureFile">
         <source> in signature file</source>
-        <target state="translated"> 在签名文件中</target>
+        <target state="new"> in signature file</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.Pattern">
         <source> in pattern</source>
-        <target state="translated"> 在模式中</target>
+        <target state="new"> in pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.Expr">
         <source> in expression</source>
-        <target state="translated"> 在表达式中</target>
+        <target state="new"> in expression</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.Category.Type">
         <source> in type</source>
-        <target state="translated"> 在类型中</target>
+        <target state="new"> in type</target>
         <note />
       </trans-unit>
       <trans-unit id="NONTERM.typeArgsActual">
         <source> in type arguments</source>
-        <target state="translated"> 在类型参数中</target>
+        <target state="new"> in type arguments</target>
         <note />
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">关键字 </target>
+        <target state="new">keyword </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
         <source>symbol </source>
-        <target state="translated">符号 </target>
+        <target state="new">symbol </target>
         <note />
       </trans-unit>
       <trans-unit id="FixReplace">
         <source> (due to indentation-aware syntax)</source>
-        <target state="translated"> (因为可识别缩进的语法)</target>
+        <target state="new"> (due to indentation-aware syntax)</target>
         <note />
       </trans-unit>
       <trans-unit id="TokenName1">
         <source>. Expected {0} or other token.</source>
-        <target state="translated">。应为 {0} 或其他标记。</target>
+        <target state="new">. Expected {0} or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="TokenName1TokenName2">
         <source>. Expected {0}, {1} or other token.</source>
-        <target state="translated">。应为 {0}、{1} 或其他标记。</target>
+        <target state="new">. Expected {0}, {1} or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="TokenName1TokenName2TokenName3">
         <source>. Expected {0}, {1}, {2} or other token.</source>
-        <target state="translated">。应为 {0}、{1}、{2} 或其他标记。</target>
+        <target state="new">. Expected {0}, {1}, {2} or other token.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuntimeCoercionSourceSealed1">
         <source>The type '{0}' cannot be used as the source of a type test or runtime coercion</source>
-        <target state="translated">类型“{0}”不能用作类型测试或运行时强制的源</target>
+        <target state="new">The type '{0}' cannot be used as the source of a type test or runtime coercion</target>
         <note />
       </trans-unit>
       <trans-unit id="RuntimeCoercionSourceSealed2">
         <source>The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</source>
-        <target state="translated">类型“{0}”不具有任何适当的子类型，且不能用作类型测试或运行时强制的源。</target>
+        <target state="new">The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</target>
         <note />
       </trans-unit>
       <trans-unit id="CoercionTargetSealed">
         <source>The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</source>
-        <target state="translated">类型“{0}”不具有任何适当的子类型，且无需用作静态强制的目标</target>
+        <target state="new">The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</target>
         <note />
       </trans-unit>
       <trans-unit id="UpcastUnnecessary">
         <source>This upcast is unnecessary - the types are identical</source>
-        <target state="translated">不需要此向上转换 - 类型都是相同的</target>
+        <target state="new">This upcast is unnecessary - the types are identical</target>
         <note />
       </trans-unit>
       <trans-unit id="TypeTestUnnecessary">
         <source>This type test or downcast will always hold</source>
-        <target state="translated">将始终保持此类型测试或向下转换</target>
+        <target state="new">This type test or downcast will always hold</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideDoesntOverride1">
         <source>The member '{0}' does not have the correct type to override any given virtual method</source>
-        <target state="translated">成员“{0}”不具有用于重写任何给定虚方法的正确类型</target>
+        <target state="new">The member '{0}' does not have the correct type to override any given virtual method</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideDoesntOverride2">
         <source>The member '{0}' does not have the correct type to override the corresponding abstract method.</source>
-        <target state="translated">成员“{0}”不具有用于重写相应的抽象方法的正确类型。</target>
+        <target state="new">The member '{0}' does not have the correct type to override the corresponding abstract method.</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideDoesntOverride3">
         <source> The required signature is '{0}'.</source>
-        <target state="translated"> 所需签名为“{0}”。</target>
+        <target state="new"> The required signature is '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideDoesntOverride4">
         <source>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</source>
-        <target state="translated">成员“{0}”已通过 "unit" 特例化，但 "unit" 不能用作针对返回类型参数化的抽象方法的返回类型。</target>
+        <target state="new">The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
         <source>This constructor is applied to {0} argument(s) but expects {1}</source>
-        <target state="translated">此构造函数应用于 {0} 个参数，但应为 {1} 个参数</target>
+        <target state="new">This constructor is applied to {0} argument(s) but expects {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="UnionPatternsBindDifferentNames">
         <source>The two sides of this 'or' pattern bind different sets of variables</source>
-        <target state="translated">此“or”模式的两侧绑定了不同的变量组</target>
+        <target state="new">The two sides of this 'or' pattern bind different sets of variables</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContained">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</source>
-        <target state="translated">模块“{0}”包含\n    {1}    \n而其签名指定\n    {2}    \n{3}。</target>
+        <target state="new">Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</target>
         <note />
       </trans-unit>
       <trans-unit id="RequiredButNotSpecified">
         <source>Module '{0}' requires a {1} '{2}'</source>
-        <target state="translated">模块“{0}”需要 {1}“{2}”</target>
+        <target state="new">Module '{0}' requires a {1} '{2}'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseOfAddressOfOperator">
         <source>The use of native pointers may result in unverifiable .NET IL code</source>
-        <target state="translated">使用本机指针可能会导致无法验证的 .NET IL 代码</target>
+        <target state="new">The use of native pointers may result in unverifiable .NET IL code</target>
         <note />
       </trans-unit>
       <trans-unit id="DefensiveCopyWarning">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">线程静态的和上下文静态的 "let" 绑定已弃用。请改为在类中使用 "static val mutable &lt;ident&gt; : &lt;type&gt;" 格式的声明。请将 "DefaultValue" 添加到此声明，以指示在每个新线程上将该值初始化为默认值。</target>
+        <target state="new">Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
         <source>This expression is a function value, i.e. is missing arguments. Its type is {0}.</source>
-        <target state="translated">此表达式是一个函数值，也就是说，缺少参数。其类型为 {0}。</target>
+        <target state="new">This expression is a function value, i.e. is missing arguments. Its type is {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">此表达式的结果具有类型“{0}”且已被隐式忽略。请考虑使用 "ignore" 以显式弃用此值(例如 "expr |&gt; ignore")，或使用 "let" 将结果绑定到名称上(例如 "let result = expr")。</target>
+        <target state="new">The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。</target>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">此相等表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要将值设置为属性，请使用 "&lt;-" 运算符(例如 "{1}.{2} &lt;- expression")。</target>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果想要转变某个值，则将此值标记为 "mutable" 并使用 "&lt;-" 运算符(例如 "{1} &lt;- expression")。</target>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">此相等表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要对值进行突变, 请使用 "&lt;-" 运算符(例如 "{1} &lt;- expression")。</target>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
         <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="translated">将检查此递归使用能否在运行时完整地进行初始化。此警告通常是无害的，可以使用“#nowarn "21"”或“--nowarn:21”来取消显示此警告。</target>
+        <target state="new">This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound1">
         <source>The value '{0}' will be evaluated as part of its own definition</source>
-        <target state="translated">值“{0}”将作为其自身定义的一部分进行计算</target>
+        <target state="new">The value '{0}' will be evaluated as part of its own definition</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsound2">
         <source>This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</source>
-        <target state="translated">此值最终将作为其自身定义的一部分进行计算。您可能需要采用延迟值或函数。值“{0}”{1}。</target>
+        <target state="new">This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecUnsoundInner">
         <source> will evaluate '{0}'</source>
-        <target state="translated"> 将计算“{0}”</target>
+        <target state="new"> will evaluate '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecEvaluatedOutOfOrder">
         <source>Bindings may be executed out-of-order because of this forward reference.</source>
-        <target state="translated">可以执行无序绑定，因为存在此前向引用。</target>
+        <target state="new">Bindings may be executed out-of-order because of this forward reference.</target>
         <note />
       </trans-unit>
       <trans-unit id="LetRecCheckedAtRuntime">
         <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="translated">将检查对要定义的对象的此引用和其他递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。这是因为您定义的是一个或多个递归对象，而不是递归函数。可以使用“#nowarn "40"”或“--nowarn:40”来禁止显示此警告。</target>
+        <target state="new">This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
+        <target state="new">Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
-        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在构造序列中的最后一个“let”绑定后的“do”语句中放置自引用。</target>
+        <target state="new">Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</target>
         <note />
       </trans-unit>
       <trans-unit id="VirtualAugmentationOnNullValuedType">
         <source>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</source>
-        <target state="translated">包含类型可以将“null”用作其空联合用例的表示形式值。对 null 值调用抽象/虚拟成员或接口实现将会导致出现异常。如有必要，可将虚拟数据值添加到空构造函数以避免将“null”用作此值的表示形式。</target>
+        <target state="new">The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonVirtualAugmentationOnNullValuedType">
         <source>The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</source>
-        <target state="translated">包含类型可以将“null”用作其空联合用例的表示形式值。此成员将编译为静态成员。</target>
+        <target state="new">The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot1">
         <source>The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</source>
-        <target state="translated">成员“{0}”与只基于名称和参数数目的唯一抽象槽不对应</target>
+        <target state="new">The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</target>
         <note />
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot2">
         <source>. Multiple implemented interfaces have a member with this name and argument count</source>
-        <target state="translated">。多个实现的接口包含具有此名称和参数数目的成员</target>
+        <target state="new">. Multiple implemented interfaces have a member with this name and argument count</target>
         <note />
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot3">
         <source>. Consider implementing interfaces '{0}' and '{1}' explicitly.</source>
-        <target state="translated">。请考虑显式实现接口“{0}”和“{1}”。</target>
+        <target state="new">. Consider implementing interfaces '{0}' and '{1}' explicitly.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot4">
         <source>. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</source>
-        <target state="translated">。可能需要其他类型批注来指示相关重写。可以使用“#nowarn "70"”或“--nowarn:70”禁用此警告。</target>
+        <target state="new">. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</target>
         <note />
       </trans-unit>
       <trans-unit id="Failure1">
         <source>parse error</source>
-        <target state="translated">分析错误</target>
+        <target state="new">parse error</target>
         <note />
       </trans-unit>
       <trans-unit id="Failure2">
         <source>parse error: unexpected end of file</source>
-        <target state="translated">分析错误: 意外的文件尾</target>
+        <target state="new">parse error: unexpected end of file</target>
         <note />
       </trans-unit>
       <trans-unit id="Failure3">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Failure4">
         <source>internal error: {0}</source>
-        <target state="translated">内部错误: {0}</target>
+        <target state="new">internal error: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="FullAbstraction">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="MatchIncomplete1">
         <source>Incomplete pattern matches on this expression.</source>
-        <target state="translated">此表达式中的模式匹配不完整。</target>
+        <target state="new">Incomplete pattern matches on this expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="MatchIncomplete2">
         <source> For example, the value '{0}' may indicate a case not covered by the pattern(s).</source>
-        <target state="translated"> 例如，值“{0}”可以指示模式未涵盖的用例。</target>
+        <target state="new"> For example, the value '{0}' may indicate a case not covered by the pattern(s).</target>
         <note />
       </trans-unit>
       <trans-unit id="MatchIncomplete3">
         <source> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</source>
-        <target state="translated"> 例如，值“{0}”可以指示模式未涵盖的用例。不过，包含“when”子句的模式规则可能会与此值成功匹配。</target>
+        <target state="new"> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</target>
         <note />
       </trans-unit>
       <trans-unit id="MatchIncomplete4">
         <source> Unmatched elements will be ignored.</source>
-        <target state="translated"> 将忽略不匹配的元素。</target>
+        <target state="new"> Unmatched elements will be ignored.</target>
         <note />
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
-        <target state="translated">枚举可能使用已知用例外的值。</target>
+        <target state="new">Enums may take values outside known cases.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
-        <target state="translated">从不与此规则匹配</target>
+        <target state="new">This rule will never be matched</target>
         <note />
       </trans-unit>
       <trans-unit id="ValNotMutable">
         <source>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</source>
-        <target state="translated">此值不是可变的。请考虑使用可变的关键字，如 "let mutable {0} = expression"。</target>
+        <target state="new">This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValNotLocal">
         <source>This value is not local</source>
-        <target state="translated">此值不是本地的</target>
+        <target state="new">This value is not local</target>
         <note />
       </trans-unit>
       <trans-unit id="Obsolete1">
         <source>This construct is deprecated</source>
-        <target state="translated">此构造已弃用</target>
+        <target state="new">This construct is deprecated</target>
         <note />
       </trans-unit>
       <trans-unit id="Obsolete2">
         <source>. {0}</source>
-        <target state="translated">。{0}</target>
+        <target state="new">. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Experimental">
         <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}。可以使用“--nowarn:57”或“#nowarn "57"”禁用此警告。</target>
+        <target state="new">{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="PossibleUnverifiableCode">
         <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="translated">使用此构造可能会导致生成不可验证的 .NET IL 代码。可以使用“--nowarn:9”或“#nowarn "9"”禁用此警告。</target>
+        <target state="new">Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
         <source>This construct is deprecated: {0}</source>
-        <target state="translated">此构造已弃用: {0}</target>
+        <target state="new">This construct is deprecated: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="LibraryUseOnly">
         <source>This construct is deprecated: it is only for use in the F# library</source>
-        <target state="translated">此构造已弃用: 只能在 F# 库中使用此构造</target>
+        <target state="new">This construct is deprecated: it is only for use in the F# library</target>
         <note />
       </trans-unit>
       <trans-unit id="MissingFields">
         <source>The following fields require values: {0}</source>
-        <target state="translated">以下字段需要值: {0}</target>
+        <target state="new">The following fields require values: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。值“{0}”具有泛型类型\n    {1}    \n使“{2}”成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">值限制。已推理出此成员具有泛型类型\n    {0}    \n构造函数和属性 Getter/Setter 不能比封闭类型更通用。    添加类型批注以指示涉及到的确切类型。</target>
+        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n使“{2}”的参数成为显式参数，或添加类型批注(如果您不希望它是泛型的)。</target>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">值限制。已推理出值“{0}”具有泛型类型\n    {1}    \n将“{2}”定义为简单的数据条目，使其成为具有显式参数的函数，或添加类型批注(如果您不希望它是泛型的)。</target>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">
         <source>syntax error</source>
-        <target state="translated">语法错误</target>
+        <target state="new">syntax error</target>
         <note />
       </trans-unit>
       <trans-unit id="ReservedKeyword">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="IndentationProblem">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideInIntrinsicAugmentation">
         <source>Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</source>
-        <target state="translated">扩大中的重写实现现已弃用。应将重写实现作为类型的初始声明的一部分提供。</target>
+        <target state="new">Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="OverrideInExtrinsicAugmentation">
         <source>Override implementations should be given as part of the initial declaration of a type.</source>
-        <target state="translated">应将重写实现作为类型的初始声明的一部分提供。</target>
+        <target state="new">Override implementations should be given as part of the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
         <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">扩大中的接口实现现已弃用。应在类型的初始声明中提供接口实现。</target>
+        <target state="new">Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
         <source>Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">应在类型的初始声明中提供接口实现。</target>
+        <target state="new">Interface implementations should be given on the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnresolvedReferenceNoRange">
         <source>A required assembly reference is missing. You must add a reference to assembly '{0}'.</source>
-        <target state="translated">缺少所需的程序集引用。必须添加对程序集“{0}”的引用。</target>
+        <target state="new">A required assembly reference is missing. You must add a reference to assembly '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnresolvedPathReferenceNoRange">
         <source>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</source>
-        <target state="translated">通过“{0}”引用的类型是在一个未被引用的程序集中定义的。必须添加对程序集“{1}”的引用。</target>
+        <target state="new">The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashIncludeNotAllowedInNonScript">
         <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#I 指令只能出现在 F# 脚本文件(扩展名为 .fsx 或 .fsscript)中。请将此代码添加到脚本文件中、添加此引用的“-I”编译器选项或使用“#if INTERACTIVE”/“#endif”分隔此指令。</target>
+        <target state="new">#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashReferenceNotAllowedInNonScript">
         <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">#r 指令只能出现在 F# 脚本文件(扩展名为 .fsx 或 .fsscript)中。请将此代码移动到脚本文件或使用 "-r" 编译器选项替换此引用。如果该指令作为用户输入执行，则可以使用 "#if INTERACTIVE'/'#endif" 分隔它。</target>
+        <target state="new">#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
         <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">只能在 F# 脚本文件(扩展名为 .fsx 或 .fsscript)中使用此指令。请删除此指令、将此代码移动到脚本文件中或使用“#if INTERACTIVE”/“#endif”分隔此指令。</target>
+        <target state="new">This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="FileNameNotResolved">
         <source>Unable to find the file '{0}' in any of\n {1}</source>
-        <target state="translated">无法在任何 {1} 中找到\n 文件“{0}”</target>
+        <target state="new">Unable to find the file '{0}' in any of\n {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="AssemblyNotResolved">
         <source>Assembly reference '{0}' was not found or is invalid</source>
-        <target state="translated">程序集引用“{0}”未找到或无效</target>
+        <target state="new">Assembly reference '{0}' was not found or is invalid</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues1">
         <source>One or more warnings in loaded file.\n</source>
-        <target state="translated">加载的文件中出现一个或多个警告。\n</target>
+        <target state="new">One or more warnings in loaded file.\n</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues2">
         <source>One or more errors in loaded file.\n</source>
-        <target state="translated">加载的文件中出现一个或多个错误。\n</target>
+        <target state="new">One or more errors in loaded file.\n</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedScriptConsideredSource">
         <source>Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</source>
-        <target state="translated">加载的文件只能是 F# 源文件(扩展名为 .fs)。此 F# 脚本文件(.fsx 或 .fsscript)将被视为一个 F# 源文件</target>
+        <target state="new">Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidInternalsVisibleToAssemblyName1">
         <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</source>
-        <target state="translated">来自 {1} 中的 InternalsVisibleTo 特性的程序集名称“{0}”无效</target>
+        <target state="new">Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidInternalsVisibleToAssemblyName2">
         <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</source>
-        <target state="translated">来自 InternalsVisibleTo 特性的程序集名称“{0}”无效(程序集文件名不可用)</target>
+        <target state="new">Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</target>
         <note />
       </trans-unit>
       <trans-unit id="LoadedSourceNotFoundIgnoring">
         <source>Could not load file '{0}' because it does not exist or is inaccessible</source>
-        <target state="translated">未能加载文件“{0}”，因为该文件不存在或无法访问</target>
+        <target state="new">Could not load file '{0}' because it does not exist or is inaccessible</target>
         <note />
       </trans-unit>
       <trans-unit id="MSBuildReferenceResolutionError">
         <source>{0} (Code={1})</source>
-        <target state="translated">{0} (代码={1})</target>
+        <target state="new">{0} (Code={1})</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
-        <target state="translated">内部错误: {0}</target>
+        <target state="new">internal error: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="translated">符号 "{|"</target>
+        <target state="new">symbol '{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="translated">符号 "|}"</target>
+        <target state="new">symbol '|}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
-        <target state="translated">关键字 "and!"</target>
+        <target state="new">keyword 'and!'</target>
         <note />
       </trans-unit>
     </body>

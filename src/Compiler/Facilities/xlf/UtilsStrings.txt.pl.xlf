@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="buildProductName">
         <source>Microsoft (R) F# Compiler version {0}</source>
-        <target state="translated">Wersja {0} kompilatora języka Microsoft (R) F#</target>
+        <target state="new">Microsoft (R) F# Compiler version {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="translated">{0} dla języka F# {1}</target>
+        <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
     </body>

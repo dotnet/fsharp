@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager 無法參考系統套件 '{0}'</target>
+        <target state="new">PackageManager can not reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="translated">具有最高版本</target>
+        <target state="new">with the highest version</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="translated">逾時 '{0}' 值無效，有效的值: 無、-1 和要等候的整數毫秒</target>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="translated">載入 Nuget 套件</target>
+        <target state="new">Load Nuget Package</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="translated">遺漏逾時值</target>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="translated">未使用</target>
+        <target state="new">Not used</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="translated">{0} 需要值</target>
+        <target state="new">{0} requires a value</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="translated">找不到來源目錄 '{0}'</target>
+        <target state="new">The source directory '{0}' not found</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="translated">解析套件時發生逾時，處理序: '{0}' '{1}'</target>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="translated">無法套用隱含引數號碼 {0}</target>
+        <target state="new">Unable to apply implicit argument number {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="translated">版本</target>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>

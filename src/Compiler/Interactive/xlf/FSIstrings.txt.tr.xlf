@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">F# Etkileşimli’de önceki bir değerlendirmeden '{0}' iç türüne, yöntemine veya alanına erişim kullanım dışıdır ve sonraki erişim hatalarına neden olabilir. İç öğelere erişen tek bir dinamik bütünleştirilmiş kodun eski neslini etkinleştirmek için '--multiemit-' seçeneğini kullanın.</target>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
-        <target state="translated">Paketler aranırken paket kaynağı URI'si ekleyin</target>
+        <target state="new">Include package source uri when searching for packages</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
@@ -19,282 +19,282 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">Birden çok bütünleştirilmiş kod göster (.NET Framework için varsayılan olarak kapalı)</target>
+        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="translated">Önceki hata nedeniyle işlem tamamlanamadı</target>
+        <target state="new">Operation could not be completed due to earlier error</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">İşlem başarısız oldu. Hata metni hata akışında yazdırıldı. İlgili FSharpDiagnostic'i döndürmek için EvalInteractionNonThrowing, EvalScriptNonThrowing veya EvalExpressionNonThrowing kullanın</target>
+        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">Birden çok bütünleştirilmiş kod göster (varsayılan olarak açık)</target>
+        <target state="new">Emit multiple assemblies (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
-        <target state="translated">Hata nedeniyle durduruldu\n</target>
+        <target state="new">Stopped due to error\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Kullanım: {0} &lt;seçenekler&gt; [script.fsx [&lt;bağımsız değişkenler&gt;]]</target>
+        <target state="new">Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">- GİRİŞ DOSYALARI -</target>
+        <target state="new">- INPUT FILES -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="translated">- KOD ÜRETİMİ -</target>
+        <target state="new">- CODE GENERATION -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">- HATALAR VE UYARILAR -</target>
+        <target state="new">- ERRORS AND WARNINGS -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">- DİL -</target>
+        <target state="new">- LANGUAGE -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">- ÇEŞİTLİ -</target>
+        <target state="new">- MISCELLANEOUS -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">
         <source>- ADVANCED -</source>
-        <target state="translated">- GELİŞMİŞ -</target>
+        <target state="new">- ADVANCED -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionRaisedStartingServer">
         <source>Exception raised when starting remoting server.\n{0}</source>
-        <target state="translated">Uzaktan iletişim sunucusu başlatılırken özel durum tetiklendi.\n{0}</target>
+        <target state="new">Exception raised when starting remoting server.\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUse">
         <source>Use the given file on startup as initial input</source>
-        <target state="translated">Verilen dosyayı başlangıçta ilk giriş olarak kullan</target>
+        <target state="new">Use the given file on startup as initial input</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoad">
         <source>#load the given file on startup</source>
-        <target state="translated">#load verilen dosyayı başlangıçta</target>
+        <target state="new">#load the given file on startup</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiRemaining">
         <source>Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</source>
-        <target state="translated">Kalan bağımsız değişkenlere fsi.CommandLineArgs kullanılarak erişilen komut satırı bağımsız değişkenleri gibi davran</target>
+        <target state="new">Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiHelp">
         <source>Display this usage message (Short form: -?)</source>
-        <target state="translated">Bu kullanım iletisini görüntüle (Kısa biçimi: -?)</target>
+        <target state="new">Display this usage message (Short form: -?)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExec">
         <source>Exit fsi after loading the files or running the .fsx script given on the command line</source>
-        <target state="translated">Dosyaları yükledikten veya komut satırında verilen .fsx betiğini çalıştırdıktan sonra fsi'den çık</target>
+        <target state="new">Exit fsi after loading the files or running the .fsx script given on the command line</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
         <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">Etkileşimleri Windows Forms olay döngüsünde yürüt (varsayılan seçenek olarak açık)</target>
+        <target state="new">Execute interactions on a Windows Forms event loop (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
         <source>Suppress fsi writing to stdout</source>
-        <target state="translated">stdout yazdırırken fsi'yi gizle</target>
+        <target state="new">Suppress fsi writing to stdout</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
         <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">Konsolda SEKME ile tamamlamayı destekle (varsayılan seçenek olarak açık)</target>
+        <target state="new">Support TAB completion in console (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
         <source>Emit debug information in quotations</source>
-        <target state="translated">Tırnak içindeki hata ayıklama bilgilerini yay</target>
+        <target state="new">Emit debug information in quotations</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
         <source>For help type #help;;</source>
-        <target state="translated">Yardım için #help yazın;;</target>
+        <target state="new">For help type #help;;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Interactive işlemi başlatılırken br sorun oluştu. Bu, bazı Windows sistemlerinde Unicode etkin uygulamalar için arka planda işleme konsol desteğiyle ilgili bilinen bir sorundan kaynaklanıyor olabilir. Araçlar-&gt;Seçenekler-&gt;Visual Studio için F# Interactive seçeneğini belirleyip '--fsi-server-no-unicode' komutunu girmeyi deneyin.</target>
+        <target state="new">A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
         <source>'{0}' is not a valid assembly name</source>
-        <target state="translated">'{0}' geçerli bir bütünleştirilmiş kod adı değil</target>
+        <target state="new">'{0}' is not a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDirectoryDoesNotExist">
         <source>Directory '{0}' doesn't exist</source>
-        <target state="translated">'{0}' dizini yok</target>
+        <target state="new">Directory '{0}' doesn't exist</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
-        <target state="translated">Uyarı: satır çok uzun, bazı karakterler yok sayılıyor\n</target>
+        <target state="new">Warning: line too long, ignoring some characters\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoMainString">
         <source>Real: {0}, CPU: {1}, GC {2}</source>
-        <target state="translated">Gerçek: {0}, CPU: {1}, GC {2}</target>
+        <target state="new">Real: {0}, CPU: {1}, GC {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration">
         <source>gen</source>
-        <target state="translated">olş</target>
+        <target state="new">gen</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nDüzgün yazdırma sırasında özel durum tetiklendi.\nDüzeltilebilmesi için lütfen bunu bildirin.\nİz: {0}\n</target>
+        <target state="new">\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# Etkileşimli yönergeleri:</target>
+        <target state="new">  F# Interactive directives:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
         <source>Reference (dynamically load) the given DLL</source>
-        <target state="translated">Verilen DLL'ye başvur (dinamik olarak yükle)</target>
+        <target state="new">Reference (dynamically load) the given DLL</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashIInfo">
         <source>Add the given search path for referenced DLLs</source>
-        <target state="translated">Başvurulan DLL'ler için verilen arama yolunu ekle</target>
+        <target state="new">Add the given search path for referenced DLLs</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashloadInfo">
         <source>Load the given file(s) as if compiled and referenced</source>
-        <target state="translated">Verilen dosyaları derlenmiş ve başvurulmuş gibi yükle</target>
+        <target state="new">Load the given file(s) as if compiled and referenced</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashtimeInfo">
         <source>Toggle timing on/off</source>
-        <target state="translated">Zamanlamayı aç/kapat</target>
+        <target state="new">Toggle timing on/off</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashhelpInfo">
         <source>Display help</source>
-        <target state="translated">Yardımı göster</target>
+        <target state="new">Display help</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashquitInfo">
         <source>Exit</source>
-        <target state="translated">Çıkış</target>
+        <target state="new">Exit</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# Etkileşimli komut satırı seçenekleri:</target>
+        <target state="new">  F# Interactive command line options:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
         <source>      See '{0}' for options</source>
-        <target state="translated">      Seçenekler için bkz. '{0}'</target>
+        <target state="new">      See '{0}' for options</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoadingFilesPrefixText">
         <source>Loading</source>
-        <target state="translated">Yükleniyor</target>
+        <target state="new">Loading</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInterrupt">
         <source>\n- Interrupt\n</source>
-        <target state="translated">\n- Kesme\n</target>
+        <target state="new">\n- Interrupt\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExit">
         <source>\n- Exit...\n</source>
-        <target state="translated">\n- Çıkış...\n</target>
+        <target state="new">\n- Exit...\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="translated">- Ana iş parçacığı iptal ediliyor...</target>
+        <target state="new">- Aborting main thread...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">
         <source>Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</source>
-        <target state="translated">ctrl-c işleyicisi yüklenemedi - Ctrl-C işlemi kullanılamayacak. Hata:\n\t{0}</target>
+        <target state="new">Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Başvurulan '{0}'</target>
+        <target state="new">--&gt; Referenced '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Başvurulan '{0}' (dosya F# Interactive işlemi tarafından kilitlenmiş olabilir)</target>
+        <target state="new">--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Başvurulan '{0}' (bu konumdan farklı bir zaman damgasına sahip bir derlemeye zaten başvurulmuş, güncelleştirilmiş derlemeyi yüklemek için fsi'yi sıfırlayın)</target>
+        <target state="new">--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; '{0}', kitaplık ekleme yoluna eklendi</target>
+        <target state="new">--&gt; Added '{0}' to library include path</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Zamanlama açıldı</target>
+        <target state="new">--&gt; Timing now on</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Zamanlama kapatıldı</target>
+        <target state="new">--&gt; Timing now off</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
         <source>- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</source>
-        <target state="translated">- Olay işlenirken beklenmeyen ThreadAbortException (Ctrl-C): Yeniden başlatma deneniyor...</target>
+        <target state="new">- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiFailedToResolveAssembly">
         <source>Failed to resolve assembly '{0}'</source>
-        <target state="translated">'{0}' bütünleştirilmiş kodu çözümlenemedi</target>
+        <target state="new">Failed to resolve assembly '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBindingSessionTo">
         <source>Binding session to '{0}'...</source>
-        <target state="translated">Oturum '{0}' öğesine bağlanıyor...</target>
+        <target state="new">Binding session to '{0}'...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Etkileşimli sürüm {0}</target>
+        <target state="new">Microsoft (R) F# Interactive version {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0} için F# Etkileşimli</target>
+        <target state="new">F# Interactive for F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">Başvuruların F# Etkileşimli işlemi tarafından kilitlenmesini engeller</target>
+        <target state="new">Prevents references from being locked by the F# Interactive process</target>
         <note />
       </trans-unit>
     </body>

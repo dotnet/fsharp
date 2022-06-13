@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="translated">F# 대화형의 이전 평가에서 내부 형식, 메서드 또는 필드 '{0}'에 액세스하는 것은 더 이상 사용되지 않으며 후속 액세스 오류가 발생할 수 있습니다. 내부에 액세스할 수 있는 단일 동적 어셈블리의 레거시 생성을 사용하도록 설정하려면 '--multiemit-' 옵션을 사용합니다.</target>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
-        <target state="translated">패키지를 검색할 때 패키지 원본 URI 포함</target>
+        <target state="new">Include package source uri when searching for packages</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
@@ -19,282 +19,282 @@
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="translated">여러 어셈블리 내보내기(기본적으로 .NET Framework 해제)</target>
+        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="translated">이전 오류로 인해 작업을 완료할 수 없습니다.</target>
+        <target state="new">Operation could not be completed due to earlier error</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">작업이 실패했습니다. 오류 텍스트가 오류 스트림에 출력되었습니다. 해당 FSharpDiagnostic을 반환하려면 EvalInteractionNonThrowing, EvalScriptNonThrowing 또는 EvalExpressionNonThrowing을 사용하세요.</target>
+        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="translated">여러 어셈블리 내보내기(기본적으로 켜져 있음)</target>
+        <target state="new">Emit multiple assemblies (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
-        <target state="translated">오류 때문에 중지되었습니다.\n</target>
+        <target state="new">Stopped due to error\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">사용법: {0} &lt;옵션&gt; [script.fsx [&lt;인수&gt;]]</target>
+        <target state="new">Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="translated">- 입력 파일 -</target>
+        <target state="new">- INPUT FILES -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="translated">- 코드 생성 -</target>
+        <target state="new">- CODE GENERATION -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="translated">- 오류 및 경고 -</target>
+        <target state="new">- ERRORS AND WARNINGS -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="translated">- 언어 -</target>
+        <target state="new">- LANGUAGE -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="translated">- 기타 -</target>
+        <target state="new">- MISCELLANEOUS -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">
         <source>- ADVANCED -</source>
-        <target state="translated">- 고급 -</target>
+        <target state="new">- ADVANCED -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionRaisedStartingServer">
         <source>Exception raised when starting remoting server.\n{0}</source>
-        <target state="translated">원격 서버를 시작하는 동안 예외가 발생했습니다.\n{0}</target>
+        <target state="new">Exception raised when starting remoting server.\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUse">
         <source>Use the given file on startup as initial input</source>
-        <target state="translated">시작 시 지정된 파일을 초기 입력으로 사용합니다.</target>
+        <target state="new">Use the given file on startup as initial input</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoad">
         <source>#load the given file on startup</source>
-        <target state="translated">#load: 시작할 때 지정된 파일을 로드합니다.</target>
+        <target state="new">#load the given file on startup</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiRemaining">
         <source>Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</source>
-        <target state="translated">나머지 인수를 fsi.CommandLineArgs를 사용하여 액세스하는 명령줄 인수로 처리합니다.</target>
+        <target state="new">Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiHelp">
         <source>Display this usage message (Short form: -?)</source>
-        <target state="translated">이 사용법 메시지를 표시합니다(약식: -?).</target>
+        <target state="new">Display this usage message (Short form: -?)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExec">
         <source>Exit fsi after loading the files or running the .fsx script given on the command line</source>
-        <target state="translated">파일을 로드한 후 또는 명령줄에 지정된 .fsx 스크립트를 실행한 후 fsi를 종료하세요.</target>
+        <target state="new">Exit fsi after loading the files or running the .fsx script given on the command line</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
         <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="translated">Windows Forms 이벤트 루프에서 상호 작용을 실행합니다(기본값: 설정).</target>
+        <target state="new">Execute interactions on a Windows Forms event loop (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
         <source>Suppress fsi writing to stdout</source>
-        <target state="translated">fsi에서 stdout에 쓰지 않습니다.</target>
+        <target state="new">Suppress fsi writing to stdout</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
         <source>Support TAB completion in console (on by default)</source>
-        <target state="translated">콘솔에서 Tab 키 완성 기능을 지원합니다(기본값: 설정).</target>
+        <target state="new">Support TAB completion in console (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
         <source>Emit debug information in quotations</source>
-        <target state="translated">인용구의 디버그 정보를 내보냅니다.</target>
+        <target state="new">Emit debug information in quotations</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
         <source>For help type #help;;</source>
-        <target state="translated">도움말을 보려면 #help;;를 입력하세요.</target>
+        <target state="new">For help type #help;;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Interactive 프로세스를 시작하는 동안 문제가 발생했습니다. 일부 Windows 시스템의 유니코드 기반 애플리케이션에 대한 백그라운드 프로세스 콘솔 지원과 관련된 알려진 문제가 원인일 수 있습니다. [도구]&gt;[옵션]-&gt;[F# Interactive for Visual Studio]를 선택하고 '--fsi-server-no-unicode'를 입력해 보세요.</target>
+        <target state="new">A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
         <source>'{0}' is not a valid assembly name</source>
-        <target state="translated">'{0}'은(는) 올바른 어셈블리 이름이 아닙니다.</target>
+        <target state="new">'{0}' is not a valid assembly name</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDirectoryDoesNotExist">
         <source>Directory '{0}' doesn't exist</source>
-        <target state="translated">'{0}' 디렉터리가 없습니다.</target>
+        <target state="new">Directory '{0}' doesn't exist</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
-        <target state="translated">경고: 줄이 너무 길어 일부 문자가 무시됩니다.\n</target>
+        <target state="new">Warning: line too long, ignoring some characters\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoMainString">
         <source>Real: {0}, CPU: {1}, GC {2}</source>
-        <target state="translated">실제: {0}, CPU: {1}, GC {2}</target>
+        <target state="new">Real: {0}, CPU: {1}, GC {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration">
         <source>gen</source>
-        <target state="translated">gen</target>
+        <target state="new">gen</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\n자동 서식 지정 중 예외가 발생했습니다.\n문제를 해결할 수 있도록 보고하세요.\n추적: {0}\n</target>
+        <target state="new">\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">  F# 대화형 지시문:</target>
+        <target state="new">  F# Interactive directives:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
         <source>Reference (dynamically load) the given DLL</source>
-        <target state="translated">지정된 DLL을 참조(동적 로드)합니다.</target>
+        <target state="new">Reference (dynamically load) the given DLL</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashIInfo">
         <source>Add the given search path for referenced DLLs</source>
-        <target state="translated">참조된 DLL에 대해 지정된 검색 경로를 추가합니다.</target>
+        <target state="new">Add the given search path for referenced DLLs</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashloadInfo">
         <source>Load the given file(s) as if compiled and referenced</source>
-        <target state="translated">지정된 파일이 컴파일되고 참조된 것으로 간주하여 해당 파일을 로드합니다.</target>
+        <target state="new">Load the given file(s) as if compiled and referenced</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashtimeInfo">
         <source>Toggle timing on/off</source>
-        <target state="translated">타이밍을 설정/해제합니다.</target>
+        <target state="new">Toggle timing on/off</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashhelpInfo">
         <source>Display help</source>
-        <target state="translated">도움말을 표시합니다.</target>
+        <target state="new">Display help</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashquitInfo">
         <source>Exit</source>
-        <target state="translated">끝내기</target>
+        <target state="new">Exit</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">  F# Interactive 명령줄 옵션:</target>
+        <target state="new">  F# Interactive command line options:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
         <source>      See '{0}' for options</source>
-        <target state="translated">      옵션에 대해서는 '{0}'을(를) 참조하세요.</target>
+        <target state="new">      See '{0}' for options</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoadingFilesPrefixText">
         <source>Loading</source>
-        <target state="translated">로드</target>
+        <target state="new">Loading</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInterrupt">
         <source>\n- Interrupt\n</source>
-        <target state="translated">\n- 중단\n</target>
+        <target state="new">\n- Interrupt\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExit">
         <source>\n- Exit...\n</source>
-        <target state="translated">\n- 끝내기...\n</target>
+        <target state="new">\n- Exit...\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="translated">- 주 스레드를 중단하는 중...</target>
+        <target state="new">- Aborting main thread...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">
         <source>Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</source>
-        <target state="translated">Ctrl-C 처리기를 설치하지 못했습니다. Ctrl-C 처리를 사용할 수 없습니다. 오류는 다음과 같습니다.\n\t{0}</target>
+        <target state="new">Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}'을(를) 참조함</target>
+        <target state="new">--&gt; Referenced '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; 참조된 '{0}'(파일이 F# Interactive 프로세스에 의해 잠겼을 수 있음)</target>
+        <target state="new">--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; '{0}'을(를) 참조함(다른 타임스탬프가 있는 어셈블리가 이미 이 위치에서 참조되었습니다. fsi를 다시 설정하여 업데이트된 어셈블리를 로드하세요.)</target>
+        <target state="new">--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; 라이브러리 포함 경로에 '{0}'을(를) 추가함</target>
+        <target state="new">--&gt; Added '{0}' to library include path</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; 지금 타이밍 켜기</target>
+        <target state="new">--&gt; Timing now on</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; 지금 타이밍 끄기</target>
+        <target state="new">--&gt; Timing now off</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
         <source>- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</source>
-        <target state="translated">- 이벤트를 처리하는 동안 예기치 않은 ThreadAbortException(Ctrl-C)이 발생했습니다. 다시 시작합니다...</target>
+        <target state="new">- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiFailedToResolveAssembly">
         <source>Failed to resolve assembly '{0}'</source>
-        <target state="translated">어셈블리 '{0}'을(를) 확인하지 못했습니다.</target>
+        <target state="new">Failed to resolve assembly '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBindingSessionTo">
         <source>Binding session to '{0}'...</source>
-        <target state="translated">세션을 '{0}'에 바인딩하는 중...</target>
+        <target state="new">Binding session to '{0}'...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="translated">Microsoft (R) F# Interactive 버전 {0}</target>
+        <target state="new">Microsoft (R) F# Interactive version {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="translated">F# {0}에 대한 F# 대화형</target>
+        <target state="new">F# Interactive for F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="translated">참조가 F# 대화형 프로세스에 의해 잠기지 않도록 합니다.</target>
+        <target state="new">Prevents references from being locked by the F# Interactive process</target>
         <note />
       </trans-unit>
     </body>

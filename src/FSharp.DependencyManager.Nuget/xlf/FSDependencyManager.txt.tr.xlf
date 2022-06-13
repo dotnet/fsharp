@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager, '{0}' Sistem Paketine başvuramıyor</target>
+        <target state="new">PackageManager can not reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="translated">en yüksek sürümle</target>
+        <target state="new">with the highest version</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="translated">Zaman aşımı için '{0}' değeri geçersiz, geçerli değerler: none, -1 ve tamsayı milisaniye cinsinden bekleme süresi</target>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="translated">NuGet Paketini Yükle</target>
+        <target state="new">Load Nuget Package</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="translated">Zaman aşımı için değer eksik</target>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="translated">Kullanılmıyor</target>
+        <target state="new">Not used</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="translated">{0}, bir değer gerektiriyor</target>
+        <target state="new">{0} requires a value</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="translated">'{0}' kaynak dizini bulunamadı</target>
+        <target state="new">The source directory '{0}' not found</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="translated">Paketler çözümlenirken zaman aşımı gerçekleşti, işlem: '{0}' '{1}'</target>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="translated">Örtük bağımsız değişken sayısı ({0}) uygulanamıyor</target>
+        <target state="new">Unable to apply implicit argument number {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="translated">sürüm</target>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>

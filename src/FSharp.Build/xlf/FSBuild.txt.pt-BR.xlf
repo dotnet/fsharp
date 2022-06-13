@@ -4,27 +4,27 @@
     <body>
       <trans-unit id="mapSourceRootsContainsDuplicate">
         <source>SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</source>
-        <target state="translated">O SourceRoot contém itens duplicados '{0}' com metadados conflitantes '{1}': '{2}' e '{3}'</target>
+        <target state="new">SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
         <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="translated">Valor de SourceRoot.ContainingRoot não foi encontrado em itens SourceRoot ou o item correspondente não é uma raiz de origem de nível superior: '{0}'</target>
+        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
         <source>SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</source>
-        <target state="translated">Os itens SourceRoot precisarão incluir pelo menos um item de nível superior (não aninhado) quando DeterministicSourcePaths for true</target>
+        <target state="new">SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsPathMustEndWithSlashOrBackslash">
         <source>SourceRoot paths are required to end with a slash or backslash: '{0}'</source>
-        <target state="translated">Os caminhos SourceRoot precisam terminar com uma barra ou uma barra invertida: '{0}'</target>
+        <target state="new">SourceRoot paths are required to end with a slash or backslash: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="translated">ToolPath desconhecido. Especifique o caminho para a ferramenta.</target>
+        <target state="new">ToolPath is unknown; specify the path to the tool.</target>
         <note />
       </trans-unit>
     </body>

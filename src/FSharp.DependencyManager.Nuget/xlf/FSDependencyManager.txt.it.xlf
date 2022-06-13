@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="translated">PackageManager non può fare riferimento al pacchetto di sistema '{0}'</target>
+        <target state="new">PackageManager can not reference the System Package '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="translated">con la versione massima</target>
+        <target state="new">with the highest version</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="translated">Valore non valido per il timeout '{0}'. I valori validi sono: nessuno, -1 e numeri interi per i millisecondi di attesa</target>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="translated">Carica pacchetto NuGet</target>
+        <target state="new">Load Nuget Package</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="translated">Manca il valore per il timeout</target>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="translated">Non usato</target>
+        <target state="new">Not used</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="translated">Con {0} è richiesto un valore</target>
+        <target state="new">{0} requires a value</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="translated">La directory di origine '{0}' non è stata trovata</target>
+        <target state="new">The source directory '{0}' not found</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="translated">Timeout durante la risoluzione dei pacchetti. Processo: '{0}' '{1}'</target>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="translated">Non è possibile applicare il numero di argomento implicito {0}</target>
+        <target state="new">Unable to apply implicit argument number {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="translated">versione</target>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>
