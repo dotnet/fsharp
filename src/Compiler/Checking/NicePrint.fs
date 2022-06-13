@@ -2246,8 +2246,12 @@ module InferredSigPrinting =
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
             let outerPath = mspec.CompilationPath.AccessPath
 
-            let denv = denv.AddOpenPath (List.map fst innerPath) 
-            if mspec.IsNamespace then
+            let denv = denv.AddOpenPath (List.map fst innerPath)
+            let isNamespace =
+                match mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind with
+                | Namespace false -> false
+                | _ -> mspec.IsNamespace
+            if isNamespace then
                 let basic = imdefL denv def
                 let basicL =
                     // Check if this namespace contains anything interesting
