@@ -1859,7 +1859,9 @@ classDefnMemberGetSetElement:
            let mPat = rhs parseState 3
            mkFileIndexRange mPat.FileIndex mPat.Start (mkPos mPat.StartLine (mPat.StartColumn + 3))
      
-       match fst $3 with
+       let pat, mPat = $3
+     
+       match pat with
        | NoGetSetWord ->
            raiseParseErrorAt mGetSet (FSComp.SR.parsGetAndOrSetRequired())
        | GetOrSetWithoutArgument gs ->
@@ -1869,7 +1871,7 @@ classDefnMemberGetSetElement:
 
        let attrs = $2 |> List.map (fun attrList -> { attrList with Attributes = attrList.Attributes |> List.map (fun a -> { a with AppliesToGetterAndSetter = true } ) })
        let mEquals = rhs parseState 4
-       let m = rhs2 parseState 1 6
+       let m = unionRanges mPat $6.Range
        let trivia: SynMemberDefnPropertyInfoTrivia = { GetSetRange = mGetSet; EqualsRange = mEquals }
        { IsInline = $1
          Attributes = attrs
