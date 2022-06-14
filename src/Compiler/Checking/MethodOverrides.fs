@@ -917,10 +917,15 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
            && not tycon.IsFSharpDelegateTycon then 
 
             DispatchSlotChecking.CheckImplementationRelationAtEndOfInferenceScope (infoReader, denv, nenv, sink, tycon, isImplementation) 
-    
+
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
 let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags) =
+
+    if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
+        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption bindm
+        checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption bindm
+
     let minfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
@@ -929,7 +934,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
     let topValSynArities = SynInfo.AritiesOfArgs valSynData
-    
+
     // We only return everything if it's empty or if it's a non-instance member.
     // If it's an instance member, we are getting rid of `this` (by only taking tail).
     let topValSynArities =
@@ -938,7 +943,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         else
             topValSynArities.Tail
     let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
-    dispatchSlots, dispatchSlotsArityMatch 
+    dispatchSlots, dispatchSlotsArityMatch
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 

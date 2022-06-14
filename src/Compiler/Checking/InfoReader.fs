@@ -695,10 +695,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     let isRuntimeFeatureDefaultImplementationsOfInterfacesSupported =
         lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
-                                            
+
+    let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
+        lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
+
     member _.g = g
     member _.amap = amap
-    
+
     /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
     member _.GetRawIntrinsicMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
         methodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
@@ -759,6 +762,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         match langFeature with
         // Both default and static interface method consumption features are tied to the runtime support of DIMs.
         | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        | LanguageFeature.VirtualStaticsInInterfaces -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
         | _ -> true
             
     /// Get the declared constructors of any F# type

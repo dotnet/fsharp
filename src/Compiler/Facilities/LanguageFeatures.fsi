@@ -39,6 +39,7 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
+    | VirtualStaticsInInterfaces
 
 /// LanguageVersion management
 type LanguageVersion =
