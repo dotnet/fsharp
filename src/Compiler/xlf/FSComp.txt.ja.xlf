@@ -857,6 +857,11 @@
         <target state="translated">統合している可能性があるため、'{1}' と '{2}' の 2 つのインスタンス化を含むインターフェイス '{0}' を実装することはできません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</source>
+        <target state="new">A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">型 '{0}' は、フィールド、コンストラクター、またはメンバー '{1}' を定義していません。</target>

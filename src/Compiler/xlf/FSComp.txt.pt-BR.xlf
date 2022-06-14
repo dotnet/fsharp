@@ -857,6 +857,11 @@
         <target state="translated">Não é possível implementar a interface '{0}' com as duas instanciações '{1}' e '{2}' porque talvez elas sejam unificadas.</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</source>
+        <target state="new">A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">O tipo '{0}' não define o campo, o construtor ou o membro '{1}'.</target>

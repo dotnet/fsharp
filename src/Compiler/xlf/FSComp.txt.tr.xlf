@@ -857,6 +857,11 @@
         <target state="translated">'{1}' ve '{2}' örnek oluşturmaları birleşebileceğinden '{0}' arabirimini bunlarla birlikte uygulayamazsınız.</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNeverRefinedAwayFromTop">
+        <source>A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</source>
+        <target state="new">A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">'{0}' türü; alanı, oluşturucuyu veya '{1}' üyesini tanımlamıyor.</target>
