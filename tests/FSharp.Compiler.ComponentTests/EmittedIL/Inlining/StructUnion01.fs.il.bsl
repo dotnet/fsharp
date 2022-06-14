@@ -4,10 +4,10 @@
 
 
 // Metadata version: v4.0.30319
-.assembly extern mscorlib
+.assembly extern System.Runtime
 {
-  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )                         // .z\V.4..
-  .ver 4:0:0:0
+  .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+  .ver 6:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -21,59 +21,59 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.StructUnion01
 {
-  // Offset: 0x00000000 Length: 0x000008BD
+  // Offset: 0x00000000 Length: 0x000008B3
   // WARNING: managed resource file FSharpSignatureData.StructUnion01 created
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
-  // Offset: 0x000008C8 Length: 0x00000421
+  // Offset: 0x000008B8 Length: 0x0000042D
   // WARNING: managed resource file FSharpOptimizationData.StructUnion01 created
 }
 .module StructUnion01.exe
-// MVID: {624E944C-488D-8510-A745-03834C944E62}
+// MVID: {628F4C90-26FB-FE0F-A745-0383904C8F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03BD0000
+// Image base: 0x0000021459770000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
 .class public abstract auto ansi sealed StructUnion01
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .class sequential autochar serializable sealed nested public beforefieldinit U
-         extends [mscorlib]System.ValueType
-         implements class [mscorlib]System.IEquatable`1<valuetype StructUnion01/U>,
-                    [mscorlib]System.Collections.IStructuralEquatable,
-                    class [mscorlib]System.IComparable`1<valuetype StructUnion01/U>,
-                    [mscorlib]System.IComparable,
-                    [mscorlib]System.Collections.IStructuralComparable
+         extends [System.Runtime]System.ValueType
+         implements class [System.Runtime]System.IEquatable`1<valuetype StructUnion01/U>,
+                    [System.Runtime]System.Collections.IStructuralEquatable,
+                    class [System.Runtime]System.IComparable`1<valuetype StructUnion01/U>,
+                    [System.Runtime]System.IComparable,
+                    [System.Runtime]System.Collections.IStructuralComparable
   {
     .pack 0
     .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   // ...{__DebugDispl
-                                                                                                   61 79 28 29 2C 6E 71 7D 00 00 )                   // ay(),nq}..
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   // ...{__DebugDispl
+                                                                                                         61 79 28 29 2C 6E 71 7D 00 00 )                   // ay(),nq}..
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 01 00 00 00 00 00 ) 
     .field assembly int32 item1
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .field assembly int32 item2
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method public static valuetype StructUnion01/U 
             NewU(int32 item1,
                  int32 item2) cil managed
@@ -93,8 +93,8 @@
             instance void  .ctor(int32 item1,
                                  int32 item2) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       15 (0xf)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -109,8 +109,8 @@
     .method public hidebysig instance int32 
             get_Item1() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -121,8 +121,8 @@
     .method public hidebysig instance int32 
             get_Item2() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -133,8 +133,8 @@
     .method public hidebysig instance int32 
             get_Tag() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       4 (0x4)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -146,8 +146,8 @@
     .method assembly hidebysig specialname 
             instance object  __DebugDisplay() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       27 (0x1b)
       .maxstack  8
       IL_0000:  ldstr      "%+0.8A"
@@ -162,7 +162,7 @@
     .method public strict virtual instance string 
             ToString() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       27 (0x1b)
       .maxstack  8
       IL_0000:  ldstr      "%+A"
@@ -177,16 +177,16 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(valuetype StructUnion01/U obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       81 (0x51)
-      .maxstack  4
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       76 (0x4c)
+      .maxstack  5
       .locals init (int32 V_0,
-               class [mscorlib]System.Collections.IComparer V_1,
+               class [System.Runtime]System.Collections.IComparer V_1,
                int32 V_2,
                int32 V_3)
       IL_0000:  ldarg.0
       IL_0001:  pop
-      IL_0002:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0002:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
       IL_0007:  stloc.1
       IL_0008:  ldarg.0
       IL_0009:  ldfld      int32 StructUnion01/U::item1
@@ -196,56 +196,48 @@
       IL_0016:  stloc.3
       IL_0017:  ldloc.2
       IL_0018:  ldloc.3
-      IL_0019:  bge.s      IL_001f
+      IL_0019:  cgt
+      IL_001b:  ldloc.2
+      IL_001c:  ldloc.3
+      IL_001d:  clt
+      IL_001f:  sub
+      IL_0020:  stloc.0
+      IL_0021:  ldloc.0
+      IL_0022:  ldc.i4.0
+      IL_0023:  bge.s      IL_0027
 
-      IL_001b:  ldc.i4.m1
-      IL_001c:  nop
-      IL_001d:  br.s       IL_0024
-
-      IL_001f:  ldloc.2
-      IL_0020:  ldloc.3
-      IL_0021:  cgt
-      IL_0023:  nop
-      IL_0024:  stloc.0
       IL_0025:  ldloc.0
-      IL_0026:  ldc.i4.0
-      IL_0027:  bge.s      IL_002b
+      IL_0026:  ret
 
-      IL_0029:  ldloc.0
-      IL_002a:  ret
+      IL_0027:  ldloc.0
+      IL_0028:  ldc.i4.0
+      IL_0029:  ble.s      IL_002d
 
       IL_002b:  ldloc.0
-      IL_002c:  ldc.i4.0
-      IL_002d:  ble.s      IL_0031
+      IL_002c:  ret
 
-      IL_002f:  ldloc.0
-      IL_0030:  ret
-
-      IL_0031:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0036:  stloc.1
-      IL_0037:  ldarg.0
-      IL_0038:  ldfld      int32 StructUnion01/U::item2
-      IL_003d:  stloc.2
-      IL_003e:  ldarga.s   obj
-      IL_0040:  ldfld      int32 StructUnion01/U::item2
-      IL_0045:  stloc.3
+      IL_002d:  call       class [System.Runtime]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0032:  stloc.1
+      IL_0033:  ldarg.0
+      IL_0034:  ldfld      int32 StructUnion01/U::item2
+      IL_0039:  stloc.2
+      IL_003a:  ldarga.s   obj
+      IL_003c:  ldfld      int32 StructUnion01/U::item2
+      IL_0041:  stloc.3
+      IL_0042:  ldloc.2
+      IL_0043:  ldloc.3
+      IL_0044:  cgt
       IL_0046:  ldloc.2
       IL_0047:  ldloc.3
-      IL_0048:  bge.s      IL_004c
-
-      IL_004a:  ldc.i4.m1
+      IL_0048:  clt
+      IL_004a:  sub
       IL_004b:  ret
-
-      IL_004c:  ldloc.2
-      IL_004d:  ldloc.3
-      IL_004e:  cgt
-      IL_0050:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -257,11 +249,11 @@
 
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj,
-                                      class [mscorlib]System.Collections.IComparer comp) cil managed
+                                      class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       76 (0x4c)
-      .maxstack  4
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       71 (0x47)
+      .maxstack  5
       .locals init (valuetype StructUnion01/U V_0,
                int32 V_1,
                int32 V_2,
@@ -279,54 +271,46 @@
       IL_0017:  stloc.3
       IL_0018:  ldloc.2
       IL_0019:  ldloc.3
-      IL_001a:  bge.s      IL_0020
+      IL_001a:  cgt
+      IL_001c:  ldloc.2
+      IL_001d:  ldloc.3
+      IL_001e:  clt
+      IL_0020:  sub
+      IL_0021:  stloc.1
+      IL_0022:  ldloc.1
+      IL_0023:  ldc.i4.0
+      IL_0024:  bge.s      IL_0028
 
-      IL_001c:  ldc.i4.m1
-      IL_001d:  nop
-      IL_001e:  br.s       IL_0025
-
-      IL_0020:  ldloc.2
-      IL_0021:  ldloc.3
-      IL_0022:  cgt
-      IL_0024:  nop
-      IL_0025:  stloc.1
       IL_0026:  ldloc.1
-      IL_0027:  ldc.i4.0
-      IL_0028:  bge.s      IL_002c
+      IL_0027:  ret
 
-      IL_002a:  ldloc.1
-      IL_002b:  ret
+      IL_0028:  ldloc.1
+      IL_0029:  ldc.i4.0
+      IL_002a:  ble.s      IL_002e
 
       IL_002c:  ldloc.1
-      IL_002d:  ldc.i4.0
-      IL_002e:  ble.s      IL_0032
+      IL_002d:  ret
 
-      IL_0030:  ldloc.1
-      IL_0031:  ret
-
-      IL_0032:  ldarg.0
-      IL_0033:  ldfld      int32 StructUnion01/U::item2
-      IL_0038:  stloc.2
-      IL_0039:  ldloca.s   V_0
-      IL_003b:  ldfld      int32 StructUnion01/U::item2
-      IL_0040:  stloc.3
+      IL_002e:  ldarg.0
+      IL_002f:  ldfld      int32 StructUnion01/U::item2
+      IL_0034:  stloc.2
+      IL_0035:  ldloca.s   V_0
+      IL_0037:  ldfld      int32 StructUnion01/U::item2
+      IL_003c:  stloc.3
+      IL_003d:  ldloc.2
+      IL_003e:  ldloc.3
+      IL_003f:  cgt
       IL_0041:  ldloc.2
       IL_0042:  ldloc.3
-      IL_0043:  bge.s      IL_0047
-
-      IL_0045:  ldc.i4.m1
+      IL_0043:  clt
+      IL_0045:  sub
       IL_0046:  ret
-
-      IL_0047:  ldloc.2
-      IL_0048:  ldloc.3
-      IL_0049:  cgt
-      IL_004b:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
-            instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+            instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       50 (0x32)
       .maxstack  7
       .locals init (int32 V_0)
@@ -369,20 +353,20 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0006:  call       instance int32 StructUnion01/U::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0001:  call       class [System.Runtime]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
+      IL_0006:  call       instance int32 StructUnion01/U::GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer)
       IL_000b:  ret
     } // end of method U::GetHashCode
 
     .method public hidebysig virtual final 
             instance bool  Equals(object obj,
-                                  class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
+                                  class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       52 (0x34)
       .maxstack  4
       .locals init (valuetype StructUnion01/U V_0)
@@ -418,7 +402,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(valuetype StructUnion01/U obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       35 (0x23)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -443,7 +427,7 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       23 (0x17)
       .maxstack  8
       IL_0000:  ldarg.1
@@ -462,9 +446,9 @@
 
     .property instance int32 Tag()
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .get instance int32 StructUnion01/U::get_Tag()
     } // end of property U::Tag
     .property instance int32 Item1()
@@ -472,8 +456,8 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance int32 StructUnion01/U::get_Item1()
     } // end of property U::Item1
     .property instance int32 Item2()
@@ -481,8 +465,8 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32,
                                                                                                   int32) = ( 01 00 04 00 00 00 00 00 00 00 01 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       .get instance int32 StructUnion01/U::get_Item2()
     } // end of property U::Item2
   } // end of class U
@@ -735,7 +719,7 @@
 } // end of class StructUnion01
 
 .class private abstract auto ansi sealed '<StartupCode$StructUnion01>'.$StructUnion01
-       extends [mscorlib]System.Object
+       extends [System.Runtime]System.Object
 {
   .method public static void  main@() cil managed
   {
@@ -751,4 +735,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\Inlining\StructUnion01_fs\StructUnion01.res
+// WARNING: Created Win32 resource file C:\dev\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\Inlining\StructUnion01_fs\StructUnion01.res
