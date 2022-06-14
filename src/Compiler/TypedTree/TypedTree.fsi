@@ -301,7 +301,10 @@ type ModuleOrNamespaceKind =
     | ModuleOrType
 
     /// Indicates that a 'module' is really a namespace
-    | Namespace of isExplicit: bool
+    | Namespace of
+        /// Indicates that the sourcecode had a namespace.
+        /// If false, this namespace was implicitly constructed during type checking.
+        isExplicit: bool
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -640,6 +643,9 @@ type Entity =
 
     /// Indicates if the entity is a namespace
     member IsNamespace: bool
+
+    /// Indicates if the entity has an implicit namespace
+    member IsImplicitNamespace: bool
 
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc.
     member IsPrefixDisplay: bool

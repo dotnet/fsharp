@@ -481,7 +481,10 @@ type ModuleOrNamespaceKind =
     | ModuleOrType 
 
     /// Indicates that a 'module' is really a namespace 
-    | Namespace of isExplicit: bool
+    | Namespace of
+        /// Indicates that the sourcecode had a namespace.
+        /// If false, this namespace was implicitly constructed during type checking. 
+        isExplicit: bool
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -868,6 +871,9 @@ type Entity =
 
     /// Indicates if the entity is a namespace
     member x.IsNamespace = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> true | _ -> false)
+    
+    /// Indicates if the entity has an implicit namespace
+    member x.IsImplicitNamespace = (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace false -> true | _ -> false)
 
     /// Indicates if the entity is an F# module definition
     member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> false | _ -> true)

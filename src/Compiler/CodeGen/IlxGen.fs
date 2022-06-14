@@ -413,12 +413,11 @@ let CompLocForSubModuleOrNamespace cloc (submod: ModuleOrNamespace) =
 
 let CompLocForFixedPath fragName qname (CompPath (sref, cpath)) =
     let ns, t =
-        List.takeUntil
-            (fun (_, mkind) ->
-                match mkind with
-                | Namespace _ -> false
-                | _ -> true)
-            cpath
+        cpath
+        |> List.takeUntil (fun (_, mkind) ->
+            match mkind with
+            | Namespace _ -> false
+            | _ -> true)
 
     let ns = List.map fst ns
     let ns = textOfPath ns
