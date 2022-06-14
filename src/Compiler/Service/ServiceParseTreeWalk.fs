@@ -948,6 +948,9 @@ module SyntaxTraversal =
             | SynMemberDefn.Inherit (synType, _identOption, range) -> traverseInherit (synType, range)
             | SynMemberDefn.ValField (_synField, _range) -> None
             | SynMemberDefn.NestedType (synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
+            | SynMemberDefn.ReadWriteMember (read = read; write = write) ->
+                traverseSynExpr path read.Expression
+                |> Option.orElseWith (fun () -> traverseSynExpr path write.Expression)
 
         and traverseSynMatchClause origPath mc =
             let defaultTraverse mc =

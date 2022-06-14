@@ -666,7 +666,7 @@ type Foo() =
                     ) ])
              ]) ])) ->
             assertRange (4, 31) (4, 35) mWith
-        | _ -> Assert.Fail "Could not get valid AST"
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
     [<Test>]
     let ``write-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
@@ -687,7 +687,7 @@ type Foo() =
                     ) ])
              ]) ])) ->
             assertRange (4, 36) (4, 40) mWith
-        | _ -> Assert.Fail "Could not get valid AST"
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
     [<Test>]
     let ``read/write property in SynMemberDefn.Member contains the range of the with keyword`` () =
@@ -705,14 +705,36 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
-                    SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
-                    ) ])
-             ]) ])) ->
+                    SynTypeDefnRepr.ObjectModel(members = [
+                        SynMemberDefn.ImplicitCtor _
+                        SynMemberDefn.ReadWriteMember(
+                            None, [], _, _,
+                            SynPat.LongIdent(longDotId = SynLongIdent _), None,
+                            { Pattern = SynPat.Const(constant = SynConst.Unit)
+                              Expression = SynExpr.Ident _
+                              Range = mGetter
+                              Trivia = { GetSetRange = mGet; EqualsRange = mReadEquals } },
+                            { Pattern = SynPat.Paren(pat = SynPat.Named _)
+                              Expression = SynExpr.LongIdentSet _
+                              Range = mSetter
+                              Trivia = { GetSetRange = mSet; EqualsRange = mWriteEquals } },
+                            mMember,
+                            { WithKeyword = mWith; AndKeyword = mAnd }
+                        )
+                     ]))
+             ]) ]) ])) ->
+            
             assertRange (5, 8) (5, 12) mWith
+            assertRange (5, 13) (5, 16) mGet
+            assertRange (5, 20) (5, 21) mReadEquals
+            assertRange (5, 13) (5, 37) mGetter
             assertRange (6, 8) (6, 11) mAnd
-        | _ -> Assert.Fail "Could not get valid AST"
+            assertRange (6, 12) (6, 15) mSet
+            assertRange (6, 24) (6, 25) mWriteEquals
+            assertRange (6, 12) (6, 50) mSetter
+            assertRange (4, 4) (6, 50) mMember
+
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
     [<Test>]
     let ``SynTypeDefn with XmlDoc contains the range of the type keyword`` () =

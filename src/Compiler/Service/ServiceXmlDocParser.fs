@@ -187,6 +187,13 @@ module XmlDocParsing =
                     let indent = indentOf line
                     XmlDocable(line, indent, [])
 
+                | SynMemberDefn.ReadWriteMember (xmlDoc = xmlDoc; identifier = synPat; range = range) ->
+                    if isEmptyXmlDoc xmlDoc then
+                        let line = range.StartLine
+                        let indent = indentOf line
+                        let paramNames = digNamesFrom synPat
+                        XmlDocable(line, indent, paramNames)
+
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _
                 | SynMemberDefn.ImplicitInherit _

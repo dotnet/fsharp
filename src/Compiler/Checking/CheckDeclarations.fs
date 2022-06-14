@@ -2530,6 +2530,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
             | SynMemberDefn.LetBindings _
             | SynMemberDefn.AutoProperty _
             | SynMemberDefn.Member _
+            | SynMemberDefn.ReadWriteMember _
             | SynMemberDefn.Open _
                 -> Some(TyconBindingDefn(containerInfo, newslotsOK, declKind, memb, memb.Range))
 
@@ -4832,7 +4833,8 @@ module TcDeclarations =
                     cspec |> List.filter (fun memb -> 
                       match memb with 
                       | SynMemberDefn.Interface _
-                      | SynMemberDefn.Member _ 
+                      | SynMemberDefn.Member _
+                      | SynMemberDefn.ReadWriteMember _
                       | SynMemberDefn.LetBindings _
                       | SynMemberDefn.ImplicitCtor _
                       | SynMemberDefn.AutoProperty _ 

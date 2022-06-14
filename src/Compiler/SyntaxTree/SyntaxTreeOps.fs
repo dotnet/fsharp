@@ -985,3 +985,66 @@ let mkDynamicArgExpr expr =
         SynExpr.Const(con, con.Range ident.idRange)
     | SynExpr.Paren (expr = e) -> e
     | e -> e
+
+let mkSynMemberGetOrSet
+    (grabXmlDocAtRangeStart: SynAttributes -> range -> PreXmlDoc)
+    (optInline: bool)
+    (propertyNameBindingPat: SynPat)
+    (mBindPattern: range)
+    (mWith: range)
+    (memberDefnPropertyInfo: SynMemberDefnPropertyInfo)
+    : SynAccess option -> (SynMemberKind -> SynMemberFlags) -> SynAttributeList list -> range -> SynMemberDefn list =
+    fun vis memFlagsBuilder attrs rangeStart ->
+        let optInline = optInline || memberDefnPropertyInfo.IsInline
+        let attrs = attrs @ memberDefnPropertyInfo.Attributes
+
+        let memberKind =
+            if memberDefnPropertyInfo.IsWrite then
+                SynMemberKind.PropertySet
+            else
+                SynMemberKind.PropertyGet
+
+        let xmlDoc = grabXmlDocAtRangeStart attrs rangeStart
+
+        let binding =
+            let mLhs = unionRanges mBindPattern memberDefnPropertyInfo.Pattern.Range
+
+            let headPat =
+                match propertyNameBindingPat with
+                | SynPat.LongIdent (longDotId, _, _, typarDecls, _, access, _) ->
+                    let getSet = if memberDefnPropertyInfo.IsWrite then "set" else "get"
+
+                    let m =
+                        unionRanges memberDefnPropertyInfo.Trivia.GetSetRange memberDefnPropertyInfo.Pattern.Range
+
+                    SynPat.LongIdent(
+                        longDotId,
+                        Some(PropertyKeyword.With mWith),
+                        Some(ident (getSet, memberDefnPropertyInfo.Trivia.GetSetRange)),
+                        typarDecls,
+                        SynArgPats.Pats([ memberDefnPropertyInfo.Pattern ]),
+                        access,
+                        m
+                    )
+                | pat -> pat
+
+            mkSynBinding
+                (xmlDoc, headPat)
+                (vis,
+                 optInline,
+                 false,
+                 mBindPattern,
+                 DebugPointAtBinding.NoneAtInvisible,
+                 memberDefnPropertyInfo.ReturnInfo,
+                 memberDefnPropertyInfo.Expression,
+                 mLhs,
+                 [],
+                 attrs,
+                 Some(memFlagsBuilder memberKind),
+                 SynBindingTrivia.Zero)
+
+        let memberRange =
+            unionRanges rangeStart memberDefnPropertyInfo.Expression.Range
+            |> unionRangeWithXmlDoc xmlDoc
+
+        [ SynMemberDefn.Member(binding, memberRange) ]

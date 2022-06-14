@@ -817,6 +817,9 @@ module InterfaceStubGenerator =
                     else
                         Option.bind (List.tryPick walkSynMemberDefn) members
                 | SynMemberDefn.Member (binding, _range) -> walkBinding binding
+                | SynMemberDefn.ReadWriteMember (read = read; write = write) ->
+                    walkExpr read.Expression
+                    |> Option.orElseWith (fun () -> walkExpr write.Expression)
                 | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
                 | SynMemberDefn.ValField (_field, _range) -> None
                 | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings

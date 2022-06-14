@@ -997,6 +997,21 @@ module NavigateTo =
                         walkSynMemberDefn m container
                 | None -> ()
             | SynMemberDefn.Member (binding, _) -> addBinding binding None container
+            | SynMemberDefn.ReadWriteMember (identifier = pat) ->
+                let kind = mapMemberKind SynMemberKind.PropertyGetSet
+
+                match pat with
+                | SynPat.LongIdent(longDotId = SynLongIdent ([ _; id ], _, _)) ->
+                    // instance members
+                    addIdent kind id false container
+                | SynPat.LongIdent(longDotId = SynLongIdent ([ id ], _, _)) ->
+                    // functions
+                    addIdent kind id false container
+                | SynPat.Named (SynIdent (id, _), _, _, _)
+                | SynPat.As (_, SynPat.Named (SynIdent (id, _), _, _, _), _) ->
+                    // values
+                    addIdent kind id false container
+                | _ -> ()
             | SynMemberDefn.NestedType (typeDef, _, _) -> walkSynTypeDefn typeDef container
             | SynMemberDefn.ValField (field, _) -> addField field false container
             | SynMemberDefn.LetBindings (bindings, _, _, _) ->

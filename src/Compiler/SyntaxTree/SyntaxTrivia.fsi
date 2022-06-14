@@ -324,3 +324,23 @@ type SynValSigTrivia =
     }
 
     static member Zero: SynValSigTrivia
+
+/// Represents additional information for SynMemberDefn.ReadWriteMember
+[<NoEquality; NoComparison>]
+type SynMemberDefnReadWriteMemberTrivia =
+    {
+        /// The syntax range of the `with` keyword
+        WithKeyword: range
+        /// The syntax range of the `and` keyword
+        AndKeyword: range
+    }
+
+/// Represents additional information for SynMemberDefnPropertyInfo
+[<NoEquality; NoComparison>]
+type SynMemberDefnPropertyInfoTrivia =
+    {
+        /// The syntax range of the `get` or `set` keyword
+        GetSetRange: range
+        /// The syntax range of the `=` token after the read pattern
+        EqualsRange: range
+    }

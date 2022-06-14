@@ -1554,6 +1554,19 @@ type SynMemberDefn =
     /// A 'member' definition within a type
     | Member of memberDefn: SynBinding * range: range
 
+    /// A 'member' definition with a get and set portion
+    | ReadWriteMember of
+        accessibility: SynAccess option *
+        attributes: SynAttributes *
+        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        xmlDoc: PreXmlDoc *
+        identifier: SynPat *
+        returnTypeOpt: SynReturnInfo option *
+        read: SynMemberDefnPropertyInfo *
+        write: SynMemberDefnPropertyInfo *
+        range: range *
+        trivia: SynMemberDefnReadWriteMemberTrivia
+
     /// An implicit constructor definition
     | ImplicitCtor of
         accessibility: SynAccess option *
@@ -1604,6 +1617,19 @@ type SynMemberDefn =
     member Range: range
 
 type SynMemberDefns = SynMemberDefn list
+
+type SynMemberDefnPropertyInfo =
+    {
+        IsInline: bool
+        Attributes: SynAttributes
+        /// 'get' or 'set
+        IsWrite: bool
+        Pattern: SynPat
+        ReturnInfo: SynReturnInfo option
+        Expression: SynExpr
+        Range: range
+        Trivia: SynMemberDefnPropertyInfoTrivia
+    }
 
 /// Represents a definition within a module
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

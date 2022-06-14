@@ -230,3 +230,17 @@ type SynValSigTrivia =
             WithKeyword = None
             EqualsRange = None
         }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnReadWriteMemberTrivia =
+    {
+        WithKeyword: range
+        AndKeyword: range
+    }
+
+[<NoEquality; NoComparison>]
+type SynMemberDefnPropertyInfoTrivia =
+    {
+        GetSetRange: range
+        EqualsRange: range
+    }

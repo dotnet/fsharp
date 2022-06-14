@@ -340,3 +340,12 @@ val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) opti
 val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
+
+val mkSynMemberGetOrSet:
+    grabXmlDocAtRangeStart: (SynAttributes -> range -> PreXmlDoc) ->
+    optInline: bool ->
+    propertyNameBindingPat: SynPat ->
+    mBindPattern: range ->
+    mWith: range ->
+    memberDefnPropertyInfo: SynMemberDefnPropertyInfo ->
+        (SynAccess option -> (SynMemberKind -> SynMemberFlags) -> SynAttributeList list -> range -> SynMemberDefn list)

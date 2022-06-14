@@ -7423,6 +7423,26 @@ FSharp.Compiler.Syntax.SynMemberDefn+Open: FSharp.Compiler.Syntax.SynOpenDeclTar
 FSharp.Compiler.Syntax.SynMemberDefn+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget target
 FSharp.Compiler.Syntax.SynMemberDefn+Open: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynMemberDefn+Open: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo get_read()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo get_write()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo read
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo write
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynPat get_identifier()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Syntax.SynPat identifier
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia get_trivia()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia trivia
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Xml.PreXmlDoc get_xmlDoc()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags] get_memberFlags()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags] memberFlags
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo] get_returnTypeOpt()
+FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo] returnTypeOpt
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 AbstractSlot
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 AutoProperty
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 ImplicitCtor
@@ -7433,6 +7453,7 @@ FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 LetBindings
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 Member
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 NestedType
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 Open
+FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 ReadWriteMember
 FSharp.Compiler.Syntax.SynMemberDefn+Tags: Int32 ValField
 FSharp.Compiler.Syntax.SynMemberDefn+ValField: FSharp.Compiler.Syntax.SynField fieldInfo
 FSharp.Compiler.Syntax.SynMemberDefn+ValField: FSharp.Compiler.Syntax.SynField get_fieldInfo()
@@ -7448,6 +7469,7 @@ FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsLetBindings
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsMember
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsNestedType
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsOpen
+FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsReadWriteMember
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean IsValField
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsAbstractSlot()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsAutoProperty()
@@ -7459,6 +7481,7 @@ FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsLetBindings()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsMember()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsNestedType()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsOpen()
+FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsReadWriteMember()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsValField()
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewAbstractSlot(FSharp.Compiler.Syntax.SynValSig, FSharp.Compiler.Syntax.SynMemberFlags, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewAutoProperty(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Syntax.SynMemberKind, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
@@ -7470,6 +7493,7 @@ FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewLe
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewMember(FSharp.Compiler.Syntax.SynBinding, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewNestedType(FSharp.Compiler.Syntax.SynTypeDefn, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewOpen(FSharp.Compiler.Syntax.SynOpenDeclTarget, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewReadWriteMember(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo], FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo, FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewValField(FSharp.Compiler.Syntax.SynField, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+AbstractSlot
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty
@@ -7481,6 +7505,7 @@ FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+LetBi
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+Member
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+NestedType
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+Open
+FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+ReadWriteMember
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+Tags
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn+ValField
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Text.Range Range
@@ -7488,6 +7513,25 @@ FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynMemberDefn: Int32 Tag
 FSharp.Compiler.Syntax.SynMemberDefn: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMemberDefn: System.String ToString()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Boolean IsInline
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Boolean IsWrite
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Boolean get_IsInline()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Boolean get_IsWrite()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Syntax.SynExpr Expression
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Syntax.SynExpr get_Expression()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Syntax.SynPat Pattern
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Syntax.SynPat get_Pattern()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia Trivia
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia get_Trivia()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] Attributes
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_Attributes()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo] ReturnInfo
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo] get_ReturnInfo()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: System.String ToString()
+FSharp.Compiler.Syntax.SynMemberDefnPropertyInfo: Void .ctor(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynReturnInfo], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia)
 FSharp.Compiler.Syntax.SynMemberFlags
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsDispatchSlot
@@ -9391,6 +9435,20 @@ FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: FSharp.Compiler.Text.Range EqualsRange
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: FSharp.Compiler.Text.Range GetSetRange
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: FSharp.Compiler.Text.Range get_EqualsRange()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: FSharp.Compiler.Text.Range get_GetSetRange()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnPropertyInfoTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: FSharp.Compiler.Text.Range AndKeyword
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: FSharp.Compiler.Text.Range WithKeyword
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: FSharp.Compiler.Text.Range get_AndKeyword()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: FSharp.Compiler.Text.Range get_WithKeyword()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynMemberDefnReadWriteMemberTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia get_Zero()

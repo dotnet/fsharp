@@ -1367,6 +1367,18 @@ type SynMemberDefn =
 
     | Member of memberDefn: SynBinding * range: range
 
+    | ReadWriteMember of
+        accessibility: SynAccess option *
+        attributes: SynAttributes *
+        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        xmlDoc: PreXmlDoc *
+        identifier: SynPat *
+        returnTypeOpt: SynReturnInfo option *
+        read: SynMemberDefnPropertyInfo *
+        write: SynMemberDefnPropertyInfo *
+        range: range *
+        trivia: SynMemberDefnReadWriteMemberTrivia
+
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
@@ -1407,6 +1419,7 @@ type SynMemberDefn =
     member d.Range =
         match d with
         | SynMemberDefn.Member (range = m)
+        | SynMemberDefn.ReadWriteMember (range = m)
         | SynMemberDefn.Interface (range = m)
         | SynMemberDefn.Open (range = m)
         | SynMemberDefn.LetBindings (range = m)
@@ -1419,6 +1432,19 @@ type SynMemberDefn =
         | SynMemberDefn.NestedType (range = m) -> m
 
 type SynMemberDefns = SynMemberDefn list
+
+type SynMemberDefnPropertyInfo =
+    {
+        IsInline: bool
+        Attributes: SynAttributes
+        /// 'get' or 'set
+        IsWrite: bool
+        Pattern: SynPat
+        ReturnInfo: SynReturnInfo option
+        Expression: SynExpr
+        Range: range
+        Trivia: SynMemberDefnPropertyInfoTrivia
+    }
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynModuleDecl =
