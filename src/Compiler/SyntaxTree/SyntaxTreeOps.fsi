@@ -349,3 +349,5 @@ val mkSynMemberGetOrSet:
     mWith: range ->
     memberDefnPropertyInfo: SynMemberDefnPropertyInfo ->
         (SynAccess option -> (SynMemberKind -> SynMemberFlags) -> SynAttributeList list -> range -> SynMemberDefn list)
+
+val (|GetOrSetPattern|GetOrSetWithoutArgument|NoGetSetWord|): pat: SynPat -> Choice<(string * SynPat), string, unit>

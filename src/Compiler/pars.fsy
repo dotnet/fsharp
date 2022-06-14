@@ -1853,32 +1853,30 @@ classDefnMemberGet:
        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedWith())
        mWithKwd, $2  }
 
-classDefnMemberGetSetPattern:
-  | LPAREN rparen
-     { let m = rhs2 parseState 1 2
-       SynPat.Const(SynConst.Unit, m) }
-
-  | atomicPattern 
-     { $1 }
-
 classDefnMemberGetSetElement: 
-  | opt_inline opt_attributes ident classDefnMemberGetSetPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock
-     { let mSet = rhs parseState 3
-       let getOrSet = $3.idText
-       printfn "getOrSet %s" getOrSet
-       if getOrSet <> "get" && getOrSet <> "set" then raiseParseErrorAt mSet (FSComp.SR.parsGetAndOrSetRequired()) else
+  | opt_inline opt_attributes bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock
+     { let mGetSet =
+           let mPat = rhs parseState 3
+           mkFileIndexRange mPat.FileIndex mPat.Start (mkPos mPat.StartLine (mPat.StartColumn + 3))
+     
+       match fst $3 with
+       | NoGetSetWord ->
+           raiseParseErrorAt mGetSet (FSComp.SR.parsGetAndOrSetRequired())
+       | GetOrSetWithoutArgument gs ->
+           // TODO: handle correctly
+           raiseParseErrorAt mGetSet (FSComp.SR.parsGetAndOrSetRequired())
+       | GetOrSetPattern (getOrSet, pat) ->
 
        let attrs = $2 |> List.map (fun attrList -> { attrList with Attributes = attrList.Attributes |> List.map (fun a -> { a with AppliesToGetterAndSetter = true } ) })
-       let mSet = rhs parseState 3
-       let mEquals = rhs parseState 6
-       let m = rhs2 parseState 1 7
-       let trivia: SynMemberDefnPropertyInfoTrivia = { GetSetRange = mSet; EqualsRange = mEquals }
+       let mEquals = rhs parseState 4
+       let m = rhs2 parseState 1 6
+       let trivia: SynMemberDefnPropertyInfoTrivia = { GetSetRange = mGetSet; EqualsRange = mEquals }
        { IsInline = $1
          Attributes = attrs
          IsWrite = getOrSet = "set"
-         Pattern = $4
-         ReturnInfo = $5
-         Expression = $7
+         Pattern = pat
+         ReturnInfo = $4
+         Expression = $6
          Range = m
          Trivia = trivia } }
 

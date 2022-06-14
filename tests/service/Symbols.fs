@@ -669,6 +669,27 @@ type Foo() =
         | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
     [<Test>]
+    let ``read-only property in SynMemberDefn.Member where get and unit are adjacent`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // notice there is no space between `get` and `()`
+    member this.MyReadProperty with get() = myInternalValue
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    ) ])
+             ]) ])) ->
+            assertRange (4, 31) (4, 35) mWith
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+    [<Test>]
     let ``write-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
         let parseResults = 
             getParseResults

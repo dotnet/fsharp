@@ -1048,3 +1048,28 @@ let mkSynMemberGetOrSet
             |> unionRangeWithXmlDoc xmlDoc
 
         [ SynMemberDefn.Member(binding, memberRange) ]
+
+let (|GetOrSetPattern|GetOrSetWithoutArgument|NoGetSetWord|) (pat: SynPat) : Choice<(string * SynPat), string, unit> =
+    let isGetOrSet v =
+        if v = "get" || v = "set" then Some v else None
+
+    let stripParensFromUnit p =
+        match p with
+        | SynPat.Paren(pat = SynPat.Const(constant = SynConst.Unit) as patUnit) -> patUnit
+        | _ -> p
+
+    let rec visit p =
+        match p with
+        | SynPat.LongIdent (longDotId = SynLongIdent ([ id ], _, _); argPats = SynArgPats.Pats [ singleArg ]) ->
+            isGetOrSet id.idText, Some(stripParensFromUnit singleArg)
+        | SynPat.Named (SynIdent (nm, _), _, _, _)
+        | SynPat.As (_, SynPat.Named (SynIdent (nm, _), _, _, _), _) -> isGetOrSet nm.idText, None
+        | SynPat.Typed (p, _, _) -> visit p
+        | SynPat.Attrib (p, _, _) -> visit p
+        | _ -> None, None
+
+    match visit pat with
+    | None, None -> NoGetSetWord
+    | Some v, None -> GetOrSetWithoutArgument v
+    | None, Some _ -> NoGetSetWord
+    | Some getOrSet, Some arg -> GetOrSetPattern(getOrSet, arg)
