@@ -464,6 +464,16 @@ check "vcewweh229f" "}}" "}}"
             """
 
     [<Test>]
+    let ``String interpolation using escaped braces - double dollar`` () =
+        SimpleCheckTest
+            """
+check "vcewweh226i" $$\"\"\"{\"\"\" "{"
+check "vcewweh226f" $$\"\"\"{}\"\"\" "{}"
+check "vcewweh226p" $$\"\"\"{ {{1}} }\"\"\" "{ 1 }"
+check "vcewweh227a" $$\"\"\"}\"\"\" "}"
+            """
+
+    [<Test>]
     let ``String interpolation using verbatim strings`` () =
         SimpleCheckTest
             """
@@ -487,10 +497,18 @@ type R2 = { X : int ; Y: int }
 // Check record expression (parenthesized)
 check "vcewweh18" $"abc{({contents=1}.contents)}def" "abc1def"
 
+// Check record expression (parenthesized) - double dollar
+check "vcewweh18b" $$\"\"\"abc{{({contents=1}.contents)}}def\"\"\" "abc1def"
+
 // Check record expression (unparenthesized, spaced)
 check "vcewweh19a" $"abc{   {X=1}   }def" "abc{ X = 1 }def"
 
 check "vcewweh19b" $"abc{ {X=1} }def" "abc{ X = 1 }def"
+
+// Check record expression (unparenthesized, spaced) - double dollar
+check "vcewweh19c" $$"abc{{   {X=1}   }}def" "abc{ X = 1 }def"
+
+check "vcewweh19d" $$\"\"\"abc{{ {X=1} }}def\"\"\" "abc{ X = 1 }def"
 
 // Check record expression (unparenthesized, spaced ending in token brace then string hole brace)
 check "vcewweh19v" $"abc{ {X=1}}def" "abc{ X = 1 }def"
@@ -500,6 +518,9 @@ check "vcewweh20" $"abc{{X=1}}def" "abc{X=1}def"
 
 // Check thing that is not really a record expression (braces are escaped)
 check "vcewweh20b" $"abc{{quack=1}}def" "abc{quack=1}def"
+
+// Check thing that is not really a record expression (double dollar)
+check "vcewweh20c" $$\"\"\"abc{X=1}def\"\"\" "abc{X=1}def"
 
 // Check thing that is not really a record expression (braces are escaped)
 check "vcewweh21" $"abc{{X=1; Y=2}}def" "abc{X=1; Y=2}def"

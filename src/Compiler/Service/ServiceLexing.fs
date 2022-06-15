@@ -615,7 +615,7 @@ module internal LexerStateEncoding =
                 match stringNest with
                 | [] -> false, 0, 0, false, []
                 | (i1, kind1, b1, _)::rest -> true, i1, encodeStringStyle kind1, b1, rest
-            
+
             let tag2, i2, kind2, b2 =
                 match rest with
                 | [] -> false, 0, 0, false

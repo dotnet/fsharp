@@ -129,7 +129,9 @@ let ``Tokenizer test - multiline non-nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
         [| "let hello1t = $\"\"\"abc {1+"
-           " 1} def\"\"\"" |]
+           " 1} def\"\"\""
+           "let hello2t = $$\"\"\"abc {{1+"
+           " 1}} def\"\"\"" |]
 
     let actual = 
         [ for lineNo, lineToks in tokenizedLines do
@@ -142,6 +144,14 @@ let ``Tokenizer test - multiline non-nested string interpolation``() =
            ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+")]);
          (1,
           [("WHITESPACE", " "); ("INT32", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])
+         (2,
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello2t");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "$$\"\"\""); ("STRING_TEXT", "abc"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+")]);
+         (3,
+          [("WHITESPACE", " "); ("INT32", "1"); ("STRING_TEXT", "}}");
            ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
   
     if actual <> expected then 
@@ -192,6 +202,48 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
         Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Test>]
+// checks nested '{' and nested single-quote strings
+let ``Tokenizer test - multi-line nested string interpolation - double dollar``() =
+    let tokenizedLines = 
+      tokenizeLines
+        [| "let hello1t = $$\"\"\"abc {{\"a\" +               "
+           "                          {                     "
+           "                           contents = \"b\"     "
+           "                          }.contents            "
+           "                         }} def\"\"\"" |]
+
+    let actual = 
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    let expected = 
+        [(0,
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "$$\"\"\""); ("STRING_TEXT", "abc"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{{"); ("STRING_TEXT", "\""); ("STRING_TEXT", "a");
+           ("STRING", "\""); ("WHITESPACE", " "); ("PLUS_MINUS_OP", "+");
+           ("WHITESPACE", "               ")]);
+         (1,
+          [("WHITESPACE", "                          "); ("LBRACE", "{");
+           ("WHITESPACE", "                     ")]);
+         (2,
+          [("WHITESPACE", "                           "); ("IDENT", "contents");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "\""); ("STRING_TEXT", "b"); ("STRING", "\"");
+           ("WHITESPACE", "     ")]);
+         (3,
+          [("WHITESPACE", "                          "); ("RBRACE", "}"); ("DOT", ".");
+           ("IDENT", "contents"); ("WHITESPACE", "            ")]);
+         (4,
+          [("WHITESPACE", "                         "); ("STRING_TEXT", "}}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
+  
+    if actual <> expected then 
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+
+[<Test>]
 let ``Tokenizer test - single-line nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
@@ -213,4 +265,3 @@ let ``Tokenizer test - single-line nested string interpolation``() =
         printfn "actual   = %A" actual
         printfn "expected = %A" expected
         Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
-
