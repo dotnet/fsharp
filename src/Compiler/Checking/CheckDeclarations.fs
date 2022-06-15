@@ -253,9 +253,9 @@ let BuildRootModuleType enclosingNamespacePath (cpath: CompilationPath) moduleTy
         |> fun (_, (moduleTy, moduls)) -> moduleTy, List.rev moduls
         
 /// Given a resulting module expression, place that inside a namespace path implied by a "namespace X.Y.Z" definition
-let BuildRootModuleContents enclosingNamespacePath (cpath: CompilationPath) moduleContents = 
+let BuildRootModuleContents (isModule: bool) enclosingNamespacePath (cpath: CompilationPath) moduleContents = 
     (enclosingNamespacePath, (cpath, moduleContents)) 
-        ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace id cpath.ParentCompPath moduleContents))
+        ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace isModule id cpath.ParentCompPath moduleContents))
         |> snd
 
 /// Try to take the "FSINNN" prefix off a namespace path
@@ -5647,7 +5647,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                       CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                   env, openDecls
           
-          let moduleContentsRoot = BuildRootModuleContents enclosingNamespacePath envNS.eCompPath moduleContents
+          let moduleContentsRoot = BuildRootModuleContents kind.IsModule enclosingNamespacePath envNS.eCompPath moduleContents
 
           let defns =
               match openDecls with 
