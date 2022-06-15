@@ -2249,7 +2249,7 @@ module InferredSigPrinting =
             let denv = denv.AddOpenPath (List.map fst innerPath)
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
-                let fullModuleName, def =
+                let fullModuleName, def, denv =
                     let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
                         match currentContents with
                         | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
@@ -2262,8 +2262,10 @@ module InferredSigPrinting =
                             None
 
                     match def with
-                    | NestedModule(path, nestedModuleContents) -> mspec.DisplayNameCore :: path, nestedModuleContents
-                    | _ -> [ mspec.DisplayNameCore ], def
+                    | NestedModule(path, nestedModuleContents) ->
+                        let fullPath = mspec.DisplayNameCore :: path
+                        fullPath, nestedModuleContents, denv.AddOpenPath(fullPath)
+                    | _ -> [ mspec.DisplayNameCore ], def, denv
                 
                 let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
                 let nmL = layoutAccessibility denv mspec.Accessibility nmL
