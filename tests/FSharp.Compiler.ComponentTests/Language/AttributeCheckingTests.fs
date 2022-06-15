@@ -48,7 +48,6 @@ type C() =
         Fsx """
 open System
 
-
 type C() =
   
     [<Obsolete("Use B instead", true)>]
@@ -264,3 +263,282 @@ let c = Color.Red
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type and use extension method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+[<Obsolete("Use B instead", true)>]
+type Button = { Text : string }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        { this with Text = text }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type property and use extension method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { [<Obsolete("Use B instead", true)>] Text : string }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        { this with Text = text }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type and property and use extension method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+[<Obsolete("Use B instead", true)>]
+type Button = { [<Obsolete("Use B instead", true)>] Text : string }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        { this with Text = text }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCodes [ 101; 101]
+        |> withErrorMessages [ "This construct is deprecated. Use B instead"; "This construct is deprecated. Use B instead"]
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type property and set via module`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { [<Obsolete("Use B instead", true)>] Text : string }
+
+module Button =
+    
+    let set text = { Text = text  }
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type and set property via module`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+ [<Obsolete("Use B instead", true)>]
+type Button = { [<Obsolete("Use B instead", true)>] Text : string }
+
+module Button =
+    
+    let set text = { Text = text  }
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type property and set property via module using an extesnion method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { [<Obsolete("Use B instead", true)>] Text : string }
+
+module Button =
+    
+    let set text = { Text = text  }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        Button.set text
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an moudle and set property via module using an extesnion method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { Text : string }
+
+[<Obsolete("Use B instead", true)>]
+module Button =
+    
+    let set text = { Text = text  }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        Button.set text
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an moudle and function and set property via module using an extesnion method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { Text : string }
+
+[<Obsolete("Use B instead", true)>]
+module Button =
+    
+    [<Obsolete("Use B instead", true)>]
+    let set text = { Text = text  }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        Button.set text
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an moudle function and set property via module using an extesnion method`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { Text : string }
+
+module Button =
+    
+    [<Obsolete("Use B instead", true)>]
+    let set text = { Text = text  }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        Button.set text
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type extensions and used on an instance`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { Text : string }
+
+[<Extension>]
+[<Obsolete("Use B instead", true)>]
+type ButtonExtensions =
+
+    [<Extension>]
+    static member inline text(this: Button, text: string) =
+        { this with Text = text }
+        
+let b = { Text = "Hello" }
+b.text("Hello 2") |> ignore
+
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Obsolete attribute is taken into account when used on an type extensions static function and used on an instance`` () =
+        Fsx """
+
+open System
+open System.Runtime.CompilerServices
+
+type Button = { Text : string }
+
+[<Extension>]
+type ButtonExtensions =
+
+    [<Extension>]
+    [<Obsolete("Use B instead", true)>]
+    static member inline text(this: Button, text: string) =
+        { this with Text = text }
+        
+let b = { Text = "Hello" }
+b.text("Hello 2") |> ignore
+
+    """
+    |> ignoreWarnings
+    |> compile
+    |> withErrorCode 101
+    |> withErrorMessage "This construct is deprecated. Use B instead"
