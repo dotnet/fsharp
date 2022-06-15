@@ -4410,8 +4410,9 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
     Construct.NewModuleOrNamespaceType (Namespace false) [ mspec ] [], mspec
 
-let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
-    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace false))
+let wrapModuleOrNamespaceContentsInNamespace (id: Ident) (cpath: CompilationPath) mexpr =
+    let isExplicitNamespace = not (List.isEmpty cpath.AccessPath) && cpath.AccessPath |> List.forall (fun (_, mnk) -> match mnk with | Namespace v -> v | _ -> false)
+    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace isExplicitNamespace))
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 //--------------------------------------------------------------------------

@@ -783,7 +783,7 @@ val InferGenericArityFromTyScheme: GeneralizedType -> prelimValReprInfo: PrelimV
 
 /// Locate the environment within a particular namespace path, used to process a
 /// 'namespace' declaration.
-val LocateEnv: ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list -> TcEnv
+val LocateEnv: isModule: bool -> ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list -> TcEnv
 
 /// Make the check for safe initialization of a member
 val MakeCheckSafeInit:

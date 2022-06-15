@@ -5287,7 +5287,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 else 
                     longId, defs
 
-            let envNS = LocateEnv cenv.thisCcu env enclosingNamespacePath
+            let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
             let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
@@ -5609,7 +5609,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               else 
                   longId, defs
 
-          let envNS = LocateEnv cenv.thisCcu env enclosingNamespacePath
+          let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
 
           let modTyNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
