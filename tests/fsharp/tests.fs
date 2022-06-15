@@ -3364,6 +3364,9 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``recursiveNestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/recursiveNestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP
