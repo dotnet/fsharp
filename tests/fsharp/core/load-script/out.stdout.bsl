@@ -22,11 +22,11 @@ Test 3=================================================
 Hello
 World
 -the end
-namespace FSI_0002
+module FSI_0002.1
 
-namespace FSI_0002
+module FSI_0002.2
 
-namespace FSI_0002
+module FSI_0002.3
 
 > 
 Test 4=================================================

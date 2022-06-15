@@ -1114,7 +1114,7 @@ module CoreTests =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-width-200`` () =
+    let ``printing-width-200`` () =  
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
