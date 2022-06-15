@@ -365,7 +365,7 @@ let GetWarningLevel diagnostic =
 let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
     List.contains n specificWarnOn
     ||
-    // Some specific warnings/informational are never on by default, i.e. unused variable warnings
+    // Some specific warnings/informational are never on by default, e.g. unused variable warnings
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
@@ -376,6 +376,7 @@ let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
     | 3390 -> false // xmlDocBadlyFormed - off by default
     | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
+    | 3524 -> false // typrelNeverRefinedAwayFromTop - off by default
     | _ ->
         (severity = FSharpDiagnosticSeverity.Info)
         || (severity = FSharpDiagnosticSeverity.Warning

@@ -32,7 +32,7 @@ Adding or adjusting diagnostics emitted by the compiler is usually straightforwa
 4. Use another search tool or a tool like Find All References / Find Usages to see where it's used in the compiler source code.
 5. Set a breakpoint at the location in source you found. If you debug the compiler with the same steps, it should trigger the breakpoint you set. This verifies that the location you found is the one that emits the error or warning you want to improve.
 
-From here, you can either simply update the error test, or you can use some of the information at the point in the source code you identified to see if there is more information to include in the error message. For example, if the error message doesn't contain information about the identifier the user is using incorrectly, you may be able to include the name of the identifier based on data the compiler has available at that stage of compilation.
+From here, you can either simply update the error text, or you can use some of the information at the point in the source code you identified to see if there is more information to include in the error message. For example, if the error message doesn't contain information about the identifier the user is using incorrectly, you may be able to include the name of the identifier based on data the compiler has available at that stage of compilation.
 
 If you're including data from user code in an error message, it's important to also write a test that verifies the exact error message for a given string of F# code.
 
@@ -55,3 +55,12 @@ Diagnostics must often format types.
 * When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of infomation to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
 
 * When displaying a type, you have the option of displaying the constraints implied by any type variables mentioned in the types, appended as `when ...`. For example, `NicePrint.layoutPrettifiedTypeAndConstraints`.
+
+## Localization
+
+The file `FSComp.txt` contains the canonical listing of diagnostic messages, but there are also `.xlf` localization files for various languages.
+When changing `FSComp.txt`, you can automatically put placeholder entries in all these `.xlf` files by running `dotnet msbuild /t:UpdateXlf FSharp.sln`.
+
+## Enabling a warning or error by default
+
+The file `CompilerDiagnostics.fs` contains the function `IsWarningOrInfoEnabled`, which determines whether a given diagnostic is emitted.

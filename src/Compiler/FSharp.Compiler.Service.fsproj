@@ -22,6 +22,8 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3524: typrelNeverRefinedAwayFromTop -->
+    <OtherFlags>$(OtherFlags) --warnon:3524</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
