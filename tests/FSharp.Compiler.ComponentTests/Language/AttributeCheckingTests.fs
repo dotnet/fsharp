@@ -516,7 +516,6 @@ b.text("Hello 2") |> ignore
         |> compile
         |> shouldSucceed
 
-
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type extensions static function and used on an instance`` () =
         Fsx """
@@ -536,9 +535,8 @@ type ButtonExtensions =
         
 let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
-
-    """
-    |> ignoreWarnings
-    |> compile
-    |> withErrorCode 101
-    |> withErrorMessage "This construct is deprecated. Use B instead"
+        """
+        |> ignoreWarnings
+        |> compile
+        |> withErrorCode 101
+        |> withErrorMessage "This construct is deprecated. Use B instead"
