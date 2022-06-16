@@ -923,8 +923,8 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags) =
 
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
-        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption bindm
-        checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption bindm
+        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.VirtualStaticsInInterfaces bindm
+        checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.VirtualStaticsInInterfaces bindm
 
     let minfos = 
         match typToSearchForAbstractMembers with 

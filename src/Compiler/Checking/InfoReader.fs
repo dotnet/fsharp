@@ -697,7 +697,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
 
     let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
-        lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
+        lazy isRuntimeFeatureSupported this "VirtualStaticsInInterfaces"
 
     member _.g = g
     member _.amap = amap
