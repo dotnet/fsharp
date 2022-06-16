@@ -74,8 +74,9 @@ let c = C()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a member and invoking the member`` () =
@@ -92,8 +93,9 @@ c.Update()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on type and invoking the member`` () =
@@ -110,9 +112,10 @@ c.Update()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCodes [ 101; 101]
-        |> withErrorMessages [ "This construct is deprecated. Use B instead"; "This construct is deprecated. Use B instead"]
-
+        |> withDiagnostics [
+            (Error 101, Line 8, Col 9, Line 8, Col 10, "This construct is deprecated. Use B instead");
+            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on struct type and invoking the member`` () =
@@ -126,14 +129,14 @@ type C =
 
 let c = C()
 c.Update()
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCodes [ 101; 101]
-        |> withErrorMessages [ "This construct is deprecated. Use B instead"; "This construct is deprecated. Use B instead"]
-
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead");
+            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on struct type and instantiate the type`` () =
@@ -150,14 +153,14 @@ let c = C()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a struct member and invoking the member`` () =
         Fsx """
 open System
-
 
 [<Struct>]
 type C =
@@ -170,15 +173,14 @@ c.Update()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 10, Col 1, Line 10, Col 9, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a record property`` () =
         Fsx """
 open System
-
 
 type C = 
     { [<Obsolete("Use B instead", true)>] X: int } 
@@ -188,15 +190,14 @@ let c = { X = 0 }
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a record and member invocation`` () =
         Fsx """
 open System
-
 
 [<Obsolete("Use B instead", true)>]
 type C = 
@@ -209,14 +210,14 @@ C.Update()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 10, Col 1, Line 10, Col 2, "This construct is deprecated. Use B instead")
+        ]
         
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a record member and method invocation`` () =
         Fsx """
 open System
-
 
 type C = 
     {  X : int }
@@ -228,8 +229,9 @@ C.Update()
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"    
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
+        ]  
         
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an enum and invocation`` () =
@@ -246,8 +248,9 @@ let c = Color.Red
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
+        ]
         
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an enum entry and invocation`` () =
@@ -284,8 +287,9 @@ type ButtonExtensions =
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 37, Line 13, Col 43, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type property and use extension method`` () =
@@ -306,14 +310,13 @@ type ButtonExtensions =
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type and property and use extension method`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -330,13 +333,14 @@ type ButtonExtensions =
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCodes [ 101; 101]
-        |> withErrorMessages [ "This construct is deprecated. Use B instead"; "This construct is deprecated. Use B instead"]
+        |> withDiagnostics [
+            (Error 101, Line 12, Col 37, Line 12, Col 43, "This construct is deprecated. Use B instead");
+            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type property and set via module`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -345,19 +349,18 @@ type Button = { [<Obsolete("Use B instead", true)>] Text : string }
 module Button =
     
     let set text = { Text = text  }
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+        ]
 
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type and set property via module`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -367,19 +370,17 @@ type Button = { [<Obsolete("Use B instead", true)>] Text : string }
 module Button =
     
     let set text = { Text = text  }
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 10, Col 20, Line 10, Col 36, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type property and set property via module using an extesnion method`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -388,26 +389,23 @@ type Button = { [<Obsolete("Use B instead", true)>] Text : string }
 module Button =
     
     let set text = { Text = text  }
-
 [<Extension>]
 type ButtonExtensions =
 
     [<Extension>]
     static member inline text(this: Button, text: string) =
         Button.set text
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an moudle and set property via module using an extesnion method`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -424,18 +422,17 @@ type ButtonExtensions =
     [<Extension>]
     static member inline text(this: Button, text: string) =
         Button.set text
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 17, Col 9, Line 17, Col 15, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an moudle and function and set property via module using an extesnion method`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -453,19 +450,17 @@ type ButtonExtensions =
     [<Extension>]
     static member inline text(this: Button, text: string) =
         Button.set text
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
-
+        |> withDiagnostics [
+            (Error 101, Line 18, Col 9, Line 18, Col 15, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an moudle function and set property via module using an extesnion method`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -482,19 +477,18 @@ type ButtonExtensions =
     [<Extension>]
     static member inline text(this: Button, text: string) =
         Button.set text
-
         """
         |> ignoreWarnings
         |> compile
         |> shouldFail
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> withDiagnostics [
+            (Error 101, Line 17, Col 9, Line 17, Col 19, "This construct is deprecated. Use B instead")
+        ]
 
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type extensions and used on an instance`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -510,7 +504,6 @@ type ButtonExtensions =
         
 let b = { Text = "Hello" }
 b.text("Hello 2") |> ignore
-
         """
         |> ignoreWarnings
         |> compile
@@ -519,7 +512,6 @@ b.text("Hello 2") |> ignore
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type extensions static function and used on an instance`` () =
         Fsx """
-
 open System
 open System.Runtime.CompilerServices
 
@@ -538,5 +530,7 @@ b.text("Hello 2") |> ignore
         """
         |> ignoreWarnings
         |> compile
-        |> withErrorCode 101
-        |> withErrorMessage "This construct is deprecated. Use B instead"
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
+        ]
