@@ -198,11 +198,11 @@ module internal Utilities =
         seq {
             if success then
                 for source in stdOut do
-                    // String returned by dotnet nuget list source --format short
-                    // is formatted similar to:
+                    // String returned by `dotnet nuget list source --format short` is formatted similar to:
                     // E https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
-                    // So strip off the flags
-                    let pos = source.IndexOf(" ")
-
-                    if pos >= 0 then yield ("i", source.Substring(pos).Trim())
+                    // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
+                    if source.Length > 0 && source.[0] = 'E' then
+                        let pos = source.IndexOf(" ")
+                        if pos >= 0 then
+                            "i", source.Substring(pos).Trim()
         }
