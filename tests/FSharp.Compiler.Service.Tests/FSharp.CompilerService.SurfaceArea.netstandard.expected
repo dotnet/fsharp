@@ -5762,6 +5762,12 @@ FSharp.Compiler.Syntax.SeqExprOnly: Int32 Tag
 FSharp.Compiler.Syntax.SeqExprOnly: Int32 get_Tag()
 FSharp.Compiler.Syntax.SeqExprOnly: System.String ToString()
 FSharp.Compiler.Syntax.SynAccess
+FSharp.Compiler.Syntax.SynAccess+Internal: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynAccess+Internal: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynAccess+Private: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynAccess+Private: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynAccess+Public: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynAccess+Public: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Internal
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Private
 FSharp.Compiler.Syntax.SynAccess+Tags: Int32 Public
@@ -5774,16 +5780,15 @@ FSharp.Compiler.Syntax.SynAccess: Boolean IsPublic
 FSharp.Compiler.Syntax.SynAccess: Boolean get_IsInternal()
 FSharp.Compiler.Syntax.SynAccess: Boolean get_IsPrivate()
 FSharp.Compiler.Syntax.SynAccess: Boolean get_IsPublic()
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess Internal
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess Private
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess Public
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess get_Internal()
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess get_Private()
-FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess get_Public()
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess NewInternal(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess NewPrivate(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess NewPublic(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Internal
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Private
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Public
 FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Syntax.SynAccess+Tags
-FSharp.Compiler.Syntax.SynAccess: Int32 CompareTo(FSharp.Compiler.Syntax.SynAccess)
-FSharp.Compiler.Syntax.SynAccess: Int32 CompareTo(System.Object)
-FSharp.Compiler.Syntax.SynAccess: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynAccess: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode()
 FSharp.Compiler.Syntax.SynAccess: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.Syntax.SynAccess: Int32 Tag

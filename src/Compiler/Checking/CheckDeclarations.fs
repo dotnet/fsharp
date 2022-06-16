@@ -422,7 +422,8 @@ module TcRecdUnionAndEnumDeclarations =
             error(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), m))
 
         if isIncrClass && (not zeroInit || not isMutable) then errorR(Error(FSComp.SR.tcUninitializedValFieldsMustBeMutable(), m))
-        if isStatic && (not zeroInit || not isMutable || vis <> Some SynAccess.Private ) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
+        let isPrivate = match vis with | Some (SynAccess.Private _) -> true | _ -> false
+        if isStatic && (not zeroInit || not isMutable || not isPrivate) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
         let konst = if zeroInit then Some Const.Zero else None
         let rfspec = MakeRecdFieldSpec cenv env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
         match parent with
@@ -815,7 +816,7 @@ module IncrClassChecking =
                 let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
-                let cctorValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, Some SynAccess.Private, false, true, false, false)
+                let cctorValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
                  
                 let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
                 cctorArgs, cctorVal, cctorValScheme)
