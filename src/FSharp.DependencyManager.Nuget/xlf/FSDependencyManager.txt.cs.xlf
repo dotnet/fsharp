@@ -4,57 +4,57 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="new">PackageManager can not reference the System Package '{0}'</target>
+        <target state="translated">PackageManager se nemůže odkazovat na systémový balíček {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="new">with the highest version</target>
+        <target state="translated">s nejvyšší verzí</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTimeoutValue">
         <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
-        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
+        <target state="translated">Neplatná hodnota pro časový limit {0}. Platné hodnoty: none, -1 a celočíselný počet milisekund, po které se má počkat</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="new">Load Nuget Package</target>
+        <target state="translated">Načíst balíček NuGet</target>
         <note />
       </trans-unit>
       <trans-unit id="missingTimeoutValue">
         <source>Missing value for timeout</source>
-        <target state="new">Missing value for timeout</target>
+        <target state="translated">Chybí hodnota pro časový limit</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="new">Not used</target>
+        <target state="translated">Nepoužito</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="new">{0} requires a value</target>
+        <target state="translated">{0} vyžaduje hodnotu.</target>
         <note />
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="new">The source directory '{0}' not found</target>
+        <target state="translated">Zdrojový adresář {0} se nenašel.</target>
         <note />
       </trans-unit>
       <trans-unit id="timedoutResolvingPackages">
         <source>Timed out resolving packages, process: '{0}' '{1}'</source>
-        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
+        <target state="translated">Při řešení balíčků vypršel časový limit. Proces: {0} {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="new">Unable to apply implicit argument number {0}</target>
+        <target state="translated">Nepovedlo se použít implicitní počet argumentů {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="new">version</target>
+        <target state="translated">verze</target>
         <note />
       </trans-unit>
     </body>

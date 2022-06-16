@@ -4,27 +4,27 @@
     <body>
       <trans-unit id="mapSourceRootsContainsDuplicate">
         <source>SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</source>
-        <target state="new">SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</target>
+        <target state="translated">SourceRoot obsahuje duplicitní položky {0} s konfliktními metadaty {1}: {2} a {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
         <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
+        <target state="translated">Hodnota SourceRoot.ContainingRoot nebyla v položkách SourceRoot nalezena nebo odpovídající položka není zdrojový kořen nejvyšší úrovně: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
         <source>SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</source>
-        <target state="new">SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</target>
+        <target state="translated">Pokud má DeterministicSourcePaths hodnotu true, položky SourceRoot musí zahrnovat nejméně jednu položku nejvyšší úrovně (nevnořenou).</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsPathMustEndWithSlashOrBackslash">
         <source>SourceRoot paths are required to end with a slash or backslash: '{0}'</source>
-        <target state="new">SourceRoot paths are required to end with a slash or backslash: '{0}'</target>
+        <target state="translated">Cesty SourceRoot musí končit lomítkem nebo zpětným lomítkem: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="new">ToolPath is unknown; specify the path to the tool.</target>
+        <target state="translated">Parametr ToolPath není známý. Zadejte cestu k nástroji.</target>
         <note />
       </trans-unit>
     </body>

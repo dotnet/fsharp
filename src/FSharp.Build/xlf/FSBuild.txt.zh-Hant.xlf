@@ -4,27 +4,27 @@
     <body>
       <trans-unit id="mapSourceRootsContainsDuplicate">
         <source>SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</source>
-        <target state="new">SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</target>
+        <target state="translated">SourceRoot 包含具有衝突之中繼資料 '{1}' 的重複項目 '{0}': '{2}' 及 '{3}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
         <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
+        <target state="translated">SourceRoot 項目中找不到 SourceRoot.ContainingRoot 的值，或相對應的項目不是最上層來源根目錄: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
         <source>SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</source>
-        <target state="new">SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</target>
+        <target state="translated">在 DeterministicSourcePaths 為 true 的情況下，SourceRoot 項目必須包含至少一個最上層 (非巢狀) 項目</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsPathMustEndWithSlashOrBackslash">
         <source>SourceRoot paths are required to end with a slash or backslash: '{0}'</source>
-        <target state="new">SourceRoot paths are required to end with a slash or backslash: '{0}'</target>
+        <target state="translated">SourceRoot 路徑必須以斜線或反斜線作為結尾: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="new">ToolPath is unknown; specify the path to the tool.</target>
+        <target state="translated">ToolPath 未知; 請指定工具的路徑。</target>
         <note />
       </trans-unit>
     </body>

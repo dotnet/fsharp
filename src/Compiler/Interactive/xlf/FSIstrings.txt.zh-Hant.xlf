@@ -4,297 +4,297 @@
     <body>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <target state="translated">從之前 F# 互動中的評估存取內部類型、方法或欄位 '{0}' 已過時，可能造成後續存取錯誤。若要啟用可存取內部之單一動態組件的舊版世代，請使用 '--multiemit-' 選項。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
-        <target state="new">Include package source uri when searching for packages</target>
+        <target state="translated">搜尋套件時包含套件來源 URI</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
         <source>Clear screen</source>
-        <target state="new">Clear screen</target>
+        <target state="translated">清空螢幕</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
-        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
+        <target state="translated">發出多組件 (.NET Framework 預設為關閉)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">因為先前發生錯誤，所以無法完成作業</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">作業失敗。錯誤文字已列印在錯誤串流中。若要傳回相對應的 FSharpDiagnostic，請使用 EvalInteractionNonThrowing、EvalScriptNonThrowing 或 EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOption">
         <source>Emit multiple assemblies (on by default)</source>
-        <target state="new">Emit multiple assemblies (on by default)</target>
+        <target state="translated">發出多組件 (預設為開啟)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
-        <target state="new">Stopped due to error\n</target>
+        <target state="translated">已因錯誤而停止\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="new">Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
+        <target state="translated">用法: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
         <source>- INPUT FILES -</source>
-        <target state="new">- INPUT FILES -</target>
+        <target state="translated">- 輸入檔 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCodeGeneration">
         <source>- CODE GENERATION -</source>
-        <target state="new">- CODE GENERATION -</target>
+        <target state="translated">- 程式碼產生 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiErrorsAndWarnings">
         <source>- ERRORS AND WARNINGS -</source>
-        <target state="new">- ERRORS AND WARNINGS -</target>
+        <target state="translated">- 錯誤和警告 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLanguage">
         <source>- LANGUAGE -</source>
-        <target state="new">- LANGUAGE -</target>
+        <target state="translated">- 語言 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMiscellaneous">
         <source>- MISCELLANEOUS -</source>
-        <target state="new">- MISCELLANEOUS -</target>
+        <target state="translated">- 其他 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAdvanced">
         <source>- ADVANCED -</source>
-        <target state="new">- ADVANCED -</target>
+        <target state="translated">- 進階 -</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionRaisedStartingServer">
         <source>Exception raised when starting remoting server.\n{0}</source>
-        <target state="new">Exception raised when starting remoting server.\n{0}</target>
+        <target state="translated">啟動遠端處理伺服器時發生例外狀況。\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUse">
         <source>Use the given file on startup as initial input</source>
-        <target state="new">Use the given file on startup as initial input</target>
+        <target state="translated">啟動時使用所指定的檔案做為初始輸入</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoad">
         <source>#load the given file on startup</source>
-        <target state="new">#load the given file on startup</target>
+        <target state="translated">#load 啟動時指定的檔案</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiRemaining">
         <source>Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</source>
-        <target state="new">Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</target>
+        <target state="translated">將其餘引數視為命令列引數，使用 fsi.CommandLineArgs 存取</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiHelp">
         <source>Display this usage message (Short form: -?)</source>
-        <target state="new">Display this usage message (Short form: -?)</target>
+        <target state="translated">顯示此訊息 (簡短形式: -?)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExec">
         <source>Exit fsi after loading the files or running the .fsx script given on the command line</source>
-        <target state="new">Exit fsi after loading the files or running the .fsx script given on the command line</target>
+        <target state="translated">載入檔案或執行命令列上指定的 .fsx 指令碼後結束 fsi</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
         <source>Execute interactions on a Windows Forms event loop (on by default)</source>
-        <target state="new">Execute interactions on a Windows Forms event loop (on by default)</target>
+        <target state="translated">在 Windows Forms 事件迴圈上執行互動 (預設為開啟)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiQuiet">
         <source>Suppress fsi writing to stdout</source>
-        <target state="new">Suppress fsi writing to stdout</target>
+        <target state="translated">禁止 fsi 寫入 stdout</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiReadline">
         <source>Support TAB completion in console (on by default)</source>
-        <target state="new">Support TAB completion in console (on by default)</target>
+        <target state="translated">支援主控台中的 TAB 鍵自動完成 (預設為開啟)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiEmitDebugInfoInQuotations">
         <source>Emit debug information in quotations</source>
-        <target state="new">Emit debug information in quotations</target>
+        <target state="translated">發出在引號內的偵錯資訊</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBanner3">
         <source>For help type #help;;</source>
-        <target state="new">For help type #help;;</target>
+        <target state="translated">如需說明，請輸入 #help;;</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="new">A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</target>
+        <target state="translated">啟動 F# Interactive 處理序時發生錯誤。這可能是某些 Windows 系統上可使用 Unicode 之應用程式的背景處理序主控台支援發生已知錯誤所致。請嘗試選取 [工具]-&gt;[選項]-&gt;[適用於 Visual Studio 的 F# Interactive] 並輸入 '--fsi-server-no-unicode’。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
         <source>'{0}' is not a valid assembly name</source>
-        <target state="new">'{0}' is not a valid assembly name</target>
+        <target state="translated">'{0}' 不是有效的組件名稱</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDirectoryDoesNotExist">
         <source>Directory '{0}' doesn't exist</source>
-        <target state="new">Directory '{0}' doesn't exist</target>
+        <target state="translated">目錄 '{0}' 不存在</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
-        <target state="new">Warning: line too long, ignoring some characters\n</target>
+        <target state="translated">警告: 行太長，將忽略某些字元\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoMainString">
         <source>Real: {0}, CPU: {1}, GC {2}</source>
-        <target state="new">Real: {0}, CPU: {1}, GC {2}</target>
+        <target state="translated">實際: {0}，CPU: {1}，GC {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration">
         <source>gen</source>
-        <target state="new">gen</target>
+        <target state="translated">gen</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="new">\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</target>
+        <target state="translated">\n\n美化顯示期間發生例外狀況。\n請回報此問題以便修正。\n追蹤: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="new">  F# Interactive directives:</target>
+        <target state="translated">  F# 互動指示詞:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
         <source>Reference (dynamically load) the given DLL</source>
-        <target state="new">Reference (dynamically load) the given DLL</target>
+        <target state="translated">參考 (以動態方式載入) 所指定的 DLL</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashIInfo">
         <source>Add the given search path for referenced DLLs</source>
-        <target state="new">Add the given search path for referenced DLLs</target>
+        <target state="translated">加入所參考 DLL 的指定搜尋路徑</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashloadInfo">
         <source>Load the given file(s) as if compiled and referenced</source>
-        <target state="new">Load the given file(s) as if compiled and referenced</target>
+        <target state="translated">載入指定的檔案，視為已編譯及已參考</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashtimeInfo">
         <source>Toggle timing on/off</source>
-        <target state="new">Toggle timing on/off</target>
+        <target state="translated">切換計時開/關</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashhelpInfo">
         <source>Display help</source>
-        <target state="new">Display help</target>
+        <target state="translated">顯示說明</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashquitInfo">
         <source>Exit</source>
-        <target state="new">Exit</target>
+        <target state="translated">結束</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="new">  F# Interactive command line options:</target>
+        <target state="translated">  F# 互動命令列選項:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
         <source>      See '{0}' for options</source>
-        <target state="new">      See '{0}' for options</target>
+        <target state="translated">      相關選項請參閱 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoadingFilesPrefixText">
         <source>Loading</source>
-        <target state="new">Loading</target>
+        <target state="translated">正在載入</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInterrupt">
         <source>\n- Interrupt\n</source>
-        <target state="new">\n- Interrupt\n</target>
+        <target state="translated">\n- 中斷\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiExit">
         <source>\n- Exit...\n</source>
-        <target state="new">\n- Exit...\n</target>
+        <target state="translated">\n- 結束...\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="new">- Aborting main thread...</target>
+        <target state="translated">- 正在中止主要執行緒...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">
         <source>Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</source>
-        <target state="new">Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</target>
+        <target state="translated">無法安裝 ctrl-c 處理常式，Ctrl-C 處理將無法使用。錯誤為:\n\t{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="new">--&gt; Referenced '{0}'</target>
+        <target state="translated">--&gt; 已參考 '{0}’</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="new">--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</target>
+        <target state="translated">--&gt; 已參考 '{0}' (F# Interactive 處理序可能鎖定了檔案)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="new">--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</target>
+        <target state="translated">--&gt; 已參考 '{0}' (已從此位置參考具有不同時間戳記的組件，請重設 fsi 以載入更新的組件)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="new">--&gt; Added '{0}' to library include path</target>
+        <target state="translated">--&gt; 已將 '{0}' 新增到程式庫 include 路徑</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="new">--&gt; Timing now on</target>
+        <target state="translated">--&gt; 計時現在已開啟</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="new">--&gt; Timing now off</target>
+        <target state="translated">--&gt; 計時現在已關閉</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
         <source>- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</source>
-        <target state="new">- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</target>
+        <target state="translated">- 事件處理時發生未預期的 ThreadAbortException (Ctrl-C): 正嘗試重新啟動...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiFailedToResolveAssembly">
         <source>Failed to resolve assembly '{0}'</source>
-        <target state="new">Failed to resolve assembly '{0}'</target>
+        <target state="translated">無法解析組件 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiBindingSessionTo">
         <source>Binding session to '{0}'...</source>
-        <target state="new">Binding session to '{0}'...</target>
+        <target state="translated">正在將工作階段繫結到 '{0}'...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductName">
         <source>Microsoft (R) F# Interactive version {0}</source>
-        <target state="new">Microsoft (R) F# Interactive version {0}</target>
+        <target state="translated">Microsoft (R) F# 互動版本 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiProductNameCommunity">
         <source>F# Interactive for F# {0}</source>
-        <target state="new">F# Interactive for F# {0}</target>
+        <target state="translated">適用於 F# {0} 的 F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="shadowCopyReferences">
         <source>Prevents references from being locked by the F# Interactive process</source>
-        <target state="new">Prevents references from being locked by the F# Interactive process</target>
+        <target state="translated">避免參考遭 F# 互動處理序封鎖</target>
         <note />
       </trans-unit>
     </body>

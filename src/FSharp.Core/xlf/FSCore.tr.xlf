@@ -4,712 +4,712 @@
     <body>
       <trans-unit id="matchCasesIncomplete">
         <source>The match cases were incomplete</source>
-        <target state="new">The match cases were incomplete</target>
+        <target state="translated">Eşleşme durumları tam değildi</target>
         <note />
       </trans-unit>
       <trans-unit id="addressOpNotFirstClass">
         <source>First class uses of address-of operators are not permitted.</source>
-        <target state="new">First class uses of address-of operators are not permitted.</target>
+        <target state="translated">Address-of işleçlerinin birinci sınıf kullanımlarına izin verilmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="arraysHadDifferentLengths">
         <source>The arrays have different lengths.</source>
-        <target state="new">The arrays have different lengths.</target>
+        <target state="translated">Dizinlerin uzunlukları farklı.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayWasEmpty">
         <source>The input array was empty.</source>
-        <target state="new">The input array was empty.</target>
+        <target state="translated">Giriş dizisi boştu.</target>
         <note />
       </trans-unit>
       <trans-unit id="badFormatString">
         <source>Input string was not in a correct format.</source>
-        <target state="new">Input string was not in a correct format.</target>
+        <target state="translated">Giriş dizesi doğru biçimde değildi.</target>
         <note />
       </trans-unit>
       <trans-unit id="delegateExpected">
         <source>Expecting delegate type.</source>
-        <target state="new">Expecting delegate type.</target>
+        <target state="translated">Temsilci türü bekleniyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvDivByIntCoerce">
         <source>Dynamic invocation of DivideByInt involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of DivideByInt involving coercions is not supported.</target>
+        <target state="translated">Zorlamalar içeren dinamik DivideByInt çağrısı desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpAddCoerce">
         <source>Dynamic invocation of op_Addition involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of op_Addition involving coercions is not supported.</target>
+        <target state="translated">Zorlamalar içeren dinamik op_Addition çağrısı desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpAddOverload">
         <source>Dynamic invocation of op_Addition involving overloading is not supported.</source>
-        <target state="new">Dynamic invocation of op_Addition involving overloading is not supported.</target>
+        <target state="translated">Aşırı yükleme içeren dinamik op_Addition çağrısı desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpMultCoerce">
         <source>Dynamic invocation of op_Multiply involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of op_Multiply involving coercions is not supported.</target>
+        <target state="translated">Zorlamalar içeren dinamik op_Multiply çağrısı desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpMultOverload">
         <source>Dynamic invocation of op_Multiply involving overloading is not supported.</source>
-        <target state="new">Dynamic invocation of op_Multiply involving overloading is not supported.</target>
+        <target state="translated">Aşırı yükleme içeren dinamik op_Multiply çağrısı desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="endCannotBeNaN">
         <source>The end of a range cannot be NaN.</source>
-        <target state="new">The end of a range cannot be NaN.</target>
+        <target state="translated">Aralığın sonu NaN olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationAlreadyFinished">
         <source>Enumeration already finished.</source>
-        <target state="new">Enumeration already finished.</target>
+        <target state="translated">Sabit listesi zaten tamamlanmış.</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationNotStarted">
         <source>Enumeration has not started. Call MoveNext.</source>
-        <target state="new">Enumeration has not started. Call MoveNext.</target>
+        <target state="translated">Sabit listesi işlemi başlamadı. MoveNext çağrısı yapın.</target>
         <note />
       </trans-unit>
       <trans-unit id="setContainsNoElements">
         <source>Set contains no elements.</source>
-        <target state="new">Set contains no elements.</target>
+        <target state="translated">Küme hiç öğe içermiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationPastIntMaxValue">
         <source>Enumeration based on System.Int32 exceeded System.Int32.MaxValue.</source>
-        <target state="new">Enumeration based on System.Int32 exceeded System.Int32.MaxValue.</target>
+        <target state="translated">System.Int32'yi temel alan numaralandırma System.Int32.MaxValue'yu aştı.</target>
         <note />
       </trans-unit>
       <trans-unit id="failedReadEnoughBytes">
         <source>Failed to read enough bytes from the stream.</source>
-        <target state="new">Failed to read enough bytes from the stream.</target>
+        <target state="translated">Akıştan yeterli miktarda bayt okunamadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="genericCompareFail1">
         <source>Failure during generic comparison: the type '{0}' does not implement the System.IComparable interface. This error may be arise from the use of a function such as 'compare', 'max' or 'min' or a data structure such as 'Set' or 'Map' whose keys contain instances of this type.</source>
-        <target state="new">Failure during generic comparison: the type '{0}' does not implement the System.IComparable interface. This error may be arise from the use of a function such as 'compare', 'max' or 'min' or a data structure such as 'Set' or 'Map' whose keys contain instances of this type.</target>
+        <target state="translated">Genel karşılaştırma sırasında hata: '{0}' türü System.IComparable arabirimini uygulamıyor. Bu hata 'compare', 'max' veya 'min' gibi bir işlevin ya da anahtarları bu türün örneklerini içeren 'Set' veya 'Map' gibi bir veri yapısının kullanılmasından kaynaklanabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="indexOutOfBounds">
         <source>The index was outside the range of elements in the list.</source>
-        <target state="new">The index was outside the range of elements in the list.</target>
+        <target state="translated">Dizin listedeki öğeleri içeren aralığın dışındaydı.</target>
         <note />
       </trans-unit>
       <trans-unit id="inputListWasEmpty">
         <source>The input list was empty.</source>
-        <target state="new">The input list was empty.</target>
+        <target state="translated">Giriş listesi boştu.</target>
         <note />
       </trans-unit>
       <trans-unit id="inputMustBeNonNegative">
         <source>The input must be non-negative.</source>
-        <target state="new">The input must be non-negative.</target>
+        <target state="translated">Giriş negatif olmayan bir sayı olmalıdır.</target>
         <note />
       </trans-unit>
       <trans-unit id="inputMustBePositive">
         <source>The input must be positive.</source>
-        <target state="new">The input must be positive.</target>
+        <target state="translated">Girdinin pozitif bir değer olması gerekir.</target>
         <note />
       </trans-unit>
       <trans-unit id="inputSequenceEmpty">
         <source>The input sequence was empty.</source>
-        <target state="new">The input sequence was empty.</target>
+        <target state="translated">Giriş dizisi boştu.</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTupleTypes">
         <source>This is not a valid tuple type for the F# reflection library.</source>
-        <target state="new">This is not a valid tuple type for the F# reflection library.</target>
+        <target state="translated">Bu, F# yansıma kitaplığı için geçerli bir demet türü değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="keyNotFound">
         <source>The item, key, or index was not found in the collection.</source>
-        <target state="new">The item, key, or index was not found in the collection.</target>
+        <target state="translated">Belirtilen öğe, anahtar veya dizin koleksiyonda bulunamadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="listsHadDifferentLengths">
         <source>The lists had different lengths.</source>
-        <target state="new">The lists had different lengths.</target>
+        <target state="translated">Listelerin uzunlukları farklıydı.</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorAlreadyStarted">
         <source>The MailboxProcessor has already been started.</source>
-        <target state="new">The MailboxProcessor has already been started.</target>
+        <target state="translated">MailboxProcessor zaten başlatılmış.</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorPostAndAsyncReplyTimedOut">
         <source>MailboxProcessor.PostAndAsyncReply timed out.</source>
-        <target state="new">MailboxProcessor.PostAndAsyncReply timed out.</target>
+        <target state="translated">MailboxProcessor.PostAndAsyncReply zaman aşımına uğradı.</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorPostAndReplyTimedOut">
         <source>MailboxProcessor.PostAndReply timed out.</source>
-        <target state="new">MailboxProcessor.PostAndReply timed out.</target>
+        <target state="translated">MailboxProcessor.PostAndReply zaman aşımına uğradı.</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxReceiveTimedOut">
         <source>Mailbox.Receive timed out.</source>
-        <target state="new">Mailbox.Receive timed out.</target>
+        <target state="translated">Mailbox.Receive zaman aşımına uğradı.</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxScanTimedOut">
         <source>Mailbox.Scan timed out.</source>
-        <target state="new">Mailbox.Scan timed out.</target>
+        <target state="translated">Mailbox.Scan zaman aşımına uğradı.</target>
         <note />
       </trans-unit>
       <trans-unit id="mapCannotBeMutated">
         <source>Map values cannot be mutated.</source>
-        <target state="new">Map values cannot be mutated.</target>
+        <target state="translated">Eşleme değerleri değiştirilemez.</target>
         <note />
       </trans-unit>
       <trans-unit id="mismatchIARCancel">
         <source>The IAsyncResult object provided does not match this 'Cancel' operation.</source>
-        <target state="new">The IAsyncResult object provided does not match this 'Cancel' operation.</target>
+        <target state="translated">Sağlanan IAsyncResult nesnesi bu 'Cancel' işlemiyle eşleşmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="mismatchIAREnd">
         <source>The IAsyncResult object provided does not match this 'End' operation.</source>
-        <target state="new">The IAsyncResult object provided does not match this 'End' operation.</target>
+        <target state="translated">Sağlanan IAsyncResult nesnesi bu 'End' işlemiyle eşleşmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="noNegateMinValue">
         <source>Negating the minimum value of a twos complement number is invalid.</source>
-        <target state="new">Negating the minimum value of a twos complement number is invalid.</target>
+        <target state="translated">İkiye tamamlanmış bir sayının en küçük değerini eksi yapma geçersizdir.</target>
         <note />
       </trans-unit>
       <trans-unit id="checkInit">
         <source>The initialization of an object or value resulted in an object or value being accessed recursively before it was fully initialized.</source>
-        <target state="new">The initialization of an object or value resulted in an object or value being accessed recursively before it was fully initialized.</target>
+        <target state="translated">Bir nesnenin veya değerin başlatılması işlemi, tam olarak başlatılmadan önce nesneye veya değere özyinelemeli olarak erişilmesiyle sonuçlandı.</target>
         <note />
       </trans-unit>
       <trans-unit id="checkStaticInit">
         <source>The static initialization of a file or type resulted in static data being accessed recursively before it was fully initialized.</source>
-        <target state="new">The static initialization of a file or type resulted in static data being accessed recursively before it was fully initialized.</target>
+        <target state="translated">Bir dosyanın veya türün statik başlatılması işlemi, tam olarak başlatılmadan önce statik verilere özyinelemeli olarak erişilmesiyle sonuçlandı.</target>
         <note />
       </trans-unit>
       <trans-unit id="nonZeroBasedDisallowed">
         <source>Arrays with non-zero base cannot be created on this platform.</source>
-        <target state="new">Arrays with non-zero base cannot be created on this platform.</target>
+        <target state="translated">Bu platformda sıfır tabanlı olmayan diziler oluşturulamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionType">
         <source>Type '{0}' is not a function type.</source>
-        <target state="new">Type '{0}' is not a function type.</target>
+        <target state="translated">'{0}' türü bir işlev türü değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAnExceptionType">
         <source>Type '{0}' is not the representation of an F# exception declaration.</source>
-        <target state="new">Type '{0}' is not the representation of an F# exception declaration.</target>
+        <target state="translated">'{0}' türü bir F# özel durum bildirimini temsil etmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAPermutation">
         <source>The function did not compute a permutation.</source>
-        <target state="new">The function did not compute a permutation.</target>
+        <target state="translated">İşlev bir permütasyon hesaplamadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="notARecordType">
         <source>Type '{0}' is not an F# record type.</source>
-        <target state="new">Type '{0}' is not an F# record type.</target>
+        <target state="translated">'{0}' türü bir F# kayıt türü değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="notATupleType">
         <source>Type '{0}' is not a tuple type.</source>
-        <target state="new">Type '{0}' is not a tuple type.</target>
+        <target state="translated">'{0}' türü bir demet türü değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAUnionType">
         <source>Type '{0}' is not an F# union type.</source>
-        <target state="new">Type '{0}' is not an F# union type.</target>
+        <target state="translated">'{0}' türü bir F# birleşim türü değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="notComparable">
         <source>The two objects have different types and are not comparable.</source>
-        <target state="new">The two objects have different types and are not comparable.</target>
+        <target state="translated">İki nesne farklı türlere sahip ve karşılaştırılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="notEnoughElements">
         <source>The input sequence has an insufficient number of elements.</source>
-        <target state="new">The input sequence has an insufficient number of elements.</target>
+        <target state="translated">Giriş dizisinde yetersiz sayıda öğe var.</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsedForHashing">
         <source>This object is for recursive equality calls and cannot be used for hashing.</source>
-        <target state="new">This object is for recursive equality calls and cannot be used for hashing.</target>
+        <target state="translated">Bu nesne özyinelemeli eşitlik çağrıları içindir ve karma işlevi için kullanılamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="nullsNotAllowedInArray">
         <source>One of the elements in the array is null.</source>
-        <target state="new">One of the elements in the array is null.</target>
+        <target state="translated">Dizideki öğelerden biri null.</target>
         <note />
       </trans-unit>
       <trans-unit id="objIsNotARecord">
         <source>The object is not an F# record value.</source>
-        <target state="new">The object is not an F# record value.</target>
+        <target state="translated">Nesne bir F# kayıt değeri değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="objIsNullAndNoType">
         <source>The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</source>
-        <target state="new">The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</target>
+        <target state="translated">Nesne null ve hiçbir tür verilmedi. Null olmayan bir nesne ya da null olmayan türde bir parametre geçirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="outOfRange">
         <source>The index is outside the legal range.</source>
-        <target state="new">The index is outside the legal range.</target>
+        <target state="translated">Dizin geçerli aralığın dışında.</target>
         <note />
       </trans-unit>
       <trans-unit id="privateExceptionType">
         <source>The type '{0}' is the representation of an F# exception declaration but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is the representation of an F# exception declaration but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">'{0}' türü bir F# özel durum bildirimini temsil ediyor ancak temsili özel değil. Özel tür temsillerine erişmek için BindingFlags.NonPublic belirtmelisiniz.</target>
         <note />
       </trans-unit>
       <trans-unit id="privateRecordType">
         <source>The type '{0}' is an F# record type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is an F# record type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">'{0}' türü bir F# kayıt türü ancak temsili özel değil. Özel tür temsillerine erişmek için BindingFlags.NonPublic belirtmelisiniz.</target>
         <note />
       </trans-unit>
       <trans-unit id="privateUnionType">
         <source>The type '{0}' is an F# union type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is an F# union type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">'{0}' türü bir F# birleşim türü ancak temsili özel değil. Özel tür temsillerine erişmek için BindingFlags.NonPublic belirtmelisiniz.</target>
         <note />
       </trans-unit>
       <trans-unit id="QexpectedOneType">
         <source>Expected exactly one type argument.</source>
-        <target state="new">Expected exactly one type argument.</target>
+        <target state="translated">Tam olarak bir tür bağımsız değişkeni bekleniyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="QexpectedTwoTypes">
         <source>Expected exactly two type arguments.</source>
-        <target state="new">Expected exactly two type arguments.</target>
+        <target state="translated">Tam olarak iki tür bağımsız değişkeni bekleniyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="QinvalidCaseIndex">
         <source>Not a valid F# union case index.</source>
-        <target state="new">Not a valid F# union case index.</target>
+        <target state="translated">Geçerli bir F# birleşim durumu dizini değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="QmissingRecordField">
         <source>Type '{0}' did not have an F# record field named '{1}'.</source>
-        <target state="new">Type '{0}' did not have an F# record field named '{1}'.</target>
+        <target state="translated">{0}' türünde '{1}' adlı bir F# kayıt alanı yoktu.</target>
         <note />
       </trans-unit>
       <trans-unit id="QmissingUnionCase">
         <source>Type '{0}' did not have an F# union case named '{1}'.</source>
-        <target state="new">Type '{0}' did not have an F# union case named '{1}'.</target>
+        <target state="translated">{0}' türünde '{1}' adlı bir F# birleşim durumu yoktu.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmBadFieldType">
         <source>Type mismatch when building '{0}': the type of the field was incorrect. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the type of the field was incorrect. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: alanın türü yanlıştı. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmBodyMustBeUnit">
         <source>Type mismatch when building '{0}': body must return unit. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': body must return unit. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: gövde birim döndürmelidir. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmCondMustBeBool">
         <source>Type mismatch when building '{0}': condition expression must be of type bool. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': condition expression must be of type bool. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: koşul ifadesi bool türünde olmalıdır. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExpectedFunction">
         <source>Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: işlev uygulamasında veya let bağlamasında işlev türü bekleniyordu. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprNotMatchTuple">
         <source>Type mismatch when building '{0}': expression doesn't match the tuple type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': expression doesn't match the tuple type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: ifade demet türüyle eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprTypeMismatch">
         <source>Type mismatch when building '{0}': types of expression does not match. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': types of expression does not match. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: ifadenin türleri eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmFunctionArgTypeMismatch">
         <source>Type mismatch when building '{0}': function argument type doesn't match. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': function argument type doesn't match. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: işlev bağımsız değişkeni türü eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmGuardMustBeBool">
         <source>Type mismatch when building '{0}': guard must return boolean. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': guard must return boolean. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: koruma boole değeri döndürmelidir. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmIncorrectArgForRecord">
         <source>Type mismatch when building '{0}': incorrect argument type for an F# record. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': incorrect argument type for an F# record. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: bir F# kaydı için geçersiz bağımsız değişken türü. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmIncorrectArgForUnion">
         <source>Type mismatch when building '{0}': incorrect argument type for an F# union. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': incorrect argument type for an F# union. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: bir F# birleşimi için geçersiz bağımsız değişken türü. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmInitArray">
         <source>Type mismatch when building '{0}': initializer doesn't match array type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': initializer doesn't match array type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: başlatıcı dizi türüyle eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmInvalidParam">
         <source>Type mismatch when building '{0}': invalid parameter for a method or indexer property. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': invalid parameter for a method or indexer property. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: bir metot veya dizin oluşturucu özelliği için geçersiz parametre. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmLoopBodyMustBeLambdaTakingInteger">
         <source>Type mismatch when building '{0}': body of the for loop must be lambda taking integer as an argument. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': body of the for loop must be lambda taking integer as an argument. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: for döngüsünün gövdesi bağımsız değişken olarak tamsayı alan lambda olmalıdır. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmLowerUpperBoundMustBeInt">
         <source>Type mismatch when building '{0}': lower and upper bounds must be integers. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': lower and upper bounds must be integers. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: alt ve üst sınırlar tamsayı olmalıdır. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmTrueAndFalseMustMatch">
         <source>Type mismatch when building '{0}': types of true and false branches differ. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': types of true and false branches differ. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: true ve false dallarının türleri farklı. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmTuple">
         <source>Type mismatch when building '{0}': mismatched type of argument and tuple element. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': mismatched type of argument and tuple element. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: bağımsız değişken ile demet öğesinin türü eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmVarTypeNotMatchRHS">
         <source>Type mismatch when building '{0}': the variable type doesn't match the type of the right-hand-side of a let binding. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the variable type doesn't match the type of the right-hand-side of a let binding. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: değişken türü bir let bağlamasının sağ tarafının türüyle eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QunexpectedHole">
         <source>Unexpected quotation hole in expression.</source>
-        <target state="new">Unexpected quotation hole in expression.</target>
+        <target state="translated">İfadede beklenmeyen tırnak boşluğu var.</target>
         <note />
       </trans-unit>
       <trans-unit id="QunrecognizedMethodCall">
         <source>The parameter is not a recognized method name.</source>
-        <target state="new">The parameter is not a recognized method name.</target>
+        <target state="translated">Parametre tanınan bir metot adı değil.</target>
         <note />
       </trans-unit>
       <trans-unit id="resetNotSupported">
         <source>Reset is not supported on this enumerator.</source>
-        <target state="new">Reset is not supported on this enumerator.</target>
+        <target state="translated">Bu numaralayıcı üzerinde sıfırlama işlemi desteklenmiyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="startCannotBeNaN">
         <source>The start of a range cannot be NaN.</source>
-        <target state="new">The start of a range cannot be NaN.</target>
+        <target state="translated">Aralığın başlangıcı NaN olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="stepCannotBeNaN">
         <source>The step of a range cannot be NaN.</source>
-        <target state="new">The step of a range cannot be NaN.</target>
+        <target state="translated">Aralığın adımı NaN olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="stepCannotBeZero">
         <source>The step of a range cannot be zero.</source>
-        <target state="new">The step of a range cannot be zero.</target>
+        <target state="translated">Aralığın adımı sıfır olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
-        <target state="new">The System.Threading.SynchronizationContext.Current of the calling thread is null.</target>
+        <target state="translated">Çağıran iş parçacığının System.Threading.SynchronizationContext.Current'ı null.</target>
         <note />
       </trans-unit>
       <trans-unit id="tupleIndexOutOfRange">
         <source>The tuple index '{1}' was out of range for tuple type '{0}'.</source>
-        <target state="new">The tuple index '{1}' was out of range for tuple type '{0}'.</target>
+        <target state="translated">{0}' demet türü için '{1}' demet dizini aralık dışındaydı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindConstructor">
         <source>Failed to bind constructor</source>
-        <target state="new">Failed to bind constructor</target>
+        <target state="translated">Oluşturucu bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindField">
         <source>Failed to bind field '{0}'</source>
-        <target state="new">Failed to bind field '{0}'</target>
+        <target state="translated">'{0}' alanı bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindProperty">
         <source>Failed to bind property '{0}'</source>
-        <target state="new">Failed to bind property '{0}'</target>
+        <target state="translated">'{0}' özelliği bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindTypeInAssembly">
         <source>Failed to bind type '{0}' in assembly '{1}'</source>
-        <target state="new">Failed to bind type '{0}' in assembly '{1}'</target>
+        <target state="translated">{1}' bütünleştirilmiş kodundaki '{0}' türü bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QincompatibleRecordLength">
         <source>Incompatible record length</source>
-        <target state="new">Incompatible record length</target>
+        <target state="translated">Uyumsuz kayıt uzunluğu</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectInstanceType">
         <source>Incorrect instance type</source>
-        <target state="new">Incorrect instance type</target>
+        <target state="translated">Yanlış örnek türü</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectNumArgs">
         <source>Incorrect number of arguments</source>
-        <target state="new">Incorrect number of arguments</target>
+        <target state="translated">Yanlış sayıda bağımsız değişken</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectType">
         <source>Incorrect type</source>
-        <target state="new">Incorrect type</target>
+        <target state="translated">Yanlış tür</target>
         <note />
       </trans-unit>
       <trans-unit id="QinvalidFuncType">
         <source>Invalid function type</source>
-        <target state="new">Invalid function type</target>
+        <target state="translated">Geçersiz işlev türü</target>
         <note />
       </trans-unit>
       <trans-unit id="QnonStaticNoReceiverObject">
         <source>The member is non-static (instance), but no receiver object was supplied</source>
-        <target state="new">The member is non-static (instance), but no receiver object was supplied</target>
+        <target state="translated">Üye statik değil (örnek), ancak hiçbir alıcı nesne sağlanmadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QparentCannotBeNull">
         <source>Parent type cannot be null</source>
-        <target state="new">Parent type cannot be null</target>
+        <target state="translated">Üst tür null olamaz</target>
         <note />
       </trans-unit>
       <trans-unit id="QreadingSetOnly">
         <source>Reading a set-only property</source>
-        <target state="new">Reading a set-only property</target>
+        <target state="translated">Yalnızca ayarlanabilen bir özellik okunuyor</target>
         <note />
       </trans-unit>
       <trans-unit id="QstaticWithReceiverObject">
         <source>Receiver object was unexpected, as member is static</source>
-        <target state="new">Receiver object was unexpected, as member is static</target>
+        <target state="translated">Üye statik olduğundan alıcı nesne beklenmiyordu</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprHasWrongType">
         <source>Type mismatch when building '{0}': the expression has the wrong type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the expression has the wrong type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: ifadenin türü yanlış. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmFunTypeNotMatchDelegate">
         <source>Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">{0}' oluşturulurken tür uyuşmazlığı oluştu: işlev türü temsilci türüyle eşleşmiyor. '{1}' bekleniyordu, ancak '{2}' türü alındı.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmRaw">
         <source>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</source>
-        <target state="new">Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</target>
+        <target state="translated">İfade değişmez teklif değerine birleştirilirken tür uyuşmazlığı oluştu. Eklenen ifade ağacının türü birleştirme işlemi tarafından beklenen türle eşleşmiyor. '{0}' bekleniyordu, ancak '{1}' türü alındı. (%% x : {0}) veya (%x : {0}) gibi beklenen ifade türüyle tür eklemeyi düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtupleAccessOutOfRange">
         <source>Tuple access out of range</source>
-        <target state="new">Tuple access out of range</target>
+        <target state="translated">Demet erişimi aralık dışında</target>
         <note />
       </trans-unit>
       <trans-unit id="QtupleLengthsDiffer">
         <source>The tuple lengths are different</source>
-        <target state="new">The tuple lengths are different</target>
+        <target state="translated">Demet uzunlukları farklı</target>
         <note />
       </trans-unit>
       <trans-unit id="QunionNeedsDiffNumArgs">
         <source>F# union type requires different number of arguments</source>
-        <target state="new">F# union type requires different number of arguments</target>
+        <target state="translated">F# birleşim türü farklı sayıda bağımsız değişken gerektirir</target>
         <note />
       </trans-unit>
       <trans-unit id="QwritingGetOnly">
         <source>Writing a get-only property</source>
-        <target state="new">Writing a get-only property</target>
+        <target state="translated">Yalnızca alınabilen bir özellik yazılıyor</target>
         <note />
       </trans-unit>
       <trans-unit id="QwrongNumOfTypeArgs">
         <source>The method '{0}' expects {1} type arguments but {2} were provided</source>
-        <target state="new">The method '{0}' expects {1} type arguments but {2} were provided</target>
+        <target state="translated">{0}' metodu {1} türünde bağımsız değişkenler bekliyor ancak {2} sağlandı</target>
         <note />
       </trans-unit>
       <trans-unit id="keyNotFoundAlt">
         <source>An index satisfying the predicate was not found in the collection.</source>
-        <target state="new">An index satisfying the predicate was not found in the collection.</target>
+        <target state="translated">Koşulu sağlayan bir dizin koleksiyonda bulunamadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="constructorForUnionCaseNotFound">
         <source>The constructor method '{0}' for the union case could not be found</source>
-        <target state="new">The constructor method '{0}' for the union case could not be found</target>
+        <target state="translated">Birleşim durumunun '{0}' oluşturucu metodu bulunamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="firstClassUsesOfSplice">
         <source>first class uses of '%' or '%%' are not permitted</source>
-        <target state="new">first class uses of '%' or '%%' are not permitted</target>
+        <target state="translated">birinci sınıf '%' veya '%%' kullanımına izin verilmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="moveNextNotCalledOrFinished">
         <source>MoveNext not called, or finished</source>
-        <target state="new">MoveNext not called, or finished</target>
+        <target state="translated">MoveNext çağrılmadı veya tamamlanmadı</target>
         <note />
       </trans-unit>
       <trans-unit id="multipleCompilationMappings">
         <source>Multiple CompilationMappingAttributes, expected at most one</source>
-        <target state="new">Multiple CompilationMappingAttributes, expected at most one</target>
+        <target state="translated">Birden fazla CompilationMappingAttributes var; bir tane bekleniyordu</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadFloatValue">
         <source>Bad float value</source>
-        <target state="new">Bad float value</target>
+        <target state="translated">Hatalı float değeri</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadFormatSpecifier">
         <source>Bad format specifier:{0}</source>
-        <target state="new">Bad format specifier:{0}</target>
+        <target state="translated">Hatalı biçim belirticisi: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadIntegerForDynamicFomatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="new">Bad integer supplied to dynamic formatter</target>
+        <target state="translated">Dinamik biçimlendiriciye yanlış tamsayı sağlandı</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
         <source>Expected a precision argument</source>
-        <target state="new">Expected a precision argument</target>
+        <target state="translated">Bir duyarlık bağımsız değişkeni bekleniyordu</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedWidth">
         <source>Expected a width argument</source>
-        <target state="new">Expected a width argument</target>
+        <target state="translated">Bir genişlik bağımsız değişkeni bekleniyordu</target>
         <note />
       </trans-unit>
       <trans-unit id="printfHashFormatSpecifierIllegal">
         <source>The # formatting modifier is invalid in F#</source>
-        <target state="new">The # formatting modifier is invalid in F#</target>
+        <target state="translated"># biçimlendirme değiştiricisi F# içinde geçersizdir</target>
         <note />
       </trans-unit>
       <trans-unit id="printfMissingFormatSpecifier">
         <source>Missing format specifier</source>
-        <target state="new">Missing format specifier</target>
+        <target state="translated">Biçim belirticisi eksik</target>
         <note />
       </trans-unit>
       <trans-unit id="printfNotAFunType">
         <source>Not a function type</source>
-        <target state="new">Not a function type</target>
+        <target state="translated">Bir işlev türü değil</target>
         <note />
       </trans-unit>
       <trans-unit id="printfPrecisonSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="new">Bad format specifier (precision)</target>
+        <target state="translated">Hatalı biçim belirticisi (duyarlık)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">
         <source>Bad format specifier (after {0})</source>
-        <target state="new">Bad format specifier (after {0})</target>
+        <target state="translated">Hatalı biçim belirticisi ({0} sonrasında)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfWidthSpecifierIllegal">
         <source>Bad format specifier (width)</source>
-        <target state="new">Bad format specifier (width)</target>
+        <target state="translated">Hatalı biçim belirticisi (genişlik)</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindFunction">
         <source>Could not bind function {0} in type {1}</source>
-        <target state="new">Could not bind function {0} in type {1}</target>
+        <target state="translated">{1} türünde {0} işlevi bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindProperty">
         <source>Could not bind property {0} in type {1}</source>
-        <target state="new">Could not bind property {0} in type {1}</target>
+        <target state="translated">{1} türündeki {0} özelliği bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindToMethod">
         <source>Could not bind to method</source>
-        <target state="new">Could not bind to method</target>
+        <target state="translated">Metot bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotTakeAddress">
         <source>Cannot take the address of this quotation</source>
-        <target state="new">Cannot take the address of this quotation</target>
+        <target state="translated">Bu tırnağın adresi alınamıyor</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindAssembly">
         <source>Failed to bind assembly '{0}' while processing quotation data</source>
-        <target state="new">Failed to bind assembly '{0}' while processing quotation data</target>
+        <target state="translated">Tırnak verileri işlenirken '{0}' bütünleştirilmiş kodu bağlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="QillFormedAppOrLet">
         <source>ill formed expression: AppOp or LetOp</source>
-        <target state="new">ill formed expression: AppOp or LetOp</target>
+        <target state="translated">hatalı biçimlendirilmiş ifade: AppOp veya LetOp</target>
         <note />
       </trans-unit>
       <trans-unit id="QtypeArgumentOutOfRange">
         <source>type argument out of range</source>
-        <target state="new">type argument out of range</target>
+        <target state="translated">tür bağımsız değişkeni aralık dışında</target>
         <note />
       </trans-unit>
       <trans-unit id="thisValueCannotBeMutated">
         <source>This value cannot be mutated</source>
-        <target state="new">This value cannot be mutated</target>
+        <target state="translated">Bu değer değiştirilemez</target>
         <note />
       </trans-unit>
       <trans-unit id="optionValueWasNone">
         <source>The option value was None</source>
-        <target state="new">The option value was None</target>
+        <target state="translated">Seçenek değeri None idi</target>
         <note />
       </trans-unit>
       <trans-unit id="controlContinuationInvokedMultipleTimes">
         <source>A continuation provided by Async.FromContinuations was invoked multiple times</source>
-        <target state="new">A continuation provided by Async.FromContinuations was invoked multiple times</target>
+        <target state="translated">Async.FromContinuations tarafından sağlanan bir devamlılık birden fazla kez çağrıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidRecordTypeConstructorNotDefined">
         <source>The record type '{0}' is invalid. Required constructor is not defined.</source>
-        <target state="new">The record type '{0}' is invalid. Required constructor is not defined.</target>
+        <target state="translated">'{0}' kayıt türü geçersiz. Gerekli oluşturucu tanımlanmadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTupleTypeConstructorNotDefined">
         <source>The tuple type '{0}' is invalid. Required constructor is not defined.</source>
-        <target state="new">The tuple type '{0}' is invalid. Required constructor is not defined.</target>
+        <target state="translated">'{0}' demet türü geçersiz. Gerekli oluşturucu tanımlanmadı.</target>
         <note />
       </trans-unit>
       <trans-unit id="inputSequenceTooLong">
         <source>The input sequence contains more than one element.</source>
-        <target state="new">The input sequence contains more than one element.</target>
+        <target state="translated">Giriş dizisi birden fazla öğe içeriyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="thenByError">
         <source>'thenBy' and 'thenByDescending' may only be used with an ordered input</source>
-        <target state="new">'thenBy' and 'thenByDescending' may only be used with an ordered input</target>
+        <target state="translated">'thenBy' ve 'thenByDescending' yalnızca sıralanmış bir girişle kullanılabilir</target>
         <note />
       </trans-unit>
       <trans-unit id="failDueToUnsupportedInputTypeInSumByOrAverageBy">
         <source>Unrecognized use of a 'sumBy' or 'averageBy' operator in a query. In queries whose original data is of static type IQueryable, these operators may only be used with result type int32, int64, single, double or decimal</source>
-        <target state="new">Unrecognized use of a 'sumBy' or 'averageBy' operator in a query. In queries whose original data is of static type IQueryable, these operators may only be used with result type int32, int64, single, double or decimal</target>
+        <target state="translated">Sorguda 'sumBy' veya 'averageBy' işlecinin tanınmayan kullanımı. Özgün verileri statik IQueryable türünde olan sorgularda, bu işleçler yalnızca int32, int64, single, double veya decimal sonuç türüyle kullanılabilir</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedIfThenElse">
         <source>An if/then/else conditional or pattern matching expression with multiple branches is not permitted in a query. An if/then/else conditional may be used.</source>
-        <target state="new">An if/then/else conditional or pattern matching expression with multiple branches is not permitted in a query. An if/then/else conditional may be used.</target>
+        <target state="translated">Sorguda, birden fazla dalı bulunan if/then/else koşullu veya desen eşleştirme ifadesine izin verilmez. Bir if/then/else koşulu kullanılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryConstruct">
         <source>This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">Bu geçerli bir sorgu ifadesi değil. Aşağıdaki yapı sorguda kullanıldı, ancak F#-to-LINQ çevirmeni tarafından tanınmıyor:\n{0}\nİzin verilen soruların belirtimini denetleyin ve işlemlerden bazılarını sorgu ifadesinin dışına taşımayı düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryCall">
         <source>This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</source>
-        <target state="new">This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</target>
+        <target state="translated">Bu geçerli bir sorgu ifadesi değil. '{0}' metodu sorguda kullanıldı, ancak F#-to-LINQ çevirmeni tarafından tanınmıyor. İzin verilen soruların belirtimini denetleyin ve işlemlerden bazılarını sorgu ifadesinin dışına taşımayı düşünün</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryProperty">
         <source>This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">Bu geçerli bir sorgu ifadesi değil. '{0}' özelliği sorguda kullanıldı, ancak F#-to-LINQ çevirmeni tarafından tanınmıyor. İzin verilen soruların belirtimini denetleyin ve işlemlerden bazılarını sorgu ifadesinin dışına taşımayı düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">Bu geçerli bir sorgu ifadesi değil. '{0}' yapısı sorguda kullanıldı, ancak F#-to-LINQ çevirmeni tarafından tanınmıyor. İzin verilen soruların belirtimini denetleyin ve işlemlerden bazılarını sorgu ifadesinin dışına taşımayı düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="maxDegreeOfParallelismNotPositive">
         <source>maxDegreeOfParallelism must be positive, was {0}</source>
-        <target state="new">maxDegreeOfParallelism must be positive, was {0}</target>
+        <target state="translated">maxDegreeOfParallelism pozitif olmalıdır, değeri: {0}</target>
         <note />
       </trans-unit>
     </body>

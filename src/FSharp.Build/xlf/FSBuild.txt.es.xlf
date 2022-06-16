@@ -4,27 +4,27 @@
     <body>
       <trans-unit id="mapSourceRootsContainsDuplicate">
         <source>SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</source>
-        <target state="new">SourceRoot contains duplicate items '{0}' with conflicting metadata '{1}': '{2}' and '{3}'</target>
+        <target state="translated">SourceRoot contiene elementos "{0}" duplicados con metadatos en conflicto "{1}": "{2}" y "{3}"</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
         <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
+        <target state="translated">No se encontró el valor de SourceRoot.ContainingRoot en los elementos SourceRoot o el elemento correspondiente no es una raíz de origen de nivel superior: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
         <source>SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</source>
-        <target state="new">SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true</target>
+        <target state="translated">Los elementos SourceRoot deben incluir al menos un elemento de nivel superior (no anidado) cuando DeterministicSourcePaths es verdadero.</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsPathMustEndWithSlashOrBackslash">
         <source>SourceRoot paths are required to end with a slash or backslash: '{0}'</source>
-        <target state="new">SourceRoot paths are required to end with a slash or backslash: '{0}'</target>
+        <target state="translated">Se requiere que las rutas de acceso SourceRoot finalicen con una barra diagonal o una barra diagonal inversa: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to the tool.</source>
-        <target state="new">ToolPath is unknown; specify the path to the tool.</target>
+        <target state="translated">ToolPath se desconoce; especifique la ruta de acceso a la herramienta.</target>
         <note />
       </trans-unit>
     </body>

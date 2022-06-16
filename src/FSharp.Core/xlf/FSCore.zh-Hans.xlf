@@ -4,712 +4,712 @@
     <body>
       <trans-unit id="matchCasesIncomplete">
         <source>The match cases were incomplete</source>
-        <target state="new">The match cases were incomplete</target>
+        <target state="translated">大小写匹配不完整</target>
         <note />
       </trans-unit>
       <trans-unit id="addressOpNotFirstClass">
         <source>First class uses of address-of operators are not permitted.</source>
-        <target state="new">First class uses of address-of operators are not permitted.</target>
+        <target state="translated">不允许优先使用 address-of 运算符。</target>
         <note />
       </trans-unit>
       <trans-unit id="arraysHadDifferentLengths">
         <source>The arrays have different lengths.</source>
-        <target state="new">The arrays have different lengths.</target>
+        <target state="translated">各个数组具有不同的长度。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayWasEmpty">
         <source>The input array was empty.</source>
-        <target state="new">The input array was empty.</target>
+        <target state="translated">输入数组为空。</target>
         <note />
       </trans-unit>
       <trans-unit id="badFormatString">
         <source>Input string was not in a correct format.</source>
-        <target state="new">Input string was not in a correct format.</target>
+        <target state="translated">输入字符串的格式不正确。</target>
         <note />
       </trans-unit>
       <trans-unit id="delegateExpected">
         <source>Expecting delegate type.</source>
-        <target state="new">Expecting delegate type.</target>
+        <target state="translated">应为委托类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvDivByIntCoerce">
         <source>Dynamic invocation of DivideByInt involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of DivideByInt involving coercions is not supported.</target>
+        <target state="translated">不支持对涉及强制的 DivideByInt 进行动态调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpAddCoerce">
         <source>Dynamic invocation of op_Addition involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of op_Addition involving coercions is not supported.</target>
+        <target state="translated">不支持对涉及强制的 op_Addition 进行动态调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpAddOverload">
         <source>Dynamic invocation of op_Addition involving overloading is not supported.</source>
-        <target state="new">Dynamic invocation of op_Addition involving overloading is not supported.</target>
+        <target state="translated">不支持对涉及重载的 op_Addition 进行动态调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpMultCoerce">
         <source>Dynamic invocation of op_Multiply involving coercions is not supported.</source>
-        <target state="new">Dynamic invocation of op_Multiply involving coercions is not supported.</target>
+        <target state="translated">不支持对涉及强制的 op_Multiply 进行动态调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="dyInvOpMultOverload">
         <source>Dynamic invocation of op_Multiply involving overloading is not supported.</source>
-        <target state="new">Dynamic invocation of op_Multiply involving overloading is not supported.</target>
+        <target state="translated">不支持对涉及重载的 op_Multiply 进行动态调用。</target>
         <note />
       </trans-unit>
       <trans-unit id="endCannotBeNaN">
         <source>The end of a range cannot be NaN.</source>
-        <target state="new">The end of a range cannot be NaN.</target>
+        <target state="translated">范围的末尾不能为 NaN。</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationAlreadyFinished">
         <source>Enumeration already finished.</source>
-        <target state="new">Enumeration already finished.</target>
+        <target state="translated">枚举已完成。</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationNotStarted">
         <source>Enumeration has not started. Call MoveNext.</source>
-        <target state="new">Enumeration has not started. Call MoveNext.</target>
+        <target state="translated">枚举尚未开始。请调用 MoveNext。</target>
         <note />
       </trans-unit>
       <trans-unit id="setContainsNoElements">
         <source>Set contains no elements.</source>
-        <target state="new">Set contains no elements.</target>
+        <target state="translated">集未包含任何元素。</target>
         <note />
       </trans-unit>
       <trans-unit id="enumerationPastIntMaxValue">
         <source>Enumeration based on System.Int32 exceeded System.Int32.MaxValue.</source>
-        <target state="new">Enumeration based on System.Int32 exceeded System.Int32.MaxValue.</target>
+        <target state="translated">基于 System.Int32 的枚举已超过 System.Int32.MaxValue。</target>
         <note />
       </trans-unit>
       <trans-unit id="failedReadEnoughBytes">
         <source>Failed to read enough bytes from the stream.</source>
-        <target state="new">Failed to read enough bytes from the stream.</target>
+        <target state="translated">未能从流中读取足够的字节。</target>
         <note />
       </trans-unit>
       <trans-unit id="genericCompareFail1">
         <source>Failure during generic comparison: the type '{0}' does not implement the System.IComparable interface. This error may be arise from the use of a function such as 'compare', 'max' or 'min' or a data structure such as 'Set' or 'Map' whose keys contain instances of this type.</source>
-        <target state="new">Failure during generic comparison: the type '{0}' does not implement the System.IComparable interface. This error may be arise from the use of a function such as 'compare', 'max' or 'min' or a data structure such as 'Set' or 'Map' whose keys contain instances of this type.</target>
+        <target state="translated">泛型比较过程中出错: 类型“{0}”未实现 System.IComparable 接口。此错误可能是因使用的函数(如“compare”、“max”或“min”)或数据结构(如“Set”或“Map”)中的键包含此类型的实例而导致的。</target>
         <note />
       </trans-unit>
       <trans-unit id="indexOutOfBounds">
         <source>The index was outside the range of elements in the list.</source>
-        <target state="new">The index was outside the range of elements in the list.</target>
+        <target state="translated">索引超出了列表中元素的范围。</target>
         <note />
       </trans-unit>
       <trans-unit id="inputListWasEmpty">
         <source>The input list was empty.</source>
-        <target state="new">The input list was empty.</target>
+        <target state="translated">输入列表为空。</target>
         <note />
       </trans-unit>
       <trans-unit id="inputMustBeNonNegative">
         <source>The input must be non-negative.</source>
-        <target state="new">The input must be non-negative.</target>
+        <target state="translated">输入必须为非负数。</target>
         <note />
       </trans-unit>
       <trans-unit id="inputMustBePositive">
         <source>The input must be positive.</source>
-        <target state="new">The input must be positive.</target>
+        <target state="translated">输入值必须为正数。</target>
         <note />
       </trans-unit>
       <trans-unit id="inputSequenceEmpty">
         <source>The input sequence was empty.</source>
-        <target state="new">The input sequence was empty.</target>
+        <target state="translated">输入序列为空。</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTupleTypes">
         <source>This is not a valid tuple type for the F# reflection library.</source>
-        <target state="new">This is not a valid tuple type for the F# reflection library.</target>
+        <target state="translated">这不是 F# 反射库的有效元组类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="keyNotFound">
         <source>The item, key, or index was not found in the collection.</source>
-        <target state="new">The item, key, or index was not found in the collection.</target>
+        <target state="translated">未在集合中找到相应的项、键或索引。</target>
         <note />
       </trans-unit>
       <trans-unit id="listsHadDifferentLengths">
         <source>The lists had different lengths.</source>
-        <target state="new">The lists had different lengths.</target>
+        <target state="translated">各个列表具有不同的长度。</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorAlreadyStarted">
         <source>The MailboxProcessor has already been started.</source>
-        <target state="new">The MailboxProcessor has already been started.</target>
+        <target state="translated">已启动 MailboxProcessor。</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorPostAndAsyncReplyTimedOut">
         <source>MailboxProcessor.PostAndAsyncReply timed out.</source>
-        <target state="new">MailboxProcessor.PostAndAsyncReply timed out.</target>
+        <target state="translated">MailboxProcessor.PostAndAsyncReply 超时。</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxProcessorPostAndReplyTimedOut">
         <source>MailboxProcessor.PostAndReply timed out.</source>
-        <target state="new">MailboxProcessor.PostAndReply timed out.</target>
+        <target state="translated">MailboxProcessor.PostAndReply 超时。</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxReceiveTimedOut">
         <source>Mailbox.Receive timed out.</source>
-        <target state="new">Mailbox.Receive timed out.</target>
+        <target state="translated">Mailbox.Receive 超时。</target>
         <note />
       </trans-unit>
       <trans-unit id="mailboxScanTimedOut">
         <source>Mailbox.Scan timed out.</source>
-        <target state="new">Mailbox.Scan timed out.</target>
+        <target state="translated">Mailbox.Scan 超时。</target>
         <note />
       </trans-unit>
       <trans-unit id="mapCannotBeMutated">
         <source>Map values cannot be mutated.</source>
-        <target state="new">Map values cannot be mutated.</target>
+        <target state="translated">无法转变映射值。</target>
         <note />
       </trans-unit>
       <trans-unit id="mismatchIARCancel">
         <source>The IAsyncResult object provided does not match this 'Cancel' operation.</source>
-        <target state="new">The IAsyncResult object provided does not match this 'Cancel' operation.</target>
+        <target state="translated">提供的 IAsyncResult 对象与此“取消”操作不匹配。</target>
         <note />
       </trans-unit>
       <trans-unit id="mismatchIAREnd">
         <source>The IAsyncResult object provided does not match this 'End' operation.</source>
-        <target state="new">The IAsyncResult object provided does not match this 'End' operation.</target>
+        <target state="translated">提供的 IAsyncResult 对象与此“结束”操作不匹配。</target>
         <note />
       </trans-unit>
       <trans-unit id="noNegateMinValue">
         <source>Negating the minimum value of a twos complement number is invalid.</source>
-        <target state="new">Negating the minimum value of a twos complement number is invalid.</target>
+        <target state="translated">对 2 的补数的最小值求反的操作无效。</target>
         <note />
       </trans-unit>
       <trans-unit id="checkInit">
         <source>The initialization of an object or value resulted in an object or value being accessed recursively before it was fully initialized.</source>
-        <target state="new">The initialization of an object or value resulted in an object or value being accessed recursively before it was fully initialized.</target>
+        <target state="translated">对象或值的初始化导致对象或值正被按递归方式访问，而尚未完全初始化。</target>
         <note />
       </trans-unit>
       <trans-unit id="checkStaticInit">
         <source>The static initialization of a file or type resulted in static data being accessed recursively before it was fully initialized.</source>
-        <target state="new">The static initialization of a file or type resulted in static data being accessed recursively before it was fully initialized.</target>
+        <target state="translated">文件或类型的静态初始化导致静态数据正被按递归方式访问，而其尚未完全初始化。</target>
         <note />
       </trans-unit>
       <trans-unit id="nonZeroBasedDisallowed">
         <source>Arrays with non-zero base cannot be created on this platform.</source>
-        <target state="new">Arrays with non-zero base cannot be created on this platform.</target>
+        <target state="translated">无法在此平台上创建不是从零数开始的数组。</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionType">
         <source>Type '{0}' is not a function type.</source>
-        <target state="new">Type '{0}' is not a function type.</target>
+        <target state="translated">类型“{0}”不是函数类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="notAnExceptionType">
         <source>Type '{0}' is not the representation of an F# exception declaration.</source>
-        <target state="new">Type '{0}' is not the representation of an F# exception declaration.</target>
+        <target state="translated">类型“{0}”不是 F# 异常声明的表示形式。</target>
         <note />
       </trans-unit>
       <trans-unit id="notAPermutation">
         <source>The function did not compute a permutation.</source>
-        <target state="new">The function did not compute a permutation.</target>
+        <target state="translated">该函数不计算排列。</target>
         <note />
       </trans-unit>
       <trans-unit id="notARecordType">
         <source>Type '{0}' is not an F# record type.</source>
-        <target state="new">Type '{0}' is not an F# record type.</target>
+        <target state="translated">类型“{0}”不是 F# 记录类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="notATupleType">
         <source>Type '{0}' is not a tuple type.</source>
-        <target state="new">Type '{0}' is not a tuple type.</target>
+        <target state="translated">类型“{0}”不是元组类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="notAUnionType">
         <source>Type '{0}' is not an F# union type.</source>
-        <target state="new">Type '{0}' is not an F# union type.</target>
+        <target state="translated">类型“{0}”不是 F# 联合类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="notComparable">
         <source>The two objects have different types and are not comparable.</source>
-        <target state="new">The two objects have different types and are not comparable.</target>
+        <target state="translated">两个对象具有不同的类型，不可以进行比较。</target>
         <note />
       </trans-unit>
       <trans-unit id="notEnoughElements">
         <source>The input sequence has an insufficient number of elements.</source>
-        <target state="new">The input sequence has an insufficient number of elements.</target>
+        <target state="translated">输入序列具有的元素数目不足。</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsedForHashing">
         <source>This object is for recursive equality calls and cannot be used for hashing.</source>
-        <target state="new">This object is for recursive equality calls and cannot be used for hashing.</target>
+        <target state="translated">此对象用于递归相等调用，而不能用于哈希处理。</target>
         <note />
       </trans-unit>
       <trans-unit id="nullsNotAllowedInArray">
         <source>One of the elements in the array is null.</source>
-        <target state="new">One of the elements in the array is null.</target>
+        <target state="translated">数组中的某个元素为 null。</target>
         <note />
       </trans-unit>
       <trans-unit id="objIsNotARecord">
         <source>The object is not an F# record value.</source>
-        <target state="new">The object is not an F# record value.</target>
+        <target state="translated">该对象不是 F# 记录值。</target>
         <note />
       </trans-unit>
       <trans-unit id="objIsNullAndNoType">
         <source>The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</source>
-        <target state="new">The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</target>
+        <target state="translated">该对象为 null，并且未给定任何类型。  请传递一个非 null 对象，或者传递一个非 null 类型参数。</target>
         <note />
       </trans-unit>
       <trans-unit id="outOfRange">
         <source>The index is outside the legal range.</source>
-        <target state="new">The index is outside the legal range.</target>
+        <target state="translated">索引超出了合法范围。</target>
         <note />
       </trans-unit>
       <trans-unit id="privateExceptionType">
         <source>The type '{0}' is the representation of an F# exception declaration but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is the representation of an F# exception declaration but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">类型“{0}”是 F# 异常声明的表示形式，但其表示形式是私有的。您必须指定 BindingFlags.NonPublic，才能访问私有类型表示形式。</target>
         <note />
       </trans-unit>
       <trans-unit id="privateRecordType">
         <source>The type '{0}' is an F# record type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is an F# record type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">类型“{0}”是 F# 记录类型，但其表示形式是私有的。您必须指定 BindingFlags.NonPublic，才能访问私有类型表示形式。</target>
         <note />
       </trans-unit>
       <trans-unit id="privateUnionType">
         <source>The type '{0}' is an F# union type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
-        <target state="new">The type '{0}' is an F# union type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</target>
+        <target state="translated">类型“{0}”是 F# 联合类型，但其表示形式是私有的。您必须指定 BindingFlags.NonPublic，才能访问私有类型表示形式。</target>
         <note />
       </trans-unit>
       <trans-unit id="QexpectedOneType">
         <source>Expected exactly one type argument.</source>
-        <target state="new">Expected exactly one type argument.</target>
+        <target state="translated">应正好为一个类型参数。</target>
         <note />
       </trans-unit>
       <trans-unit id="QexpectedTwoTypes">
         <source>Expected exactly two type arguments.</source>
-        <target state="new">Expected exactly two type arguments.</target>
+        <target state="translated">应正好为两个类型参数。</target>
         <note />
       </trans-unit>
       <trans-unit id="QinvalidCaseIndex">
         <source>Not a valid F# union case index.</source>
-        <target state="new">Not a valid F# union case index.</target>
+        <target state="translated">不是有效的 F# 联合用例索引。</target>
         <note />
       </trans-unit>
       <trans-unit id="QmissingRecordField">
         <source>Type '{0}' did not have an F# record field named '{1}'.</source>
-        <target state="new">Type '{0}' did not have an F# record field named '{1}'.</target>
+        <target state="translated">类型“{0}”不具有名为“{1}”的 F# 记录字段。</target>
         <note />
       </trans-unit>
       <trans-unit id="QmissingUnionCase">
         <source>Type '{0}' did not have an F# union case named '{1}'.</source>
-        <target state="new">Type '{0}' did not have an F# union case named '{1}'.</target>
+        <target state="translated">类型“{0}”不具有名为“{1}”的 F# 联合用例。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmBadFieldType">
         <source>Type mismatch when building '{0}': the type of the field was incorrect. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the type of the field was incorrect. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 字段的类型不正确。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmBodyMustBeUnit">
         <source>Type mismatch when building '{0}': body must return unit. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': body must return unit. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: body 必须返回 unit。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmCondMustBeBool">
         <source>Type mismatch when building '{0}': condition expression must be of type bool. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': condition expression must be of type bool. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 条件表达式的类型必须为 bool。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExpectedFunction">
         <source>Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 应为函数应用程序或 let 绑定中的函数类型。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprNotMatchTuple">
         <source>Type mismatch when building '{0}': expression doesn't match the tuple type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': expression doesn't match the tuple type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 表达式与元组类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprTypeMismatch">
         <source>Type mismatch when building '{0}': types of expression does not match. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': types of expression does not match. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 表达式的类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmFunctionArgTypeMismatch">
         <source>Type mismatch when building '{0}': function argument type doesn't match. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': function argument type doesn't match. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 函数参数类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmGuardMustBeBool">
         <source>Type mismatch when building '{0}': guard must return boolean. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': guard must return boolean. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: guard 必须返回 boolean。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmIncorrectArgForRecord">
         <source>Type mismatch when building '{0}': incorrect argument type for an F# record. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': incorrect argument type for an F# record. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: F# 记录的参数类型不正确。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmIncorrectArgForUnion">
         <source>Type mismatch when building '{0}': incorrect argument type for an F# union. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': incorrect argument type for an F# union. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: F# 联合的参数类型不正确。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmInitArray">
         <source>Type mismatch when building '{0}': initializer doesn't match array type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': initializer doesn't match array type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 初始化表达式与数组类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmInvalidParam">
         <source>Type mismatch when building '{0}': invalid parameter for a method or indexer property. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': invalid parameter for a method or indexer property. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 方法或索引器属性的参数无效。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmLoopBodyMustBeLambdaTakingInteger">
         <source>Type mismatch when building '{0}': body of the for loop must be lambda taking integer as an argument. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': body of the for loop must be lambda taking integer as an argument. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: for 循环的主体必须是采用整数作为参数的 lambda。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmLowerUpperBoundMustBeInt">
         <source>Type mismatch when building '{0}': lower and upper bounds must be integers. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': lower and upper bounds must be integers. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 下限或上限必须为整数。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmTrueAndFalseMustMatch">
         <source>Type mismatch when building '{0}': types of true and false branches differ. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': types of true and false branches differ. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 类型为 true 和 false 的分支不同。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmTuple">
         <source>Type mismatch when building '{0}': mismatched type of argument and tuple element. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': mismatched type of argument and tuple element. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 参数和元组元素的类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmVarTypeNotMatchRHS">
         <source>Type mismatch when building '{0}': the variable type doesn't match the type of the right-hand-side of a let binding. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the variable type doesn't match the type of the right-hand-side of a let binding. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 变量类型与 let 绑定右侧的类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QunexpectedHole">
         <source>Unexpected quotation hole in expression.</source>
-        <target state="new">Unexpected quotation hole in expression.</target>
+        <target state="translated">表达式中存在意外的引用漏洞。</target>
         <note />
       </trans-unit>
       <trans-unit id="QunrecognizedMethodCall">
         <source>The parameter is not a recognized method name.</source>
-        <target state="new">The parameter is not a recognized method name.</target>
+        <target state="translated">该参数不是可识别的方法名称。</target>
         <note />
       </trans-unit>
       <trans-unit id="resetNotSupported">
         <source>Reset is not supported on this enumerator.</source>
-        <target state="new">Reset is not supported on this enumerator.</target>
+        <target state="translated">此枚举器不支持重置。</target>
         <note />
       </trans-unit>
       <trans-unit id="startCannotBeNaN">
         <source>The start of a range cannot be NaN.</source>
-        <target state="new">The start of a range cannot be NaN.</target>
+        <target state="translated">范围的开头不能为 NaN。</target>
         <note />
       </trans-unit>
       <trans-unit id="stepCannotBeNaN">
         <source>The step of a range cannot be NaN.</source>
-        <target state="new">The step of a range cannot be NaN.</target>
+        <target state="translated">范围的跨距不能为 NaN。</target>
         <note />
       </trans-unit>
       <trans-unit id="stepCannotBeZero">
         <source>The step of a range cannot be zero.</source>
-        <target state="new">The step of a range cannot be zero.</target>
+        <target state="translated">范围的跨距不能为零。</target>
         <note />
       </trans-unit>
       <trans-unit id="syncContextNull">
         <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
-        <target state="new">The System.Threading.SynchronizationContext.Current of the calling thread is null.</target>
+        <target state="translated">调用线程的 System.Threading.SynchronizationContext.Current 为 null。</target>
         <note />
       </trans-unit>
       <trans-unit id="tupleIndexOutOfRange">
         <source>The tuple index '{1}' was out of range for tuple type '{0}'.</source>
-        <target state="new">The tuple index '{1}' was out of range for tuple type '{0}'.</target>
+        <target state="translated">元组索引“{1}”超出元组类型“{0}”的范围。</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindConstructor">
         <source>Failed to bind constructor</source>
-        <target state="new">Failed to bind constructor</target>
+        <target state="translated">未能绑定构造函数</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindField">
         <source>Failed to bind field '{0}'</source>
-        <target state="new">Failed to bind field '{0}'</target>
+        <target state="translated">未能绑定字段“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindProperty">
         <source>Failed to bind property '{0}'</source>
-        <target state="new">Failed to bind property '{0}'</target>
+        <target state="translated">未能绑定属性“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindTypeInAssembly">
         <source>Failed to bind type '{0}' in assembly '{1}'</source>
-        <target state="new">Failed to bind type '{0}' in assembly '{1}'</target>
+        <target state="translated">未能绑定程序集“{1}”中的类型“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="QincompatibleRecordLength">
         <source>Incompatible record length</source>
-        <target state="new">Incompatible record length</target>
+        <target state="translated">记录长度不兼容</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectInstanceType">
         <source>Incorrect instance type</source>
-        <target state="new">Incorrect instance type</target>
+        <target state="translated">实例类型不正确</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectNumArgs">
         <source>Incorrect number of arguments</source>
-        <target state="new">Incorrect number of arguments</target>
+        <target state="translated">参数数目不正确</target>
         <note />
       </trans-unit>
       <trans-unit id="QincorrectType">
         <source>Incorrect type</source>
-        <target state="new">Incorrect type</target>
+        <target state="translated">类型不正确</target>
         <note />
       </trans-unit>
       <trans-unit id="QinvalidFuncType">
         <source>Invalid function type</source>
-        <target state="new">Invalid function type</target>
+        <target state="translated">函数类型无效</target>
         <note />
       </trans-unit>
       <trans-unit id="QnonStaticNoReceiverObject">
         <source>The member is non-static (instance), but no receiver object was supplied</source>
-        <target state="new">The member is non-static (instance), but no receiver object was supplied</target>
+        <target state="translated">该成员是非静态的(实例)，但未提供任何接收器对象</target>
         <note />
       </trans-unit>
       <trans-unit id="QparentCannotBeNull">
         <source>Parent type cannot be null</source>
-        <target state="new">Parent type cannot be null</target>
+        <target state="translated">父类型不能为 null</target>
         <note />
       </trans-unit>
       <trans-unit id="QreadingSetOnly">
         <source>Reading a set-only property</source>
-        <target state="new">Reading a set-only property</target>
+        <target state="translated">正在读取仅有 setter 的属性</target>
         <note />
       </trans-unit>
       <trans-unit id="QstaticWithReceiverObject">
         <source>Receiver object was unexpected, as member is static</source>
-        <target state="new">Receiver object was unexpected, as member is static</target>
+        <target state="translated">由于成员是静态的，因此不应出现接收器对象</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprHasWrongType">
         <source>Type mismatch when building '{0}': the expression has the wrong type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': the expression has the wrong type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 表达式具有错误类型。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmFunTypeNotMatchDelegate">
         <source>Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</source>
-        <target state="new">Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</target>
+        <target state="translated">在生成“{0}”时类型不匹配: 函数类型与委托类型不匹配。应为“{1}”，但收到的类型为“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmRaw">
         <source>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</source>
-        <target state="new">Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</target>
+        <target state="translated">将表达式拼接到引用文本中时类型不匹配。要插入的表达式树的类型与拼接操作所需的类型不匹配。应为“{0}”，但收到的类型为“{1}”。请考虑使用预期表达式类型进行类型批准，例如，(%% x : {0})或(%x : {0})。</target>
         <note />
       </trans-unit>
       <trans-unit id="QtupleAccessOutOfRange">
         <source>Tuple access out of range</source>
-        <target state="new">Tuple access out of range</target>
+        <target state="translated">元组访问超出范围</target>
         <note />
       </trans-unit>
       <trans-unit id="QtupleLengthsDiffer">
         <source>The tuple lengths are different</source>
-        <target state="new">The tuple lengths are different</target>
+        <target state="translated">各个元组长度不同</target>
         <note />
       </trans-unit>
       <trans-unit id="QunionNeedsDiffNumArgs">
         <source>F# union type requires different number of arguments</source>
-        <target state="new">F# union type requires different number of arguments</target>
+        <target state="translated">F# 联合类型需要不同数目的参数</target>
         <note />
       </trans-unit>
       <trans-unit id="QwritingGetOnly">
         <source>Writing a get-only property</source>
-        <target state="new">Writing a get-only property</target>
+        <target state="translated">正在写入仅有 getter 的属性</target>
         <note />
       </trans-unit>
       <trans-unit id="QwrongNumOfTypeArgs">
         <source>The method '{0}' expects {1} type arguments but {2} were provided</source>
-        <target state="new">The method '{0}' expects {1} type arguments but {2} were provided</target>
+        <target state="translated">方法“{0}”要求 {1} 个类型参数，但提供了 {2} 个类型参数</target>
         <note />
       </trans-unit>
       <trans-unit id="keyNotFoundAlt">
         <source>An index satisfying the predicate was not found in the collection.</source>
-        <target state="new">An index satisfying the predicate was not found in the collection.</target>
+        <target state="translated">未在集合找到符合谓词的索引。</target>
         <note />
       </trans-unit>
       <trans-unit id="constructorForUnionCaseNotFound">
         <source>The constructor method '{0}' for the union case could not be found</source>
-        <target state="new">The constructor method '{0}' for the union case could not be found</target>
+        <target state="translated">找不到联合用例的构造函数方法“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="firstClassUsesOfSplice">
         <source>first class uses of '%' or '%%' are not permitted</source>
-        <target state="new">first class uses of '%' or '%%' are not permitted</target>
+        <target state="translated">不允许优先使用“%”或“%%”</target>
         <note />
       </trans-unit>
       <trans-unit id="moveNextNotCalledOrFinished">
         <source>MoveNext not called, or finished</source>
-        <target state="new">MoveNext not called, or finished</target>
+        <target state="translated">未调用 MoveNext 或已完成 MoveNext</target>
         <note />
       </trans-unit>
       <trans-unit id="multipleCompilationMappings">
         <source>Multiple CompilationMappingAttributes, expected at most one</source>
-        <target state="new">Multiple CompilationMappingAttributes, expected at most one</target>
+        <target state="translated">多个 CompilationMappingAttribute，最多只应有一个</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadFloatValue">
         <source>Bad float value</source>
-        <target state="new">Bad float value</target>
+        <target state="translated">错误的浮点值</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadFormatSpecifier">
         <source>Bad format specifier:{0}</source>
-        <target state="new">Bad format specifier:{0}</target>
+        <target state="translated">错误的格式说明符: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="printfBadIntegerForDynamicFomatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="new">Bad integer supplied to dynamic formatter</target>
+        <target state="translated">提供给动态格式化程序的整数错误</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
         <source>Expected a precision argument</source>
-        <target state="new">Expected a precision argument</target>
+        <target state="translated">应为精度参数</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedWidth">
         <source>Expected a width argument</source>
-        <target state="new">Expected a width argument</target>
+        <target state="translated">应为宽度参数</target>
         <note />
       </trans-unit>
       <trans-unit id="printfHashFormatSpecifierIllegal">
         <source>The # formatting modifier is invalid in F#</source>
-        <target state="new">The # formatting modifier is invalid in F#</target>
+        <target state="translated"># 格式修饰符在 F# 中无效</target>
         <note />
       </trans-unit>
       <trans-unit id="printfMissingFormatSpecifier">
         <source>Missing format specifier</source>
-        <target state="new">Missing format specifier</target>
+        <target state="translated">缺少格式说明符</target>
         <note />
       </trans-unit>
       <trans-unit id="printfNotAFunType">
         <source>Not a function type</source>
-        <target state="new">Not a function type</target>
+        <target state="translated">不是函数类型</target>
         <note />
       </trans-unit>
       <trans-unit id="printfPrecisonSpecifierIllegal">
         <source>Bad format specifier (precision)</source>
-        <target state="new">Bad format specifier (precision)</target>
+        <target state="translated">错误的格式说明符(精度)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfSpecifierAfterIllegal">
         <source>Bad format specifier (after {0})</source>
-        <target state="new">Bad format specifier (after {0})</target>
+        <target state="translated">错误的格式说明符(在 {0} 之后)</target>
         <note />
       </trans-unit>
       <trans-unit id="printfWidthSpecifierIllegal">
         <source>Bad format specifier (width)</source>
-        <target state="new">Bad format specifier (width)</target>
+        <target state="translated">错误的格式说明符(宽度)</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindFunction">
         <source>Could not bind function {0} in type {1}</source>
-        <target state="new">Could not bind function {0} in type {1}</target>
+        <target state="translated">未能绑定类型 {1} 中的函数 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindProperty">
         <source>Could not bind property {0} in type {1}</source>
-        <target state="new">Could not bind property {0} in type {1}</target>
+        <target state="translated">未能绑定类型 {1} 中的属性 {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotBindToMethod">
         <source>Could not bind to method</source>
-        <target state="new">Could not bind to method</target>
+        <target state="translated">未能绑定到方法</target>
         <note />
       </trans-unit>
       <trans-unit id="QcannotTakeAddress">
         <source>Cannot take the address of this quotation</source>
-        <target state="new">Cannot take the address of this quotation</target>
+        <target state="translated">无法获取此引用的地址</target>
         <note />
       </trans-unit>
       <trans-unit id="QfailedToBindAssembly">
         <source>Failed to bind assembly '{0}' while processing quotation data</source>
-        <target state="new">Failed to bind assembly '{0}' while processing quotation data</target>
+        <target state="translated">在处理引用数据时未能绑定程序集“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="QillFormedAppOrLet">
         <source>ill formed expression: AppOp or LetOp</source>
-        <target state="new">ill formed expression: AppOp or LetOp</target>
+        <target state="translated">格式错误的表达式: AppOp 或 LetOp</target>
         <note />
       </trans-unit>
       <trans-unit id="QtypeArgumentOutOfRange">
         <source>type argument out of range</source>
-        <target state="new">type argument out of range</target>
+        <target state="translated">类型参数超出范围</target>
         <note />
       </trans-unit>
       <trans-unit id="thisValueCannotBeMutated">
         <source>This value cannot be mutated</source>
-        <target state="new">This value cannot be mutated</target>
+        <target state="translated">无法转变此值</target>
         <note />
       </trans-unit>
       <trans-unit id="optionValueWasNone">
         <source>The option value was None</source>
-        <target state="new">The option value was None</target>
+        <target state="translated">选项值为“None”</target>
         <note />
       </trans-unit>
       <trans-unit id="controlContinuationInvokedMultipleTimes">
         <source>A continuation provided by Async.FromContinuations was invoked multiple times</source>
-        <target state="new">A continuation provided by Async.FromContinuations was invoked multiple times</target>
+        <target state="translated">Async.FromContinuations 提供的延续被调用了多次</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidRecordTypeConstructorNotDefined">
         <source>The record type '{0}' is invalid. Required constructor is not defined.</source>
-        <target state="new">The record type '{0}' is invalid. Required constructor is not defined.</target>
+        <target state="translated">记录类型“{0}”无效。未定义所需的构造函数。</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidTupleTypeConstructorNotDefined">
         <source>The tuple type '{0}' is invalid. Required constructor is not defined.</source>
-        <target state="new">The tuple type '{0}' is invalid. Required constructor is not defined.</target>
+        <target state="translated">元组类型“{0}”无效。未定义所需的构造函数。</target>
         <note />
       </trans-unit>
       <trans-unit id="inputSequenceTooLong">
         <source>The input sequence contains more than one element.</source>
-        <target state="new">The input sequence contains more than one element.</target>
+        <target state="translated">输入序列包含多个元素。</target>
         <note />
       </trans-unit>
       <trans-unit id="thenByError">
         <source>'thenBy' and 'thenByDescending' may only be used with an ordered input</source>
-        <target state="new">'thenBy' and 'thenByDescending' may only be used with an ordered input</target>
+        <target state="translated">“thenBy”和“thenByDescending”只能用于有序输入</target>
         <note />
       </trans-unit>
       <trans-unit id="failDueToUnsupportedInputTypeInSumByOrAverageBy">
         <source>Unrecognized use of a 'sumBy' or 'averageBy' operator in a query. In queries whose original data is of static type IQueryable, these operators may only be used with result type int32, int64, single, double or decimal</source>
-        <target state="new">Unrecognized use of a 'sumBy' or 'averageBy' operator in a query. In queries whose original data is of static type IQueryable, these operators may only be used with result type int32, int64, single, double or decimal</target>
+        <target state="translated">查询中无法识别的“sumBy”或“averageBy”运算符用法。在其原始数据属于静态类型 IQueryable 的查询中，这些运算符只能用于结果类型 int32、int64、single、double 或 decimal</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedIfThenElse">
         <source>An if/then/else conditional or pattern matching expression with multiple branches is not permitted in a query. An if/then/else conditional may be used.</source>
-        <target state="new">An if/then/else conditional or pattern matching expression with multiple branches is not permitted in a query. An if/then/else conditional may be used.</target>
+        <target state="translated">查询中不允许出现拥有多个分支的 if/then/else 条件或模式匹配表达式。可以使用 if/then/else 条件。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryConstruct">
         <source>This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">这不是有效的查询表达式。查询中使用了下面的构造，但 F#-LINQ 查询转换器无法识别该构造:\n{0}\n请查看有效查询的规范，考虑是否将部分运算移到查询表达式之外。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryCall">
         <source>This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</source>
-        <target state="new">This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</target>
+        <target state="translated">这不是有效的查询表达式。查询中使用了方法“{0}”，但 F#-LINQ 查询转换器无法识别该方法。请查看有效查询的规范，考虑是否将部分运算移到查询表达式之外</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryProperty">
         <source>This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">这不是有效的查询表达式。查询中使用了属性“{0}”，但 F#-LINQ 查询转换器无法识别该属性。请查看有效查询的规范，考虑是否将部分运算移到查询表达式之外。</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="new">This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</target>
+        <target state="translated">这不是有效的查询表达式。查询中使用了构造“{0}”，但 F#-LINQ 查询转换器无法识别该构造。请查看有效查询的规范，考虑是否将部分运算移到查询表达式之外。</target>
         <note />
       </trans-unit>
       <trans-unit id="maxDegreeOfParallelismNotPositive">
         <source>maxDegreeOfParallelism must be positive, was {0}</source>
-        <target state="new">maxDegreeOfParallelism must be positive, was {0}</target>
+        <target state="translated">maxDegreeOfParallelism 必须是正数，它之前是 {0}</target>
         <note />
       </trans-unit>
     </body>
