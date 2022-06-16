@@ -1352,7 +1352,7 @@ and [<Sealed>] TcImports
                 tcImports.RegisterDll dllinfo
 
                 let ccuContents =
-                    Construct.NewCcuContents ilScopeRef m ilShortAssemName (Construct.NewEmptyModuleOrNamespaceType Namespace)
+                    Construct.NewCcuContents ilScopeRef m ilShortAssemName (Construct.NewEmptyModuleOrNamespaceType(Namespace true))
 
                 let ccuData: CcuData =
                     {
@@ -1597,11 +1597,11 @@ and [<Sealed>] TcImports
                         ILScopeRef.Local,
                         injectedNamespace
                         |> List.rev
-                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace))
+                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
                     )
 
                 let mid = ident (next, rangeStartup)
-                let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
 
                 let newNamespace =
                     Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty)

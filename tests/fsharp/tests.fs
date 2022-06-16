@@ -1114,7 +1114,7 @@ module CoreTests =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-width-200`` () =
+    let ``printing-width-200`` () =  
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
@@ -3358,6 +3358,15 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``recursiveNestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/recursiveNestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

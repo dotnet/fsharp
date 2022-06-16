@@ -2519,7 +2519,10 @@ module internal ParseAndCheckFile =
                         return result
                     with e ->
                         errorR e
-                        let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
+
+                        let mty =
+                            Construct.NewEmptyModuleOrNamespaceType(ModuleOrNamespaceKind.Namespace true)
+
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
 
