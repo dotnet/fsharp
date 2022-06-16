@@ -67,6 +67,7 @@
     <Compile Include="Compiler\Language\OpenTypeDeclarationTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
+    <Compile Include="Compiler\Language\ComparisonOptimizationTest.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Language\StructActivePatternTests.fs" />

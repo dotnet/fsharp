@@ -5,7 +5,6 @@ docs/
 eng/
 fcs-samples/
 scripts/
-service/
 setup/
 tests/
 vsintegration/
@@ -14,15 +13,13 @@ artifacts/
 # Explicitly unformatted implementation files
 
 src/Compiler/Checking/**/*.fs
-src/Compiler/CodeGen/**/*.fs
 src/Compiler/DependencyManager/**/*.fs
+src/Compiler/Facilities/**/*.fs
 src/Compiler/Interactive/**/*.fs
 src/Compiler/Legacy/**/*.fs
 src/Compiler/Optimize/**/*.fs
-src/Compiler/Service/**/*.fs
 src/Compiler/Symbols/**/*.fs
 src/Compiler/TypedTree/**/*.fs
-src/Microsoft.FSharp.Compiler/**/*.fs
 
 # Explicitly unformatted file that needs more care to get it to format well
 
@@ -49,6 +46,10 @@ src/FSharp.Core/SI.fs
 
 src/Compiler/AbstractIL/ilwrite.fs
 src/Compiler/Utilities/lib.fs
+src/Compiler/Service/IncrementalBuild.fs
+src/Compiler/Service/ServiceAssemblyContent.fs
+src/Compiler/Service/ServiceDeclarationLists.fs
+src/Compiler/Service/ServiceErrorResolutionHints.fs
 
 # Fantomas limitations on signature files  (to investigate)
 

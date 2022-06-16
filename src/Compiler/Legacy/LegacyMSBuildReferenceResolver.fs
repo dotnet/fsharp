@@ -225,7 +225,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
 
     /// Perform assembly resolution by instantiating the ResolveAssembly task directly from the MSBuild SDK.
     let ResolveCore(resolutionEnvironment: LegacyResolutionEnvironment,
-                    references:(string*(*baggage*)string)[], 
+                    references:(string*string)[], 
                     targetFrameworkVersion: string, 
                     targetFrameworkDirectories: string list,
                     targetProcessorArchitecture: string,                
