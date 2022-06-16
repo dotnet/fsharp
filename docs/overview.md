@@ -27,7 +27,7 @@ The following are the key data formats and internal data representations of the 
 
 * _Input command-line arguments_  See [CompilerOptions.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/CompilerOptions.fs) for the full code implementing the arguments table. Command-line arguments are also accepted by the F# Compiler Service API in project specifications, and as optional input to F# Interactive.
 
-* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/Compiler/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl), [lexhelp.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/lexhelp.fs) and related files.
+* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/Compiler/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl), [LexHelpers.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/LexHelpers.fs) and related files.
 
 * _Abstract Syntax Tree (AST)_, see [SyntaxTree.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/SyntaxTree.fs), the untyped syntax tree resulting from parsing.
 
