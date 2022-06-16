@@ -127,14 +127,6 @@ stateDiagram-v2
   }
 ```
 
-<details>
-
-<summary>Previous version of the graph.</summary>
-
-![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
-
-</details>
-
 The following are the key phases and high-level logical operations of the F# compiler code in its various configurations:
 
 * _Basic lexing_. Produces a token stream from input source file text.
