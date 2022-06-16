@@ -37,7 +37,7 @@ type PrintfFormat<'Printer, 'State, 'Residue, 'Result> =
 
     /// <summary>The captures associated with an interpolated string.</summary>
     member Captures: obj[]
-    
+
     /// <summary>The capture types associated with an interpolated string.</summary>
     member CaptureTypes: System.Type[]
 
