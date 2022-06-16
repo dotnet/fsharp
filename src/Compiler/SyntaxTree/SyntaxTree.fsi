@@ -1121,7 +1121,7 @@ type SynMatchClause =
     member Range: range
 
 /// Represents an attribute
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
+[<NoEquality; NoComparison>]
 type SynAttribute =
     {
         /// The name of the type for the attribute
@@ -1141,7 +1141,6 @@ type SynAttribute =
     }
 
 /// List of attributes enclosed in [< ... >].
-[<RequireQualifiedAccess>]
 type SynAttributeList =
     {
         /// The list of attributes
@@ -1193,7 +1192,7 @@ type SynBinding =
 type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
 
 /// Represents the flags for a 'member' declaration
-[<NoComparison; RequireQualifiedAccess; CustomEquality>]
+[<NoComparison; CustomEquality>]
 type SynMemberFlags =
     {
         /// The member is an instance member (non-static)

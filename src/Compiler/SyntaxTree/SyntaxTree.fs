@@ -975,7 +975,7 @@ type SynMatchClause =
         match this with
         | SynMatchClause (range = m) -> m
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
+[<NoEquality; NoComparison>]
 type SynAttribute =
     {
         TypeName: SynLongIdent
@@ -989,7 +989,6 @@ type SynAttribute =
         Range: range
     }
 
-[<RequireQualifiedAccess>]
 type SynAttributeList =
     {
         Attributes: SynAttribute list
@@ -1036,7 +1035,7 @@ type SynBinding =
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
 
-[<NoComparison; RequireQualifiedAccess; CustomEquality>]
+[<NoComparison; CustomEquality>]
 type SynMemberFlags =
     {
         IsInstance: bool
