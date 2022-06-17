@@ -1855,7 +1855,7 @@ let p_istype x st =
     match x with
     | FSharpModuleWithSuffix -> p_byte 0 st
     | ModuleOrType           -> p_byte 1 st
-    | Namespace              -> p_byte 2 st
+    | Namespace _            -> p_byte 2 st
 
 let p_cpath (CompPath(a, b)) st =
     p_tup2 p_ILScopeRef (p_list (p_tup2 p_string p_istype)) (a, b) st
@@ -1867,7 +1867,7 @@ let u_istype st =
     match tag with
     | 0 -> FSharpModuleWithSuffix
     | 1 -> ModuleOrType
-    | 2 -> Namespace
+    | 2 -> Namespace true
     | _ -> ufailwith st "u_istype"
 
 let u_cpath  st = let a, b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istype)) st in (CompPath(a, b))
