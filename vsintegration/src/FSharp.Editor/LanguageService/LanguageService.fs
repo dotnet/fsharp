@@ -363,7 +363,7 @@ type internal HackCpsCommandLineChanges
 
         let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
-        /// Due to an issue in project system, when we close and reopen solution, it sends is the CommandLineChanges twice for every project.
+        /// Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
         /// First time it sends a correct path, sources, references and options.
         /// Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
         /// As a woraround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
