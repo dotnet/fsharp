@@ -1446,9 +1446,9 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
         match overrideVis, vis with
         | Some v, _ -> v
         | _, None -> taccessPublic (* a module or member binding defaults to "public" *)
-        | _, Some SynAccess.Public -> taccessPublic
-        | _, Some SynAccess.Private -> taccessPrivate accessPath
-        | _, Some SynAccess.Internal -> taccessInternal
+        | _, Some (SynAccess.Public _) -> taccessPublic
+        | _, Some (SynAccess.Private _) -> taccessPrivate accessPath
+        | _, Some (SynAccess.Internal _) -> taccessInternal
 
     let vis =
         match actualParent with

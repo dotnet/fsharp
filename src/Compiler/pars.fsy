@@ -2228,13 +2228,16 @@ opt_access:
 
 access:
   | PRIVATE
-     { SynAccess.Private }
+     { let m = rhs parseState 1
+       SynAccess.Private m }
 
   | PUBLIC
-     { SynAccess.Public }
+     { let m = rhs parseState 1
+       SynAccess.Public m }
 
   | INTERNAL
-     { SynAccess.Internal }
+     { let m = rhs parseState 1
+       SynAccess.Internal m }
 
 /* only valid on 'NEW' */
 opt_declVisibility:

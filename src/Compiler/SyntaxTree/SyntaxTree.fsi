@@ -224,13 +224,15 @@ type SynRationalConst =
 [<RequireQualifiedAccess>]
 type SynAccess =
     /// A construct marked or assumed 'public'
-    | Public
+    | Public of range: range
 
     /// A construct marked or assumed 'internal'
-    | Internal
+    | Internal of range: range
 
     /// A construct marked or assumed 'private'
-    | Private
+    | Private of range: range
+
+    member Range: range
 
 /// Represents whether a debug point should be present for the target
 /// of a decision tree, that is whether the construct corresponds to a debug
