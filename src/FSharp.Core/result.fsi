@@ -68,7 +68,6 @@ module Result =
     /// </example>
     [<CompiledName("Bind")>]
     val bind: binder: ('T -> Result<'U, 'TError>) -> result: Result<'T, 'TError> -> Result<'U, 'TError>
-    
 
     /// <summary>Returns true if the result is Ok.</summary>
     /// <param name="result">The input result.</param>
@@ -164,7 +163,8 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T, 'Error, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> result: Result<'T, 'Error> -> 'State
+    val fold<'T, 'Error, 'State> :
+        folder: ('State -> 'T -> 'State) -> state: 'State -> result: Result<'T, 'Error> -> 'State
 
     /// <summary><c>fold f inp s</c> evaluates to <c>match inp with Error _ -> s | Ok x -> f x s</c>.</summary>
     ///
@@ -183,7 +183,8 @@ module Result =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T, 'Error, 'State> : folder: ('T -> 'State -> 'State) -> result: Result<'T, 'Error> -> state: 'State -> 'State
+    val foldBack<'T, 'Error, 'State> :
+        folder: ('T -> 'State -> 'State) -> result: Result<'T, 'Error> -> state: 'State -> 'State
 
     /// <summary><c>exists p inp</c> evaluates to <c>match inp with Error _ -> false | Ok x -> p x</c>.</summary>
     ///

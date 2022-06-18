@@ -92,7 +92,7 @@ module Result =
     [<CompiledName("ToArray")>]
     let toArray result =
         match result with
-        | Error _ -> [| |]
+        | Error _ -> [||]
         | Ok x -> [| x |]
 
     [<CompiledName("ToList")>]
