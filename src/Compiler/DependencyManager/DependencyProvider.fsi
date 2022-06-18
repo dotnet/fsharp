@@ -88,8 +88,16 @@ type DependencyProvider =
     /// Construct a new DependencyProvider with only native resolution
     new: nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
+    /// Construct a new DependencyProvider with only native resolution and specify caching
+    new: nativeProbingRoots: NativeResolutionProbe * bool -> DependencyProvider
+
     /// Construct a new DependencyProvider with managed and native resolution
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
+
+    /// Construct a new DependencyProvider with managed and native resolution and specify caching
+    new:
+        assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe * bool ->
+            DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]

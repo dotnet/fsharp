@@ -149,10 +149,16 @@ type ReflectionDependencyManagerProvider
         resolveDepsEx: MethodInfo option,
         resolveDepsExWithTimeout: MethodInfo option,
         resolveDepsExWithScriptInfoAndTimeout: MethodInfo option,
-        outputDir: string option
-    ) =
+        outputDir: string option,
+        useResultsCache: bool
+        ) =
 
-    let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
+    let instance =
+        if not(isNull (theType.GetConstructor([|typeof<string option>; typeof<bool>|]))) then
+            Activator.CreateInstance(theType, [| outputDir :> obj; useResultsCache :> obj |])
+        else
+            Activator.CreateInstance(theType, [| outputDir :> obj |])
+
     let nameProperty = nameProperty.GetValue >> string
     let keyProperty = keyProperty.GetValue >> string
 
@@ -163,7 +169,7 @@ type ReflectionDependencyManagerProvider
         | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
         | None -> fun _ -> [||]
 
-    static member InstanceMaker(theType: Type, outputDir: string option) =
+    static member InstanceMaker(theType: Type, outputDir: string option, useResultsCache: bool) =
         match getAttributeNamed theType dependencyManagerAttributeName,
               getInstanceProperty<string> theType namePropertyName,
               getInstanceProperty<string> theType keyPropertyName,
@@ -233,7 +239,8 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
-                    outputDir
+                    outputDir,
+                    useResultsCache
                 )
                 :> IDependencyManagerProvider)
 
@@ -297,7 +304,8 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
-                    outputDir
+                    outputDir,
+                    useResultsCache
                 )
                 :> IDependencyManagerProvider)
 
@@ -454,7 +462,7 @@ type ReflectionDependencyManagerProvider
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
+type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option, useResultsCache: bool) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
@@ -508,7 +516,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 let loadedProviders =
                     enumerateDependencyManagerAssemblies compilerTools reportError
                     |> Seq.collect (fun a -> a.GetTypes())
-                    |> Seq.choose (fun t -> ReflectionDependencyManagerProvider.InstanceMaker(t, outputDir))
+                    |> Seq.choose (fun t -> ReflectionDependencyManagerProvider.InstanceMaker(t, outputDir, useResultsCache))
                     |> Seq.map (fun maker -> maker ())
 
                 defaultProviders
@@ -523,11 +531,18 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         ConcurrentDictionary<_, Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
 
     new(assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
-        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots)
+        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots, true)
 
-    new(nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(None, Some nativeProbingRoots)
+    new(assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
+        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots, useResultsCache)
 
-    new() = new DependencyProvider(None, None)
+    new(nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
+        new DependencyProvider(None, Some nativeProbingRoots, useResultsCache)
+
+    new(nativeProbingRoots: NativeResolutionProbe) =
+        new DependencyProvider(None, Some nativeProbingRoots, true)
+
+    new() = new DependencyProvider(None, None, true)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir, errorReport) =

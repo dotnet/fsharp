@@ -45,6 +45,7 @@ type ResolveDependenciesResult =
 
 [<DependencyManager>]
 type FSharpDependencyManager =
+    new: outputDirectory: string option * bool -> FSharpDependencyManager
     new: outputDirectory: string option -> FSharpDependencyManager
 
     member Name: string

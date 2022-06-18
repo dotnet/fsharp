@@ -71,7 +71,7 @@ type DependencyManagerInteractiveTests() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -100,7 +100,7 @@ type DependencyManagerInteractiveTests() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -123,7 +123,7 @@ type DependencyManagerInteractiveTests() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -154,7 +154,7 @@ type DependencyManagerInteractiveTests() =
         let assemblyProbingPaths () = Seq.empty<string>
         let nativeProbingRoots () = Seq.empty<string>
 
-        use dp1 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp1 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -182,7 +182,7 @@ type DependencyManagerInteractiveTests() =
         Assert.Equal(1, result2.Roots |> Seq.length)
         Assert.True((result2.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
 
-        use dp2 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp2 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
@@ -209,7 +209,7 @@ type DependencyManagerInteractiveTests() =
 
         let nativeProbingRoots () = Seq.empty<string>
 
-        use dp1 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp1 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -285,7 +285,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 
         // Restore packages, Get Reference dll paths and package roots
         let result =
-            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net6.0")
 
@@ -350,7 +350,7 @@ printfn ""%A"" result
         let scriptText = code.Replace("$(REFERENCES)", referenceText)
 
         // Use the dependency manager to resolve assemblies and native paths
-        use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
 
         use script = new FSharpScript()
         let opt = script.Eval(scriptText)  |> getValue
@@ -381,7 +381,7 @@ printfn ""%A"" result
 
         // Restore packages, Get Reference dll paths and package roots
         let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net6.0")
 
@@ -462,7 +462,7 @@ printfn ""%A"" result
 
         // Restore packages, Get Reference dll paths and package roots
         let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net6.0")
 
@@ -519,7 +519,7 @@ x |> Seq.iter(fun r ->
 
         // Restore packages, Get Reference dll paths and package roots
         let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "net6.0")
 
@@ -545,7 +545,7 @@ x |> Seq.iter(fun r ->
 
         // Restore packages, Get Reference dll paths and package roots
         let result =
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "net6.0")
 
@@ -569,7 +569,7 @@ x |> Seq.iter(fun r ->
 
         // Set up native resolver to resolve dll's
         do
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
 
             // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
@@ -613,7 +613,7 @@ x |> Seq.iter(fun r ->
 
         // Set up native resolver to resolve dll's
         do
-            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots), false)
 
             // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
@@ -678,7 +678,7 @@ x |> Seq.iter(fun r ->
         let mutable finalPath:string =  null
         do
             initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             let mutable currentPath:string = null
             if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
@@ -695,7 +695,7 @@ x |> Seq.iter(fun r ->
         do
             initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
             let mutable currentPath:string = null
-            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "net6.0")
             Assert.Equal(true, result.Success)
@@ -810,7 +810,7 @@ x |> Seq.iter(fun r ->
         let mutable foundCorrectError = false
         let mutable foundWrongError = false
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -833,7 +833,7 @@ x |> Seq.iter(fun r ->
         let mutable foundCorrectError = false
         let mutable foundWrongError = false
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -856,7 +856,7 @@ x |> Seq.iter(fun r ->
         let mutable foundCorrectError = false
         let mutable foundWrongError = false
 
-        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), false)
         let reportError =
             let report errorType code message =
                 match errorType with
@@ -872,5 +872,3 @@ x |> Seq.iter(fun r ->
         Assert.Equal(foundCorrectError, false)
         Assert.Equal(foundWrongError, false)
         ()
-
-
