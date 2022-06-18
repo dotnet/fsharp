@@ -96,8 +96,8 @@ module Result =
         | Ok x -> [| x |]
 
     [<CompiledName("ToList")>]
-    let toList option =
-        match option with
+    let toList result =
+        match result with
         | Error _ -> []
         | Ok x -> [ x ]
 
