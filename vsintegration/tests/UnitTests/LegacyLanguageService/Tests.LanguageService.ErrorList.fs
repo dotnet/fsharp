@@ -396,7 +396,10 @@ type staticInInterface =
     end"""
             
         CheckErrorList fileContent <| function
-                | [err] -> Assert.IsTrue(err.Message.Contains("Unexpected keyword 'static' in member definition. Expected 'member', 'override' or other token"))
+                | [err1, err2, err3] ->
+                    Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
+                    Assert.IsTrue(err2.Message.Contains("Feature 'static abstract interface members' is not available in F# 6.0. Please use language version 'PREVIEW' or greater"))
+                    Assert.IsTrue(err3.Message.Contains("Feature 'static abstract interface members' is not supported by target runtime"))
                 | x -> Assert.Fail(sprintf "Unexpected errors: %A" x)
     
     [<Test>]
