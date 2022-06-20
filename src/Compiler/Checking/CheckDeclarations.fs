@@ -253,9 +253,9 @@ let BuildRootModuleType enclosingNamespacePath (cpath: CompilationPath) moduleTy
         |> fun (_, (moduleTy, moduls)) -> moduleTy, List.rev moduls
         
 /// Given a resulting module expression, place that inside a namespace path implied by a "namespace X.Y.Z" definition
-let BuildRootModuleContents enclosingNamespacePath (cpath: CompilationPath) moduleContents = 
+let BuildRootModuleContents (isModule: bool) enclosingNamespacePath (cpath: CompilationPath) moduleContents = 
     (enclosingNamespacePath, (cpath, moduleContents)) 
-        ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace id cpath.ParentCompPath moduleContents))
+        ||> List.foldBack (fun id (cpath, moduleContents) -> (cpath.ParentCompPath, wrapModuleOrNamespaceContentsInNamespace isModule id cpath.ParentCompPath moduleContents))
         |> snd
 
 /// Try to take the "FSINNN" prefix off a namespace path
@@ -422,7 +422,8 @@ module TcRecdUnionAndEnumDeclarations =
             error(Error(FSComp.SR.tcVolatileOnlyOnClassLetBindings(), m))
 
         if isIncrClass && (not zeroInit || not isMutable) then errorR(Error(FSComp.SR.tcUninitializedValFieldsMustBeMutable(), m))
-        if isStatic && (not zeroInit || not isMutable || vis <> Some SynAccess.Private ) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
+        let isPrivate = match vis with | Some (SynAccess.Private _) -> true | _ -> false
+        if isStatic && (not zeroInit || not isMutable || not isPrivate) then errorR(Error(FSComp.SR.tcStaticValFieldsMustBeMutableAndPrivate(), m))
         let konst = if zeroInit then Some Const.Zero else None
         let rfspec = MakeRecdFieldSpec cenv env parent (isStatic, konst, tyR, attrsForProperty, attrsForField, id, nameGenerated, isMutable, isVolatile, xmldoc, vis, m)
         match parent with
@@ -815,7 +816,7 @@ module IncrClassChecking =
                 let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
-                let cctorValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, Some SynAccess.Private, false, true, false, false)
+                let cctorValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
                  
                 let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
                 cctorArgs, cctorVal, cctorValScheme)
@@ -3254,7 +3255,7 @@ module EstablishTypeDefinitionCores =
               () ]
 
     let ComputeModuleOrNamespaceKind g isModule typeNames attribs nm = 
-        if not isModule then Namespace 
+        if not isModule then (Namespace true)
         elif ModuleNameIsMangled g attribs || Set.contains nm typeNames then FSharpModuleWithSuffix 
         else ModuleOrType
 
@@ -5287,7 +5288,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 else 
                     longId, defs
 
-            let envNS = LocateEnv cenv.thisCcu env enclosingNamespacePath
+            let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
             let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
@@ -5609,7 +5610,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               else 
                   longId, defs
 
-          let envNS = LocateEnv cenv.thisCcu env enclosingNamespacePath
+          let envNS = LocateEnv kind.IsModule cenv.thisCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink g cenv.amap m enclosingNamespacePath envNS
 
           let modTyNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
@@ -5647,7 +5648,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                       CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                   env, openDecls
           
-          let moduleContentsRoot = BuildRootModuleContents enclosingNamespacePath envNS.eCompPath moduleContents
+          let moduleContentsRoot = BuildRootModuleContents kind.IsModule enclosingNamespacePath envNS.eCompPath moduleContents
 
           let defns =
               match openDecls with 
@@ -5863,7 +5864,7 @@ let emptyTcEnv g =
       eAccessRights = ComputeAccessRights cpath [] None // compute this field 
       eInternalsVisibleCompPaths = []
       eContextInfo = ContextInfo.NoContext
-      eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
+      eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType (Namespace true))
       eFamilyType = None
       eCtorInfo = None
       eCallerMemberName = None 
@@ -5992,7 +5993,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
 /// Make the initial type checking environment for a single file with an empty accumulator for the overall contents for the file
 let MakeInitialEnv env = 
     // Note: here we allocate a new module type accumulator 
-    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
+    let moduleTyAcc = ref (Construct.NewEmptyModuleOrNamespaceType (Namespace false))
     { env with eModuleOrNamespaceTypeAccumulator = moduleTyAcc }, moduleTyAcc
 
 /// Check an entire implementation file
