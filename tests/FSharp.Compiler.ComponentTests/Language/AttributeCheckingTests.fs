@@ -379,7 +379,7 @@ module Button =
         ]
 
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an type property and set property via module using an extesnion method`` () =
+    let ``Obsolete attribute is taken into account when used on an type property and set property via module using an extension method`` () =
         Fsx """
 open System
 open System.Runtime.CompilerServices
