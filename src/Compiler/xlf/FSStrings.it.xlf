@@ -1319,17 +1319,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = espressione'. Se si intende impostare un valore su una proprietà, usare l'operatore '&lt;-', ad esempio '{1}.{2} &lt;- espressione'.</target>
+        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = expression'. Se si intende impostare un valore su una proprietà, usare l'operatore '&lt;-', ad esempio '{1}.{2} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = espressione'. Se si intende modificare un valore, contrassegnare il valore 'mutable' e usare l'operatore '&lt;-', ad esempio '{1} &lt;- espressione'.</target>
+        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = expression'. Se si intende modificare un valore, contrassegnare il valore 'mutable' e usare l'operatore '&lt;-', ad esempio '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = espressione'. Se si intende modificare un valore, usare l'operatore '&lt;-', ad esempio '{1} &lt;- espressione'.</target>
+        <target state="translated">Il risultato di questa espressione di uguaglianza è di tipo '{0}' e viene rimosso in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let result = expression'. Se si intende modificare un valore, usare l'operatore '&lt;-', ad esempio '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

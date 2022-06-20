@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">opravit překlad názvů typů delegátů, viz https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">chyba při zastaralém přístupu konstruktoru s atributem RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">vypsat literály libovolné velikosti</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -304,7 +304,7 @@
       </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="translated"> – {0}</target>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --staticlink ani --refonly a --refout společně.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Neplatná cesta k referenčnímu sestavení</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -449,12 +449,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Vytvoří referenční sestavení místo úplného sestavení jako primární výstup.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Vytvoří referenční sestavení se zadanou cestou k souboru.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -589,7 +589,7 @@
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="translated">Tento stavový stroj není staticky kompilovatelný a není k dispozici žádná alternativa. {0}. Pokud chcete zadat alternativu, použijte „if __useResumableCode“ then &lt;state-machine&gt; else &lt;alternative&gt;“.</target>
+        <target state="translated">Tento stavový stroj není staticky kompilovatelný a není k dispozici žádná alternativa. {0}. Pokud chcete zadat alternativu, použijte if __useResumableCode“ then &lt;state-machine&gt; else &lt;alternative&gt;“.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -619,7 +619,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">Pole {0} se v tomto výrazu záznamu vyskytuje vícekrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -644,7 +644,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">Pole {0} se v tomto anonymním typu záznamu vyskytuje vícekrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1179,12 +1179,12 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávalo se #r \"&lt;soubor-nebo-sestavení&gt;\".</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #r \"&lt;file-or-assembly&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávalo se #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\"'.</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -1514,7 +1514,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale signatura uvádí, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
+        <target state="translated">{0}Definice pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale signatura uvádí, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -3004,12 +3004,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neúplná podmínka. Očekávaná notace je if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neúplná podmínka. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">assert nejde použít jako první hodnotu třídy. Použijte místo toho assert &lt;výraz&gt;.</target>
+        <target state="translated">assert nejde použít jako hodnotu první třídy. Použijte místo toho assert &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -5009,7 +5009,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Omezuje platformy, na kterých je možné tento kód spustit: x86, Itanium, x64, anycpu32bitpreferred a anycpu. Výchozí je anycpu.</target>
+        <target state="translated">Omezuje platformy, na kterých je možné tento kód spustit: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, nebo anycpu. Výchozí je anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5304,7 +5304,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Nerozpoznaná platforma {0}. Platné hodnoty jsou x86, x64, Itanium, anycpu32bitpreferred a anycpu.</target>
+        <target state="translated">Nerozpoznaná platforma {0}, platné hodnoty jsou x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred a anycpu. Výchozí hodnota je anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -6854,7 +6854,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;'.</target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -6869,7 +6869,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstup ve větvi else podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve větvi else podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
@@ -6934,7 +6934,7 @@
       </trans-unit>
       <trans-unit id="parsWhileDoExpected">
         <source>Missing 'do' in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Chybí do ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;'.</target>
+        <target state="translated">Chybí do ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsForDoExpected">

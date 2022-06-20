@@ -12,6 +12,11 @@
         <target state="translated">Includi l'URI di origine pacchetti durante la ricerca di pacchetti</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="translated">Cancella schermata</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
         <source>Emit multiple assemblies (off by default for .NET Framework)</source>
         <target state="translated">Creare più assembly (disattivato per impostazione predefinita per .NET Framework)</target>
@@ -39,7 +44,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Utilizzo: {0} &lt;opzioni&gt; [script.fsx [&lt;argomenti&gt;]]</target>
+        <target state="translated">Utilizzo: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -195,11 +200,6 @@
       <trans-unit id="fsiIntroTextHashquitInfo">
         <source>Exit</source>
         <target state="translated">Esci</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fsiIntroTextHashclearInfo">
-        <source>Clear screen</source>
-        <target state="needs-review-translation">Pulisci terminale</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">

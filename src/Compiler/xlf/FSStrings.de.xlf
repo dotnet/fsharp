@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Der Typ entspricht "abstract", da einige abstrakte Member nicht mit einer Implementierung versehen wurden. Wenn dies Ihre Absicht ist, fügen Sie das [&lt;AbstractClass&gt;]-Attribut zu Ihrem Typ hinzu.</target>
+        <target state="translated">Der Typ entspricht „abstract“, da einige abstrakte Member nicht mit einer Implementierung versehen wurden. Wenn dies Ihre Absicht ist, fügen Sie das [&lt;AbstractClass&gt;]-Attribut zu Ihrem Typ hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -324,12 +324,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">Symbol "&amp;"</target>
+        <target state="translated">Symbol „&amp;“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">Symbol "&amp;&amp;"</target>
+        <target state="translated">Symbol „&amp;&amp;“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">
@@ -339,7 +339,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LESS">
         <source>symbol '&lt;'</source>
-        <target state="translated">Symbol "&lt;"</target>
+        <target state="translated">Symbol „&lt;“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER">
@@ -399,7 +399,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LARROW">
         <source>symbol '&lt;-'</source>
-        <target state="translated">Symbol "&lt;-"</target>
+        <target state="translated">Symbol „&lt;-“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EQUALS">
@@ -494,7 +494,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.LESS">
         <source>symbol '[&lt;'</source>
-        <target state="translated">Symbol "[&lt;"</target>
+        <target state="translated">Symbol „[&lt;“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE">
@@ -504,7 +504,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.LESS">
         <source>symbol '{&lt;'</source>
-        <target state="translated">Symbol "{&lt;"</target>
+        <target state="translated">Symbol „{&lt;“</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACK">
@@ -1299,7 +1299,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Threadstatische und kontextstatische "let"-Bindungen sind veraltet. Verwenden Sie stattdessen eine Deklaration im Format "static val mutable &lt;ident&gt; : &lt;type&gt;" in einer Klasse. Fügen Sie dieser Deklaration das DefaultValue-Attribut hinzu, um anzugeben, dass der Wert bei jedem neuen Thread mit dem Standardwert initialisiert wird.</target>
+        <target state="translated">Threadstatische und kontextstatische „let“-Bindungen sind veraltet. Verwenden Sie stattdessen eine Deklaration im Format „static val mutable &lt;ident&gt; : &lt;type&gt;“ in einer Klasse. Fügen Sie dieser Deklaration das DefaultValue-Attribut hinzu, um anzugeben, dass der Wert bei jedem neuen Thread mit dem Standardwert initialisiert wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1319,17 +1319,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ "{0}" auf und wird implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie einen Wert auf eine Eigenschaft festlegen möchten, verwenden Sie den Operator "&lt;-". Beispiel: "{1}.{2} &lt;- Ausdruck".</target>
+        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ „{0}“ auf und wird implizit verworfen. Verwenden Sie ggf. „let“, um das Ergebnis an einen Namen zu binden. Beispiel: „let Ergebnis = Ausdruck“. Falls Sie einen Wert auf eine Eigenschaft festlegen möchten, verwenden Sie den Operator „&lt;-“. Beispiel: „{1}.{2} &lt;- Ausdruck“.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ "{0}" auf und wird implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie einen Wert mutieren möchten, markieren Sie ihn als "mutable", und verwenden Sie den Operator "&lt;-" . Beispiel: "{1} &lt;- Ausdruck".</target>
+        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ „{0}“ auf und wird implizit verworfen. Verwenden Sie ggf. „let“, um das Ergebnis an einen Namen zu binden. Beispiel: „let Ergebnis = Ausdruck“. Falls Sie einen Wert mutieren möchten, markieren Sie ihn als „mutable“, und verwenden Sie den Operator „&lt;-“. Beispiel: „{1} &lt;- Ausdruck".</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ "{0}" auf und wird implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie einen Wert mutieren möchten, verwenden Sie den Operator "&lt;-". Beispiel: "{1} &lt;- Ausdruck".</target>
+        <target state="translated">Das Ergebnis dieses Gleichheitsausdrucks weist den Typ „{0}“ auf und wird implizit verworfen. Verwenden Sie ggf. „let“, um das Ergebnis an einen Namen zu binden. Beispiel: „let Ergebnis = Ausdruck“. Falls Sie einen Wert mutieren möchten, verwenden Sie den Operator „&lt;-“. Beispiel: „{1} &lt;- Ausdruck“.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1364,7 +1364,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Rekursive Verweise auf das definierte Objekt werden zur Laufzeit mithilfe eines verzögerten Verweises auf ihre ordnungsgemäße Initialisierung geprüft. Sie sollten in Membern oder innerhalb eines nachgestellten Ausdrucks Eigenverweise im Format "&lt;ctor-expr&gt; then &lt;expr&gt;" platzieren.</target>
+        <target state="translated">Rekursive Verweise auf das definierte Objekt werden zur Laufzeit mithilfe eines verzögerten Verweises auf ihre ordnungsgemäße Initialisierung geprüft. Sie sollten in Membern oder innerhalb eines nachgestellten Ausdrucks Eigenverweise im Format „&lt;ctor-expr&gt; then &lt;expr&gt;“ platzieren.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">

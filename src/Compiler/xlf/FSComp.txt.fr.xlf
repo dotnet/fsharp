@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="translated">L’utilisation de « := » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « cell := expr » par « cell.Value &lt;- expr ».</target>
+        <target state="translated">L’utilisation de « := » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « cell := expr » par « cell.Value &lt;- expr ».</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="translated">L’utilisation de « decr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « decr cell » par « cell.Value &lt;- cell.Value - 1 ».</target>
+        <target state="translated">L’utilisation de « decr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « decr cell » par « cell.Value &lt;- cell.Value - 1 ».</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="translated">L’utilisation de « incr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « incr cell » par « cell.Value &lt;- cell.Value + 1 ».</target>
+        <target state="translated">L’utilisation de « incr » à partir de la bibliothèque F# est déconseillée. Voir https://aka.ms/fsharp-refcell-ops. Par exemple, veuillez remplacer « incr cell » par « cell.Value &lt;- cell.Value + 1 ».</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">corriger pour résoudre les noms de types délégués, voir https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">donner une erreur sur l’accès déconseillé de la construction avec l’attribut RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">répertorier les littéraux de n’importe quelle taille</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Utilisation non valide de l’émission d’un assembly de référence. N’utilisez pas '--staticlink' ni '--refonly' et '--refout' ensemble.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Chemin d'assemblage de référence non valide'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -449,12 +449,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Produire un assembly de référence, au lieu d’un assembly complet, en tant que sortie principale</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Produire un assembly de référence avec le chemin de fichier spécifié</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -619,7 +619,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">Le champ «{0}» apparaît plusieurs fois dans cette expression d’enregistrement.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -644,7 +644,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">Le champ '{0}' apparaît plusieurs fois dans ce type d'enregistrement anonyme.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -684,7 +684,7 @@
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="translated">Cette expression utilise la conversion implicite « {0}&lt;» pour convertir le type « {1} » en type « {2} ». Voir https://aka.ms/fsharp-implicit-convs. Cet avertissement peut être désactivé à l’aide de '#nowarn \"3391\".</target>
+        <target state="translated">Cette expression utilise la conversion implicite '{0}' pour convertir le type '{1}' en type '{2}'. Voir https://aka.ms/fsharp-implicit-convs. Cet avertissement peut être désactivé en utilisant '#nowarn \"3391\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -5009,7 +5009,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Limiter les plateformes sur lesquelles ce code peut s'exécuter : x86, Itanium, x64, anycpu32bitpreferred ou anycpu. La valeur par défaut est anycpu.</target>
+        <target state="translated">Limite les plateformes sur lesquelles ce code peut s'exécuter : x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, ou anycpu. La valeur par défaut est anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5304,7 +5304,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Plateforme '{0}' non reconnue, les valeurs valides sont 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' et 'anycpu'</target>
+        <target state="translated">Plateforme non reconnue '{0}', les valeurs valides sont 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred' et 'anycpu'. La valeur par défaut est anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -6939,7 +6939,7 @@
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'do' manquant dans l'expression 'for'. Attendu 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</target>
+        <target state="translated">'do' manquant dans l'expression 'for'. Attendu 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
@@ -7874,7 +7874,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Un pointeur byref retourné par une fonction ou une méthode est implicitement déréférencé à partir de F# 4.5. Pour acquérir la valeur de retour sous forme de pointeur, utilisez l'opérateur d'adresse, par ex. '&amp;f(x)' ou '&amp;obj.Method(arg1, arg2)'.</target>
+        <target state="translated">Un pointeur byref retourné par une fonction ou une méthode est implicitement déréférencé à partir de F# 4.5. Pour acquérir la valeur de retour sous forme de pointeur, utilisez l'opérateur d'adresse, par ex. '&amp;f(x)' ou '&amp;obj.Method(arg1, arg2)'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

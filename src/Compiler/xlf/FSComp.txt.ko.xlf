@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">대리자 형식 이름의 해결 방법을 수정합니다. https://github.com/dotnet/fsharp/issues/10228 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">RequireQualifiedAccess 특성을 사용하여 사용되지 않는 구문 액세스에 대한 오류 제공</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">모든 크기의 목록 리터럴</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">참조 어셈블리 내보내기를 잘못 사용했습니다. '--staticlink' 또는 '--refonly' 및 '--refout'을 함께 사용하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">잘못된 참조 어셈블리 경로'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -449,12 +449,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">주 출력으로 전체 어셈블리 대신 참조 어셈블리를 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">지정된 파일 경로를 사용하여 참조 어셈블리를 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -619,7 +619,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">'{0}' 필드가 이 레코드 식에 여러 번 나타납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -644,7 +644,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">'{0}' 필드가 이 익명 레코드 형식에서 여러 번 나타납니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1509,22 +1509,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">구현 형식이 봉인되어 있지만 시그니처는 봉인되어 있지 않음을 암시하므로 시그니처 및 구현의 '{1}' 형식 {0} 정의가 호환되지 않습니다. 시그니처에 [&lt;Sealed&gt;] 특성을 추가하세요.</target>
+        <target state="translated">구현 형식이 봉인되어 있지만 시그니처는 봉인되어 있지 않음을 암시하므로 시그니처 및 구현의 '{0}' 형식 {1} 정의가 호환되지 않습니다. 시그니처에 [&lt;Sealed&gt;] 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">구현 형식이 봉인되어 있지 않지만 시그니처는 봉인되어 있음을 암시하므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다. 구현에 [&lt;Sealed&gt;] 특성을 추가해 보세요.</target>
+        <target state="translated">구현 형식이 봉인되어 있지 않지만 시그니처는 봉인되어 있음을 암시하므로 시그니처 및 구현의 '{0}' 형식에 대한 {1} 정의가 호환되지 않습니다. 구현에 [&lt;Sealed&gt;] 특성을 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">구현이 추상 클래스이지만 시그니처는 추상 클래스가 아니므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다. 시그니처에 [&lt;AbstractClass&gt;] 특성을 추가해 보세요.</target>
+        <target state="translated">구현이 추상 클래스이지만 시그니처는 추상 클래스가 아니므로 시그니처 및 구현의 '{0}' 형식에 대한 {1} 정의가 호환되지 않습니다. 시그니처에 [&lt;AbstractClass&gt;] 특성을 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">시그니처가 추상 클래스이지만 구현은 추상 클래스가 아니므로 시그니처 및 구현의 '{1}' 형식에 대한 {0} 정의가 호환되지 않습니다. 구현에 [&lt;AbstractClass&gt;] 특성을 추가해 보세요.</target>
+        <target state="translated">시그니처가 추상 클래스이지만 구현은 추상 클래스가 아니므로 시그니처 및 구현의 '{0}' 형식에 대한 {1} 정의가 호환되지 않습니다. 구현에 [&lt;AbstractClass&gt;] 특성을 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -5009,7 +5009,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">이 코드를 실행할 수 있는 플랫폼을 x86, Itanium, x64, anycpu32bitpreferred 또는 anycpu로 제한합니다. 기본값은 anycpu입니다.</target>
+        <target state="translated">x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred 또는 anycpu에서 실행할 수 있는 플랫폼을 제한합니다. 기본값은 anycpu입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5304,7 +5304,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">인식할 수 없는 플랫폼 '{0}'입니다. 올바른 값은 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다.</target>
+        <target state="translated">인식할 수 없는 플랫폼 '{0}', 유효한 값은 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다. 기본값은 anycpu입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -6129,7 +6129,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 파일의 이름은 &lt;어셈블리 파일 이름&gt;.mdb여야 합니다. --pdb 옵션은 무시됩니다.</target>
+        <target state="translated">MDB 파일의 이름은 &lt;assembly-file-name&gt;.mdb여야 합니다. --pdb 옵션은 무시됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -6724,7 +6724,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">제공된 형식 또는 메서드 '{1}'의 정적 매개 변수 '{0}'에 값이 필요합니다. 명명된 인수(예: '{2}&lt;{3}=...&gt;')를 사용하여 형식 공급자에 대한 정적 매개 변수를 선택적으로 지정할 수 있습니다.</target>
+        <target state="translated">제공된 형식 또는 메서드 '{0}'의 정적 매개 변수 '{1}'에 값이 필요합니다. 명명된 인수(예: '{2}&lt;{3}=...&gt;')를 사용하여 형식 공급자에 대한 정적 매개 변수를 선택적으로 지정할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">

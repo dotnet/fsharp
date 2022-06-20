@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
         <source>Clear screen</source>
-        <target state="new">Clear screen</target>
+        <target state="translated">清空螢幕</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">用法: {0} &lt;選項&gt; [script.fsx [&lt;引數&gt;]]</target>
+        <target state="translated">用法: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
