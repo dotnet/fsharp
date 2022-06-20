@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiEntryPointWontBeInvokedAutomatically">
+        <source>Function with '[&lt;EntryPoint&gt;]' are not invoked in FSI. '{0}' was not invoked. Execute '['{1}' &lt;args&gt;]' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
+        <target state="new">Function with '[&lt;EntryPoint&gt;]' are not invoked in FSI. '{0}' was not invoked. Execute '['{1}' &lt;args&gt;]' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
         <target state="translated">從之前 F# 互動中的評估存取內部類型、方法或欄位 '{0}' 已過時，可能造成後續存取錯誤。若要啟用可存取內部之單一動態組件的舊版世代，請使用 '--multiemit-' 選項。</target>
