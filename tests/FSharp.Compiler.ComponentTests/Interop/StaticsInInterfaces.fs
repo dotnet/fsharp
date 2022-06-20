@@ -39,6 +39,78 @@ module ``Static Methods In Interfaces`` =
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
     
+    let csharpOperators =
+        CSharp """
+        namespace StaticsInInterfaces
+        {
+            public interface IAddable<T> where T : IAddable<T>
+            {
+                static abstract T operator +(T left, T right);
+            }
+
+
+            public record MyInteger : IAddable<MyInteger>
+            {
+                public int Value { get; init; } = default;
+                public MyInteger(int value)
+                {
+                    Value = value;
+                }
+
+                public static MyInteger operator +(MyInteger left, MyInteger right) => new MyInteger(left.Value + right.Value);
+            }
+
+        }
+        """  |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csOpLib"
+
+    #if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can use operators declared in C#`` () =
+
+        let fsharpSource =
+            """
+open System
+open StaticsInInterfaces
+
+type MyInteger2 =
+    val Value : int
+    new(value: int) = { Value = value }
+    static member op_Addition(left: MyInteger2, right: MyInteger2) : MyInteger2 = MyInteger2(left.Value + right.Value)
+    interface IAddable<MyInteger2> with
+        static member op_Addition(left: MyInteger2, right: MyInteger2) : MyInteger2 = MyInteger2.op_Addition(left, right)
+
+[<EntryPoint>]
+let main _ =
+    let mint1 = new MyInteger(1)
+    let mint2 = new MyInteger(2)
+
+    let sum = mint1 + mint2
+
+    let mint21 = new MyInteger2(2)
+    let mint22 = new MyInteger2(4)
+
+    let sum2 = mint21 + mint22
+
+    if sum.Value <> 3 then
+        failwith $"Unexpected result: %d{sum.Value}"
+
+    if sum2.Value <> 6 then
+        failwith $"Unexpected result: %d{sum2.Value}"
+
+    // TODO: Figure out if we allow something like:
+    // let add (a: IAddable<_>) (b: IAddable<_>) = a + b
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpOperators]
+        |> compileAndRun
+        |> shouldSucceed
+
 #if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
