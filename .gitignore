@@ -119,3 +119,6 @@ nCrunchTemp_*
 .fake
 *.pdb
 *.dll
+
+/test.fs
+/test.fsx
