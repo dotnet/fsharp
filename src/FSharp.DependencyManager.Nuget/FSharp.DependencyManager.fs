@@ -6,6 +6,7 @@ open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
+open System.Text
 open FSharp.DependencyManager.Nuget
 open FSharp.DependencyManager.Nuget.Utilities
 open FSharp.DependencyManager.Nuget.ProjectFile
@@ -197,6 +198,57 @@ module FSharpDependencyManager =
         |> List.distinct
         |> (fun l -> l, binLogPath, timeout)
 
+    let computeHashForResolutionInputs
+        (
+            scriptExt: string,
+            directiveLines: (string * string) seq,
+            targetFrameworkMoniker: string,
+            runtimeIdentifier: string
+        ) : string option =
+
+        let packageReferences, _, _ =
+            directiveLines |> List.ofSeq |> parsePackageDirective scriptExt
+
+        let referencesHaveWildCardVersion =
+            // Verify to see if the developer specified a wildcard version.  If they did then caching is not possible
+            let hasWildCardVersion p =
+                // Todo: named record please
+                let {
+                        Include = package
+                        Version = ver
+                        RestoreSources = _
+                        Script = _
+                    } =
+                    p
+
+                not (String.IsNullOrWhiteSpace(package))
+                && (not (String.IsNullOrWhiteSpace(ver)) && ver.Contains("*"))
+
+            packageReferences |> List.tryFind hasWildCardVersion |> Option.isSome
+
+        if referencesHaveWildCardVersion then
+            // We have wildcard references so no caching can apply
+            None
+        else
+            let packageReferenceText =
+                packageReferences
+                |> List.map formatPackageReference
+                |> Seq.concat
+                |> Seq.distinct
+                |> Seq.toArray
+                |> Seq.sort
+                |> Seq.fold (fun acc s -> acc + s) ""
+
+            let value =
+                $"""Tfm={targetFrameworkMoniker}:Rid={runtimeIdentifier}:PackageReferences={packageReferenceText}:Ext={match scriptExt with
+                                                                                                                       | ".csx" -> csxExt
+                                                                                                                       | _ -> fsxExt}"""
+
+            Some(
+                computeSha256HashOfBytes (Encoding.Unicode.GetBytes(value))
+                |> Array.fold (fun acc byte -> acc + $"%02x{byte}") ""
+            )
+
 /// The results of ResolveDependencies
 type ResolveDependenciesResult
     (
@@ -237,45 +289,48 @@ type ResolveDependenciesResult
     member _.Roots = roots
 
 [<DependencyManager>]
-type FSharpDependencyManager(outputDirectory: string option) =
+type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bool) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
 
     let generatedScripts = ConcurrentDictionary<string, string>()
 
-    let workingDirectory =
+    let projectDirectory, cacheDirectory =
+        let createDirectory directory =
+            lazy
+                try
+                    if not (Directory.Exists(directory)) then
+                        Directory.CreateDirectory(directory) |> ignore
+
+                    directory
+                with _ ->
+                    directory
+
         // Calculate the working directory for dependency management
         //   if a path wasn't supplied to the dependency manager then use the temporary directory as the root
         //   if a path was supplied if it was rooted then use the rooted path as the root
         //   if the path wasn't supplied or not rooted use the temp directory as the root.
-        let directory =
-            let path =
-                Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
+        let specialDir =
+            Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".packagemanagement", "nuget")
 
+        let path =
+            Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
+
+        let root =
             match outputDirectory with
-            | None -> Path.Combine(Path.GetTempPath(), path)
-            | Some v ->
-                if Path.IsPathRooted(v) then
-                    Path.Combine(v, path)
-                else
-                    Path.Combine(Path.GetTempPath(), path)
+            | Some v when Path.IsPathRooted(v) -> v
+            | Some v -> Path.Combine(specialDir, v)
+            | _ -> specialDir
 
-        lazy
-            try
-                if not (Directory.Exists(directory)) then
-                    Directory.CreateDirectory(directory) |> ignore
-
-                directory
-            with _ ->
-                directory
+        createDirectory (Path.Combine(root, "Projects", path)), createDirectory (Path.Combine(root, "Cache"))
 
     let deleteScripts () =
         try
 #if !DEBUG
-            if workingDirectory.IsValueCreated then
-                if Directory.Exists(workingDirectory.Value) then
-                    Directory.Delete(workingDirectory.Value, true)
+            if projectDirectory.IsValueCreated then
+                if Directory.Exists(projectDirectory.Value) then
+                    Directory.Delete(projectDirectory.Value, true)
 #else
             ()
 #endif
@@ -315,7 +370,7 @@ type FSharpDependencyManager(outputDirectory: string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        let projectPath = Path.Combine(workingDirectory.Value, "Project.fsproj")
+        let projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
@@ -339,7 +394,42 @@ type FSharpDependencyManager(outputDirectory: string option) =
 
         generateAndBuildProjectArtifacts
 
+    let tryGetResultsForResolutionHash hash (projectDirectory: Lazy<string>) : PackageBuildResolutionResult option =
+        match hash with
+        | Some hash when useResultsCache = true ->
+            let resolutionsFile =
+                Path.Combine(cacheDirectory.Value, (hash + ".resolvedReferences.paths"))
+
+            if File.Exists(resolutionsFile) then
+                let resolutions, references, loads, includes =
+                    let resolutions = getResolutionsFromFile resolutionsFile
+                    let references = (findReferencesFromResolutions resolutions) |> Array.toList
+                    let loads = (findLoadsFromResolutions resolutions) |> Array.toList
+                    let includes = (findIncludesFromResolutions resolutions) |> Array.toList
+                    resolutions, references, loads, includes
+
+                if verifyFilesExist (references) then
+                    Some
+                        {
+                            success = true
+                            projectPath = Path.Combine(projectDirectory.Value, "Project.fsproj")
+                            stdOut = [||]
+                            stdErr = [||]
+                            resolutionsFile = Some resolutionsFile
+                            resolutions = resolutions
+                            references = references
+                            loads = loads
+                            includes = includes
+                        }
+                else
+                    None
+            else
+                None
+        | _ -> None
+
     do AppDomain.CurrentDomain.ProcessExit |> Event.add (fun _ -> deleteScripts ())
+
+    new(outputDirectory: string option) = FSharpDependencyManager(outputDirectory, true)
 
     member _.Name = name
 
@@ -356,6 +446,10 @@ type FSharpDependencyManager(outputDirectory: string option) =
                 (SR.loadNugetPackage ())
                 (SR.highestVersion ())
         |]
+
+    member _.ClearResultsCache() =
+        Directory.Delete(cacheDirectory.Value, true)
+        Directory.CreateDirectory(cacheDirectory.Value) |> ignore
 
     member _.ResolveDependencies
         (
@@ -376,34 +470,49 @@ type FSharpDependencyManager(outputDirectory: string option) =
 
         let generateAndBuildProjectArtifacts =
             let configIncludes =
-                generateSourcesFromNugetConfigs scriptDirectory workingDirectory.Value timeout
+                generateSourcesFromNugetConfigs scriptDirectory projectDirectory.Value timeout
 
             let directiveLines = Seq.append packageManagerTextLines configIncludes
 
-            let resolutionResult =
-                prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+            let resolutionHash =
+                FSharpDependencyManager.computeHashForResolutionInputs (
+                    scriptExt,
+                    directiveLines,
+                    targetFrameworkMoniker,
+                    runtimeIdentifier
+                )
+
+            let fromCache, resolutionResult =
+                match tryGetResultsForResolutionHash resolutionHash projectDirectory with
+                | Some resolutionResult -> true, resolutionResult
+                | None ->
+                    false, prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
 
             match resolutionResult.resolutionsFile with
             | Some file ->
-                let resolutions = getResolutionsFromFile file
-                let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
+                let generatedScriptPath =
+                    match resolutionHash with
+                    | Some hash -> Path.Combine(cacheDirectory.Value, hash) + scriptExt
+                    | None -> resolutionResult.projectPath + scriptExt
 
-                let scripts =
-                    let generatedScriptPath = resolutionResult.projectPath + scriptExt
-                    let generatedScriptBody = makeScriptFromReferences references poundRprefix
+                // We have succeeded to gather information -- generate script and copy the results to the cache
+                if not (fromCache) then
+                    let generatedScriptBody =
+                        makeScriptFromReferences resolutionResult.references poundRprefix
+
                     emitFile generatedScriptPath generatedScriptBody
-                    let loads = (findLoadsFromResolutions resolutions) |> Array.toList
-                    List.concat [ [ generatedScriptPath ]; loads ] |> List.toSeq
 
-                let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
+                    match resolutionHash with
+                    | Some hash -> File.Copy(file, Path.Combine(cacheDirectory.Value, hash + ".resolvedReferences.paths"), true)
+                    | None -> ()
 
                 ResolveDependenciesResult(
                     resolutionResult.success,
                     resolutionResult.stdOut,
                     resolutionResult.stdErr,
-                    references,
-                    scripts,
-                    includes
+                    resolutionResult.references,
+                    Seq.concat [ [ generatedScriptPath ]; resolutionResult.loads ],
+                    resolutionResult.includes
                 )
 
             | None ->

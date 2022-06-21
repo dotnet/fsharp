@@ -2216,7 +2216,10 @@ FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.Int3
 FSharp.Compiler.DependencyManager.DependencyProvider: System.Tuple`2[System.String,FSharp.Compiler.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport, System.String)
 FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor()
 FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe, FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.AssemblyResolutionProbe, FSharp.Compiler.DependencyManager.NativeResolutionProbe, Boolean)
 FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void .ctor(FSharp.Compiler.DependencyManager.NativeResolutionProbe, Boolean)
+FSharp.Compiler.DependencyManager.DependencyProvider: Void ClearResultsCache(System.Collections.Generic.IEnumerable`1[System.String], System.String, FSharp.Compiler.DependencyManager.ResolvingErrorReport)
 FSharp.Compiler.DependencyManager.ErrorReportType
 FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Error
 FSharp.Compiler.DependencyManager.ErrorReportType+Tags: Int32 Warning
@@ -2248,6 +2251,7 @@ FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_
 FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String get_Name()
 FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] HelpMessages
 FSharp.Compiler.DependencyManager.IDependencyManagerProvider: System.String[] get_HelpMessages()
+FSharp.Compiler.DependencyManager.IDependencyManagerProvider: Void ClearResultsCache()
 FSharp.Compiler.DependencyManager.IResolveDependenciesResult
 FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean Success
 FSharp.Compiler.DependencyManager.IResolveDependenciesResult: Boolean get_Success()

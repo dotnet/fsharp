@@ -432,6 +432,11 @@
         <target state="translated">Imprimir as interfaces inferidas de todos os arquivos de compilação para os arquivos de assinatura associados</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsClearResultsCache">
+        <source>Clear the package manager results cache</source>
+        <target state="new">Clear the package manager results cache</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Uso inválido de emitir um assembly de referência, não use '--staticlink' ou '--reutilly' e '--refout' juntos.</target>
