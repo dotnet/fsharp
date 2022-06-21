@@ -45,7 +45,7 @@ type ResolveDependenciesResult =
 
 [<DependencyManager>]
 type FSharpDependencyManager =
-    new: outputDirectory: string option * bool -> FSharpDependencyManager
+    new: outputDirectory: string option * useResultsCache: bool -> FSharpDependencyManager
     new: outputDirectory: string option -> FSharpDependencyManager
 
     member Name: string
@@ -53,6 +53,8 @@ type FSharpDependencyManager =
     member Key: string
 
     member HelpMessages: string[]
+
+    member ClearResultsCache: unit -> unit
 
     member ResolveDependencies:
         scriptDirectory: string *

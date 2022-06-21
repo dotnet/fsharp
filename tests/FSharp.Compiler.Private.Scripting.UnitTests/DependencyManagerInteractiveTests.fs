@@ -872,3 +872,39 @@ x |> Seq.iter(fun r ->
         Assert.Equal(foundCorrectError, false)
         Assert.Equal(foundWrongError, false)
         ()
+
+        
+    [<Fact>]
+    member _.``Verify that clear cache doesn't fail and clears the cache``() =
+        let nativeProbingRoots () = Seq.empty<string>
+        let mutable foundCorrectError = false
+        let mutable foundWrongError = false
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots), true)
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error ->
+                    if code = 3217 then foundCorrectError <- true
+                    else foundWrongError <- true
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        // Resolve and cache the results won't time out
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=10000"|], reportError, "net6.0", null, "", "", "", -1)           // Wait forever
+
+        // Clear the results
+        foundCorrectError <- false
+        foundWrongError <- false
+
+        // Now clear the cache --- this will ensure that resolving produces a timeout error.  If we read from the cache the test will fail
+        dp.ClearResultsCache(idm, reportError)
+
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net6.0", null, "", "", "", -1)           // Wait forever
+        Assert.Equal(false, result.Success)
+        Assert.Equal(foundCorrectError, true)
+        Assert.Equal(foundWrongError, false)
+        ()
+

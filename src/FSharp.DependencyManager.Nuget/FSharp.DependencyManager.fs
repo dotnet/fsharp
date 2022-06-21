@@ -312,7 +312,7 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
         //   if a path was supplied if it was rooted then use the rooted path as the root
         //   if the path wasn't supplied or not rooted use the temp directory as the root.
         let specialDir =
-            Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".packagemanagement")
+            Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".packagemanagement", "nuget")
 
         let path =
             Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--" + Guid.NewGuid().ToString())
@@ -446,6 +446,10 @@ type FSharpDependencyManager(outputDirectory: string option, useResultsCache: bo
                 (SR.loadNugetPackage ())
                 (SR.highestVersion ())
         |]
+
+    member _.ClearResultsCache() =
+        Directory.Delete(cacheDirectory.Value, true)
+        Directory.CreateDirectory(cacheDirectory.Value) |> ignore
 
     member _.ResolveDependencies
         (

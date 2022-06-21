@@ -26,6 +26,8 @@ module ReflectionHelper =
 
     let resolveDependenciesMethodName = "ResolveDependencies"
 
+    let clearResultsCacheMethodName = "ClearResultsCache"
+
     let namePropertyName = "Name"
 
     let keyPropertyName = "Key"
@@ -127,7 +129,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract HelpMessages: string[]
-
+    abstract ClearResultsCache: unit -> unit
     abstract ResolveDependencies:
         scriptDir: string *
         mainScriptName: string *
@@ -139,7 +141,7 @@ type IDependencyManagerProvider =
         timeout: int ->
             IResolveDependenciesResult
 
-type ReflectionDependencyManagerProvider
+    type ReflectionDependencyManagerProvider
     (
         theType: Type,
         nameProperty: PropertyInfo,
@@ -149,6 +151,7 @@ type ReflectionDependencyManagerProvider
         resolveDepsEx: MethodInfo option,
         resolveDepsExWithTimeout: MethodInfo option,
         resolveDepsExWithScriptInfoAndTimeout: MethodInfo option,
+        clearResultCache: MethodInfo option,
         outputDir: string option,
         useResultsCache: bool
         ) =
@@ -178,7 +181,6 @@ type ReflectionDependencyManagerProvider
         | None, _, _, _
         | _, None, _, _
         | _, _, None, _ -> None
-
         | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =
                 getInstanceMethod<bool * string list * string list>
@@ -229,6 +231,11 @@ type ReflectionDependencyManagerProvider
                     |]
                     resolveDependenciesMethodName
 
+            let clearResultsCacheMethod =
+                getInstanceMethod<unit>
+                    theType [||]
+                    clearResultsCacheMethodName
+
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
                     theType,
@@ -239,6 +246,7 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
+                    clearResultsCacheMethod,
                     outputDir,
                     useResultsCache
                 )
@@ -294,6 +302,11 @@ type ReflectionDependencyManagerProvider
                     |]
                     resolveDependenciesMethodName
 
+            let clearResultsCacheMethod =
+                getInstanceMethod<unit>
+                    theType [||]
+                    clearResultsCacheMethodName
+
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
                     theType,
@@ -304,6 +317,7 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
+                    clearResultsCacheMethod,
                     outputDir,
                     useResultsCache
                 )
@@ -384,6 +398,13 @@ type ReflectionDependencyManagerProvider
 
         /// Key of dependency Manager: used for #r "key: ... "   E.g nuget
         member _.Key = instance |> keyProperty
+
+        /// Clear the dependency manager caches
+        member _.ClearResultsCache () =
+            match clearResultCache with
+            | Some clearResultsCache ->
+                clearResultsCache.Invoke(instance, [||]) |> ignore
+            | None -> ()
 
         /// Key of dependency Manager: used for #help
         member _.HelpMessages = instance |> helpMessagesProperty
@@ -554,6 +575,15 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 let dm = kvp.Value
                 yield! dm.HelpMessages
         |]
+
+    /// Clear the DependencyManager results cache
+    member _.ClearResultsCache(packageManager: IDependencyManagerProvider, reportError: ResolvingErrorReport) =
+        try
+            packageManager.ClearResultsCache()
+        with e ->
+            let e = stripTieWrapper e
+            let err, msg = FSComp.SR.packageManagerError (e.Message)
+            reportError.Invoke(ErrorReportType.Error, err, msg)
 
     /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError
