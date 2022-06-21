@@ -110,7 +110,7 @@ type internal DelayedILModuleReader =
                                 None
                         | _ -> Some this.result)
             }
-        | _ -> Cancellable.ret (Some this.result)
+        | _ -> cancellable.Return(Some this.result)
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
