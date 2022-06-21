@@ -66,7 +66,6 @@ and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> b
 type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// Contains functions for composing resumable code blocks
-[<Microsoft.FSharp.Core.Experimental("Experimental library feature, requires '--langversion:preview'")>]
 [<Microsoft.FSharp.Core.RequireQualifiedAccess>]
 module ResumableCode =
 
@@ -125,7 +124,6 @@ type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 /// Contains compiler intrinsics related to the definition of state machines.
-[<Microsoft.FSharp.Core.Experimental("Experimental library feature, requires '--langversion:preview'")>]
 module StateMachineHelpers = 
 
     /// <summary>
