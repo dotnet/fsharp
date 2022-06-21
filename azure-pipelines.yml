@@ -276,11 +276,11 @@ stages:
           pool:
             # The PR build definition sets this variable:
             #   was WindowsMachineQueueName=Build.Windows.Amd64.VS2022.Open
-            #   currently  Windows.vs2022.amd64
+            #   currently  Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
             name: NetCore1ESPool-Public
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
+            demands: ImageOverride -equals Windows.vs2022.amd64.open #$(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4
