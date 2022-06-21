@@ -10,7 +10,9 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+#if !COMPILING_PROTO
 open FSharp.Core.CompilerServices.StateMachineHelpers
+#endif
 
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
@@ -941,13 +943,14 @@ type CancellableBuilder() =
 
     member inline _.Delay([<InlineIfLambda>] f) =
         Cancellable(fun ct ->
-            //__debugPoint ""
             let (Cancellable g) = f ()
             g ct)
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
 
             match Cancellable.run ct comp with
             | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
@@ -955,7 +958,9 @@ type CancellableBuilder() =
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
 
             match Cancellable.run ct comp with
             | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
@@ -963,7 +968,9 @@ type CancellableBuilder() =
 
     member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
 
             match Cancellable.run ct comp1 with
             | ValueOrCancelled.Value () -> Cancellable.run ct comp2
@@ -971,7 +978,9 @@ type CancellableBuilder() =
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
 
             let compRes =
                 try
@@ -990,7 +999,9 @@ type CancellableBuilder() =
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
             let body = comp resource
 
             let compRes =
@@ -1012,7 +1023,9 @@ type CancellableBuilder() =
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
+#if !COMPILING_PROTO
             __debugPoint ""
+#endif
 
             let compRes =
                 try
@@ -1032,9 +1045,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     member inline _.Return v =
-        Cancellable(fun _ ->
-            __debugPoint ""
-            ValueOrCancelled.Value v)
+        Cancellable(fun _ -> ValueOrCancelled.Value v)
 
     member inline _.ReturnFrom(v: Cancellable<'T>) = v
 

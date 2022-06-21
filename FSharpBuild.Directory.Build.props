@@ -79,6 +79,10 @@
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <DefineConstants>$(DefineConstants);COMPILING_PROTO</DefineConstants>
+  </PropertyGroup>
+
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
     <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>
