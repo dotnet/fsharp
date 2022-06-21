@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #Exceptions 
-#light
+
 
 // Verify you can catch an F# exceptions can be caught via pattern matching (and not a dynamic type check).
 

@@ -1,12 +1,6 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
-#if INTERACTIVE
-#r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.Test.Utilities/TestFramework.fs"
-#load "single-test.fs"
-#else
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 module FSharp.Tests.Core
-#endif
 
 open System
 open System.IO
@@ -38,7 +32,8 @@ let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
 
-[<NonParallelizable>]
+
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -470,7 +465,7 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
-        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+        let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
             use testOkFile = fileguard cfg "test.ok"
@@ -1063,7 +1058,7 @@ module CoreTests =
 
         let rawFileOut = tryCreateTemporaryFileName ()
         let rawFileErr = tryCreateTemporaryFileName ()
-        ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
+        ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
         let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
@@ -1119,7 +1114,7 @@ module CoreTests =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-width-200`` () =
+    let ``printing-width-200`` () =  
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
@@ -1318,7 +1313,7 @@ module CoreTests =
         exec cfg ("." ++ "main.exe") ""
 
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/1298
+    // Repro for https://github.com/dotnet/fsharp/issues/1298
     [<Test>]
     let fileorder () =
         let cfg = testConfig "core/fileorder"
@@ -1345,7 +1340,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test2.exe") ""
 
-    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    // Repro for https://github.com/dotnet/fsharp/issues/2679
     [<Test>]
     let ``add files with same name from different folders`` () =
         let cfg = testConfig "core/samename"
@@ -1390,7 +1385,7 @@ module CoreTests =
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
-        // see https://github.com/Microsoft/visualfsharp/issues/3139
+        // see https://github.com/dotnet/fsharp/issues/3139
         let cfg = testConfig "core/versionAttributes"
         let stdoutPath = "out.stdout.txt" |> getfullpath cfg
         let stderrPath = "out.stderr.txt" |> getfullpath cfg
@@ -1593,9 +1588,11 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
-//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
-//    [<Test>]
-//    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
+// This requires --multiemit on by default, which is not the case for .NET Framework
+#if NETCOREAPP
+    [<Test>]
+    let ``patterns-FSI`` () = singleTestBuildAndRun "core/patterns" FSI
+#endif
 
     [<Test>]
     let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
@@ -2102,13 +2099,14 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
-[<NonParallelizable>]
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module ToolsTests =
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let bundle () =
-        let cfg = testConfig "tools/bundle"
+        let cfg = 
+            testConfig "tools/bundle" 
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
@@ -2232,7 +2230,9 @@ module RegressionTests =
 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
-        let cfg = testConfig "regression/5531"
+        let cfg = 
+            testConfig "regression/5531"
+       
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
@@ -2265,7 +2265,7 @@ module RegressionTests =
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``655`` () =
         let cfg = testConfig "regression/655"
@@ -2284,7 +2284,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
 
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test >]
     let ``656`` () =
         let cfg = testConfig "regression/656"
@@ -2318,7 +2318,7 @@ module RegressionTests =
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
-    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () =
         let cfg = testConfig "regression/struct-measure-bug-1"
@@ -3288,7 +3288,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if NET472
+#if !NETCOREAPP
 [<NonParallelizable>]
 module ProductVersionTest =
 
@@ -3358,6 +3358,15 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``recursiveNestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/recursiveNestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

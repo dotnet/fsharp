@@ -10,10 +10,16 @@
         "*.vsixmanifest": "xml",
         "*.vstemplate": "xml",
     },
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.expand": false,
+    "explorer.fileNesting.patterns": {
+        "*.fs": "${capture}.fsi"
+    },
     "FSharp.suggestGitignore": false,
-    "FSharp.enableMSBuildProjectGraph": true,
-    "FSharp.workspacePath": "FSharp.sln",
+    "FSharp.enableMSBuildProjectGraph": false,
+    "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
+    "FSharp.enableBackgroundServices": false,
     "FSharp.excludeProjectDirectories": [
         ".git",
         "eng",
@@ -28,9 +34,13 @@
     "csharp.suppressDotnetInstallWarning": true,
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
-    "omnisharp.autoStart": true,
+    "omnisharp.autoStart": false,
+    "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
+    "omnisharp.enableRoslynAnalyzers": false,
+    "omnisharp.analyzeOpenDocumentsOnly": true,
+    "omnisharp.useModernNet": true,
     "razor.disabled": true,
     "powershell.promptToUpdatePowerShell": false,
     "powershell.integratedConsole.showOnStartup": false,
@@ -45,5 +55,6 @@
         "MD025": {
             "front_matter_title": ""
         }
-    }
+    },
+    "editor.inlayHints.enabled": "offUnlessPressed"
 }

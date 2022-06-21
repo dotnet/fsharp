@@ -1,4 +1,4 @@
-Microsoft (R) F# Compiler version 10.6.0.0 for F# 4.7
+Microsoft (R) F# Compiler version 12.0.0.0 for F# 6.0
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
@@ -21,9 +21,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          the given file
 --keyfile:<file>                         Specify a strong name key file
 --platform:<string>                      Limit which platforms this code can
-                                         run on: x86, Itanium, x64,
-                                         anycpu32bitpreferred, or anycpu. The
-                                         default is anycpu.
+                                         run on: x86, x64, Arm, Arm64,
+                                         Itanium, anycpu32bitpreferred, or
+                                         anycpu. The default is anycpu.
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.
@@ -39,6 +39,11 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the
                                          produced binaries
+--refonly[+|-]                           Produce a reference assembly,
+                                         instead of a full assembly, as the
+                                         primary output
+--refout:<file>                          Produce a reference assembly with
+                                         the specified file path.
 
 
 		- INPUT FILES -

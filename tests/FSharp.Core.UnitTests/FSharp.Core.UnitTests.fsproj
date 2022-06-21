@@ -101,7 +101,7 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
   </ItemGroup>
 </Project>

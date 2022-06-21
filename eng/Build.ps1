@@ -61,6 +61,7 @@ param (
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
+    [switch]$skipBuild,
 
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -114,6 +115,7 @@ function Print-Usage() {
     Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
+    Write-Host "  -skipbuild                    Skip building product"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -458,7 +460,7 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln"
         }
@@ -509,7 +511,7 @@ try {
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
+        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\4.3.0-1.22220.8\tools\csc.exe"
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE

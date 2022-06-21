@@ -29,10 +29,10 @@ let cleanUpFSharpCore cfg =
     { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
 // Generate a project files
-let emitFile filename (body:string) =
+let emitFile fileName (body:string) =
     try
         // Create a file to write to
-        use sw = File.CreateText(filename)
+        use sw = File.CreateText(fileName)
         sw.WriteLine(body)
     with | _ -> ()
 
@@ -378,8 +378,8 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
-            fsi_flags = sprintf "%s %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
             }
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)

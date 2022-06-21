@@ -95,7 +95,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let cleanFileName a = if a = fileName1 then "file1" else if a = fileName2 then "file2" else "??"
 
-[<Test>]
+[<Test; SetUICulture("en-US"); SetCulture("en-US")>]
 let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
@@ -5246,7 +5246,7 @@ module internal ProjectBig =
 
 
 [<Test>]
-// Simplified repro for https://github.com/Microsoft/visualfsharp/issues/2679
+// Simplified repro for https://github.com/dotnet/fsharp/issues/2679
 let ``add files with same name from different folders`` () =
     let fileNames =
         [ __SOURCE_DIRECTORY__ + "/data/samename/folder1/a.fs"
@@ -5333,7 +5333,7 @@ let x = (1 = 3.0)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 [<Test>]
-let ``Test line directives in foreground analysis`` () = // see https://github.com/Microsoft/visualfsharp/issues/3317
+let ``Test line directives in foreground analysis`` () = // see https://github.com/dotnet/fsharp/issues/3317
 
     // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate

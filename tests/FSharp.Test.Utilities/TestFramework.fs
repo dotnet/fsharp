@@ -308,16 +308,16 @@ let config configurationName envVars =
     let coreClrRuntimePackageVersion = "5.0.0-preview.7.20364.11"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
-    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
+    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US" 
+    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror --preferreduilang:en-US"
     let operatingSystem = getOperatingSystem ()
     let Is64BitOperatingSystem = DotnetPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let packagesDir = getPackagesDir ()
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
-    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
+    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "csc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"

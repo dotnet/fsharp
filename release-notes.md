@@ -25,6 +25,15 @@ These release notes track our current efforts to document changes to the F# proj
   A 'do expr' declaration in a module will correspond to a SynModuleDecl.Expr enclosing a SynExpr.Do 
   This constructo also loses the debug point as it was always None. The debug point
   is always implicit for this construct.
+* In FCS API, FSharpParsingOptions, `CompilingFsLib` --> `CompilingFSharpCore`
+* In FCS API, FSharpParsingOptions, `ErrorSeverityOptions` --> `DiagnosticOptions`
+* [SynIdent](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synident.html#SynIdent) was introduced in the Untyped Syntax Tree. 
+  This represent an `Ident` with potential additional information, stored as [IdentTrivia](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntaxtrivia-identtrivia.html)).
+* `LongIdentWithDots` was renamed to [SynLongIdent](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synlongident.html) and also could contain `IdentTrivia`.
+  Due to this change, infix operators are stored as `SynExpr.LongIdent` instead of `SynExpr.Ident`.
+  `a + b` is parsed as `SynLongIdent([op_Addition], [], [Some (OriginalNotation "+")])`.
+* `SynMeasure` was extended with [SynMeasure.Paren](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synmeasure.html#Paren) case.
+* Dynamic expressions (like `x?y`) are now represented as [SynExpr.Dynamic](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synexpr.html#Dynamic) in the Untyped Syntax Tree.
 
 ### F# 6.0 / Visual Studio 17.0
 

@@ -133,11 +133,11 @@ type CompilerService() =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalDefines = []
-            ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+            DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = "default"
             IsInteractive = false
-            LightSyntax = None
-            CompilingFsLib = false
+            IndentationAwareSyntax = None
+            CompilingFSharpCore = false
             IsExe = false
         }
 
@@ -158,7 +158,7 @@ type CompilerService() =
 
         match sourceOpt with
         | None ->
-            sourceOpt <- Some <| FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\fsharp\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
+            sourceOpt <- Some <| FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
         | _ -> ()
 
         match assembliesOpt with
