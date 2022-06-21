@@ -5,12 +5,26 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Security.Cryptography
 open FSDependencyManager
 open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class, AllowMultiple = false)>]
 type DependencyManagerAttribute() =
     inherit Attribute()
+
+// Resolved assembly information
+type Resolution =
+    {
+        NugetPackageId: string
+        NugetPackageVersion: string
+        PackageRoot: string
+        FullPath: string
+        AssetType: string
+        IsNotImplementationReference: string
+        InitializeSourcePath: string
+        NativePath: string
+    }
 
 /// The result of building the package resolution files.
 type PackageBuildResolutionResult =
@@ -20,9 +34,92 @@ type PackageBuildResolutionResult =
         stdOut: string array
         stdErr: string array
         resolutionsFile: string option
+        resolutions: Resolution[]
+        references: string list
+        loads: string list
+        includes: string list
     }
 
 module internal Utilities =
+
+    let verifyFilesExist files =
+        files |> List.tryFind (fun f -> not (File.Exists(f))) |> Option.isNone
+
+    let findLoadsFromResolutions (resolutions: Resolution[]) =
+        resolutions
+        |> Array.filter (fun r ->
+            not (
+                String.IsNullOrEmpty(r.NugetPackageId)
+                || String.IsNullOrEmpty(r.InitializeSourcePath)
+            )
+            && File.Exists(r.InitializeSourcePath))
+        |> Array.map (fun r -> r.InitializeSourcePath)
+        |> Array.distinct
+
+    let findReferencesFromResolutions (resolutions: Resolution array) =
+        let equals (s1: string) (s2: string) =
+            String.Compare(s1, s2, StringComparison.InvariantCultureIgnoreCase) = 0
+
+        resolutions
+        |> Array.filter (fun r ->
+            not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.FullPath))
+            && not (equals r.IsNotImplementationReference "true")
+            && File.Exists(r.FullPath)
+            && equals r.AssetType "runtime")
+        |> Array.map (fun r -> r.FullPath)
+        |> Array.distinct
+
+    let findIncludesFromResolutions (resolutions: Resolution[]) =
+        let managedRoots =
+            resolutions
+            |> Array.filter (fun r ->
+                not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.PackageRoot))
+                && Directory.Exists(r.PackageRoot))
+            |> Array.map (fun r -> r.PackageRoot)
+
+        let nativeRoots =
+            resolutions
+            |> Array.filter (fun r -> not (String.IsNullOrEmpty(r.NugetPackageId) || String.IsNullOrEmpty(r.NativePath)))
+            |> Array.map (fun r ->
+                if Directory.Exists(r.NativePath) then
+                    Some r.NativePath
+                elif File.Exists(r.NativePath) then
+                    Some(Path.GetDirectoryName(r.NativePath).Replace('\\', '/'))
+                else
+                    None)
+            |> Array.filter (fun r -> r.IsSome)
+            |> Array.map (fun r -> r.Value)
+
+        Array.concat [| managedRoots; nativeRoots |] |> Array.distinct
+
+    let getResolutionsFromFile resolutionsFile =
+        let lines =
+            try
+                File
+                    .ReadAllText(resolutionsFile)
+                    .Split([| '\r'; '\n' |], StringSplitOptions.None)
+                |> Array.filter (fun line -> not (String.IsNullOrEmpty(line)))
+            with _ ->
+                [||]
+
+        [|
+            for line in lines do
+                let fields = line.Split(',')
+
+                if fields.Length < 8 then
+                    raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+                else
+                    {
+                        NugetPackageId = fields[0]
+                        NugetPackageVersion = fields[1]
+                        PackageRoot = fields[2]
+                        FullPath = fields[3]
+                        AssetType = fields[4]
+                        IsNotImplementationReference = fields[5]
+                        InitializeSourcePath = fields[6]
+                        NativePath = fields[7]
+                    }
+        |]
 
     /// Return a string array delimited by commas
     /// Note that a quoted string is not going to be mangled into pieces.
@@ -160,11 +257,15 @@ module internal Utilities =
 
         let outputFile = projectPath + ".resolvedReferences.paths"
 
-        let resolutionsFile =
+        let resolutionsFile, resolutions, references, loads, includes =
             if success && File.Exists(outputFile) then
-                Some outputFile
+                let resolutions = getResolutionsFromFile outputFile
+                let references = (findReferencesFromResolutions resolutions) |> Array.toList
+                let loads = (findLoadsFromResolutions resolutions) |> Array.toList
+                let includes = (findIncludesFromResolutions resolutions) |> Array.toList
+                (Some outputFile), resolutions, references, loads, includes
             else
-                None
+                None, [||], List.empty, List.empty, List.empty
 
         {
             success = success
@@ -172,6 +273,10 @@ module internal Utilities =
             stdOut = stdOut
             stdErr = stdErr
             resolutionsFile = resolutionsFile
+            resolutions = resolutions
+            references = references
+            loads = loads
+            includes = includes
         }
 
     let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
@@ -205,3 +310,5 @@ module internal Utilities =
                         let pos = source.IndexOf(" ")
                         if pos >= 0 then "i", source.Substring(pos).Trim()
         }
+
+    let computeSha256HashOfBytes (bytes: byte[]) : byte[] = SHA256.Create().ComputeHash(bytes)

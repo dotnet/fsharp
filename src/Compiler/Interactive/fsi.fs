@@ -989,6 +989,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
 
     do
+        if tcConfigB.clearResultsCache then
+            dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
