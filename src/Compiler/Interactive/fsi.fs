@@ -1648,10 +1648,9 @@ type internal FsiDynamicCompiler(
 
     /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
     let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
-        let tryGetEntryPoint = function
-            | TBind (var = value) ->
-                TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
-                |> Option.map (fun attrib -> value.DisplayName, attrib)
+        let tryGetEntryPoint (TBind (var = value)) =
+            TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
+            |> Option.map (fun attrib -> value.DisplayName, attrib)
 
         let rec findEntryPointInContents = function
             | TMDefLet (binding = binding) -> tryGetEntryPoint binding
