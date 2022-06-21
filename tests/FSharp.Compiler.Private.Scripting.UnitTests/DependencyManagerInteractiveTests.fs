@@ -900,7 +900,7 @@ x |> Seq.iter(fun r ->
         foundWrongError <- false
 
         // Now clear the cache --- this will ensure that resolving produces a timeout error.  If we read from the cache the test will fail
-        dp.ClearResultsCache(idm, reportError)
+        dp.ClearResultsCache(Seq.empty, "", reportError)
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data,3.3.3"; "r", "timeout=0"|], reportError, "net6.0", null, "", "", "", -1)           // Wait forever
         Assert.Equal(false, result.Success)

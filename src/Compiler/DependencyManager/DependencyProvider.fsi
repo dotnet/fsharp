@@ -100,14 +100,16 @@ type DependencyProvider =
 
     /// Construct a new DependencyProvider with managed and native resolution and specify caching
     new:
-        assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe * useResultsCache: bool ->
+        assemblyProbingPaths: AssemblyResolutionProbe *
+        nativeProbingRoots: NativeResolutionProbe *
+        useResultsCache: bool ->
             DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
 
-    /// Clear the DependencyManager results cache
-    member ClearResultsCache: packageManager: IDependencyManagerProvider * reportError: ResolvingErrorReport -> unit
+    /// Clear the DependencyManager results caches
+    member ClearResultsCache: string seq * string * ResolvingErrorReport -> unit
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string

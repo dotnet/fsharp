@@ -417,6 +417,7 @@ type TcConfigBuilder =
         mutable subsystemVersion: int * int
         mutable useHighEntropyVA: bool
         mutable inputCodePage: int option
+        mutable clearResultsCache: bool
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
         mutable mlCompatibility: bool
@@ -631,6 +632,7 @@ type TcConfigBuilder =
             diagnosticsOptions = FSharpDiagnosticOptions.Default
             embedResources = []
             inputCodePage = None
+            clearResultsCache = false
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
             mlCompatibility = false
@@ -1217,6 +1219,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.subsystemVersion = data.subsystemVersion
     member _.useHighEntropyVA = data.useHighEntropyVA
     member _.inputCodePage = data.inputCodePage
+    member _.clearResultsCache = data.clearResultsCache
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility

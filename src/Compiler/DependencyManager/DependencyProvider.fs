@@ -576,14 +576,13 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 yield! dm.HelpMessages
         |]
 
-    /// Clear the DependencyManager results cache
-    member _.ClearResultsCache(packageManager: IDependencyManagerProvider, reportError: ResolvingErrorReport) =
-        try
-            packageManager.ClearResultsCache()
-        with e ->
-            let e = stripTieWrapper e
-            let err, msg = FSComp.SR.packageManagerError (e.Message)
-            reportError.Invoke(ErrorReportType.Error, err, msg)
+    /// Clear the DependencyManager results caches
+    member _.ClearResultsCache(compilerTools, outputDir, errorReport) =
+        let managers =
+            RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
+
+        for kvp in managers do
+            kvp.Value.ClearResultsCache()
 
     /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError
