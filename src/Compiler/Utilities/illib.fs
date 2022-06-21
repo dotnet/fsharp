@@ -10,7 +10,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
 open FSharp.Core.CompilerServices.StateMachineHelpers
 #endif
 
@@ -948,7 +948,7 @@ type CancellableBuilder() =
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
 
@@ -958,7 +958,7 @@ type CancellableBuilder() =
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
 
@@ -968,7 +968,7 @@ type CancellableBuilder() =
 
     member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
 
@@ -978,7 +978,7 @@ type CancellableBuilder() =
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
 
@@ -999,7 +999,7 @@ type CancellableBuilder() =
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
             let body = comp resource
@@ -1023,7 +1023,7 @@ type CancellableBuilder() =
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
-#if !COMPILING_PROTO
+#if !COMPILING_PROTO && !USE_SHIPPED_FSCORE
             __debugPoint ""
 #endif
 
