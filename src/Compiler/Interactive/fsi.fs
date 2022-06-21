@@ -1647,11 +1647,10 @@ type internal FsiDynamicCompiler(
         codegenResults, optEnv, fragName
 
     /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
-    let CheckEntryPoint (declaredImpls: CheckedImplFile list) =
+    let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
         let tryGetEntryPoint = function
             | TBind (var = value) ->
-                value.Attribs
-                |> List.tryFind (fun attrib -> attrib.TyconRef.PublicPath = Some (PubPath [|"Microsoft"; "FSharp"; "Core"; "EntryPointAttribute"|]))
+                TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
                 |> Option.map (fun attrib -> value.DisplayName, attrib)
 
         let rec findEntryPointInContents = function
@@ -1670,7 +1669,7 @@ type internal FsiDynamicCompiler(
             |> Seq.choose (fun implFile -> implFile.Contents |> findEntryPointInContents)
 
         for name, attrib in entryPointBindings do
-            warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvokedAutomatically(name, name, name), attrib.Range))
+            warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvoked(name, name, name), attrib.Range))
 
     let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
@@ -1687,7 +1686,7 @@ type internal FsiDynamicCompiler(
 
         let newState, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
         
-        CheckEntryPoint declaredImpls
+        CheckEntryPoint istate.tcGlobals declaredImpls
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
