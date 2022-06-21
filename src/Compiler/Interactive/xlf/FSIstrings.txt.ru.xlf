@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="ru" original="../FSIstrings.resx">
     <body>
       <trans-unit id="fsiEntryPointWontBeInvokedAutomatically">
-        <source>Function with '[&lt;EntryPoint&gt;]' are not invoked in FSI. '{0}' was not invoked. Execute '['{1}' &lt;args&gt;]' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
-        <target state="new">Function with '[&lt;EntryPoint&gt;]' are not invoked in FSI. '{0}' was not invoked. Execute '['{1}' &lt;args&gt;]' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
+        <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
+        <target state="new">Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInternalAccess">

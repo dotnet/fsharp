@@ -58,4 +58,4 @@ fsiOperationFailed,"Operation failed. The error text has been printed in the err
 fsiMultiAssemblyEmitOption,"Emit multiple assemblies (on by default)"
 fsiMultiAssemblyEmitOptionOffByDefault,"Emit multiple assemblies (off by default for .NET Framework)"
 2303,fsiInternalAccess,"Accessing the internal type, method or field '%s' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option."
-2304,fsiEntryPointWontBeInvokedAutomatically,"Function with '[<EntryPoint>]' are not invoked in FSI. '%s' was not invoked. Execute '['%s' <args>]' in order to invoke '%s' with the appropriate string array of command line arguments."
+2304,fsiEntryPointWontBeInvokedAutomatically,"Functions with [<EntryPoint>] are not invoked in FSI. '%s' was not invoked. Execute '%s <args>' in order to invoke '%s' with the appropriate string array of command line arguments."

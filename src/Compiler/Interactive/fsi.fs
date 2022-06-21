@@ -1646,6 +1646,32 @@ type internal FsiDynamicCompiler(
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
+    /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
+    let CheckEntryPoint (declaredImpls: CheckedImplFile list) =
+        let tryGetEntryPoint = function
+            | TBind (var = value) ->
+                value.Attribs
+                |> List.tryFind (fun attrib -> attrib.TyconRef.PublicPath = Some (PubPath [|"Microsoft"; "FSharp"; "Core"; "EntryPointAttribute"|]))
+                |> Option.map (fun attrib -> value.DisplayName, attrib)
+
+        let rec findEntryPointInContents = function
+            | TMDefLet (binding = binding) -> tryGetEntryPoint binding
+            | TMDefs defs -> defs |> List.tryPick findEntryPointInContents
+            | TMDefRec (bindings = bindings) -> bindings |> List.tryPick findEntryPointInBinding
+            | _ -> None
+
+        and findEntryPointInBinding = function
+            | ModuleOrNamespaceBinding.Binding binding -> tryGetEntryPoint binding
+            | ModuleOrNamespaceBinding.Module (moduleOrNamespaceContents = contents) -> findEntryPointInContents contents
+
+        let entryPointBindings =
+            declaredImpls
+            |> Seq.where (fun implFile -> implFile.HasExplicitEntryPoint)
+            |> Seq.choose (fun implFile -> implFile.Contents |> findEntryPointInContents)
+
+        for name, attrib in entryPointBindings do
+            warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvokedAutomatically(name, name, name), attrib.Range))
+    
     let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
@@ -1660,9 +1686,11 @@ type internal FsiDynamicCompiler(
         let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
         let newState, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
+        
+        CheckEntryPoint declaredImpls
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
-
+    
     let tryGetGeneratedValue istate cenv v =
         match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
         | Some (res, ty) ->

@@ -2101,7 +2101,6 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
         cenv.entryPointGiven <- true
-        warning (Error(FSIstrings.SR.fsiEntryPointWontBeInvokedAutomatically(v.DisplayName, v.DisplayName, v.DisplayName), v.Range))
         let isLastCompiland = fst cenv.isLastCompiland
         if not isLastCompiland && cenv.reportErrors  then 
             errorR(Error(FSComp.SR.chkEntryPointUsage(), v.Range)) 
