@@ -218,6 +218,9 @@ function BuildSolution {
 
   local projects="$repo_root/$solution"
 
+
+  export NativeToolsOnMachine=true
+
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
   UNAME="$(uname)"
