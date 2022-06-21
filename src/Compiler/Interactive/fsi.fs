@@ -1671,7 +1671,7 @@ type internal FsiDynamicCompiler(
 
         for name, attrib in entryPointBindings do
             warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvokedAutomatically(name, name, name), attrib.Range))
-    
+
     let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
@@ -1690,7 +1690,7 @@ type internal FsiDynamicCompiler(
         CheckEntryPoint declaredImpls
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
-    
+
     let tryGetGeneratedValue istate cenv v =
         match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
         | Some (res, ty) ->
