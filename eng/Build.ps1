@@ -454,6 +454,8 @@ try {
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
 
+    $env:NativeToolsOnMachine = $true
+
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
