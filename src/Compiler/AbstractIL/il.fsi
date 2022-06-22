@@ -2030,12 +2030,15 @@ val internal mkILNonGenericStaticMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILGenericVirtualMethod:
-    string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+    string * ILCallingConv * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILGenericNonVirtualMethod:
     string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericVirtualMethod:
+    string * ILCallingConv * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
+val internal mkILNonGenericVirtualInstanceMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericInstanceMethod:

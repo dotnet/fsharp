@@ -995,7 +995,9 @@ tyconSpfnRhs:
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
-       let invoke = SynMemberSig.Member(SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+       let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+       let invoke = SynMemberSig.Member(valSig, flags, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
@@ -1082,8 +1084,8 @@ classMemberSpfn:
                | None -> m
                | Some e -> unionRanges m e.Range
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, wholeRange, { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals })
-       let _, flags = $3 
-       SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), wholeRange) }
+       let flags = $3 (getSetAdjuster arity)
+       SynMemberSig.Member(valSpfn, flags, wholeRange) }
 
   | opt_attributes opt_declVisibility interfaceMember appType  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -1156,13 +1158,7 @@ classMemberSpfnGetSetElements:
 
 memberSpecFlags: 
   | memberFlags { $1 }  
-  | ABSTRACT
-      { let mAbstract = rhs parseState 1
-        (false, AbstractMemberFlags(AbstractSynMemberFlagsTrivia mAbstract)) }
-  | ABSTRACT MEMBER
-      { let mAbstract = rhs parseState 1
-        let mMember = rhs parseState 2
-        (false, AbstractMemberFlags(AbstractMemberSynMemberFlagsTrivia mAbstract mMember)) }
+  | abstractMemberFlags { $1 }
 
 
 /* Part of an exception definition in a signature file */
@@ -1598,16 +1594,16 @@ memberFlags:
   | STATIC MEMBER 
       { let mStatic = rhs parseState 1
         let mMember = rhs parseState 2
-        (true, StaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember)) }  
+        StaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
   | MEMBER
       { let mMember = rhs parseState 1
-        (false, NonVirtualMemberFlags(MemberSynMemberFlagsTrivia mMember)) }
+        NonVirtualMemberFlags(MemberSynMemberFlagsTrivia mMember) }
   | OVERRIDE
       { let mOverride = rhs parseState 1
-        (false, OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride)) }
+        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
   | DEFAULT
       { let mDefault = rhs parseState 1
-        (false, OverrideMemberFlags(DefaultSynMemberFlagsTrivia mDefault)) }
+        OverrideMemberFlags(DefaultSynMemberFlagsTrivia mDefault) }
 
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo: 
@@ -1741,8 +1737,9 @@ tyconDefnRhs:
      { let m = lhs parseState 
        let ty, arity = $3
        (fun nameRange augmentation -> 
-           let valSpfn = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
-           let invoke = SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
+           let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
 
@@ -2065,16 +2062,23 @@ memberCore:
              | _ -> [])
        }
 
-
 abstractMemberFlags: 
   | ABSTRACT
       { let mAbstract = rhs parseState 1
-        AbstractSynMemberFlagsTrivia mAbstract } 
-  | ABSTRACT MEMBER 
+        AbstractMemberFlags true (AbstractSynMemberFlagsTrivia mAbstract) }
+  | ABSTRACT MEMBER
       { let mAbstract = rhs parseState 1
         let mMember = rhs parseState 2
-        AbstractMemberSynMemberFlagsTrivia mAbstract mMember } 
-
+        AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
+  | STATIC ABSTRACT
+      { let mStatic = rhs parseState 1
+        let mAbstract = rhs parseState 2
+        AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
+  | STATIC ABSTRACT MEMBER
+      { let mStatic = rhs parseState 1
+        let mAbstract = rhs parseState 2
+        let mMember = rhs parseState 3
+        AbstractMemberFlags false (StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember) }
 
 /* A member definition */
 classDefnMember:
@@ -2090,7 +2094,7 @@ classDefnMember:
      { let rangeStart = rhs parseState 1
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let _, flags = $3
+       let flags = $3
        $4 $2 flags $1 rangeStart }
        
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
@@ -2115,7 +2119,7 @@ classDefnMember:
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), wholeRange))
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, wholeRange, { ValKeyword = None; WithKeyword = mWith; EqualsRange = None })
-       [ SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags $3 (getSetAdjuster arity), wholeRange) ] }
+       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster arity), wholeRange) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
@@ -2136,8 +2140,8 @@ classDefnMember:
      { let rangeStart = rhs parseState 1 
        if Option.isSome $2 then
            errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isStatic, flags = $3
-       $4 $1 isStatic flags rangeStart }
+       let flags = $3
+       $4 $1 flags rangeStart }
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
@@ -2177,11 +2181,13 @@ autoPropsDefnDecl:
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
-       (fun attribs isStatic flags rangeStart ->
+       (fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range |> unionRangeWithXmlDoc xmlDoc
-           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
-
+           let memberFlags = flags SynMemberKind.Member
+           let memberFlagsForSet = flags SynMemberKind.PropertySet
+           let isStatic = not memberFlags.IsInstance
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
 
 /* An optional type on an auto-property definition */
 opt_typ:
@@ -2346,7 +2352,7 @@ objectImplementationMember:
 
   | opt_attributes staticMemberOrMemberOrOverride autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       $3 $1 false $2 rangeStart }
+       $3 $1 $2 rangeStart }
 
   | opt_attributes staticMemberOrMemberOrOverride error 
       { [] } 

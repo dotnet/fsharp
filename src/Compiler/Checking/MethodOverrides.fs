@@ -344,7 +344,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if reqdSlot.HasDefaultInterfaceImplementation then
-                checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+                checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -924,8 +924,8 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags) =
 
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
-        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.VirtualStaticsInInterfaces bindm
-        checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.VirtualStaticsInInterfaces bindm
+        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+        checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.InterfacesWithAbstractStaticMembers bindm
 
     let minfos = 
         match typToSearchForAbstractMembers with 

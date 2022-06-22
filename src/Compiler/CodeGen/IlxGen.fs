@@ -1373,7 +1373,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
         // Find the 'this' argument type if any
         let thisTy, flatArgInfos =
             if isCtor then
-                (GetFSharpViewOfReturnType g returnTy), flatArgInfos
+                GetFSharpViewOfReturnType g returnTy, flatArgInfos
             else
                 match flatArgInfos with
                 | [] -> error (InternalError("This instance method '" + vref.LogicalName + "' has no arguments", m))
@@ -1392,8 +1392,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
             warning (InternalError(msg, m))
         else
-            List.iter2
-                (fun gtp ty2 ->
+            (ctps, thisArgTys) ||> List.iter2 (fun gtp ty2 ->
                     if not (typeEquiv g (mkTyparTy gtp) ty2) then
                         warning (
                             InternalError(
@@ -1406,8 +1405,6 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
                                 m
                             )
                         ))
-                ctps
-                thisArgTys
 
         let methodArgTys, paramInfos = List.unzip flatArgInfos
 
@@ -5741,7 +5738,7 @@ and fixupMethodImplFlags (mdef: ILMethodDef) =
 
 and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) = mdef.WithHideBySig(true)
 
-and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
+and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
     let g = cenv.g
 
     let (TObjExprMethod (slotsig, attribs, methTyparsOfOverridingMethod, methParams, methBodyExpr, m)) =
@@ -5786,6 +5783,7 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
         let mdef =
             mkILGenericVirtualMethod (
                 nameOfOverridingMethod,
+                ILCallingConv.Instance,
                 ILMemberAccess.Public,
                 GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                 ilParamsOfOverridingMethod,
@@ -5969,7 +5967,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                     (ilArgTys, argVals)
                     ||> List.map2 (fun ty v -> mkILParamNamed (v.LogicalName, ty))
 
-                mkILNonGenericVirtualMethod (imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL(notlazy ilCode))
+                mkILNonGenericVirtualInstanceMethod (imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL(notlazy ilCode))
         ]
 
     let mimpls =
@@ -6176,7 +6174,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     let genMethodAndOptionalMethodImpl tmethod useMethodImpl =
         [
             for (useMethodImpl, methodImplGeneratorFunction, methTyparsOfOverridingMethod), mdef in
-                GenObjectMethod cenv eenvinner cgbuf useMethodImpl tmethod do
+                GenObjectExprMethod cenv eenvinner cgbuf useMethodImpl tmethod do
                 let mimpl =
                     (if useMethodImpl then
                          Some(methodImplGeneratorFunction (ilTyForOverriding, methTyparsOfOverridingMethod))
@@ -6327,7 +6325,7 @@ and GenSequenceExpr
                      GenSequel cenv eenv.cloc cgbuf Return),
                  m)
 
-        mkILNonGenericVirtualMethod (
+        mkILNonGenericVirtualInstanceMethod (
             "GetFreshEnumerator",
             ILMemberAccess.Public,
             [],
@@ -6340,13 +6338,13 @@ and GenSequenceExpr
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
-        mkILNonGenericVirtualMethod ("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod ("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL(lazy ilCode))
 
     let checkCloseMethod =
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_CheckClose", eenvinner, 1, None, checkCloseExpr, Return)
 
-        mkILNonGenericVirtualMethod ("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod ("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL(lazy ilCode))
 
     let generateNextMethod =
         // the 'next enumerator' byref arg is at arg position 1
@@ -6359,13 +6357,13 @@ and GenSequenceExpr
         let ilCode =
             MethodBody.IL(lazy (CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "GenerateNext", eenvinner, 2, None, generateNextExpr, Return)))
 
-        mkILNonGenericVirtualMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
+        mkILNonGenericVirtualInstanceMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
     let lastGeneratedMethod =
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_LastGenerated", eenvinner, 1, None, exprForValRef m currvref, Return)
 
-        mkILNonGenericVirtualMethod ("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod ("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL(lazy ilCode))
         |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
@@ -6561,6 +6559,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
         [
             mkILGenericVirtualMethod (
                 "DirectInvoke",
+                ILCallingConv.Instance,
                 ILMemberAccess.Assembly,
                 ilDirectGenericParams,
                 ilDirectWitnessParams,
@@ -9078,8 +9077,10 @@ and GenMethodForBinding
 
                             let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
 
+                            let cconv = if memberInfo.MemberFlags.IsInstance then ILCallingConv.Instance else ILCallingConv.Static
+
                             let mdef =
-                                mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                                mkILGenericVirtualMethod (mspec.Name, cconv, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
 
                             let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
@@ -10143,7 +10144,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
     let ilMethodBody =
         mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, None)
 
-    mkILNonGenericVirtualMethod (
+    mkILNonGenericVirtualInstanceMethod (
         "Equals",
         ILMemberAccess.Public,
         [ mkILParamNamed ("obj", g.ilg.typ_Object) ],
@@ -10226,6 +10227,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let mdef =
             mkILGenericVirtualMethod (
                 vref.CompiledName g.CompilerGlobalState,
+                mspec.CallingConv,
                 ILMemberAccess.Public,
                 ilMethTypars,
                 ilParams,
@@ -10236,15 +10238,8 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let mdef = fixupVirtualSlotFlags mdef
 
         let mdef =
-            if mdef.IsVirtual then
-                mdef
-                    .WithFinal(memberInfo.MemberFlags.IsFinal)
-                    .WithAbstract(memberInfo.MemberFlags.IsDispatchSlot)
-            else
-                mdef
-
-        let mdef =
             mdef
+                .WithFinal(memberInfo.MemberFlags.IsFinal)
                 .WithPreserveSig(hasPreserveSigImplFlag)
                 .WithSynchronized(hasSynchronizedImplFlag)
                 .WithNoInlining(hasNoInliningFlag)
@@ -10346,7 +10341,7 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                 mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
 
             let mdef =
-                mkILNonGenericVirtualMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+                mkILNonGenericVirtualInstanceMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
 
             let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
             yield mdef

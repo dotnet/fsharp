@@ -187,14 +187,8 @@ type InfoReader =
     /// Find the op_Implicit for a type
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list
 
-val checkLanguageFeatureRuntimeError:
+val checkLanguageFeatureRuntimeAndRecover:
     infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
-
-val checkLanguageFeatureRuntimeErrorRecover:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
-
-val tryLanguageFeatureRuntimeErrorRecover:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> bool
 
 /// Get the declared constructors of any F# type
 val GetIntrinsicConstructorInfosOfType: infoReader: InfoReader -> m: range -> ty: TType -> MethInfo list

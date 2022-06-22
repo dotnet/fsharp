@@ -697,7 +697,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
 
     let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
-        lazy isRuntimeFeatureSupported this "VirtualStaticsInInterfaces"
+        lazy isRuntimeFeatureSupported this "InterfacesWithAbstractStaticMembers"
 
     member _.g = g
     member _.amap = amap
@@ -762,7 +762,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         match langFeature with
         // Both default and static interface method consumption features are tied to the runtime support of DIMs.
         | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
-        | LanguageFeature.VirtualStaticsInInterfaces -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
+        | LanguageFeature.InterfacesWithAbstractStaticMembers -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
         | _ -> true
             
     /// Get the declared constructors of any F# type
@@ -847,22 +847,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member _.FindImplicitConversions m ad ty = 
         implicitConversionCache.Apply((ad, m, ty))
 
-let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeature m error =
+let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = infoReader.g.langVersion.GetFeatureString langFeature
-        error (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
-        false
-    else
-        true
-
-let checkLanguageFeatureRuntimeError infoReader langFeature m =
-    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error |> ignore
-
-let checkLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
-    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR |> ignore
-
-let tryLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
-    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty

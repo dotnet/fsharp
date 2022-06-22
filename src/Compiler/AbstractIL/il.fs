@@ -3814,18 +3814,20 @@ let mkILClassCtor impl =
 let mk_ospec (ty: ILType, callconv, nm, genparams, formal_args, formal_ret) =
     OverridesSpec(mkILMethRef (ty.TypeRef, callconv, nm, genparams, formal_args, formal_ret), ty)
 
-let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
+let mkILGenericVirtualMethod (nm, callconv: ILCallingConv, access, genparams, actual_args, actual_ret, impl) =
+    let attributes =
+        convertMemberAccess access
+        ||| MethodAttributes.CheckAccessOnOverride
+        ||| (match impl with
+             | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
+             | _ -> MethodAttributes.Virtual)
+        ||| (if callconv.IsInstance then enum 0 else MethodAttributes.Static)
     ILMethodDef(
         name = nm,
-        attributes =
-            (convertMemberAccess access
-             ||| MethodAttributes.CheckAccessOnOverride
-             ||| (match impl with
-                  | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
-                  | _ -> MethodAttributes.Virtual)),
+        attributes = attributes,
         implAttributes = MethodImplAttributes.Managed,
         genericParams = genparams,
-        callingConv = ILCallingConv.Instance,
+        callingConv = callconv,
         parameters = actual_args,
         ret = actual_ret,
         isEntryPoint = false,
@@ -3834,8 +3836,11 @@ let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, im
         body = notlazy impl
     )
 
-let mkILNonGenericVirtualMethod (nm, access, args, ret, impl) =
-    mkILGenericVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
+let mkILNonGenericVirtualMethod (nm, callconv, access, args, ret, impl) =
+    mkILGenericVirtualMethod (nm, callconv, access, mkILEmptyGenericParams, args, ret, impl)
+
+let mkILNonGenericVirtualInstanceMethod (nm, access, args, ret, impl) =
+    mkILNonGenericVirtualMethod (nm, ILCallingConv.Instance, access, args, ret, impl)
 
 let mkILGenericNonVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
     ILMethodDef(
@@ -4258,7 +4263,7 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     let one nm args ret =
         let mdef =
-            mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
+            mkILNonGenericVirtualInstanceMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
 
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
 
