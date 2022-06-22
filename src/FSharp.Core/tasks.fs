@@ -13,7 +13,6 @@
 
 namespace Microsoft.FSharp.Control
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 open System
 open System.Runtime.CompilerServices
 open System.Threading
@@ -464,5 +463,3 @@ module MediumPriority =
 
         member inline this.ReturnFrom(computation: Async<'T>) : TaskCode<'T, 'T> =
             this.ReturnFrom(Async.StartAsTask computation)
-
-#endif
