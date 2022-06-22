@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 open System
@@ -229,5 +228,3 @@ type NoEagerConstraintApplicationAttribute =
     /// <summary>Creates an instance of the attribute</summary>
     /// <returns>NoEagerConstraintApplicationAttribute</returns>
     new : unit -> NoEagerConstraintApplicationAttribute
-
-#endif
