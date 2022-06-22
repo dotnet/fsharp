@@ -46,6 +46,7 @@ module WordL =
     let bar = wordL TaggedText.bar
     let keywordStruct = wordL TaggedText.keywordStruct
     let keywordClass = wordL TaggedText.keywordClass
+    let keywordInterface = wordL TaggedText.keywordInterface
     let keywordInherit = wordL TaggedText.keywordInherit
     let keywordBegin = wordL TaggedText.keywordBegin
     let keywordEnd = wordL TaggedText.keywordEnd

@@ -233,6 +233,7 @@ module TaggedText =
     let bar = tagPunctuation "|"
     let keywordStruct = tagKeyword "struct"
     let keywordClass = tagKeyword "class"
+    let keywordInterface = tagKeyword "interface"
     let keywordInherit = tagKeyword "inherit"
     let keywordEnd = tagKeyword "end"
     let keywordBegin = tagKeyword "begin"

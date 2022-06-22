@@ -189,6 +189,7 @@ module internal TaggedText =
     val internal bar: TaggedText
     val internal keywordStruct: TaggedText
     val internal keywordClass: TaggedText
+    val internal keywordInterface: TaggedText
     val internal keywordInherit: TaggedText
     val internal keywordBegin: TaggedText
     val internal keywordEnd: TaggedText

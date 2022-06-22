@@ -1988,9 +1988,18 @@ module TastDefinitionPrinting =
                 |> aboveListL
                 |> addLhs
 
-            | TFSharpObjectRepr _ when isNil allDecls ->
-                WordL.keywordClass ^^ WordL.keywordEnd
-                |> addLhs
+            | TFSharpObjectRepr objRepr when isNil allDecls ->
+                match objRepr.fsobjmodel_kind with
+                | TFSharpClass ->
+                    WordL.keywordClass ^^ WordL.keywordEnd
+                    |> addLhs
+                | TFSharpInterface ->
+                    WordL.keywordInterface ^^ WordL.keywordEnd
+                    |> addLhs
+                | TFSharpStruct ->
+                    WordL.keywordStruct ^^ WordL.keywordEnd
+                    |> addLhs
+                | _ -> lhsL
 
             | TFSharpObjectRepr _ ->
                 allDecls
