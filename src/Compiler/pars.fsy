@@ -4384,6 +4384,11 @@ tupleExpr:
   | declExpr COMMA declExpr  
       { [$3 ; $1], [rhs parseState 2] }
 
+  | COMMA declExpr
+      { let commaRange = rhs parseState 1
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingExpressionInTuple())
+        [$2; arbExpr ("tupleExpr3", commaRange.StartRange)], [commaRange] }
+
 minusExpr: 
   | MINUS minusExpr   %prec expr_prefix_plus_minus
       { mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) "~-" $2 }
