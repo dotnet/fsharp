@@ -1989,7 +1989,8 @@ module TastDefinitionPrinting =
                 |> addLhs
 
             | TFSharpObjectRepr _ when isNil allDecls ->
-                lhsL
+                WordL.keywordClass ^^ WordL.keywordEnd
+                |> addLhs
 
             | TFSharpObjectRepr _ ->
                 allDecls

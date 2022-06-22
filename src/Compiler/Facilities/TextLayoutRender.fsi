@@ -84,6 +84,7 @@ module internal WordL =
     val keywordFalse: Layout
     val bar: Layout
     val keywordStruct: Layout
+    val keywordClass: Layout
     val keywordInherit: Layout
     val keywordBegin: Layout
     val keywordEnd: Layout
