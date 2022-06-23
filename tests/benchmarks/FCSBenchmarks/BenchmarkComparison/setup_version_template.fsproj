@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="FSharp.Compiler.Service" Version="{TEMPLATE_FCS_VERSION}" />
   </ItemGroup>
 
