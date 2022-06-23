@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
-        <target state="new">Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
+        <target state="translated">FSI 中未叫用具有 [&lt;EntryPoint&gt;] 的函數。未叫用'{0}'。執行 '{1} &lt;args&gt;'，以使用適當的命令列引數字串陣列叫用 '{2}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInternalAccess">
