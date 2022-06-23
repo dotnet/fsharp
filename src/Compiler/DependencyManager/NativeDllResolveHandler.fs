@@ -11,12 +11,58 @@ open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.IO
 
+
+type internal ProbingPathsStore() =
+
+    let addedPaths = ConcurrentBag<string>()
+
+    static member AppendPathSeparator (p: string) =
+        let separator = string Path.PathSeparator
+
+        if not (p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
+            p + separator
+        else
+            p
+
+    static member RemoveProbeFromProcessPath probePath =
+        if not (String.IsNullOrWhiteSpace(probePath)) then
+            let probe = ProbingPathsStore.AppendPathSeparator probePath
+            let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+            if path.Contains(probe) then
+                Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
+
+    member _.AddProbeToProcessPath probePath =
+        let probe = ProbingPathsStore.AppendPathSeparator probePath
+        let path = ProbingPathsStore.AppendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+
+        if not (path.Contains(probe)) then
+            Environment.SetEnvironmentVariable("PATH", path + probe)
+            addedPaths.Add probe
+
+    member this.RefreshPathsInEnvironment(roots) =
+        for probePath in roots do
+            this.AddProbeToProcessPath(probePath)
+
+    member this.Dispose() =
+        let mutable probe: string = Unchecked.defaultof<string>
+        while (addedPaths.TryTake(&probe)) do
+            ProbingPathsStore.RemoveProbeFromProcessPath(probe)
+
+    interface IDisposable with
+        member _.Dispose() =
+            let mutable probe: string = Unchecked.defaultof<string>
+            while (addedPaths.TryTake(&probe)) do
+                ProbingPathsStore.RemoveProbeFromProcessPath(probe)
+
 /// Signature for Native library resolution probe callback
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
 /// Type that encapsulates Native library probing for managed packages
-type NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutionProbe option) =
+type internal NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutionProbe option) =
+
+    let probingPaths = new ProbingPathsStore()
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type =
@@ -116,57 +162,28 @@ type NativeDllResolveHandlerCoreClr(nativeProbingRoots: NativeResolutionProbe op
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
+    member _.RefreshPathsInEnvironment(roots: string seq) =
+        probingPaths.RefreshPathsInEnvironment(roots)
+
+    member _.Dispose() =
+        eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
+        probingPaths.Dispose()
+
     interface IDisposable with
-        member _x.Dispose() =
-            eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
+        member this.Dispose() = this.Dispose()
 
 type NativeDllResolveHandler(nativeProbingRoots: NativeResolutionProbe option) =
 
-    let handler: IDisposable option =
-        if isRunningOnCoreClr then
-            Some(new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
-        else
-            None
-
-    let appendPathSeparator (p: string) =
-        let separator = string Path.PathSeparator
-
-        if not (p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
-            p + separator
-        else
-            p
-
-    let addedPaths = ConcurrentBag<string>()
-
-    let addProbeToProcessPath probePath =
-        let probe = appendPathSeparator probePath
-        let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
-
-        if not (path.Contains(probe)) then
-            Environment.SetEnvironmentVariable("PATH", path + probe)
-            addedPaths.Add probe
-
-    let removeProbeFromProcessPath probePath =
-        if not (String.IsNullOrWhiteSpace(probePath)) then
-            let probe = appendPathSeparator probePath
-            let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
-
-            if path.Contains(probe) then
-                Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
+    let handler: NativeDllResolveHandlerCoreClr option =
+        nativeProbingRoots
+        |> Option.filter(fun _ -> isRunningOnCoreClr)
+        |> Option.map (fun _ -> new NativeDllResolveHandlerCoreClr(nativeProbingRoots))
 
     new(nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
-        for probePath in roots do
-            addProbeToProcessPath probePath
+        handler |> Option.iter (fun handler -> handler.RefreshPathsInEnvironment(roots))
 
     interface IDisposable with
         member _.Dispose() =
-            match handler with
-            | None -> ()
-            | Some handler -> handler.Dispose()
-
-            let mutable probe: string = Unchecked.defaultof<string>
-
-            while (addedPaths.TryTake(&probe)) do
-                removeProbeFromProcessPath probe
+            handler |> Option.iter (fun handler -> handler.Dispose())
