@@ -988,7 +988,9 @@ let mkDynamicArgExpr expr =
 
 let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
     match exprs with
-    | SynExpr.Tuple(false, innerExprs, innerCommas, _) :: rest ->
-        let innerExprs, innerCommas = normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
+    | SynExpr.Tuple (false, innerExprs, innerCommas, _) :: rest ->
+        let innerExprs, innerCommas =
+            normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
+
         innerExprs @ rest, innerCommas @ commas
     | _ -> exprs, commas
