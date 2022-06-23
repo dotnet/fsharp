@@ -4028,6 +4028,13 @@ declExpr:
 
   | tupleExpr  %prec expr_tuple
      { let exprs, commas = $1
+       let exprs, commas =
+           // Nested non-struct tuple is only possible during error recovery,
+           // in other situations there are intermediate nodes.
+           match exprs with
+           | SynExpr.Tuple(false, _, _, _) :: _ -> normalizeTupleExpr exprs commas
+           | _ -> exprs, commas
+
        SynExpr.Tuple (false, List.rev exprs, List.rev commas, (commas.Head, exprs) ||> unionRangeWithListBy (fun e -> e.Range) ) }
 
   | declExpr JOIN_IN declExpr
