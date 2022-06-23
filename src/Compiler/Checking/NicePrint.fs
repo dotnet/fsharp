@@ -106,12 +106,26 @@ module internal PrintUtilities =
     //       longLongLongArgName10: TType
     //      -> TType list
     let curriedLayoutsL retTyDelim (argTysL: Layout list) (retTyL: Layout) =
-        let arrowAndRetyL = wordL (tagPunctuation retTyDelim) ^^ retTyL
-        let argTysL =
-            argTysL
-            |> List.mapi (fun i argTyL -> if i = 0 then argTyL else wordL (tagPunctuation "->") ^^ argTyL)
-            |> List.reduce (++)
-        argTysL --- arrowAndRetyL
+        let lastIndex = List.length argTysL - 1
+
+        argTysL
+        |> List.mapi (fun idx argTyL ->
+            let isTupled =
+                match argTyL with
+                | Node(leftLayout = Node(rightLayout = Leaf (text = starText))) -> starText.Text = "*"
+                | _ -> false
+
+            let layout =
+                argTyL
+                ^^ (if idx = lastIndex then
+                        wordL (tagPunctuation retTyDelim)
+                    else
+                        wordL (tagPunctuation "->"))
+
+            isTupled, layout)
+        |> List.rev
+        |> fun reversedArgs -> (true, retTyL) :: reversedArgs
+        |> List.fold (fun acc (shouldBreak, layout) -> (if shouldBreak then (---) else (++)) layout acc) emptyL
 
     let tagNavArbValRef (valRefOpt: ValRef option) tag =
         match valRefOpt with
