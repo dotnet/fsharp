@@ -730,10 +730,10 @@ let OverrideMemberFlags trivia k : SynMemberFlags =
         Trivia = trivia
     }
 
-let AbstractMemberFlags trivia k : SynMemberFlags =
+let AbstractMemberFlags isInstance trivia k : SynMemberFlags =
     {
         MemberKind = k
-        IsInstance = true
+        IsInstance = isInstance 
         IsDispatchSlot = true
         IsOverrideOrExplicitImpl = false
         IsFinal = false
@@ -811,6 +811,24 @@ let AbstractMemberSynMemberFlagsTrivia (mAbstract: range) (mMember: range) : Syn
         OverrideRange = None
         AbstractRange = Some mAbstract
         StaticRange = None
+        DefaultRange = None
+    }
+
+let StaticAbstractSynMemberFlagsTrivia mStatic mAbstract =
+    {
+        MemberRange = None
+        OverrideRange = None
+        AbstractRange = Some mAbstract
+        StaticRange = Some mStatic
+        DefaultRange = None
+    }
+
+let StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember =
+    {
+        MemberRange = Some mMember
+        OverrideRange = None
+        AbstractRange = Some mAbstract
+        StaticRange = Some mStatic
         DefaultRange = None
     }
 

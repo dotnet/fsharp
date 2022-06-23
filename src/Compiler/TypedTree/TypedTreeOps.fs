@@ -8840,12 +8840,11 @@ let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute att
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members
-    if isExtensionMember then false
-    // Members implementing a dispatch slot is compiled as an instance member
-    // Exception is static interface members:
-    elif not membInfo.MemberFlags.IsInstance && membInfo.MemberFlags.IsOverrideOrExplicitImpl then false
-    elif membInfo.MemberFlags.IsOverrideOrExplicitImpl then true
-    elif not (isNil membInfo.ImplementedSlotSigs) then true
+    if isExtensionMember then
+        false
+    // Abstract slots, overrides and interface impls are all true to IsInstance
+    elif membInfo.MemberFlags.IsDispatchSlot || membInfo.MemberFlags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs) then
+        membInfo.MemberFlags.IsInstance
     else 
         // Otherwise check attributes to see if there is an explicit instance or explicit static flag
         let explicitInstance, explicitStatic = 

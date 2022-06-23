@@ -316,3 +316,55 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can implement interfaces with static abstract methods`` () =
+
+        let fsharpSource =
+            """
+
+type IAdditionOperator<'T> =
+    static abstract op_Addition: 'T * 'T -> 'T
+
+type C() =
+    interface IAdditionOperator<C> with
+        static member op_Addition(x: C, y: C) = C()
+
+[<EntryPoint>]
+let main _ = 0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# supports inference for types of arguments when implementing interfaces`` () =
+
+        let fsharpSource =
+            """
+
+type IAdditionOperator<'T> =
+    static abstract op_Addition: 'T * 'T -> 'T
+
+type C() =
+    interface IAdditionOperator<C> with
+        static member op_Addition(x, y) = C() // no type annotation needed on 'x' and 'y'
+
+[<EntryPoint>]
+let main _ = 0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed

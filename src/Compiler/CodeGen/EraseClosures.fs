@@ -571,6 +571,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
+                        ILCallingConv.Instance,
                         ILMemberAccess.Public,
                         addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
                         [],
@@ -703,7 +704,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let convil = convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
 
                     let nowApplyMethDef =
-                        mkILNonGenericVirtualMethod (
+                        mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
                             nowParams,

@@ -1401,7 +1401,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *
