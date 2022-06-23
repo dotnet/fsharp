@@ -171,6 +171,9 @@
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbstractIL\illex.fsl</Link>
     </FsLex>
+    <None Include="..\..\tests\scripts\compiler-perf.fsx">
+      <Link>compiler-perf.fsx</Link>
+    </None>
     <None Include="AbstractIL\illex.fsl">
       <Link>AbstractIL\illex.fsl</Link>
     </None>
