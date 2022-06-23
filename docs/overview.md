@@ -65,7 +65,7 @@ stateDiagram-v2
       Codegen: Code generation
       Emit: IL emit
       Inputs --> Lexing: Source and signature files
-      Inputs --> Import: Referecnces
+      Inputs --> Import: References
       Lexing --> Parsing
       Parsing --> Typechecking
       Import --> Typechecking
@@ -94,7 +94,7 @@ stateDiagram-v2
           ImportFS --> [*]
       }
       state Typechecking {
-          SequentialTypechecking: Sequenctially type checking files
+          SequentialTypechecking: Sequentially type checking files
           PatternMatchCompilation: Pattern match compilation
           ConstraintSolving: Constraint solving
           PostInferenceChecks: Post inference checks
