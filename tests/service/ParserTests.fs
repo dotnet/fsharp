@@ -296,3 +296,12 @@ let ``Expr - Tuple 04`` () =
             [ c, 7 ] |> checkRangeCountAndOrder
 
     | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 05`` () =
+    let parseResults = getParseResults """
+(1,
+"""
+    match getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr with
+    | [ SynExpr.FromParseError(SynExpr.Tuple(_, [SynExpr.Const _; SynExpr.ArbitraryAfterError _], _, _), _) ] -> ()
+    | _ -> failwith "Unexpected tree"
