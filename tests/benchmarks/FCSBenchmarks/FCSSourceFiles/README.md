@@ -11,6 +11,10 @@
 1. Run `dotnet run -c release`
 2. Output available on the commandline and in `BenchmarkDotNet.Artifacts/`
 
-# Other
+## Sample results
+
+*TODO*
+
+## Other
 
 You can find this document under 'tests/benchmarks/FCSBenchmarks/FCSSourceFiles/README.md'.

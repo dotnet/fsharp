@@ -17,6 +17,6 @@ When making changes to the FCS source code, consider running some of these to as
 
 All the above benchmarks use BenchmarkDotNet.
 
-# Other
+## Other
 
 You can find this document under 'tests/benchmarks/FCSBenchmarks/README.md'.
