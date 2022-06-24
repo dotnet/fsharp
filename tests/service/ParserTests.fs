@@ -305,3 +305,16 @@ let ``Expr - Tuple 05`` () =
     match getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr with
     | [ SynExpr.FromParseError(SynExpr.Tuple(_, [SynExpr.Const _; SynExpr.ArbitraryAfterError _], _, _), _) ] -> ()
     | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 06`` () =
+    let parseResults = getParseResults """
+(1,,,2)
+"""
+    let synExprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    match synExprs with
+    | [ SynExpr.Tuple(_, [ SynExpr.Const _
+                           SynExpr.ArbitraryAfterError _
+                           SynExpr.ArbitraryAfterError _
+                           SynExpr.Const _ ], _, _) ] -> ()
+    | _ -> failwith "Unexpected tree"
