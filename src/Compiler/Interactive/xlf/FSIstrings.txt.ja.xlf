@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
-        <target state="new">Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
+        <target state="translated">[&lt;EntryPoint&gt;] を含む関数は FSI では呼び出されません。'{0}' は呼び出されませんでした。コマンド ライン引数の適切な文字列配列を使用して '{2}' を呼び出すには、'{1} &lt;args&gt;' を実行してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInternalAccess">
