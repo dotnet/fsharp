@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
 </Project>
