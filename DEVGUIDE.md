@@ -279,7 +279,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     dotnet add reference ..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj
     ```
 
-4. Additionally, if you want to test changes to the FSharp.Core
+4. Additionally, if you want to test changes to the FSharp.Core (note that the relative path can be different)
 
      ```shell
      dotnet add reference ..\..\..\src\FSharp.Core\FSharp.Core.fsproj

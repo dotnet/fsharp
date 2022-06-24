@@ -2,7 +2,7 @@
 
 ## What can be found here
 
-This folder contains code and scripts used for running of a selection performance benchmarks ad hoc.
+This folder contains code and scripts used for running a selection of performance benchmarks.
 
 ### How the tests are used
 
@@ -42,6 +42,17 @@ Most of the benchmarks use [BenchmarkDotNet](https://benchmarkdotnet.org/) (BDN)
 It helps avoid common benchmarking pitfalls and provide highly-accurate, repeatable results.
 
 A BDN benchmark is an executable. To run it, simply run `dotnet run %BenchmarkProject.fsproj%` in the benchmark's directory.
+
+### Writing a new benchmark
+
+When adding a benchmark, consider:
+* choosing an appropriate subdirectory
+* adding a README with the following details:
+* * what is being measured
+* * how to run the benchmark, including any environment requirements
+* * an example of the results it produces
+
+For instructions on how to write a BDN benchmark see [DEVGUIDE](https://github.com/dotnet/fsharp/blob/main/DEVGUIDE.md).
 
 ## Other
 
