@@ -4396,6 +4396,12 @@ tupleExpr:
         reportParseErrorAt commaRange (FSComp.SR.parsExpectingExpressionInTuple())
         [$2; arbExpr ("tupleExpr3", commaRange.StartRange)], [commaRange] }
 
+  | COMMA ends_coming_soon_or_recover
+      { if not $2 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
+        let commaRange = rhs parseState 1
+        let zeroWidthAtNextToken = (rhs parseState 2).StartRange
+        [(arbExpr("tupleExpr4", zeroWidthAtNextToken)); arbExpr ("tupleExpr5", commaRange.StartRange)], [commaRange] }
+
 minusExpr: 
   | MINUS minusExpr   %prec expr_prefix_plus_minus
       { mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) "~-" $2 }

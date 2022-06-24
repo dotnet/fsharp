@@ -213,11 +213,15 @@ let ``Expr - Tuple 01`` () =
     let parseResults = getParseResults """
 (,)
 (,,)
+(,,,)
 """
     let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
     match exprs with
-    | [ SynExpr.ArbitraryAfterError _
-        SynExpr.ArbitraryAfterError _ ] -> ()
+    | [ SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e11; SynExpr.ArbitraryAfterError _ as e12], c1, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e21; SynExpr.ArbitraryAfterError _ as e22; SynExpr.ArbitraryAfterError _ as e23], c2, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e31; SynExpr.ArbitraryAfterError _ as e32; SynExpr.ArbitraryAfterError _ as e33; SynExpr.ArbitraryAfterError _ as e34], c3, _) ] ->
+            [ e11; e12; e21; e22; e23; e31; e32; e33; e34 ] |> checkExprOrder
+            [ c1, 1; c2, 2; c3, 3 ] |> checkRangeCountAndOrder
 
     | _ -> failwith "Unexpected tree"
 
@@ -241,7 +245,7 @@ let ``Expr - Tuple 02`` () =
 [<Test>]
 let ``Expr - Tuple 03`` () =
     let parseResults = getParseResults """
-(1,,) // two items are produced
+(1,,)
 (,1,)
 (,,1)
 
@@ -253,7 +257,7 @@ let ``Expr - Tuple 03`` () =
 """
     let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr    
     match exprs with
-    | [ SynExpr.Tuple(_, [SynExpr.Const _ as e11; SynExpr.ArbitraryAfterError _  as e12], c1, _)
+    | [ SynExpr.Tuple(_, [SynExpr.Const _ as e11; SynExpr.ArbitraryAfterError _  as e12; SynExpr.ArbitraryAfterError _  as e13], c1, _)
         SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e21; SynExpr.Const _ as e22; SynExpr.ArbitraryAfterError _ as e23], c2, _)
         SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e31; SynExpr.ArbitraryAfterError _ as e32; SynExpr.Const _ as e33], c3, _)
 
@@ -262,12 +266,12 @@ let ``Expr - Tuple 03`` () =
         SynExpr.Tuple(_, [SynExpr.Const _ as e61; SynExpr.ArbitraryAfterError _ as e62; SynExpr.Const _ as e63], c6, _)
 
         SynExpr.Tuple(_, [SynExpr.Const _ as e71; SynExpr.Const _ as e72; SynExpr.Const _ as e73], c7, _) ] ->
-            [ e11; e12; e21; e22; e23; e31; e32; e33
+            [ e11; e12; e13; e21; e22; e23; e31; e32; e33
               e41; e42; e43; e51; e52; e53; e61; e62; e63
               e71; e72; e73 ]
             |> checkExprOrder
 
-            [ c1, 1; c2, 2; c3, 2
+            [ c1, 2; c2, 2; c3, 2
               c4, 2; c5, 2; c6, 2
               c7, 2 ]
             |> checkRangeCountAndOrder
