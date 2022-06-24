@@ -3,7 +3,6 @@
 open System
 open System.IO
 open System.Text
-open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
@@ -12,118 +11,10 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
-
-[<AutoOpen>]
-module BenchmarkHelpers =
-
-    type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-            let ts = TaskCompletionSource<'T>()
-            let task = ts.Task
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken)
-            task.Result
-    
-    let createProject name referencedProjects =
-        let tmpPath = Path.GetTempPath()
-        let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
-        {
-            ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
-            ProjectId = None
-            SourceFiles = [|file|]
-            OtherOptions = 
-                Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
-            ReferencedProjects =
-                referencedProjects
-                |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
-                |> Array.ofList
-            IsIncompleteTypeCheckEnvironment = false
-            UseScriptResolutionRules = false
-            LoadTime = DateTime()
-            UnresolvedReferences = None
-            OriginalLoadReferences = []
-            Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
-        }
-
-    let generateSourceCode moduleName =
-        sprintf """
-module Benchmark.%s
-
-type %s =
-
-    val X : int
-
-    val Y : int
-
-    val Z : int
-
-let function%s (x: %s) =
-    let x = 1
-    let y = 2
-    let z = x + y
-    z""" moduleName moduleName moduleName moduleName
-
-    let decentlySizedStandAloneFile = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "decentlySizedStandAloneFile.fsx"))
+open FSharp.Compiler.Benchmarks.BenchmarkHelpers
 
 [<MemoryDiagnoser>]
-type TypeCheckingBenchmark1() =
-    let mutable checkerOpt = None
-    let mutable assembliesOpt = None
-    let mutable testFileOpt = None
-
-    [<GlobalSetup>]
-    member _.Setup() =
-        match checkerOpt with
-        | None -> checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
-        | _ -> ()
-
-        match assembliesOpt with
-        | None -> 
-            assembliesOpt <- 
-                System.AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.map (fun x -> (x.Location))
-                |> Some
-        
-        | _ -> ()
-
-        match testFileOpt with
-        | None ->
-            let options, _ =
-                checkerOpt.Value.GetProjectOptionsFromScript("decentlySizedStandAloneFile.fsx", SourceText.ofString decentlySizedStandAloneFile)
-                |> Async.RunImmediate
-            testFileOpt <- Some options
-        | _ -> ()
-
-    [<Benchmark>]
-    member _.Run() =
-        match checkerOpt, testFileOpt with
-        | None, _ -> failwith "no checker"
-        | _, None -> failwith "no test file"
-        | Some(checker), Some(options) ->
-            let _, result =                                                                
-                checker.ParseAndCheckFileInProject("decentlySizedStandAloneFile.fsx", 0, SourceText.ofString decentlySizedStandAloneFile, options)
-                |> Async.RunImmediate
-            match result with
-            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
-            | FSharpCheckFileAnswer.Succeeded results ->
-                if results.Diagnostics.Length > 0 then failwithf "had errors: %A" results.Diagnostics
-
-    [<IterationCleanup>]
-    member _.Cleanup() =
-        match checkerOpt with
-        | None -> failwith "no checker"
-        | Some(checker) ->
-            checker.InvalidateAll()
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            ClearAllILModuleReaderCache()
-
-[<MemoryDiagnoser>]
-type CompilerService() =
+type CompilerServiceBenchmarks() =
     let mutable checkerOpt = None
     let mutable sourceOpt = None
     let mutable assembliesOpt = None
@@ -173,10 +64,10 @@ type CompilerService() =
         match decentlySizedStandAloneFileCheckResultOpt with
         | None ->
             let options, _ =
-                checkerOpt.Value.GetProjectOptionsFromScript("decentlySizedStandAloneFile.fsx", SourceText.ofString decentlySizedStandAloneFile)
+                checkerOpt.Value.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
                 |> Async.RunImmediate
             let _, checkResult =                                                                
-                checkerOpt.Value.ParseAndCheckFileInProject("decentlySizedStandAloneFile.fsx", 0, SourceText.ofString decentlySizedStandAloneFile, options)
+                checkerOpt.Value.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
                 |> Async.RunImmediate
             decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()

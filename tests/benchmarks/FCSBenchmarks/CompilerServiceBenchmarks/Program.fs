@@ -3,6 +3,6 @@ open FSharp.Compiler.Benchmarks
 
 [<EntryPoint>]
 let main _ =
-    //BenchmarkRunner.Run<CompilerService>() |> ignore
-    BenchmarkRunner.Run<TypeCheckingBenchmark1>() |> ignore
+    //BenchmarkRunner.Run<CompilerServiceBenchmarks>() |> ignore
+    BenchmarkRunner.Run<TypeCheckingBenchmark>() |> ignore
     0

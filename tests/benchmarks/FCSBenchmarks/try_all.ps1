@@ -1,0 +1,1 @@
+dotnet run -c release --project FCSBenchmarks/CompilerServiceBenchmarks/FSharp.Compiler.Benchmarks.fsproj
