@@ -264,10 +264,10 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
 1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
 
-2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
+2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\FCSBenchmarks`).
 
       ```shell
-      cd tests\benchmarks
+      cd tests\benchmarks\FCSBenchmarks
       dotnet new console -o FcsBench --name FcsBench -lang F#
       ```
 
@@ -371,7 +371,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     ```shell
     > ls .\BenchmarkDotNet.Artifacts\results\
 
-        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
+        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FCSBenchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
 
     Mode                 LastWriteTime         Length Name
     ----                 -------------         ------ ----
