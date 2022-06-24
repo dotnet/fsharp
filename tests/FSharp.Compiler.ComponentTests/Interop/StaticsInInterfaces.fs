@@ -368,3 +368,36 @@ let main _ = 0
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can call interface with static abstract method`` () =
+
+        let fsharpSource =
+            """
+
+type IAdditionOperator<'T> =
+    static abstract op_Addition: 'T * 'T -> 'T
+
+type C(c: int) =
+    member _.Value = c
+    interface IAdditionOperator<C> with
+        static member op_Addition(x, y) = C(x.Value + y.Value) 
+
+let f<'T when 'T :> IAdditionOperator<'T>>(x: 'T, y: 'T) =
+    'T.op_Addition(x, y)
+
+[<EntryPoint>]
+let main _ =
+    if f<C>(C(3), C(4)).Value <> 7 then
+        failwith "incorrect value"
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> compileAndRun
+        |> shouldSucceed

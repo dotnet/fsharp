@@ -2494,12 +2494,11 @@ and CanMemberSigsMatchUpToCheck
                   assignedItemSetters |> MapCombineTDCD (fun (AssignedItemSetter(_, item, caller)) ->
                     let name, calledArgTy = 
                         match item with
-                        | AssignedPropSetter(_, pminfo, pminst) -> 
+                        | AssignedPropSetter(_, _, pminfo, pminst) -> 
                             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(amap, m, pminst)))
                             pminfo.LogicalName, calledArgTy
 
                         | AssignedILFieldSetter(finfo) ->
-                            (* Get or set instance IL field *)
                             let calledArgTy = finfo.FieldType(amap, m)
                             finfo.FieldName, calledArgTy
                 

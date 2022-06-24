@@ -727,6 +727,10 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    /// F# syntax: ^T.ident
+    /// F# syntax: 'T.ident
+    | TyparDotIdent of typar: SynTypar * ident: SynIdent * range: range
+
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
     | Ident of ident: Ident

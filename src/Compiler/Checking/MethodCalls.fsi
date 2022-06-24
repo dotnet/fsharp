@@ -83,7 +83,7 @@ type AssignedCalledArg<'T> =
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget =
-    | AssignedPropSetter of PropInfo * MethInfo * TypeInst
+    | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo
     | AssignedRecdFieldSetter of RecdFieldInfo
 
@@ -348,6 +348,7 @@ val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: T
 //   minst: the instantiation to apply for a generic method
 //   objArgs: the 'this' argument, if any
 //   args: the arguments, if any
+//   staticTyOpt: the static type that governs the call, different to the nominal type containing the member, e.g. 'T.CallSomeMethod()
 val BuildMethodCall:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
@@ -360,6 +361,7 @@ val BuildMethodCall:
     minst: TType list ->
     objArgs: Expr list ->
     args: Expr list ->
+    staticTyOpt: TType option ->
         Expr * TType
 
 /// Build a call to the System.Object constructor taking no arguments,
