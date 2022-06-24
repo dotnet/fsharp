@@ -22,7 +22,7 @@
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
     <Compile Include="Benchmarks.fs" />
-    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
