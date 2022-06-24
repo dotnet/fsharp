@@ -316,7 +316,8 @@ val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> Sy
 
 val StaticAbstractSynMemberFlagsTrivia: mStatic: range -> mAbstract: range -> SynMemberFlagsTrivia
 
-val StaticAbstractMemberSynMemberFlagsTrivia: mStatic: range -> mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
+val StaticAbstractMemberSynMemberFlagsTrivia:
+    mStatic: range -> mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
 
 val inferredTyparDecls: SynValTyparDecls
 

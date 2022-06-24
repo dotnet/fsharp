@@ -3821,7 +3821,11 @@ let mkILGenericVirtualMethod (nm, callconv: ILCallingConv, access, genparams, ac
         ||| (match impl with
              | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
              | _ -> MethodAttributes.Virtual)
-        ||| (if callconv.IsInstance then enum 0 else MethodAttributes.Static)
+        ||| (if callconv.IsInstance then
+                 enum 0
+             else
+                 MethodAttributes.Static)
+
     ILMethodDef(
         name = nm,
         attributes = attributes,

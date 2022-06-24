@@ -1392,19 +1392,20 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
             warning (InternalError(msg, m))
         else
-            (ctps, thisArgTys) ||> List.iter2 (fun gtp ty2 ->
-                    if not (typeEquiv g (mkTyparTy gtp) ty2) then
-                        warning (
-                            InternalError(
-                                "CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained "
-                                + gtp.Name
-                                + "#"
-                                + string gtp.Stamp
-                                + " and list from 'this' pointer contained "
-                                + (showL (typeL ty2)),
-                                m
-                            )
-                        ))
+            (ctps, thisArgTys)
+            ||> List.iter2 (fun gtp ty2 ->
+                if not (typeEquiv g (mkTyparTy gtp) ty2) then
+                    warning (
+                        InternalError(
+                            "CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained "
+                            + gtp.Name
+                            + "#"
+                            + string gtp.Stamp
+                            + " and list from 'this' pointer contained "
+                            + (showL (typeL ty2)),
+                            m
+                        )
+                    ))
 
         let methodArgTys, paramInfos = List.unzip flatArgInfos
 
@@ -5967,7 +5968,13 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                     (ilArgTys, argVals)
                     ||> List.map2 (fun ty v -> mkILParamNamed (v.LogicalName, ty))
 
-                mkILNonGenericVirtualInstanceMethod (imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL(notlazy ilCode))
+                mkILNonGenericVirtualInstanceMethod (
+                    imethName,
+                    ILMemberAccess.Public,
+                    ilParams,
+                    mkILReturn ilRetTy,
+                    MethodBody.IL(notlazy ilCode)
+                )
         ]
 
     let mimpls =
@@ -6344,7 +6351,13 @@ and GenSequenceExpr
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_CheckClose", eenvinner, 1, None, checkCloseExpr, Return)
 
-        mkILNonGenericVirtualInstanceMethod ("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod (
+            "get_CheckClose",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn g.ilg.typ_Bool,
+            MethodBody.IL(lazy ilCode)
+        )
 
     let generateNextMethod =
         // the 'next enumerator' byref arg is at arg position 1
@@ -6363,7 +6376,13 @@ and GenSequenceExpr
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_LastGenerated", eenvinner, 1, None, exprForValRef m currvref, Return)
 
-        mkILNonGenericVirtualInstanceMethod ("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod (
+            "get_LastGenerated",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn ilCloSeqElemTy,
+            MethodBody.IL(lazy ilCode)
+        )
         |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
@@ -9077,10 +9096,22 @@ and GenMethodForBinding
 
                             let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
 
-                            let cconv = if memberInfo.MemberFlags.IsInstance then ILCallingConv.Instance else ILCallingConv.Static
+                            let cconv =
+                                if memberInfo.MemberFlags.IsInstance then
+                                    ILCallingConv.Instance
+                                else
+                                    ILCallingConv.Static
 
                             let mdef =
-                                mkILGenericVirtualMethod (mspec.Name, cconv, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                                mkILGenericVirtualMethod (
+                                    mspec.Name,
+                                    cconv,
+                                    ILMemberAccess.Public,
+                                    ilMethTypars,
+                                    ilParams,
+                                    ilReturn,
+                                    ilMethodBody
+                                )
 
                             let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 

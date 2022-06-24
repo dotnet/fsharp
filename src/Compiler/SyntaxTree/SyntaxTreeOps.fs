@@ -733,7 +733,7 @@ let OverrideMemberFlags trivia k : SynMemberFlags =
 let AbstractMemberFlags isInstance trivia k : SynMemberFlags =
     {
         MemberKind = k
-        IsInstance = isInstance 
+        IsInstance = isInstance
         IsDispatchSlot = true
         IsOverrideOrExplicitImpl = false
         IsFinal = false
