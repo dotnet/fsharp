@@ -4,7 +4,6 @@
 
 namespace Microsoft.FSharp.Control
 
-    #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
     open System
     open System.Runtime.CompilerServices
     open System.Threading.Tasks
@@ -286,4 +285,3 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                 task: Task<'TResult1> *
                 continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
                     -> bool
-#endif

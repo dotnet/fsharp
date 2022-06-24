@@ -26,6 +26,8 @@ module ReflectionHelper =
 
     let resolveDependenciesMethodName = "ResolveDependencies"
 
+    let clearResultsCacheMethodName = "ClearResultsCache"
+
     let namePropertyName = "Name"
 
     let keyPropertyName = "Key"
@@ -127,7 +129,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract HelpMessages: string[]
-
+    abstract ClearResultsCache: unit -> unit
     abstract ResolveDependencies:
         scriptDir: string *
         mainScriptName: string *
@@ -139,7 +141,7 @@ type IDependencyManagerProvider =
         timeout: int ->
             IResolveDependenciesResult
 
-type ReflectionDependencyManagerProvider
+    type ReflectionDependencyManagerProvider
     (
         theType: Type,
         nameProperty: PropertyInfo,
@@ -149,10 +151,17 @@ type ReflectionDependencyManagerProvider
         resolveDepsEx: MethodInfo option,
         resolveDepsExWithTimeout: MethodInfo option,
         resolveDepsExWithScriptInfoAndTimeout: MethodInfo option,
-        outputDir: string option
-    ) =
+        clearResultCache: MethodInfo option,
+        outputDir: string option,
+        useResultsCache: bool
+        ) =
 
-    let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
+    let instance =
+        if not(isNull (theType.GetConstructor([|typeof<string option>; typeof<bool>|]))) then
+            Activator.CreateInstance(theType, [| outputDir :> obj; useResultsCache :> obj |])
+        else
+            Activator.CreateInstance(theType, [| outputDir :> obj |])
+
     let nameProperty = nameProperty.GetValue >> string
     let keyProperty = keyProperty.GetValue >> string
 
@@ -163,7 +172,7 @@ type ReflectionDependencyManagerProvider
         | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
         | None -> fun _ -> [||]
 
-    static member InstanceMaker(theType: Type, outputDir: string option) =
+    static member InstanceMaker(theType: Type, outputDir: string option, useResultsCache: bool) =
         match getAttributeNamed theType dependencyManagerAttributeName,
               getInstanceProperty<string> theType namePropertyName,
               getInstanceProperty<string> theType keyPropertyName,
@@ -172,7 +181,6 @@ type ReflectionDependencyManagerProvider
         | None, _, _, _
         | _, None, _, _
         | _, _, None, _ -> None
-
         | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =
                 getInstanceMethod<bool * string list * string list>
@@ -223,6 +231,11 @@ type ReflectionDependencyManagerProvider
                     |]
                     resolveDependenciesMethodName
 
+            let clearResultsCacheMethod =
+                getInstanceMethod<unit>
+                    theType [||]
+                    clearResultsCacheMethodName
+
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
                     theType,
@@ -233,7 +246,9 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
-                    outputDir
+                    clearResultsCacheMethod,
+                    outputDir,
+                    useResultsCache
                 )
                 :> IDependencyManagerProvider)
 
@@ -287,6 +302,11 @@ type ReflectionDependencyManagerProvider
                     |]
                     resolveDependenciesMethodName
 
+            let clearResultsCacheMethod =
+                getInstanceMethod<unit>
+                    theType [||]
+                    clearResultsCacheMethodName
+
             Some(fun () ->
                 ReflectionDependencyManagerProvider(
                     theType,
@@ -297,7 +317,9 @@ type ReflectionDependencyManagerProvider
                     resolveMethodEx,
                     resolveMethodExWithTimeout,
                     resolveDepsExWithScriptInfoAndTimeout,
-                    outputDir
+                    clearResultsCacheMethod,
+                    outputDir,
+                    useResultsCache
                 )
                 :> IDependencyManagerProvider)
 
@@ -377,6 +399,13 @@ type ReflectionDependencyManagerProvider
         /// Key of dependency Manager: used for #r "key: ... "   E.g nuget
         member _.Key = instance |> keyProperty
 
+        /// Clear the dependency manager caches
+        member _.ClearResultsCache () =
+            match clearResultCache with
+            | Some clearResultsCache ->
+                clearResultsCache.Invoke(instance, [||]) |> ignore
+            | None -> ()
+
         /// Key of dependency Manager: used for #help
         member _.HelpMessages = instance |> helpMessagesProperty
 
@@ -454,7 +483,7 @@ type ReflectionDependencyManagerProvider
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
+type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option, useResultsCache: bool) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
@@ -508,7 +537,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 let loadedProviders =
                     enumerateDependencyManagerAssemblies compilerTools reportError
                     |> Seq.collect (fun a -> a.GetTypes())
-                    |> Seq.choose (fun t -> ReflectionDependencyManagerProvider.InstanceMaker(t, outputDir))
+                    |> Seq.choose (fun t -> ReflectionDependencyManagerProvider.InstanceMaker(t, outputDir, useResultsCache))
                     |> Seq.map (fun maker -> maker ())
 
                 defaultProviders
@@ -523,11 +552,18 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         ConcurrentDictionary<_, Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
 
     new(assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
-        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots)
+        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots, true)
 
-    new(nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(None, Some nativeProbingRoots)
+    new(assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
+        new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots, useResultsCache)
 
-    new() = new DependencyProvider(None, None)
+    new(nativeProbingRoots: NativeResolutionProbe, useResultsCache) =
+        new DependencyProvider(None, Some nativeProbingRoots, useResultsCache)
+
+    new(nativeProbingRoots: NativeResolutionProbe) =
+        new DependencyProvider(None, Some nativeProbingRoots, true)
+
+    new() = new DependencyProvider(None, None, true)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member _.GetRegisteredDependencyManagerHelpText(compilerTools, outputDir, errorReport) =
@@ -539,6 +575,14 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 let dm = kvp.Value
                 yield! dm.HelpMessages
         |]
+
+    /// Clear the DependencyManager results caches
+    member _.ClearResultsCache(compilerTools, outputDir, errorReport) =
+        let managers =
+            RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
+
+        for kvp in managers do
+            kvp.Value.ClearResultsCache()
 
     /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError

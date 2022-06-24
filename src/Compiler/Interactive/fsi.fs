@@ -989,6 +989,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
 
     do
+        if tcConfigB.clearResultsCache then
+            dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
@@ -1646,6 +1648,30 @@ type internal FsiDynamicCompiler(
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
+    /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
+    let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
+        let tryGetEntryPoint (TBind (var = value)) =
+            TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
+            |> Option.map (fun attrib -> value.DisplayName, attrib)
+
+        let rec findEntryPointInContents = function
+            | TMDefLet (binding = binding) -> tryGetEntryPoint binding
+            | TMDefs defs -> defs |> List.tryPick findEntryPointInContents
+            | TMDefRec (bindings = bindings) -> bindings |> List.tryPick findEntryPointInBinding
+            | _ -> None
+
+        and findEntryPointInBinding = function
+            | ModuleOrNamespaceBinding.Binding binding -> tryGetEntryPoint binding
+            | ModuleOrNamespaceBinding.Module (moduleOrNamespaceContents = contents) -> findEntryPointInContents contents
+
+        let entryPointBindings =
+            declaredImpls
+            |> Seq.where (fun implFile -> implFile.HasExplicitEntryPoint)
+            |> Seq.choose (fun implFile -> implFile.Contents |> findEntryPointInContents)
+
+        for name, attrib in entryPointBindings do
+            warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvoked(name, name, name), attrib.Range))
+
     let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
@@ -1660,6 +1686,8 @@ type internal FsiDynamicCompiler(
         let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
         let newState, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
+        
+        CheckEntryPoint istate.tcGlobals declaredImpls
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
 

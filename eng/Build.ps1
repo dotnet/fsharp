@@ -425,6 +425,8 @@ try {
 
     [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
 
+    $env:NativeToolsOnMachine = $true
+
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
