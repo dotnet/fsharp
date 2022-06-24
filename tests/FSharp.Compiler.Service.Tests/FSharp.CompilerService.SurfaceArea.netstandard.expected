@@ -7352,6 +7352,10 @@ FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.Ident 
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynExpr get_synExpr()
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynExpr synExpr
+FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberFlags get_memberFlags()
+FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberFlags get_memberFlagsForSet()
+FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberFlags memberFlags
+FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberFlags memberFlagsForSet
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberKind get_propKind()
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Syntax.SynMemberKind propKind
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Text.Range equalsRange
@@ -7362,8 +7366,6 @@ FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Xml.PreXmlDoc
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: FSharp.Compiler.Xml.PreXmlDoc xmlDoc
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] attributes
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList] get_attributes()
-FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags] get_memberFlags()
-FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags] memberFlags
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
 FSharp.Compiler.Syntax.SynMemberDefn+AutoProperty: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType] get_typeOpt()
@@ -7466,7 +7468,7 @@ FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsNestedType()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsOpen()
 FSharp.Compiler.Syntax.SynMemberDefn: Boolean get_IsValField()
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewAbstractSlot(FSharp.Compiler.Syntax.SynValSig, FSharp.Compiler.Syntax.SynMemberFlags, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewAutoProperty(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Syntax.SynMemberKind, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Syntax.SynMemberKind,FSharp.Compiler.Syntax.SynMemberFlags], FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewAutoProperty(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], Boolean, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Syntax.SynMemberKind, FSharp.Compiler.Syntax.SynMemberFlags, FSharp.Compiler.Syntax.SynMemberFlags, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewImplicitCtor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.SynSimplePats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewImplicitInherit(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynMemberDefn: FSharp.Compiler.Syntax.SynMemberDefn NewInherit(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
