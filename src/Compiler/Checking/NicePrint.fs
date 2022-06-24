@@ -1680,7 +1680,7 @@ module TastDefinitionPrinting =
         let ty = generalizedTyconRef g tcref 
 
         let start, tagger =
-            if isStructTy g ty then
+            if isStructTy g ty && not tycon.TypeAbbrev.IsSome then
                 // Always show [<Struct>] whether verbose or not
                 Some "struct", tagStruct
             elif isInterfaceTy g ty then
