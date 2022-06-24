@@ -663,7 +663,7 @@ module ParsedInput =
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
             | SynType.Tuple (_, ts, _) -> ts |> List.tryPick (fun (_, t) -> walkType t)
             | SynType.Array (_, t, _) -> walkType t
-            | SynType.Fun (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
@@ -1651,7 +1651,7 @@ module ParsedInput =
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
             | SynType.Paren (t, _) -> walkType t
-            | SynType.Fun (t1, t2, _)
+            | SynType.Fun (argType = t1; returnType = t2)
             | SynType.MeasureDivide (t1, t2, _) ->
                 walkType t1
                 walkType t2
