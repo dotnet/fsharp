@@ -888,7 +888,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoDynamicInvocationAttribute</returns>
         new: unit -> NoDynamicInvocationAttribute
 
-        internal new: isLegacy: bool -> NoDynamicInvocationAttribute
+        new: isLegacy: bool -> NoDynamicInvocationAttribute
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
