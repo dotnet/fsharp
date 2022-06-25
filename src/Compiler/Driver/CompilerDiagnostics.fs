@@ -1206,9 +1206,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             if showParserStackOnParseError then
                 printfn "parser stack:"
 
-                let rps = 
-                    ctxt.ReducibleProductions |> List.map (fun rps ->
-                        rps |> List.map (fun rp -> rp, Parser.prodIdxToNonTerminal rp))
+                let rps =
+                    ctxt.ReducibleProductions
+                    |> List.map (fun rps -> rps |> List.map (fun rp -> rp, Parser.prodIdxToNonTerminal rp))
 
                 for rps in rps do
                     printfn "   ----"
