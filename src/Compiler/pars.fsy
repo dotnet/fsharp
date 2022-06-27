@@ -4993,8 +4993,9 @@ opt_topReturnTypeWithTypeConstraints:
 topType: 
   | topTupleType RARROW topType 
      { let dty, dmdata= $1 
-       let rty, (SynValInfo(dmdatas, rmdata)) = $3 
-       SynType.Fun(dty, rty, lhs parseState), (SynValInfo(dmdata :: dmdatas, rmdata)) }
+       let rty, (SynValInfo(dmdatas, rmdata)) = $3
+       let mArrow = rhs parseState 2
+       SynType.Fun(dty, rty, lhs parseState, { ArrowRange = mArrow }), (SynValInfo(dmdata :: dmdatas, rmdata)) }
 
   | topTupleType 
      { let ty, rmdata = $1 in ty, (SynValInfo([], (match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
@@ -5040,7 +5041,8 @@ topAppType:
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 typ:
   | tupleType RARROW typ  
-     { SynType.Fun($1, $3, lhs parseState) }
+     { let mArrow = rhs parseState 2
+       SynType.Fun($1, $3, lhs parseState, { ArrowRange = mArrow }) }
 
   | tupleType %prec prec_typ_prefix 
      { $1 }

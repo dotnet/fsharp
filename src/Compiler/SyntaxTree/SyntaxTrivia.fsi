@@ -324,3 +324,11 @@ type SynValSigTrivia =
     }
 
     static member Zero: SynValSigTrivia
+
+/// Represents additional information for SynType.Fun
+[<NoEquality; NoComparison>]
+type SynTypeFunTrivia =
+    {
+        /// The syntax range of the `->` token.
+        ArrowRange: range
+    }

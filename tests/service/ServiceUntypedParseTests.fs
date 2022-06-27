@@ -152,7 +152,7 @@ let rec getParenTypes (synType: SynType): SynType list =
           yield synType
           yield! getParenTypes innerType
 
-      | SynType.Fun (argType, returnType, _) ->
+      | SynType.Fun (argType = argType; returnType = returnType) ->
           yield! getParenTypes argType
           yield! getParenTypes returnType
 

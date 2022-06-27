@@ -230,3 +230,6 @@ type SynValSigTrivia =
             WithKeyword = None
             EqualsRange = None
         }
+
+[<NoEquality; NoComparison>]
+type SynTypeFunTrivia = { ArrowRange: range }
