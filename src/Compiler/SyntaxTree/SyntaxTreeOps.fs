@@ -872,6 +872,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.LibraryOnlyStaticOptimization _
         | SynExpr.Null _
         | SynExpr.Ident _
+        | SynExpr.TyparDotIdent _
         | SynExpr.ImplicitZero _
         | SynExpr.Const _
         | SynExpr.Dynamic _ -> false

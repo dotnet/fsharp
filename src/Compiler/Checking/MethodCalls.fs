@@ -101,7 +101,8 @@ type AssignedCalledArg<'T> =
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget = 
-    | AssignedPropSetter of PropInfo * MethInfo * TypeInst   (* the MethInfo is a non-indexer setter property *)
+    // the MethInfo is a non-indexer setter property
+    | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo 
     | AssignedRecdFieldSetter of RecdFieldInfo 
 
@@ -197,11 +198,13 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
             isTyparTy g actualTy && (let ftyvs = freeInType CollectAll reqdTy2 in ftyvs.FreeTypars.Contains(destTyparTy g actualTy))) then
 
             let implicits = 
-                infoReader.FindImplicitConversions m ad actualTy @
-                infoReader.FindImplicitConversions m ad reqdTy2
+                [ for conv in infoReader.FindImplicitConversions m ad actualTy do
+                    (conv, actualTy)
+                  for conv in infoReader.FindImplicitConversions m ad reqdTy2 do
+                    (conv, reqdTy2) ]
             
             let implicits = 
-                implicits |> List.filter (fun minfo -> 
+                implicits |> List.filter (fun (minfo, _staticTy) -> 
                     not minfo.IsInstance &&
                     minfo.FormalMethodTyparInst.IsEmpty && 
                     (match minfo.GetParamTypes(amap, m, []) with
@@ -212,12 +215,12 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                 )
 
             match implicits with
-            | [minfo] ->
-                Some (minfo, (reqdTy, reqdTy2, ignore))
-            | minfo :: _ -> 
-                Some (minfo, (reqdTy, reqdTy2, fun denv -> 
+            | [(minfo, staticTy) ] ->
+                Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
+            | (minfo, staticTy) :: _ -> 
+                Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv -> 
                          let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy2 actualTy
-                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv implicits
+                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv (List.map fst implicits)
                          errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
             | _ -> None
         else
@@ -289,7 +292,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (minfo, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo)), Some eqn
+         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo)), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
@@ -617,7 +620,8 @@ type CalledMeth<'T>
                     | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                         let pminfo = pinfo.SetterMethod
                         let pminst = freshenMethInfo m pminfo
-                        Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
+                        let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                        Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                     | _ ->
                         let epinfos = 
                             match nameEnv with  
@@ -636,7 +640,8 @@ type CalledMeth<'T>
                                 | Some(TType_app(_, types, _)) -> types
                                 | _ -> pminst
 
-                            Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
+                            let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                            Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
                             | finfo :: _ -> 
@@ -869,9 +874,11 @@ let IsBaseCall objArgs =
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
-let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
-    match objArgs with 
-    | [objArgExpr] when not minfo.IsExtensionMember -> 
+let ComputeConstrainedCallInfo g amap m staticTyOpt objArgs (minfo: MethInfo) =
+    match objArgs, staticTyOpt with 
+    | [], Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+
+    | [objArgExpr], _ when not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
@@ -891,8 +898,8 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
 
 /// Adjust the 'this' pointer before making a call 
 /// Take the address of a struct, and coerce to an interface/base/constraint type if necessary 
-let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
-    let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs, minfo)
+let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m staticTyOpt objArgs f =
+    let ccallInfo = ComputeConstrainedCallInfo g amap m staticTyOpt objArgs minfo
 
     let wrap, objArgs = 
 
@@ -1070,10 +1077,10 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
 //   minst: the instantiation to apply for a generic method 
 //   objArgs: the 'this' argument, if any 
 //   args: the arguments, if any 
-let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args =
+let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
     let direct = IsBaseCall objArgs
 
-    TakeObjAddrForMethodCall g amap minfo isMutable m objArgs (fun ccallInfo objArgs -> 
+    TakeObjAddrForMethodCall g amap minfo isMutable m staticTyOpt objArgs (fun ccallInfo objArgs -> 
         let allArgs = objArgs @ args
         let valUseFlags = 
             if direct && (match valUseFlags with NormalValUse -> true | _ -> false) then 
@@ -1288,9 +1295,10 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
 
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-       | Some (minfo, _) -> 
+       | Some (minfo, staticTy, _) -> 
            MethInfoChecks g amap false None [] ad m minfo
-           let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr]
+           let staticTyOpt = if isTyparTy g staticTy then Some staticTy else None
+           let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr] staticTyOpt
            assert (let resTy = tyOfExpr g callExpr in typeEquiv g reqdTy resTy)
            callExpr
        | None -> mkCoerceIfNeeded g reqdTy actualTy expr
@@ -1949,7 +1957,7 @@ module ProvidedMethodCalls =
             let targetMethInfo = ProvidedMeth(amap, ctor.PApply((fun ne -> upcast ne), m), None, m)
             let objArgs = [] 
             let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
-            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
+            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments None
             callExpr
 
         and addVar (v: Tainted<ProvidedVar>) =    
@@ -1984,7 +1992,7 @@ module ProvidedMethodCalls =
             let mut         = if top then mut else PossiblyMutates
             let isSuperInit = if top then isSuperInit else ValUseFlag.NormalValUse
             let isProp      = if top then isProp else false
-            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments
+            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments None
             Some meth, callExpr
 
         and varToExpr (pe: Tainted<ProvidedVar>) =    

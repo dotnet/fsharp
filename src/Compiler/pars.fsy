@@ -4010,12 +4010,14 @@ declExpr:
       { let m = rhs parseState 1
         SynExpr.IndexRange(None, m, None, m, m, m) }
 
+/*
   | INFIX_AT_HAT_OP declExpr
     { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.FromEndSlicing) then 
         raiseParseErrorAt (rhs parseState 1) (FSComp.SR.fromEndSlicingRequiresVFive())
       if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
       let m = (rhs2 parseState 1 2)
       SynExpr.IndexFromEnd($2, m) }
+*/
 
   | minusExpr %prec expr_prefix_plus_minus { $1 }
 
@@ -4283,6 +4285,10 @@ atomicExpr:
       { let arg2, hpa2 = $2 
         if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt arg2.Range (FSComp.SR.parsInvalidPrefixOperator())
         mkSynPrefixPrim (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) $1 arg2, hpa2 }
+
+  | typar DOT identOrOp
+      { let lhsm = rhs2 parseState 1 3
+        SynExpr.TyparDotIdent($1, $3, lhsm), false }
 
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 

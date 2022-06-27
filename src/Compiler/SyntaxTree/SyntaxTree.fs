@@ -583,6 +583,8 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    | TyparDotIdent of typar: SynTypar * ident: SynIdent * range: range
+
     | Ident of ident: Ident
 
     | LongIdent of isOptional: bool * longDotId: SynLongIdent * altNameRefCell: SynSimplePatAlternativeIdInfo ref option * range: range
@@ -757,6 +759,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.TyparDotIdent(range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
