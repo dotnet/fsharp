@@ -4699,3 +4699,26 @@ module Measures =
             Assert.AreEqual("weeks", weeksIdent.idText)
             assertRange (2, 9) (2, 22) mParen
         | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+module SyntaxTypes =
+    [<Test>]
+    let ``SynType.Fun has range of arrow`` () =
+        let parseResults =
+            getParseResults
+                 """
+     type X = string -> // after a tuple, mixed needs an indent 
+                 int
+     """
+ 
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types(typeDefns = [
+                    SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                        SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
+                            SynType.Fun(trivia = { ArrowRange = mArrow }))))
+                ])
+            ])
+        ])) ->
+            assertRange (2, 21) (2, 23) mArrow
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
