@@ -1572,7 +1572,13 @@ module TastDefinitionPrinting =
         let lhs = ConvertNameToDisplayLayout (tagRecordField >> mkNav fld.DefinitionRange >> wordL) fld.DisplayNameCore
         let lhs = (if isClassDecl then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
-        let fieldL = (lhs |> addColonL) --- layoutType denv fld.FormalType
+        let fieldL =
+            let rhs =
+                match fld.FormalType with
+                | TType_fun _ -> LeftL.leftParen ^^ layoutType denv fld.FormalType ^^ RightL.rightParen
+                | _ -> layoutType denv fld.FormalType
+            
+            (lhs |> addColonL) --- rhs
         let fieldL = prefix fieldL
         let fieldL = fieldL |> layoutAttribs denv None false TyparKind.Type (fld.FieldAttribs @ fld.PropertyAttribs)
 
