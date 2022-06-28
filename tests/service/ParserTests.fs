@@ -3,6 +3,7 @@
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FsUnit
 open NUnit.Framework
 
 [<Test>]
@@ -186,4 +187,138 @@ let f (x,
         match pat with
         | SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _) -> ()
         | _ -> failwith "Unexpected tree"
+    | _ -> failwith "Unexpected tree"
+
+let assertIsBefore (f: _ -> range) (a, b) =
+    let r1 = f a
+    let r2 = f b
+    Position.posGeq r2.Start r1.End |> shouldEqual true
+
+let checkExprOrder exprs =
+    exprs
+    |> List.pairwise
+    |> List.iter (assertIsBefore getRange)
+
+let checkRangeCountAndOrder commas =
+    commas
+    |> List.iter (fun (commas, length) ->
+        List.length commas |> shouldEqual length
+
+        commas
+        |> List.pairwise
+        |> List.iter (assertIsBefore id))
+
+[<Test>]
+let ``Expr - Tuple 01`` () =
+    let parseResults = getParseResults """
+(,)
+(,,)
+(,,,)
+"""
+    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    match exprs with
+    | [ SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e11; SynExpr.ArbitraryAfterError _ as e12], c1, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e21; SynExpr.ArbitraryAfterError _ as e22; SynExpr.ArbitraryAfterError _ as e23], c2, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e31; SynExpr.ArbitraryAfterError _ as e32; SynExpr.ArbitraryAfterError _ as e33; SynExpr.ArbitraryAfterError _ as e34], c3, _) ] ->
+            [ e11; e12; e21; e22; e23; e31; e32; e33; e34 ] |> checkExprOrder
+            [ c1, 1; c2, 2; c3, 3 ] |> checkRangeCountAndOrder
+
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 02`` () =
+    let parseResults = getParseResults """
+(1,)
+(,1)
+(1,1)
+"""
+    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr    
+    match exprs with
+    | [ SynExpr.Tuple(_, [SynExpr.Const _ as e11; SynExpr.ArbitraryAfterError _ as e12], c1, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _  as e21; SynExpr.Const _  as e22], c2, _)
+        SynExpr.Tuple(_, [SynExpr.Const _  as e31; SynExpr.Const _  as e32], c3, _) ] ->
+            [ e11; e12; e21; e22; e31; e32 ] |> checkExprOrder
+            [ c1, 1; c2, 1; c3, 1 ] |> checkRangeCountAndOrder
+    
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 03`` () =
+    let parseResults = getParseResults """
+(1,,)
+(,1,)
+(,,1)
+
+(1,1,)
+(,1,1)
+(1,,1)
+
+(1,1,1)
+"""
+    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr    
+    match exprs with
+    | [ SynExpr.Tuple(_, [SynExpr.Const _ as e11; SynExpr.ArbitraryAfterError _  as e12; SynExpr.ArbitraryAfterError _  as e13], c1, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e21; SynExpr.Const _ as e22; SynExpr.ArbitraryAfterError _ as e23], c2, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e31; SynExpr.ArbitraryAfterError _ as e32; SynExpr.Const _ as e33], c3, _)
+
+        SynExpr.Tuple(_, [SynExpr.Const _ as e41; SynExpr.Const _ as e42; SynExpr.ArbitraryAfterError _ as e43], c4, _)
+        SynExpr.Tuple(_, [SynExpr.ArbitraryAfterError _ as e51; SynExpr.Const _ as e52; SynExpr.Const _ as e53], c5, _)
+        SynExpr.Tuple(_, [SynExpr.Const _ as e61; SynExpr.ArbitraryAfterError _ as e62; SynExpr.Const _ as e63], c6, _)
+
+        SynExpr.Tuple(_, [SynExpr.Const _ as e71; SynExpr.Const _ as e72; SynExpr.Const _ as e73], c7, _) ] ->
+            [ e11; e12; e13; e21; e22; e23; e31; e32; e33
+              e41; e42; e43; e51; e52; e53; e61; e62; e63
+              e71; e72; e73 ]
+            |> checkExprOrder
+
+            [ c1, 2; c2, 2; c3, 2
+              c4, 2; c5, 2; c6, 2
+              c7, 2 ]
+            |> checkRangeCountAndOrder
+
+    | _ -> failwith "Unexpected tree"
+
+
+[<Test>]
+let ``Expr - Tuple 04`` () =
+    let parseResults = getParseResults """
+(,1,,2,3,,4,)
+"""
+    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    match exprs with
+    | [ SynExpr.Tuple(_, [ SynExpr.ArbitraryAfterError _ as e1
+                           SynExpr.Const _ as e2
+                           SynExpr.ArbitraryAfterError _ as e3
+                           SynExpr.Const _ as e4
+                           SynExpr.Const _ as e5
+                           SynExpr.ArbitraryAfterError _  as e6
+                           SynExpr.Const _ as e7
+                           SynExpr.ArbitraryAfterError _  as e8 ], c, _) ] ->
+            [ e1; e2; e3; e4; e5; e6; e7; e8 ]
+            |> checkExprOrder
+
+            [ c, 7 ] |> checkRangeCountAndOrder
+
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 05`` () =
+    let parseResults = getParseResults """
+(1,
+"""
+    match getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr with
+    | [ SynExpr.FromParseError(SynExpr.Tuple(_, [SynExpr.Const _; SynExpr.ArbitraryAfterError _], _, _), _) ] -> ()
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 06`` () =
+    let parseResults = getParseResults """
+(1,,,2)
+"""
+    let synExprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    match synExprs with
+    | [ SynExpr.Tuple(_, [ SynExpr.Const _
+                           SynExpr.ArbitraryAfterError _
+                           SynExpr.ArbitraryAfterError _
+                           SynExpr.Const _ ], _, _) ] -> ()
     | _ -> failwith "Unexpected tree"

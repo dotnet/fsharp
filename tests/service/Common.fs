@@ -226,6 +226,11 @@ let getSingleExprInModule (input: ParsedInput) =
     | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
 
+let getSingleParenInnerExpr expr =
+    match expr with
+    | SynModuleDecl.Expr(SynExpr.Paren(expr, _, _, _), _) -> expr
+    | _ -> failwith "Unexpected tree"
+
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
 
@@ -448,6 +453,8 @@ let coreLibAssemblyName =
 #else
     "mscorlib"
 #endif
+
+let getRange (e: SynExpr) = e.Range
 
 let assertRange
     (expectedStartLine: int, expectedStartColumn: int)
