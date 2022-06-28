@@ -7,11 +7,12 @@
   "tools": {
     "dotnet": "7.0.100-preview.2.22153.17",
     "vs": {
-      "version": "17.3",
+      "version": "17.0",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
-    }
+    },
+    "xcopy-msbuild": "17.1.0"
   },
   "native-tools": {
     "perl": "5.32.1.1"
