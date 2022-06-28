@@ -79,7 +79,7 @@ type CompilerServiceBenchmarks() =
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
             let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunImmediate
-            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
+            if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
     member _.ParsingTypeCheckerFsSetup() =
@@ -156,7 +156,7 @@ type CompilerServiceBenchmarks() =
             | FSharpCheckFileAnswer.Succeeded checkFileResult ->
 
                 if checkFileResult.Diagnostics.Length > 0 then
-                    failwithf "%A" checkFileResult.Diagnostics
+                    failwithf $"%A{checkFileResult.Diagnostics}"
 
     [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
     member this.TypeCheckFileWith100ReferencedProjectsSetup() =

@@ -7,19 +7,6 @@ open FSharp.Compiler.CodeAnalysis
 
 module BenchmarkHelpers =
 
-    type Async with
-        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-            let ts = TaskCompletionSource<'T>()
-            let task = ts.Task
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken)
-            task.Result
-    
     let createProject name referencedProjects =
         let tmpPath = Path.GetTempPath()
         let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
@@ -42,10 +29,10 @@ module BenchmarkHelpers =
         }
 
     let generateSourceCode moduleName =
-        sprintf """
-module Benchmark.%s
+        $"""
+module Benchmark.%s{moduleName}
 
-type %s =
+type %s{moduleName} =
 
     val X : int
 
@@ -53,11 +40,11 @@ type %s =
 
     val Z : int
 
-let function%s (x: %s) =
+let function%s{moduleName} (x: %s{moduleName}) =
     let x = 1
     let y = 2
     let z = x + y
-    z""" moduleName moduleName moduleName moduleName
+    z"""
 
     let sourcePath = "../decentlySizedStandAloneFile.fs"
     let decentlySizedStandAloneFile = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, sourcePath))

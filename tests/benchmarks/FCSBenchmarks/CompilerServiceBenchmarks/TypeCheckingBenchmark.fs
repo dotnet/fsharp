@@ -47,7 +47,7 @@ type TypeCheckingBenchmark() =
             match result with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
-                if results.Diagnostics.Length > 0 then failwithf "had errors: %A" results.Diagnostics
+                if results.Diagnostics.Length > 0 then failwithf $"had errors: %A{results.Diagnostics}"
 
     [<IterationCleanup>]
     member _.Cleanup() =
