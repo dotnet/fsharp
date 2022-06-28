@@ -2,6 +2,17 @@
 
 open System.IO
 open System.Threading.Tasks
+#if SERVICE_13_0_0
+open Microsoft.FSharp.Compiler.SourceCodeServices
+#else
+#if SERVICE_30_0_0
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+#else
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
+#endif
+#endif
 
 type Async with
     static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
@@ -16,26 +27,10 @@ type Async with
             cancellationToken)
         task.Result
 
-#if SERVICE_13_0_0
-open Microsoft.FSharp.Compiler.SourceCodeServices
-#elif SERVICE_30_0_0
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
-#else
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
-#endif
-
-type Config =
-    {
-        Checker : FSharpChecker
-        Options : FSharpProjectOptions
-    }
-
 [<AutoOpen>]
 module Helpers =
 
-    let getFileText (filePath : string) =
+    let getFileSourceText (filePath : string) =
         let text = File.ReadAllText(filePath)
 #if SERVICE_13_0_0
         text
@@ -50,7 +45,7 @@ module Helpers =
         if results.Diagnostics.Length > 0 then failwithf $"had errors: %A{results.Diagnostics}"
 #endif
     
-    let makeOptionsForFile (checker : FSharpChecker) (filePath : string) =
+    let makeCmdlineArgs (filePath : string) =
         let assemblies =
             let mainAssemblyLocation = typeof<System.Object>.Assembly.Location
             let frameworkDirectory = Path.GetDirectoryName(mainAssemblyLocation)
@@ -63,21 +58,32 @@ module Helpers =
             )
             |> Array.ofSeq
             |> Array.append [|typeof<Async>.Assembly.Location|]
-        let args =
-            let refs =
-                assemblies
-                |> Array.map (fun x ->
-                    $"-r:{x}"
-                )
-            [|"--simpleresolution";"--targetprofile:netcore";"--noframework"|]
-            |> Array.append refs
-            |> Array.append [|filePath|]
-        checker.GetProjectOptionsFromCommandLineArgs(filePath, args)
+            
+        let refs =
+            assemblies
+            |> Array.map (fun x ->
+                $"-r:{x}"
+            )
+        [|"--simpleresolution";"--targetprofile:netcore";"--noframework"|]
+        |> Array.append refs
+        |> Array.append [|filePath|]
+
+
+type private SingleFileCompilerConfig =
+    {
+        Checker : FSharpChecker
+        Options : FSharpProjectOptions
+    }
+
+[<RequireQualifiedAccess>]
+type OptionsCreationMethod =
+    | CmdlineArgs
+    | FromScript
 
 /// <summary>Performs compilation (FSharpChecker.ParseAndCheckFileInProject) on the given file</summary>
-type BenchmarkSingleFileCompiler(filePath: string) =
+type SingleFileCompiler(filePath: string, optionsCreationMethod : OptionsCreationMethod) =
 
-    let mutable configOpt : Config option = None    
+    let mutable configOpt : SingleFileCompilerConfig option = None    
 
     member _.Setup() =
         configOpt <-
@@ -85,7 +91,15 @@ type BenchmarkSingleFileCompiler(filePath: string) =
             | Some _ -> configOpt
             | None ->
                 let checker = FSharpChecker.Create(projectCacheSize = 200)
-                let options = makeOptionsForFile checker filePath
+                let options =
+                    match optionsCreationMethod with
+                    | OptionsCreationMethod.CmdlineArgs ->
+                        let args = makeCmdlineArgs filePath
+                        checker.GetProjectOptionsFromCommandLineArgs(filePath, args)
+                    | OptionsCreationMethod.FromScript ->
+                        checker.GetProjectOptionsFromScript(filePath, getFileSourceText filePath)
+                        |> Async.RunImmediate
+                        |> fst
                 {
                     Checker = checker
                     Options = options
@@ -97,7 +111,7 @@ type BenchmarkSingleFileCompiler(filePath: string) =
         | None -> failwith "Setup not run"
         | Some {Checker = checker; Options = options} ->
             let _, result =                                                                
-                checker.ParseAndCheckFileInProject(filePath, 0, getFileText filePath, options)
+                checker.ParseAndCheckFileInProject(filePath, 0, getFileSourceText filePath, options)
                 |> Async.RunImmediate
             match result with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"

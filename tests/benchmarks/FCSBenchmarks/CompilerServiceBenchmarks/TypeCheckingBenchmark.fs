@@ -9,22 +9,12 @@ open FSharp.Compiler.Benchmarks.BenchmarkHelpers
 [<MemoryDiagnoser>]
 type TypeCheckingBenchmark() =
     let mutable checkerOpt = None
-    let mutable assembliesOpt = None
     let mutable testFileOpt = None
     
     [<GlobalSetup>]
     member _.Setup() =
         match checkerOpt with
         | None -> checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
-        | _ -> ()
-
-        match assembliesOpt with
-        | None -> 
-            assembliesOpt <- 
-                System.AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.map (fun x -> (x.Location))
-                |> Some
-        
         | _ -> ()
 
         match testFileOpt with

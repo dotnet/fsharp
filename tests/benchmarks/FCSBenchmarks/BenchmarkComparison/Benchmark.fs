@@ -5,8 +5,8 @@ open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
 open BenchmarkHelpers
 
-[<MemoryDiagnoser>]
-type TypeCheckingBenchmarkBase(compiler : BenchmarkSingleFileCompiler) =
+[<AbstractClass>]
+type SingleFileCompilerBenchmarkBase(compiler : SingleFileCompiler) =
     [<GlobalSetup>]
     member _.Setup() =
         compiler.Setup()
@@ -21,7 +21,12 @@ type TypeCheckingBenchmarkBase(compiler : BenchmarkSingleFileCompiler) =
 
 [<MemoryDiagnoser>]
 type DecentlySizedStandAloneFileBenchmark() =
-    inherit TypeCheckingBenchmarkBase(BenchmarkSingleFileCompiler(Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs")))
+    inherit SingleFileCompilerBenchmarkBase(
+        SingleFileCompiler(
+            Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs"),
+            OptionsCreationMethod.FromScript
+        )
+    )
 
 [<EntryPoint>]
 let main args =
