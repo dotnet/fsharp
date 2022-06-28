@@ -115,8 +115,8 @@ module BenchmarkHelpers =
                 checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 
 [<MemoryDiagnoser>]
-type TypeCheckingBenchmark1() =
-    let compiler = BenchmarkSingleFileCompiler(Path.Combine(__SOURCE_DIRECTORY__, "decentlySizedStandAloneFile.fs"))
+type TypeCheckingBenchmark() =
+    let compiler = BenchmarkSingleFileCompiler(Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs"))
 
     [<GlobalSetup>]
     member _.Setup() =

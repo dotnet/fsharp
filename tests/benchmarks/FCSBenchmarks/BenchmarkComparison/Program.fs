@@ -5,7 +5,7 @@ open BenchmarkDotNet.Running
 open BenchmarkComparison
 
 [<EntryPoint>]
-let main _ =
-    BenchmarkRunner.Run<TypeCheckingBenchmark1>() |> ignore
+let main args =
+    BenchmarkSwitcher.FromAssembly(typeof<TypeCheckingBenchmark>.Assembly).Run(args) |> ignore
     0
 

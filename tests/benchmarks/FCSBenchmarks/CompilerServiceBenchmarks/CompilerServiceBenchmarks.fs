@@ -49,7 +49,7 @@ type CompilerServiceBenchmarks() =
 
         match sourceOpt with
         | None ->
-            sourceOpt <- Some <| FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
+            sourceOpt <- Some <| FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
         | _ -> ()
 
         match assembliesOpt with

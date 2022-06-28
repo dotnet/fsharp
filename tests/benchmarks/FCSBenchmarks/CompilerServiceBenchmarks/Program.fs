@@ -2,7 +2,6 @@
 open FSharp.Compiler.Benchmarks
 
 [<EntryPoint>]
-let main _ =
-    //BenchmarkRunner.Run<CompilerServiceBenchmarks>() |> ignore
-    BenchmarkRunner.Run<TypeCheckingBenchmark>() |> ignore
+let main args =
+    BenchmarkSwitcher.FromAssembly(typeof<TypeCheckingBenchmark>.Assembly).Run(args) |> ignore
     0
