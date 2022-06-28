@@ -102,6 +102,7 @@ module internal SymbolHelpers =
         | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
         | Item.Types(_, tys)     -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.map (rangeOfEntityRef preferFlag))
         | Item.CustomOperation (_, _, Some minfo)  -> rangeOfMethInfo g preferFlag minfo
+        | Item.Trait _ -> None
         | Item.TypeVar (_, tp)  -> Some tp.Range
         | Item.ModuleOrNamespaces modrefs -> modrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.MethodGroup(_, minfos, _) 
@@ -193,6 +194,7 @@ module internal SymbolHelpers =
         | Item.AnonRecdField (info, _, _, _) ->
             Some info.Assembly
 
+        | Item.Trait _ -> None
         | Item.TypeVar _  -> None
         | _ -> None
 
@@ -273,6 +275,8 @@ module internal SymbolHelpers =
         | Item.CustomOperation (_, _, Some minfo) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
 
+        | Item.Trait _ -> FSharpXmlDoc.None
+
         | Item.TypeVar _  -> FSharpXmlDoc.None
 
         | Item.ModuleOrNamespaces(modref :: _) ->
@@ -335,6 +339,7 @@ module internal SymbolHelpers =
       { new IPartialEqualityComparer<_> with   
           member x.InEqualityRelation item = 
               match item  with 
+              | Item.Trait _ -> true
               | Item.Types(_, [_]) -> true
               | Item.ILField(ILFieldInfo _) -> true
               | Item.RecdField _ -> true
@@ -404,6 +409,8 @@ module internal SymbolHelpers =
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  anonInfoEquiv anon1 anon2 && i1 = i2
+              | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
+                 (traitInfo1.MemberName = traitInfo2.MemberName)
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   (meths1, meths2)
                   ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -438,6 +445,7 @@ module internal SymbolHelpers =
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
+              | Item.Trait traitInfo -> hash traitInfo.MemberName
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
@@ -514,6 +522,7 @@ module internal SymbolHelpers =
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
+        | Item.Trait traitInfo -> traitInfo.MemberName
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
@@ -828,6 +837,7 @@ module internal SymbolHelpers =
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
         | Item.ArgName _ // no keyword on named parameters 
+        | Item.Trait _
         | Item.UnionCaseField _ 
         | Item.TypeVar _ 
         | Item.ImplicitOp _
@@ -858,6 +868,7 @@ module internal SymbolHelpers =
         | ItemIsWithStaticArguments m g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
 #endif
         | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
+        | Item.Trait _ -> [item]
         | Item.TypeVar _ -> []
         | Item.CustomBuilder _ -> []
         | _ -> []

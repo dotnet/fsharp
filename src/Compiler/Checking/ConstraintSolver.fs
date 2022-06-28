@@ -1981,137 +1981,161 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     }
 
     
-/// Record a constraint on an inference type variable. 
-and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
+// Type variable sets may not have two trait constraints with the same name, nor
+// be constrained by different instantiations of the same interface type.
+//
+// This results in limitations on generic code, especially "inline" code, which 
+// may require type annotations. 
+//
+// The 'retry' flag is passed when a rigid type variable is about to taise a missing constraint error.
+and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace retry tpc1 tpc2 =
+    let g = csenv.g
+    let amap = csenv.amap
+    let m = csenv.m
+    match tpc1, tpc2 with           
+    | (TyparConstraint.MayResolveMember(TTrait(tys1, nm1, memFlags1, argTys1, rty1, _), _), 
+        TyparConstraint.MayResolveMember(TTrait(tys2, nm2, memFlags2, argTys2, rty2, _), _))  
+            when (memFlags1 = memFlags2 &&
+                nm1 = nm2 &&
+                // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
+                // See FSharp 1.0 bug 6477.
+                not (nm1 = "op_Explicit" || nm1 = "op_Implicit") &&
+                argTys1.Length = argTys2.Length &&
+                (List.lengthsEqAndForall2 (typeEquiv g) tys1 tys2 || retry)) -> 
+
+                trackErrors {
+                    if retry then
+                        match tys1, tys2 with 
+                        | [ty1], [ty2] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2
+                        | [ty1], _ -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1) tys2
+                        | _, [ty2] -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty2) tys1
+                        | _ -> ()
+                    do! Iterate2D (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace) argTys1 argTys2
+                    let rty1 = GetFSharpViewOfReturnType g rty1
+                    let rty2 = GetFSharpViewOfReturnType g rty2
+                    do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2
+                    ()
+                }
+          
+    | (TyparConstraint.CoercesTo(ty1, _), 
+        TyparConstraint.CoercesTo(ty2, _)) ->
+            // Record at most one subtype constraint for each head type. 
+            // That is, we forbid constraints by both I<string> and I<int>. 
+            // This works because the types on the r.h.s. of subtype 
+            // constraints are head-types and so any further inferences are equational. 
+            let collect ty = 
+                let mutable res = [] 
+                IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
+                List.rev res
+            let parents1 = collect ty1
+            let parents2 = collect ty2
+            trackErrors {
+                for ty1Parent in parents1 do
+                    for ty2Parent in parents2 do
+                        do! if not (HaveSameHeadType g ty1Parent ty2Parent) then CompleteD else
+                            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
+            }
+
+    | (TyparConstraint.IsEnum (u1, _), 
+        TyparConstraint.IsEnum (u2, m2)) ->   
+        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace u1 u2
+            
+    | (TyparConstraint.IsDelegate (aty1, bty1, _), 
+        TyparConstraint.IsDelegate (aty2, bty2, m2)) -> trackErrors {
+        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace aty1 aty2
+        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bty1 bty2
+        }
+
+    | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
+    | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
+    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
+    | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
+        ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
+
+
+    | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _  
+    | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _  
+    | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _  
+    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _     
+    | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
+    | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
+    | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ 
+    | TyparConstraint.SimpleChoice _, TyparConstraint.SimpleChoice _ -> 
+        CompleteD
+            
+    | _ -> CompleteD
+
+// See when one constraint implies implies another. 
+// 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1 
+// If it does occur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
+// T2<inst2> = ty2 
+and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 = 
     let g = csenv.g
     let aenv = csenv.EquivEnv
     let amap = csenv.amap
+    let m = csenv.m
+    match tpc1, tpc2 with           
+    | TyparConstraint.MayResolveMember(trait1, _), 
+        TyparConstraint.MayResolveMember(trait2, _) -> 
+        traitsAEquiv g aenv trait1 trait2
+
+    | TyparConstraint.CoercesTo(ty1, _), TyparConstraint.CoercesTo(ty2, _) -> 
+        ExistsSameHeadTypeInHierarchy g amap m ty1 ty2
+
+    | TyparConstraint.IsEnum(u1, _), TyparConstraint.IsEnum(u2, _) -> typeEquiv g u1 u2
+
+    | TyparConstraint.IsDelegate(aty1, bty1, _), TyparConstraint.IsDelegate(aty2, bty2, _) -> 
+        typeEquiv g aty1 aty2 && typeEquiv g bty1 bty2 
+
+    | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _
+    | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
+    // comparison implies equality
+    | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
+    | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
+    | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
+    | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
+    | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _
+    | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ -> true
+    | TyparConstraint.SimpleChoice (tys1, _), TyparConstraint.SimpleChoice (tys2, _) -> ListSet.isSubsetOf (typeEquiv g) tys1 tys2
+    | TyparConstraint.DefaultsTo (priority1, dty1, _), TyparConstraint.DefaultsTo (priority2, dty2, _) -> 
+            (priority1 = priority2) && typeEquiv g dty1 dty2
+    | _ -> false
+        
+// Ensure constraint conforms with existing constraints 
+// NOTE: QUADRATIC 
+and EnforceConstraintSetConsistency csenv ndeep m2 trace retry allCxs i cxs = 
+    match cxs with 
+    | [] ->  CompleteD
+    | cx :: rest -> 
+        trackErrors {
+            do! IterateIdxD (fun j cx2 -> if i = j then CompleteD else EnforceConstraintConsistency csenv ndeep m2 trace retry cx cx2) allCxs 
+            return! EnforceConstraintSetConsistency csenv ndeep m2 trace retry allCxs (i+1) rest
+        }
+
+// Eliminate any constraints where one constraint implies another 
+// Keep constraints in the left-to-right form according to the order they are asserted. 
+// NOTE: QUADRATIC 
+and EliminateRedundantConstraints csenv cxs acc = 
+    match cxs with 
+    | [] -> acc
+    | cx :: rest -> 
+        let acc = 
+            if List.exists (fun cx2 -> CheckConstraintImplication csenv cx2 cx) acc then acc
+            else (cx :: acc)
+        EliminateRedundantConstraints csenv rest acc
+                  
+/// Record a constraint on an inference type variable. 
+and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let denv = csenv.DisplayEnv
     let m = csenv.m
-
-    // Type variable sets may not have two trait constraints with the same name, nor
-    // be constrained by different instantiations of the same interface type.
-    //
-    // This results in limitations on generic code, especially "inline" code, which 
-    // may require type annotations. See FSharp 1.0 bug 6477.
-    let consistent tpc1 tpc2 =
-        match tpc1, tpc2 with           
-        | (TyparConstraint.MayResolveMember(TTrait(tys1, nm1, memFlags1, argTys1, rty1, _), _), 
-           TyparConstraint.MayResolveMember(TTrait(tys2, nm2, memFlags2, argTys2, rty2, _), _))  
-              when (memFlags1 = memFlags2 &&
-                    nm1 = nm2 &&
-                    // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
-                    // See FSharp 1.0 bug 6477.
-                    not (nm1 = "op_Explicit" || nm1 = "op_Implicit") &&
-                    argTys1.Length = argTys2.Length &&
-                    List.lengthsEqAndForall2 (typeEquiv g) tys1 tys2) -> 
-
-                  let rty1 = GetFSharpViewOfReturnType g rty1
-                  let rty2 = GetFSharpViewOfReturnType g rty2
-                  trackErrors {
-                      do! Iterate2D (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace) argTys1 argTys2
-                      do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2
-                      ()
-                  }
-          
-        | (TyparConstraint.CoercesTo(ty1, _), 
-           TyparConstraint.CoercesTo(ty2, _)) ->
-              // Record at most one subtype constraint for each head type. 
-              // That is, we forbid constraints by both I<string> and I<int>. 
-              // This works because the types on the r.h.s. of subtype 
-              // constraints are head-types and so any further inferences are equational. 
-              let collect ty = 
-                  let mutable res = [] 
-                  IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
-                  List.rev res
-              let parents1 = collect ty1
-              let parents2 = collect ty2
-              trackErrors {
-                  for ty1Parent in parents1 do
-                      for ty2Parent in parents2 do
-                          do! if not (HaveSameHeadType g ty1Parent ty2Parent) then CompleteD else
-                              SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
-              }
-
-        | (TyparConstraint.IsEnum (u1, _), 
-           TyparConstraint.IsEnum (u2, m2)) ->   
-            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace u1 u2
-            
-        | (TyparConstraint.IsDelegate (aty1, bty1, _), 
-           TyparConstraint.IsDelegate (aty2, bty2, m2)) -> trackErrors {
-            do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace aty1 aty2
-            return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bty1 bty2
-          }
-
-        | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
-        | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
-        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
-        | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
-            ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
-
-
-        | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _  
-        | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _  
-        | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _  
-        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _     
-        | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
-        | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
-        | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ 
-        | TyparConstraint.SimpleChoice _, TyparConstraint.SimpleChoice _ -> 
-            CompleteD
-            
-        | _ -> CompleteD
-
-    // See when one constraint implies implies another. 
-    // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1 
-    // If it does occur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
-    // T2<inst2> = ty2 
-    let implies tpc1 tpc2 = 
-        match tpc1, tpc2 with           
-        | TyparConstraint.MayResolveMember(trait1, _), 
-          TyparConstraint.MayResolveMember(trait2, _) -> 
-            traitsAEquiv g aenv trait1 trait2
-
-        | TyparConstraint.CoercesTo(ty1, _), TyparConstraint.CoercesTo(ty2, _) -> 
-            ExistsSameHeadTypeInHierarchy g amap m ty1 ty2
-
-        | TyparConstraint.IsEnum(u1, _), TyparConstraint.IsEnum(u2, _) -> typeEquiv g u1 u2
-
-        | TyparConstraint.IsDelegate(aty1, bty1, _), TyparConstraint.IsDelegate(aty2, bty2, _) -> 
-            typeEquiv g aty1 aty2 && typeEquiv g bty1 bty2 
-
-        | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _
-        | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
-        // comparison implies equality
-        | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsEquality _
-        | TyparConstraint.SupportsNull _, TyparConstraint.SupportsNull _
-        | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsNonNullableStruct _
-        | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
-        | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _
-        | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ -> true
-        | TyparConstraint.SimpleChoice (tys1, _), TyparConstraint.SimpleChoice (tys2, _) -> ListSet.isSubsetOf (typeEquiv g) tys1 tys2
-        | TyparConstraint.DefaultsTo (priority1, dty1, _), TyparConstraint.DefaultsTo (priority2, dty2, _) -> 
-             (priority1 = priority2) && typeEquiv g dty1 dty2
-        | _ -> false
-        
     
-    // First ensure constraint conforms with existing constraints 
-    // NOTE: QUADRATIC 
     let existingConstraints = tp.Constraints
 
     let allCxs = newConstraint :: List.rev existingConstraints
     trackErrors {
-        let rec enforceMutualConsistency i cxs = 
-            match cxs with 
-            | [] ->  CompleteD
-            | cx :: rest -> 
-                trackErrors {
-                    do! IterateIdxD (fun j cx2 -> if i = j then CompleteD else consistent cx cx2) allCxs 
-                    return! enforceMutualConsistency (i+1) rest
-                }
-        do! enforceMutualConsistency 0 allCxs
+        do! EnforceConstraintSetConsistency csenv ndeep m2 trace false allCxs 0 allCxs
     
-        let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> implies tpc2 newConstraint)
+        let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
     
         if impliedByExistingConstraints then ()
         // "Default" constraints propagate softly and can be omitted from explicit declarations of type parameters
@@ -2120,7 +2144,15 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | _ -> false) then 
             ()
         elif IsRigid csenv tp then
-            return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
+            // Retry rigid type parameters where the supporting types are forced to be identical, e.g if declared type parameter has this:
+            //    (T : static member Foo: int)
+            // and the constraint we're adding is this:
+            //    ((T or ?inf) : static member Foo: int)
+            // then the only logical solution is ?inf = T.  So just enforce this and try again.
+            do! EnforceConstraintSetConsistency csenv ndeep m2 trace true allCxs 0 allCxs
+            let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
+            if not impliedByExistingConstraints then
+                return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 
             // will-be-made-rigid type variable. This is because the existence of these warnings
@@ -2129,20 +2161,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
             if tp.Rigidity.WarnIfMissingConstraint then
                 do! WarnD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2))
 
-            let newConstraints = 
-                  // Eliminate any constraints where one constraint implies another 
-                  // Keep constraints in the left-to-right form according to the order they are asserted. 
-                  // NOTE: QUADRATIC 
-                  let rec eliminateRedundant cxs acc = 
-                      match cxs with 
-                      | [] -> acc
-                      | cx :: rest -> 
-                          let acc = 
-                              if List.exists (fun cx2 -> implies cx2 cx) acc then acc
-                              else (cx :: acc)
-                          eliminateRedundant rest acc
-                  
-                  eliminateRedundant allCxs []
+            let newConstraints = EliminateRedundantConstraints csenv allCxs []
 
             // Write the constraint into the type variable 
             // Record a entry in the undo trace if one is provided 

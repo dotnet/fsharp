@@ -174,6 +174,9 @@ type Item =
     /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
 
+    /// Represents the resolution of a name to an F# trait
+    | Trait of TraitConstraintInfo
+
     /// Represents the resolution of a name to a union case field.
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
@@ -268,6 +271,7 @@ type Item =
         | Item.Types(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
         | Item.TypeVar (nm, _) -> nm 
+        | Item.Trait traitInfo -> traitInfo.MemberName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
         | Item.ArgName (id, _, _)  -> id.idText 
         | Item.SetterArg (id, _) -> id.idText 
@@ -1772,6 +1776,9 @@ let ItemsAreEffectivelyEqual g orig other =
     | EntityUse ty1, EntityUse ty2 ->
         tyconRefDefnEq g ty1 ty2
 
+    | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
+        traitInfo1.MemberName = traitInfo2.MemberName
+
     | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) ->
         nm1 = nm2 &&
         (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) ||
@@ -1841,6 +1848,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     match orig with
     | EntityUse tcref -> tyconRefDefnHash g tcref
     | Item.TypeVar (nm, _)-> hash nm
+    | Item.Trait traitInfo -> hash traitInfo.MemberName
     | ValUse vref -> valRefDefnHash g vref
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()
@@ -2128,6 +2136,7 @@ let CheckAllTyparsInferrable amap m item =
             let free = Zset.diff freeInDeclaringType.FreeTypars  freeInArgsAndRetType.FreeTypars
             free.IsEmpty)
 
+    | Item.Trait _
     | Item.CtorGroup _
     | Item.FakeInterfaceCtor _
     | Item.DelegateCtor _
@@ -2508,6 +2517,9 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | None ->
             let isLookUpExpr = (lookupKind = LookupKind.Expr)
             match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad) findFlag m ty with
+            | Some (TraitItem (traitInfo :: _)) when isLookUpExpr ->
+                success [resInfo, Item.Trait traitInfo, rest]
+
             | Some (PropertyItem psets) when isLookUpExpr ->
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
 

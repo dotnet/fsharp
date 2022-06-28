@@ -81,6 +81,9 @@ module ItemKeyTags =
     let itemProperty = "p$"
 
     [<Literal>]
+    let itemTrait = "T$"
+
+    [<Literal>]
     let itemTypeVar = "y$"
 
     [<Literal>]
@@ -366,6 +369,13 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             match infos |> List.tryHead with
             | Some info -> writeEntityRef info.DeclaringTyconRef
             | _ -> ()
+
+        | Item.Trait (info) ->
+            writeString ItemKeyTags.itemTrait
+            writeString info.MemberName
+            info.GoverningTypes |> List.iter (writeType false)
+            info.ArgumentTypes |> List.iter (writeType false)
+            info.ReturnType |> Option.iter (writeType false)
 
         | Item.TypeVar (_, typar) -> writeTypar true typar
 

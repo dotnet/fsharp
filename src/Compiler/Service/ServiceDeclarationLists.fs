@@ -385,6 +385,11 @@ module DeclarationListHelpers =
             let layout = NicePrint.prettyLayoutOfTypar denv typar
             ToolTipElement.Single (toArray layout, xml)
 
+        // Traits
+        | Item.Trait traitInfo ->
+            let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
+            ToolTipElement.Single (toArray layout, xml)
+
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             //let os = StringBuilder()
@@ -853,6 +858,7 @@ module internal DescriptionListsImpl =
             | Item.CustomOperation _ -> FSharpGlyph.Method
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
+            | Item.Trait _ -> FSharpGlyph.Method
             | Item.TypeVar _ -> FSharpGlyph.TypeParameter
             | Item.Types _  -> FSharpGlyph.Class
             | Item.UnqualifiedType (tcref :: _) -> 
@@ -886,6 +892,7 @@ module internal DescriptionListsImpl =
         match item with 
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 
         | Item.FakeInterfaceCtor _
+        | Item.Trait _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
         | Item.ILField _ -> []

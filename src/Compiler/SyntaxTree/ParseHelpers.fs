@@ -732,3 +732,28 @@ let mkSynMemberDefnGetSet
                 tryMkSynMemberDefnMember (Option.map PropertyKeyword.And mAnd) s
             ]
     | _ -> []
+
+let mkQualTypeAccess mFull rightExpr =
+    let rec take inp =
+        match inp with
+        | SynExpr.Ident(typarIdent)
+        | SynExpr.LongIdent(false, SynLongIdent ([typarIdent], _, _), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            SynExpr.Typar(typar, mFull)
+        | SynExpr.LongIdent(false, SynLongIdent ((typarIdent :: items), (dotm :: dots), (_ :: itemTrivias)), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            let lookup = SynLongIdent (items, dots, itemTrivias)
+            SynExpr.DotGet (SynExpr.Typar(typar, mFull), dotm, lookup, mFull)
+        | SynExpr.App(ExprAtomicFlag.Atomic, false, funcExpr, argExpr, m) ->
+            let funcExpr2 = take funcExpr
+            SynExpr.App (ExprAtomicFlag.Atomic, false, funcExpr2, argExpr, unionRanges funcExpr2.Range m)
+        | SynExpr.DotGet (leftExpr, dotm, lookup, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotGet (leftExpr2, dotm, lookup, m)
+        | SynExpr.DotIndexedGet(leftExpr, indexArg, dotm, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotIndexedGet (leftExpr2, indexArg, dotm, m)
+        | _ ->
+            reportParseErrorAt mFull (FSComp.SR.parsIncompleteTyparExpr2())
+            arbExpr("hatExpr1", mFull)
+    take rightExpr

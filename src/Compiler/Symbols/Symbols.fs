@@ -310,6 +310,9 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.TypeVar (_, tp) ->
              FSharpGenericParameter(cenv, tp) :> _
 
+        | Item.Trait traitInfo ->
+            FSharpGenericParameterMemberConstraint(cenv, traitInfo) :> _
+
         | Item.ActivePatternCase apref -> 
              FSharpActivePatternCase(cenv, apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item) :> _
 
@@ -1414,6 +1417,10 @@ type FSharpAbstractSignature(cenv, info: SlotSig) =
     member _.DeclaringType = FSharpType(cenv, info.ImplementedType)
 
 type FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) = 
+    inherit FSharpSymbol (cenv, 
+                          (fun () -> Item.Trait(info)), 
+                          (fun _ _ _ad -> true))
+
     let (TTrait(tys, nm, flags, atys, retTy, _)) = info 
     member _.MemberSources = 
         tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection

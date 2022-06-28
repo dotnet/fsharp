@@ -68,6 +68,9 @@ type Item =
     /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
 
+    /// Represents the resolution of a name to an F# trait
+    | Trait of TraitConstraintInfo
+
     /// Represents the resolution of a name to a union case field.
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 

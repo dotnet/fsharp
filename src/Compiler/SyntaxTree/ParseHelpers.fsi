@@ -175,3 +175,6 @@ val mkSynMemberDefnGetSet:
     attrs: SynAttributeList list ->
     rangeStart: range ->
         SynMemberDefn list
+
+/// Incorporate a '^' for an qualified type access
+val mkQualTypeAccess: mFull: range -> rightExpr: SynExpr -> SynExpr

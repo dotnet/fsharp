@@ -73,6 +73,7 @@ val FilterMostSpecificMethInfoSets:
 /// Used to collect sets of virtual methods, protected methods, protected
 /// properties etc.
 type HierarchyItem =
+    | TraitItem of TraitConstraintInfo list
     | MethodItem of MethInfo list list
     | PropertyItem of PropInfo list list
     | RecdFieldItem of RecdFieldInfo

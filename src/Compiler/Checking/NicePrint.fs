@@ -986,6 +986,9 @@ module PrintTypes =
             else
                 bracketL coreL --- nmL
 
+    let layoutTrait denv traitInfo = 
+        layoutTraitWithInfo denv SimplifyTypes.typeSimplificationInfo0 traitInfo
+
     let layoutTyparConstraint denv (tp, tpc) = 
         match layoutConstraintWithInfo denv SimplifyTypes.typeSimplificationInfo0 (tp, tpc) with 
         | h :: _ -> h 
@@ -1104,6 +1107,14 @@ module PrintTypes =
         let env = SimplifyTypes.CollectInfo true [ty] cxs
         let cxsL = layoutConstraintsWithInfo denv env env.postfixConstraints
         layoutTypeWithInfoAndPrec denv env 2 ty --- cxsL
+
+    let prettyLayoutOfTrait denv traitInfo = 
+        let compgenId = SyntaxTreeOps.mkSynId Range.range0 unassignedTyparName
+        let fakeTypar = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false)
+        fakeTypar.SetConstraints [TyparConstraint.MayResolveMember(traitInfo, Range.range0)]
+        let ty, cxs = PrettyTypes.PrettifyType denv.g (mkTyparTy fakeTypar)
+        let env = SimplifyTypes.CollectInfo true [ty] cxs
+        layoutConstraintsWithInfo denv env env.postfixConstraints
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
@@ -1323,6 +1334,8 @@ module PrintTastMemberOrVals =
 
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
+
+let layoutTrait denv x = x |> PrintTypes.layoutTrait denv 
 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
 
@@ -2459,6 +2472,8 @@ let stringOfTyparConstraint denv tpc = stringOfTyparConstraints denv [tpc]
 let stringOfTy denv x = x |> PrintTypes.layoutType denv |> showL
 
 let prettyLayoutOfType denv x = x |> PrintTypes.prettyLayoutOfType denv
+
+let prettyLayoutOfTrait denv x = x |> PrintTypes.prettyLayoutOfTrait denv
 
 let prettyLayoutOfTypeNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
 

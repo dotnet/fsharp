@@ -95,6 +95,30 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
 let GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty = 
     GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m ty ty
 
+/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+let GetImmediateTraitsInfosOfType (optFilter, _ad) g ty = 
+    match tryDestTyparTy g ty with
+    | ValueSome tp ->
+        let infos = GetTraitConstraintInfosOfTypars g [tp]
+        let infos =
+            match optFilter with
+            | None -> infos
+            | Some nm ->
+                infos |> List.filter (fun traitInfo ->
+                    let traitName0 = traitInfo.MemberName
+                    let traitName1 =
+                        match traitInfo.MemberFlags.MemberKind with
+                        | SynMemberKind.PropertyGet ->
+                            match PrettyNaming.TryChopPropertyName traitName0 with
+                            | Some nm -> nm
+                            | None -> traitName0
+                        | _ -> traitName0
+                    (nm = traitName0) || (nm = traitName1))
+        infos
+    | _ ->
+        []
+
 /// A helper type to help collect properties.
 ///
 /// Join up getters and setters which are not associated in the F# data structure 
@@ -247,6 +271,7 @@ let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameM
 /// Used to collect sets of virtual methods, protected methods, protected
 /// properties etc. 
 type HierarchyItem = 
+    | TraitItem of TraitConstraintInfo list
     | MethodItem of MethInfo list list
     | PropertyItem of PropInfo list list
     | RecdFieldItem of RecdFieldInfo
@@ -397,12 +422,14 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         if nm = ".ctor" then None else // '.ctor' lookups only ever happen via constructor syntax
         let optFilter = Some nm
         FoldPrimaryHierarchyOfType (fun ty acc -> 
+             let qinfos = GetImmediateTraitsInfosOfType (optFilter, ad) g ty
              let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty
              let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty
              let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty 
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter, ad) m ty 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
+             | _ when not (isNil qinfos) -> Some(TraitItem (qinfos))
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
              | _ when not (isNil minfos) -> Some(MethodItem [minfos])
              | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))

@@ -1638,25 +1638,28 @@ type TraitConstraintInfo =
     | TTrait of
         tys: TTypes *
         memberName: string *
-        _memFlags: Syntax.SynMemberFlags *
+        memberFlags: Syntax.SynMemberFlags *
         argTys: TTypes *
         returnTy: TType option *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member ArgumentTypes: TTypes
-
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+    /// Get the types that may provide solutions for the traits
+    member GoverningTypes: TType list
 
     /// Get the member flags associated with the member constraint.
     member MemberFlags: Syntax.SynMemberFlags
 
     /// Get the member name associated with the member constraint.
     member MemberName: string
+
+    /// Get the argument types recorded in the member constraint. This includes the object instance type for
+    /// instance members.
+    member ArgumentTypes: TTypes
 
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option

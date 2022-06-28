@@ -5418,8 +5418,8 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
         TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
     // 'T.Ident
-    | SynExpr.TyparDotIdent (typar, ident, _) ->
-        TcTyparIdentThen cenv overallTy env tpenv typar ident delayed
+    | SynExpr.Typar (typar, m) ->
+        TcTyparExprThen cenv overallTy env tpenv typar m delayed
     
     // expr1.[expr2]
     // expr1.[e21, ..., e2n]
@@ -5623,7 +5623,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     | SynExpr.DotIndexedGet _
     | SynExpr.DotIndexedSet _
-    | SynExpr.TyparDotIdent _
+    | SynExpr.Typar _
     | SynExpr.TypeApp _
     | SynExpr.Ident _
     | SynExpr.LongIdent _
@@ -6316,15 +6316,29 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
             TcExpr cenv overallTy env tpenv e)
 
-and TcTyparIdentThen cenv overallTy env tpenv synTypar (synIdent: SynIdent) delayed =
-    let (SynIdent(ident, _)) = synIdent
-    let ad = env.eAccessRights
-    let tp, tpenv = TcTypar cenv env NoNewTypars tpenv synTypar
-    let mExprAndLongId = unionRanges synTypar.Range ident.idRange
-    let ty = mkTyparTy tp
-    let item, _rest = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr ident.idRange ad ident IgnoreOverrides TypeNameResolutionInfo.Default ty
-    TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed
-    //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
+and TcTyparExprThen cenv overallTy env tpenv synTypar m delayed =
+    match delayed with
+    | DelayedDotLookup (ident :: rest, m2) :: delayed2 ->
+        let ad = env.eAccessRights
+        let tp, tpenv = TcTypar cenv env NoNewTypars tpenv synTypar
+        let mExprAndLongId = unionRanges synTypar.Range ident.idRange
+        let ty = mkTyparTy tp
+        let item, _rest = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr ident.idRange ad ident IgnoreOverrides TypeNameResolutionInfo.Default ty
+        let delayed3 =
+            match rest with 
+            | [] -> delayed2
+            | _ -> DelayedDotLookup (rest, m2) :: delayed2
+        TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
+        //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
+    | _ -> 
+        let (SynTypar(_, q, _)) = synTypar
+        let msg =
+            match q with
+            | TyparStaticReq.None -> FSComp.SR.parsIncompleteTyparExpr1()
+            | TyparStaticReq.HeadType -> FSComp.SR.parsIncompleteTyparExpr2()
+        errorR (Error(msg, m))
+        SolveTypeAsError env.DisplayEnv cenv.css m overallTy.Commit
+        mkThrow m overallTy.Commit (mkOne cenv.g m), tpenv
 
 and (|IndexArgOptionalFromEnd|) indexArg = 
     match indexArg with
@@ -8291,6 +8305,9 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
     | Item.MethodGroup (methodName, minfos, _) ->
         TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem afterResolution staticTyOpt delayed
 
+    | Item.Trait traitInfo ->
+        TcTraitItemThen cenv overallTy env traitInfo tpenv mItem delayed
+
     | Item.CtorGroup(nm, minfos) ->
         TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed
 
@@ -8607,6 +8624,23 @@ and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem 
 
         TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [] mItem delayed (Some afterResolution)
 
+and TcTraitItemThen cenv overallTy env traitInfo tpenv mItem delayed =
+    let g = cenv.g
+
+    let retTy = traitInfo.ReturnType |> Option.defaultValue g.unit_ty
+
+    // Build a lambda for the trait call
+    let vs, ves = traitInfo.ArgumentTypes |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
+    let expr = Expr.Op (TOp.TraitCall traitInfo, [], ves, mItem)
+    let v, body = MultiLambdaToTupledLambda g vs expr
+    let expr = mkLambda mItem v (body, retTy)
+
+    // Propagate the types from the known application structure 
+    Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) delayed
+
+    // Check and apply the arguments
+    TcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) ExprAtomicFlag.NonAtomic delayed
+
 and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
     let g = cenv.g
     let isPrefix = IsPrefixOperator id.idText
@@ -8658,7 +8692,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.Null _
         | SynExpr.Ident _
         | SynExpr.Const _
-        | SynExpr.TyparDotIdent _
+        | SynExpr.Typar _
         | SynExpr.LongIdent _
         | SynExpr.Dynamic _ -> true
 

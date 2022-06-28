@@ -337,6 +337,8 @@ module TcResolutionsExtensions =
 
                         | Item.UnionCase _, _, m -> add m SemanticClassificationType.UnionCase
 
+                        | Item.Trait _, _, m -> add m SemanticClassificationType.Method
+
                         | Item.ActivePatternResult _, _, m -> add m SemanticClassificationType.UnionCase
 
                         | Item.UnionCaseField _, _, m -> add m SemanticClassificationType.UnionCaseField
