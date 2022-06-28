@@ -347,3 +347,5 @@ val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) opti
 val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
+
+val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List

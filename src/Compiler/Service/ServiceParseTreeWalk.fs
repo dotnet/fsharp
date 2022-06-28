@@ -809,7 +809,7 @@ module SyntaxTraversal =
                 | SynType.App (typeName, _, typeArgs, _, _, _, _)
                 | SynType.LongIdentApp (typeName, _, _, typeArgs, _, _, _) ->
                     [ yield typeName; yield! typeArgs ] |> List.tryPick (traverseSynType path)
-                | SynType.Fun (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
+                | SynType.Fun (argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.MeasurePower (ty, _, _)
                 | SynType.HashConstraint (ty, _)
                 | SynType.WithGlobalConstraints (ty, _, _)

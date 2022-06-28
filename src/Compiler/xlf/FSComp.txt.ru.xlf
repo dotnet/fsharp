@@ -532,6 +532,11 @@
         <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="new">Expecting expression</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
         <target state="translated">Неоднозначный доступ к этому элементу. Заключите операцию создания объекта в круглые скобки, например (new Объект(аргументы)).Элемент</target>

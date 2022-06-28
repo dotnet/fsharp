@@ -522,6 +522,7 @@
         <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
         <note />
       </trans-unit>
+<<<<<<< HEAD
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -530,6 +531,11 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+=======
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="new">Expecting expression</target>
+>>>>>>> a901fe2862dce0644ac8104d24e51e664b2d553f
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">

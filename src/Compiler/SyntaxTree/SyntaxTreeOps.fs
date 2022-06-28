@@ -1014,3 +1014,12 @@ let mkDynamicArgExpr expr =
         SynExpr.Const(con, con.Range ident.idRange)
     | SynExpr.Paren (expr = e) -> e
     | e -> e
+
+let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
+    match exprs with
+    | SynExpr.Tuple (false, innerExprs, innerCommas, _) :: rest ->
+        let innerExprs, innerCommas =
+            normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
+
+        innerExprs @ rest, innerCommas @ commas
+    | _ -> exprs, commas

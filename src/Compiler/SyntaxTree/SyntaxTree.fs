@@ -398,7 +398,7 @@ type SynType =
 
     | Array of rank: int * elementType: SynType * range: range
 
-    | Fun of argType: SynType * returnType: SynType * range: range
+    | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
 
     | Var of typar: SynTypar * range: range
 

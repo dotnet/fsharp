@@ -2269,7 +2269,14 @@ module InferredSigPrinting =
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
             let outerPath = mspec.CompilationPath.AccessPath
 
-            let denv = denv.AddOpenPath (List.map fst innerPath)
+            let denv =
+                innerPath
+                |> List.choose (fun (path, kind) ->
+                    match kind with
+                    | ModuleOrNamespaceKind.Namespace false -> None
+                    | _ -> Some path)
+                |> denv.AddOpenPath
+
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
                 let fullModuleName, def, denv =
