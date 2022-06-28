@@ -224,13 +224,15 @@ type SynRationalConst =
 [<RequireQualifiedAccess>]
 type SynAccess =
     /// A construct marked or assumed 'public'
-    | Public
+    | Public of range: range
 
     /// A construct marked or assumed 'internal'
-    | Internal
+    | Internal of range: range
 
     /// A construct marked or assumed 'private'
-    | Private
+    | Private of range: range
+
+    member Range: range
 
 /// Represents whether a debug point should be present for the target
 /// of a decision tree, that is whether the construct corresponds to a debug
@@ -469,7 +471,7 @@ type SynType =
     | Array of rank: int * elementType: SynType * range: range
 
     /// F# syntax: type -> type
-    | Fun of argType: SynType * returnType: SynType * range: range
+    | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
 
     /// F# syntax: 'Var
     | Var of typar: SynTypar * range: range

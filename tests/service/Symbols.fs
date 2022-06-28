@@ -70,12 +70,12 @@ extern int private c()
         let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults.ParseTree
 
         [ None
-          Some SynAccess.Public
-          Some SynAccess.Private ]
+          Some "Public"
+          Some "Private" ]
         |> List.zip decls
         |> List.iter (fun (actual, expected) ->
             match actual with
-            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> access |> should equal expected
+            | SynModuleDecl.Let (_, [SynBinding (accessibility = access)], _) -> Option.map string access |> should equal expected
             | decl -> Assert.Fail (sprintf "unexpected decl: %O" decl))
 
         [ "a", (true, false, false, false)
@@ -3252,6 +3252,34 @@ type Foo = Bar of string
         | _ ->
             Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``private keyword has range`` () =
+        let ast = """
+type Currency =
+    // Temporary fix until a new Thoth.Json.Net package is released
+    // See https://github.com/MangelMaxime/Thoth/pull/70
+
+#if !FABLE_COMPILER
+    private
+#endif
+    | Code of string
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types ([
+                    SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(
+                        accessibility = Some (SynAccess.Private mPrivate)
+                        unionCases = [ SynUnionCase.SynUnionCase _ ])))
+                ], _)
+            ])
+          ])) ->
+            assertRange (7, 4) (7, 11) mPrivate
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
 module EnumCases =
     [<Test>]
     let ``single SynEnumCase has bar range`` () =
@@ -4670,4 +4698,27 @@ module Measures =
             Assert.AreEqual("staff", staffIdent.idText)
             Assert.AreEqual("weeks", weeksIdent.idText)
             assertRange (2, 9) (2, 22) mParen
+        | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+module SyntaxTypes =
+    [<Test>]
+    let ``SynType.Fun has range of arrow`` () =
+        let parseResults =
+            getParseResults
+                 """
+     type X = string -> // after a tuple, mixed needs an indent 
+                 int
+     """
+ 
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types(typeDefns = [
+                    SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                        SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
+                            SynType.Fun(trivia = { ArrowRange = mArrow }))))
+                ])
+            ])
+        ])) ->
+            assertRange (2, 21) (2, 23) mArrow
         | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

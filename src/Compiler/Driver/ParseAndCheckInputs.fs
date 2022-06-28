@@ -1067,7 +1067,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
 
     // Create a ccu to hold all the results of compilation
     let ccuContents =
-        Construct.NewCcuContents ILScopeRef.Local m ccuName (Construct.NewEmptyModuleOrNamespaceType Namespace)
+        Construct.NewCcuContents ILScopeRef.Local m ccuName (Construct.NewEmptyModuleOrNamespaceType(Namespace true))
 
     let ccuData: CcuData =
         {
@@ -1105,7 +1105,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
         tcsCreatesGeneratedProvidedTypes = false
         tcsRootSigs = Zmap.empty qnameOrder
         tcsRootImpls = Zset.empty qnameOrder
-        tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace
+        tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
         tcsImplicitOpenDeclarations = openDecls0
     }
 
@@ -1211,7 +1211,7 @@ let CheckOneInput
                 let typeCheckOne =
                     if skipImplIfSigExists && hadSig then
                         (EmptyTopAttrs, CreateEmptyDummyImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
-                        |> Cancellable.ret
+                        |> cancellable.Return
                     else
                         CheckOneImplFile(
                             tcGlobals,

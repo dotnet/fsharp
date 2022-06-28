@@ -1284,7 +1284,11 @@ val mkRepackageRemapping: SignatureRepackageInfo -> Remap
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceContentsInNamespace:
-    Ident -> CompilationPath -> ModuleOrNamespaceContents -> ModuleOrNamespaceContents
+    isModule: bool ->
+    id: Ident ->
+    cpath: CompilationPath ->
+    mexpr: ModuleOrNamespaceContents ->
+        ModuleOrNamespaceContents
 
 /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceTypeInNamespace:

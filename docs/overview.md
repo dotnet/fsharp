@@ -27,7 +27,7 @@ The following are the key data formats and internal data representations of the 
 
 * _Input command-line arguments_  See [CompilerOptions.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Driver/CompilerOptions.fs) for the full code implementing the arguments table. Command-line arguments are also accepted by the F# Compiler Service API in project specifications, and as optional input to F# Interactive.
 
-* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/Compiler/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl), [lexhelp.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/lexhelp.fs) and related files.
+* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/Compiler/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl), [LexHelpers.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/LexHelpers.fs) and related files.
 
 * _Abstract Syntax Tree (AST)_, see [SyntaxTree.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/SyntaxTree/SyntaxTree.fs), the untyped syntax tree resulting from parsing.
 
@@ -55,15 +55,85 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 The following is a diagram of how the different phases of the F# compiler work:
 
-![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
+```mermaid
+stateDiagram-v2
+    state "Compilation phases" as Flow {
+      Lexing: Lexing
+      Parsing: Parsing
+      Import: Import
+      Typechecking: Type checking
+      Codegen: Code generation
+      Emit: IL emit
+      Inputs --> Lexing: Source and signature files
+      Inputs --> Import: References
+      Lexing --> Parsing
+      Parsing --> Typechecking
+      Import --> Typechecking
+      Typechecking --> Codegen
+      Codegen --> Emit
+      state Lexing {
+          BasicLexing: Basic Lexing
+          WhitespaceSensitiveLexing: Whitespace Sensitive Lexing
+          [*] --> BasicLexing
+          BasicLexing --> WhitespaceSensitiveLexing: A token stream from input source text.
+          WhitespaceSensitiveLexing --> [*]: A token stream, augmented per the F# Language Specification.
+      }
+      state Parsing {
+          Parser: Parsing
+          [*] --> Parser
+          Parser --> [*]: AST per the grammar in the F# Language Specification.
+      }
+      state Import {
+          Resolving: Resolving references
+          ImportNET: Importing .NET references
+          ImportFS: Importing F# references
+          [*] --> Resolving
+          Resolving --> ImportNET
+          Resolving --> ImportFS
+          ImportNET --> [*]
+          ImportFS --> [*]
+      }
+      state Typechecking {
+          SequentialTypechecking: Sequentially type checking files
+          PatternMatchCompilation: Pattern match compilation
+          ConstraintSolving: Constraint solving
+          PostInferenceChecks: Post inference checks
+          [*] --> SequentialTypechecking
+          SequentialTypechecking --> PatternMatchCompilation
+          PatternMatchCompilation --> ConstraintSolving
+          ConstraintSolving --> PostInferenceChecks
+          PostInferenceChecks --> [*]
+      }
+      state Codegen {
+          QuotationTranslation: Quotation translation
+          Optimization: Optimization
+          Codegeneration: Code generation
+          AbstractILRewrite: Abstract IL rewriting
+          [*] --> QuotationTranslation
+          QuotationTranslation --> Optimization
+          Optimization --> Codegeneration
+          Codegeneration --> AbstractILRewrite
+          AbstractILRewrite --> [*]
+      }
+      state Emit {
+          Binary: Binary emit
+          Reflection: Reflection emit
+          Output: Output (assembly, references, PDBs, etc.)
+          [*] --> Binary
+          [*] --> Reflection
+          Binary --> Output
+          Reflection --> Output
+      }
+  }
+```
 
 The following are the key phases and high-level logical operations of the F# compiler code in its various configurations:
 
 * _Basic lexing_. Produces a token stream from input source file text.
 
-* _White-space sensitive lexing_. Accepts and produces a token stream, augmenting per the F# Language Specification.
+* _White-space sensitive lexing_. Accepts and produces a token stream, augmenting per the [F# Language Specification](https://fsharp.org/specs/language-spec/).
 
-* _Parsing_. Accepts a token stream and produces an AST per the grammar in the F# Language Specification.
+* _Parsing_. Accepts a token stream and produces an AST per the grammar in the [F# Language Specification](https://fsharp.org/specs/language-spec/).
 
 * _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for

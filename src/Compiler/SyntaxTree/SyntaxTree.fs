@@ -198,17 +198,23 @@ type SynRationalConst =
 
 [<RequireQualifiedAccess>]
 type SynAccess =
-    | Public
+    | Public of range: range
 
-    | Internal
+    | Internal of range: range
 
-    | Private
+    | Private of range: range
 
     override this.ToString() =
         match this with
-        | Public -> "Public"
-        | Internal -> "Internal"
-        | Private -> "Private"
+        | Public _ -> "Public"
+        | Internal _ -> "Internal"
+        | Private _ -> "Private"
+
+    member this.Range: range =
+        match this with
+        | Public m
+        | Internal m
+        | Private m -> m
 
 [<RequireQualifiedAccess>]
 type DebugPointAtTarget =
@@ -392,7 +398,7 @@ type SynType =
 
     | Array of rank: int * elementType: SynType * range: range
 
-    | Fun of argType: SynType * returnType: SynType * range: range
+    | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
 
     | Var of typar: SynTypar * range: range
 

@@ -267,8 +267,6 @@ val stopProcessingRecovery: exn: exn -> m: range -> unit
 
 val errorRecoveryNoRange: exn: exn -> unit
 
-val report: f: (unit -> 'T) -> 'T
-
 val deprecatedWithError: s: string -> m: range -> unit
 
 val libraryOnlyError: m: range -> unit

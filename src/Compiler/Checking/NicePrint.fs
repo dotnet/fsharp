@@ -1555,7 +1555,7 @@ module TastDefinitionPrinting =
     let layoutExtensionMember denv infoReader (vref: ValRef) =
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
         let tycon = vref.MemberApparentEntity.Deref
-        let nameL = ConvertNameToDisplayLayout (tagMethod >> mkNav vref.DefinitionRange >> wordL) tycon.DisplayNameCore
+        let nameL = layoutTyconRefImpl false denv vref.MemberApparentEntity
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g vref.Deref with
@@ -1680,7 +1680,7 @@ module TastDefinitionPrinting =
         let ty = generalizedTyconRef g tcref 
 
         let start, tagger =
-            if isStructTy g ty then
+            if isStructTy g ty && not tycon.TypeAbbrev.IsSome then
                 // Always show [<Struct>] whether verbose or not
                 Some "struct", tagStruct
             elif isInterfaceTy g ty then
@@ -1988,8 +1988,18 @@ module TastDefinitionPrinting =
                 |> aboveListL
                 |> addLhs
 
-            | TFSharpObjectRepr _ when isNil allDecls ->
-                lhsL
+            | TFSharpObjectRepr objRepr when isNil allDecls ->
+                match objRepr.fsobjmodel_kind with
+                | TFSharpClass ->
+                    WordL.keywordClass ^^ WordL.keywordEnd
+                    |> addLhs
+                | TFSharpInterface ->
+                    WordL.keywordInterface ^^ WordL.keywordEnd
+                    |> addLhs
+                | TFSharpStruct ->
+                    WordL.keywordStruct ^^ WordL.keywordEnd
+                    |> addLhs
+                | _ -> lhsL
 
             | TFSharpObjectRepr _ ->
                 allDecls
@@ -2116,7 +2126,8 @@ module TastDefinitionPrinting =
                     mspec.ModuleOrNamespaceType.AllValsAndMembers |> Seq.isEmpty
 
                 // Check if its an outer module or a nested module
-                if (outerPath |> List.forall (fun (_, istype) -> istype = Namespace)) && isNil outerPath then 
+                let isNamespace = function | Namespace _ -> true | _ -> false
+                if (outerPath |> List.forall (fun (_, istype) -> isNamespace istype)) && isNil outerPath then
                     // If so print a "module" declaration
                     modNameL
                 elif modIsEmpty then
@@ -2245,8 +2256,35 @@ module InferredSigPrinting =
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
             let outerPath = mspec.CompilationPath.AccessPath
 
-            let denv = denv.AddOpenPath (List.map fst innerPath) 
-            if mspec.IsNamespace then
+            let denv = denv.AddOpenPath (List.map fst innerPath)
+            if mspec.IsImplicitNamespace then
+                // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
+                let fullModuleName, def, denv =
+                    let rec (|NestedModule|_|) (currentContents:ModuleOrNamespaceContents) =
+                        match currentContents with
+                        | ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ->
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
+                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, NestedModule(path, contents)) ]) ] ->
+                            Some ([ yield mn.DisplayNameCore; yield! path ], contents)
+                        | ModuleOrNamespaceContents.TMDefs [ ModuleOrNamespaceContents.TMDefRec (bindings = [ ModuleOrNamespaceBinding.Module(mn, nestedModuleContents) ]) ] ->
+                            Some ([ mn.DisplayNameCore ], nestedModuleContents)
+                        | _ ->
+                            None
+
+                    match def with
+                    | NestedModule(path, nestedModuleContents) ->
+                        let fullPath = mspec.DisplayNameCore :: path
+                        fullPath, nestedModuleContents, denv.AddOpenPath(fullPath)
+                    | _ -> [ mspec.DisplayNameCore ], def, denv
+                
+                let nmL = List.map (tagModule >> wordL) fullModuleName |> sepListL SepL.dot
+                let nmL = layoutAccessibility denv mspec.Accessibility nmL
+                let denv = denv.AddAccessibility mspec.Accessibility
+                let basic = imdefL denv def
+                let modNameL = wordL (tagKeyword "module") ^^ nmL
+                let basicL = modNameL @@ basic
+                layoutXmlDoc denv true mspec.XmlDoc basicL
+            elif mspec.IsNamespace then
                 let basic = imdefL denv def
                 let basicL =
                     // Check if this namespace contains anything interesting
@@ -2271,7 +2309,8 @@ module InferredSigPrinting =
                 let basic = imdefL denv def
                 let modNameL = wordL (tagKeyword "module") ^^ nmL
                 let modNameEqualsL = modNameL ^^ WordL.equals
-                let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> istype = Namespace) )
+                let isNamespace = function | Namespace _ -> true | _ -> false
+                let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> isNamespace istype) )
                 let basicL =
                     // Check if its an outer module or a nested module
                     if modIsOuter then

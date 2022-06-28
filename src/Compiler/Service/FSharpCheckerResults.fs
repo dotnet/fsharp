@@ -110,7 +110,7 @@ type internal DelayedILModuleReader =
                                 None
                         | _ -> Some this.result)
             }
-        | _ -> Cancellable.ret (Some this.result)
+        | _ -> cancellable.Return(Some this.result)
 
 [<RequireQualifiedAccess; NoComparison; CustomEquality>]
 type FSharpReferencedProject =
@@ -2519,7 +2519,10 @@ module internal ParseAndCheckFile =
                         return result
                     with e ->
                         errorR e
-                        let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
+
+                        let mty =
+                            Construct.NewEmptyModuleOrNamespaceType(ModuleOrNamespaceKind.Namespace true)
+
                         return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
                 }
 
