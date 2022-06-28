@@ -1206,11 +1206,15 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             if showParserStackOnParseError then
                 printfn "parser stack:"
 
-                for rps in ctxt.ReducibleProductions do
+                let rps =
+                    ctxt.ReducibleProductions
+                    |> List.map (fun rps -> rps |> List.map (fun rp -> rp, Parser.prodIdxToNonTerminal rp))
+
+                for rps in rps do
                     printfn "   ----"
                     //printfn "   state %d" state
-                    for rp in rps do
-                        printfn "       non-terminal %+A (idx %d): ... " (Parser.prodIdxToNonTerminal rp) rp
+                    for rp, nonTerminalId in rps do
+                        printfn $"       non-terminal %+A{nonTerminalId} (idx {rp}): ... "
 #endif
 
             match ctxt.CurrentToken with
