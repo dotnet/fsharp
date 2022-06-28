@@ -355,6 +355,20 @@ let getParseAndCheckResultsPreview (source: string) =
 let getParseAndCheckResults50 (source: string) =
     parseAndCheckScript50("Test.fsx", source)
 
+let parseTestSource () =
+    match FileIndex.testSource with
+    | None -> failwith "Test source is not set"
+    | Some source ->
+
+    let path = "Test.fsx"
+
+    let options = 
+        { FSharpParsingOptions.Default with
+            IsExe = true
+            SourceFiles = [| path |] }
+
+    let parseFileResults = checker.ParseFile(path, SourceText.ofString source, options) |> Async.RunSynchronously
+    parseFileResults.ParseTree
 
 let inline dumpDiagnostics (results: FSharpCheckFileResults) =
     results.Diagnostics

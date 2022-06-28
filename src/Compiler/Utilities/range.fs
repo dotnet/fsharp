@@ -7,6 +7,7 @@ open System
 open System.IO
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Text
 open Microsoft.FSharp.Core.Printf
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras.Bits
@@ -258,6 +259,13 @@ module FileIndex =
     let startupFileName = "startup"
     let commandLineArgsFileName = "commandLineArgs"
 
+    let mutable internal testSource: string option = None
+
+    let internal setTestSource source =
+        testSource <- Some source
+        { new IDisposable with
+            member this.Dispose() = testSource <- None }
+
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1: int64, code2: int64) =
@@ -341,6 +349,22 @@ type Range(code1: int64, code2: int64) =
     member _.Code2 = code2
 
     member m.DebugCode =
+        let getRangeSubstring (m: range) (stream: Stream) =
+            let endCol = m.EndColumn - 1
+            let startCol = m.StartColumn - 1
+
+            stream.ReadLines()
+            |> Seq.skip (m.StartLine - 1)
+            |> Seq.take (m.EndLine - m.StartLine + 1)
+            |> String.concat "\n"
+            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+
+        match testSource with
+        | Some source ->
+            use stream = new MemoryStream(Encoding.UTF8.GetBytes(source + "\n"))
+            getRangeSubstring m stream
+        | _ ->
+
         let name = m.FileName
 
         if name = unknownFileName
@@ -348,21 +372,14 @@ type Range(code1: int64, code2: int64) =
            || name = commandLineArgsFileName then
             name
         else
-
             try
-                let endCol = m.EndColumn - 1
-                let startCol = m.StartColumn - 1
-
                 if FileSystem.IsInvalidPathShim m.FileName then
                     "path invalid: " + m.FileName
                 elif not (FileSystem.FileExistsShim m.FileName) then
                     "non existing file: " + m.FileName
                 else
-                    FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
-                    |> Seq.skip (m.StartLine - 1)
-                    |> Seq.take (m.EndLine - m.StartLine + 1)
-                    |> String.concat "\n"
-                    |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+                    use stream = FileSystem.OpenFileForReadShim(m.FileName)
+                    getRangeSubstring m stream
             with e ->
                 e.ToString()
 
