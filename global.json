@@ -5,9 +5,9 @@
     "rollForward": "minor"
   },
   "tools": {
-    "dotnet": "6.0.301",
+    "dotnet": "7.0.100-preview.2.22153.17",
     "vs": {
-      "version": "16.8",
+      "version": "17.3",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
