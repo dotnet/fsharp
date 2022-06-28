@@ -1,4 +1,4 @@
-﻿module BenchmarkHelpers
+﻿namespace BenchmarkComparison
 
 open System.IO
 open System.Threading.Tasks
@@ -14,21 +14,8 @@ open FSharp.Compiler.Text
 #endif
 #endif
 
-type Async with
-    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let ts = TaskCompletionSource<'T>()
-        let task = ts.Task
-        Async.StartWithContinuations(
-            computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
-            (fun _ -> ts.SetCanceled()),
-            cancellationToken)
-        task.Result
-
-[<AutoOpen>]
-module Helpers =
+[<RequireQualifiedAccess>]
+module private Helpers =
 
     let getFileSourceText (filePath : string) =
         let text = File.ReadAllText(filePath)
@@ -45,7 +32,7 @@ module Helpers =
         if results.Diagnostics.Length > 0 then failwithf $"had errors: %A{results.Diagnostics}"
 #endif
     
-    let makeCmdlineArgs (filePath : string) =
+    let makeCmdlineArgsWithSystemReferences (filePath : string) =
         let assemblies =
             let mainAssemblyLocation = typeof<System.Object>.Assembly.Location
             let frameworkDirectory = Path.GetDirectoryName(mainAssemblyLocation)
@@ -94,11 +81,11 @@ type SingleFileCompiler(filePath: string, optionsCreationMethod : OptionsCreatio
                 let options =
                     match optionsCreationMethod with
                     | OptionsCreationMethod.CmdlineArgs ->
-                        let args = makeCmdlineArgs filePath
+                        let args = Helpers.makeCmdlineArgsWithSystemReferences filePath
                         checker.GetProjectOptionsFromCommandLineArgs(filePath, args)
                     | OptionsCreationMethod.FromScript ->
-                        checker.GetProjectOptionsFromScript(filePath, getFileSourceText filePath)
-                        |> Async.RunImmediate
+                        checker.GetProjectOptionsFromScript(filePath, Helpers.getFileSourceText filePath)
+                        |> Async.RunSynchronously
                         |> fst
                 {
                     Checker = checker
@@ -111,12 +98,12 @@ type SingleFileCompiler(filePath: string, optionsCreationMethod : OptionsCreatio
         | None -> failwith "Setup not run"
         | Some {Checker = checker; Options = options} ->
             let _, result =                                                                
-                checker.ParseAndCheckFileInProject(filePath, 0, getFileSourceText filePath, options)
-                |> Async.RunImmediate
+                checker.ParseAndCheckFileInProject(filePath, 0, Helpers.getFileSourceText filePath, options)
+                |> Async.RunSynchronously
             match result with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
-                failOnErrors results
+                Helpers.failOnErrors results
 
     member _.Cleanup() =
         match configOpt with

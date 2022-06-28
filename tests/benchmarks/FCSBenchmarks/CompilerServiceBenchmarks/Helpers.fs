@@ -2,11 +2,8 @@
 module internal FSharp.Compiler.Benchmarks.Helpers
 
 open System
-open System.IO
-open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Text
-open FSharp.Compiler.CodeAnalysis
 
 module private SourceText =
 
@@ -79,38 +76,3 @@ type SourceText with
 
 type FSharpSourceText = SourceText
 type FSharpSourceHashAlgorithm = SourceHashAlgorithm
-
-type Async with
-    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let ts = TaskCompletionSource<'T>()
-        let task = ts.Task
-        Async.StartWithContinuations(
-            computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
-            (fun _ -> ts.SetCanceled()),
-            cancellationToken)
-        task.Result
-
-let CreateProject name referencedProjects =
-    let tmpPath = Path.GetTempPath()
-    let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
-    {
-        ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
-        ProjectId = None
-        SourceFiles = [|file|]
-        OtherOptions = 
-            Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
-        ReferencedProjects =
-            referencedProjects
-            |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
-            |> Array.ofList
-        IsIncompleteTypeCheckEnvironment = false
-        UseScriptResolutionRules = false
-        LoadTime = DateTime()
-        UnresolvedReferences = None
-        OriginalLoadReferences = []
-        Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
-    }
-

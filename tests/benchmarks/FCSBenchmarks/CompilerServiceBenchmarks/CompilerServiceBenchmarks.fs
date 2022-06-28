@@ -13,6 +13,10 @@ open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
 open FSharp.Compiler.Benchmarks.BenchmarkHelpers
 
+[<AutoOpen>]
+module Utils =
+    
+
 [<MemoryDiagnoser>]
 type CompilerServiceBenchmarks() =
     let mutable checkerOpt = None
@@ -65,10 +69,10 @@ type CompilerServiceBenchmarks() =
         | None ->
             let options, _ =
                 checkerOpt.Value.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
-                |> Async.RunImmediate
+                |> Async.RunSynchronously
             let _, checkResult =                                                                
                 checkerOpt.Value.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
-                |> Async.RunImmediate
+                |> Async.RunSynchronously
             decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()
 
@@ -78,7 +82,7 @@ type CompilerServiceBenchmarks() =
         | None, _ -> failwith "no checker"
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
-            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunImmediate
+            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
             if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
@@ -88,7 +92,7 @@ type CompilerServiceBenchmarks() =
         | Some(checker) ->
             checker.InvalidateAll()
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunImmediate |> ignore
+            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
             ClearAllILModuleReaderCache()
 
     [<Benchmark>]
@@ -146,7 +150,7 @@ type CompilerServiceBenchmarks() =
         | Some checker ->
             let parseResult, checkResult =                                                                
                 checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
-                |> Async.RunImmediate
+                |> Async.RunSynchronously
 
             if parseResult.Diagnostics.Length > 0 then
                 failwithf "%A" parseResult.Diagnostics
@@ -207,7 +211,7 @@ type CompilerServiceBenchmarks() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
+                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
                 ignore ranges                
         | _ -> failwith "oopsie"
 
@@ -219,7 +223,7 @@ type CompilerServiceBenchmarks() =
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
                 let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunImmediate
+                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
                 ignore decls              
         | _ -> failwith "oopsie"
 
@@ -230,6 +234,6 @@ type CompilerServiceBenchmarks() =
             match checkResult with
             | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
             | FSharpCheckFileAnswer.Succeeded results ->
-                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunImmediate
+                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
                 ignore decls // should be 16                
         | _ -> failwith "oopsie"

@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="BenchmarkHelpers.fs" />
+    <Compile Include="SingleFileCompiler.fs" />
     <Compile Include="Benchmark.fs" />
   </ItemGroup>
 
