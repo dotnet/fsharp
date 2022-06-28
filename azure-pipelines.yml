@@ -179,6 +179,51 @@ stages:
               AccessToken: $(dn-bot-devdiv-drop-rw-code-rw)
             condition: succeeded()
 
+  #                            PR builds without logs publishing                                                      #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/common/templates/jobs/jobs.yml
+      parameters:
+        enableMicrobuild: false
+        enablePublishBuildArtifacts: false
+        enablePublishTestResults: false
+        enablePublishBuildAssets: false
+        enablePublishUsingPipelines: $(_PublishUsingPipelines)
+        enableSourceBuild: false
+        enableTelemetry: true
+        helixRepo: dotnet/fsharp
+        jobs:
+          # Determinism, we want to run it only in PR builds
+        - job: Determinism_Debug
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+          - name: _SignType
+            value: Test
+          pool:
+            name: NetCore1ESPool-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: false
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            displayName: Determinism tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
+
   #-------------------------------------------------------------------------------------------------------------------#
   #                                                    PR builds                                                      #
   #-------------------------------------------------------------------------------------------------------------------#
@@ -355,29 +400,6 @@ stages:
           - script: .\Build.cmd -c Release -pack
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
-
-        # Determinism, we want to run it only in PR builds
-        - job: Determinism_Debug
-          condition: eq(variables['Build.Reason'], 'PullRequest')
-          variables:
-          - name: _SignType
-            value: Test
-          pool:
-            name: NetCore1ESPool-Public
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 90
-          steps:
-          - checkout: self
-            clean: true
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            displayName: Determinism tests with Debug configuration
-          - task: PublishPipelineArtifact@1
-            displayName: Publish Determinism Logs
-            inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
-            continueOnError: true
-            condition: not(succeeded())
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
