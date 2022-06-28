@@ -741,6 +741,8 @@ module DispatchSlotChecking =
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]
 
 
+    let IsStaticAbstractImpl (overrideBy: ValRef) = (not overrideBy.IsInstanceMember) && overrideBy.IsOverrideOrExplicitImpl
+
     /// Check that a type definition implements all its required interfaces after processing all declarations 
     /// within a file.
     let CheckImplementationRelationAtEndOfInferenceScope (infoReader : InfoReader, denv, nenv, sink, tycon: Tycon, isImplementation) =
@@ -764,12 +766,10 @@ module DispatchSlotChecking =
 
         let allImpls = List.zip allReqdTys slotImplSets
 
-        let isStaticAbstract (overrideBy: ValRef) = (not overrideBy.IsInstanceMember) && overrideBy.IsOverrideOrExplicitImpl
-
         // Find the methods relevant to implementing the abstract slots listed under the reqdType being checked.
         let allImmediateMembersThatMightImplementDispatchSlots = 
             allImmediateMembers |> List.filter (fun overrideBy -> 
-                (overrideBy.IsInstanceMember || isStaticAbstract overrideBy) // Not static OR Static in the interface
+                (overrideBy.IsInstanceMember || IsStaticAbstractImpl overrideBy) // Not static OR Static in the interface
                 && overrideBy.IsVirtualMember   // exclude non virtual (e.g. keep override/default). [4469]
                 && not overrideBy.IsDispatchSlotMember)
 

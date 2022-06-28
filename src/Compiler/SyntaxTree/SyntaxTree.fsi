@@ -613,8 +613,13 @@ type SynExpr =
         range2: range *
         range: range
 
-    /// F# syntax: ^expr
-    | IndexFromEnd of expr: SynExpr * range: range
+    /// F# syntax: ^expr, used for from-end-of-collection indexing and ^T.Operation
+    ///
+    /// NOTE: In the case of ^T.ident the Typar node is not initially in the tree as produced by the parser,
+    /// but rather is a HatPrefix node that is then processed using adjustHatPrefixToTyparLookup
+    /// when in arbitrary expression position. If ^expr occurs in index/slicing position then it is not processed
+    /// and the node is interpreted as from-the-end-indexing.
+    | HatPrefix of expr: SynExpr * range: range
 
     /// F# syntax: { expr }
     | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr * range: range
@@ -727,7 +732,12 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
-    /// F# syntax: ^T (for ^T.ident) or (for 'T.ident)
+    /// F# syntax: ^T (for ^T.ident) or (for 'T.ident).
+    ///
+    /// NOTE: In the case of ^T.ident the Typar node is not initially in the tree as produced by the parser,
+    /// but rather is a HatPrefix node that is then processed using adjustHatPrefixToTyparLookup
+    /// when in arbitrary expression position. If ^expr occurs in index/slicing position then it is not processed
+    /// and the node is interpreted as from-the-end-indexing.
     | Typar of typar: SynTypar * range: range
 
     /// F# syntax: ident

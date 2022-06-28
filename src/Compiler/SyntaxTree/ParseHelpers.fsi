@@ -176,5 +176,5 @@ val mkSynMemberDefnGetSet:
     rangeStart: range ->
         SynMemberDefn list
 
-/// Incorporate a '^' for an qualified type access
-val mkQualTypeAccess: mFull: range -> rightExpr: SynExpr -> SynExpr
+/// Incorporate a '^' for an qualified access to a generic type parameter
+val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr

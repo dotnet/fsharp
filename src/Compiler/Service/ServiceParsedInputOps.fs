@@ -1768,7 +1768,7 @@ module ParsedInput =
                 match expr2 with
                 | Some e -> walkExpr e
                 | None -> ()
-            | SynExpr.IndexFromEnd (e, _) -> walkExpr e
+            | SynExpr.HatPrefix (e, _) -> walkExpr e
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 walkExpr args

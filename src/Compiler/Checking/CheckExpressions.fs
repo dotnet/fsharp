@@ -5417,10 +5417,6 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
         TcNonControlFlowExpr env <| fun env ->
         TcExprThen cenv overallTy env tpenv false expr1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
-    // 'T.Ident
-    | SynExpr.Typar (typar, m) ->
-        TcTyparExprThen cenv overallTy env tpenv typar m delayed
-    
     // expr1.[expr2]
     // expr1.[e21, ..., e2n]
     // etc.
@@ -5438,6 +5434,16 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
         if g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (expr3, mOfLeftOfSet)) expr1 indexArgs delayed
+
+    // 'T.Ident
+    // ^T.Ident
+    | SynExpr.Typar (typar, m) ->
+        TcTyparExprThen cenv overallTy env tpenv typar m delayed
+    
+    | SynExpr.HatPrefix (rightExpr, m) ->
+        // Incorporate the '^'  into the rightExpr, producing a nested SynExpr.Typar
+        let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
+        TcExprThen cenv overallTy env tpenv isArg adjustedExpr delayed
 
     | _ ->
         match delayed with
@@ -5861,7 +5867,15 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.MatchBang (range=m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
-    | SynExpr.IndexFromEnd (range=m)
+    // 'T.Ident
+    // ^T.Ident
+    | SynExpr.Typar (typar, m) ->
+        TcTyparExprThen cenv overallTy env tpenv typar m []
+    
+    | SynExpr.HatPrefix (rightExpr, m) ->
+        let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
+        TcExprUndelayed cenv overallTy env tpenv adjustedExpr
+
     | SynExpr.IndexRange (range=m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
 
@@ -6340,25 +6354,31 @@ and TcTyparExprThen cenv overallTy env tpenv synTypar m delayed =
         SolveTypeAsError env.DisplayEnv cenv.css m overallTy.Commit
         mkThrow m overallTy.Commit (mkOne cenv.g m), tpenv
 
-and (|IndexArgOptionalFromEnd|) indexArg = 
+and (|IndexArgOptionalFromEnd|) (cenv: cenv) indexArg = 
     match indexArg with
-    | SynExpr.IndexFromEnd (a, m) -> (a, true, m)
+    | SynExpr.HatPrefix (a, m) ->
+        if not (cenv.g.langVersion.SupportsFeature LanguageFeature.FromEndSlicing) then 
+            errorR (Error(FSComp.SR.fromEndSlicingRequiresVFive(), m))
+        (a, true, m)
     | _ -> (indexArg, false, indexArg.Range)
 
-and DecodeIndexArg indexArg = 
+and DecodeIndexArg cenv indexArg = 
     match indexArg with
     | SynExpr.IndexRange (info1, _opm, info2, m1, m2, _) ->
         let info1 = 
             match info1 with 
-            | Some (IndexArgOptionalFromEnd (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
+            | Some (IndexArgOptionalFromEnd cenv (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
             | None -> None 
         let info2 = 
             match info2 with 
-            | Some (IndexArgOptionalFromEnd (synExpr2, isFromEnd2, _)) -> Some (synExpr2, isFromEnd2)
+            | Some (IndexArgOptionalFromEnd cenv (synExpr2, isFromEnd2, _)) -> Some (synExpr2, isFromEnd2)
             | None -> None 
         IndexArgRange (info1, info2, m1, m2)
-    | IndexArgOptionalFromEnd (expr, isFromEnd, m) ->
+    | IndexArgOptionalFromEnd cenv (expr, isFromEnd, m) ->
         IndexArgItem(expr, isFromEnd, m)
+
+and DecodeIndexArgs cenv indexArgs =
+    indexArgs |> List.map (DecodeIndexArg cenv)
 
 and (|IndexerArgs|) expr =
     match expr with 
@@ -6367,11 +6387,11 @@ and (|IndexerArgs|) expr =
 
 and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (setInfo: _ option) synLeftExpr indexArgs delayed =
     let leftExpr, leftExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synLeftExpr
-    let expandedIndexArgs = ExpandIndexArgs (Some synLeftExpr) indexArgs
+    let expandedIndexArgs = ExpandIndexArgs cenv (Some synLeftExpr) indexArgs
     TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some synLeftExpr) leftExpr leftExprTy expandedIndexArgs indexArgs delayed
 
 // Eliminate GetReverseIndex from index args
-and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
+and ExpandIndexArgs cenv (synLeftExprOpt: SynExpr option) indexArgs =
 
     // xs.GetReverseIndex rank offset - 1
     let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
@@ -6396,7 +6416,7 @@ and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
     let expandedIndexArgs =
         indexArgs
         |> List.mapi ( fun pos indexerArg ->
-            match DecodeIndexArg indexerArg with
+            match DecodeIndexArg cenv indexerArg with
             | IndexArgItem(expr, fromEnd, range) ->
                 [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
             | IndexArgRange(info1, info2, range1, range2) ->
@@ -6428,7 +6448,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR
     // has a member called 'Item'
-    let isIndex = indexArgs |> List.forall (fun indexArg -> match DecodeIndexArg indexArg with IndexArgItem _ -> true | _ -> false)
+    let isIndex = indexArgs |> List.forall (fun indexArg -> match DecodeIndexArg cenv indexArg with IndexArgItem _ -> true | _ -> false)
     let propName =
         if isIndex then
             FoldPrimaryHierarchyOfType (fun ty acc ->
@@ -6459,7 +6479,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
     let MakeIndexParam setSliceArrayOption =
-       match List.map DecodeIndexArg indexArgs with
+       match DecodeIndexArgs cenv indexArgs with
        | [] -> failwith "unexpected empty index list"
        | [IndexArgItem _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
        | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
@@ -6471,7 +6491,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
         let info =
             if isArray then
                 let fixedIndex3d4dEnabled = g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
-                let indexArgs = List.map DecodeIndexArg indexArgs
+                let indexArgs = List.map (DecodeIndexArg cenv) indexArgs
                 match indexArgs, setInfo with
                 | [IndexArgItem _; IndexArgItem _], None                                        -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
                 | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], None                        -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
@@ -6539,7 +6559,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
                 | _ -> None
 
             elif isString then
-                match List.map DecodeIndexArg indexArgs, setInfo with
+                match DecodeIndexArgs cenv indexArgs, setInfo with
                 | [IndexArgRange _], None -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
                 | [IndexArgItem _], None -> Some (indexOpPath, "GetString", expandedIndexArgs)
                 | _ -> None
@@ -8243,7 +8263,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
                 isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
                 g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
 
-            let expandedIndexArgs = ExpandIndexArgs synLeftExprOpt indexArgs
+            let expandedIndexArgs = ExpandIndexArgs cenv synLeftExprOpt indexArgs
             let setInfo, delayed = 
                 match delayed with 
                 | DelayedSet(expr3, _) :: rest -> Some (expr3, unionRanges leftExpr.Range synArg.Range), rest
@@ -8742,7 +8762,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.LetOrUseBang _
         | SynExpr.DoBang _
         | SynExpr.TraitCall _
-        | SynExpr.IndexFromEnd _
+        | SynExpr.HatPrefix _
         | SynExpr.IndexRange _
             -> false
 

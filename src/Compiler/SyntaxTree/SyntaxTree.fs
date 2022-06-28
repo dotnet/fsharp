@@ -510,7 +510,7 @@ type SynExpr =
 
     | IndexRange of expr1: SynExpr option * opm: range * expr2: SynExpr option * range1: range * range2: range * range: range
 
-    | IndexFromEnd of expr: SynExpr * range: range
+    | HatPrefix of expr: SynExpr * range: range
 
     | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr * range: range
 
@@ -738,7 +738,7 @@ type SynExpr =
         | SynExpr.LibraryOnlyILAssembly (range = m)
         | SynExpr.LibraryOnlyStaticOptimization (range = m)
         | SynExpr.IndexRange (range = m)
-        | SynExpr.IndexFromEnd (range = m)
+        | SynExpr.HatPrefix (range = m)
         | SynExpr.TypeTest (range = m)
         | SynExpr.Upcast (range = m)
         | SynExpr.AddressOf (range = m)
@@ -759,7 +759,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
         | SynExpr.Ident id -> id.idRange
-        | SynExpr.Typar(range = m) -> m
+        | SynExpr.Typar (range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =

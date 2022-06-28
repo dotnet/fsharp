@@ -681,7 +681,7 @@ signatureFile:
 moduleIntro: 
   | moduleKeyword opt_attributes opt_access opt_rec path
       { if not (isNil $2) then
-            parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
         let mModule = rhs parseState 1
         mModule, $4, $5.LongIdent, $3, $2 }
 
@@ -1875,11 +1875,13 @@ abstractMemberFlags:
         let mMember = rhs parseState 2
         AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
   | STATIC ABSTRACT
-      { let mStatic = rhs parseState 1
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers (rhs2 parseState 1 2)
+        let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
   | STATIC ABSTRACT MEMBER
-      { let mStatic = rhs parseState 1
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers (rhs2 parseState 1 2)
+        let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         let mMember = rhs parseState 3
         AbstractMemberFlags false (StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember) }
@@ -4018,14 +4020,10 @@ declExpr:
       { let m = rhs parseState 1
         SynExpr.IndexRange(None, m, None, m, m, m) }
 
-/*
-  | INFIX_AT_HAT_OP declExpr
-    { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.FromEndSlicing) then 
-        raiseParseErrorAt (rhs parseState 1) (FSComp.SR.fromEndSlicingRequiresVFive())
-      if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
+  | INFIX_AT_HAT_OP declExpr  %prec infix_at_hat_op_prefix
+    { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
       let m = (rhs2 parseState 1 2)
-      SynExpr.IndexFromEnd($2, m) }
-*/
+      SynExpr.HatPrefix($2, m) }
 
   | minusExpr %prec expr_prefix_plus_minus { $1 }
 
@@ -4266,26 +4264,6 @@ minusExpr:
 appExpr:
   | appExpr argExpr %prec expr_app
       { SynExpr.App (ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range)  }
-/*
-  | INFIX_AT_HAT_OP atomicExpr
-      { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnfinishedExpression($1));
-        match $2 with
-        | SynExpr.LongIdent(false, SynLongIdent ([typarIdent; rightIdent], [dotm], [_; rightTrivia]), None, m), _ ->
-            let rightId = SynIdent (rightIdent, rightTrivia)
-            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
-            let typarRange = unionRanges (rhs parseState 1) m
-            SynExpr.TyparDotIdent(typar, dotm, rightId, typarRange)
-        | _ ->
-            reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedHatExpr());
-            let m = rhs2 parseState 1 2
-            arbExpr("hatExpr1", m) }
-*/
-
-  | INFIX_AT_HAT_OP appExpr %prec infix_at_hat_op_prefix
-      { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnfinishedExpression($1));
-        let rightExpr = $2
-        let mFull = rhs2 parseState 1 2
-        mkQualTypeAccess mFull rightExpr }
 
   | atomicExpr
       { let arg, _ = $1 

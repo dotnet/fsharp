@@ -3,6 +3,14 @@ let legacyConcat2 (x: string) (y: string) = x ^y
 let legacyConcat3 (x: string) (y: string) = x^ y
 let legacyConcat4 (x: string) (y: string) = x^y
 
+let testSlicingOne() =
+    let arr = [| 1;2;3;4;5 |]
+    arr.[^3..]
+
+let testSlicingTwo() =
+    let arr = [| 1;2;3;4;5 |]
+    arr[^3..]
+
 type IAdditionOperator<'T> =
     static abstract op_Addition: 'T * 'T -> 'T
 
