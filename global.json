@@ -2,7 +2,7 @@
   "sdk": {
     "version": "6.0.301",
     "allowPrerelease": true,
-    "rollForward": "minor"
+    "rollForward": "latestMajor"
   },
   "tools": {
     "dotnet": "7.0.100-preview.2.22153.17",
