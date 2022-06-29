@@ -1397,14 +1397,15 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "typedtreestamps",
             tagNone,
-            OptionUnit (fun () ->  DebugPrint.layoutStamps <- true),
+            OptionUnit(fun () -> DebugPrint.layoutStamps <- true),
             Some(InternalCommandLineOption("--typedtreestamps", rangeCmdArgs)),
-            None)
+            None
+        )
 
         CompilerOption(
             "typedtreeranges",
             tagNone,
-            OptionUnit (fun () ->  DebugPrint.layoutRanges <- true),
+            OptionUnit(fun () -> DebugPrint.layoutRanges <- true),
             Some(InternalCommandLineOption("--typedtreeranges", rangeCmdArgs)),
             None
         )
@@ -1412,7 +1413,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "typedtreetypes",
             tagNone,
-            OptionUnit (fun () ->  DebugPrint.layoutTypes <- true),
+            OptionUnit(fun () -> DebugPrint.layoutTypes <- true),
             Some(InternalCommandLineOption("--typedtreetypes", rangeCmdArgs)),
             None
         )
@@ -1420,7 +1421,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption(
             "typedtreearities",
             tagNone,
-            OptionUnit (fun () ->  DebugPrint.layoutValInfo <- true),
+            OptionUnit(fun () -> DebugPrint.layoutValInfo <- true),
             Some(InternalCommandLineOption("--typedtreearities", rangeCmdArgs)),
             None
         )

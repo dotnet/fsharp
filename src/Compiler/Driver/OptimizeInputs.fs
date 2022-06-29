@@ -68,9 +68,7 @@ let ApplyAllOptimizations
     PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then
-        dprintf
-            "Expression prior to optimization:\n%s\n"
-            (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL implFiles)))
 
     if tcConfig.showOptimizationData then
         dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL ccu.Contents)))

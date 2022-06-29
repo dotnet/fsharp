@@ -531,8 +531,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
         TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst))
 
-    member _.WithoutTemplateReplacement() =
-        TypeReprEnv(reprs, count, None)
+    member _.WithoutTemplateReplacement() = TypeReprEnv(reprs, count, None)
 
     /// Lookup a type parameter
     member _.Item(tp: Typar, m: range) =
@@ -1317,7 +1316,7 @@ let AddStorageForLocalWitnesses witnesses eenv =
 // Lookup eenv
 //--------------------------------------------------------------------------
 
-let StorageForVal g m v eenv =
+let StorageForVal m v eenv =
     let v =
         try
             eenv.valsInScope[v]
@@ -1328,7 +1327,7 @@ let StorageForVal g m v eenv =
 
     v.Force()
 
-let StorageForValRef g m (v: ValRef) eenv = StorageForVal g m v.Deref eenv
+let StorageForValRef m (v: ValRef) eenv = StorageForVal m v.Deref eenv
 
 let ComputeGenerateWitnesses (g: TcGlobals) eenv =
     g.generateWitnesses
@@ -2873,6 +2872,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                     LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr
                 else
                     None
+
             match lowering with
             | Some info ->
                 GenSequenceExpr cenv cgbuf eenv info sequel
@@ -2940,7 +2940,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             List.forall (isMeasureTy g) tyargs
             && (
                 // inline only values that are stored in local variables
-                match StorageForValRef g m vref eenv with
+                match StorageForValRef m vref eenv with
                 | ValStorage.Local _ -> true
                 | _ -> false)
             ->
@@ -4118,7 +4118,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         // where f is an F# function value or F# method
         | Expr.Lambda (_, _, _, _, DebugPoints (Expr.App (OptionalCoerce (OptionalTyapp (Expr.Val (vref, _, _))), _, _, _, _), _), _, _) ->
 
-            let storage = StorageForValRef g m vref eenv
+            let storage = StorageForValRef m vref eenv
 
             match storage with
             | Method (_, _, mspec, _, _, _, _, _, _, _, _, _) ->
@@ -4155,7 +4155,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
     // Optimize calls to top methods when given "enough" arguments.
     | Expr.Val (vref, valUseFlags, _), _, _ when
-        (let storage = StorageForValRef g m vref eenv
+        (let storage = StorageForValRef m vref eenv
 
          match storage with
          | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
@@ -4164,7 +4164,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
          | _ -> false)
         ->
 
-        let storage = StorageForValRef g m vref eenv
+        let storage = StorageForValRef m vref eenv
 
         match storage with
         | Method (topValInfo, vref, mspec, mspecW, _, ctps, mtps, curriedArgInfos, _, _, _, _) ->
@@ -4415,11 +4415,11 @@ and FreeVarStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames ilCl
 //          ()
 //  in debug code , here `a` will be a TyLamba.  However the compiled representation of
 // `a` is an integer.
-and IsLocalErasedTyLambda g eenv (v: Val) e =
+and IsLocalErasedTyLambda eenv (v: Val) e =
     match e with
     | Expr.TyLambda (_, tyargs, body, _, _) when
         tyargs |> List.forall (fun tp -> tp.IsErased)
-        && (match StorageForVal g v.Range v eenv with
+        && (match StorageForVal v.Range v eenv with
             | Local _ -> true
             | _ -> false)
         ->
@@ -4721,7 +4721,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
 
-                GenStoreVal cenv cgbuf eenvinner valForFilter.Range valForFilter
+                GenStoreVal cgbuf eenvinner valForFilter.Range valForFilter
 
                 // Why SPSuppress? Because we do not emit a debug point at the start of the List.filter - we've already put one on
                 // the 'with' keyword above
@@ -4741,7 +4741,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
                     AllocLocalVal cenv cgbuf valForHandler eenvinner None (startOfHandler, afterHandler)
 
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
-                GenStoreVal cenv cgbuf eenvinner valForHandler.Range valForHandler
+                GenStoreVal cgbuf eenvinner valForHandler.Range valForHandler
 
                 let exitSequel = LeaveHandler(false, whereToSaveOpt, afterHandler, true)
                 GenExpr cenv cgbuf eenvinner handlerExpr exitSequel
@@ -4763,7 +4763,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 CG.EmitInstr cgbuf (pop 1) (Push [ g.iltyp_Exception ]) (I_castclass g.iltyp_Exception)
 
-                GenStoreVal cenv cgbuf eenvinner m valForHandler
+                GenStoreVal cgbuf eenvinner m valForHandler
 
                 let exitSequel = LeaveHandler(false, whereToSaveOpt, afterHandler, true)
 
@@ -4889,7 +4889,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
     | DebugPointAtFor.No -> ()
 
     GenExpr cenv cgbuf eenv e1 Continue
-    GenStoreVal cenv cgbuf eenvinner m v
+    GenStoreVal cgbuf eenvinner m v
 
     if isFSharpStyle then
         GenExpr cenv cgbuf eenvinner e2 Continue
@@ -4914,7 +4914,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, m)
 
     CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
     CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
-    GenStoreVal cenv cgbuf eenvinner m v
+    GenStoreVal cgbuf eenvinner m v
 
     // .text
     CG.SetMarkToHere cgbuf test
@@ -5403,7 +5403,7 @@ and GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel =
 and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
     let vspec = v.Deref
     let ilTy = GenTypeOfVal cenv eenv vspec
-    let storage = StorageForValRef cenv.g m v eenv
+    let storage = StorageForValRef m v eenv
 
     match storage with
     | Local (idx, _, None) -> CG.EmitInstr cgbuf (pop 0) (Push [ ILType.Byref ilTy ]) (I_ldloca(uint16 idx))
@@ -6662,7 +6662,7 @@ and GenTypeOfVal cenv eenv (v: Val) = GenType cenv v.Range eenv.tyenv v.Type
 and GenFreevar cenv m eenvouter tyenvinner (fv: Val) =
     let g = cenv.g
 
-    match StorageForVal cenv.g m fv eenvouter with
+    match StorageForVal m fv eenvouter with
     // Local type functions
     | Local (_, _, Some _)
     | Env (_, _, Some _) -> g.ilg.typ_Object
@@ -6720,7 +6720,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
         freeLocals
         |> List.filter (fun fv ->
             (thisVars |> List.forall (fun v -> not (valRefEq g (mkLocalValRef fv) v)))
-            && (match StorageForVal cenv.g m fv eenvouter with
+            && (match StorageForVal m fv eenvouter with
                 | StaticPropertyWithField _
                 | StaticProperty _
                 | Method _
@@ -6732,7 +6732,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let cloFreeTyvars =
         (cloFreeVarResults.FreeTyvars, freeLocals)
         ||> List.fold (fun ftyvs fv ->
-            match StorageForVal cenv.g m fv eenvouter with
+            match StorageForVal m fv eenvouter with
             | Env (_, _, Some (moreFtyvs, _))
             | Local (_, _, Some (moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
             | _ -> ftyvs)
@@ -6775,7 +6775,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
         (cloFreeVars, names)
         ||> List.map2 (fun fv nm ->
             let localCloInfo =
-                match StorageForVal g m fv eenvouter with
+                match StorageForVal m fv eenvouter with
                 | Local (_, _, localCloInfo)
                 | Env (_, _, localCloInfo) -> localCloInfo
                 | _ -> None
@@ -7256,7 +7256,7 @@ and GenDecisionTreeSuccess
             (vs, es)
             ||> List.iter2 (fun v e ->
 
-                GetStoreValCtxt cenv cgbuf eenvAtTarget v
+                GetStoreValCtxt cgbuf eenvAtTarget v
                 // Emit the expression
                 GenBindingRhs cenv cgbuf eenv v e)
 
@@ -7264,7 +7264,7 @@ and GenDecisionTreeSuccess
             |> List.rev
             |> List.iter (fun v ->
                 // Store the results
-                GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
+                GenStoreVal cgbuf eenvAtTarget v.Range v)
 
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
 
@@ -7908,7 +7908,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
     let bindsPossiblyRequiringFixup =
         allBinds
         |> List.filter (fun b ->
-            match (StorageForVal cenv.g m b.Var eenv) with
+            match (StorageForVal m b.Var eenv) with
             | StaticProperty _
             | Method _
             // Note: Recursive data stored in static fields may require fixups e.g. let x = C(x)
@@ -7951,7 +7951,7 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
 
             for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
-                    match StorageForVal cenv.g m fv eenvclo with
+                    match StorageForVal m fv eenvclo with
                     | Env (_, ilField, _) ->
                         let fixup =
                             (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m)))
@@ -8098,7 +8098,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
     let m = vspec.Range
 
-    match StorageForVal cenv.g m vspec eenv with
+    match StorageForVal m vspec eenv with
 
     | Null ->
         GenExpr cenv cgbuf eenv rhsExpr discard
@@ -8359,21 +8359,21 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 cgbuf.SetMarkToHere startMark
 
     | _ ->
-        let storage = StorageForVal cenv.g m vspec eenv
+        let storage = StorageForVal m vspec eenv
 
         match storage, rhsExpr with
         // locals are zero-init, no need to initialize them, except if you are in a loop and the local is mutable.
         | Local (_, realloc, _), Expr.Const (Const.Zero, _, _) when not realloc && not (eenv.isInLoop && vspec.IsMutable) ->
             CommitStartScope cgbuf startMarkOpt
         | _ ->
-            GetStoreValCtxt cenv cgbuf eenv vspec
+            GetStoreValCtxt cgbuf eenv vspec
             GenBindingRhs cenv cgbuf eenv vspec rhsExpr
             CommitStartScope cgbuf startMarkOpt
-            GenStoreVal cenv cgbuf eenv vspec.Range vspec
+            GenStoreVal cgbuf eenv vspec.Range vspec
 
-and GetStoreValCtxt cenv cgbuf eenv (vspec: Val) =
+and GetStoreValCtxt cgbuf eenv (vspec: Val) =
     // Emit the ldarg0 if needed
-    match StorageForVal cenv.g vspec.Range vspec eenv with
+    match StorageForVal vspec.Range vspec eenv with
     | Env (ilCloTy, _, _) ->
         let ilCloAddrTy =
             if ilCloTy.Boxity = ILBoxity.AsValue then
@@ -9254,15 +9254,15 @@ and GenBindings cenv cgbuf eenv binds stateVarFlagsOpt =
 //-------------------------------------------------------------------------
 
 and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
-    let storage = StorageForValRef cenv.g m vref eenv
-    GetStoreValCtxt cenv cgbuf eenv vref.Deref
+    let storage = StorageForValRef m vref eenv
+    GetStoreValCtxt cgbuf eenv vref.Deref
     GenExpr cenv cgbuf eenv e Continue
     GenSetStorage vref.Range cgbuf storage
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 and GenGetValRefAndSequel cenv cgbuf eenv m (v: ValRef) storeSequel =
     let ty = v.Type
-    GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) (StorageForValRef cenv.g m v eenv) storeSequel
+    GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) (StorageForValRef m v eenv) storeSequel
 
 and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
     GenGetValRefAndSequel cenv cgbuf eenv m v None
@@ -9275,7 +9275,7 @@ and GenBindingRhs cenv cgbuf eenv (vspec: Val) expr =
     | Expr.TyLambda _
     | Expr.Lambda _ ->
 
-        match IsLocalErasedTyLambda g eenv vspec expr with
+        match IsLocalErasedTyLambda eenv vspec expr with
         | Some body -> GenExpr cenv cgbuf eenv body Continue
         | None ->
             let isLocalTypeFunc = IsNamedLocalTypeFuncVal g vspec expr
@@ -9413,20 +9413,13 @@ and GenGetLocalVals cenv cgbuf eenvouter m fvs =
     List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
-    GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal cenv.g m vspec eenv) storeSequel
+    GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) storeSequel
 
 and GenGetLocalVRef cenv cgbuf eenv m (vref: ValRef) storeSequel =
-    GenGetStorageAndSequel
-        cenv
-        cgbuf
-        eenv
-        m
-        (vref.Type, GenTypeOfVal cenv eenv vref.Deref)
-        (StorageForValRef cenv.g m vref eenv)
-        storeSequel
+    GenGetStorageAndSequel cenv cgbuf eenv m (vref.Type, GenTypeOfVal cenv eenv vref.Deref) (StorageForValRef m vref eenv) storeSequel
 
-and GenStoreVal cenv cgbuf eenv m (vspec: Val) =
-    GenSetStorage vspec.Range cgbuf (StorageForVal cenv.g m vspec eenv)
+and GenStoreVal cgbuf eenv m (vspec: Val) =
+    GenSetStorage vspec.Range cgbuf (StorageForVal m vspec eenv)
 
 /// Allocate IL locals
 and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark) : int * _ * _ =
@@ -9596,7 +9589,6 @@ and EmitRestoreStack cgbuf (savedStack, savedStackLocals) =
 //-------------------------------------------------------------------------
 
 and GenAttribArg amap g eenv x (ilArgTy: ILType) =
-    let exprL expr = exprL g expr
 
     match stripDebugPoints x, ilArgTy with
     // Detect 'null' used for an array argument
@@ -11552,7 +11544,7 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
             let ilTy = GenType cenv v.Range TypeReprEnv.Empty v.Type
             ctxt.LookupType ilTy
         // Lookup the compiled v value (as an object).
-        match StorageForVal cenv.g v.Range v eenv with
+        match StorageForVal v.Range v eenv with
         | StaticPropertyWithField (fspec, _, hasLiteralAttr, ilContainerTy, _, _, ilGetterMethRef, _, _) ->
             let obj =
                 if hasLiteralAttr then
@@ -11596,9 +11588,9 @@ let LookupGeneratedValue (cenv: cenv) (ctxt: ExecutionContext) eenv (v: Val) =
         None
 
 // Invoke the set_Foo method for a declaration with a value. Used to create variables with values programatically in fsi.exe.
-let SetGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv isForced (v: Val) (value: obj) =
+let SetGeneratedValue (ctxt: ExecutionContext) eenv isForced (v: Val) (value: obj) =
     try
-        match StorageForVal g v.Range v eenv with
+        match StorageForVal v.Range v eenv with
         | StaticPropertyWithField (fspec, _, hasLiteralAttr, _, _, _, _f, ilSetterMethRef, _) ->
             if not hasLiteralAttr && (v.IsMutable || isForced) then
                 if isForced then
@@ -11623,13 +11615,13 @@ let SetGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv isForced (v: 
         ()
 
 // Invoke the set_Foo method for a declaration with a default/null value. Used to release storage in fsi.exe
-let ClearGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv (v: Val) =
+let ClearGeneratedValue (ctxt: ExecutionContext) eenv (v: Val) =
     try
-        match StorageForVal g v.Range v eenv with
+        match StorageForVal v.Range v eenv with
         | StaticPropertyWithField (fspec, _, hasLiteralAttr, _, _, _, _ilGetterMethRef, _ilSetterMethRef, _) ->
             if not hasLiteralAttr && v.IsMutable then
                 let ty = ctxt.LookupType fspec.ActualType
-                SetGeneratedValue ctxt g eenv false v (defaultOf ty)
+                SetGeneratedValue ctxt eenv false v (defaultOf ty)
         | _ -> ()
     with e ->
 #if DEBUG
@@ -11714,12 +11706,11 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
         GenerateCode(cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
-    member _.ClearGeneratedValue(ctxt, v) =
-        ClearGeneratedValue ctxt tcGlobals ilxGenEnv v
+    member _.ClearGeneratedValue(ctxt, v) = ClearGeneratedValue ctxt ilxGenEnv v
 
     /// Invert the compilation of the given value and set the storage of the value, even if it is immutable
     member _.ForceSetGeneratedValue(ctxt, v, value: obj) =
-        SetGeneratedValue ctxt tcGlobals ilxGenEnv true v value
+        SetGeneratedValue ctxt ilxGenEnv true v value
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type
     member _.LookupGeneratedValue(ctxt, v) =
