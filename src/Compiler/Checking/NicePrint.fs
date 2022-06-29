@@ -1574,7 +1574,7 @@ module TastDefinitionPrinting =
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         let fieldL =
             let rhs =
-                match fld.FormalType with
+                match stripTyparEqns fld.FormalType with
                 | TType_fun _ -> LeftL.leftParen ^^ layoutType denv fld.FormalType ^^ RightL.rightParen
                 | _ -> layoutType denv fld.FormalType
             
