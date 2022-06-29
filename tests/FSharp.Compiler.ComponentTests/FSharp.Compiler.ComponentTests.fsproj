@@ -74,6 +74,7 @@
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
+    <Compile Include="Conformance\LexicalFiltering\FunctionTypes.fs" />
     <Compile Include="Conformance\MethodResolution\ParametersResolution.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
     <Compile Include="Conformance\Printing\Printing.fs" />

@@ -2014,8 +2014,15 @@ type LexFilterImpl (
             returnToken tokenLexbufState token
 
         | EQUALS, CtxtTypeDefns _ :: _ ->  
-            if debug then dprintf "CtxType: EQUALS, pushing CtxtSeqBlock\n"
-            pushCtxtSeqBlock(true, AddBlockEnd)
+            let nextToken = peekNextToken()
+            match nextToken with
+            | IDENT _ ->
+                // Don't add OBLOCKSEP for type aliases or function types
+                ()
+            | _ ->
+                if debug then dprintf "CtxType: EQUALS, pushing CtxtSeqBlock\n"
+                pushCtxtSeqBlock(true, AddBlockEnd)
+
             returnToken tokenLexbufState token
 
         | (LAZY | ASSERT), _ ->  
@@ -2063,6 +2070,20 @@ type LexFilterImpl (
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState token
 
+        // val GetParseResultsForFile :
+         //    (A ->
+         //     B ->
+         //        C)
+        | LPAREN _, CtxtMemberHead _ :: _
+        // type R =
+        //     { F: (A ->
+        //           B ->
+        //             C) }
+        | LPAREN _, CtxtVanilla _ :: CtxtSeqBlock _ :: CtxtParen (LBRACE _, _) :: CtxtSeqBlock _ :: CtxtTypeDefns _ :: _ ->
+            // Don't add OBLOCKSEP in these scenarios
+            pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
+            returnToken tokenLexbufState token
+        
         // '(' tokens are balanced with ')' tokens and also introduce a CtxtSeqBlock 
         // $".... { ... }  ... { ....} " pushes a block context at first {
         // ~~~~~~~~
