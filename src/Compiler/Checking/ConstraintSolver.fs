@@ -996,12 +996,12 @@ and SolveTyparEqualsTypePart2 (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
         do! RepeatWhileD ndeep (fun ndeep -> SolveRelevantMemberConstraintsForTypar csenv ndeep PermitWeakResolution.No trace r)
 
     // Re-solve the other constraints associated with this type variable 
-    return! solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
+    return! SolveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
 
   }
 
 /// Apply the constraints on 'typar' to the type 'ty'
-and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = trackErrors {
+and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = trackErrors {
     let g = csenv.g
 
     // Propagate compat flex requirements from 'tp' to 'ty'
@@ -1424,7 +1424,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           when 
                // This simulates the existence of 
                //    float * float -> float
-               //    float32 * float32 -> float32
+               //     float32 * float32 -> float32
                //    float<'u> * float<'v> -> float<'u 'v>
                //    float32<'u> * float32<'v> -> float32<'u 'v>
                //    decimal<'u> * decimal<'v> -> decimal<'u 'v>
