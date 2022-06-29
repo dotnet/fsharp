@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Benchmarks.BenchmarkHelpers
+﻿module FSharp.Compiler.Benchmarks.Helpers
 
 open System
 open System.IO

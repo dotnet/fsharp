@@ -11,24 +11,24 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
-open FSharp.Compiler.Benchmarks.BenchmarkHelpers
+open FSharp.Compiler.Benchmarks.Helpers
 open Microsoft.CodeAnalysis.Text
 
-type private Config = {
-    Checker : FSharpChecker
-    Source : SourceText
-    Assemblies : string[]
-    CheckResult : FSharpCheckFileAnswer 
-}
+type private Config =
+    {
+        Checker : FSharpChecker
+        Source : SourceText
+        Assemblies : string[]
+        CheckResult : FSharpCheckFileAnswer
+    }
 
 [<MemoryDiagnoser>]
 type CompilerServiceBenchmarks() =
-    let mutable configOpt = None
+    let mutable configOpt : Config option = None
 
     let getConfig () =
-        match configOpt with
-        | Some config -> config
-        | None -> failwith "Setup not run"
+        configOpt
+        |> Option.defaultWith (fun () -> failwith "Setup not run")
         
     let parsingOptions =
         {
@@ -52,23 +52,22 @@ type CompilerServiceBenchmarks() =
 
     [<GlobalSetup>]
     member _.Setup() =
-        
-        match configOpt with
-        | Some _ -> ()
-        | None ->
-            let checker = FSharpChecker.Create(projectCacheSize = 200)
-            let source = FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
-            let assemblies = 
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.map (fun x -> x.Location)
-            let options, _ =
-                checker.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
-                |> Async.RunSynchronously
-            let _, checkResult =                                                                
-                checker.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
-                |> Async.RunSynchronously
-            
-            configOpt <-
+        configOpt <-
+            match configOpt with
+            | Some _ -> configOpt
+            | None ->
+                let checker = FSharpChecker.Create(projectCacheSize = 200)
+                let source = FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
+                let assemblies = 
+                    AppDomain.CurrentDomain.GetAssemblies()
+                    |> Array.map (fun x -> x.Location)
+                let options, _ =
+                    checker.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
+                    |> Async.RunSynchronously
+                let _, checkResult =                                                                
+                    checker.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
+                    |> Async.RunSynchronously
+                
                 {
                     Checker = checker
                     Source = source

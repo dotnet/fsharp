@@ -1,4 +1,4 @@
-namespace Benchmark
+namespace HistoricalBenchmark
 
 open System.IO
 open BenchmarkDotNet.Attributes

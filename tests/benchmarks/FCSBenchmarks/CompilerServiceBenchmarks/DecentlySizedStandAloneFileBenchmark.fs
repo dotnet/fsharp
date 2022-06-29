@@ -1,11 +1,11 @@
 ﻿namespace FSharp.Compiler.Benchmarks
 
-open Benchmark
+open HistoricalBenchmark
 open BenchmarkDotNet.Attributes
-open BenchmarkHelpers
+open Helpers
 
 [<MemoryDiagnoser>]
-type TypeCheckingBenchmark() =
+type DecentlySizedStandAloneFileBenchmark() =
     inherit SingleFileCompilerBenchmarkBase(
         SingleFileCompiler(
             decentlySizedStandAloneFile,

@@ -10,13 +10,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+  
+  <PropertyGroup>
     <FcsReferenceType Condition="'$(FcsReferenceType)' == ''">project</FcsReferenceType>
     <FcsProjectPath Condition="'$(FcsDllPath)' == ''">..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj</FcsProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Helpers.fs" />
     <Compile Include="SingleFileCompiler.fs" />
-    <Compile Include="Benchmark.fs" />
+    <Compile Include="SingleBenchmark.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,7 +34,7 @@
     <ProjectReference Include="$(FcsProjectPath)" Condition="'$(FcsReferenceType)' == 'project'" />
     <!-- Reference the FCS NuGet package with the specified $FcsVersion -->
     <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" Condition=" '$(FcsReferenceType)' == 'nuget' " />
-    <!-- Reference the dll specified in $FcsPath -->
+    <!-- Reference the dll specified in $FcsDllPath -->
     <Reference Include="FSharp.Compiler.Service" Condition=" '$(FcsReferenceType)' == 'dll' ">
       <HintPath>$(FcsDllPath)</HintPath>
     </Reference>

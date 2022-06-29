@@ -9,7 +9,7 @@
   <ItemGroup>
     <Compile Include="SourceText.fs" />
     <Compile Include="Helpers.fs" />
-    <Compile Include="TypeCheckingBenchmark.fs" />
+    <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -22,7 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\BenchmarkComparison\Benchmark.fsproj" />
+    <ProjectReference Include="..\BenchmarkComparison\HistoricalBenchmark.fsproj" />
   </ItemGroup>
 
 </Project>
