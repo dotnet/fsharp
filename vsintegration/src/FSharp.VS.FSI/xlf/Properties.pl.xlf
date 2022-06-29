@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64-bitowe narzędzie F# Interactive</target>
+        <target state="new">64-bit F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">Jeśli ustawiono wartość true i obecnie jest używany komputer 64-bitowy, należy uruchomić narzędzie F# Interactive jako proces 64-bitowy. W przeciwnym razie narzędzie F# Interactive zostanie uruchomione jako proces 32-bitowy.</target>
+        <target state="new">If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
