@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Compiler.Benchmarks
 
-open BenchmarkComparison
+open Benchmark
 open BenchmarkDotNet.Attributes
 open BenchmarkHelpers
 

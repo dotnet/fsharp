@@ -1,4 +1,4 @@
-﻿namespace BenchmarkComparison
+﻿namespace Benchmark
 
 open System.IO
 open System.Threading.Tasks

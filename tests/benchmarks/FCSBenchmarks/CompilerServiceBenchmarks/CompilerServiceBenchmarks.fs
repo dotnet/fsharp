@@ -12,18 +12,24 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
 open FSharp.Compiler.Benchmarks.BenchmarkHelpers
+open Microsoft.CodeAnalysis.Text
 
-[<AutoOpen>]
-module Utils =
-    
+type private Config = {
+    Checker : FSharpChecker
+    Source : SourceText
+    Assemblies : string[]
+    CheckResult : FSharpCheckFileAnswer 
+}
 
 [<MemoryDiagnoser>]
 type CompilerServiceBenchmarks() =
-    let mutable checkerOpt = None
-    let mutable sourceOpt = None
-    let mutable assembliesOpt = None
-    let mutable decentlySizedStandAloneFileCheckResultOpt = None
+    let mutable configOpt = None
 
+    let getConfig () =
+        match configOpt with
+        | Some config -> config
+        | None -> failwith "Setup not run"
+        
     let parsingOptions =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
@@ -46,88 +52,76 @@ type CompilerServiceBenchmarks() =
 
     [<GlobalSetup>]
     member _.Setup() =
-        match checkerOpt with
-        | None ->
-            checkerOpt <- Some(FSharpChecker.Create(projectCacheSize = 200))
-        | _ -> ()
-
-        match sourceOpt with
-        | None ->
-            sourceOpt <- Some <| FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
-        | _ -> ()
-
-        match assembliesOpt with
-        | None -> 
-            assembliesOpt <- 
-                System.AppDomain.CurrentDomain.GetAssemblies()
-                |> Array.map (fun x -> (x.Location))
-                |> Some
         
-        | _ -> ()
-
-        match decentlySizedStandAloneFileCheckResultOpt with
+        match configOpt with
+        | Some _ -> ()
         | None ->
+            let checker = FSharpChecker.Create(projectCacheSize = 200)
+            let source = FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
+            let assemblies = 
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Array.map (fun x -> x.Location)
             let options, _ =
-                checkerOpt.Value.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
+                checker.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
                 |> Async.RunSynchronously
             let _, checkResult =                                                                
-                checkerOpt.Value.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
+                checker.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
                 |> Async.RunSynchronously
-            decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
-        | _ -> ()
-
+            
+            configOpt <-
+                {
+                    Checker = checker
+                    Source = source
+                    Assemblies = assemblies
+                    CheckResult = checkResult
+                }
+                |> Some
+    
     [<Benchmark>]
     member _.ParsingTypeCheckerFs() =
-        match checkerOpt, sourceOpt with
-        | None, _ -> failwith "no checker"
-        | _, None -> failwith "no source"
-        | Some(checker), Some(source) ->
-            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
-            if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
+        let config = getConfig()
+        let results = config.Checker.ParseFile("CheckExpressions.fs", config.Source |> SourceText.toFSharpSourceText, parsingOptions) |> Async.RunSynchronously
+        if results.ParseHadErrors then failwithf $"parse had errors: %A{results.Diagnostics}"
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
     member _.ParsingTypeCheckerFsSetup() =
-        match checkerOpt with
-        | None -> failwith "no checker"
-        | Some(checker) ->
-            checker.InvalidateAll()
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
-            ClearAllILModuleReaderCache()
+        let checker = getConfig().Checker
+        checker.InvalidateAll()
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+        ClearAllILModuleReaderCache()
 
     [<Benchmark>]
     member _.ILReading() =
-        match assembliesOpt with
-        | None -> failwith "no assemblies"
-        | Some(assemblies) ->
-            // We try to read most of everything in the assembly that matter, mainly types with their properties, methods, and fields.
-            // CustomAttrs and SecurityDecls are lazy until you call them, so we call them here for benchmarking.
-            for fileName in assemblies do
-                let reader = OpenILModuleReader fileName readerOptions
+        let config = getConfig()
+        // We try to read most of everything in the assembly that matter, mainly types with their properties, methods, and fields.
+        // CustomAttrs and SecurityDecls are lazy until you call them, so we call them here for benchmarking.
+        for fileName in config.Assemblies do
+            let reader = OpenILModuleReader fileName readerOptions
 
-                let ilModuleDef = reader.ILModuleDef
+            let ilModuleDef = reader.ILModuleDef
 
-                let ilAssemblyManifest = ilModuleDef.Manifest.Value
+            let ilAssemblyManifest = ilModuleDef.Manifest.Value
 
-                ilAssemblyManifest.CustomAttrs |> ignore
-                ilAssemblyManifest.SecurityDecls |> ignore
-                for x in ilAssemblyManifest.ExportedTypes.AsList() do
-                    x.CustomAttrs |> ignore
+            ilAssemblyManifest.CustomAttrs |> ignore
+            ilAssemblyManifest.SecurityDecls |> ignore
+            for x in ilAssemblyManifest.ExportedTypes.AsList() do
+                x.CustomAttrs |> ignore
 
-                ilModuleDef.CustomAttrs |> ignore
-                for ilTypeDef in ilModuleDef.TypeDefs.AsArray() do
-                    ilTypeDef.CustomAttrs |> ignore
-                    ilTypeDef.SecurityDecls |> ignore
+            ilModuleDef.CustomAttrs |> ignore
+            for ilTypeDef in ilModuleDef.TypeDefs.AsArray() do
+                ilTypeDef.CustomAttrs |> ignore
+                ilTypeDef.SecurityDecls |> ignore
 
-                    for ilMethodDef in ilTypeDef.Methods.AsArray() do
-                        ilMethodDef.CustomAttrs |> ignore
-                        ilMethodDef.SecurityDecls |> ignore
+                for ilMethodDef in ilTypeDef.Methods.AsArray() do
+                    ilMethodDef.CustomAttrs |> ignore
+                    ilMethodDef.SecurityDecls |> ignore
 
-                    for ilFieldDef in ilTypeDef.Fields.AsList() do
-                        ilFieldDef.CustomAttrs |> ignore
+                for ilFieldDef in ilTypeDef.Fields.AsList() do
+                    ilFieldDef.CustomAttrs |> ignore
 
-                    for ilPropertyDef in ilTypeDef.Properties.AsList() do
-                        ilPropertyDef.CustomAttrs |> ignore
+                for ilPropertyDef in ilTypeDef.Properties.AsList() do
+                    ilPropertyDef.CustomAttrs |> ignore
 
     [<IterationCleanup(Target = "ILReading")>]
     member _.ILReadingSetup() =
@@ -144,23 +138,20 @@ type CompilerServiceBenchmarks() =
     member this.TypeCheckFileWith100ReferencedProjectsRun() =
         let options = this.TypeCheckFileWith100ReferencedProjectsOptions
         let file = options.SourceFiles.[0]
+        let checker = getConfig().Checker
+        let parseResult, checkResult =                                                                
+            checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
+            |> Async.RunSynchronously
 
-        match checkerOpt with
-        | None -> failwith "no checker"
-        | Some checker ->
-            let parseResult, checkResult =                                                                
-                checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
-                |> Async.RunSynchronously
+        if parseResult.Diagnostics.Length > 0 then
+            failwithf $"%A{parseResult.Diagnostics}"
 
-            if parseResult.Diagnostics.Length > 0 then
-                failwithf "%A" parseResult.Diagnostics
+        match checkResult with
+        | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
+        | FSharpCheckFileAnswer.Succeeded checkFileResult ->
 
-            match checkResult with
-            | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
-            | FSharpCheckFileAnswer.Succeeded checkFileResult ->
-
-                if checkFileResult.Diagnostics.Length > 0 then
-                    failwithf $"%A{checkFileResult.Diagnostics}"
+            if checkFileResult.Diagnostics.Length > 0 then
+                failwithf $"%A{checkFileResult.Diagnostics}"
 
     [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
     member this.TypeCheckFileWith100ReferencedProjectsSetup() =
@@ -196,44 +187,36 @@ type CompilerServiceBenchmarks() =
                     try File.Delete(file) with | _ -> ()
             | _ -> ()
 
-        match checkerOpt with
-        | None -> failwith "no checker"
-        | Some checker ->
-            checker.InvalidateAll()
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            ClearAllILModuleReaderCache()
+        let checker = getConfig().Checker
+        checker.InvalidateAll()
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        ClearAllILModuleReaderCache()
 
     [<Benchmark>]
     member _.SimplifyNames() =
-        match decentlySizedStandAloneFileCheckResultOpt with
-        | Some checkResult ->
-            match checkResult with
-            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
-            | FSharpCheckFileAnswer.Succeeded results ->
-                let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
-                ignore ranges                
-        | _ -> failwith "oopsie"
+        let checkResult = getConfig().CheckResult
+        match checkResult with
+        | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+        | FSharpCheckFileAnswer.Succeeded results ->
+            let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+            let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+            ignore ranges                
 
     [<Benchmark>]
     member _.UnusedOpens() =
-        match decentlySizedStandAloneFileCheckResultOpt with
-        | Some checkResult ->
-            match checkResult with
-            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
-            | FSharpCheckFileAnswer.Succeeded results ->
-                let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
-                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
-                ignore decls              
-        | _ -> failwith "oopsie"
+        let checkResult = getConfig().CheckResult
+        match checkResult with
+        | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+        | FSharpCheckFileAnswer.Succeeded results ->
+            let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+            let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+            ignore decls              
 
     [<Benchmark>]
     member _.UnusedDeclarations() =
-        match decentlySizedStandAloneFileCheckResultOpt with
-        | Some checkResult ->
-            match checkResult with
-            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
-            | FSharpCheckFileAnswer.Succeeded results ->
-                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
-                ignore decls // should be 16                
-        | _ -> failwith "oopsie"
+        let checkResult = getConfig().CheckResult
+        match checkResult with
+        | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+        | FSharpCheckFileAnswer.Succeeded results ->
+            let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
+            ignore decls // should be 16                

@@ -1,9 +1,8 @@
-module BenchmarkComparison
+namespace Benchmark
 
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Running
-open BenchmarkHelpers
 
 [<AbstractClass>]
 type SingleFileCompilerBenchmarkBase(compiler : SingleFileCompiler) =
@@ -28,7 +27,9 @@ type DecentlySizedStandAloneFileBenchmark() =
         )
     )
 
-[<EntryPoint>]
-let main args =
-    BenchmarkSwitcher.FromAssembly(typeof<DecentlySizedStandAloneFileBenchmark>.Assembly).Run(args) |> ignore
-    0
+module Benchmark =
+
+    [<EntryPoint>]
+    let main args =
+        BenchmarkSwitcher.FromAssembly(typeof<DecentlySizedStandAloneFileBenchmark>.Assembly).Run(args) |> ignore
+        0

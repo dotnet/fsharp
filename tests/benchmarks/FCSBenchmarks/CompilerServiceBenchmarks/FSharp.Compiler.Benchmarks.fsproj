@@ -7,22 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="SourceText.fs" />
     <Compile Include="Helpers.fs" />
-    <Compile Include="BenchmarkHelpers.fs" />
     <Compile Include="TypeCheckingBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
     <!-- <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="2.9.0" /> -->
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\BenchmarkComparison\BenchmarkComparison.fsproj" />
+    <ProjectReference Include="..\BenchmarkComparison\Benchmark.fsproj" />
   </ItemGroup>
 
 </Project>

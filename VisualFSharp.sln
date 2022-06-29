@@ -178,7 +178,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsi\fsiAny
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiArm64", "src\fsi\fsiArm64Project\fsiArm64.fsproj", "{EB015235-1E07-4CDA-9CC6-3FBCC27910D1}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BenchmarkComparison", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\BenchmarkComparison.fsproj", "{583182E1-3484-4A8F-AC06-7C0D232C0CA4}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Benchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\Benchmark.fsproj", "{583182E1-3484-4A8F-AC06-7C0D232C0CA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
