@@ -531,6 +531,9 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member _.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
         TypeReprEnv(reprs, count, Some(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst))
 
+    member _.WithoutTemplateReplacement() =
+        TypeReprEnv(reprs, count, None)
+
     /// Lookup a type parameter
     member _.Item(tp: Typar, m: range) =
         try
@@ -859,17 +862,17 @@ let GenFieldSpecForStaticField (isInteractive, g, ilContainerTy, vspec: Val, nm,
         mkILFieldSpecInTy (ilFieldContainerTy, fieldName, ilTy)
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
-    // Fixup references to the fields of a struct machine template
-    // templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
-    // templateTyconRef = ResumableStateMachine<'Data>
-    // templateTypeArgs = <TaskStateMachineData<SomeType['FreeTyVars]>
-    // templateTypeInst = 'Data -> TaskStateMachineData<SomeType['FreeTyVars]>
-    // cloFreeTyvars = <'FreeTyVars>
-    // ilCloTy = clo<'FreeTyVars> w.r.t envinner
-    // rfref = ResumableStateMachine<'Data>::Result
-    // rfref.RecdField.FormalType = 'Data
     match tyenv.TemplateReplacement with
     | Some (tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 ->
+        // Fixup references to the fields of a struct machine template
+        //     templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
+        //     templateTyconRef = ResumableStateMachine<'Data>
+        //     templateTypeArgs = <TaskStateMachineData<SomeType['FreeTyVars]>
+        //     templateTypeInst = 'Data -> TaskStateMachineData<SomeType['FreeTyVars]>
+        //     cloFreeTyvars = <'FreeTyVars>
+        //     ilCloTy = clo<'FreeTyVars> w.r.t envinner
+        //     rfref = ResumableStateMachine<'Data>::Result
+        //     rfref.RecdField.FormalType = 'Data
         let ilCloTy =
             let cloInst = List.map mkTyparTy cloFreeTyvars
             let ilTypeInst = GenTypeArgsAux cenv m tyenv cloInst
@@ -1291,6 +1294,11 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
 
 let AddStorageForLocalVals g vals eenv =
     List.foldBack (fun (v, s) acc -> AddStorageForVal g (v, notlazy s) acc) vals eenv
+
+let RemoveTemplateReplacement eenv =
+    { eenv with
+        tyenv = eenv.tyenv.WithoutTemplateReplacement()
+    }
 
 let AddTemplateReplacement eenv (tcref, ftyvs, ilTy, inst) =
     { eenv with
@@ -2848,21 +2856,24 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
         //ProcessDebugPointForExpr cenv cgbuf expr
 
-        match (if compileSequenceExpressions then
-                   LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr
-               else
-                   None)
-            with
+        let lowering =
+            if compileSequenceExpressions then
+                LowerComputedCollectionExpressions.LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr
+            else
+                None
+
+        match lowering with
         | Some altExpr ->
             GenExpr cenv cgbuf eenv altExpr sequel
             true
         | None ->
 
-            match (if compileSequenceExpressions then
-                       LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr
-                   else
-                       None)
-                with
+            let lowering =
+                if compileSequenceExpressions then
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr
+                else
+                    None
+            match lowering with
             | Some info ->
                 GenSequenceExpr cenv cgbuf eenv info sequel
                 true
@@ -2870,15 +2881,21 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
                 match LowerStateMachineExpr cenv.g expr with
                 | LoweredStateMachineResult.Lowered res ->
+                    let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     GenStructStateMachine cenv cgbuf eenv res sequel
                     true
                 | LoweredStateMachineResult.UseAlternative (msg, altExpr) ->
+                    // When prepping to generate a state machine, we can remove any trace of the template struct
+                    // type for the internal state of any enclosing state machine, as they do not interact. This
+                    // is important if the nested state machine generates dynamic code (LoweredStateMachineResult.UseAlternative).
+                    let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     warning (Error(FSComp.SR.reprStateMachineNotCompilable (msg), expr.Range))
                     GenExpr cenv cgbuf eenv altExpr sequel
                     true
                 | LoweredStateMachineResult.NoAlternative msg ->
+                    let eenv = RemoveTemplateReplacement eenv
                     checkLanguageFeatureError cenv.g.langVersion LanguageFeature.ResumableStateMachines expr.Range
                     errorR (Error(FSComp.SR.reprStateMachineNotCompilableNoAlternative (msg), expr.Range))
                     GenDefaultValue cenv cgbuf eenv (tyOfExpr cenv.g expr, expr.Range)
