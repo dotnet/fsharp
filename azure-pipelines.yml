@@ -56,6 +56,10 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+    - name: _DotNetValidationArtifactsCategory
+      value: .NETCoreValidation
+    - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -75,11 +79,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.2') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.3') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.2
+          MirrorBranch: release/dev17.3
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -180,6 +184,78 @@ stages:
             condition: succeeded()
 
   #-------------------------------------------------------------------------------------------------------------------#
+  #                            PR builds without logs publishing                                                      #
+  #-------------------------------------------------------------------------------------------------------------------#
+  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
+    - template: /eng/common/templates/jobs/jobs.yml
+      parameters:
+        enableMicrobuild: false
+        enablePublishBuildArtifacts: false
+        enablePublishTestResults: false
+        enablePublishBuildAssets: false
+        enablePublishUsingPipelines: $(_PublishUsingPipelines)
+        enableSourceBuild: false
+        enableTelemetry: true
+        helixRepo: dotnet/fsharp
+        jobs:
+          # Determinism, we want to run it only in PR builds
+        - job: Determinism_Debug
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+          - name: _SignType
+            value: Test
+          pool:
+            name: NetCore1ESPool-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: false
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Build.SourcesDirectory)/.dotnet
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            displayName: Determinism tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
+
+          # Check code formatting
+        - job: CheckCodeFormatting
+          pool:
+            vmImage: $(UbuntuMachineQueueName)
+          steps:
+          - checkout: self
+            clean: true
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet tool restore
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Install tools
+          - script: dotnet fantomas src -r --check
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check code formatting (run 'dotnet fantomas src -r' to fix)
+
+  #-------------------------------------------------------------------------------------------------------------------#
   #                                                    PR builds                                                      #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if eq(variables['System.TeamProject'], 'public') }}:
@@ -199,7 +275,7 @@ stages:
         - job: Windows
           pool:
             # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
             name: NetCore1ESPool-Public
@@ -397,7 +473,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -429,7 +505,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -461,7 +537,7 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.sln
           - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
-            workingDirectory: $(Build.SourcesDirectory)/service
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
@@ -492,6 +568,20 @@ stages:
       enableSymbolValidation: false
       # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
       enableSourceLinkValidation: false
+      # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
+      SDLValidationParameters:
+        enable: true
+        params: >-
+          -SourceToolsList @("policheck","credscan")
+          -TsaInstanceURL $(_TsaInstanceURL)
+          -TsaProjectName $(_TsaProjectName)
+          -TsaNotificationEmail $(_TsaNotificationEmail)
+          -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
+          -TsaBugAreaPath $(_TsaBugAreaPath)
+          -TsaIterationPath $(_TsaIterationPath)
+          -TsaRepositoryName "FSharp"
+          -TsaCodebaseName "FSharp-GitHub"
+          -TsaPublish $True
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                   VS Insertion                                                      #
@@ -499,8 +589,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.2
-      insertTargetBranch: rel/d17.2
+      componentBranchName: refs/heads/release/dev17.3
+      insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'
