@@ -84,9 +84,7 @@ let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPro
 
             mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, body)
 
-    ilMethodDef
-        .With(customAttrs = mkILCustomAttrs customAttrs)
-        .WithSpecialName
+    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
 
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
@@ -600,7 +598,8 @@ type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
 
-let GenReadOnlyAttribute (g: TcGlobals) = mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+let GenReadOnlyAttribute (g: TcGlobals) =
+    mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
 
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
     let add = isInByrefTy g ty && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
@@ -2091,7 +2090,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs = if isStruct then [GenReadOnlyAttribute g] else []
+                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                     yield! genToStringMethod ilTy
                 ]
@@ -10698,7 +10697,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let ilMethName = "get_" + ilPropName
                             let access = ComputeMemberAccess isPropHidden
                             let isStruct = tcref.IsFSharpStructOrEnumTycon && not tcref.IsEnumTycon
-                            let attrs = if isStruct && not isStatic then [GenReadOnlyAttribute g] else []
+
+                            let attrs =
+                                if isStruct && not isStatic then
+                                    [ GenReadOnlyAttribute g ]
+                                else
+                                    []
+
                             yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, attrs)
 
                     // Generate property setter methods for the mutable fields
