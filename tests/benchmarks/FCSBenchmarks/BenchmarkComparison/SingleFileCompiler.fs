@@ -66,10 +66,10 @@ type SingleFileCompiler(filePath: string, optionsCreationMethod : OptionsCreatio
             | FSharpCheckFileAnswer.Succeeded results ->
                 Helpers.failOnErrors results
 
-    member _.Cleanup() =
+    abstract member Cleanup : unit -> unit
+    default _.Cleanup() =
         match configOpt with
         | None -> failwith "Setup not run"
         | Some {Checker = checker} ->
             checker.InvalidateAll()
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-            FSharp.Compiler.AbstractIL.ILBinaryReader.ClearAllILModuleReaderCache()

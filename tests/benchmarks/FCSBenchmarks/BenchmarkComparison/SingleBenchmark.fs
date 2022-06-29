@@ -19,11 +19,12 @@ type SingleFileCompilerBenchmarkBase(compiler : SingleFileCompiler) =
         compiler.Cleanup()
 
 [<MemoryDiagnoser>]
+[<JsonExporter>]
 type DecentlySizedStandAloneFileBenchmark() =
     inherit SingleFileCompilerBenchmarkBase(
         SingleFileCompiler(
             Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs"),
-            OptionsCreationMethod.FromScript
+            OptionsCreationMethod.CmdlineArgs
         )
     )
 
