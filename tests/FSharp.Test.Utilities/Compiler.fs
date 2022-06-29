@@ -641,12 +641,17 @@ module rec Compiler =
     let withMetadataReader func =
         withPeReader (fun reader -> reader.GetMetadataReader() |> func)
 
-    let compileGuid =
-        compile
-        >> shouldSucceed
-        >> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
+    let compileGuid cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
 
-    let compileAssembly = compile >> shouldSucceed >> getAssembly
+    let compileAssembly cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> getAssembly
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
