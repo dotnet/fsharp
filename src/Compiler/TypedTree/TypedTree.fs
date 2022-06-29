@@ -2341,7 +2341,7 @@ type TyparConstraint =
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
-    | TraitWitnessInfo of TTypes * string * SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTy: TType option
     
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
@@ -2352,7 +2352,7 @@ type TraitWitnessInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2360,26 +2360,23 @@ type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
-
-    /// Get the key associated with the member constraint.
-    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the types that may provide solutions for the traits
-    member x.GoverningTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
+    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
 
-    /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    /// Get the logical member name associated with the member constraint.
+    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
     member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argTys, _, _)) = x in argTys)
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
 
-    /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
+
+    /// Get the optional return type recorded in the member constraint.
+    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
@@ -2389,7 +2386,7 @@ type TraitConstraintInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -4927,7 +4924,7 @@ type TOp =
         | Return -> "Return"
         | Goto n -> "Goto(" + string n + ")"
         | Label n -> "Label(" + string n + ")"
-        | TraitCall info -> "TraitCall(" + info.MemberName + ")"
+        | TraitCall info -> "TraitCall(" + info.MemberLogicalName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
         | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 

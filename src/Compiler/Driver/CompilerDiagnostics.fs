@@ -782,12 +782,13 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | UnresolvedOverloading (denv, callerArgs, failure, m) ->
 
+            let g = denv.g
             // extract eventual information (return type and type parameters)
             // from ConstraintTraitInfo
             let knownReturnType, genericParameterTypes =
                 match failure with
                 | NoOverloadsFound(cx = Some cx)
-                | PossibleCandidates(cx = Some cx) -> cx.ReturnType, cx.ArgumentTypes
+                | PossibleCandidates(cx = Some cx) -> Some (cx.GetReturnType(g)), cx.GetCompiledArgumentTypes()
                 | _ -> None, []
 
             // prepare message parts (known arguments, known return type, known generic parameters)

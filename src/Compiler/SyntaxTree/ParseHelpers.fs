@@ -733,6 +733,14 @@ let mkSynMemberDefnGetSet
             ]
     | _ -> []
 
+//  Input Text               Precedence by Parser        Adjustment
+//
+//  ^T.Ident                 ^(T.Ident)                  (^T).Ident
+//  ^T.Ident[idx]            ^(T.Ident[idx])             (^T).Ident[idx]
+//  ^T.Ident.[idx]           ^(T.Ident.[idx])            (^T).Ident.[idx]
+//  ^T.Ident.Ident2          ^(T.Ident.Ident2)           (^T).Ident.Ident2
+//  ^T.Ident(args).Ident3    ^(T.Ident(args).Ident3)     (^T).Ident(args).Ident3
+//  ^T.(+)(args)             ^(T.(+)(args))              (^T).(+)(args).Ident3
 let adjustHatPrefixToTyparLookup mFull rightExpr =
     let rec take inp =
         match inp with

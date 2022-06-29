@@ -825,7 +825,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             | Some e -> yield! walkExpr false e
                             | None -> ()
 
-                        | SynExpr.HatPrefix (e, _) -> yield! walkExpr false e
+                        | SynExpr.IndexFromEnd (e, _) -> yield! walkExpr false e
 
                         | SynExpr.DotIndexedSet (e1, es, e2, _, _, _) ->
                             yield! walkExpr false e1

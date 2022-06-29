@@ -2647,3 +2647,21 @@ val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
 val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
+
+type TraitConstraintInfo with
+    /// Get the argument types recorded in the member constraint suitable for building a TypedTree call.
+    member GetCompiledArgumentTypes: unit -> TType list
+
+    /// Get the argument types when the trait is used as a first-class value "^T.TraitName" which can then be applied
+    member GetLogicalArgumentTypes: g: TcGlobals -> TType list
+
+    member GetObjectType: unit -> TType option
+
+    member GetReturnType: g: TcGlobals -> TType
+
+    /// Get the name of the trait for textual call.
+    member MemberDisplayNameCore: string
+
+    /// Get the key associated with the member constraint.
+    member GetWitnessInfo: unit -> TraitWitnessInfo
+

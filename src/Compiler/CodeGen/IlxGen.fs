@@ -3924,7 +3924,8 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
 
 and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
     let g = cenv.g
-    let storage = TryStorageForWitness g eenv traitInfo.TraitKey
+    let witnessInfo = traitInfo.GetWitnessInfo()
+    let storage = TryStorageForWitness g eenv witnessInfo
 
     match storage with
     | None ->
@@ -3940,7 +3941,8 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
             let eenv = { eenv with suppressWitnesses = true }
             GenExpr cenv cgbuf eenv arg Continue
     | Some storage ->
-        let ty = GenWitnessTy g traitInfo.TraitKey
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage None
 
 and GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo =
@@ -5340,14 +5342,16 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
     let witness =
         if generateWitnesses then
-            TryStorageForWitness g eenv traitInfo.TraitKey
+            let witnessInfo = traitInfo.GetWitnessInfo()
+            TryStorageForWitness g eenv witnessInfo
         else
             None
 
     match witness with
     | Some storage ->
 
-        let ty = GenWitnessTy g traitInfo.TraitKey
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        let ty = GenWitnessTy g witnessInfo
         let argExprs = if argExprs.Length = 0 then [ mkUnit g m ] else argExprs
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage (Some([], argExprs, m, sequel))
 
@@ -5362,7 +5366,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         match minfoOpt with
         | None ->
             let exnArg =
-                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberName))
+                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberLogicalName))
 
             let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
             let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr

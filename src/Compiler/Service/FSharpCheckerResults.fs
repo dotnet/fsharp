@@ -46,6 +46,7 @@ open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.AbstractIL
 open System.Reflection.PortableExecutable
@@ -814,14 +815,39 @@ type internal TypeCheckInfo
     let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind =
             match item.Item with
-            | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.FakeInterfaceCtor _
+            | Item.DelegateCtor _
+            | Item.CtorGroup _ -> CompletionItemKind.Method false
+            | Item.MethodGroup (_, minfos, _) ->
+                match minfos with
+                | [] -> CompletionItemKind.Method false
+                | minfo :: _ -> CompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
             | Item.Event _ -> CompletionItemKind.Event
             | Item.ILField _
             | Item.Value _ -> CompletionItemKind.Field
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
-            | _ -> CompletionItemKind.Other
+            // These items are not given a completion kind. This could be reviewed
+            | Item.AnonRecdField _
+            | Item.ActivePatternResult _
+            | Item.CustomOperation _
+            | Item.CtorGroup _
+            | Item.ExnCase _
+            | Item.ImplicitOp _
+            | Item.ModuleOrNamespaces _
+            | Item.Trait _
+            | Item.TypeVar _
+            | Item.Types _
+            | Item.UnionCase _
+            | Item.UnionCaseField _
+            | Item.UnqualifiedType _
+            | Item.Value _
+            | Item.NewDef _
+            | Item.SetterArg _
+            | Item.CustomBuilder _
+            | Item.ArgName _
+            | Item.ActivePatternCase _ -> CompletionItemKind.Other
 
         let isUnresolved =
             match assemblySymbol with
@@ -1796,7 +1822,8 @@ type internal TypeCheckInfo
                 | Some ([], _, _, _) -> None
                 | Some (items, denv, _, m) ->
                     let allItems =
-                        items |> List.collect (fun item -> FlattenItems g m item.ItemWithInst)
+                        items
+                        |> List.collect (fun item -> SelectMethodGroupItems2 g m item.ItemWithInst)
 
                     let symbols =
                         allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item.Item), item)
@@ -1838,6 +1865,8 @@ type internal TypeCheckInfo
                         let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun ty -> ty.Name)
                         classTypeParams @ methodTypeParams |> Array.ofList
 
+                    // Detect external references.  Currently this only labels references to .NET assemblies as external - F#
+                    // references from nuget packages are not labelled as external.
                     let result =
                         match item.Item with
                         | Item.CtorGroup (_, ILMeth (_, ilinfo, _) :: _) ->
@@ -1906,21 +1935,19 @@ type internal TypeCheckInfo
                                 Some(FindDeclResult.ExternalDecl(assemblyRef.Name, externalSym))
                             | _ -> None
 
-                        | Item.ImplicitOp (_,
-                                           {
-                                               contents = Some (TraitConstraintSln.FSMethSln (_, _vref, _))
-                                           }) ->
-                            //Item.Value(vref)
-                            None
-
-                        | Item.Types (_, TType_app (tr, _, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
-
-                        | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
-                            match tr.TypeReprInfo, tr.PublicPath with
-                            | TILObjectRepr (TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
-                                let fullName = parts |> String.concat "."
-                                Some(FindDeclResult.ExternalDecl(assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
+                        | Item.Types (_, ty :: _) ->
+                            match stripTyparEqns ty with
+                            | TType_app (tr, _, _) ->
+                                if tr.IsLocalRef then
+                                    None
+                                else
+                                    match tr.TypeReprInfo, tr.PublicPath with
+                                    | TILObjectRepr (TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
+                                        let fullName = parts |> String.concat "."
+                                        Some(FindDeclResult.ExternalDecl(assemblyRef.Name, FindDeclExternalSymbol.Type fullName))
+                                    | _ -> None
                             | _ -> None
+
                         | _ -> None
 
                     match result with

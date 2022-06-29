@@ -2216,7 +2216,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
-    let witnessInfo = traitInfo.TraitKey
+    let witnessInfo = traitInfo.GetWitnessInfo()
     let argTysl = GenWitnessArgTys g witnessInfo
     let vse = argTysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse

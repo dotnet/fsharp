@@ -611,6 +611,7 @@ module ParsedInput =
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
+            | SynTypeConstraint.WhereSelfConstrained (ts, _) -> walkType ts
 
         and walkPatWithKind (kind: EntityKind option) pat =
             match pat with
@@ -1606,6 +1607,8 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
+            | SynTypeConstraint.WhereSelfConstrained (ty, _) ->
+                walkType ty
 
         and walkPat pat =
             match pat with
@@ -1768,7 +1771,7 @@ module ParsedInput =
                 match expr2 with
                 | Some e -> walkExpr e
                 | None -> ()
-            | SynExpr.HatPrefix (e, _) -> walkExpr e
+            | SynExpr.IndexFromEnd (e, _) -> walkExpr e
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 walkExpr args

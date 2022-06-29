@@ -50,6 +50,7 @@ type LanguageFeature =
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -113,6 +114,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ReallyLongLists, previewVersion
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
                 LanguageFeature.InterfacesWithAbstractStaticMembers, previewVersion
+                LanguageFeature.SelfTypeConstraints, previewVersion
 
             ]
 
@@ -213,7 +215,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureVirtualStaticsInInterfaces ()
+        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
+        | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

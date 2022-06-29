@@ -136,6 +136,11 @@ type ParamData =
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 
+// Adhoc information - could be unified with ParamData
+type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
+
+val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs
+
 /// Describes an F# use of an IL type, including the type instantiation associated with the type at a particular usage point.
 [<NoComparison; NoEquality>]
 type ILTypeInfo =
@@ -494,8 +499,7 @@ type MethInfo =
     member GetObjArgTypes: amap: ImportMap * m: range * minst: TypeInst -> TType list
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member GetParamAttribs:
-        amap: ImportMap * m: range -> (bool * bool * bool * OptionalArgInfo * CallerInfo * ReflectedArgInfo) list list
+    member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list

@@ -670,7 +670,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.HatPrefix (e, _) -> traverseSynExpr e
+                | SynExpr.IndexFromEnd (e, _) -> traverseSynExpr e
 
                 | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) ->
                     [

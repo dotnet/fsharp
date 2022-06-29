@@ -97,25 +97,46 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty =
 
 /// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
 /// parameter is an optional name to restrict the set of properties returned.
-let GetImmediateTraitsInfosOfType (optFilter, _ad) g ty = 
+let GetImmediateTraitsInfosOfType optFilter g ty = 
     match tryDestTyparTy g ty with
     | ValueSome tp ->
         let infos = GetTraitConstraintInfosOfTypars g [tp]
-        let infos =
-            match optFilter with
-            | None -> infos
-            | Some nm ->
-                infos |> List.filter (fun traitInfo ->
-                    let traitName0 = traitInfo.MemberName
-                    let traitName1 =
-                        match traitInfo.MemberFlags.MemberKind with
-                        | SynMemberKind.PropertyGet ->
-                            match PrettyNaming.TryChopPropertyName traitName0 with
-                            | Some nm -> nm
-                            | None -> traitName0
-                        | _ -> traitName0
-                    (nm = traitName0) || (nm = traitName1))
-        infos
+        match optFilter with
+        | None -> 
+            [ for traitInfo in infos do
+                match traitInfo.MemberFlags.MemberKind with
+                | SynMemberKind.PropertySet ->
+                    // A setter property trait only can be utilized via 
+                    //   ^T.set_Property(v)
+                    traitInfo.WithMemberKind(SynMemberKind.Member)
+                | _ ->
+                    traitInfo ]
+        | Some nm ->
+            [ for traitInfo in infos do
+                match traitInfo.MemberFlags.MemberKind with
+                | SynMemberKind.PropertyGet ->
+                    // A getter property trait can be utilized via 
+                    //   ^T.Property
+                    //   ^T.get_Property()
+                    // The latter doesn't appear in intellisense
+                    if nm = traitInfo.MemberDisplayNameCore then
+                        traitInfo
+                    let traitInfo2 = traitInfo.WithMemberKind(SynMemberKind.Member)
+                    if nm = traitInfo2.MemberDisplayNameCore then
+                        traitInfo2
+                | SynMemberKind.PropertySet ->
+                    // A setter property trait only can be utilized via 
+                    //   ^T.set_Property(v)
+                    let traitInfo2 = traitInfo.WithMemberKind(SynMemberKind.Member)
+                    if nm = traitInfo2.MemberDisplayNameCore then
+                        traitInfo2
+                | _ -> 
+                    // Method traits can be utilized via
+                    //   ^T.Member(v)
+                    if nm = traitInfo.MemberDisplayNameCore then
+                        traitInfo
+                ]
+
     | _ ->
         []
 
@@ -418,11 +439,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         FoldPrimaryHierarchyOfType (fun ty acc -> ty :: acc) g amap m allowMultiIntfInst ty [] 
 
     /// The primitive reader for the named items up a hierarchy
-    let GetIntrinsicNamedItemsUncached ((nm, ad), m, ty) =
+    let GetIntrinsicNamedItemsUncached ((nm, ad, includeConstraints), m, ty) =
         if nm = ".ctor" then None else // '.ctor' lookups only ever happen via constructor syntax
         let optFilter = Some nm
         FoldPrimaryHierarchyOfType (fun ty acc -> 
-             let qinfos = GetImmediateTraitsInfosOfType (optFilter, ad) g ty
+             let qinfos = if includeConstraints then GetImmediateTraitsInfosOfType optFilter g ty else []
              let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty
              let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty
              let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty 
@@ -689,9 +710,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                member _.Equals((filter1, ad1), (filter2, ad2)) = (filter1 = filter2) && AccessorDomain.CustomEquals(g, ad1, ad2) }
 
     let hashFlags2 = 
-        { new System.Collections.Generic.IEqualityComparer<string * AccessorDomain> with 
-               member _.GetHashCode((nm: string, ad: AccessorDomain)) = hash nm + AccessorDomain.CustomGetHashCode ad
-               member _.Equals((nm1, ad1), (nm2, ad2)) = (nm1 = nm2) && AccessorDomain.CustomEquals(g, ad1, ad2) }
+        { new System.Collections.Generic.IEqualityComparer<string * AccessorDomain * bool> with 
+               member _.GetHashCode((nm: string, ad: AccessorDomain, includeConstraints)) =
+                   hash nm + AccessorDomain.CustomGetHashCode ad + hash includeConstraints
+               member _.Equals((nm1, ad1, includeConstraints1), (nm2, ad2, includeConstraints2)) =
+                   (nm1 = nm2) && AccessorDomain.CustomEquals(g, ad1, ad2) && (includeConstraints1 = includeConstraints2) }
                          
     let hashFlags3 = 
         { new System.Collections.Generic.IEqualityComparer<AccessorDomain> with 
@@ -769,8 +792,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                 | _ -> failwith "unexpected multiple fields with same name" // Because it should have been already reported as duplicate fields
 
     /// Try and find an item with the given name in a type.
-    member _.TryFindNamedItemOfType (nm, ad, m, ty) =
-        namedItemsCache.Apply(((nm, ad), m, ty))
+    member _.TryFindNamedItemOfType ((nm, ad, includeConstraints), m, ty) =
+        namedItemsCache.Apply(((nm, ad, includeConstraints), m, ty))
 
     /// Read the raw method sets of a type that are the most specific overrides. Cache the result for monomorphic types
     member _.GetIntrinsicMostSpecificOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
@@ -853,8 +876,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty = 
         infoReader.GetIntrinsicPropInfoSetsOfType optFilter ad allowMultiIntfInst findFlag m ty  |> List.concat
 
-    member infoReader.TryFindIntrinsicNamedItemOfType (nm, ad) findFlag m ty = 
-        match infoReader.TryFindNamedItemOfType(nm, ad, m, ty) with
+    member _.GetTraitInfosInType optFilter ty = 
+        GetImmediateTraitsInfosOfType optFilter g ty
+
+    member infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty = 
+        match infoReader.TryFindNamedItemOfType((nm, ad, includeConstraints), m, ty) with
         | Some item -> 
             match item with 
             | PropertyItem psets -> Some(PropertyItem (psets |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m))
@@ -900,8 +926,8 @@ let GetIntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMulti
 let GetIntrinsicPropInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty = 
     infoReader.GetIntrinsicPropInfosOfType optFilter ad allowMultiIntfInst findFlag m ty
 
-let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad) findFlag m ty = 
-    infoReader.TryFindIntrinsicNamedItemOfType (nm, ad) findFlag m ty
+let TryFindIntrinsicNamedItemOfType (infoReader: InfoReader) (nm, ad, includeConstraints) findFlag m ty = 
+    infoReader.TryFindIntrinsicNamedItemOfType (nm, ad, includeConstraints) findFlag m ty
 
 let TryFindIntrinsicMethInfo (infoReader: InfoReader) m ad nm ty = 
     infoReader.TryFindIntrinsicMethInfo m ad nm ty

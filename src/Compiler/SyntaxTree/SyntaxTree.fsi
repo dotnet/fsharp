@@ -413,6 +413,9 @@ type SynTypeConstraint =
     /// F# syntax is 'typar: delegate<'Args, unit>
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    /// F# syntax is SomeThing<'T>
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member Range: range
 
 /// List of type parameter declarations with optional type constraints,
@@ -616,10 +619,10 @@ type SynExpr =
     /// F# syntax: ^expr, used for from-end-of-collection indexing and ^T.Operation
     ///
     /// NOTE: In the case of ^T.ident the Typar node is not initially in the tree as produced by the parser,
-    /// but rather is a HatPrefix node that is then processed using adjustHatPrefixToTyparLookup
+    /// but rather is a IndexFromEnd node that is then processed using adjustHatPrefixToTyparLookup
     /// when in arbitrary expression position. If ^expr occurs in index/slicing position then it is not processed
     /// and the node is interpreted as from-the-end-indexing.
-    | HatPrefix of expr: SynExpr * range: range
+    | IndexFromEnd of expr: SynExpr * range: range
 
     /// F# syntax: { expr }
     | ComputationExpr of hasSeqBuilder: bool * expr: SynExpr * range: range
@@ -735,7 +738,7 @@ type SynExpr =
     /// F# syntax: ^T (for ^T.ident) or (for 'T.ident).
     ///
     /// NOTE: In the case of ^T.ident the Typar node is not initially in the tree as produced by the parser,
-    /// but rather is a HatPrefix node that is then processed using adjustHatPrefixToTyparLookup
+    /// but rather is a IndexFromEnd node that is then processed using adjustHatPrefixToTyparLookup
     /// when in arbitrary expression position. If ^expr occurs in index/slicing position then it is not processed
     /// and the node is interpreted as from-the-end-indexing.
     | Typar of typar: SynTypar * range: range

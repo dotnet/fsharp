@@ -1370,11 +1370,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     let (TTrait(tys, nm, memFlags, traitObjAndArgTys, retTy, sln)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
+
     let g = csenv.g
     let m = csenv.m
     let amap = csenv.amap
     let aenv = csenv.EquivEnv
     let denv = csenv.DisplayEnv
+
     let ndeep = ndeep + 1
     do! DepthCheck ndeep m
 
@@ -1390,10 +1392,27 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         match tys, traitObjAndArgTys with 
         | [ty], h :: _ -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
+
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
         do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
     
+    // SRTP constraints on rigid type parameters do not need to be solved - they are simply declared
+    let isRigid =
+        tys |> List.forall (fun ty ->
+            match tryDestTyparTy g ty with
+            | ValueSome tp ->
+                match tp.Rigidity with
+                | TyparRigidity.Rigid
+                | TyparRigidity.WillBeRigid -> true
+                | _ -> false
+            | ValueNone -> false)
+
+    if isRigid then 
+        do! AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo CompleteD
+        return false
+    else
+
     let argTys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
 
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
@@ -1650,7 +1669,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   let propName = nm[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
-                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere) FindMemberFlag.IgnoreOverrides m ty with
+                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere, false) FindMemberFlag.IgnoreOverrides m ty with
                         | Some (RecdFieldItem rfinfo) 
                               when (isGetProp || rfinfo.RecdField.IsMutable) && 
                                    (rfinfo.IsStatic = not memFlags.IsInstance) && 
@@ -1760,6 +1779,15 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                       return TTraitSolved (minfo, calledMeth.CalledTyArgs)
                           
               | _ -> 
+                  do! AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors
+                  return TTraitUnsolved
+     }
+    return! RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res
+  }
+
+and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignoreUnresolvedOverload traitInfo errors =
+    trackErrors {
+                  let nm = traitInfo.MemberLogicalName
                   let support = GetSupportOfMemberConstraint csenv traitInfo
                   let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
 
@@ -1780,9 +1808,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                           (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
                       return! ErrorD AbortForFailedMemberConstraintResolution
                   | _ -> 
-                      return TTraitUnsolved
-     }
-    return! RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res
+                      ()
   }
 
 /// Record the solution to a member constraint in the mutable reference cell attached to 

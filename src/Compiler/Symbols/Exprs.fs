@@ -917,7 +917,7 @@ module FSharpExprConvert =
             | _ -> wfail (sprintf "unhandled construct in AST", m)
 
         | Expr.WitnessArg (traitInfo, _m) ->
-            ConvWitnessInfoPrim cenv env traitInfo
+            ConvWitnessInfoPrim env traitInfo
 
         | Expr.DebugPoint (_, innerExpr) ->
             ConvExprPrim cenv env innerExpr
@@ -925,8 +925,8 @@ module FSharpExprConvert =
         | _ -> 
             wfail (sprintf "unhandled construct in AST", expr.Range)
 
-    and ConvWitnessInfoPrim _cenv env traitInfo : E =
-        let witnessInfo = traitInfo.TraitKey
+    and ConvWitnessInfoPrim env traitInfo : E =
+        let witnessInfo = traitInfo.GetWitnessInfo()
         let env = { env with suppressWitnesses = true }
         // First check if this is a witness in ReflectedDefinition code
         if env.witnessesInScope.ContainsKey witnessInfo then 
@@ -939,9 +939,9 @@ module FSharpExprConvert =
 
     and ConvWitnessInfo cenv env m traitInfo : FSharpExpr =
         let g = cenv.g
-        let witnessInfo = traitInfo.TraitKey
+        let witnessInfo = traitInfo.GetWitnessInfo()
         let witnessTy = GenWitnessTy g witnessInfo 
-        let traitInfoR = ConvWitnessInfoPrim cenv env traitInfo
+        let traitInfoR = ConvWitnessInfoPrim env traitInfo
         Mk cenv m witnessTy traitInfoR
 
     and ConvLetBind cenv env (bind : Binding) = 

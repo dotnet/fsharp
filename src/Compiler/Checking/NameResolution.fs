@@ -266,18 +266,26 @@ type Item =
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
         | Item.MethodGroup(nm, _, _) -> nm |> DecompileOpName
         | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
-        | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayNameCore
-        | Item.Types(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.FakeInterfaceCtor ty
+        | Item.DelegateCtor ty ->
+            match ty with 
+            | AbbrevOrAppTy tcref -> tcref.DisplayNameCore
+            // This case is not expected
+            | _ -> "" 
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
+        | Item.Types(nm, _) -> nm |> DemangleGenericTypeName 
         | Item.TypeVar (nm, _) -> nm 
-        | Item.Trait traitInfo -> traitInfo.MemberName
+        | Item.Trait traitInfo -> traitInfo.MemberDisplayNameCore
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
         | Item.ArgName (id, _, _)  -> id.idText 
         | Item.SetterArg (id, _) -> id.idText 
         | Item.CustomOperation (customOpName, _, _) -> customOpName 
         | Item.CustomBuilder (nm, _) -> nm 
-        | _ ->  ""
+        | Item.ImplicitOp (id, _) -> id.idText
+        //| _ ->  ""
+        // These singleton cases are not expected
+        | Item.ModuleOrNamespaces [] -> ""
+        | Item.UnqualifiedType [] -> ""
 
     member d.DisplayName =
         match d with
@@ -1776,9 +1784,6 @@ let ItemsAreEffectivelyEqual g orig other =
     | EntityUse ty1, EntityUse ty2 ->
         tyconRefDefnEq g ty1 ty2
 
-    | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
-        traitInfo1.MemberName = traitInfo2.MemberName
-
     | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) ->
         nm1 = nm2 &&
         (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) ||
@@ -1841,6 +1846,9 @@ let ItemsAreEffectivelyEqual g orig other =
     | Item.ModuleOrNamespaces modrefs1, Item.ModuleOrNamespaces modrefs2 ->
         modrefs1 |> List.exists (fun modref1 -> modrefs2 |> List.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
 
+    | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
+        traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName
+
     | _ -> false
 
 /// Given the Item 'orig' - returns function 'other: Item -> bool', that will yield true if other and orig represents the same item and false - otherwise
@@ -1848,7 +1856,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     match orig with
     | EntityUse tcref -> tyconRefDefnHash g tcref
     | Item.TypeVar (nm, _)-> hash nm
-    | Item.Trait traitInfo -> hash traitInfo.MemberName
+    | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
     | ValUse vref -> valRefDefnHash g vref
     | ActivePatternCaseUse (_, _, idx)-> hash idx
     | MethodUse minfo -> minfo.ComputeHashCode()
@@ -2516,7 +2524,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 OneResult (success(resInfo, item, rest))
             | None ->
             let isLookUpExpr = (lookupKind = LookupKind.Expr)
-            match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad) findFlag m ty with
+            match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad, true) findFlag m ty with
             | Some (TraitItem (traitInfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Trait traitInfo, rest]
 
@@ -3920,6 +3928,11 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             x.IsStatic = statics &&
             IsILFieldInfoAccessible g amap m ad x)
 
+    let qinfos =
+        ncenv.InfoReader.GetTraitInfosInType None ty
+        |> List.filter (fun x ->
+            x.MemberFlags.IsInstance = not statics)
+
     let pinfosIncludingUnseen =
         AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad PreferOverrides m ty
         |> List.filter (fun x ->
@@ -4083,6 +4096,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     List.map Item.RecdField rfinfos @
     pinfoItems @
     anonFields @
+    List.map Item.Trait qinfos @
     List.map Item.ILField finfos @
     List.map Item.Event einfos @
     List.map (ItemOfTy g) nestedTypes @
@@ -4439,7 +4453,15 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
                     let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                     let ty = FreshenTycon ncenv m tcref
-                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty ]
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty 
+
+                // 'T.Ident: lookup a static something in a type parameter
+                // ^T.Ident: lookup a static something in a type parameter
+                match nenv.eTypars.TryGetValue id with
+                | true, tp ->
+                    let ty = mkTyparTy tp
+                    yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty 
+                | _ -> () ]
 
         namespaces @ values @ staticSomethingInType
 
@@ -4599,6 +4621,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
             | _-> []
         modsOrNs @ qualifiedFields
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
@@ -4788,6 +4812,8 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
             | _ -> ()
     }
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) ty =
     seq {
         let g = ncenv.g
@@ -4836,6 +4862,8 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
                   yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
     }
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) nenv m ad (modref: ModuleOrNamespaceRef) plid (item: Item) =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
@@ -4926,6 +4954,8 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                      yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item ty
     }
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
     match plid with
@@ -4936,6 +4966,8 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty)
         | _ -> Seq.empty
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let PartialResolveLongIdentAsModuleOrNamespaceThenLazy (nenv: NameResolutionEnv) plid f =
     seq {
         match plid with
@@ -4948,6 +4980,8 @@ let PartialResolveLongIdentAsModuleOrNamespaceThenLazy (nenv: NameResolutionEnv)
         | [] -> ()
     }
 
+// This is "on-demand" reimplementation of completion logic that is only used along one
+// pathway - `IsRelativeNameResolvableFromSymbol` - in the editor support for simplifying names
 let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g

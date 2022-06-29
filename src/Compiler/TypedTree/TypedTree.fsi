@@ -1616,7 +1616,7 @@ type TyparConstraint =
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo =
-    | TraitWitnessInfo of TTypes * string * Syntax.SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTy: TType option
 
     override ToString: unit -> string
 
@@ -1639,8 +1639,8 @@ type TraitConstraintInfo =
         tys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
-        argTys: TTypes *
-        returnTy: TType option *
+        objAndArgTys: TTypes *
+        returnTyOpt: TType option *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
@@ -1649,26 +1649,31 @@ type TraitConstraintInfo =
     member DebugText: string
 
     /// Get the types that may provide solutions for the traits
-    member GoverningTypes: TType list
+    member SupportTypes: TType list
 
     /// Get the member flags associated with the member constraint.
     member MemberFlags: Syntax.SynMemberFlags
 
-    /// Get the member name associated with the member constraint.
-    member MemberName: string
+    /// Get the member name associated with the member constraint.  For preop
+    member MemberLogicalName: string
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member ArgumentTypes: TTypes
+    /// Get the raw object and argument types recorded in the member constraint. This includes the object instance type 
+    /// instance members. This may be empty for property traits e.g.
+    ///      "(static member Zero: ^T)"
+    /// or unit-taking methods
+    ///      "(static member get_Zero: unit -> ^T)"
+    /// See also extension members GetCompiledArgumentTypes and GetLogicalArgumentTypes
+    member CompiledObjectAndArgumentTypes: TTypes
 
     /// Get the return type recorded in the member constraint.
-    member ReturnType: TType option
+    member CompiledReturnType: TType option
 
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
-    /// Get the key associated with the member constraint.
-    member TraitKey: TraitWitnessInfo
+    /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
+    /// the extension property MemberDisplayNameCore
+    member WithMemberKind: SynMemberKind -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]

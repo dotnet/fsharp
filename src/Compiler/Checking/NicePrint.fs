@@ -780,23 +780,49 @@ module PrintTypes =
                     WordL.arrow ^^
                     (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
-    and layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argTys, retTy, _)) =
+    and layoutTraitWithInfo denv env traitInfo =
+        let g = denv.g
+        let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
+        let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValNameToDisplayLayout false (tagMember >> wordL) nm
         if denv.shortConstraints then 
             WordL.keywordMember ^^ nameL
         else
-            let retTy = GetFSharpViewOfReturnType denv.g retTy
+            let retTy = traitInfo.GetReturnType(g)
+            let argTys = traitInfo.GetLogicalArgumentTypes(g)
+            let argTys, retTy =
+                match memFlags.MemberKind with
+                | SynMemberKind.PropertySet ->
+                    match List.tryFrontAndBack argTys with
+                    | Some res -> res
+                    | None -> argTys, retTy
+                | _ ->
+                    argTys, retTy
+                
             let stat = layoutMemberFlags memFlags
-            let tys = ListSet.setify (typeEquiv denv.g) tys
+            let tys = ListSet.setify (typeEquiv g) tys
             let tysL = 
                 match tys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
                 | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
 
-            let argTysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argTys
             let retTyL = layoutReturnType denv env retTy
-            let sigL = curriedLayoutsL "->" [argTysL] retTyL
-            (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL)
+            let sigL =
+                match argTys with
+                // Empty arguments indicates a non-indexer property constraint
+                | [] -> retTyL
+                | _ ->
+                    let argTysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argTys
+                    curriedLayoutsL "->" [argTysL] retTyL
+            let getterSetterL =
+                match memFlags.MemberKind with
+                | SynMemberKind.PropertyGet when not argTys.IsEmpty ->
+                    wordL (tagKeyword "with") ^^ wordL (tagText "get")
+                | SynMemberKind.PropertySet ->
+                    wordL (tagKeyword "with") ^^ wordL (tagText "set")
+                | _ ->
+                    emptyL
+            (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL --- getterSetterL)
 
     /// Layout a unit of measure expression 
     and layoutMeasure denv unt =

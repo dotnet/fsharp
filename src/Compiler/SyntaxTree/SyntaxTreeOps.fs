@@ -968,7 +968,7 @@ let rec synExprContainsError inpExpr =
                 | Some e -> walkExpr e
                 | None -> false)
 
-        | SynExpr.HatPrefix (e, _) -> walkExpr e
+        | SynExpr.IndexFromEnd (e, _) -> walkExpr e
 
         | SynExpr.DotIndexedGet (e1, indexArgs, _, _) -> walkExpr e1 || walkExpr indexArgs
 

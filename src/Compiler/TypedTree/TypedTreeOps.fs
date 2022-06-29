@@ -11,7 +11,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
@@ -972,7 +971,7 @@ type TypeEquivEnv with
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
    let (TTrait(tys1, nm, mf1, argTys, retTy, _)) = traitInfo1
    let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _)) = traitInfo2
-   mf1 = mf2 &&
+   mf1.IsInstance = mf2.IsInstance &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
@@ -981,7 +980,7 @@ let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
 and traitKeysAEquivAux erasureFlag g aenv witnessInfo1 witnessInfo2 =
    let (TraitWitnessInfo(tys1, nm, mf1, argTys, retTy)) = witnessInfo1
    let (TraitWitnessInfo(tys2, nm2, mf2, argTys2, retTy2)) = witnessInfo2
-   mf1 = mf2 &&
+   mf1.IsInstance = mf2.IsInstance &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
@@ -2486,6 +2485,117 @@ let checkMemberVal membInfo arity m =
 let checkMemberValRef (vref: ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
      
+let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
+    match retTy with 
+    | None -> g.unit_ty
+    | Some retTy -> retTy
+
+type TraitConstraintInfo with
+    member traitInfo.GetReturnType(g: TcGlobals) =
+        GetFSharpViewOfReturnType g traitInfo.CompiledReturnType
+
+    member traitInfo.GetObjectType() =
+        match traitInfo.MemberFlags.IsInstance, traitInfo.CompiledObjectAndArgumentTypes with
+        | true, objTy :: _ ->
+            Some objTy
+        | _ ->
+            None
+
+    // For static property traits:
+    //      ^T: (static member Zero: ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Property, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent static get_property traits (i.e. the property as a get_ method)
+    //      ^T: (static member get_Zero: unit -> ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Member, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For instance property traits
+    //      ^T: (member Length: int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Property, Instance, [], int)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent instance get_property traits (i.e. the property as a get_ method)
+    //      ^T: (member get_Length: unit -> int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Method, Instance, [^T], int)
+    // and this returns
+    //      []
+    //
+    // For index property traits
+    //      ^T: (member Item: int -> int with get)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Item, Property, Instance, [^T; int], int)
+    // and this returns
+    //      [int]
+    member traitInfo.GetCompiledArgumentTypes() =
+        match traitInfo.MemberFlags.IsInstance, traitInfo.CompiledObjectAndArgumentTypes with
+        | true, _ :: argTys ->
+            argTys
+        | _, argTys ->
+            argTys
+
+    // For static property traits:
+    //      ^T: (static member Zero: ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, PropertyGet, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent static get_property traits (i.e. the property as a get_ method)
+    //      ^T: (static member get_Zero: unit -> ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Member, Static, [], ^T)
+    // and this returns
+    //      [unit]
+    //
+    // For instance property traits
+    //      ^T: (member Length: int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, PropertyGet, Instance, [^T], int)
+    // and this views the constraint as if it were
+    //      []
+    //
+    // For the logically equivalent instance get_property traits (i.e. the property as a get_ method)
+    //      ^T: (member get_Length: unit -> int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Member, Instance, [^T], int)
+    // and this returns
+    //      [unit]
+    //
+    // For index property traits
+    //      (member Item: int -> int with get)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Item, PropertyGet, [^T; int], int)
+    // and this returns
+    //      [int]
+    member traitInfo.GetLogicalArgumentTypes(g: TcGlobals) =
+        match traitInfo.GetCompiledArgumentTypes(), traitInfo.MemberFlags.MemberKind with
+        | [], SynMemberKind.Member -> [g.unit_ty]
+        | argTys, _ -> argTys
+
+    member traitInfo.MemberDisplayNameCore =
+        let traitName0 = traitInfo.MemberLogicalName
+        match traitInfo.MemberFlags.MemberKind with
+        | SynMemberKind.PropertyGet
+        | SynMemberKind.PropertySet ->
+            match PrettyNaming.TryChopPropertyName traitName0 with
+            | Some nm -> nm
+            | None -> traitName0
+        | _ -> traitName0
+
+    /// Get the key associated with the member constraint.
+    member traitInfo.GetWitnessInfo() =
+        let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _)) = traitInfo
+        TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
+
 /// Get information about the trait constraints for a set of typars.
 /// Put these in canonical order.
 let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
@@ -2495,13 +2605,13 @@ let GetTraitConstraintInfosOfTypars g (tps: Typars) =
             | TyparConstraint.MayResolveMember(traitInfo, _) -> yield traitInfo 
             | _ -> () ]
     |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
-    |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length)
+    |> List.sortBy (fun traitInfo -> traitInfo.MemberLogicalName, traitInfo.GetCompiledArgumentTypes().Length)
 
 /// Get information about the runtime witnesses needed for a set of generalized typars
 let GetTraitWitnessInfosOfTypars g numParentTypars typars = 
     let typs = typars |> List.skip numParentTypars
     let cxs = GetTraitConstraintInfosOfTypars g typs
-    cxs |> List.map (fun cx -> cx.TraitKey)
+    cxs |> List.map (fun cx -> cx.GetWitnessInfo())
 
 /// Count the number of type parameters on the enclosing type
 let CountEnclosingTyparsOfActualParentOfVal (v: Val) = 
@@ -2606,12 +2716,6 @@ let ArgInfosOfMemberVal g (v: Val) =
 let ArgInfosOfMember g (vref: ValRef) = 
     ArgInfosOfMemberVal g vref.Deref
 
-let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
-    match retTy with 
-    | None -> g.unit_ty
-    | Some retTy -> retTy
-
-
 /// Get the property "type" (getter return type) for an F# value that represents a getter or setter
 /// of an object model property.
 let ReturnTypeOfPropertyVal g (v: Val) = 
@@ -2673,7 +2777,7 @@ let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> 
 let prefixOfStaticReq s =
     match s with 
     | TyparStaticReq.None -> "'"
-    | TyparStaticReq.HeadType -> " ^"
+    | TyparStaticReq.HeadType -> "^"
 
 let prefixOfInferenceTypar (typar: Typar) =  
   if typar.Rigidity <> TyparRigidity.Rigid then "_" else ""
@@ -6326,14 +6430,16 @@ let rec tyOfExpr g expr =
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
         | TOp.LValueOp (LAddrOf readonly, v) -> mkByrefTyWithFlag g readonly v.Type
         | TOp.RefAddrGet readonly -> (match tinst with [ty] -> mkByrefTyWithFlag g readonly ty | _ -> failwith "bad TOp.RefAddrGet node")      
-        | TOp.TraitCall traitInfo -> GetFSharpViewOfReturnType g traitInfo.ReturnType
+        | TOp.TraitCall traitInfo -> traitInfo.GetReturnType(g)
         | TOp.Reraise -> (match tinst with [rtn_ty] -> rtn_ty | _ -> failwith "bad TOp.Reraise node")
         | TOp.Goto _ | TOp.Label _ | TOp.Return -> 
             //assert false
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr", m))
             // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
-    | Expr.WitnessArg (traitInfo, _m) -> GenWitnessTy g traitInfo.TraitKey
+    | Expr.WitnessArg (traitInfo, _m) ->
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        GenWitnessTy g witnessInfo
 
 //--------------------------------------------------------------------------
 // Make applications
@@ -10151,3 +10257,4 @@ let isFSharpExceptionTy g ty =
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
+

@@ -168,21 +168,27 @@ module internal SymbolHelpers =
                 |> Option.bind ccuOfValRef
                 |> Option.orElseWith (fun () -> pinfo.DeclaringTyconRef |> computeCcuOfTyconRef))
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Method minfo)) ->
-            ccuOfMethInfo g minfo
+        | Item.ArgName (_, _, meth) ->
+            match meth with
+            | None -> None
+            | Some (ArgumentContainer.Method minfo) -> ccuOfMethInfo g minfo
+            | Some (ArgumentContainer.Type eref) -> computeCcuOfTyconRef eref
 
         | Item.MethodGroup(_, minfos, _)
         | Item.CtorGroup(_, minfos) ->
             minfos |> List.tryPick (ccuOfMethInfo g)
 
-        | Item.CustomOperation (_, _, Some minfo) ->
-            ccuOfMethInfo g minfo
+        | Item.CustomOperation (_, _, meth) ->
+            match meth with
+            | None -> None
+            | Some minfo -> ccuOfMethInfo g minfo
 
         | Item.Types(_, tys) ->
             tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) ->
-            computeCcuOfTyconRef eref
+        | Item.FakeInterfaceCtor(ty)
+        | Item.DelegateCtor(ty) ->
+            ty |> tryNiceEntityRefOfTyOption |> Option.bind computeCcuOfTyconRef
 
         | Item.ModuleOrNamespaces erefs 
         | Item.UnqualifiedType erefs ->
@@ -194,9 +200,20 @@ module internal SymbolHelpers =
         | Item.AnonRecdField (info, _, _, _) ->
             Some info.Assembly
 
+        // This is not expected: you can't directly refer to trait constraints in other assemblies
         | Item.Trait _ -> None
+
+        // This is not expected: you can't directly refer to type variables in other assemblies
         | Item.TypeVar _  -> None
-        | _ -> None
+
+        // This is not expected: you can't directly refer to active pattern result tags in other assemblies
+        | Item.ActivePatternResult _  -> None
+
+        // This is not expected: implicit operator references only occur in the current assembly
+        | Item.ImplicitOp _  -> None
+
+        // This is not expected: NewDef only occurs within checking
+        | Item.NewDef _  -> None
 
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
@@ -248,7 +265,7 @@ module internal SymbolHelpers =
             |> Option.defaultValue xmlDoc
 
     /// This function gets the signature to pass to Visual Studio to use its lookup functions for .NET stuff. 
-    let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
+    let rec GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
         let g = infoReader.g
         match d with
         | Item.ActivePatternCase (APElemRef(_, vref, _, _))        
@@ -258,6 +275,7 @@ module internal SymbolHelpers =
         | Item.UnionCase  (ucinfo, _) ->
             mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
 
+        | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref ->
             mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
 
@@ -269,8 +287,13 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
 
-        | Item.Types(_, TType_app(tcref, _, _) :: _) ->
-            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.FakeInterfaceCtor ty
+        | Item.DelegateCtor ty
+        | Item.Types(_, ty :: _) ->
+            match ty with
+            | AbbrevOrAppTy tcref ->
+                mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+            | _ -> FSharpXmlDoc.None
 
         | Item.CustomOperation (_, _, Some minfo) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
@@ -302,7 +325,24 @@ module internal SymbolHelpers =
         | Item.UnionCaseField (ucinfo, _) ->
             mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
 
-        | _ -> FSharpXmlDoc.None
+        | Item.SetterArg (_, item) ->
+            GetXmlDocHelpSigOfItemForLookup infoReader m item
+
+        // These do not have entires in XML doc files
+        | Item.CustomOperation _
+        | Item.ArgName _
+        | Item.ActivePatternResult _
+        | Item.AnonRecdField _
+        | Item.ImplicitOp _
+
+        // These empty lists are not expected to occur
+        | Item.CtorGroup (_, [])
+        | Item.MethodGroup (_, [], _)
+        | Item.Property (_, [])
+        | Item.ModuleOrNamespaces []
+        | Item.UnqualifiedType []
+        | Item.Types(_, []) ->
+            FSharpXmlDoc.None
 
         |> GetXmlDocFromLoader infoReader
 
@@ -340,8 +380,8 @@ module internal SymbolHelpers =
           member x.InEqualityRelation item = 
               match item  with 
               | Item.Trait _ -> true
-              | Item.Types(_, [_]) -> true
-              | Item.ILField(ILFieldInfo _) -> true
+              | Item.Types(_, _ :: _) -> true
+              | Item.ILField(_) -> true
               | Item.RecdField _ -> true
               | Item.SetterArg _ -> true
               | Item.TypeVar _ -> true
@@ -357,7 +397,21 @@ module internal SymbolHelpers =
               | Item.Property _ -> true
               | Item.CtorGroup _ -> true
               | Item.UnqualifiedType _ -> true
-              | _ -> false
+
+              // These are never expected to have duplicates in declaration lists etc
+              | Item.ActivePatternResult _
+              | Item.AnonRecdField _
+              | Item.ArgName _
+              | Item.FakeInterfaceCtor _
+              | Item.ImplicitOp _
+              | Item.NewDef _
+              | Item.UnionCaseField _
+
+              // These are not expected to occur
+              | Item.Types(_, [])
+              | Item.ModuleOrNamespaces [] -> false
+
+              //| _ -> false
               
           member x.Equals(item1, item2) = 
             // This may explore assemblies that are not in the reference set.
@@ -376,7 +430,7 @@ module internal SymbolHelpers =
               // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
               match item1, item2 with 
               | Item.DelegateCtor ty1, Item.DelegateCtor ty2 -> equalHeadTypes(ty1, ty2)
-              | Item.Types(dn1, [ty1]), Item.Types(dn2, [ty2]) -> 
+              | Item.Types(dn1, ty1 :: _), Item.Types(dn2, ty2 :: _) -> 
                   // Bug 4403: We need to compare names as well, because 'int' and 'Int32' are physically the same type, but we want to show both
                   dn1 = dn2 && equalHeadTypes(ty1, ty2) 
               
@@ -384,8 +438,8 @@ module internal SymbolHelpers =
               | ItemWhereTypIsPreferred ty1, ItemWhereTypIsPreferred ty2 -> equalHeadTypes(ty1, ty2) 
 
               | Item.ExnCase tcref1, Item.ExnCase tcref2 -> tyconRefEq g tcref1 tcref2
-              | Item.ILField(ILFieldInfo(_, fld1)), Item.ILField(ILFieldInfo(_, fld2)) -> 
-                  fld1 === fld2 // reference equality on the object identity of the AbstractIL metadata blobs for the fields
+              | Item.ILField(fld1), Item.ILField(fld2) -> 
+                  ILFieldInfo.ILFieldInfosUseIdenticalDefinitions fld1 fld2
               | Item.CustomOperation (_, _, Some minfo1), Item.CustomOperation (_, _, Some minfo2) -> 
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2
               | Item.TypeVar (nm1, tp1), Item.TypeVar (nm2, tp2) -> 
@@ -410,15 +464,15 @@ module internal SymbolHelpers =
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.Trait traitInfo1, Item.Trait traitInfo2 ->
-                 (traitInfo1.MemberName = traitInfo2.MemberName)
+                 (traitInfo1.MemberLogicalName = traitInfo2.MemberLogicalName)
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   (meths1, meths2)
                   ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | Item.UnqualifiedType tcrefs1, Item.UnqualifiedType tcrefs2 ->
                   (tcrefs1, tcrefs2)
                   ||> List.forall2 (fun tcref1 tcref2 -> tyconRefEq g tcref1 tcref2)
-              | Item.Types(_, [TType_app(tcref1, _, _)]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
-              | Item.UnqualifiedType([tcref1]), Item.Types(_, [TType_app(tcref2, _, _)]) -> tyconRefEq g tcref1 tcref2
+              | Item.Types(_, [AbbrevOrAppTy tcref1]), Item.UnqualifiedType([tcref2]) -> tyconRefEq g tcref1 tcref2
+              | Item.UnqualifiedType([tcref1]), Item.Types(_, [AbbrevOrAppTy tcref2]) -> tyconRefEq g tcref1 tcref2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -430,8 +484,8 @@ module internal SymbolHelpers =
                   match tryTcrefOfAppTy g ty with
                   | ValueSome tcref -> hash tcref.LogicalName
                   | _ -> 1010
-              | Item.ILField(ILFieldInfo(_, fld)) -> 
-                  System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
+              | Item.ILField(fld) -> 
+                  fld.ComputeHashCode()
               | Item.TypeVar (nm, _tp) -> hash nm
               | Item.CustomOperation (_, _, Some minfo) -> minfo.ComputeHashCode()
               | Item.CustomOperation (_, _, None) -> 1
@@ -445,11 +499,24 @@ module internal SymbolHelpers =
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
-              | Item.Trait traitInfo -> hash traitInfo.MemberName
+              | Item.Trait traitInfo -> hash traitInfo.MemberLogicalName
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
-              | _ -> failwith "unreachable") }
+
+              // These are not expected to occur, see InEqualityRelation and ItemWhereTypIsPreferred
+              | Item.ActivePatternResult _
+              | Item.AnonRecdField _
+              | Item.ArgName _
+              | Item.FakeInterfaceCtor _
+              | Item.ImplicitOp _
+              | Item.NewDef _
+              | Item.UnionCaseField _
+              | Item.UnqualifiedType _
+              | Item.Types _
+              | Item.DelegateCtor _
+              | Item.ModuleOrNamespaces [] -> 0
+              ) }
 
     let ItemWithTypeDisplayPartialEquality g = 
         let itemComparer = ItemDisplayPartialEquality g
@@ -522,7 +589,7 @@ module internal SymbolHelpers =
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
-        | Item.Trait traitInfo -> traitInfo.MemberName
+        | Item.Trait traitInfo -> traitInfo.MemberLogicalName
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
@@ -539,28 +606,41 @@ module internal SymbolHelpers =
         | Item.ModuleOrNamespaces []
         | Item.Property(_, []) -> ""
 
-    /// Output a the description of a language item
+    /// Output the description of a language item
     let rec GetXmlCommentForItem (infoReader: InfoReader) m item = 
         let g = infoReader.g
         match item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
-            GetXmlCommentForItem infoReader m (Item.Value vref)
+        | Item.ImplicitOp(_, sln) -> 
+            match sln.Value with
+            | Some(TraitConstraintSln.FSMethSln(_, vref, _)) ->
+                GetXmlCommentForItem infoReader m (Item.Value vref)
+            | Some (TraitConstraintSln.ILMethSln _)
+            | Some (TraitConstraintSln.FSRecdFieldSln _)
+            | Some (TraitConstraintSln.FSAnonRecdFieldSln _)
+            | Some (TraitConstraintSln.ClosedExprSln _)
+            | Some TraitConstraintSln.BuiltInSln
+            | None ->
+                GetXmlCommentForItemAux None infoReader m item
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            GetXmlCommentForItemAux (if valRefInThisAssembly g.compilingFSharpCore vref || vref.XmlDoc.NonEmpty then Some vref.XmlDoc else None) infoReader m item 
+            let doc = if valRefInThisAssembly g.compilingFSharpCore vref || vref.XmlDoc.NonEmpty then Some vref.XmlDoc else None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.UnionCase(ucinfo, _) -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None) infoReader m item 
+            let doc = if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.ActivePatternCase apref -> 
-            GetXmlCommentForItemAux (Some apref.ActivePatternVal.XmlDoc) infoReader m item 
+            let doc = Some apref.ActivePatternVal.XmlDoc
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.ExnCase ecref -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None) infoReader m item 
+            let doc = if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.RecdField rfinfo ->
             let tcref = rfinfo.TyconRef
-            let xmldoc =
+            let doc =
                 if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
                     if tcref.IsFSharpException then
                         Some tcref.XmlDoc
@@ -568,55 +648,89 @@ module internal SymbolHelpers =
                         Some rfinfo.RecdField.XmlDoc
                 else
                     None
-            GetXmlCommentForItemAux xmldoc infoReader m item 
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.Event einfo ->
-            GetXmlCommentForItemAux (if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None) infoReader m item 
+            let doc = if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.Property(_, pinfos) -> 
             let pinfo = pinfos.Head
-            GetXmlCommentForItemAux (if pinfo.HasDirectXmlComment || pinfo.XmlDoc.NonEmpty then Some pinfo.XmlDoc else None) infoReader m item 
+            let doc = if pinfo.HasDirectXmlComment || pinfo.XmlDoc.NonEmpty then Some pinfo.XmlDoc else None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.CustomOperation (_, _, Some minfo) 
         | Item.CtorGroup(_, minfo :: _) 
         | Item.MethodGroup(_, minfo :: _, _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
-        | Item.Types(_, TType_app(tcref, _, _) :: _) -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
+        | Item.Types(_, tys) -> 
+            let doc =
+                match tys with
+                | AbbrevOrAppTy tcref :: _ ->
+                    if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
+                        Some tcref.XmlDoc
+                    else
+                        None
+                | _ -> None
+            GetXmlCommentForItemAux doc infoReader m item 
+
+        | Item.UnqualifiedType(tcrefs) -> 
+            let doc =
+                match tcrefs with
+                | tcref :: _ ->
+                    if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty then
+                        Some tcref.XmlDoc
+                    else
+                        None
+                | _ -> None
+            GetXmlCommentForItemAux doc infoReader m item 
 
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if not definiteNamespace then
-                GetXmlCommentForItemAux (if entityRefInThisAssembly g.compilingFSharpCore modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None) infoReader m item 
+                let doc = if entityRefInThisAssembly g.compilingFSharpCore modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None
+                GetXmlCommentForItemAux doc infoReader m item 
             else
                 GetXmlCommentForItemAux None infoReader m item
 
         | Item.ArgName (_, _, argContainer) -> 
-            let xmldoc = 
+            let doc = 
                 match argContainer with
                 | Some(ArgumentContainer.Method minfo) ->
                     if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty  then Some minfo.XmlDoc else None 
                 | Some(ArgumentContainer.Type tcref) ->
                     if tyconRefUsesLocalXmlDoc g.compilingFSharpCore tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
                 | _ -> None
-            GetXmlCommentForItemAux xmldoc infoReader m item
+            GetXmlCommentForItemAux doc infoReader m item
 
         | Item.UnionCaseField (ucinfo, _) ->
-            let xmldoc =
-                if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
-            GetXmlCommentForItemAux xmldoc infoReader m item
+            let doc =
+                if tyconRefUsesLocalXmlDoc g.compilingFSharpCore ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then
+                    Some ucinfo.UnionCase.XmlDoc
+                else
+                    None
+            GetXmlCommentForItemAux doc infoReader m item
 
         | Item.SetterArg (_, item) -> 
             GetXmlCommentForItem infoReader m item
         
         // In all these cases, there is no direct XML documentation from F# comments
+        | Item.MethodGroup (_, [], _)
+        | Item.CtorGroup (_, [])
+        | Item.ModuleOrNamespaces []
+        | Item.Types (_, [])
+        | Item.CustomOperation (_, _, None)
+        | Item.UnqualifiedType []
+        | Item.TypeVar _ 
+        | Item.Trait _ 
+        | Item.AnonRecdField _ 
         | Item.ActivePatternResult _ 
         | Item.NewDef _
         | Item.ILField _
         | Item.FakeInterfaceCtor _
-        | Item.DelegateCtor _
-        |  _ -> 
+        | Item.DelegateCtor _ ->
+        //|  _ -> 
             GetXmlCommentForItemAux None infoReader m item
 
         |> GetXmlDocFromLoader infoReader
@@ -844,8 +958,12 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword
             ->  None
 
-    /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g (m: range) (item: ItemWithInst) : ItemWithInst list =
+    /// Select the items that participate in a MethodGroup.
+    //
+    // NOTE: This is almost identical to SelectMethodGroupItems and
+    // should be merged, and indeed is only used on the TypeCheckInfo::GetMethodsAsSymbols path, which is unused by
+    // the VS integration.
+    let SelectMethodGroupItems2 g (m: range) (item: ItemWithInst) : ItemWithInst list =
         ignore m
         match item.Item with 
         | Item.MethodGroup(nm, minfos, orig) ->
@@ -871,5 +989,17 @@ module internal SymbolHelpers =
         | Item.Trait _ -> [item]
         | Item.TypeVar _ -> []
         | Item.CustomBuilder _ -> []
-        | _ -> []
+        // These are not items that can participate in a method group
+        | Item.TypeVar _
+        | Item.CustomBuilder _
+        | Item.ActivePatternCase _
+        | Item.AnonRecdField _
+        | Item.ArgName _
+        | Item.ImplicitOp _
+        | Item.ModuleOrNamespaces _
+        | Item.SetterArg _
+        | Item.Types _
+        | Item.UnionCaseField _
+        | Item.UnqualifiedType _
+        | Item.ActivePatternResult _ -> []
 
