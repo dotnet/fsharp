@@ -366,7 +366,7 @@ let convReturnInstr ty instr =
     | I_ret -> [ I_box ty; I_ret ]
     | I_call (_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
     | I_callvirt (_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
-    | I_callconstraint (_, ty, mspec, varargs) -> [ I_callconstraint(Normalcall, ty, mspec, varargs) ]
+    | I_callconstraint (callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
     | I_calli (_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
     | _ -> [ instr ]
 

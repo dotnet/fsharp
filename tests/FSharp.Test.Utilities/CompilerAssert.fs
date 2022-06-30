@@ -624,10 +624,14 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member DefaultProjectOptions = defaultProjectOptions
 
     static member GenerateFsInputPath() =
-        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+        printfn $"input path = {path}"
+        path
 
     static member GenerateDllOutputPath() =
-        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+        printfn $"output path = {path}"
+        path
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false

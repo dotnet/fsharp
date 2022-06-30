@@ -376,8 +376,13 @@ let main _ = 0
 #endif
     let ``F# can call interface with static abstract method`` () =
 
+        let inputFilePath = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let fsharpSource =
             """
+
+[<assembly: System.Runtime.Versioning.RequiresPreviewFeaturesAttribute()>]
+do()
 
 type IAdditionOperator<'T> =
     static abstract op_Addition: 'T * 'T -> 'T
@@ -396,7 +401,7 @@ let main _ =
         failwith "incorrect value"
     0
 """
-        FSharp fsharpSource
+        FSharpWithInputAndOutputPath fsharpSource inputFilePath outputFilePath
         |> asExe
         |> withLangVersionPreview
         |> compileAndRun

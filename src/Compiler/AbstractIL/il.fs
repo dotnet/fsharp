@@ -1364,7 +1364,7 @@ type ILInstr =
 
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -3402,9 +3402,6 @@ let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
 let mkNormalCallvirt mspec = I_callvirt(Normalcall, mspec, None)
 
-let mkNormalCallconstraint (ty, mspec) =
-    I_callconstraint(Normalcall, ty, mspec, None)
-
 let mkNormalNewobj mspec = I_newobj(mspec, None)
 
 /// Comment on common object cache sizes:
@@ -5291,7 +5288,7 @@ and refsOfILInstr s x =
     | I_callvirt (_, mr, varargs) ->
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_callconstraint (_, tr, mr, varargs) ->
+    | I_callconstraint (_, _, tr, mr, varargs) ->
         refsOfILType s tr
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs

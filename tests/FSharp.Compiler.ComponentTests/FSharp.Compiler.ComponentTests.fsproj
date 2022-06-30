@@ -15,6 +15,7 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- allow testing of static methods in interfaces on .NET 6  -->
   </PropertyGroup>
 
   <ItemGroup>

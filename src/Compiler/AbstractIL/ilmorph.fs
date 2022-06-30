@@ -212,7 +212,7 @@ let morphILTypesInILInstr ((factualTy, fformalTy)) i =
     | I_calli (a, mref, varargs) -> I_calli(a, callsig_ty2ty factualTy mref, morphILVarArgs factualTy varargs)
     | I_call (a, mr, varargs) -> I_call(a, conv_mspec mr, morphILVarArgs factualTy varargs)
     | I_callvirt (a, mr, varargs) -> I_callvirt(a, conv_mspec mr, morphILVarArgs factualTy varargs)
-    | I_callconstraint (a, ty, mr, varargs) -> I_callconstraint(a, factualTy ty, conv_mspec mr, morphILVarArgs factualTy varargs)
+    | I_callconstraint (callvirt, a, ty, mr, varargs) -> I_callconstraint(callvirt, a, factualTy ty, conv_mspec mr, morphILVarArgs factualTy varargs)
     | I_newobj (mr, varargs) -> I_newobj(conv_mspec mr, morphILVarArgs factualTy varargs)
     | I_ldftn mr -> I_ldftn(conv_mspec mr)
     | I_ldvirtftn mr -> I_ldvirtftn(conv_mspec mr)

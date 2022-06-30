@@ -888,11 +888,11 @@ let rec goutput_instr env os inst =
         output_string os "callvirt "
         goutput_vararg_mspec env os (mspec, varargs)
         output_after_tailcall os tl
-    | I_callconstraint (tl, ty, mspec, varargs) ->
+    | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
         output_tailness os tl
         output_string os "constraint. "
         goutput_typ env os ty
-        output_string os " callvirt "
+        output_string os (if callvirt then " callvirt " else " call")
         goutput_vararg_mspec env os (mspec, varargs)
         output_after_tailcall os tl
     | I_castclass ty ->

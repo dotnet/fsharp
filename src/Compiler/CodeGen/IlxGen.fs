@@ -4224,13 +4224,13 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     Normalcall
 
-            let useICallVirt = virtualCall || useCallVirt cenv boxity mspec isBaseCall
+            let useICallVirt = (virtualCall || useCallVirt cenv boxity mspec isBaseCall) && mspec.MethodRef.CallingConv.IsInstance
 
             let callInstr =
                 match valUseFlags with
                 | PossibleConstrainedCall ty ->
                     let ilThisTy = GenType cenv m eenv.tyenv ty
-                    I_callconstraint(isTailCall, ilThisTy, mspec, None)
+                    I_callconstraint(useICallVirt, isTailCall, ilThisTy, mspec, None)
                 | _ ->
                     if newobj then I_newobj(mspec, None)
                     elif useICallVirt then I_callvirt(isTailCall, mspec, None)
@@ -5291,7 +5291,7 @@ and GenILCall
     let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
     let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
     let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-    let useICallVirt = virt || useCallVirt cenv boxity ilMethSpec isBaseCall
+    let useICallVirt = (virt || useCallVirt cenv boxity ilMethSpec isBaseCall) && ilMethRef.CallingConv.IsInstance
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
@@ -5307,7 +5307,7 @@ and GenILCall
             match ccallInfo with
             | Some objArgTy ->
                 let ilObjArgTy = GenType cenv m eenv.tyenv objArgTy
-                I_callconstraint(tail, ilObjArgTy, ilMethSpec, None)
+                I_callconstraint(useICallVirt, tail, ilObjArgTy, ilMethSpec, None)
             | None ->
                 if useICallVirt then
                     I_callvirt(tail, ilMethSpec, None)
@@ -10169,7 +10169,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
             mkLdarg0
             mkLdarg 1us
             if tcref.IsStructOrEnumTycon then
-                I_callconstraint(Normalcall, ilThisTy, mspec, None)
+                I_callconstraint(true, Normalcall, ilThisTy, mspec, None)
             else
                 I_callvirt(Normalcall, mspec, None)
             mkLdcInt32 0
