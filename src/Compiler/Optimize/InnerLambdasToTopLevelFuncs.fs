@@ -793,17 +793,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 // step3: chooseEnvPacks
 //-------------------------------------------------------------------------
 
-#if DEBUG
-let DumpEnvPackM g envPackM =
-    for KeyValue(fc, packedReqdItems) in envPackM do
-        dprintf "packedReqdItems: fc = %A\n" fc
-        dprintf "         reqdTypars = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
-        dprintf "         aenvs = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)))
-        dprintf "         pack = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_pack)))
-        dprintf "         unpack = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_unpack)))
-        dprintf "\n"
-#endif
-
 /// For each fclass, have an env.
 /// Required to choose an PackedReqdItems,
 /// e.g. deciding whether to tuple up the environment or not.
@@ -815,9 +804,6 @@ let DumpEnvPackM g envPackM =
 let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
     if verboseTLR then dprintf "ChooseReqdItemPackings------\n"
     let envPackM = FlatEnvPacks g fclassM topValS  declist reqdItemsMap
-#if DEBUG
-    if verboseTLR then DumpEnvPackM g envPackM
-#endif
     envPackM
 
 //-------------------------------------------------------------------------
