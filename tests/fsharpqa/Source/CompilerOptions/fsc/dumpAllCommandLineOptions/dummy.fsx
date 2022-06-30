@@ -34,9 +34,9 @@
 //<Expects status="success">section='NoSection                ' ! option=typedtree                      kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreefile                  kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=typedtreestamps                kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=typedtreeranges                kind=OptionSet</Expects>
-//<Expects status="success">section='NoSection                ' ! option=typedtreetypes                 kind=OptionSet</Expects>
-//<Expects status="success">section='NoSection                ' ! option=typedtreevalreprinfo           kind=OptionSet</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreeranges                kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreetypes                 kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreevalreprinfo           kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=simulateException              kind=OptionString</Expects>
