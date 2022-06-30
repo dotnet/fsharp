@@ -10,7 +10,7 @@ module ``Struct getters readonly`` =
     let structRecord =
         FSharp
             """
-            module TestStructRecord
+            module Test
 
             [<Struct>] type MyRecord = { MyField : int }
             """
@@ -18,7 +18,7 @@ module ``Struct getters readonly`` =
     let nonStructRecord =
         FSharp
             """
-            module TestNonStructRecord
+            module Test
 
             type MyRecord = { MyField : int }
             """
@@ -26,7 +26,7 @@ module ``Struct getters readonly`` =
     let structAnonRecord =
         FSharp
             """
-            module TestStructAnonRecord
+            module Test
 
             let myRecord = struct {| MyField = 3 |}
             """
@@ -34,7 +34,7 @@ module ``Struct getters readonly`` =
     let nonStructAnonRecord =
         FSharp
             """
-            module TestNonStructAnonRecord
+            module Test
 
             let myRecord = {| MyField = 3 |}
             """
@@ -42,17 +42,7 @@ module ``Struct getters readonly`` =
     let structNonRecord =
         FSharp
             """
-            module TestStructNonRecord
-
-            [<Struct>]
-            type MyStruct(myField: int) =
-                member _.MyField = myField
-            """
-
-    let structNonRecordVal =
-        FSharp
-            """
-            module TestStructNonRecordVal
+            module Test
 
             [<Struct>]
             type MyStruct =
@@ -62,7 +52,7 @@ module ``Struct getters readonly`` =
     let structWithCustomGetter =
         FSharp
             """
-            module TestStructWithCustomGetter
+            module Test
 
             [<Struct>]
             type MyStruct =
@@ -74,7 +64,7 @@ module ``Struct getters readonly`` =
     let ``Struct record has readonly attribute on getter`` () =
         structRecord
         |> compileAssembly
-        |> getType "TestStructRecord+MyRecord"
+        |> getType "Test+MyRecord"
         |> getMethod "get_MyField"
         |> should haveAttribute "IsReadOnlyAttribute"
 
@@ -98,7 +88,7 @@ module ``Struct getters readonly`` =
     let ``Non-struct record doesn't have readonly getters`` () =
         nonStructRecord
         |> compileAssembly
-        |> getType "TestNonStructRecord+MyRecord"
+        |> getType "Test+MyRecord"
         |> getMethod "get_MyField"
         |> shouldn't haveAttribute "IsReadOnlyAttribute"
 
@@ -106,15 +96,7 @@ module ``Struct getters readonly`` =
     let ``Struct has readonly getters`` () =
         structNonRecord
         |> compileAssembly
-        |> getType "TestStructNonRecord+MyStruct"
-        |> getMethod "get_MyField"
-        |> should haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Struct val has readonly getter`` () =
-        structNonRecordVal
-        |> compileAssembly
-        |> getType "TestStructNonRecordVal+MyStruct"
+        |> getType "Test+MyStruct"
         |> getMethod "get_MyField"
         |> should haveAttribute "IsReadOnlyAttribute"
 
@@ -122,7 +104,7 @@ module ``Struct getters readonly`` =
     let ``Custom getter on a struct doesn't have readonly attribute`` () =
         structWithCustomGetter
         |> compileAssembly
-        |> getType "TestStructWithCustomGetter+MyStruct"
+        |> getType "Test+MyStruct"
         |> getMethod "get_MyField"
         |> shouldn't haveAttribute "IsReadOnlyAttribute"
 
@@ -139,7 +121,7 @@ module ``Struct getters readonly`` =
 
               .maxstack  8
               IL_0000:  ldarg.0
-              IL_0001:  ldfld      int32 TestStructRecord/MyRecord::MyField@
+              IL_0001:  ldfld      int32 Test/MyRecord::MyField@
               IL_0006:  ret
             }""" ]
 
@@ -155,6 +137,6 @@ module ``Struct getters readonly`` =
 
               .maxstack  8
               IL_0000:  ldarg.0
-              IL_0001:  ldfld      int32 TestNonStructRecord/MyRecord::MyField@
+              IL_0001:  ldfld      int32 Test/MyRecord::MyField@
               IL_0006:  ret
             } """ ]
