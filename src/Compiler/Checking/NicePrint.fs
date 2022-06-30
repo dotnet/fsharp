@@ -1572,7 +1572,13 @@ module TastDefinitionPrinting =
         let lhs = ConvertNameToDisplayLayout (tagRecordField >> mkNav fld.DefinitionRange >> wordL) fld.DisplayNameCore
         let lhs = (if isClassDecl then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
-        let fieldL = (lhs |> addColonL) --- layoutType denv fld.FormalType
+        let fieldL =
+            let rhs =
+                match stripTyparEqns fld.FormalType with
+                | TType_fun _ -> LeftL.leftParen ^^ layoutType denv fld.FormalType ^^ RightL.rightParen
+                | _ -> layoutType denv fld.FormalType
+            
+            (lhs |> addColonL) --- rhs
         let fieldL = prefix fieldL
         let fieldL = fieldL |> layoutAttribs denv None false TyparKind.Type (fld.FieldAttribs @ fld.PropertyAttribs)
 
@@ -2256,7 +2262,14 @@ module InferredSigPrinting =
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
             let outerPath = mspec.CompilationPath.AccessPath
 
-            let denv = denv.AddOpenPath (List.map fst innerPath)
+            let denv =
+                innerPath
+                |> List.choose (fun (path, kind) ->
+                    match kind with
+                    | ModuleOrNamespaceKind.Namespace false -> None
+                    | _ -> Some path)
+                |> denv.AddOpenPath
+
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
                 let fullModuleName, def, denv =
