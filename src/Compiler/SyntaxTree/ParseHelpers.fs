@@ -769,7 +769,8 @@ let mkSynMemberDefnGetSet
 
             let trivia =
                 match getIdent, setIdent with
-                | GetIdent mGet, SetIdent mSet ->
+                | GetIdent mGet, SetIdent mSet
+                | SetIdent mSet, GetIdent mGet ->
                     {
                         WithKeyword = mWith
                         GetKeyword = Some mGet
