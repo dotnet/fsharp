@@ -1404,7 +1404,7 @@ val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 module DebugPrint =
 
     /// A global flag indicating whether debug output should include ValReprInfo
-    val mutable layoutValInfo: bool
+    val mutable layoutValReprInfo: bool
 
     /// A global flag indicating whether debug output should include stamps of Val and Entity
     val mutable layoutStamps: bool

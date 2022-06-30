@@ -1395,6 +1395,22 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
 let internalFlags (tcConfigB: TcConfigBuilder) =
     [
         CompilerOption(
+            "typedtree",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.showTerms <- true),
+            Some(InternalCommandLineOption("--typedtree", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "typedtreefile",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.writeTermsToFiles <- true),
+            Some(InternalCommandLineOption("--typedtreefile", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
             "typedtreestamps",
             tagNone,
             OptionUnit(fun () -> DebugPrint.layoutStamps <- true),
@@ -1419,26 +1435,10 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
-            "typedtreearities",
+            "typedtreevalreprinfo",
             tagNone,
-            OptionUnit(fun () -> DebugPrint.layoutValInfo <- true),
-            Some(InternalCommandLineOption("--typedtreearities", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "typedtree",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.showTerms <- true),
-            Some(InternalCommandLineOption("--typedtree", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "typedtreefile",
-            tagNone,
-            OptionUnit(fun () -> tcConfigB.writeTermsToFiles <- true),
-            Some(InternalCommandLineOption("--typedtreefile", rangeCmdArgs)),
+            OptionUnit(fun () -> DebugPrint.layoutValReprInfo <- true),
+            Some(InternalCommandLineOption("--typedtreevalreprinfo", rangeCmdArgs)),
             None
         )
 

@@ -3705,7 +3705,7 @@ module DebugPrint =
     let mutable layoutRanges = false
     let mutable layoutTypes = false
     let mutable layoutStamps = false
-    let mutable layoutValInfo = false
+    let mutable layoutValReprInfo = false
 
     let squareAngleL l = LeftL.leftBracketAngle ^^ l ^^ RightL.rightBracketAngle
 
@@ -4015,7 +4015,7 @@ module DebugPrint =
                 vL
         let vL =
             match v.ValReprInfo with
-            | Some info when layoutValInfo -> vL ^^ wordL(tagText "!") ^^ valReprInfoL info
+            | Some info when layoutValReprInfo -> vL ^^ wordL(tagText "!") ^^ valReprInfoL info
             | _ -> vL
         vL
 
