@@ -153,6 +153,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpDebug", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpDebug.csproj", "{A422D673-8E3B-4924-821B-DD3174173426}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{DFB6ADD7-3149-43D9-AFA0-FC4A818B472B}"
+	ProjectSection(SolutionItems) = preProject
+		tests\benchmarks\README.md = tests\benchmarks\README.md
+	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{564E7DC5-11CB-4FCF-ABDD-23AD93AF3A61}"
 EndProject
@@ -183,6 +186,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FCSBenchmarks", "FCSBenchmarks", "{39CDF34B-FB23-49AE-AB27-0975DA379BB5}"
 	ProjectSection(SolutionItems) = preProject
 		tests\benchmarks\FCSBenchmarks\decentlySizedStandAloneFile.fs = tests\benchmarks\FCSBenchmarks\decentlySizedStandAloneFile.fs
+		tests\benchmarks\FCSBenchmarks\README.md = tests\benchmarks\FCSBenchmarks\README.md
+		tests\benchmarks\FCSBenchmarks\SmokeTestAllBenchmarks.ps1 = tests\benchmarks\FCSBenchmarks\SmokeTestAllBenchmarks.ps1
 	EndProjectSection
 EndProject
 Global
