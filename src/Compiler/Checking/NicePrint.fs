@@ -72,45 +72,46 @@ module internal PrintUtilities =
     //
     // val SampleFunctionTupledAllBreakA:
     //    longLongLongArgName1: string * longLongLongArgName2: TType *
-    //    longLongLongArgName3: TType * longLongLongArgName4: TType
-    //      -> TType list
+    //    longLongLongArgName3: TType * longLongLongArgName4: TType ->
+    //      TType list
     //
     // val SampleFunctionTupledAllBreakA:
     //    longLongLongArgName1: string *
     //    longLongLongArgName2: TType *
     //    longLongLongArgName3: TType *
-    //    longLongLongArgName4: TType
-    //      -> TType list
+    //    longLongLongArgName4: TType ->
+    //      TType list
     //
     // val SampleFunctionCurriedOneBreakA:
-    //    arg1: string -> arg2: TType -> arg3: TType
-    //    -> arg4: TType -> TType list
+    //    arg1: string -> arg2: TType -> arg3: TType ->
+    //      arg4: TType -> TType list
     //
     // val SampleFunctionCurriedAllBreaksA:
-    //    longLongLongArgName1: string
-    //    -> longLongLongArgName2: TType
-    //    -> longLongLongArgName3: TType
-    //    -> longLongLongArgName4: TType
-    //      -> TType list
+    //    longLongLongArgName1: string ->
+    //      longLongLongArgName2: TType ->
+    //      longLongLongArgName3: TType ->
+    //      longLongLongArgName4: TType ->
+    //        TType list
     //
     //  val SampleFunctionMixedA:
     //    longLongLongArgName1: string *
-    //    longLongLongArgName2: string
-    //    -> longLongLongArgName3: string *
-    //       longLongLongArgName4: string *
-    //       longLongLongArgName5: TType
-    //    -> longLongLongArgName6: TType *
-    //       longLongLongArgName7: TType *
-    //    -> longLongLongArgName8: TType *
-    //       longLongLongArgName9: TType *
-    //       longLongLongArgName10: TType
-    //      -> TType list
+    //    longLongLongArgName2: string ->
+    //      longLongLongArgName3: string *
+    //      longLongLongArgName4: string *
+    //      longLongLongArgName5: TType ->
+    //        longLongLongArgName6: TType *
+    //        longLongLongArgName7: TType ->
+    //          longLongLongArgName8: TType *
+    //          longLongLongArgName9: TType *
+    //          longLongLongArgName10: TType ->
+    //            TType list
     let curriedLayoutsL retTyDelim (argTysL: Layout list) (retTyL: Layout) =
         let lastIndex = List.length argTysL - 1
 
         argTysL
         |> List.mapi (fun idx argTyL ->
             let isTupled =
+                idx = 0 ||
                 match argTyL with
                 | Node(leftLayout = Node(rightLayout = Leaf (text = starText))) -> starText.Text = "*"
                 | _ -> false

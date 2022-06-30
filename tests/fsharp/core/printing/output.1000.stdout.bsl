@@ -2644,14 +2644,14 @@ type System.Int32 with
 
 > val functionWhichTakesLongNameCurriedParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int ->
-  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
-  cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int ->
-  dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
-  int
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int ->
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesMixedLengthCurriedParametersA:
   a: 'a ->
-  b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd -> int
+    b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd -> int
 
 > val functionWhichTakesMixedLengthCurriedParametersB:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 'a -> b: 'b -> c: 'c -> d: 'd -> int
