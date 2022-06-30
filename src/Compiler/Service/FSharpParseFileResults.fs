@@ -885,6 +885,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynMemberDefn.AutoProperty (synExpr = synExpr) -> yield! walkExpr true synExpr
                         | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) -> yield! checkRange m
                         | SynMemberDefn.Member (bind, _) -> yield! walkBind bind
+                        | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                            match getBinding, setBinding with
+                            | None, None -> ()
+                            | None, Some binding
+                            | Some binding, None -> yield! walkBind binding
+                            | Some getBinding, Some setBinding ->
+                                yield! walkBind getBinding
+                                yield! walkBind setBinding
                         | SynMemberDefn.Interface(members = Some membs) ->
                             for m in membs do
                                 yield! walkMember m

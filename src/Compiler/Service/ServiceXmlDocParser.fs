@@ -161,6 +161,19 @@ module XmlDocParsing =
                         let paramNames = digNamesFrom synPat
                         XmlDocable(line, indent, paramNames)
 
+                | SynMemberDefn.GetSetMember (getBinding, setBinding, m, _) ->
+                    yield!
+                        (Option.map (fun b -> SynMemberDefn.Member(b, m))
+                         >> Option.toList
+                         >> List.collect getXmlDocablesSynMemberDefn)
+                            getBinding
+
+                    yield!
+                        (Option.map (fun b -> SynMemberDefn.Member(b, m))
+                         >> Option.toList
+                         >> List.collect getXmlDocablesSynMemberDefn)
+                            setBinding
+
                 | SynMemberDefn.AbstractSlot (valSig, _, range) ->
                     let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
                         valSig

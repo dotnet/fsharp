@@ -342,3 +342,5 @@ val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: Sy
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 
 val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
+
+val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
