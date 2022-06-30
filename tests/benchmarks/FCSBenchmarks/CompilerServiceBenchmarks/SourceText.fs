@@ -4,7 +4,7 @@ open System
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Text
 
-module SourceText =
+module internal SourceText =
 
     open System.Runtime.CompilerServices
 
@@ -71,5 +71,5 @@ module SourceText =
     let toFSharpSourceText (sourceText : SourceText) =
         weakTable.GetValue(sourceText, ConditionalWeakTable<_,_>.CreateValueCallback(create))
 
-type FSharpSourceText = SourceText
-type FSharpSourceHashAlgorithm = SourceHashAlgorithm
+type internal FSharpSourceText = SourceText
+type internal FSharpSourceHashAlgorithm = SourceHashAlgorithm

@@ -15,6 +15,7 @@ To run a benchmark for a local FCS in the current codebase you can run the bench
 To run a comparison use the `runner.ipynb` .NET notebook
 
 ## How it works
+
 - `runner.ipynb` runs `HistoricalBenchmark.fsproj` for a selection of versions/commits/local codebases.
 - Individual runs involve running a BDN benchmark in a separate process (via `HistoricalBenchmark.fsproj`).
 - For each version:
@@ -24,16 +25,18 @@ To run a comparison use the `runner.ipynb` .NET notebook
   4. `runner.ipynb` then parses CSV results from all runs and plots a chart
 
 ## `HistoricalBenchmark` and backwards compatibility
+
 Due to the requirement to run the same benchmark on older versions of the codebase and minor changes in the API, code in `HistoricalBenchmark` can be compiled in three different ways by adding one of the following DEFINEs:
 - `SERVICE_13_0_0`
 - `SERVICE_30_0_0`
 - _none_ (default, uses latest API)
 
-As of now the minimum supported version of FCS is 13.0.0 
+As of now the minimum supported version of FCS is 13.0.0
 
 ## Sample results
 
-*TODO*
+Below is a sample result of running the notebook locally with a selection of versions:
+![a](./sample_result.png?raw=true)
 
 ## Other
 

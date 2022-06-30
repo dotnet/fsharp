@@ -1,7 +1,6 @@
-﻿module HistoricalBenchmark.Helpers
+﻿module internal HistoricalBenchmark.Helpers
 
 open System.IO
-open System.Threading.Tasks
 #if SERVICE_13_0_0
 open Microsoft.FSharp.Compiler.SourceCodeServices
 #else

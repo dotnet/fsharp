@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Compile Include="SourceText.fs" />
-    <Compile Include="Helpers.fs" />
     <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
     <Compile Include="Program.fs" />

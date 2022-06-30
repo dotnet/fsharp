@@ -11,7 +11,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open BenchmarkDotNet.Attributes
 open FSharp.Compiler.Benchmarks
-open FSharp.Compiler.Benchmarks.Helpers
 open Microsoft.CodeAnalysis.Text
 
 type private Config =
@@ -20,12 +19,57 @@ type private Config =
         Source : SourceText
         Assemblies : string[]
         CheckResult : FSharpCheckFileAnswer
+        DecentlySizedFileSource : string
     }
+
+[<AutoOpen>]
+module private Helpers =
+        
+    let createProject name referencedProjects =
+        let tmpPath = Path.GetTempPath()
+        let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
+        {
+            ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
+            ProjectId = None
+            SourceFiles = [|file|]
+            OtherOptions = 
+                Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
+            ReferencedProjects =
+                referencedProjects
+                |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
+                |> Array.ofList
+            IsIncompleteTypeCheckEnvironment = false
+            UseScriptResolutionRules = false
+            LoadTime = DateTime()
+            UnresolvedReferences = None
+            OriginalLoadReferences = []
+            Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
+        }
+
+    let generateSourceCode moduleName =
+        $"""
+    module Benchmark.%s{moduleName}
+
+    type %s{moduleName} =
+
+    val X : int
+
+    val Y : int
+
+    val Z : int
+
+    let function%s{moduleName} (x: %s{moduleName}) =
+    let x = 1
+    let y = 2
+    let z = x + y
+    z"""
+
 
 [<MemoryDiagnoser>]
 type CompilerServiceBenchmarks() =
     let mutable configOpt : Config option = None
-
+    let sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs")
+    
     let getConfig () =
         configOpt
         |> Option.defaultWith (fun () -> failwith "Setup not run")
@@ -61,18 +105,19 @@ type CompilerServiceBenchmarks() =
                 let assemblies = 
                     AppDomain.CurrentDomain.GetAssemblies()
                     |> Array.map (fun x -> x.Location)
+                let decentlySizedStandAloneFile = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, sourcePath))
                 let options, _ =
                     checker.GetProjectOptionsFromScript(sourcePath, SourceText.ofString decentlySizedStandAloneFile)
                     |> Async.RunSynchronously
                 let _, checkResult =                                                                
                     checker.ParseAndCheckFileInProject(sourcePath, 0, SourceText.ofString decentlySizedStandAloneFile, options)
                     |> Async.RunSynchronously
-                
                 {
                     Checker = checker
                     Source = source
                     Assemblies = assemblies
                     CheckResult = checkResult
+                    DecentlySizedFileSource = decentlySizedStandAloneFile
                 }
                 |> Some
     
@@ -194,20 +239,22 @@ type CompilerServiceBenchmarks() =
     [<Benchmark>]
     member _.SimplifyNames() =
         let checkResult = getConfig().CheckResult
+        let source = getConfig().DecentlySizedFileSource
         match checkResult with
         | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
         | FSharpCheckFileAnswer.Succeeded results ->
-            let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+            let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
             let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
             ignore ranges                
 
     [<Benchmark>]
     member _.UnusedOpens() =
         let checkResult = getConfig().CheckResult
+        let source = getConfig().DecentlySizedFileSource
         match checkResult with
         | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
         | FSharpCheckFileAnswer.Succeeded results ->
-            let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+            let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
             let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
             ignore decls              
 

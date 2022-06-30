@@ -1,8 +1,8 @@
 ﻿namespace FSharp.Compiler.Benchmarks
 
+open System.IO
 open HistoricalBenchmark
 open BenchmarkDotNet.Attributes
-open Helpers
 
 type SingleFileCompilerWithILCacheClearing(file, options) =
     inherit SingleFileCompiler(file, options)
@@ -15,7 +15,7 @@ type SingleFileCompilerWithILCacheClearing(file, options) =
 type DecentlySizedStandAloneFileBenchmark() =
     inherit SingleFileCompilerBenchmarkBase(
         SingleFileCompiler(
-            decentlySizedStandAloneFile,
+            Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs"),
             OptionsCreationMethod.FromScript
         )
     )
