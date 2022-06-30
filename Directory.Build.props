@@ -3,4 +3,7 @@
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
 
+  <!-- Import user-specific properties that are not checked in to the codebase  -->
+  <Import Project="Directory.Build.props.user" Condition = "Exists('Directory.Build.props.user')" />
+
 </Project>

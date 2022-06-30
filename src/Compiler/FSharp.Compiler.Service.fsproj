@@ -3,7 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(_DisableNetFrameworkTarget)' != 'true'">net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(_DisableNetFrameworkTarget)' == 'true'">netstandard2.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->

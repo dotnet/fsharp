@@ -69,6 +69,7 @@ ossreadme*.txt
 *.fsproj.user
 *.vbproj.user
 *.sln.DotSettings.user
+*.props.user
 *.log
 *.jrs
 *.chk
