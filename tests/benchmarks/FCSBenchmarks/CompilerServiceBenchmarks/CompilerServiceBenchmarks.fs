@@ -48,9 +48,9 @@ module private Helpers =
 
     let generateSourceCode moduleName =
         $"""
-    module Benchmark.%s{moduleName}
+module Benchmark.%s{moduleName}
 
-    type %s{moduleName} =
+type %s{moduleName} =
 
     val X : int
 
@@ -58,7 +58,7 @@ module private Helpers =
 
     val Z : int
 
-    let function%s{moduleName} (x: %s{moduleName}) =
+let function%s{moduleName} (x: %s{moduleName}) =
     let x = 1
     let y = 2
     let z = x + y
@@ -101,7 +101,7 @@ type CompilerServiceBenchmarks() =
             | Some _ -> configOpt
             | None ->
                 let checker = FSharpChecker.Create(projectCacheSize = 200)
-                let source = FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
+                let source = FSharpSourceText.From(File.OpenRead("""..\..\..\..\..\..\..\..\..\src\Compiler\Checking\CheckExpressions.fs"""), Encoding.Default, FSharpSourceHashAlgorithm.Sha1, true)
                 let assemblies = 
                     AppDomain.CurrentDomain.GetAssemblies()
                     |> Array.map (fun x -> x.Location)

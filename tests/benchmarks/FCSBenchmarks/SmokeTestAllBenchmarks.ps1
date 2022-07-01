@@ -1,6 +1,7 @@
 # Smoke test for checking that all the benchmarks work
 # The test is successful if all the benchmarks run and produce results.
 # The actual numbers produced aren't accurate.
+# Results can be checked in BenchmarkDotNet.Artifacts/results
 
 function Run {
     param (
