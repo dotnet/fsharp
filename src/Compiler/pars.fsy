@@ -4184,34 +4184,34 @@ ifExprElifs:
   | ELIF declExpr recover 
       { None, Some (exprFromParseError $2) }
 
-tupleExpr: 
-  | tupleExpr COMMA declExpr   
-      { let exprs, commas = $1 in ($3 :: exprs), ((rhs parseState 2) :: commas) }
+tupleExpr:
+  | tupleExpr COMMA declExpr
+      { let exprs, commas = $1
+        $3 :: exprs, (rhs parseState 2 :: commas) }
 
   | tupleExpr COMMA ends_coming_soon_or_recover
-      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
-        let exprs, commas = $1     
-        let zeroWidthAtNextToken = (rhs parseState 3).StartRange
-        ((arbExpr("tupleExpr1", zeroWidthAtNextToken)) :: exprs), (rhs parseState 2) :: commas }
+      { let commaRange = rhs parseState 2
+        if not $3 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedExpressionAfterToken ())
+        let exprs, commas = $1
+        arbExpr ("tupleExpr1", commaRange.EndRange) :: exprs, commaRange :: commas }
 
   | declExpr COMMA ends_coming_soon_or_recover
-      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
-        let zeroWidthAtNextToken = (rhs parseState 3).StartRange 
-        ((arbExpr("tupleExpr2", zeroWidthAtNextToken)) :: [$1]), [rhs parseState 2] }
+      { let commaRange = rhs parseState 2
+        if not $3 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedExpressionAfterToken ())
+        [arbExpr ("tupleExpr2", commaRange.EndRange); $1], [commaRange] }
 
-  | declExpr COMMA declExpr  
-      { [$3 ; $1], [rhs parseState 2] }
+  | declExpr COMMA declExpr
+      { [$3; $1], [rhs parseState 2] }
 
   | COMMA declExpr
       { let commaRange = rhs parseState 1
-        reportParseErrorAt commaRange (FSComp.SR.parsExpectingExpressionInTuple())
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingExpressionInTuple ())
         [$2; arbExpr ("tupleExpr3", commaRange.StartRange)], [commaRange] }
 
   | COMMA ends_coming_soon_or_recover
-      { if not $2 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
-        let commaRange = rhs parseState 1
-        let zeroWidthAtNextToken = (rhs parseState 2).StartRange
-        [(arbExpr("tupleExpr4", zeroWidthAtNextToken)); arbExpr ("tupleExpr5", commaRange.StartRange)], [commaRange] }
+      { let commaRange = rhs parseState 1
+        if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedExpressionAfterToken ())
+        [arbExpr ("tupleExpr4", commaRange.EndRange); arbExpr ("tupleExpr5", commaRange.StartRange)], [commaRange] }
 
 minusExpr: 
   | INFIX_AT_HAT_OP minusExpr
