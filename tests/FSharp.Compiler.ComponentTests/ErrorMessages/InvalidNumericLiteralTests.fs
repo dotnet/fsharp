@@ -68,7 +68,7 @@ let x = 1N
                     "Operation could not be completed due to earlier error"
                 ]
 
-    // Regressiont test for FSharp1.0: 2543 - Decimal literals do not support exponents
+    // Regression test for FSharp1.0: 2543 - Decimal literals do not support exponents
     [<Theory>]
     [<InlineData("1.0E28M")>]
     [<InlineData("1.0E-28M")>]
