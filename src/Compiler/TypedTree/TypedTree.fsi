@@ -1616,7 +1616,12 @@ type TyparConstraint =
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo =
-    | TraitWitnessInfo of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTy: TType option
+    | TraitWitnessInfo of
+        tys: TTypes *
+        memberName: string *
+        memberFlags: SynMemberFlags *
+        objAndArgTys: TTypes *
+        returnTy: TType option
 
     override ToString: unit -> string
 
@@ -1657,7 +1662,7 @@ type TraitConstraintInfo =
     /// Get the member name associated with the member constraint.  For preop
     member MemberLogicalName: string
 
-    /// Get the raw object and argument types recorded in the member constraint. This includes the object instance type 
+    /// Get the raw object and argument types recorded in the member constraint. This includes the object instance type
     /// instance members. This may be empty for property traits e.g.
     ///      "(static member Zero: ^T)"
     /// or unit-taking methods

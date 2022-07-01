@@ -186,7 +186,11 @@ type InfoReader =
 
     /// Perform type-directed name resolution of a particular named member in an F# type
     member TryFindIntrinsicNamedItemOfType:
-        nm: string * ad: AccessorDomain * includeConstraints: bool -> findFlag: FindMemberFlag -> m: range -> ty: TType -> HierarchyItem option
+        nm: string * ad: AccessorDomain * includeConstraints: bool ->
+            findFlag: FindMemberFlag ->
+            m: range ->
+            ty: TType ->
+                HierarchyItem option
 
     /// Find the op_Implicit for a type
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list

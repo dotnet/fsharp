@@ -2649,6 +2649,7 @@ val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
 val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
 
 type TraitConstraintInfo with
+
     /// Get the argument types recorded in the member constraint suitable for building a TypedTree call.
     member GetCompiledArgumentTypes: unit -> TType list
 
@@ -2664,4 +2665,3 @@ type TraitConstraintInfo with
 
     /// Get the key associated with the member constraint.
     member GetWitnessInfo: unit -> TraitWitnessInfo
-

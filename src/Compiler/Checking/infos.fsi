@@ -137,7 +137,14 @@ type ParamData =
         ttype: TType
 
 // Adhoc information - could be unified with ParamData
-type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
+type ParamAttribs =
+    | ParamAttribs of
+        isParamArrayArg: bool *
+        isInArg: bool *
+        isOutArg: bool *
+        optArgInfo: OptionalArgInfo *
+        callerInfo: CallerInfo *
+        reflArgInfo: ReflectedArgInfo
 
 val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs
 

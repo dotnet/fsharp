@@ -788,7 +788,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             let knownReturnType, genericParameterTypes =
                 match failure with
                 | NoOverloadsFound(cx = Some cx)
-                | PossibleCandidates(cx = Some cx) -> Some (cx.GetReturnType(g)), cx.GetCompiledArgumentTypes()
+                | PossibleCandidates(cx = Some cx) -> Some(cx.GetReturnType(g)), cx.GetCompiledArgumentTypes()
                 | _ -> None, []
 
             // prepare message parts (known arguments, known return type, known generic parameters)

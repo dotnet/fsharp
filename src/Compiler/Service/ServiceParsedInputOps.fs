@@ -1607,8 +1607,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
-            | SynTypeConstraint.WhereSelfConstrained (ty, _) ->
-                walkType ty
+            | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
 
         and walkPat pat =
             match pat with

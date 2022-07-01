@@ -4224,7 +4224,9 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     Normalcall
 
-            let useICallVirt = (virtualCall || useCallVirt cenv boxity mspec isBaseCall) && mspec.MethodRef.CallingConv.IsInstance
+            let useICallVirt =
+                (virtualCall || useCallVirt cenv boxity mspec isBaseCall)
+                && mspec.MethodRef.CallingConv.IsInstance
 
             let callInstr =
                 match valUseFlags with
@@ -5291,7 +5293,10 @@ and GenILCall
     let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
     let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
     let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-    let useICallVirt = (virt || useCallVirt cenv boxity ilMethSpec isBaseCall) && ilMethRef.CallingConv.IsInstance
+
+    let useICallVirt =
+        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
+        && ilMethRef.CallingConv.IsInstance
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
