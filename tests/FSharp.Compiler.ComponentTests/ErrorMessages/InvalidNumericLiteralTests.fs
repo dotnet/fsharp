@@ -12,6 +12,7 @@ module ``Numeric Literals`` =
 
     [<Theory>]
     [<InlineData("1up")>]
+    [<InlineData("0xABCI")>]
     [<InlineData("3._1415F")>]
     [<InlineData("999_99_9999_L")>]
     [<InlineData("52_")>]
