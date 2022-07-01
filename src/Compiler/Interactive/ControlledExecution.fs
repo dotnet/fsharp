@@ -14,7 +14,7 @@ open System.Threading
 
 open Internal.Utilities.FSharpEnvironment
 
-type ControlledExecution (thread:Thread) =
+type internal ControlledExecution (thread:Thread) =
 
     static let ceType: Type option =
         Option.ofObj (Type.GetType("System.Runtime.CompilerServices.ControlledExecution, System.Private.CoreLib", false))
