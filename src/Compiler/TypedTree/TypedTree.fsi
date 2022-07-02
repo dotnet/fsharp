@@ -650,6 +650,7 @@ type Entity =
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc.
     member IsPrefixDisplay: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is a provided type or namespace definition
     member IsProvided: bool
 
@@ -661,11 +662,14 @@ type Entity =
 
     /// Indicates if the entity is a provided namespace fragment
     member IsProvidedNamespace: bool
+#endif
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member IsRecordTycon: bool
 
+#if !NO_TYPEPROVIDERS
     member IsStaticInstantiationTycon: bool
+#endif
 
     /// Indicates if this is a struct or enum type definition, i.e. a value type definition
     member IsStructOrEnumTycon: bool
@@ -1314,8 +1318,10 @@ type ModuleOrNamespaceType =
     /// Mutation used during compilation of FSharp.Core.dll
     member AddModuleOrNamespaceByMutation: modul: ModuleOrNamespace -> unit
 
+#if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+#endif
 
     /// Return a new module or namespace type with a value added.
     member AddVal: vspec: Val -> ModuleOrNamespaceType
@@ -2198,9 +2204,11 @@ type NonLocalEntityRef =
     /// Try to find the entity corresponding to the given path in the given CCU
     static member TryDerefEntityPath: ccu: CcuThunk * path: string[] * i: int * entity: Entity -> Entity voption
 
+#if !NO_TYPEPROVIDERS
     /// Try to find the entity corresponding to the given path, using type-providers to link the data
     static member TryDerefEntityPathViaProvidedType:
         ccu: CcuThunk * path: string[] * i: int * entity: Entity -> Entity voption
+#endif
 
     override ToString: unit -> string
 
@@ -2452,6 +2460,7 @@ type EntityRef =
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc.
     member IsPrefixDisplay: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is a provided namespace fragment
     member IsProvided: bool
 
@@ -2463,6 +2472,7 @@ type EntityRef =
 
     /// Indicates if the entity is a provided namespace fragment
     member IsProvidedNamespace: bool
+#endif
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member IsRecordTycon: bool
@@ -2470,8 +2480,10 @@ type EntityRef =
     /// Indicates if the reference has been resolved
     member IsResolved: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is an erased provided type definition that incorporates a static instantiation (type therefore in some sense compiler generated)
     member IsStaticInstantiationTycon: bool
+#endif
 
     /// Indicates if this is a struct or enum type definition, i.e. a value type definition
     member IsStructOrEnumTycon: bool
