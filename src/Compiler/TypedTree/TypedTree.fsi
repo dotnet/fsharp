@@ -881,6 +881,7 @@ type TyconRepresentation =
     /// Indicates the type is parameterized on a measure (e.g. float<_>) but erases to some other type (e.g. float)
     | TMeasureableRepr of TType
 
+#if !NO_TYPEPROVIDERS
     /// TProvidedTypeRepr
     ///
     /// Indicates the representation information for a provided type.
@@ -888,6 +889,7 @@ type TyconRepresentation =
 
     /// Indicates the representation information for a provided namespace.
     | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
+#endif
 
     /// The 'NoRepr' value here has four meanings:
     ///     (1) it indicates 'not yet known' during the first 2 phases of establishing type definitions
@@ -909,6 +911,8 @@ type TILObjectReprData =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+#if !NO_TYPEPROVIDERS
 
 /// The information kept about a provided type
 [<NoComparison; NoEquality; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -970,6 +974,8 @@ type TProvidedTypeInfo =
 
     /// Indicates if the provided type is generated, i.e. not erased
     member IsGenerated: bool
+
+#endif
 
 type TyconFSharpObjModelKind =
 
@@ -3867,6 +3873,7 @@ type CcuData =
         /// Indicates that this DLL was compiled using the F# compiler type has F# metadata
         IsFSharp: bool
 
+#if !NO_TYPEPROVIDERS
         /// Is the CCu an assembly injected by a type provider
         IsProviderGenerated: bool
 
@@ -3876,6 +3883,7 @@ type CcuData =
         /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality
         /// logic in tastops.fs
         ImportProvidedType: Tainted<ProvidedType> -> TType
+#endif
 
         /// Indicates that this DLL uses pre-F#-4.0 quotation literals somewhere. This is used to implement a restriction on static linking
         mutable UsesFSharp20PlusQuotations: bool
@@ -3944,8 +3952,10 @@ type CcuThunk =
     /// Fixup a CCU to have the given contents
     member Fixup: avail: CcuThunk -> unit
 
+#if !NO_TYPEPROVIDERS
     /// Used to make 'forward' calls into the loader during linking
     member ImportProvidedType: ty: Tainted<ProvidedType> -> TType
+#endif
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member MemberSignatureEquality: ty1: TType * ty2: TType -> bool
@@ -3980,8 +3990,10 @@ type CcuThunk =
     /// Indicates that this DLL was compiled using the F# compiler type has F# metadata
     member IsFSharp: bool
 
+#if !NO_TYPEPROVIDERS
     /// Is this a provider-injected assembly
     member IsProviderGenerated: bool
+#endif
 
     /// Indicates if this assembly reference is unresolved
     member IsUnresolvedReference: bool
@@ -4120,9 +4132,11 @@ type Construct =
 
     new: unit -> Construct
 
+#if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
     static member ComputeDefinitionLocationOfProvidedItem:
         p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+#endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.
     /// Generic types can be accessed either by 'List' or 'List`1'.
@@ -4207,6 +4221,7 @@ type Construct =
     static member NewModuleOrNamespaceType:
         mkind: ModuleOrNamespaceKind -> tycons: Entity list -> vals: Val list -> ModuleOrNamespaceType
 
+#if !NO_TYPEPROVIDERS
     /// Create a new entity node for a provided type definition
     static member NewProvidedTycon:
         resolutionEnvironment: ResolutionEnvironment *
@@ -4226,6 +4241,7 @@ type Construct =
         isSuppressRelocate: bool *
         m: Text.range ->
             TyconRepresentation
+#endif
 
     /// Create a new TAST RecdField node for an F# class, struct or record field
     static member NewRecdField:
