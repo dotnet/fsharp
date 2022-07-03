@@ -415,7 +415,7 @@ let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) =
 #if !NO_TYPEPROVIDERS
                 (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
 #else
-            (fun _provAttribs -> None)
+                (fun _provAttribs -> None)
 #endif 
         match search with
         | Some res -> res
