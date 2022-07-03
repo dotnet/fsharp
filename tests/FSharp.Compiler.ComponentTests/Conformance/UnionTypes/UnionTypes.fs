@@ -509,6 +509,13 @@ module UnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    //SOURCE=LowercaseWhenRequireQualifiedAccess.fsx                                                                 # LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``LowercaseWhenRequireQualifiedAccess_fs`` compilation =
+        compilation
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     //SOURCE=W_GenericFunctionValuedStaticProp02.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # W_GenericFunctionValuedStaticProp02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_GenericFunctionValuedStaticProp02.fs"|])>]
     let ``W_GenericFunctionValuedStaticProp02_fs`` compilation =
