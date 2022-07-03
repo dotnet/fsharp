@@ -339,10 +339,13 @@ type SynMemberGetSetTrivia =
     {
         /// The syntax range of the `with` keyword
         WithKeyword: range
+
         /// The syntax range of the `get` keyword
         GetKeyword: range option
+
         /// The syntax range of the `and` keyword
         AndKeyword: range option
+
         /// The syntax range of the `set` keyword
         SetKeyword: range option
     }
