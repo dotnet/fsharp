@@ -163,16 +163,16 @@ module XmlDocParsing =
 
                 | SynMemberDefn.GetSetMember (getBinding, setBinding, m, _) ->
                     yield!
-                        (Option.map (fun b -> SynMemberDefn.Member(b, m))
-                         >> Option.toList
-                         >> List.collect getXmlDocablesSynMemberDefn)
-                            getBinding
+                        getBinding
+                        |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                        |> Option.toList
+                        |> List.collect getXmlDocablesSynMemberDefn
 
                     yield!
-                        (Option.map (fun b -> SynMemberDefn.Member(b, m))
-                         >> Option.toList
-                         >> List.collect getXmlDocablesSynMemberDefn)
-                            setBinding
+                        setBinding
+                        |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                        |> Option.toList
+                        |> List.collect getXmlDocablesSynMemberDefn
 
                 | SynMemberDefn.AbstractSlot (valSig, _, range) ->
                     let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
