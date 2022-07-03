@@ -48,10 +48,12 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=subsystemversion               kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=targetprofile                  kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=quotations-debug               kind=OptionSwitch</Expects>
-//<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
-//<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtree                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreefile                  kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreestamps                kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreeranges                kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreetypes                 kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreevalreprinfo           kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=simulateException              kind=OptionString</Expects>

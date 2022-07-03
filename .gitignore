@@ -69,10 +69,11 @@ ossreadme*.txt
 *.fsproj.user
 *.vbproj.user
 *.sln.DotSettings.user
+launchSettings.json
 *.log
 *.jrs
 *.chk
-*.bak                                                     
+*.bak
 *.vserr
 *.err
 *.orig
