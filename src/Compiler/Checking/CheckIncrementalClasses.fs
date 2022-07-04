@@ -770,13 +770,13 @@ let MakeCtorForIncrClassConstructionPhase2C(
         | Phase2CCtorJustAfterLastLet ->  
             let binders = 
                 [ match ctorInfo.InstanceCtorSafeInitInfo with 
-                    | SafeInitField (rfref, _) ->  
+                  | SafeInitField (rfref, _) ->  
                     let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                     let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
                     let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                     let isPriorToSuperInit = false
                     yield (isPriorToSuperInit, binder)  
-                    | NoSafeInitInfo ->  
+                  | NoSafeInitInfo ->  
                     () ]
 
             ([], binders, []), reps
@@ -786,14 +786,13 @@ let MakeCtorForIncrClassConstructionPhase2C(
             let cctorInitActions, ctorInitActions, methodBinds = List.unzip3 initActions
             (List.concat cctorInitActions, List.concat ctorInitActions, List.concat methodBinds), reps 
 
-                
-
     let takenFieldNames = 
         [ for b in memberBinds do 
-                yield b.Var.CompiledName g.CompilerGlobalState
-                yield b.Var.DisplayName 
-                yield b.Var.DisplayNameCoreMangled 
-                yield b.Var.LogicalName ] 
+            b.Var.CompiledName g.CompilerGlobalState
+            b.Var.DisplayName 
+            b.Var.DisplayNameCoreMangled 
+            b.Var.LogicalName ] 
+
     let reps = IncrClassReprInfo.Empty(g, takenFieldNames)
 
     // Bind the IsArg(true) representations of the object constructor arguments and assign them to fields
