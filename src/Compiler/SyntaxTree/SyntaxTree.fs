@@ -481,7 +481,7 @@ type SynExpr =
         argOptions: (SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -895,7 +895,6 @@ type SynPat =
 
     | LongIdent of
         longDotId: SynLongIdent *
-        propertyKeyword: PropertyKeyword option *
         extraId: Ident option *  // holds additional ident for tooling
         typarDecls: SynValTyparDecls option *  // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -952,18 +951,13 @@ type SynPat =
         | SynPat.Paren (range = m)
         | SynPat.FromParseError (range = m) -> m
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type PropertyKeyword =
-    | With of range
-    | And of range
-
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
     | SynInterfaceImpl of
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1379,6 +1373,12 @@ type SynMemberDefn =
 
     | Member of memberDefn: SynBinding * range: range
 
+    | GetSetMember of
+        memberDefnForGet: SynBinding option *
+        memberDefnForSet: SynBinding option *
+        range: range *
+        trivia: SynMemberGetSetTrivia
+
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
@@ -1420,6 +1420,7 @@ type SynMemberDefn =
     member d.Range =
         match d with
         | SynMemberDefn.Member (range = m)
+        | SynMemberDefn.GetSetMember (range = m)
         | SynMemberDefn.Interface (range = m)
         | SynMemberDefn.Open (range = m)
         | SynMemberDefn.LetBindings (range = m)

@@ -332,3 +332,20 @@ type SynTypeFunTrivia =
         /// The syntax range of the `->` token.
         ArrowRange: range
     }
+
+/// Represents additional information for SynMemberDefn.GetSetMember
+[<NoEquality; NoComparison>]
+type SynMemberGetSetTrivia =
+    {
+        /// The syntax range of the `with` keyword
+        WithKeyword: range
+
+        /// The syntax range of the `get` keyword
+        GetKeyword: range option
+
+        /// The syntax range of the `and` keyword
+        AndKeyword: range option
+
+        /// The syntax range of the `set` keyword
+        SetKeyword: range option
+    }

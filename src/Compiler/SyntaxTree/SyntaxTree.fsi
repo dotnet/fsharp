@@ -568,7 +568,7 @@ type SynExpr =
         argOptions: (SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -1057,7 +1057,6 @@ type SynPat =
     /// A long identifier pattern possibly with argument patterns
     | LongIdent of
         longDotId: SynLongIdent *
-        propertyKeyword: PropertyKeyword option *
         extraId: Ident option *  // holds additional ident for tooling
         typarDecls: SynValTyparDecls option *  // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -1105,12 +1104,6 @@ type SynPat =
     /// Gets the syntax range of this construct
     member Range: range
 
-/// Represents a used keyword for a property member
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type PropertyKeyword =
-    | With of range
-    | And of range
-
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
@@ -1118,7 +1111,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         range: range
 
 /// Represents a clause in a 'match' expression
@@ -1571,6 +1564,13 @@ type SynMemberDefn =
 
     /// A 'member' definition within a type
     | Member of memberDefn: SynBinding * range: range
+
+    /// A 'member' definition with get/set accessors within a type
+    | GetSetMember of
+        memberDefnForGet: SynBinding option *
+        memberDefnForSet: SynBinding option *
+        range: range *
+        trivia: SynMemberGetSetTrivia
 
     /// An implicit constructor definition
     | ImplicitCtor of
