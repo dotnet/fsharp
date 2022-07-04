@@ -6707,6 +6707,7 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Sequential
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 SequentialOrImplicitYield
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Set
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 TraitCall
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Typar
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 TryFinally
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 TryWith
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Tuple
@@ -6757,6 +6758,10 @@ FSharp.Compiler.Syntax.SynExpr+Tuple: Microsoft.FSharp.Collections.FSharpList`1[
 FSharp.Compiler.Syntax.SynExpr+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] get_exprs()
 FSharp.Compiler.Syntax.SynExpr+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] commaRanges
 FSharp.Compiler.Syntax.SynExpr+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_commaRanges()
+FSharp.Compiler.Syntax.SynExpr+Typar: FSharp.Compiler.Syntax.SynTypar get_typar()
+FSharp.Compiler.Syntax.SynExpr+Typar: FSharp.Compiler.Syntax.SynTypar typar
+FSharp.Compiler.Syntax.SynExpr+Typar: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+Typar: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+TypeApp: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+TypeApp: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+TypeApp: FSharp.Compiler.Text.Range get_lessRange()
@@ -6867,6 +6872,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsSequential
 FSharp.Compiler.Syntax.SynExpr: Boolean IsSequentialOrImplicitYield
 FSharp.Compiler.Syntax.SynExpr: Boolean IsSet
 FSharp.Compiler.Syntax.SynExpr: Boolean IsTraitCall
+FSharp.Compiler.Syntax.SynExpr: Boolean IsTypar
 FSharp.Compiler.Syntax.SynExpr: Boolean IsTryFinally
 FSharp.Compiler.Syntax.SynExpr: Boolean IsTryWith
 FSharp.Compiler.Syntax.SynExpr: Boolean IsTuple
@@ -6938,6 +6944,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTraitCall()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTryFinally()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTryWith()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTuple()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTypar()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTypeApp()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTypeTest()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTyped()
@@ -7002,6 +7009,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSh
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrImplicitYield(FSharp.Compiler.Syntax.DebugPointAtSequential, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypar], FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTypar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryFinally(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtFinally, FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryWith(FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause], FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtWith, FSharp.Compiler.SyntaxTrivia.SynExprTryWithTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
@@ -7073,6 +7081,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TraitCall
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TryFinally
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TryWith
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Tuple
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Typar
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TypeApp
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TypeTest
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Typed
@@ -8570,6 +8579,7 @@ FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsDelegate
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsEnum
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsEquatable
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsReferenceType
+FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereSelfConstrained
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsUnmanaged
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparIsValueType
 FSharp.Compiler.Syntax.SynTypeConstraint+Tags: Int32 WhereTyparSubtypeOfType
@@ -8629,6 +8639,11 @@ FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull: FSharp.Compiler
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynTypeConstraint+WhereTyparSupportsNull: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereSelfConstrained: FSharp.Compiler.Syntax.SynType get_selfConstraint()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereSelfConstrained: FSharp.Compiler.Syntax.SynType selfConstraint
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereSelfConstrained: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTypeConstraint+WhereSelfConstrained: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereSelfConstrained
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparDefaultsToType
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsComparable
 FSharp.Compiler.Syntax.SynTypeConstraint: Boolean IsWhereTyparIsDelegate
@@ -8679,6 +8694,9 @@ FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeConstraint: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeConstraint: System.String ToString()
+FSharp.Compiler.Syntax.SynTypeConstraint: Boolean get_IsWhereSelfConstrained()
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint NewWhereSelfConstrained(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeConstraint: FSharp.Compiler.Syntax.SynTypeConstraint+WhereSelfConstrained
 FSharp.Compiler.Syntax.SynTypeDefn
 FSharp.Compiler.Syntax.SynTypeDefn: FSharp.Compiler.Syntax.SynComponentInfo get_typeInfo()
 FSharp.Compiler.Syntax.SynTypeDefn: FSharp.Compiler.Syntax.SynComponentInfo typeInfo
