@@ -810,7 +810,10 @@ module PrintTypes =
 
             let argTysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argTys
             let retTyL = layoutReturnType denv env retTy
-            let sigL = curriedLayoutsL "->" [argTysL] retTyL
+            let sigL =
+                match argTys with
+                | [] -> retTyL
+                | _ -> curriedLayoutsL "->" [argTysL] retTyL
             (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL)
 
     /// Layout a unit of measure expression 

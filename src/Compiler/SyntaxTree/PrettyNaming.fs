@@ -584,6 +584,8 @@ let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
         else
             leftL (TaggedText.tagPunctuation "(")
             ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+    elif name = "get_Zero" then
+        ConvertNameToDisplayLayout nonOpLayout "Zero"
     else
         ConvertNameToDisplayLayout nonOpLayout name
 
