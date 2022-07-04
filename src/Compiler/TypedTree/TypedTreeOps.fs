@@ -284,10 +284,10 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
         | Some sln -> 
             let sln = 
                 match sln with 
-                | ILMethSln(ty, extOpt, ilMethRef, minst) ->
-                     ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst)  
-                | FSMethSln(ty, vref, minst) ->
-                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst)  
+                | ILMethSln(ty, extOpt, ilMethRef, minst, staticTyOpt) ->
+                     ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
+                | FSMethSln(ty, vref, minst, staticTyOpt) ->
+                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
@@ -2261,13 +2261,15 @@ and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argTys, retTy)) ac
 
 and accFreeInTraitSln opts sln acc = 
     match sln with 
-    | ILMethSln(ty, _, _, minst) ->
-         accFreeInType opts ty 
-            (accFreeInTypes opts minst acc)
-    | FSMethSln(ty, vref, minst) ->
-         accFreeInType opts ty 
+    | ILMethSln(ty, _, _, minst, staticTyOpt) ->
+        Option.foldBack (accFreeInType opts) staticTyOpt
+            (accFreeInType opts ty 
+                (accFreeInTypes opts minst acc))
+    | FSMethSln(ty, vref, minst, staticTyOpt) ->
+        Option.foldBack (accFreeInType opts) staticTyOpt
+         (accFreeInType opts ty 
             (accFreeValRefInTraitSln opts vref  
-               (accFreeInTypes opts minst acc))
+               (accFreeInTypes opts minst acc)))
     | FSAnonRecdFieldSln(_anonInfo, tinst, _n) ->
          accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
@@ -5520,11 +5522,23 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-let decideStaticOptimizationConstraint g c haveWitnesses = 
+// Most static optimization conditionals in FSharp.Core are
+//   ^T : tycon
+//
+// These decide positively if ^T is nominal and identical to tycon.
+// These decide negatively if ^T is nominal and different to tycon.
+//
+// The "special" static optimization conditionals
+//    ^T : ^T 
+//    'T : 'T 
+// are used as hacks in FSharp.Core as follows:
+//    ^T : ^T  --> used in (+), (-) etc. to guard witness-invoking implementations added in F# 5
+//    'T : 'T  --> used in FastGenericEqualityComparer, FastGenericComparer to guard struct/tuple implementations 
+//
+// canDecideTyparEqn is set to true in IlxGen when the witness-invoking implementation can be used.
+let decideStaticOptimizationConstraint g c canDecideTyparEqn = 
     match c with 
-    // When witnesses are available in generic code during codegen, "when ^T : ^T" resolves StaticOptimizationAnswer.Yes
-    // This doesn't apply to "when 'T : 'T" use for "FastGenericEqualityComparer" and others.
-    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadType | _ -> false) ->
+    | TTyconEqualsTycon (a, b) when canDecideTyparEqn && typeEquiv g a b && isTyparTy g a ->
          StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
@@ -5561,13 +5575,13 @@ let decideStaticOptimizationConstraint g c haveWitnesses =
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
-let rec DecideStaticOptimizations g cs haveWitnesses = 
+let rec DecideStaticOptimizations g cs canDecideTyparEqn = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
     | h :: t -> 
-        let d = decideStaticOptimizationConstraint g h haveWitnesses
+        let d = decideStaticOptimizationConstraint g h canDecideTyparEqn
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
-        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t haveWitnesses
+        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t canDecideTyparEqn
         else StaticOptimizationAnswer.Unknown
 
 let mkStaticOptimizationExpr g (cs, e1, e2, m) = 

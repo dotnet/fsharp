@@ -689,8 +689,9 @@ type MethInfo =
     /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =
         match x with
-        | ILMeth(_, y, _) -> "ILMeth: " + y.ILName
-        | FSMeth(_, _, vref, _) -> "FSMeth: " + vref.LogicalName
+        | ILMeth(_, y, _) -> y.DeclaringTyconRef.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + y.ILName
+        | FSMeth(_, AbbrevOrAppTy tcref, vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
+        | FSMeth(_, _, vref, _) -> "??::" + vref.LogicalName
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
 #endif
@@ -727,7 +728,7 @@ type MethInfo =
 #endif
         | _ -> false
 
-    override x.ToString() =  x.ApparentEnclosingType.ToString() + x.LogicalName
+    override x.ToString() =  x.ApparentEnclosingType.ToString() + "::" + x.LogicalName
 
     /// Get the actual type instantiation of the declaring type associated with this use of the method.
     ///

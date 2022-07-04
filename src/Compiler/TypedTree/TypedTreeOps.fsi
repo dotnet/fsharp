@@ -1480,11 +1480,11 @@ module DebugPrint =
 
 /// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =
-    { exprIntercept: ('State -> Expr -> 'State) (* noInterceptF *)
+    { exprIntercept: ('State -> Expr -> 'State)
         -> ('State -> Expr -> 'State)
         -> 'State
         -> Expr
-        -> 'State (* recurseF *)
+        -> 'State
       valBindingSiteIntercept: 'State -> bool * Val -> 'State
       nonRecBindingsIntercept: 'State -> Binding -> 'State
       recBindingsIntercept: 'State -> Bindings -> 'State
@@ -1496,10 +1496,10 @@ type ExprFolder<'State> =
 val ExprFolder0: ExprFolder<'State>
 
 /// Fold over all the expressions in an implementation file
-val FoldImplFile: ExprFolder<'State> -> ('State -> CheckedImplFile -> 'State)
+val FoldImplFile: ExprFolder<'State> -> 'State -> CheckedImplFile -> 'State
 
 /// Fold over all the expressions in an expression
-val FoldExpr: ExprFolder<'State> -> ('State -> Expr -> 'State)
+val FoldExpr: ExprFolder<'State> -> 'State -> Expr -> 'State
 
 #if DEBUG
 /// Extract some statistics from an expression
@@ -2379,7 +2379,7 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> haveWitnesses: bool -> StaticOptimizationAnswer
+val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> canDecideTyparEqn: bool -> StaticOptimizationAnswer
 
 val mkStaticOptimizationExpr: TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 

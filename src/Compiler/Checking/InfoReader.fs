@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.InfoReader
 
 open System.Collections.Concurrent
+open System.Collections.Generic
 open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
@@ -663,7 +664,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
 
-    let MakeInfoCache f (flagsEq : System.Collections.Generic.IEqualityComparer<_>) = 
+    let MakeInfoCache f (flagsEq : IEqualityComparer<_>) = 
         MemoizationTable<_, _>
              (compute=f,
               // Only cache closed, monomorphic types (closed = all members for the type
@@ -675,7 +676,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     | _ -> false),
               
               keyComparer=
-                 { new System.Collections.Generic.IEqualityComparer<_> with 
+                 { new IEqualityComparer<_> with 
                        member _.Equals((flags1, _, typ1), (flags2, _, typ2)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
@@ -698,28 +699,38 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         else
             this.TryFindIntrinsicMethInfo m ad "op_Implicit" ty
 
+    let IsInterfaceWithStaticAbstractMemberTyUncached ((ad, nm), m, ty) = 
+        ExistsInEntireHierarchyOfType (fun parentTy -> 
+            this.TryFindIntrinsicMethInfo m ad nm parentTy |> List.isEmpty |> not)
+           g amap m AllowMultiIntfInstantiations.Yes ty
+
     let hashFlags0 = 
-        { new System.Collections.Generic.IEqualityComparer<string option * AccessorDomain * AllowMultiIntfInstantiations> with 
+        { new IEqualityComparer<string option * AccessorDomain * AllowMultiIntfInstantiations> with 
                member _.GetHashCode((filter: string option, ad: AccessorDomain, _allowMultiIntfInst1)) = hash filter + AccessorDomain.CustomGetHashCode ad
                member _.Equals((filter1, ad1, allowMultiIntfInst1), (filter2, ad2, allowMultiIntfInst2)) = 
                    (filter1 = filter2) && AccessorDomain.CustomEquals(g, ad1, ad2) && allowMultiIntfInst1 = allowMultiIntfInst2 }
 
     let hashFlags1 = 
-        { new System.Collections.Generic.IEqualityComparer<string option * AccessorDomain> with 
+        { new IEqualityComparer<string option * AccessorDomain> with 
                member _.GetHashCode((filter: string option, ad: AccessorDomain)) = hash filter + AccessorDomain.CustomGetHashCode ad
                member _.Equals((filter1, ad1), (filter2, ad2)) = (filter1 = filter2) && AccessorDomain.CustomEquals(g, ad1, ad2) }
 
     let hashFlags2 = 
-        { new System.Collections.Generic.IEqualityComparer<string * AccessorDomain * bool> with 
+        { new IEqualityComparer<string * AccessorDomain * bool> with 
                member _.GetHashCode((nm: string, ad: AccessorDomain, includeConstraints)) =
                    hash nm + AccessorDomain.CustomGetHashCode ad + hash includeConstraints
                member _.Equals((nm1, ad1, includeConstraints1), (nm2, ad2, includeConstraints2)) =
                    (nm1 = nm2) && AccessorDomain.CustomEquals(g, ad1, ad2) && (includeConstraints1 = includeConstraints2) }
                          
     let hashFlags3 = 
-        { new System.Collections.Generic.IEqualityComparer<AccessorDomain> with 
+        { new IEqualityComparer<AccessorDomain> with 
                member _.GetHashCode((ad: AccessorDomain)) = AccessorDomain.CustomGetHashCode ad
                member _.Equals((ad1), (ad2)) = AccessorDomain.CustomEquals(g, ad1, ad2) }
+                         
+    let hashFlags4 = 
+        { new IEqualityComparer<AccessorDomain * string> with 
+               member _.GetHashCode((ad, nm)) = AccessorDomain.CustomGetHashCode ad + hash nm
+               member _.Equals((ad1, nm1), (ad2, nm2)) = AccessorDomain.CustomEquals(g, ad1, ad2) && (nm1 = nm2) }
                          
     let methodInfoCache = MakeInfoCache GetIntrinsicMethodSetsUncached hashFlags0
     let propertyInfoCache = MakeInfoCache GetIntrinsicPropertySetsUncached hashFlags0
@@ -732,6 +743,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
     let implicitConversionCache = MakeInfoCache FindImplicitConversionsUncached hashFlags3
+    let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache IsInterfaceWithStaticAbstractMemberTyUncached hashFlags4
 
     // Runtime feature support
 
@@ -899,6 +911,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     member _.FindImplicitConversions m ad ty = 
         implicitConversionCache.Apply((ad, m, ty))
+
+    member _.IsInterfaceWithStaticAbstractMemberTy m nm ad ty = 
+        isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then

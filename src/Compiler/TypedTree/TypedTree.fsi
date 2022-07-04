@@ -1701,8 +1701,9 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by an F# method.
     ///    ty -- the type type its instantiation
     ///    vref -- the method that solves the trait constraint
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
     ///    minst -- the generic method instantiation
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -1722,7 +1723,8 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst * staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///

@@ -25,6 +25,9 @@ type IUnitMethod<'T when 'T :> IUnitMethod<'T>> =
 type IAdditionOperator<'T when 'T :> IAdditionOperator<'T>> =
     static abstract op_Addition: 'T * 'T -> 'T
 
+type ISinOperator<'T when 'T :> ISinOperator<'T>> =
+    static abstract Sin: 'T -> 'T
+
 type C(c: int) =
     member _.Value = c
     interface IAdditionOperator<C> with
@@ -257,8 +260,37 @@ module Negative =
 #endif
 
 
-//let f7<'T when 'T :> IAdditionOperator<'T>>(x: 'T, y: 'T) =
-//    x + y
+module ``Use SRTP operators from generic IWSAM code`` =
+    let fAdd<'T when 'T :> IAdditionOperator<'T>>(x: 'T, y: 'T) =
+        x + y
+
+    let fSin<'T when ISinOperator<'T>>(x: 'T) =
+        sin x
+
+module ``Use SRTP operators from generic IWSAM code not rigid`` =
+    let fAdd(x: 'T when 'T :> IAdditionOperator<'T>, y: 'T) =
+        x + y
+
+    let fSin(x: 'T when ISinOperator<'T>) =
+        sin x
+
+module ``Use SRTP operators from generic IWSAM code flex`` =
+    let fAdd(x: #IAdditionOperator<'T>, y) =
+        x + y
+
+    let fSin(x: #ISinOperator<'T>) =
+        sin x
+
+module ``Use SRTP operators from generic IWSAM code super flex`` =
+    let fAdd(x: #IAdditionOperator<_>, y) =
+        x + y
+
+    let fSin(x: #ISinOperator<_>) =
+        sin x
+
+    //let fSin<'T when ISinOperator<'T>>(x: 'T) =
+    //    sin x
+
 
 (*
 let inline f_SRTP_GoToDefinition_FindAllReferences (x: 'T) = 

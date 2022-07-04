@@ -322,7 +322,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.ArgName(id, ty, argOwner) ->
             FSharpParameter(cenv, id, ty, argOwner) :> _
 
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
 
         // TODO: the following don't currently return any interesting subtype

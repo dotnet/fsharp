@@ -111,7 +111,7 @@ module internal SymbolHelpers =
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
         | Item.ArgName (id, _, _) -> Some id.idRange
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
-        | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
+        | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(vref=vref))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor ty 
@@ -566,7 +566,7 @@ module internal SymbolHelpers =
     let rec FullNameOfItem g item = 
         let denv = DisplayEnv.Empty g
         match item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) 
         | Item.Value vref | Item.CustomBuilder (_, vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo, _) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names[idx]
@@ -612,7 +612,7 @@ module internal SymbolHelpers =
         match item with
         | Item.ImplicitOp(_, sln) -> 
             match sln.Value with
-            | Some(TraitConstraintSln.FSMethSln(_, vref, _)) ->
+            | Some(TraitConstraintSln.FSMethSln(vref=vref)) ->
                 GetXmlCommentForItem infoReader m (Item.Value vref)
             | Some (TraitConstraintSln.ILMethSln _)
             | Some (TraitConstraintSln.FSRecdFieldSln _)

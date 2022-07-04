@@ -243,6 +243,12 @@ let stripTyparEqns ty = stripTyparEqnsAux false ty
 
 let stripUnitEqns unt = stripUnitEqnsAux false unt
 
+/// Detect a use of a nominal type, including type abbreviations.
+let (|AbbrevOrAppTy|_|) (ty: TType) =
+    match stripTyparEqns ty with
+    | TType_app (tcref, _, _) -> Some tcref
+    | _ -> None
+
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
 // the item is globally stable ("published") or not.

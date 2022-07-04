@@ -651,7 +651,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
 
         let visitTraitSolution info = 
             match info with 
-            | FSMethSln(_, vref, _) -> 
+            | FSMethSln(_, vref, _, _) -> 
                //printfn "considering %s..." vref.DisplayName
                if valRefInThisAssembly cenv.g.compilingFSharpCore vref && not (cenv.boundVals.ContainsKey(vref.Stamp)) then 
                    //printfn "recording %s..." vref.DisplayName

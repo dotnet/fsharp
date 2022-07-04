@@ -132,6 +132,9 @@ val stripTyparEqns: ty: TType -> TType
 
 val stripUnitEqns: unt: Measure -> Measure
 
+/// Detect a use of a nominal type, including type abbreviations.
+val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef option
+
 val mkLocalValRef: v: Val -> ValRef
 
 val mkLocalModuleRef: v: ModuleOrNamespace -> EntityRef

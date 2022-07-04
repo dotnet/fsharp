@@ -12,6 +12,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.IO
@@ -491,6 +492,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
 /// <param name='allowParamArgs'>Do we allow the use of a param args method in its "expanded" form?</param>
 /// <param name='allowOutAndOptArgs'>Do we allow the use of the transformation that converts out arguments as tuple returns?</param>
 /// <param name='tyargsOpt'>Method parameters</param>
+/// <param name='staticTyOpt'>The optional static type governing a constrained static virtual interface call</param>
 type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
@@ -506,7 +508,8 @@ type CalledMeth<'T>
        callerArgs: CallerArgs<'T>,
        allowParamArgs: bool,
        allowOutAndOptArgs: bool,
-       tyargsOpt: TType option)    
+       tyargsOpt: TType option,
+       staticTyOpt: TType option)    
     =
     let g = infoReader.g
     let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(infoReader.amap, m, calledTyArgs)
@@ -797,6 +800,8 @@ type CalledMeth<'T>
 
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
+    member x.OptionalStaticType = staticTyOpt
+
     override x.ToString() = "call to " + minfo.ToString()
 
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
@@ -874,11 +879,11 @@ let IsBaseCall objArgs =
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
-let ComputeConstrainedCallInfo g amap m staticTyOpt objArgs (minfo: MethInfo) =
-    match objArgs, staticTyOpt with 
-    | [], Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
+    match args, staticTyOpt with 
+    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
 
-    | [objArgExpr], _ when not minfo.IsExtensionMember -> 
+    | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
@@ -1014,11 +1019,18 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
 /// calls to the type-directed solutions to member constraints.
-let MakeMethInfoCall amap m minfo minst args =
-    let valUseFlags = NormalValUse // correct unless if we allow wild trait constraints like "T has a ctor and can be used as a parent class" 
+let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOpt =
+    let g = amap.g
+    let ccallInfo = ComputeConstrainedCallInfo g amap m staticTyOpt args minfo
+    let valUseFlags = 
+        match ccallInfo with
+        | Some ty -> 
+            // printfn "possible constrained call to '%s' at %A" minfo.LogicalName m
+            PossibleConstrainedCall ty
+        | None -> 
+            NormalValUse
 
     match minfo with 
-
     | ILMeth(g, ilminfo, _) -> 
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
@@ -1446,7 +1458,7 @@ let MakeNullableExprIfNeeded (infoReader: InfoReader) calledArgTy callerArgTy ca
         let calledNonOptTy = destNullableTy g calledArgTy 
         let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
         let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
+        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced] None
 
 // Adjust all the optional arguments, filling in values for defaults, 
 let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
@@ -2088,7 +2100,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
             // Given the solution information, reconstruct the MethInfo for the solution
             match sln with 
-            | ILMethSln(origTy, extOpt, mref, minst) ->
+            | ILMethSln(origTy, extOpt, mref, minst, staticTyOpt) ->
                 let metadataTy = convertToTypeWithMetadataIfPossible g origTy
                 let tcref = tcrefOfAppTy g metadataTy
                 let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
@@ -2098,10 +2110,10 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | Some ilActualTypeRef -> 
                         let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
-                Choice1Of5 (ilMethInfo, minst)
+                Choice1Of5 (ilMethInfo, minst, staticTyOpt)
 
-            | FSMethSln(ty, vref, minst) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst)
+            | FSMethSln(ty, vref, minst, staticTyOpt) ->
+                Choice1Of5  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
                 Choice2Of5  (tinst, rfref, isSetProp)
@@ -2116,7 +2128,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                 Choice5Of5 ()
 
     match sln with
-    | Choice1Of5(minfo, methArgTys) -> 
+    | Choice1Of5(minfo, methArgTys, staticTyOpt) -> 
         let argExprs = 
             // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
             // calls arguments but codegen doesn't emit coercion operations
@@ -2156,9 +2168,9 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
             | _ ->
-                Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
+                Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
         else        
-            Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
+            Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 

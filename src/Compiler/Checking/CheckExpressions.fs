@@ -7367,7 +7367,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                     let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
                     mkArray (g.system_Type_ty, tyExprs, m)
 
-            let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
+            let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr] None
 
             if isString then
                 TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
@@ -8753,16 +8753,16 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
 
     let argData =
         if isPrefix then
-            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true) ]
+            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true) ]
         elif isTernary then
-            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true)
-              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true)
-              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true) ]
+            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true)
+              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true)
+              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true) ]
         else
-            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true)
-              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true) ]
+            [ SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true)
+              SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true) ]
 
-    let retTyData = SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.HeadType, true)
+    let retTyData = SynTypar(mkSynId mItem (cenv.synArgNameGenerator.New()), TyparStaticReq.None, true)
     let argTypars = argData |> List.map (fun d -> Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, d, false, TyparDynamicReq.Yes, [], false, false))
     let retTypar = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, retTyData, false, TyparDynamicReq.Yes, [], false, false)
     let argTys = argTypars |> List.map mkTyparTy
@@ -9510,7 +9510,8 @@ and TcMethodApplication_UniqueOverloadInference
     candidateMethsAndProps
     candidates
     mMethExpr
-    mItem =
+    mItem
+    staticTyOpt =
 
     let g = cenv.g
     let denv = env.DisplayEnv
@@ -9568,7 +9569,7 @@ and TcMethodApplication_UniqueOverloadInference
             match tyArgsOpt with
             | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
             | None -> minst
-        CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt)
+        CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt)
 
     let preArgumentTypeCheckingCalledMethGroup =
         [ for minfo, pinfoOpt in candidateMethsAndProps do
@@ -9749,7 +9750,7 @@ and TcMethodApplication
     // Extract what we know about the caller arguments, either type-directed if
     // no arguments are given or else based on the syntax of the arguments.
     let uniquelyResolved, preArgumentTypeCheckingCalledMethGroup =
-        TcMethodApplication_UniqueOverloadInference cenv env exprTy tyArgsOpt ad objTyOpt isCheckingAttributeCall callerObjArgTys methodName curriedCallerArgsOpt candidateMethsAndProps candidates mMethExpr mItem
+        TcMethodApplication_UniqueOverloadInference cenv env exprTy tyArgsOpt ad objTyOpt isCheckingAttributeCall callerObjArgTys methodName curriedCallerArgsOpt candidateMethsAndProps candidates mMethExpr mItem staticTyOpt
 
     // STEP 2. Check arguments
     let unnamedCurriedCallerArgs, namedCurriedCallerArgs, lambdaVars, returnTy, tpenv =
@@ -9780,7 +9781,7 @@ and TcMethodApplication
                     match tyArgsOpt with
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
                     | None -> minst
-                CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt))
+                CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt, staticTyOpt))
 
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity
         // about the possible target of the call.

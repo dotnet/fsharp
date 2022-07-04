@@ -128,14 +128,6 @@ let ActivePatternElemsOfModuleOrNamespace g (modref: ModuleOrNamespaceRef) : Nam
 // Name Resolution Items
 //-------------------------------------------------------------------------
 
-/// Detect a use of a nominal type, including type abbreviations.
-///
-/// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
-let (|AbbrevOrAppTy|_|) (ty: TType) =
-    match stripTyparEqns ty with
-    | TType_app (tcref, _, _) -> Some tcref
-    | _ -> None
-
 /// Represents the item with which a named argument is associated.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ArgumentContainer =
@@ -3655,7 +3647,7 @@ let NeedsWorkAfterResolution namedItem =
     | Item.MethodGroup(_, minfos, _)
     | Item.CtorGroup(_, minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
     | Item.Property(_, pinfos) -> pinfos.Length > 1
-    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) })
+    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) })
     | Item.Value vref | Item.CustomBuilder (_, vref) -> not (List.isEmpty vref.Typars)
     | Item.CustomOperation (_, _, Some minfo) -> not (isNil minfo.FormalMethodInst)
     | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)

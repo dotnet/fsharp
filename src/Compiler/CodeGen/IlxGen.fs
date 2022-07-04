@@ -5382,10 +5382,10 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         // If witnesses are available, we should now always find trait witnesses in scope
         assert not generateWitnesses
 
-        let minfoOpt =
+        let exprOpt =
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
 
-        match minfoOpt with
+        match exprOpt with
         | None ->
             let exnArg =
                 mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberLogicalName))
@@ -7092,26 +7092,52 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod (slotsig, _attribs
     CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
-/// Generate statically-resolved conditionals used for type-directed optimizations.
-and GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, _m) sequel =
-    // Note: during IlxGen, even if answer is StaticOptimizationAnswer.Unknown we discard the static optimization
-    // This means 'when ^T : ^T' is discarded if not resolved.
-    //
-    // This doesn't apply when witnesses are available. In that case, "when ^T : ^T" is resolved as 'Yes',
-    // this is because all the uses of "when ^T : ^T" in FSharp.Core (e.g. for are for deciding between the
-    // witness-based implementation and the legacy dynamic implementation, e.g.
-    //
-    //    let inline ( * ) (x: ^T) (y: ^U) : ^V =
-    //         MultiplyDynamic<(^T),(^U),(^V)>  x y
-    //         ...
-    //         when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
-    //
-    // When witnesses are not available we use the dynamic implementation.
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprIsTraitCall expr =
+    match expr with 
+    | Expr.Op(TOp.TraitCall _, _, _, _) -> true
+    | _ -> false
 
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprIndicatesGenericStaticConstrainedCall g expr =
+    match expr with 
+    | Expr.Val(vref, PossibleConstrainedCall ty, _) -> vref.IsMember && not vref.MemberInfo.Value.MemberFlags.IsInstance && isTyparTy g ty
+    | Expr.Op(TOp.ILCall (valUseFlag=PossibleConstrainedCall ty; ilMethRef=ilMethRef), _, _, _) -> not ilMethRef.CallingConv.IsInstance && isTyparTy g ty 
+    | _ -> false
+
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprRequiresWitness cenv m expr =
+    let g = cenv.g
+    match expr with 
+    | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
+        ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
+        |> CommitOperationResult
+    | _ -> false
+
+/// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
+and GenStaticOptimization cenv cgbuf eenv (staticConditions, e2, e3, m) sequel =
+    let g = cenv.g
     let e =
+        // See 'decideStaticOptimizationConstraint'
+        //
+        // For ^T : ^T we can additionally decide the conditional positively if either 
+        //   1. we're in code generating witnesses
+        //   2. e2 uses a trait call of some kind
+        //   2. e2 doesn't require a witness
         let generateWitnesses = ComputeGenerateWitnesses cenv.g eenv
 
-        if DecideStaticOptimizations cenv.g constraints generateWitnesses = StaticOptimizationAnswer.Yes then
+        let canDecideTyparEqn =
+            let usesTraitOrConstrainedCall = (false, e2) ||> FoldExpr { ExprFolder0 with exprIntercept = (fun _exprF noInterceptF z expr -> z || ExprIsTraitCall expr || ExprIndicatesGenericStaticConstrainedCall g expr || noInterceptF false expr) }
+            if usesTraitOrConstrainedCall then
+                if generateWitnesses then
+                    true
+                else
+                    let requiresWitness = (false, e2) ||> FoldExpr { ExprFolder0 with exprIntercept = (fun _exprF noInterceptF z expr -> z || ExprRequiresWitness cenv m expr || noInterceptF false expr) }
+                    not requiresWitness
+            else
+                false
+
+        if DecideStaticOptimizations cenv.g staticConditions canDecideTyparEqn = StaticOptimizationAnswer.Yes then
             e2
         else
             e3
