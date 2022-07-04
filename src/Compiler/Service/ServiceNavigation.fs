@@ -321,44 +321,32 @@ module NavigationImpl =
         and processMembers members enclosingEntityKind =
             let members =
                 members
-                |> List.groupBy (fun x -> x.Range)
-                |> List.map (fun (range, members) ->
-                    range,
-                    (match members with
-                     | [ memb ] ->
-                         match memb with
-                         | SynMemberDefn.LetBindings (binds, _, _, _) -> List.collect (processBinding false enclosingEntityKind false) binds
-                         | SynMemberDefn.Member (bind, _) -> processBinding true enclosingEntityKind false bind
-                         | SynMemberDefn.ValField (SynField (_, _, Some (rcid), _, _, _, access, range), _) ->
-                             [
-                                 createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
-                             ]
-                         | SynMemberDefn.AutoProperty (ident = id; accessibility = access) ->
-                             [
-                                 createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
-                             ]
-                         | SynMemberDefn.AbstractSlot (SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access), _, _) ->
-                             [
-                                 createMember (id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access)
-                             ]
-                         | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon
-                         | SynMemberDefn.Interface(members = Some (membs)) -> processMembers membs enclosingEntityKind |> snd
-                         | _ -> []
-                     // can happen if one is a getter and one is a setter
-                     | [ SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent (longDotId = lid1; extraId = Some (info1))) as binding1)
-                         SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent (longDotId = lid2; extraId = Some (info2))) as binding2) ] ->
-                         // ensure same long id
-                         assert
-                             ((lid1.LongIdent, lid2.LongIdent)
-                              ||> List.forall2 (fun x y -> x.idText = y.idText))
-                         // ensure one is getter, other is setter
-                         assert
-                             ((info1.idText = "set" && info2.idText = "get")
-                              || (info2.idText = "set" && info1.idText = "get"))
-                         // both binding1 and binding2 have same range, so just try the first one, else try the second one
-                         match processBinding true enclosingEntityKind false binding1 with
-                         | [] -> processBinding true enclosingEntityKind false binding2
-                         | x -> x
+                |> List.map (fun md ->
+                    md.Range,
+                    (match md with
+                     | SynMemberDefn.LetBindings (binds, _, _, _) -> List.collect (processBinding false enclosingEntityKind false) binds
+                     | SynMemberDefn.GetSetMember (Some bind, None, _, _)
+                     | SynMemberDefn.GetSetMember (None, Some bind, _, _)
+                     | SynMemberDefn.Member (bind, _) -> processBinding true enclosingEntityKind false bind
+                     | SynMemberDefn.ValField (SynField (_, _, Some (rcid), _, _, _, access, range), _) ->
+                         [
+                             createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access)
+                         ]
+                     | SynMemberDefn.AutoProperty (ident = id; accessibility = access) ->
+                         [
+                             createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
+                         ]
+                     | SynMemberDefn.AbstractSlot (SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access), _, _) ->
+                         [
+                             createMember (id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access)
+                         ]
+                     | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon
+                     | SynMemberDefn.Interface(members = Some (membs)) -> processMembers membs enclosingEntityKind |> snd
+                     | SynMemberDefn.GetSetMember (Some getBinding, Some setBinding, _, _) ->
+                         [
+                             yield! processBinding true enclosingEntityKind false getBinding
+                             yield! processBinding true enclosingEntityKind false setBinding
+                         ]
                      | _ -> []))
 
             let m2 = members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero
@@ -997,6 +985,9 @@ module NavigateTo =
                         walkSynMemberDefn m container
                 | None -> ()
             | SynMemberDefn.Member (binding, _) -> addBinding binding None container
+            | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                Option.iter (fun b -> addBinding b None container) getBinding
+                Option.iter (fun b -> addBinding b None container) setBinding
             | SynMemberDefn.NestedType (typeDef, _, _) -> walkSynTypeDefn typeDef container
             | SynMemberDefn.ValField (field, _) -> addField field false container
             | SynMemberDefn.LetBindings (bindings, _, _, _) ->

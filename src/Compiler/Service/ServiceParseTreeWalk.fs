@@ -824,47 +824,19 @@ module SyntaxTraversal =
         and normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit (synMemberDefns: SynMemberDefns) =
             synMemberDefns
             // property getters are setters are two members that can have the same range, so do some somersaults to deal with this
-            |> Seq.groupBy (fun x -> x.Range)
-            |> Seq.choose (fun (r, mems) ->
-                match mems |> Seq.toList with
-                | [ mem ] -> // the typical case, a single member has this range 'r'
-                    Some(dive mem r (traverseSynMemberDefn path traverseInherit))
-                | [ SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent (longDotId = lid1; extraId = Some (info1)))) as mem1
-                    SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent (longDotId = lid2; extraId = Some (info2)))) as mem2 ] -> // can happen if one is a getter and one is a setter
-                    // ensure same long id
-                    assert
-                        ((lid1.LongIdent, lid2.LongIdent)
-                         ||> List.forall2 (fun x y -> x.idText = y.idText))
-                    // ensure one is getter, other is setter
-                    assert
-                        ((info1.idText = "set" && info2.idText = "get")
-                         || (info2.idText = "set" && info1.idText = "get"))
+            |> Seq.map (fun mb ->
+                match mb with
+                | SynMemberDefn.GetSetMember (Some binding, None, m, _)
+                | SynMemberDefn.GetSetMember (None, Some binding, m, _) ->
+                    dive (SynMemberDefn.Member(binding, m)) m (traverseSynMemberDefn path traverseInherit)
+                | SynMemberDefn.GetSetMember (Some getBinding, Some setBinding, m, _) ->
+                    let traverse () =
+                        match traverseSynMemberDefn path (fun _ -> None) (SynMemberDefn.Member(getBinding, m)) with
+                        | Some _ as x -> x
+                        | None -> traverseSynMemberDefn path (fun _ -> None) (SynMemberDefn.Member(setBinding, m))
 
-                    Some(
-                        r,
-                        (fun () ->
-                            // both mem1 and mem2 have same range, would violate dive-and-pick assertions, so just try the first one, else try the second one:
-                            match traverseSynMemberDefn path (fun _ -> None) mem1 with
-                            | Some _ as x -> x
-                            | _ -> traverseSynMemberDefn path (fun _ -> None) mem2)
-                    )
-                | [] ->
-#if DEBUG
-                    assert false
-                    failwith "impossible, Seq.groupBy never returns empty results"
-#else
-                    // swallow AST error and recover silently
-                    None
-#endif
-                | _ ->
-#if DEBUG
-                    assert false // more than 2 members claim to have the same range, this indicates a bug in the AST
-                    failwith "bug in AST"
-#else
-                    // swallow AST error and recover silently
-                    None
-#endif
-            )
+                    m, traverse
+                | mem -> dive mem mem.Range (traverseSynMemberDefn path traverseInherit))
 
         and traverseSynTypeDefn origPath (SynTypeDefn (synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange, _) as tydef) =
             let path = SyntaxNode.SynTypeDefn tydef :: origPath
@@ -910,6 +882,15 @@ module SyntaxTraversal =
             match m with
             | SynMemberDefn.Open (_longIdent, _range) -> None
             | SynMemberDefn.Member (synBinding, _range) -> traverseSynBinding path synBinding
+            | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                match getBinding, setBinding with
+                | None, None -> None
+                | Some binding, None
+                | None, Some binding -> traverseSynBinding path binding
+                | Some getBinding, Some setBinding ->
+                    traverseSynBinding path getBinding
+                    |> Option.orElseWith (fun () -> traverseSynBinding path setBinding)
+
             | SynMemberDefn.ImplicitCtor (_synAccessOption, _synAttributes, simplePats, _identOption, _doc, _range) ->
                 match simplePats with
                 | SynSimplePats.SimplePats (simplePats, _) -> visitor.VisitSimplePats(path, simplePats)

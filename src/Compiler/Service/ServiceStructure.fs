@@ -587,6 +587,15 @@ module Structure =
                 parseAttributes attrs
                 parseBinding binding
 
+            | SynMemberDefn.GetSetMember (getBinding, setBinding, m, _) ->
+                getBinding
+                |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                |> Option.iter (parseSynMemberDefn objectModelRange)
+
+                setBinding
+                |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                |> Option.iter (parseSynMemberDefn objectModelRange)
+
             | SynMemberDefn.LetBindings (bindings, _, _, _) -> parseBindings bindings
 
             | SynMemberDefn.Interface (interfaceType = tp; members = iMembers; range = r) ->
