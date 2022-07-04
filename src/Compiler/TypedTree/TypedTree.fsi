@@ -1724,7 +1724,12 @@ type TraitConstraintSln =
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation
     ///    staticTyOpt -- the static type governing a static virtual call, if any
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst * staticTyOpt: TType option
+    | ILMethSln of
+        ty: TType *
+        extOpt: ILTypeRef option *
+        ilMethodRef: ILMethodRef *
+        minst: TypeInst *
+        staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///

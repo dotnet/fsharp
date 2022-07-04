@@ -7094,22 +7094,27 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod (slotsig, _attribs
 
 /// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
 and ExprIsTraitCall expr =
-    match expr with 
-    | Expr.Op(TOp.TraitCall _, _, _, _) -> true
+    match expr with
+    | Expr.Op (TOp.TraitCall _, _, _, _) -> true
     | _ -> false
 
 /// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
 and ExprIndicatesGenericStaticConstrainedCall g expr =
-    match expr with 
-    | Expr.Val(vref, PossibleConstrainedCall ty, _) -> vref.IsMember && not vref.MemberInfo.Value.MemberFlags.IsInstance && isTyparTy g ty
-    | Expr.Op(TOp.ILCall (valUseFlag=PossibleConstrainedCall ty; ilMethRef=ilMethRef), _, _, _) -> not ilMethRef.CallingConv.IsInstance && isTyparTy g ty 
+    match expr with
+    | Expr.Val (vref, PossibleConstrainedCall ty, _) ->
+        vref.IsMember
+        && not vref.MemberInfo.Value.MemberFlags.IsInstance
+        && isTyparTy g ty
+    | Expr.Op (TOp.ILCall (valUseFlag = PossibleConstrainedCall ty; ilMethRef = ilMethRef), _, _, _) ->
+        not ilMethRef.CallingConv.IsInstance && isTyparTy g ty
     | _ -> false
 
 /// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
 and ExprRequiresWitness cenv m expr =
     let g = cenv.g
-    match expr with 
-    | Expr.Op(TOp.TraitCall(traitInfo), _, _, _) ->
+
+    match expr with
+    | Expr.Op (TOp.TraitCall (traitInfo), _, _, _) ->
         ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
         |> CommitOperationResult
     | _ -> false
@@ -7117,22 +7122,41 @@ and ExprRequiresWitness cenv m expr =
 /// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
 and GenStaticOptimization cenv cgbuf eenv (staticConditions, e2, e3, m) sequel =
     let g = cenv.g
+
     let e =
         // See 'decideStaticOptimizationConstraint'
         //
-        // For ^T : ^T we can additionally decide the conditional positively if either 
+        // For ^T : ^T we can additionally decide the conditional positively if either
         //   1. we're in code generating witnesses
         //   2. e2 uses a trait call of some kind
         //   2. e2 doesn't require a witness
         let generateWitnesses = ComputeGenerateWitnesses cenv.g eenv
 
         let canDecideTyparEqn =
-            let usesTraitOrConstrainedCall = (false, e2) ||> FoldExpr { ExprFolder0 with exprIntercept = (fun _exprF noInterceptF z expr -> z || ExprIsTraitCall expr || ExprIndicatesGenericStaticConstrainedCall g expr || noInterceptF false expr) }
+            let usesTraitOrConstrainedCall =
+                (false, e2)
+                ||> FoldExpr
+                        { ExprFolder0 with
+                            exprIntercept =
+                                (fun _exprF noInterceptF z expr ->
+                                    z
+                                    || ExprIsTraitCall expr
+                                    || ExprIndicatesGenericStaticConstrainedCall g expr
+                                    || noInterceptF false expr)
+                        }
+
             if usesTraitOrConstrainedCall then
                 if generateWitnesses then
                     true
                 else
-                    let requiresWitness = (false, e2) ||> FoldExpr { ExprFolder0 with exprIntercept = (fun _exprF noInterceptF z expr -> z || ExprRequiresWitness cenv m expr || noInterceptF false expr) }
+                    let requiresWitness =
+                        (false, e2)
+                        ||> FoldExpr
+                                { ExprFolder0 with
+                                    exprIntercept =
+                                        (fun _exprF noInterceptF z expr -> z || ExprRequiresWitness cenv m expr || noInterceptF false expr)
+                                }
+
                     not requiresWitness
             else
                 false

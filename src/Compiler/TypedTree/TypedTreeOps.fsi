@@ -1480,11 +1480,7 @@ module DebugPrint =
 
 /// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =
-    { exprIntercept: ('State -> Expr -> 'State)
-        -> ('State -> Expr -> 'State)
-        -> 'State
-        -> Expr
-        -> 'State
+    { exprIntercept: ('State -> Expr -> 'State) -> ('State -> Expr -> 'State) -> 'State -> Expr -> 'State
       valBindingSiteIntercept: 'State -> bool * Val -> 'State
       nonRecBindingsIntercept: 'State -> Binding -> 'State
       recBindingsIntercept: 'State -> Bindings -> 'State
@@ -2379,7 +2375,8 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> canDecideTyparEqn: bool -> StaticOptimizationAnswer
+val DecideStaticOptimizations:
+    TcGlobals -> StaticOptimization list -> canDecideTyparEqn: bool -> StaticOptimizationAnswer
 
 val mkStaticOptimizationExpr: TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 

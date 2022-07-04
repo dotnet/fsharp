@@ -205,7 +205,7 @@ type CalledMeth<'T> =
         callerArgs: CallerArgs<'T> *
         allowParamArgs: bool *
         allowOutAndOptArgs: bool *
-        tyargsOpt: TType option  *
+        tyargsOpt: TType option *
         staticTyOpt: TType option ->
             CalledMeth<'T>
 
@@ -341,7 +341,14 @@ val BuildILMethInfoCall:
 
 /// Make a call to a method info. Used by the optimizer and code generator to build
 /// calls to the type-directed solutions to member constraints.
-val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: TType list -> args: Exprs -> staticTyOpt: TType option -> Expr
+val MakeMethInfoCall:
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minst: TType list ->
+    args: Exprs ->
+    staticTyOpt: TType option ->
+        Expr
 
 /// Build an expression that calls a given method info.
 /// This is called after overload resolution, and also to call other
