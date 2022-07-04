@@ -429,15 +429,23 @@ module Test =
     ()
 
 [<Test>]
-let ``Automation.LetBindings.ArgumentNames``() =
-    let code1 = """
+let ``Automation.LetBindings.InsideModule``() =
+    let code = """
 namespace FsTest
 
 module Test =
     let fu$$nc x = ()
 """
+    let expectedSignature = "val func: x: 'a -> unit"
 
-    let code2 = """
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideType``() =
+    let code = """
 namespace FsTest
 
 module Test =
@@ -447,9 +455,7 @@ module Test =
 
     let expectedSignature = "val func: x: 'a -> unit"
 
-    let tooltip1 = GetQuickInfoTextFromCode code1
-    let tooltip2 = GetQuickInfoTextFromCode code2
+    let tooltip = GetQuickInfoTextFromCode code
 
-    StringAssert.StartsWith(expectedSignature, tooltip1)
-    StringAssert.StartsWith(expectedSignature, tooltip2)
+    StringAssert.StartsWith(expectedSignature, tooltip)
     ()
