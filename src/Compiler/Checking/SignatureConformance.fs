@@ -122,7 +122,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               let aenv = aenv.BindEquivTypars implTypars sigTypars 
               (implTypars, sigTypars) ||> List.forall2 (fun implTypar sigTypar -> 
                   let m = sigTypar.Range
-                  if implTypar.StaticReq <> sigTypar.StaticReq then 
+                  if implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None then 
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))          
                   
                   // Adjust the actual type parameter name to look like the signature
