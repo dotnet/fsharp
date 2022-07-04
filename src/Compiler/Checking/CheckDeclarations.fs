@@ -990,6 +990,9 @@ module IncrClassChecking =
                     let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 
                     let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
+                    
+                    AdjustValToTopVal v (Parent tcref) topValInfo 
+                    
                     // Add the 'this' pointer on to the function
                     let memberTauTy, topValInfo = 
                         let tauTy = v.TauType
