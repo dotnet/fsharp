@@ -516,6 +516,25 @@ module UnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``E_LowercaseWhenRequireQualifiedAccess_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 6, Col 14, Line 6, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 6, Col 14, Line 6, Col 29, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 8, Col 12, Line 8, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 8, Col 12, Line 8, Col 27, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 11, Col 14, Line 11, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 883, Line 14, Col 12, Line 14, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 16, Col 14, Line 16, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 18, Col 12, Line 18, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 20, Col 12, Line 20, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 22, Col 14, Line 22, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+        ]
+
     //SOURCE=W_GenericFunctionValuedStaticProp02.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # W_GenericFunctionValuedStaticProp02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_GenericFunctionValuedStaticProp02.fs"|])>]
     let ``W_GenericFunctionValuedStaticProp02_fs`` compilation =
