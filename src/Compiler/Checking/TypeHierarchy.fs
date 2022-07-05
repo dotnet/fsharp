@@ -151,21 +151,26 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 // This measure-annotated type is considered to support the interfaces on its representation type A,
 // with the exception that
 //
-//   1. we rewrite the IComparable and IEquatable interfaces, so that
+//   1. Rewrite the IComparable and IEquatable interfaces, so that
 //    IComparable<A> --> IComparable<A<'m>>
 //    IEquatable<A> --> IEquatable<A<'m>>
 //
-//   2. we emit any other interfaces that derive from IComparable and IEquatable interfaces
+//   2. Omit any other interfaces that derive from IComparable and IEquatable interfaces
 //
 // This rule is conservative and only applies to IComparable and IEquatable interfaces.
 //
-// This rule may in future be extended to rewrite the "trait" interfaces associated with .NET 7.
+// We also:
+//   3. Omit any interfaces in System.Numerics, since pretty much none of them are adequate for units of measure
+//      There are some exceptions, e.g. IAdditiveIdentity, but these are available3 by different routes in F# and for clarity
+//      it is better to imply omit all
 and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
     [
-        // Report any interfaces that don't derive from IComparable<_> or IEquatable<_>
+        // Suppress any interfaces that derive from IComparable<_> or IEquatable<_>
+        // Suppress any interfaces in System.Numerics, since none of them are adequate for units of measure
         for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
             if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m ity) &&
-               not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m ity) then
+               not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m ity) &&
+               not (ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity) then
                 ity
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
@@ -179,6 +184,18 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
         //if ExistsInInterfaceHierarchy (typeEquiv g (mkAppTy g.system_GenericIEquatable_tcref [reprTy])) skipUnref g amap m ty then
         mkAppTy g.system_GenericIEquatable_tcref [ty]
     ]
+
+// Check for any System.Numerics type in the interface hierarchy
+and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
+    ExistsInInterfaceHierarchy
+        (fun ity2 ->
+            match ity2 with
+            | AppTy g (tcref,_) -> 
+                match tcref.CompilationPath.AccessPath with
+                | [("System", _); ("Numerics", _)] -> true
+                | _ -> false
+            | _ -> false) 
+        skipUnref g amap m ity
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
 and ExistsHeadTypeInInterfaceHierarchy target skipUnref g amap m ity =

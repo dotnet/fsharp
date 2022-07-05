@@ -701,7 +701,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     let IsInterfaceWithStaticAbstractMemberTyUncached ((ad, nm), m, ty) = 
         ExistsInEntireHierarchyOfType (fun parentTy -> 
-            this.TryFindIntrinsicMethInfo m ad nm parentTy |> List.isEmpty |> not)
+            let meths = this.TryFindIntrinsicMethInfo m ad nm parentTy
+            meths |> List.exists (fun meth ->
+                not meth.IsInstance &&
+                meth.IsDispatchSlot &&
+                isInterfaceTy g meth.ApparentEnclosingAppType
+            ))
            g amap m AllowMultiIntfInstantiations.Yes ty
 
     let hashFlags0 = 
@@ -901,7 +906,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         | None -> None
 
     /// Try to detect the existence of a method on a type.
-    member infoReader.TryFindIntrinsicMethInfo m ad nm ty = 
+    member infoReader.TryFindIntrinsicMethInfo m ad nm ty : MethInfo list = 
         infoReader.GetIntrinsicMethInfosOfType (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
     /// Try to find a particular named property on a type. Only used to ensure that local 'let' definitions and property names
