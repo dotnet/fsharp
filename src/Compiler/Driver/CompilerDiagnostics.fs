@@ -17,6 +17,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver

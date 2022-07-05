@@ -15,6 +15,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
@@ -40,8 +41,6 @@ open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
-open CheckIncrementalClasses
-
 #endif
 
 type cenv = TcFileState
