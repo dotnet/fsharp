@@ -886,6 +886,7 @@ let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
     | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
+        let objArgTy = if isByrefTy g objArgTy then destByrefTy g objArgTy else objArgTy
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
            // Constrained calls to class types can only ever be needed for the three class types that 
            // are base types of value types
