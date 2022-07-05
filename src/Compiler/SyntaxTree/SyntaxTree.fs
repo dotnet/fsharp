@@ -392,7 +392,9 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * elementTypes: (bool * SynType) list * range: range
+    | Tuple of isStruct: bool * elementTypes: SynType list * range: range
+
+    | Division of elementTypes: (bool * SynType list) * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
