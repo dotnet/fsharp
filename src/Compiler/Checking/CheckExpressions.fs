@@ -718,7 +718,7 @@ type TcFileState =
           tcComputationExpression) =
 
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsorig = FreshenTypars m tpsorig
+        let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
@@ -750,8 +750,8 @@ type TcFileState =
 
 type cenv = TcFileState
 
-let CopyAndFixupTypars m rigid tpsorig =
-    FreshenAndFixupTypars m rigid [] [] tpsorig
+let CopyAndFixupTypars g m rigid tpsorig =
+    FreshenAndFixupTypars g m rigid [] [] tpsorig
 
 let UnifyTypes (cenv: cenv) (env: TcEnv) m actualTy expectedTy =
     let g = cenv.g
@@ -1765,11 +1765,11 @@ let SetTyparRigid denv m (tp: Typar) =
             errorR(Error(FSComp.SR.tcTypeParameterHasBeenConstrained(NicePrint.prettyStringOfTy denv ty), tp.Range))
     tp.SetRigidity TyparRigidity.Rigid
 
-let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsForThisBinding
-        (PrelimVal1(id, explicitTyparInfo, ty, prelimValReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, argAttribs, vis, isCompGen)) =
+let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsForThisBinding prelimVal =
 
     let g = cenv.g
 
+    let (PrelimVal1(id, explicitTyparInfo, ty, prelimValReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, argAttribs, vis, isCompGen)) = prelimVal
     let (ExplicitTyparInfo(_rigidCopyOfDeclaredTypars, declaredTypars, _)) = explicitTyparInfo
 
     let m = id.idRange
@@ -1997,7 +1997,8 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 
 let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars = 
     let origTypars = declaredTyconTypars
-    let freshTypars = copyTypars true origTypars
+    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+    let freshTypars = copyTypars clearStaticReq origTypars
     if rigid <> TyparRigidity.Rigid then
         for tp in freshTypars do
             tp.SetRigidity rigid
@@ -2014,11 +2015,11 @@ let FreshenPossibleForallTy g m rigid ty =
     else
         // tps may be have been equated to other tps in equi-recursive type inference and units-of-measure type inference. Normalize them here
         let origTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g origTypars
-        let tps, renaming, tinst = CopyAndFixupTypars m rigid origTypars
+        let tps, renaming, tinst = CopyAndFixupTypars g m rigid origTypars
         origTypars, tps, tinst, instType renaming tau
 
 let FreshenTyconRef2 (g: TcGlobals) m (tcref: TyconRef) = 
-    let tps, renaming, tinst = FreshenTypeInst m (tcref.Typars m)
+    let tps, renaming, tinst = FreshenTypeInst g m (tcref.Typars m)
     tps, renaming, tinst, TType_app (tcref, tinst, g.knownWithoutNull)
 
 /// Given a abstract method, which may be a generic method, freshen the type in preparation
@@ -2045,7 +2046,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m
         let ttinst = argsOfAppTy g absMethInfo.ApparentEnclosingType
         let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
-        FreshenAndFixupTypars m rigid ttps ttinst fmtps
+        FreshenAndFixupTypars g m rigid ttps ttinst fmtps
 
     // Work out the required type of the member
     let argTysFromAbsSlot = argTys |> List.mapSquared (instType typarInstFromAbsSlot)
@@ -2424,7 +2425,7 @@ module GeneralizationHelpers =
         generalizedTypars |> List.iter (SetTyparRigid denv m)
 
         // Generalization removes constraints related to generalized type variables
-        EliminateConstraintsForGeneralizedTypars denv cenv.css m NoTrace generalizedTypars
+        AddCxTyparsGeneralized denv cenv.css m ContextInfo.NoContext NoTrace generalizedTypars
 
         generalizedTypars
 

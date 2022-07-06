@@ -41,7 +41,7 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
-    m: range -> rigid: TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInstantiation * TType list
+    g: TcGlobals -> m: range -> rigid: TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInstantiation * TType list
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
@@ -50,13 +50,13 @@ val FreshenAndFixupTypars:
 ///   1. the new type parameters
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
-val FreshenTypeInst: range -> Typars -> Typars * TyparInstantiation * TType list
+val FreshenTypeInst: g: TcGlobals -> range -> Typars -> Typars * TyparInstantiation * TType list
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenTypars: range -> Typars -> TType list
+val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
 
 /// Given a method, which may be generic, make new inference type variables for
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
@@ -251,9 +251,10 @@ val UnifyUniqueOverloading:
         OverallTy ->
             OperationResult<bool>
 
-/// Remove the global constraints where these type variables appear in the support of the constraint
-val EliminateConstraintsForGeneralizedTypars:
-    DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit
+/// Note that the type parameters have ben generalized. Assess the staticness of the type parameters
+/// and remove the global constraints where these type variables appear in the support of the constraint.
+val AddCxTyparsGeneralized:
+    DisplayEnv -> ConstraintSolverState -> range -> ctxtInfo: ContextInfo -> OptionalTrace -> Typars -> unit
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit
 

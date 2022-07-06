@@ -196,7 +196,8 @@ type InfoReader =
     member FindImplicitConversions: m: range -> ad: AccessorDomain -> ty: TType -> MethInfo list
 
     /// Determine if a type has a static abstract method with the given name somewhere in its hierarchy
-    member IsInterfaceTypeWithMatchingStaticAbstractMember: m: range -> nm: string -> ad: AccessorDomain -> ty: TType -> bool
+    member IsInterfaceTypeWithMatchingStaticAbstractMember:
+        m: range -> nm: string -> ad: AccessorDomain -> ty: TType -> bool
 
 val checkLanguageFeatureRuntimeAndRecover:
     infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit

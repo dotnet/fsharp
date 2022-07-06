@@ -328,4 +328,285 @@ module CheckStaticTyparInference =
 // this should fail compilation - the trait has multiple support types and can't be invoked using this syntax
     let inline f5 (x: 'T when ('T or int) : (static member A: int) ) = 'T.A 
 #endif
-    
+
+// This is tested in the bootstrap of FSharp.Core
+module ``Check generalized type variables have correct staticness`` =
+    open System
+
+    let inline uint32 (value: ^T) = 
+         (^T : (static member op_Explicit: ^T -> uint32) (value))
+
+    let inline uint value = uint32 value // the inferred signature of this should also be static-required
+
+module NullableOperators =
+    let (?>=) (x: Nullable<'T>) (y: 'T) =
+        x.HasValue && x.Value >= y
+
+    let (?>) (x: Nullable<'T>) (y: 'T) =
+        x.HasValue && x.Value > y
+
+    let (?<=) (x: Nullable<'T>) (y: 'T) =
+        x.HasValue && x.Value <= y
+
+    let (?<) (x: Nullable<'T>) (y: 'T) =
+        x.HasValue && x.Value < y
+
+    let (?=) (x: Nullable<'T>) (y: 'T) =
+        x.HasValue && x.Value = y
+
+    let (?<>) (x: Nullable<'T>) (y: 'T) =
+        not (x ?= y)
+
+    let (>=?) (x: 'T) (y: Nullable<'T>) =
+        y.HasValue && x >= y.Value
+
+    let (>?) (x: 'T) (y: Nullable<'T>) =
+        y.HasValue && x > y.Value
+
+    let (<=?) (x: 'T) (y: Nullable<'T>) =
+        y.HasValue && x <= y.Value
+
+    let (<?) (x: 'T) (y: Nullable<'T>) =
+        y.HasValue && x < y.Value
+
+    let (=?) (x: 'T) (y: Nullable<'T>) =
+        y.HasValue && x = y.Value
+
+    let (<>?) (x: 'T) (y: Nullable<'T>) =
+        not (x =? y)
+
+    let (?>=?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        (x.HasValue && y.HasValue && x.Value >= y.Value)
+
+    let (?>?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        (x.HasValue && y.HasValue && x.Value > y.Value)
+
+    let (?<=?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        (x.HasValue && y.HasValue && x.Value <= y.Value)
+
+    let (?<?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        (x.HasValue && y.HasValue && x.Value < y.Value)
+
+    let (?=?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        (not x.HasValue && not y.HasValue)
+        || (x.HasValue && y.HasValue && x.Value = y.Value)
+
+    let (?<>?) (x: Nullable<'T>) (y: Nullable<'T>) =
+        not (x ?=? y)
+
+    let inline (?+) (x: Nullable<_>) y =
+        if x.HasValue then
+            Nullable(x.Value + y)
+        else
+            Nullable()
+
+    let inline (+?) x (y: Nullable<_>) =
+        if y.HasValue then
+            Nullable(x + y.Value)
+        else
+            Nullable()
+
+    let inline (?+?) (x: Nullable<_>) (y: Nullable<_>) =
+        if x.HasValue && y.HasValue then
+            Nullable(x.Value + y.Value)
+        else
+            Nullable()
+
+    let inline (?-) (x: Nullable<_>) y =
+        if x.HasValue then
+            Nullable(x.Value - y)
+        else
+            Nullable()
+
+    let inline (-?) x (y: Nullable<_>) =
+        if y.HasValue then
+            Nullable(x - y.Value)
+        else
+            Nullable()
+
+    let inline (?-?) (x: Nullable<_>) (y: Nullable<_>) =
+        if x.HasValue && y.HasValue then
+            Nullable(x.Value - y.Value)
+        else
+            Nullable()
+
+    let inline (?*) (x: Nullable<_>) y =
+        if x.HasValue then
+            Nullable(x.Value * y)
+        else
+            Nullable()
+
+    let inline ( *? ) x (y: Nullable<_>) =
+        if y.HasValue then
+            Nullable(x * y.Value)
+        else
+            Nullable()
+
+    let inline (?*?) (x: Nullable<_>) (y: Nullable<_>) =
+        if x.HasValue && y.HasValue then
+            Nullable(x.Value * y.Value)
+        else
+            Nullable()
+
+    let inline (?%) (x: Nullable<_>) y =
+        if x.HasValue then
+            Nullable(x.Value % y)
+        else
+            Nullable()
+
+    let inline (%?) x (y: Nullable<_>) =
+        if y.HasValue then
+            Nullable(x % y.Value)
+        else
+            Nullable()
+
+    let inline (?%?) (x: Nullable<_>) (y: Nullable<_>) =
+        if x.HasValue && y.HasValue then
+            Nullable(x.Value % y.Value)
+        else
+            Nullable()
+
+    let inline (?/) (x: Nullable<_>) y =
+        if x.HasValue then
+            Nullable(x.Value / y)
+        else
+            Nullable()
+
+    let inline (/?) x (y: Nullable<_>) =
+        if y.HasValue then
+            Nullable(x / y.Value)
+        else
+            Nullable()
+
+    let inline (?/?) (x: Nullable<_>) (y: Nullable<_>) =
+        if x.HasValue && y.HasValue then
+            Nullable(x.Value / y.Value)
+        else
+            Nullable()
+
+module Nullable =
+    let inline uint8 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.byte value.Value)
+        else
+            Nullable()
+
+    let inline int8 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.sbyte value.Value)
+        else
+            Nullable()
+
+    let inline byte (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.byte value.Value)
+        else
+            Nullable()
+
+    let inline sbyte (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.sbyte value.Value)
+        else
+            Nullable()
+
+    let inline int16 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.int16 value.Value)
+        else
+            Nullable()
+
+    let inline uint16 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.uint16 value.Value)
+        else
+            Nullable()
+
+    let inline int (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.int value.Value)
+        else
+            Nullable()
+
+    let inline uint (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.uint value.Value)
+        else
+            Nullable()
+
+    let inline enum (value: Nullable<int32>) =
+        if value.HasValue then
+            Nullable(Operators.enum value.Value)
+        else
+            Nullable()
+
+    let inline int32 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.int32 value.Value)
+        else
+            Nullable()
+
+    let inline uint32 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.uint32 value.Value)
+        else
+            Nullable()
+
+    let inline int64 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.int64 value.Value)
+        else
+            Nullable()
+
+    let inline uint64 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.uint64 value.Value)
+        else
+            Nullable()
+
+    let inline float32 (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.float32 value.Value)
+        else
+            Nullable()
+
+    let inline float (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.float value.Value)
+        else
+            Nullable()
+
+    let inline single (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.float32 value.Value)
+        else
+            Nullable()
+
+    let inline double (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.float value.Value)
+        else
+            Nullable()
+
+    let inline nativeint (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.nativeint value.Value)
+        else
+            Nullable()
+
+    let inline unativeint (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.unativeint value.Value)
+        else
+            Nullable()
+
+    let inline decimal (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.decimal value.Value)
+        else
+            Nullable()
+
+    let inline char (value: Nullable<_>) =
+        if value.HasValue then
+            Nullable(Operators.char value.Value)
+        else
+            Nullable()

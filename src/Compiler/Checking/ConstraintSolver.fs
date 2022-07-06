@@ -115,34 +115,37 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
-let FreshenTypar rigid (tp: Typar) =
-    NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
+let FreshenTypar (g: TcGlobals) rigid (tp: Typar) =
+    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+    let staticReq = if clearStaticReq then TyparStaticReq.None else tp.StaticReq
+    let dynamicReq = if rigid = TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No
+    NewCompGenTypar (tp.Kind, rigid, staticReq, dynamicReq, false)
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know 
 // we are going to have to generalize a typar, e.g. when implementing a 
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars m rigid fctps tinst tpsorig = 
-    let tps = tpsorig |> List.map (FreshenTypar rigid)
+let FreshenAndFixupTypars g m rigid fctps tinst tpsorig = 
+    let tps = tpsorig |> List.map (FreshenTypar g rigid)
     let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst m tpsorig =
-    FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
+let FreshenTypeInst g m tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] tpsorig 
 
-let FreshMethInst m fctps tinst tpsorig =
-    FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
+let FreshMethInst g m fctps tinst tpsorig =
+    FreshenAndFixupTypars g m TyparRigidity.Flexible fctps tinst tpsorig 
 
-let FreshenTypars m tpsorig = 
+let FreshenTypars g m tpsorig = 
     match tpsorig with 
     | [] -> []
     | _ -> 
-        let _, _, tptys = FreshenTypeInst m tpsorig
+        let _, _, tptys = FreshenTypeInst g m tpsorig
         tptys
 
 let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tptys = FreshMethInst m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+    let _, _, tptys = FreshMethInst minfo.TcGlobals m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tptys
 
 //-------------------------------------------------------------------------
@@ -3397,7 +3400,23 @@ let UnifyUniqueOverloading
         ResultD false
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
-let EliminateConstraintsForGeneralizedTypars denv css m (trace: OptionalTrace) (generalizedTypars: Typars) =
+let AddCxTyparsGeneralized (denv: DisplayEnv) css m ctxtInfo (trace: OptionalTrace) (generalizedTypars: Typars) =
+    let g = denv.g
+    let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
+    trackErrors {
+        if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            for tp in generalizedTypars do
+                for cx in tp.Constraints do
+                    match cx with
+                    | TyparConstraint.MayResolveMember(traitInfo,_) ->
+                        for supportTy in traitInfo.SupportTypes do
+                           if isAnyParTy g supportTy then
+                               do! SolveTypStaticReqTypar csenv NoTrace TyparStaticReq.HeadType (destAnyParTy g supportTy)
+                    | TyparConstraint.SimpleChoice _ ->
+                          do! SolveTypStaticReqTypar csenv NoTrace TyparStaticReq.HeadType tp
+                    | _ -> ()
+    } |> RaiseOperationResult
+
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     for tp in generalizedTypars do
         let tpn = tp.Stamp
@@ -3627,7 +3646,7 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let ftps, _renaming, tinst = FreshenTypeInst m typars
+    let ftps, _renaming, tinst = FreshenTypeInst g m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
     return GenWitnessArgs amap g m traitInfos
