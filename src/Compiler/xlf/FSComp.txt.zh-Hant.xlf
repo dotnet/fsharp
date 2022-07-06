@@ -873,8 +873,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
-        <source>The trait '{0}' invoked by this call has multiple support types.</source>
-        <target state="new">The trait '{0}' invoked by this call has multiple support types.</target>
+        <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
+        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitInvocationShouldUseTick">
