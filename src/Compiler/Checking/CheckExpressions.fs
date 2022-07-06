@@ -1997,7 +1997,7 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 
 let FreshenTyconRef (g: TcGlobals) m rigid (tcref: TyconRef) declaredTyconTypars = 
     let origTypars = declaredTyconTypars
-    let freshTypars = copyTypars origTypars
+    let freshTypars = copyTypars true origTypars
     if rigid <> TyparRigidity.Rigid then
         for tp in freshTypars do
             tp.SetRigidity rigid
@@ -6264,10 +6264,9 @@ and TcExprNamedIndexPropertySet cenv overallTy env tpenv (synLongId, synExpr1, s
             [ DelayedApp(ExprAtomicFlag.Atomic, false, None, synExpr1, mStmt)
               MakeDelayedSet(synExpr2, mStmt) ]
 
-and TcExprTraitCall cenv overallTy env tpenv (tps, synMemberSig, arg, m) =
+and TcExprTraitCall cenv overallTy env tpenv (synTypes, synMemberSig, arg, m) =
     let g = cenv.g
     TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
-        let synTypes = tps |> List.map (fun tp -> SynType.Var(tp, m))
         let traitInfo, tpenv = TcPseudoMemberSpec cenv NewTyparsOK env synTypes tpenv synMemberSig m
         if BakedInTraitConstraintNames.Contains traitInfo.MemberLogicalName then
             warning(BakedInMemberConstraintName(traitInfo.MemberLogicalName, m))
@@ -8723,6 +8722,14 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
     let argTys = traitInfo.GetLogicalArgumentTypes(g)
     let retTy = traitInfo.GetReturnType(g)
 
+    match traitInfo.SupportTypes with
+    | tys when tys.Length > 1 ->
+    //| (t0 :: (_ :: _) as rest) ->
+        error(Error (FSComp.SR.tcTraitHasMultipleSupportTypes(traitInfo.MemberDisplayNameCore), mItem))
+        //for ty in rest do
+        //    UnifyTypes cenv env mItem t0 ty
+    | _ -> ()
+
     match objOpt, traitInfo.MemberFlags.IsInstance with
     | Some _, false -> error (Error (FSComp.SR.tcTraitIsStatic traitInfo.MemberDisplayNameCore, mItem))
     | None, true -> error (Error (FSComp.SR.tcTraitIsNotStatic traitInfo.MemberDisplayNameCore, mItem))
@@ -10663,7 +10670,7 @@ and TcBindingTyparDecls alwaysRigid cenv env tpenv (ValTyparDecls(synTypars, syn
             declaredTypars |> List.iter (fun tp -> SetTyparRigid env.DisplayEnv tp.Range tp)
             declaredTypars
         else
-            let rigidCopyOfDeclaredTypars = copyTypars declaredTypars
+            let rigidCopyOfDeclaredTypars = copyTypars false declaredTypars
             // The type parameters used to check rigidity after inference are marked rigid straight away
             rigidCopyOfDeclaredTypars |> List.iter (fun tp -> SetTyparRigid env.DisplayEnv tp.Range tp)
             // The type parameters using during inference will be marked rigid after inference

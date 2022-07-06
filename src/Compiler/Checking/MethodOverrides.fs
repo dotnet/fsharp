@@ -767,11 +767,15 @@ module DispatchSlotChecking =
         let allImpls = List.zip allReqdTys slotImplSets
 
         // Find the methods relevant to implementing the abstract slots listed under the reqdType being checked.
+        //
+        // Methods that are
+        //   - Not static OR Static in the interface
+        //   - override/default
         let allImmediateMembersThatMightImplementDispatchSlots = 
             allImmediateMembers |> List.filter (fun overrideBy -> 
-                (overrideBy.IsInstanceMember || IsStaticAbstractImpl overrideBy) // Not static OR Static in the interface
-                && overrideBy.IsVirtualMember   // exclude non virtual (e.g. keep override/default). [4469]
-                && not overrideBy.IsDispatchSlotMember)
+                (overrideBy.IsInstanceMember || IsStaticAbstractImpl overrideBy) &&
+                overrideBy.IsVirtualMember &&
+                not overrideBy.IsDispatchSlotMember)
 
         let mustOverrideSomething reqdTy (overrideBy: ValRef) =
            let memberInfo = overrideBy.MemberInfo.Value

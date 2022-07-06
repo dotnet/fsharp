@@ -628,7 +628,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 

@@ -325,7 +325,7 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
     match tps with 
     | [] -> tps, tyenv 
     | _ -> 
-      let tpsR = copyTypars tps
+      let tpsR = copyTypars false tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tpsR) tyenv.tpinst } 
       (tps, tpsR) ||> List.iter2 (fun tporig tp -> 
          tp.SetConstraints (remapTyparConstraintsAux tyenv tporig.Constraints)
@@ -2602,9 +2602,9 @@ type TraitConstraintInfo with
 /// Put these in canonical order.
 let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
     [ for tp in tps do 
-            for cx in tp.Constraints do
+        for cx in tp.Constraints do
             match cx with 
-            | TyparConstraint.MayResolveMember(traitInfo, _) -> yield traitInfo 
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> traitInfo 
             | _ -> () ]
     |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
     |> List.sortBy (fun traitInfo -> traitInfo.MemberLogicalName, traitInfo.GetCompiledArgumentTypes().Length)
@@ -8230,7 +8230,7 @@ let MakeArgsForTopArgs _g m argTysl tpenv =
 let AdjustValForExpectedArity g m (vref: ValRef) flags topValInfo =
 
     let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
-    let tpsR = copyTypars tps
+    let tpsR = copyTypars false tps
     let tyargsR = List.map mkTyparTy tpsR
     let tpenv = bindTypars tps tyargsR emptyTyparInst
     let rtyR = instType tpenv retTy

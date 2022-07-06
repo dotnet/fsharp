@@ -1209,9 +1209,9 @@ type MethInfo =
             // REVIEW: should we copy down attributes to slot params?
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
-            let formalEnclosingTypars = copyTypars formalEnclosingTyparsOrig
+            let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
             let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
-            let formalMethTypars = copyTypars x.FormalMethodTypars
+            let formalMethTypars = copyTypars false x.FormalMethodTypars
             let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =

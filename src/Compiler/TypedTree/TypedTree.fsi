@@ -206,6 +206,8 @@ type TyparFlags =
 
     member WithCompatFlex: b: bool -> TyparFlags
 
+    member WithStaticReq: staticReq: Syntax.TyparStaticReq -> TyparFlags
+
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member ComparisonConditionalOn: bool
 

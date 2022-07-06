@@ -9,6 +9,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
+open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
@@ -187,6 +188,7 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
 
 // Check for any System.Numerics type in the interface hierarchy
 and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
+    g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers &&
     ExistsInInterfaceHierarchy
         (fun ity2 ->
             match ity2 with

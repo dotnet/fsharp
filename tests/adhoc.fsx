@@ -303,3 +303,29 @@ let inline f_SRTP_GoToDefinition_FindAllReferences (x: 'T) =
 *)
 
 
+module CheckStaticTyparInference =
+
+    let inline f0 (x: ^T) = x
+    let g0 (x: 'T) = f0 x // ^T need not be static because it has no static constraint. Therefore this is ok to be properly generic
+
+    let inline f1 (x: ^T) = (^T : (static member A: int) ())
+    let inline f2 (x: 'T) = ((^T or int) : (static member A: int) ())  // will infer 'T to have a static req
+    let inline f3 (x: 'T) = ((^U or 'T) : (static member A: int) ())  // will infer 'T to have a static req
+    let inline f4 (x: 'T when 'T : (static member A: int) ) = 'T.A  // will infer 'T to have a static req
+
+    let inline f5 (x: ^T) = printfn "%d" x
+    let g5 (x: 'T) = f5 x // 'T should be inferred int
+    let inline h5 (x: 'T) = f5 x // 'T should be inferred static because it has a choice constraint
+
+
+ //val inline f0: x: ^T -> ^T
+ // val g0: x: 'T -> 'T
+ // val inline f1: x: ^T -> int when ^T: (static member A: int)
+ // val inline f2: x: ^T -> int when (^T or int) : (static member A: int)
+ // val inline f3: x: ^T -> int when (^U or ^T) : (static member A: int)
+ // val inline f4: x: ^T -> int when ^T: (static member A: int)
+#if NEGATIVE
+// this should fail compilation - the trait has multiple support types and can't be invoked using this syntax
+    let inline f5 (x: 'T when ('T or int) : (static member A: int) ) = 'T.A 
+#endif
+    

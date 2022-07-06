@@ -178,17 +178,19 @@ let mkTyparTy (tp: Typar) =
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = 
+// We clear the StaticReq when copying because the requirement will be re-established through the
+// process of type inference.
+let copyTypar isFresh (tp: Typar) = 
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
     Typar.New { typar_id = tp.typar_id
-                typar_flags = tp.typar_flags
+                typar_flags = (if isFresh then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags)
                 typar_stamp = newStamp()
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
                 typar_opt_data = optData } 
 
-let copyTypars tps = List.map copyTypar tps
+let copyTypars isFresh tps = List.map (copyTypar isFresh) tps
 
 //--------------------------------------------------------------------------
 // Inference variables

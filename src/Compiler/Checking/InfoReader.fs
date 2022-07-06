@@ -752,19 +752,19 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     // Runtime feature support
 
-    let isRuntimeFeatureSupported (infoReader: InfoReader) runtimeFeature =
+    let isRuntimeFeatureSupported runtimeFeature =
         match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
         | Some runtimeFeatureTy ->
-            infoReader.GetILFieldInfosOfType (None, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
+            GetIntrinsicILFieldInfosUncached ((None, AccessorDomain.AccessibleFromEverywhere), range0, runtimeFeatureTy)
             |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
         | _ ->
             false
 
     let isRuntimeFeatureDefaultImplementationsOfInterfacesSupported =
-        lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
+        lazy isRuntimeFeatureSupported "DefaultImplementationsOfInterfaces"
 
     let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
-        lazy isRuntimeFeatureSupported this "VirtualStaticsInInterfaces"
+        lazy isRuntimeFeatureSupported "VirtualStaticsInInterfaces"
 
     member _.g = g
     member _.amap = amap

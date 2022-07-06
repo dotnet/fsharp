@@ -872,6 +872,11 @@
         <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTraitHasMultipleSupportTypes">
+        <source>The trait '{0}' invoked by this call has multiple support types.</source>
+        <target state="new">The trait '{0}' invoked by this call has multiple support types.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTraitInvocationShouldUseTick">
         <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
         <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>

@@ -376,6 +376,9 @@ type TyparFlags(flags: int32) =
                   else
                       TyparFlags(flags &&& ~~~0b00010000000000000)
 
+    member x.WithStaticReq staticReq =  
+        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn) 
+
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits = flags       
 
@@ -2266,22 +2269,33 @@ type Typar =
     member x.SetIdent id = x.typar_id <- id
 
     /// Sets the rigidity of a type variable
-    member x.SetRigidity b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetRigidity b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable is compiler generated
-    member x.SetCompilerGenerated b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetCompilerGenerated b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable has a static requirement
-    member x.SetStaticReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, b, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetStaticReq b =
+        x.typar_flags <- x.typar_flags.WithStaticReq(b)
 
     /// Sets whether a type variable is required at runtime
-    member x.SetDynamicReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetDynamicReq b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
-    member x.SetEqualityDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+    member x.SetEqualityDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
-    member x.SetComparisonDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+    member x.SetComparisonDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

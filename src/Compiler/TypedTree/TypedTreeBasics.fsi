@@ -118,9 +118,7 @@ val ccuOfTyconRef: eref: EntityRef -> CcuThunk option
 
 val mkTyparTy: tp: Typar -> TType
 
-val copyTypar: tp: Typar -> Typar
-
-val copyTypars: tps: Typar list -> Typar list
+val copyTypars: isFresh: bool -> tps: Typar list -> Typar list
 
 val tryShortcutSolvedUnitPar: canShortcut: bool -> r: Typar -> Measure
 

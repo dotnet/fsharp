@@ -814,8 +814,8 @@ type SynExpr =
     /// F# syntax: &expr, &&expr
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    /// F# syntax: ((typar1 or ... or typarN): (member-dig) expr)
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    /// F# syntax: ((type1 or ... or typeN): (member-dig) expr)
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     /// F# syntax: ... in ...
     /// Computation expressions only, based on JOIN_IN token from lex filter

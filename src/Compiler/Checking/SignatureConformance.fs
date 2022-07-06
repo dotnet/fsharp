@@ -11,6 +11,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Syntax
@@ -122,9 +123,15 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
               let aenv = aenv.BindEquivTypars implTypars sigTypars 
               (implTypars, sigTypars) ||> List.forall2 (fun implTypar sigTypar -> 
                   let m = sigTypar.Range
-                  if implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None then 
-                      errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))          
                   
+                  let check =
+                      if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+                          implTypar.StaticReq = TyparStaticReq.HeadType && sigTypar.StaticReq = TyparStaticReq.None
+                      else
+                          implTypar.StaticReq <> sigTypar.StaticReq
+                  if check then
+                      errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))
+                
                   // Adjust the actual type parameter name to look like the signature
                   implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 

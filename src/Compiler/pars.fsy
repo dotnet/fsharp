@@ -2372,7 +2372,7 @@ typeConstraint:
      { let tp = $1
        SynTypeConstraint.WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ], $4, lhs parseState) }
 
-  | LPAREN typarAlts rparen COLON LPAREN classMemberSpfn rparen 
+  | LPAREN typeAlts rparen COLON LPAREN classMemberSpfn rparen 
      { SynTypeConstraint.WhereTyparSupportsMember(List.rev($2), $6, lhs parseState) }
 
   | typar COLON DELEGATE typeArgsNoHpaDeprecated
@@ -2396,8 +2396,8 @@ typeConstraint:
   | appType
      { SynTypeConstraint.WhereSelfConstrained($1, lhs parseState) }
 
-typarAlts:
-  | typarAlts OR appType
+typeAlts:
+  | typeAlts OR appType
      { $3 :: $1 }
 
   | appType
@@ -4557,7 +4557,7 @@ parenExpr:
         //arbExpr("parenExpr2", lhsm)  }  
 
 parenExprBody:
-  | staticallyKnownHeadTypars COLON LPAREN classMemberSpfn rparen  typedSequentialExpr 
+  | typars COLON LPAREN classMemberSpfn rparen  typedSequentialExpr 
       { (fun m -> SynExpr.TraitCall ($1, $4, $6, m)) } /* disambiguate: x $a.id(x) */
 
   | typedSequentialExpr
@@ -4566,19 +4566,19 @@ parenExprBody:
   | inlineAssemblyExpr 
       { $1 }
 
-staticallyKnownHeadTypars:
-  | staticallyKnownHeadTypar 
-      { [$1] }
+typars:
+  | typar 
+      { [SynType.Var($1, rhs parseState 1)] }
 
-  | LPAREN staticallyKnownHeadTyparAlts rparen 
+  | LPAREN typarAlts rparen 
       { List.rev $2 }
 
-staticallyKnownHeadTyparAlts:
-  | staticallyKnownHeadTyparAlts OR staticallyKnownHeadTypar
+typarAlts:
+  | typarAlts OR appType
       {$3 :: $1}
 
-  | staticallyKnownHeadTypar
-      { [$1] }
+  | typar
+      { [SynType.Var($1, rhs parseState 1)] }
 
 braceExpr:
   | LBRACE braceExprBody rbrace 
@@ -5439,10 +5439,6 @@ typar:
      {  let id = mkSynId (lhs parseState) ($2).idText
         SynTypar(id, TyparStaticReq.None, false) }
 
-  | staticallyKnownHeadTypar 
-     { $1 }
-
-staticallyKnownHeadTypar: 
   | INFIX_AT_HAT_OP ident 
     {  if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.tcUnexpectedSymbolInTypeExpression($1));
        let id = mkSynId (lhs parseState) ($2).idText

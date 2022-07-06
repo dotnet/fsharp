@@ -831,7 +831,7 @@ module ParsedInput =
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.tryPick walkTypar ts
+                List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
@@ -1802,7 +1802,7 @@ module ParsedInput =
 
                 walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.iter walkTypar ts
+                List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
             | SynExpr.Const (SynConst.Measure (_, _, m), _) -> walkMeasure m

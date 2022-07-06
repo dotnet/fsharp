@@ -115,14 +115,16 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 
 let NewInferenceTypes g l = l |> List.map (fun _ -> NewInferenceType g) 
 
+let FreshenTypar rigid (tp: Typar) =
+    NewCompGenTypar (tp.Kind, rigid, TyparStaticReq.None, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
+
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know 
 // we are going to have to generalize a typar, e.g. when implementing a 
 // abstract generic method slot. But we later check the generalization 
 // condition anyway, so we could get away with a non-rigid typar. This 
 // would sort of be cleaner, though give errors later. 
 let FreshenAndFixupTypars m rigid fctps tinst tpsorig = 
-    let copy_tyvar (tp: Typar) =  NewCompGenTypar (tp.Kind, rigid, tp.StaticReq, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
-    let tps = tpsorig |> List.map copy_tyvar 
+    let tps = tpsorig |> List.map (FreshenTypar rigid)
     let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
     tps, renaming, tinst
 
@@ -1010,6 +1012,9 @@ and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
         // Propagate dynamic requirements from 'tp' to 'ty'
     do! SolveTypDynamicReq csenv trace r.DynamicReq ty
 
+    // Propagate static requirements from 'tp' to 'ty' 
+    do! SolveTypStaticReq csenv trace r.StaticReq ty
+
     if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
         // Propagate static requirements from 'tp' to 'ty' 
         //
@@ -1784,18 +1789,18 @@ and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignore
     trackErrors {
         let g = csenv.g
 
+        let nm = traitInfo.MemberLogicalName
+        let supportTypars = GetTyparSupportOfMemberConstraint csenv traitInfo
+        let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
+
         // Trait calls are only supported on pseudo type (variables) unless supported by IWSAM constraints
         //
         // SolveTypStaticReq is applied here if IWSAMs are supported
         if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            for supportTy in traitInfo.SupportTypes do
-                if not (SupportTypeOfMemberConstraintIsSolved csenv traitInfo supportTy) then
-                    do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType supportTy
+            for supportTypar in supportTypars do
+                if not (SupportTypeOfMemberConstraintIsSolved csenv traitInfo supportTypar) then
+                    do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType supportTypar
     
-        let nm = traitInfo.MemberLogicalName
-        let support = GetTyparSupportOfMemberConstraint csenv traitInfo
-        let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
-
         // If there's nothing left to learn then raise the errors.
         // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
         // reasons we use the more restrictive isNil frees.
@@ -1803,7 +1808,7 @@ and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignore
             do! errors  
         // Otherwise re-record the trait waiting for canonicalization 
         else
-            do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
+            do! AddMemberConstraint csenv ndeep m2 trace traitInfo supportTypars frees
 
         match errors with
         | ErrorResult (_, UnresolvedOverloading _)
@@ -1977,10 +1982,8 @@ and SupportTypeHasInterfaceWithMatchingStaticAbstractMember (csenv: ConstraintSo
     else
         false
 
-and SupportTypeOfMemberConstraintIsSolved (csenv: ConstraintSolverEnv) (traitInfo: TraitConstraintInfo) supportTy =
-    let g = csenv.g
-    not (isAnyParTy g supportTy) ||
-    SupportTypeHasInterfaceWithMatchingStaticAbstractMember csenv traitInfo (destAnyParTy g supportTy)
+and SupportTypeOfMemberConstraintIsSolved (csenv: ConstraintSolverEnv) (traitInfo: TraitConstraintInfo) supportTypar =
+    SupportTypeHasInterfaceWithMatchingStaticAbstractMember csenv traitInfo supportTypar
 
 // This may be relevant to future bug fixes, see https://github.com/dotnet/fsharp/issues/3814
 // /// Check if some part of the support is solved.  
@@ -2008,7 +2011,8 @@ and MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo =
 
 /// Check if the support is fully solved.  
 and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) traitInfo =
-    traitInfo.SupportTypes |> List.forall (SupportTypeOfMemberConstraintIsSolved csenv traitInfo)
+    let g = csenv.g
+    traitInfo.SupportTypes |> List.forall (fun ty -> if isAnyParTy g ty then SupportTypeOfMemberConstraintIsSolved csenv traitInfo (destAnyParTy g ty) else true)
 
 /// Re-solve the global constraints involving any of the given type variables. 
 /// Trait constraints can't always be solved using the pessimistic rules. We only canonicalize 
