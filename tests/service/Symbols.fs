@@ -785,6 +785,41 @@ type Foo =
             assertRange (3, 4) (5, 54) m
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with member with set/get`` () =
+        let parseResults = 
+            getParseResults
+                """
+type A() =
+    member this.Z with set (_:int):unit = () and get():int = 1
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                    SynMemberDefn.ImplicitCtor _
+                    SynMemberDefn.GetSetMember(Some (SynBinding(headPat = SynPat.LongIdent(extraId = Some getIdent))),
+                                               Some (SynBinding(headPat = SynPat.LongIdent(extraId = Some setIdent))),
+                                               m,
+                                               { WithKeyword = mWith
+                                                 GetKeyword = Some mGet
+                                                 AndKeyword = Some mAnd
+                                                 SetKeyword = Some mSet })
+                ])) ]
+            )
+        ]) ])) ->
+            Assert.AreEqual("get", getIdent.idText)
+            Assert.AreEqual("set", setIdent.idText)
+            assertRange (3, 18) (3, 22) mWith
+            assertRange (3, 23) (3, 26) mSet
+            assertRange (3, 23) (3, 26) setIdent.idRange
+            assertRange (3, 45) (3, 48) mAnd
+            assertRange (3, 49) (3, 52) mGet
+            assertRange (3, 49) (3, 52) getIdent.idRange
+            assertRange (3, 4) (3, 62) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =

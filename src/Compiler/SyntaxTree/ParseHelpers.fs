@@ -764,42 +764,17 @@ let mkSynMemberDefnGetSet
         let setter = tryMkSynMemberDefnMember s
 
         match getter, setter with
-        | Some (SynMemberDefn.Member (getBinding, mGet), getIdent), Some (SynMemberDefn.Member (setBinding, mSet), setIdent) ->
-            let range = unionRanges mGet mSet
+        | Some (SynMemberDefn.Member (getBinding, m1), GetIdent mGet), Some (SynMemberDefn.Member (setBinding, m2), SetIdent mSet)
+        | Some (SynMemberDefn.Member (setBinding, m1), SetIdent mSet), Some (SynMemberDefn.Member (getBinding, m2), GetIdent mGet) ->
+            let range = unionRanges m1 m2
 
             let trivia =
-                match getIdent, setIdent with
-                | GetIdent mGet, SetIdent mSet
-                | SetIdent mSet, GetIdent mGet ->
-                    {
-                        WithKeyword = mWith
-                        GetKeyword = Some mGet
-                        AndKeyword = mAnd
-                        SetKeyword = Some mSet
-                    }
-                | OtherIdent, GetIdent mGet
-                | GetIdent mGet, OtherIdent ->
-                    {
-                        WithKeyword = mWith
-                        GetKeyword = Some mGet
-                        AndKeyword = mAnd
-                        SetKeyword = None
-                    }
-                | OtherIdent, SetIdent mSet
-                | SetIdent mSet, OtherIdent ->
-                    {
-                        WithKeyword = mWith
-                        GetKeyword = None
-                        AndKeyword = mAnd
-                        SetKeyword = Some mSet
-                    }
-                | _ ->
-                    {
-                        WithKeyword = mWith
-                        AndKeyword = mAnd
-                        GetKeyword = None
-                        SetKeyword = None
-                    }
+                {
+                    WithKeyword = mWith
+                    GetKeyword = Some mGet
+                    AndKeyword = mAnd
+                    SetKeyword = Some mSet
+                }
 
             [ SynMemberDefn.GetSetMember(Some getBinding, Some setBinding, range, trivia) ]
         | Some (SynMemberDefn.Member (binding, m), getOrSet), None
