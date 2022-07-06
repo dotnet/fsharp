@@ -1874,12 +1874,18 @@ abstractMemberFlags:
         let mMember = rhs parseState 2
         AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
   | STATIC ABSTRACT
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers (rhs2 parseState 1 2)
+      { let mWhole = rhs2 parseState 1 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
   | STATIC ABSTRACT MEMBER
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers (rhs2 parseState 1 2)
+      { let mWhole = rhs2 parseState 1 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         let mMember = rhs parseState 3

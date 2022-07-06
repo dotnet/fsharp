@@ -326,7 +326,7 @@ let main _ =
 
         let fsharpSource =
             """
-
+#nowarn "3535"
 type IAdditionOperator<'T> =
     static abstract op_Addition: 'T * 'T -> 'T
 
@@ -352,7 +352,7 @@ let main _ = 0
 
         let fsharpSource =
             """
-
+#nowarn "3535"
 type IAdditionOperator<'T> =
     static abstract op_Addition: 'T * 'T -> 'T
 
@@ -380,7 +380,7 @@ let main _ = 0
         let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let fsharpSource =
             """
-
+#nowarn "3535"
 [<assembly: System.Runtime.Versioning.RequiresPreviewFeaturesAttribute()>]
 do()
 
