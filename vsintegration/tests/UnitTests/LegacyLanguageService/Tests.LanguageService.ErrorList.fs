@@ -396,7 +396,7 @@ type staticInInterface =
     end"""
             
         CheckErrorList fileContent (function
-            | [err1] ->
+            | err1 :: _ ->
                 Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
             | x ->
                 Assert.Fail(sprintf "Unexpected errors: %A" x))
