@@ -743,8 +743,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidSelfConstraint">
-        <source>Invalid constraint. Consider using \"'T :&gt; ISomeInterface\" for interface constraints, and \"WithConstraints&lt;'T&gt;\" for type abbreviations that add constraints. See https://aka.ms/fsharp-type-constraint-syntax</source>
-        <target state="new">Invalid constraint. Consider using \"'T :&gt; ISomeInterface\" for interface constraints, and \"WithConstraints&lt;'T&gt;\" for type abbreviations that add constraints. See https://aka.ms/fsharp-type-constraint-syntax</target>
+        <source>Invalid constraint. Consider using \"'T :&gt; ISomeInterface\" for interface constraints, and \"WithConstraints&lt;'T&gt;\" for type abbreviations that add constraints. See https://aka.ms/fsharp-type-constraint-syntax.</source>
+        <target state="new">Invalid constraint. Consider using \"'T :&gt; ISomeInterface\" for interface constraints, and \"WithConstraints&lt;'T&gt;\" for type abbreviations that add constraints. See https://aka.ms/fsharp-type-constraint-syntax.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -895,6 +895,16 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">插補字串無效。{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
+        <source>This type is an interface with a static abstract method. These are normally used as type constraints in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
+        <target state="new">This type is an interface with a static abstract method. These are normally used as type constraints in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
+        <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
+        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

@@ -4034,6 +4034,13 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Indicates whether the position being checked is precisely the r.h.s. of a "'T :> ***" constraint or a similar
+/// places where IWSAM types do not generate a warning
+[<RequireQualifiedAccess>]
+type WarnOnIWSAM =
+    | Yes
+    | No
+
 /// Represents information about the module or type in which a member or value is declared.
 type MemberOrValContainerInfo =
     | MemberOrValContainerInfo of
@@ -4165,13 +4172,13 @@ let rec TcTyparConstraint ridx cenv newOk checkConstraints occ (env: TcEnv) tpen
 
     match c with
     | SynTypeConstraint.WhereTyparDefaultsToType(tp, ty, m) ->
-        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty
+        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty
         let tpR, tpenv = TcTypar cenv env newOk tpenv tp
         AddCxTyparDefaultsTo env.DisplayEnv cenv.css m env.eContextInfo tpR ridx tyR
         tpenv
 
     | SynTypeConstraint.WhereTyparSubtypeOfType(tp, ty, m) ->
-        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType env tpenv ty
+        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No env tpenv ty
         let tpR, tpenv = TcTypar cenv env newOk tpenv tp
         if newOk = NoNewTypars && isSealedTy g tyR then
             errorR(Error(FSComp.SR.tcInvalidConstraintTypeSealed(), m))
@@ -4207,7 +4214,7 @@ let rec TcTyparConstraint ridx cenv newOk checkConstraints occ (env: TcEnv) tpen
 
     | SynTypeConstraint.WhereSelfConstrained(ty, m) ->
         checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SelfTypeConstraints m
-        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType env tpenv ty
+        let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No env tpenv ty
         match tyR with
         | TType_app(tcref, tinst, _) when (tcref.IsTypeAbbrev && (isTyparTy g tcref.TypeAbbrev.Value) && tinst |> List.forall (isTyparTy g)) ->
             match checkConstraints with
@@ -4230,7 +4237,7 @@ and TcConstraintWhereTyparIsEnum cenv env newOk checkConstraints tpenv tp synUnd
     let tpenv =
         match synUnderlingTys with
         | [synUnderlyingTy] ->
-            let underlyingTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType env tpenv synUnderlyingTy
+            let underlyingTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synUnderlyingTy
             AddCxTypeIsEnum env.DisplayEnv cenv.css m NoTrace (mkTyparTy tpR) underlyingTy
             tpenv
         | _ ->
@@ -4242,8 +4249,8 @@ and TcConstraintWhereTyparIsDelegate cenv env newOk checkConstraints occ tpenv t
     let tpR, tpenv = TcTypar cenv env newOk tpenv tp
     match synTys with
     | [a;b] ->
-        let a', tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv a
-        let b', tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv b
+        let a', tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv a
+        let b', tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv b
         AddCxTypeIsDelegate env.DisplayEnv cenv.css m NoTrace (mkTyparTy tpR) a' b'
         tpenv
     | _ ->
@@ -4274,7 +4281,7 @@ and TcSimpleTyparConstraint cenv env newOk tpenv tp m constraintAdder =
 and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
     let g = cenv.g
 
-    let tys, tpenv = List.mapFold (TcTypeAndRecover cenv newOk CheckCxs ItemOccurence.UseInType env) tpenv synTypes
+    let tys, tpenv = List.mapFold (TcTypeAndRecover cenv newOk CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env) tpenv synTypes
 
     match synMemberSig with
     | SynMemberSig.Member (synValSig, memberFlags, m) ->
@@ -4350,7 +4357,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
     allDeclaredTypars |> List.iter (SetTyparRigid env.DisplayEnv m)
 
     // Process the type, including any constraints
-    let declaredTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType envinner tpenv ty
+    let declaredTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
 
     match memFlagsOpt, thisTyOpt with
     | Some memberFlags, Some thisTy ->
@@ -4508,7 +4515,7 @@ and TcTypeOrMeasureParameter kindOpt cenv (env: TcEnv) newOk tpenv (SynTypar(id,
 
         tpR, AddUnscopedTypar key tpR tpenv
 
-and TcTypar cenv env newOk tpenv tp =
+and TcTypar cenv env newOk tpenv tp : Typar * UnscopedTyparEnv =
     TcTypeOrMeasureParameter (Some TyparKind.Type) cenv env newOk tpenv tp
 
 and TcTyparDecl cenv env synTyparDecl =
@@ -4543,7 +4550,7 @@ and TcTyparDecls cenv env synTypars =
 /// If kindOpt=Some kind, then this is the kind we're expecting (we're doing kind checking)
 /// If kindOpt=None, we need to determine the kind (we're doing kind inference)
 ///
-and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) synTy =
+and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ (iwsam: WarnOnIWSAM) env (tpenv: UnscopedTyparEnv) synTy =
     let g = cenv.g
 
     match synTy with
@@ -4552,13 +4559,13 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
         g.obj_ty, tpenv
 
     | SynType.LongIdent synLongId ->
-        TcLongIdent kindOpt cenv newOk checkConstraints occ env tpenv synLongId
+        TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
     | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
-        TcLongIdentAppType kindOpt cenv newOk checkConstraints occ env tpenv longId postfix args m
+        TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
 
     | SynType.LongIdentApp (synLeftTy, synLongId, _, args, _commas, _, m) ->
-        TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongId args m
+        TcNestedAppType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy synLongId args m
 
     | SynType.Tuple(isStruct, args, m) ->
         TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m
@@ -4605,13 +4612,26 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
         TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args postfix m 
 
     | SynType.Paren(innerType, _) ->
-        TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env tpenv innerType
+        TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv innerType
 
-and TcLongIdent kindOpt cenv newOk checkConstraints occ env tpenv synLongId =
+and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
+    let g = cenv.g
+    let ad = env.eAccessRights
+    let ty = generalizedTyconRef g tcref
+    if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
+        let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides m ty
+        if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot) then
+            warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(), m))
+
+and TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId =
     let (SynLongIdent(tc, _, _)) = synLongId
     let m = synLongId.Range
     let ad = env.eAccessRights
+
     let tinstEnclosing, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+
+    CheckIWSAM cenv env checkConstraints iwsam m tcref
+
     match kindOpt, tcref.TypeOrMeasureKind with
     | Some TyparKind.Type, TyparKind.Measure ->
         error(Error(FSComp.SR.tcExpectedTypeNotUnitOfMeasure(), m))
@@ -4626,7 +4646,7 @@ and TcLongIdent kindOpt cenv newOk checkConstraints occ env tpenv synLongId =
 
 /// Some.Long.TypeName<ty1, ty2>
 /// ty1 SomeLongTypeName
-and TcLongIdentAppType kindOpt cenv newOk checkConstraints occ env tpenv longId postfix args m =
+and TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m =
     let (SynLongIdent(tc, _, _)) = longId
     let ad = env.eAccessRights
 
@@ -4634,6 +4654,8 @@ and TcLongIdentAppType kindOpt cenv newOk checkConstraints occ env tpenv longId 
         let tyResInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length
         ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc tyResInfo PermitDirectReferenceToGeneratedType.No
         |> ForceRaise
+
+    CheckIWSAM cenv env checkConstraints iwsam m tcref
 
     match kindOpt, tcref.TypeOrMeasureKind with
     | Some TyparKind.Type, TyparKind.Measure ->
@@ -4659,11 +4681,11 @@ and TcLongIdentAppType kindOpt cenv newOk checkConstraints occ env tpenv longId 
             errorR(Error(FSComp.SR.tcUnitsOfMeasureInvalidInTypeConstructor(), m))
             NewErrorType (), tpenv
 
-and TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongId args m =
+and TcNestedAppType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy synLongId args m =
     let g = cenv.g
     let ad = env.eAccessRights
     let (SynLongIdent(longId, _, _)) = synLongId
-    let leftTy, tpenv = TcType cenv newOk checkConstraints occ env tpenv synLeftTy
+    let leftTy, tpenv = TcType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy
     match leftTy with
     | AppTy g (tcref, tinst) ->
         let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId
@@ -4714,14 +4736,14 @@ and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
 
 and TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy =
     let g = cenv.g
-    let domainTyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv domainTy
-    let resultTyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv resultTy
+    let domainTyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv domainTy
+    let resultTyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv resultTy
     let tyR = mkFunTy g domainTyR resultTyR
     tyR, tpenv
 
 and TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m =
     let g = cenv.g
-    let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv elemTy
+    let elemTy, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv elemTy
     let tyR = mkArrayTy g rank elemTy m
     tyR, tpenv
 
@@ -4739,14 +4761,14 @@ and TcAnonType kindOpt cenv newOk tpenv m =
     | TyparKind.Type -> mkTyparTy tp, tpenv
 
 and TcTypeWithConstraints cenv env newOk checkConstraints occ tpenv synTy synConstraints =
-    let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv synTy
+    let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv synTy
     let tpenv = TcTyparConstraints cenv newOk checkConstraints occ env tpenv synConstraints
     ty, tpenv
 
 // #typ
 and TcTypeHashConstraint cenv env newOk checkConstraints occ tpenv synTy m =
     let tp = TcAnonTypeOrMeasure (Some TyparKind.Type) cenv TyparRigidity.WarnIfNotRigid TyparDynamicReq.Yes newOk m
-    let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv synTy
+    let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.No env tpenv synTy
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty (mkTyparTy tp)
     tp.AsType, tpenv
 
@@ -4796,8 +4818,8 @@ and TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args
         errorR(Error(FSComp.SR.tcIllegalSyntaxInTypeExpression(), m))
         NewErrorType (), tpenv
 
-and TcType cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) ty =
-    TcTypeOrMeasure (Some TyparKind.Type) cenv newOk checkConstraints occ env tpenv ty
+and TcType cenv newOk checkConstraints occ iwsam env (tpenv: UnscopedTyparEnv) ty =
+    TcTypeOrMeasure (Some TyparKind.Type) cenv newOk checkConstraints occ iwsam env tpenv ty
 
 and TcMeasure cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (StripParenTypes ty) m =
     match ty with
@@ -4805,7 +4827,7 @@ and TcMeasure cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (Str
         error(Error(FSComp.SR.tcAnonymousUnitsOfMeasureCannotBeNested(), m))
         NewErrorMeasure (), tpenv
     | _ ->
-        match TcTypeOrMeasure (Some TyparKind.Measure) cenv newOk checkConstraints occ env tpenv ty with
+        match TcTypeOrMeasure (Some TyparKind.Measure) cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty with
         | TType_measure ms, tpenv -> ms, tpenv
         | _ ->
             error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
@@ -4827,15 +4849,15 @@ and TcAnonTypeOrMeasure kindOpt _cenv rigid dyn newOk m =
 
     NewAnonTypar (kind, m, rigid, TyparStaticReq.None, dyn)
 
-and TcTypes cenv newOk checkConstraints occ env tpenv args =
-    List.mapFold (TcTypeAndRecover cenv newOk checkConstraints occ env) tpenv args
+and TcTypes cenv newOk checkConstraints occ iwsam env tpenv args =
+    List.mapFold (TcTypeAndRecover cenv newOk checkConstraints occ iwsam env) tpenv args
 
 and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m =
     match args with
     | [] -> error(InternalError("empty tuple type", m))
-    | [(_, ty)] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty in [ty], tpenv
+    | [(_, ty)] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty in [ty], tpenv
     | (isquot, ty) :: args ->
-        let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty
+        let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty
         let tys, tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
         if isquot then errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))
         ty :: tys, tpenv
@@ -4853,10 +4875,10 @@ and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparE
 and TcTypesOrMeasures optKinds cenv newOk checkConstraints occ env tpenv args m =
     match optKinds with
     | None ->
-        List.mapFold (TcTypeOrMeasure None cenv newOk checkConstraints occ env) tpenv args
+        List.mapFold (TcTypeOrMeasure None cenv newOk checkConstraints occ WarnOnIWSAM.Yes env) tpenv args
     | Some kinds ->
         if List.length kinds = List.length args then
-            List.mapFold (fun tpenv (arg, kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkConstraints occ env tpenv arg) tpenv (List.zip args kinds)
+            List.mapFold (fun tpenv (arg, kind) -> TcTypeOrMeasure (Some kind) cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv arg) tpenv (List.zip args kinds)
         elif isNil kinds then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
@@ -5093,10 +5115,10 @@ and TcTypeApp cenv newOk checkConstraints occ env tpenv m tcref pathTypeArgs (sy
 
     ty, tpenv
 
-and TcTypeOrMeasureAndRecover kindOpt cenv newOk checkConstraints occ env tpenv ty =
+and TcTypeOrMeasureAndRecover kindOpt cenv newOk checkConstraints occ iwsam env tpenv ty =
     let g = cenv.g
     try
-        TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env tpenv ty
+        TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv ty
     with e ->
         errorRecovery e ty.Range
 
@@ -5109,10 +5131,10 @@ and TcTypeOrMeasureAndRecover kindOpt cenv newOk checkConstraints occ env tpenv 
 
         recoveryTy, tpenv
 
-and TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty =
-    TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkConstraints occ env tpenv ty
+and TcTypeAndRecover cenv newOk checkConstraints occ iwsam env tpenv ty =
+    TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkConstraints occ iwsam env tpenv ty
 
-and TcNestedTypeApplication cenv newOk checkConstraints occ env tpenv mWholeTypeApp ty pathTypeArgs tyargs =
+and TcNestedTypeApplication cenv newOk checkConstraints occ iwsam env tpenv mWholeTypeApp ty pathTypeArgs tyargs =
     let g = cenv.g
 
     let ty = convertToTypeWithMetadataIfPossible g ty
@@ -5122,6 +5144,7 @@ and TcNestedTypeApplication cenv newOk checkConstraints occ env tpenv mWholeType
 
     match ty with
     | TType_app(tcref, _, _) ->
+        CheckIWSAM cenv env checkConstraints iwsam mWholeTypeApp tcref
         TcTypeApp cenv newOk checkConstraints occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
     | _ ->
         error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
@@ -5753,7 +5776,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
-        let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
+        let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use WarnOnIWSAM.Yes env tpenv synObjTy
 
         TcNonControlFlowExpr env <| fun env ->
         TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
@@ -5944,7 +5967,7 @@ and TcExprMatchLambda cenv overallTy env tpenv (isExnMatch, mArg, clauses, spMat
     overallExpr, tpenv
 
 and TcExprTypeAnnotated cenv overallTy env tpenv (synBodyExpr, synType, m) =
-    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
+    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synType
     UnifyOverallType cenv env m overallTy tgtTy
     let bodyExpr, tpenv = TcExpr cenv (MustConvertTo (false, tgtTy)) env tpenv synBodyExpr
     let bodyExpr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy tgtTy env m bodyExpr
@@ -5954,7 +5977,7 @@ and TcExprTypeTest cenv overallTy env tpenv (synInnerExpr, tgtTy, m) =
     let g = cenv.g
     let innerExpr, srcTy, tpenv = TcExprOfUnknownType cenv env tpenv synInnerExpr
     UnifyTypes cenv env m overallTy.Commit g.bool_ty
-    let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
+    let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv tgtTy
     TcRuntimeTypeTest false true cenv env.DisplayEnv m tgtTy srcTy
     let expr = mkCallTypeTest g m tgtTy innerExpr
     expr, tpenv
@@ -5964,7 +5987,7 @@ and TcExprUpcast cenv overallTy env tpenv (synExpr, synInnerExpr, m) =
     let tgtTy, tpenv =
         match synExpr with
         | SynExpr.Upcast (_, tgtTy, m) ->
-            let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
+            let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv tgtTy
             UnifyTypes cenv env m tgtTy overallTy.Commit
             tgtTy, tpenv
         | SynExpr.InferredUpcast _ ->
@@ -5982,7 +6005,7 @@ and TcExprDowncast cenv overallTy env tpenv (synExpr, synInnerExpr, m) =
     let tgtTy, tpenv, isOperator =
         match synExpr with
         | SynExpr.Downcast (_, tgtTy, m) ->
-            let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
+            let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv tgtTy
             UnifyTypes cenv env m tgtTy overallTy.Commit
             tgtTy, tpenv, true
         | SynExpr.InferredDowncast _ -> overallTy.Commit, tpenv, false
@@ -6064,13 +6087,13 @@ and TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImp
 
     let mObjTy = synObjTy.Range
 
-    let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synObjTy
+    let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synObjTy
 
     // Work out the type of any interfaces to implement
     let extraImpls, tpenv =
         (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, bindings, members, m)) ->
             let overrides = unionBindingAndMembers bindings members
-            let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
+            let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synIntfTy
             if not (isInterfaceTy g intfTy) then
                 error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
             if isErasedType g intfTy then
@@ -6290,11 +6313,11 @@ and TcExprILAssembly cenv overallTy env tpenv (ilInstrs, synTyArgs, synArgs, syn
     let g = cenv.g
     let ilInstrs = (ilInstrs :?> ILInstr[])
     let argTys = NewInferenceTypes g synArgs
-    let tyargs, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synTyArgs
+    let tyargs, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synTyArgs
     // No subsumption at uses of IL assembly code
     let flexes = argTys |> List.map (fun _ -> false)
     let args, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synArgs
-    let retTys, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synRetTys
+    let retTys, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synRetTys
     let returnTy =
         match retTys with
         | [] -> g.unit_ty
@@ -8188,7 +8211,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
 
         // expr : type" allowed with no subsequent qualifications
         | SynExpr.Typed (synBodyExpr, synType, _) when delayed.IsEmpty && overallTyOpt.IsNone ->
-            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
+            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synType
             check (Some (MustEqual tgtTy)) resultOpt synBodyExpr delayed
 
         | _ ->
@@ -8572,7 +8595,7 @@ and TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed =
         // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs
         // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args
         // and replace them by 'tyargs'
-        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
+        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
 
         // Report information about the whole expression including type arguments to VS
         let item = Item.Types(nm, [ty])
@@ -8583,7 +8606,7 @@ and TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed =
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
-        let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
+        let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
         let item = Item.Types(nm, [ty])
         CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
@@ -8660,7 +8683,7 @@ and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem 
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
-        let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
+        let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
         CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
         let itemAfterTyArgs, minfosAfterTyArgs =
 #if !NO_TYPEPROVIDERS
@@ -8681,7 +8704,7 @@ and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem 
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: otherDelayed ->
 
-        let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
+        let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
 
         // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
         let resolvedItem = Item.Types(nm, [objTy])
@@ -8875,7 +8898,7 @@ and TcDelegateCtorItemThen cenv overallTy env ty tinstEnclosing tpenv mItem dela
     | DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
         TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
     | DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs) :: DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
-        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
+        let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
 
         // Report information about the whole expression including type arguments to VS
         let item = Item.DelegateCtor ty
@@ -10261,7 +10284,7 @@ and TcStaticOptimizationConstraint cenv env tpenv c =
     | SynStaticOptimizationConstraint.WhenTyparTyconEqualsTycon(tp, ty, m) ->
         if not g.compilingFSharpCore then
             errorR(Error(FSComp.SR.tcStaticOptimizationConditionalsOnlyForFSharpLibrary(), m))
-        let tyR, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv ty
+        let tyR, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let tpR, tpenv = TcTypar cenv env NewTyparsOK tpenv tp
         TTyconEqualsTycon(mkTyparTy tpR, tyR), tpenv
     | SynStaticOptimizationConstraint.WhenTyparIsStruct(tp, m) ->
@@ -10685,7 +10708,7 @@ and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribut
             let ad = env.eAccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No with
             | Exception err -> raze err
-            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), None, [], [], None, false, mAttr)) )
+            | _ -> success(TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInAttribute WarnOnIWSAM.Yes env tpenv (SynType.App(SynType.LongIdent(SynLongIdent(tycon, [], List.replicate tycon.Length None)), None, [], [], None, false, mAttr)) )
         ForceRaise ((try1 (tyid.idText + "Attribute")) |> otherwise (fun () -> (try1 tyid.idText)))
 
     let ad = env.eAccessRights
@@ -11060,7 +11083,7 @@ and ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, ty, m, tpenv, Nor
         match retInfoOpt with
         | None -> ()
         | Some (SynBindingReturnInfo (retInfoTy, m, _)) ->
-            let retInfoTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv retInfoTy
+            let retInfoTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv retInfoTy
             UnifyTypes cenv env m ty retInfoTy
         // Property setters always have "unit" return type
         match memberFlagsOpt with
@@ -11476,7 +11499,7 @@ and AnalyzeRecursiveDecl
         match pat with
         | SynPat.FromParseError(pat', _) -> analyzeRecursiveDeclPat tpenv pat'
         | SynPat.Typed(pat', cty, _) ->
-            let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType envinner tpenv cty
+            let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv cty
             UnifyTypes cenv envinner mBinding ty ctyR
             analyzeRecursiveDeclPat tpenv pat'
         | SynPat.Attrib(_pat', _attribs, m) ->

@@ -411,7 +411,7 @@ module TcRecdUnionAndEnumDeclarations =
         let attrsForProperty, attrsForField = attrs |> List.partition (fun (attrTargets, _) -> (attrTargets &&& AttributeTargets.Property) <> enum 0) 
         let attrsForProperty = (List.map snd attrsForProperty) 
         let attrsForField = (List.map snd attrsForField)
-        let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty
+        let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
         let zeroInit = HasFSharpAttribute g g.attrib_DefaultValueAttribute attrsForField
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute attrsForField
         
@@ -504,7 +504,7 @@ module TcRecdUnionAndEnumDeclarations =
                 rfields, thisTy
 
             | SynUnionCaseKind.FullType (ty, arity) -> 
-                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty
+                let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                 let curriedArgTys, recordTy = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                 if curriedArgTys.Length > 1 then 
@@ -658,7 +658,7 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
 
     checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
 
-    let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
+    let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open WarnOnIWSAM.Yes env emptyUnscopedTyparEnv synType
 
     if not (isAppTy g typ) then
         error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
@@ -1046,7 +1046,7 @@ module MutRecBindingChecking =
                             
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
-                            let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use envInstance tpenv synBaseTy
+                            let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use WarnOnIWSAM.Yes envInstance tpenv synBaseTy
                             let baseTy = baseTy |> convertToTypeWithMetadataIfPossible g
                             let inheritsExpr, tpenv =
                                 try 
@@ -1620,7 +1620,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
 
                   let intfTyR = 
                       let envinner = AddDeclaredTypars CheckForDuplicateTypars declaredTyconTypars envForTycon
-                      TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner emptyUnscopedTyparEnv intfTy |> fst
+                      TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.No envinner emptyUnscopedTyparEnv intfTy |> fst
 
                   if not (tcref.HasInterface g intfTyR) then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), intfTy.Range))
@@ -2348,11 +2348,11 @@ module EstablishTypeDefinitionCores =
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
                     for SynField(_, _, _, ty, _, _, _, m) in flds do 
-                        let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
+                        let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                         yield (tyR, m)
 
                 | SynUnionCaseKind.FullType (ty, arity) -> 
-                    let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
+                    let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                     let curriedArgTys, _ = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
                     if curriedArgTys.Length > 1 then 
@@ -2363,9 +2363,10 @@ module EstablishTypeDefinitionCores =
                             yield (argTy, m)
 
           | SynTypeDefnSimpleRepr.General (_, _, _, fields, _, _, implicitCtorSynPats, _) when tycon.IsFSharpStructOrEnumTycon -> // for structs
-              for SynField(_, isStatic, _, ty, _, _, _, m) in fields do 
+              for field in fields do 
+                  let (SynField(_, isStatic, _, ty, _, _, _, m)) = field
                   if not isStatic then 
-                      let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
+                      let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                       yield (tyR, m)
 
               match implicitCtorSynPats with
@@ -2384,7 +2385,7 @@ module EstablishTypeDefinitionCores =
 
           | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
               for SynField(_, _, _, ty, _, _, _, m) in fields do 
-                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType env tpenv ty
+                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                   yield (tyR, m)
 
           | _ ->
@@ -2918,7 +2919,7 @@ module EstablishTypeDefinitionCores =
                   // This case deals with ordinary type and measure abbreviations 
                   if not hasMeasureableAttr then 
                     let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-                    let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType envinner tpenv rhsType
+                    let ty, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
                     if not firstPass then 
                         let ftyvs = freeInTypeLeftToRight g false ty 
@@ -2952,7 +2953,7 @@ module EstablishTypeDefinitionCores =
                 let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false 
                 
-                let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType envinner)) tpenv explicitImplements
+                let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
 
                 if firstPass then 
                     tycon.entity_attribs <- attrs
@@ -2964,7 +2965,7 @@ module EstablishTypeDefinitionCores =
                         let kind = InferTyconKind g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
                         let inherits = inherits |> List.map (fun (ty, m, _) -> (ty, m)) 
-                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType envinner)) tpenv inherits)
+                        let inheritedTys = fst (List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurence.UseInType WarnOnIWSAM.No envinner)) tpenv inherits)
                         let implementedTys, inheritedTys =   
                             match kind with 
                             | SynTypeDefnKind.Interface -> 
@@ -3203,7 +3204,7 @@ module EstablishTypeDefinitionCores =
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureableAttr then 
                         let kind = if hasMeasureAttr then TyparKind.Measure else TyparKind.Type
-                        let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv rhsType
+                        let theTypeAbbrev, _ = TcTypeOrMeasureAndRecover (Some kind) cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.No envinner tpenv rhsType
 
                         TMeasureableRepr theTypeAbbrev, None, NoSafeInitInfo
                     // If we already computed a representation, e.g. for a generative type definition, then don't change it here.
@@ -3326,7 +3327,7 @@ module EstablishTypeDefinitionCores =
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
                                   primaryConstructorInDelegateCheck(implicitCtorSynPats)
-                                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty
+                                  let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes envinner tpenv ty
                                   let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateSynValInfo m (TcAttributes cenv envinner)  |> TranslatePartialValReprInfo []) 0 tyR m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))

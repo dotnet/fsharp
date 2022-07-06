@@ -292,9 +292,14 @@ module ``Use SRTP operators from generic IWSAM code super flex`` =
     //    sin x
 
 
+let fExpectAWarning(x: ISinOperator<'T>)  =
+    ()
+
 (*
 let inline f_SRTP_GoToDefinition_FindAllReferences (x: 'T) = 
     let y = x + x // implicitly adds constraint to type inference variable 'T
     let z = 'T.op_Addition(x, x) // where would go-to-definition go? what does find-all-references do?
     y + z
 *)
+
+

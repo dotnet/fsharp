@@ -926,6 +926,8 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
         checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.InterfacesWithAbstractStaticMembers bindm
         checkLanguageFeatureAndRecover infoReader.g.langVersion LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+        if infoReader.g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), bindm))
 
     let minfos = 
         match typToSearchForAbstractMembers with 

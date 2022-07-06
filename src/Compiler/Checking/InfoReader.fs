@@ -699,7 +699,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
         else
             this.TryFindIntrinsicMethInfo m ad "op_Implicit" ty
 
-    let IsInterfaceWithStaticAbstractMemberTyUncached ((ad, nm), m, ty) = 
+    let IsInterfaceTypeWithMatchingStaticAbstractMemberUncached ((ad, nm), m, ty) = 
         ExistsInEntireHierarchyOfType (fun parentTy -> 
             let meths = this.TryFindIntrinsicMethInfo m ad nm parentTy
             meths |> List.exists (fun meth ->
@@ -748,7 +748,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
     let implicitConversionCache = MakeInfoCache FindImplicitConversionsUncached hashFlags3
-    let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache IsInterfaceWithStaticAbstractMemberTyUncached hashFlags4
+    let isInterfaceWithStaticAbstractMethodCache = MakeInfoCache IsInterfaceTypeWithMatchingStaticAbstractMemberUncached hashFlags4
 
     // Runtime feature support
 
@@ -917,7 +917,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member _.FindImplicitConversions m ad ty = 
         implicitConversionCache.Apply((ad, m, ty))
 
-    member _.IsInterfaceWithStaticAbstractMemberTy m nm ad ty = 
+    member _.IsInterfaceTypeWithMatchingStaticAbstractMember m nm ad ty = 
         isInterfaceWithStaticAbstractMethodCache.Apply((ad, nm), m, ty)
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
