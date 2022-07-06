@@ -1405,6 +1405,11 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         | [ty], h :: _ -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
 
+    // Trait calls are only supported on pseudo type (variables) 
+    if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
+        for e in supportTys do
+            do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
+
     // SRTP constraints on rigid type parameters do not need to be solved
     let isRigid =
         supportTys |> List.forall (fun ty ->

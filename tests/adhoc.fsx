@@ -610,3 +610,16 @@ module Nullable =
             Nullable(Operators.char value.Value)
         else
             Nullable()
+open System.Collections.Generic
+
+module HashIdentity =
+
+    let inline NonStructural<'T when 'T: equality and 'T: (static member (=): 'T * 'T -> bool)> =
+        { new IEqualityComparer<'T> with
+            member _.GetHashCode(x) =
+                NonStructuralComparison.hash x
+
+            member _.Equals(x, y) =
+                NonStructuralComparison.(=) x y
+        }
+
