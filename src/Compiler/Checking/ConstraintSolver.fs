@@ -2070,79 +2070,77 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     }
 
     
+and TraitsAreRelated (csenv: ConstraintSolverEnv) retry traitInfo1 traitInfo2 =
+    let g = csenv.g
+    let (TTrait(tys1, nm1, memFlags1, argTys1, _, _)) = traitInfo1
+    let (TTrait(tys2, nm2, memFlags2, argTys2, _, _)) = traitInfo2
+    memFlags1.IsInstance = memFlags2.IsInstance &&
+    nm1 = nm2 &&
+    // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
+    // See FSharp 1.0 bug 6477.
+    not (nm1 = "op_Explicit" || nm1 = "op_Implicit") &&
+    argTys1.Length = argTys2.Length &&
+    (List.lengthsEqAndForall2 (typeEquiv g) tys1 tys2 || retry)
+
 // Type variable sets may not have two trait constraints with the same name, nor
 // be constrained by different instantiations of the same interface type.
 //
 // This results in limitations on generic code, especially "inline" code, which 
 // may require type annotations. 
 //
-// The 'retry' flag is passed when a rigid type variable is about to taise a missing constraint error.
-// In this case the support types are all first forced to be equal.
-and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace retry tpc1 tpc2 =
+// The 'retry' flag is passed when a rigid type variable is about to raise a missing constraint error
+// and the lengths of the support types are not equal (i.e. one is length 1, the other is length 2).
+// In this case the support types are first forced to be equal.
+and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace retry tpc1 tpc2 = trackErrors {
     let g = csenv.g
     let amap = csenv.amap
     let m = csenv.m
     match tpc1, tpc2 with           
-    | (TyparConstraint.MayResolveMember(TTrait(tys1, nm1, memFlags1, argTys1, rty1, _), _), 
-        TyparConstraint.MayResolveMember(TTrait(tys2, nm2, memFlags2, argTys2, rty2, _), _))  
-            when
-               (memFlags1.IsInstance = memFlags2.IsInstance &&
-                nm1 = nm2 &&
-                // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
-                // See FSharp 1.0 bug 6477.
-                not (nm1 = "op_Explicit" || nm1 = "op_Implicit") &&
-                argTys1.Length = argTys2.Length &&
-                (List.lengthsEqAndForall2 (typeEquiv g) tys1 tys2 || retry)) -> 
-
-                trackErrors {
-                    if retry then
-                        match tys1, tys2 with 
-                        | [ty1], [ty2] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2
-                        | [ty1], _ -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1) tys2
-                        | _, [ty2] -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty2) tys1
-                        | _ -> ()
-                    do! Iterate2D (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace) argTys1 argTys2
-                    let rty1 = GetFSharpViewOfReturnType g rty1
-                    let rty2 = GetFSharpViewOfReturnType g rty2
-                    do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2
-                    ()
-                }
+    | TyparConstraint.MayResolveMember(traitInfo1, _), TyparConstraint.MayResolveMember(traitInfo2, _)  
+        when TraitsAreRelated csenv retry traitInfo1 traitInfo2 ->
+        let (TTrait(tys1, _, _, argTys1, rty1, _)) = traitInfo1
+        let (TTrait(tys2, _, _, argTys2, rty2, _)) = traitInfo2
+        if retry then
+            match tys1, tys2 with 
+            | [ty1], [ty2] -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2
+            | [ty1], _ -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1) tys2
+            | _, [ty2] -> do! IterateD (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty2) tys1
+            | _ -> ()
+        do! Iterate2D (SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace) argTys1 argTys2
+        let rty1 = GetFSharpViewOfReturnType g rty1
+        let rty2 = GetFSharpViewOfReturnType g rty2
+        do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty1 rty2
           
-    | (TyparConstraint.CoercesTo(ty1, _), 
-        TyparConstraint.CoercesTo(ty2, _)) ->
-            // Record at most one subtype constraint for each head type. 
-            // That is, we forbid constraints by both I<string> and I<int>. 
-            // This works because the types on the r.h.s. of subtype 
-            // constraints are head-types and so any further inferences are equational. 
-            let collect ty = 
-                let mutable res = [] 
-                IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
-                List.rev res
-            let parents1 = collect ty1
-            let parents2 = collect ty2
-            trackErrors {
-                for ty1Parent in parents1 do
-                    for ty2Parent in parents2 do
-                        do! if not (HaveSameHeadType g ty1Parent ty2Parent) then CompleteD else
-                            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
-            }
+    | TyparConstraint.CoercesTo(ty1, _), TyparConstraint.CoercesTo(ty2, _) ->
+        // Record at most one subtype constraint for each head type. 
+        // That is, we forbid constraints by both I<string> and I<int>. 
+        // This works because the types on the r.h.s. of subtype 
+        // constraints are head-types and so any further inferences are equational. 
+        let collect ty = 
+            let mutable res = [] 
+            IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
+            List.rev res
+        let parents1 = collect ty1
+        let parents2 = collect ty2
+        for ty1Parent in parents1 do
+            for ty2Parent in parents2 do
+                if HaveSameHeadType g ty1Parent ty2Parent then
+                    do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1Parent ty2Parent
 
-    | (TyparConstraint.IsEnum (u1, _), 
-        TyparConstraint.IsEnum (u2, m2)) ->   
-        SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace u1 u2
+    | TyparConstraint.IsEnum (u1, _), 
+      TyparConstraint.IsEnum (u2, m2) ->   
+        return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace u1 u2
             
-    | (TyparConstraint.IsDelegate (aty1, bty1, _), 
-        TyparConstraint.IsDelegate (aty2, bty2, m2)) -> trackErrors {
+    | TyparConstraint.IsDelegate (aty1, bty1, _), 
+      TyparConstraint.IsDelegate (aty2, bty2, m2) -> 
         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace aty1 aty2
         return! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace bty1 bty2
-        }
 
     | TyparConstraint.SupportsComparison _, TyparConstraint.IsDelegate _  
     | TyparConstraint.IsDelegate _, TyparConstraint.SupportsComparison _
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _     
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
-        ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
-
+        return! ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
 
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _  
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _  
@@ -2152,9 +2150,10 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ 
     | TyparConstraint.SimpleChoice _, TyparConstraint.SimpleChoice _ -> 
-        CompleteD
+        ()
             
-    | _ -> CompleteD
+    | _ -> ()
+  }
 
 // See when one constraint implies implies another. 
 // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1 
@@ -2191,6 +2190,9 @@ and CheckConstraintImplication (csenv: ConstraintSolverEnv) tpc1 tpc2 =
             (priority1 = priority2) && typeEquiv g dty1 dty2
     | _ -> false
         
+and CheckConstraintsImplication csenv existingConstraints newConstraint = 
+    existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
+
 // Ensure constraint conforms with existing constraints 
 // NOTE: QUADRATIC 
 and EnforceConstraintSetConsistency csenv ndeep m2 trace retry allCxs i cxs = 
@@ -2218,6 +2220,7 @@ and EliminateRedundantConstraints csenv cxs acc =
 and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     let denv = csenv.DisplayEnv
     let m = csenv.m
+    let g = csenv.g
     
     let existingConstraints = tp.Constraints
 
@@ -2225,8 +2228,23 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
     trackErrors {
         do! EnforceConstraintSetConsistency csenv ndeep m2 trace false allCxs 0 allCxs
     
-        let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
-    
+        let mutable impliedByExistingConstraints = CheckConstraintsImplication csenv existingConstraints newConstraint
+
+        // When InterfacesWithAbstractStaticMembers enabled, retry constraint consistency and implication when one of the constraints is known to have
+        // a single support type, and the other has two support types.
+        //    (T1 : static member Foo: int)
+        // and the constraint we're adding is this:
+        //    ((T2 or ?inf) : static member Foo: int)
+        //
+        // Then the only logical solution is ?inf = T1 = T2.  So just enforce this and try again.
+        if
+            not impliedByExistingConstraints &&
+            (IsRigid csenv tp || tp.Rigidity.WarnIfMissingConstraint) &&
+            g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
+        then
+            do! EnforceConstraintSetConsistency csenv ndeep m2 trace true allCxs 0 allCxs
+            impliedByExistingConstraints <- CheckConstraintsImplication csenv existingConstraints newConstraint
+   
         if impliedByExistingConstraints then ()
         // "Default" constraints propagate softly and can be omitted from explicit declarations of type parameters
         elif (match tp.Rigidity, newConstraint with 
@@ -2234,13 +2252,6 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | _ -> false) then 
             ()
         elif IsRigid csenv tp then
-            // Retry rigid type parameters where the supporting types are forced to be identical, e.g if declared type parameter has this:
-            //    (T : static member Foo: int)
-            // and the constraint we're adding is this:
-            //    ((T or ?inf) : static member Foo: int)
-            // then the only logical solution is ?inf = T.  So just enforce this and try again.
-            do! EnforceConstraintSetConsistency csenv ndeep m2 trace true allCxs 0 allCxs
-            let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> CheckConstraintImplication csenv tpc2 newConstraint)
             if not impliedByExistingConstraints then
                 return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
