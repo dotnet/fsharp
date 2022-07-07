@@ -437,11 +437,8 @@ module Test =
     let fu$$nc x = ()
 """
     let expectedSignature = "val func: x: 'a -> unit"
-
     let tooltip = GetQuickInfoTextFromCode code
-
     StringAssert.StartsWith(expectedSignature, tooltip)
-    ()
 
 [<Test>]
 let ``Automation.LetBindings.InsideType``() =
@@ -454,8 +451,57 @@ module Test =
 """
 
     let expectedSignature = "val func: x: 'a -> unit"
-
     let tooltip = GetQuickInfoTextFromCode code
-
     StringAssert.StartsWith(expectedSignature, tooltip)
-    ()
+
+[<Test>]
+let ``quick info for IWSAM property get``() =
+    let code = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticPr$$operty
+"""
+
+    let expectedSignature = "property IStaticProperty.StaticProperty: 'T with get"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for IWSAM method call``() =
+    let code = """
+type IStaticMethod<'T when 'T :> IStaticMethod<'T>> =
+    static abstract StaticMethod: unit -> 'T
+
+let f (x: #IStaticMethod<'T>) =
+    'T.StaticMe$$thod()
+"""
+
+    let expectedSignature = "static abstract IStaticMethod.StaticMethod: unit -> 'T"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for SRTP property get``() =
+    let code = """
+
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticPr$$operty
+"""
+
+    let expectedSignature = "'T: (static member StaticProperty: 'T)"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for SRTP method call``() =
+    let code = """
+
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticMethod: unit -> 'T) >() =
+    'T.StaticMe$$thod()
+"""
+
+    let expectedSignature = "'T: (static member StaticMethod: unit -> 'T)"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)

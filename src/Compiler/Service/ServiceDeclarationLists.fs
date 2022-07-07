@@ -387,6 +387,7 @@ module DeclarationListHelpers =
 
         // Traits
         | Item.Trait traitInfo ->
+            let denv = { denv with shortConstraints = false}
             let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
             ToolTipElement.Single (toArray layout, xml)
 

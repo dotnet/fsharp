@@ -888,3 +888,22 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 """
     VerifyCompletionListWithOptions(fileContents, "'T.", ["StaticProperty"], [], [| "/langversion:preview" |])
 
+
+[<Test>]
+let ``Completion list for SRTP invocation contains static property with residue``() =
+    let fileContents = """
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticProperty
+
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.Stati", ["StaticProperty"], [], [| "/langversion:preview" |])
+
+[<Test>]
+let ``Completion list for SRTP invocation contains static property after dot``() =
+    let fileContents = """
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticProperty
+
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.", ["StaticProperty"], [], [| "/langversion:preview" |])
+

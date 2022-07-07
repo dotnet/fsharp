@@ -1155,7 +1155,12 @@ module PrintTypes =
         fakeTypar.SetConstraints [TyparConstraint.MayResolveMember(traitInfo, Range.range0)]
         let ty, cxs = PrettyTypes.PrettifyType denv.g (mkTyparTy fakeTypar)
         let env = SimplifyTypes.CollectInfo true [ty] cxs
-        layoutConstraintsWithInfo denv env env.postfixConstraints
+        // We expect one constraint, since we put one in.
+        match env.postfixConstraints with
+        | cx :: _ ->
+             // We expect at most one per constraint
+             sepListL emptyL (layoutConstraintWithInfo denv env cx)
+        | [] -> emptyL
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
