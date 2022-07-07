@@ -457,10 +457,7 @@ type SynType =
 
     /// F# syntax: type * ... * type
     /// F# syntax: struct (type * ... * type)
-    | Tuple of isStruct: bool * elementTypes: SynType list * range: range
-
-    // TODO Add documentation
-    | Division of elementTypes: (bool * SynType list) * range: range
+    | Tuple of isStruct: bool * elementTypes:(bool option * SynType) list * range: range
 
     /// F# syntax: {| id: type; ...; id: type |}
     /// F# syntax: struct {| id: type; ...; id: type |}

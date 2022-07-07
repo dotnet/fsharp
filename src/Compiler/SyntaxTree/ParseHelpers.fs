@@ -812,6 +812,6 @@ let mkSynMemberDefnGetSet
         | _ -> []
     | _ -> []
 
-let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool * SynType) list) : SynType = failwith "Todo"
+let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool option * SynType) list) : SynType = failwith "Todo"
 
-let mkDivideWithLeadingSlash (elementTypes: (bool * SynType) list) : SynType = failwith "TODO"
+let mkDivideWithLeadingSlash (elementTypes: (bool option * SynType) list) : SynType = failwith "TODO"
