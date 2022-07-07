@@ -461,8 +461,13 @@ module TcRecdUnionAndEnumDeclarations =
 
         CheckNamespaceModuleOrTypeName g id
 
-        if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
-            errorR(NotUpperCaseConstructor(id.idRange))
+        if g.langVersion.SupportsFeature(LanguageFeature.LowercaseDUWhenRequireQualifiedAccess) then
+
+            if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
+                errorR(NotUpperCaseConstructor(id.idRange))
+        else
+            if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
+                errorR(NotUpperCaseConstructor(id.idRange))
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
