@@ -519,7 +519,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">İfade bekleniyor</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -5069,7 +5069,7 @@
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">Taşınabilir PDB dosyasına eklenecek kaynak bağlantı bilgileri dosyası</target>
+        <target state="translated">Taşınabilir PDB dosyasına eklenecek kaynak bağlantısı bilgileri dosyası</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">

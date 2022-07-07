@@ -519,7 +519,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">必須是運算式</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
