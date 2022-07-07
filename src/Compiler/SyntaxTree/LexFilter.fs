@@ -187,7 +187,7 @@ let canFollowInfixToken token =
     | ABSTRACT
     | AND
     | AND_BANG _
-    | AS
+    // | AS
     | DONE
     | DOWNTO
     | ELIF
@@ -221,7 +221,8 @@ let canFollowInfixToken token =
     | WHEN
     | WITH
 
-    | LBRACK_LESS -> false
+    // | LBRACK_LESS
+         -> false
     | _ -> true
 
 /// Matches against a left-parenthesis-like token that is valid in expressions.
