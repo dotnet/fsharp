@@ -1829,6 +1829,7 @@ classDefnMemberGetSet:
 classDefnMemberGetSetElements: 
   | classDefnMemberGetSetElement 
      { [$1], None  }
+
   | classDefnMemberGetSetElement AND classDefnMemberGetSetElement
      { let mAnd = rhs parseState 2
        [$1;$3], Some mAnd }
@@ -1869,10 +1870,12 @@ abstractMemberFlags:
   | ABSTRACT
       { let mAbstract = rhs parseState 1
         AbstractMemberFlags true (AbstractSynMemberFlagsTrivia mAbstract) }
+
   | ABSTRACT MEMBER
       { let mAbstract = rhs parseState 1
         let mMember = rhs parseState 2
         AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
+
   | STATIC ABSTRACT
       { let mWhole = rhs2 parseState 1 2
         parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
@@ -1881,6 +1884,7 @@ abstractMemberFlags:
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
+
   | STATIC ABSTRACT MEMBER
       { let mWhole = rhs2 parseState 1 2
         parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole

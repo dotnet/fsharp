@@ -1798,8 +1798,10 @@ let GeneralizeVal (cenv: cenv) denv enclosingDeclaredTypars generalizedTyparsFor
         warning(Error(FSComp.SR.tcTypeParametersInferredAreNotStable(), m))
 
     let hasDeclaredTypars = not (isNil declaredTypars)
+
     // This is just about the only place we form a GeneralizedType
     let tyScheme = GeneralizedType(generalizedTypars, ty)
+
     PrelimVal2(id, tyScheme, prelimValReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, argAttribs, vis, isCompGen, hasDeclaredTypars)
 
 let GeneralizeVals cenv denv enclosingDeclaredTypars generalizedTypars types =
@@ -2403,6 +2405,10 @@ module GeneralizationHelpers =
             then (ListSet.unionFavourLeft typarEq allDeclaredTypars maxInferredTypars)
             else allDeclaredTypars
 
+        // Update the StaticReq of type variables prior to assessing generalization
+        for typar in typarsToAttemptToGeneralize do
+            UpdateStaticReqOfTypar denv cenv.css m NoTrace typar
+
         let generalizedTypars, freeInEnv =
             TrimUngeneralizableTypars genConstrainedTyparFlag inlineFlag typarsToAttemptToGeneralize freeInEnv
 
@@ -2425,7 +2431,7 @@ module GeneralizationHelpers =
         generalizedTypars |> List.iter (SetTyparRigid denv m)
 
         // Generalization removes constraints related to generalized type variables
-        AddCxTyparsGeneralized denv cenv.css m ContextInfo.NoContext NoTrace generalizedTypars
+        EliminateConstraintsForGeneralizedTypars denv cenv.css m NoTrace generalizedTypars
 
         generalizedTypars
 
@@ -4620,9 +4626,10 @@ and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let ad = env.eAccessRights
     let ty = generalizedTyconRef g tcref
     if iwsam = WarnOnIWSAM.Yes && isInterfaceTy g ty && checkConstraints = CheckCxs then
+        let tcref = tcrefOfAppTy g ty
         let meths = AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides m ty
         if meths |> List.exists (fun meth -> not meth.IsInstance && meth.IsDispatchSlot) then
-            warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(), m))
+            warning(Error(FSComp.SR.tcUsingInterfaceWithStaticAbstractMethodAsType(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
 
 and TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId =
     let (SynLongIdent(tc, _, _)) = synLongId
@@ -6403,6 +6410,7 @@ and TcTyparExprThen cenv overallTy env tpenv synTypar m delayed =
             match rest with 
             | [] -> delayed2
             | _ -> DelayedDotLookup (rest, m2) :: delayed2
+        CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
         TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
         //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
     | _ -> 

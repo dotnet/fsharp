@@ -699,7 +699,12 @@ let SubstMeasure (r: Typar) ms =
 
 let rec TransactStaticReq (csenv: ConstraintSolverEnv) (trace: OptionalTrace) (tpr: Typar) req = 
     let m = csenv.m
-    if tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req then 
+    let g = csenv.g
+
+    // Prior to feature InterfacesWithAbstractStaticMembers the StaticReq must match the
+    // declared StaticReq. With feature InterfacesWithAbstractStaticMembers it is inferred
+    // from the finalized constraints on the type variable.
+    if not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) && tpr.Rigidity.ErrorIfUnified && tpr.StaticReq <> req then 
         ErrorD(ConstraintSolverError(FSComp.SR.csTypeCannotBeResolvedAtCompileTime(tpr.Name), m, m)) 
     else
         let orig = tpr.StaticReq
@@ -3404,25 +3409,26 @@ let UnifyUniqueOverloading
     | _ -> 
         ResultD false
 
-/// Remove the global constraints where these type variables appear in the support of the constraint 
-let AddCxTyparsGeneralized (denv: DisplayEnv) css m ctxtInfo (trace: OptionalTrace) (generalizedTypars: Typars) =
+/// Re-assess the staticness of the type parameters. Necessary prior to assessing generalization.
+let UpdateStaticReqOfTypar (denv: DisplayEnv) css m (trace: OptionalTrace) (typar: Typar) =
     let g = denv.g
-    let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     trackErrors {
         if g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
-            for tp in generalizedTypars do
-                for cx in tp.Constraints do
-                    match cx with
-                    | TyparConstraint.MayResolveMember(traitInfo,_) ->
-                        for supportTy in traitInfo.SupportTypes do
-                           if isAnyParTy g supportTy then
-                               do! SolveTypStaticReqTypar csenv NoTrace TyparStaticReq.HeadType (destAnyParTy g supportTy)
-                    | TyparConstraint.SimpleChoice _ ->
-                          do! SolveTypStaticReqTypar csenv NoTrace TyparStaticReq.HeadType tp
-                    | _ -> ()
+            for cx in typar.Constraints do
+                match cx with
+                | TyparConstraint.MayResolveMember(traitInfo,_) ->
+                    for supportTy in traitInfo.SupportTypes do
+                        do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType supportTy
+                | TyparConstraint.SimpleChoice _ ->
+                        do! SolveTypStaticReqTypar csenv trace TyparStaticReq.HeadType typar
+                | _ -> ()
     } |> RaiseOperationResult
 
+/// Remove the global constraints related to generalized type variables
+let EliminateConstraintsForGeneralizedTypars (denv: DisplayEnv) css m (trace: OptionalTrace) (generalizedTypars: Typars) =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+
     for tp in generalizedTypars do
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs

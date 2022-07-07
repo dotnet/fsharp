@@ -462,6 +462,8 @@ type internal TypeCheckInfo
 
         match cnrs, membersByResidue with
 
+        // Exact resolution via SomeType.$ or SomeType<int>.$
+        //
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
         | CNR (Item.Types (_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
@@ -469,6 +471,15 @@ type internal TypeCheckInfo
                 ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
 
             let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
+            let items = List.map ItemWithNoInst items
+            ReturnItemsOfType items g denv m filterCtors
+
+        // Exact resolution via 'T.$
+        | CNR (Item.TypeVar (_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
+            let targets =
+                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+
+            let items = ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp)
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors
 
@@ -720,27 +731,21 @@ type internal TypeCheckInfo
         let items = items |> RemoveExplicitlySuppressed g
         items, nenv.DisplayEnv, m
 
-    /// Resolve a location and/or text to items.
-    //   Three techniques are used
-    //        - look for an exact known name resolution from type checking
-    //        - use the known type of an expression, e.g. (expr).Name, to generate an item list
-    //        - lookup an entire name in the name resolution environment, e.g. A.B.Name, to generate an item list
-    //
-    // The overall aim is to resolve as accurately as possible based on what we know from type inference
-
-    let GetBaseClassCandidates =
-        function
+    /// Is the item suitable for completion at "inherits $"
+    let IsInheritsCompletionCandidate item =
+        match item with
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types (_, ty :: _) when (isClassTy g ty) && not (isSealedTy g ty) -> true
+        | Item.Types (_, ty :: _) when isClassTy g ty && not (isSealedTy g ty) -> true
         | _ -> false
 
-    let GetInterfaceCandidates =
-        function
+    /// Is the item suitable for completion at "interface $"
+    let IsInterfaceCompletionCandidate item =
+        match item with
         | Item.ModuleOrNamespaces _ -> true
-        | Item.Types (_, ty :: _) when (isInterfaceTy g ty) -> true
+        | Item.Types (_, ty :: _) when isInterfaceTy g ty -> true
         | _ -> false
 
-    // Return only items with the specified name
+    /// Return only items with the specified name, modulo "Attribute" for type completions
     let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) =
         let attributedResidue = residue + "Attribute"
 
@@ -769,7 +774,7 @@ type internal TypeCheckInfo
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results
     /// exactMatchResidueOpt = Some _ -- means that we are looking for exact matches
-    let FilterRelevantItemsBy (getItem: 'a -> Item) (exactMatchResidueOpt: _ option) check (items: 'a list, denv, m) =
+    let FilterRelevantItemsBy (getItem: 'a -> Item) (exactMatchResidueOpt: string option) check (items: 'a list, denv, m) =
         // can throw if type is in located in non-resolved CCU: i.e. bigint if reference to System.Numerics is absent
         let inline safeCheck item =
             try
@@ -812,6 +817,7 @@ type internal TypeCheckInfo
 
             if p >= 0 then Some p else None
 
+    /// Build a CompetionItem
     let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind =
             match item.Item with
@@ -1138,19 +1144,19 @@ type internal TypeCheckInfo
             // Completion at 'inherit C(...)"
             | Some (CompletionContext.Inherit (InheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
+                |> FilterRelevantItemsBy getItem None (getItem >> IsInheritsCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'interface ..."
             | Some (CompletionContext.Inherit (InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy getItem None (getItem >> GetInterfaceCandidates)
+                |> FilterRelevantItemsBy getItem None (getItem >> IsInterfaceCompletionCandidate)
                 |> Option.map toCompletionItems
 
             // Completion at 'implement ..."
             | Some (CompletionContext.Inherit (InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t))
+                |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> IsInheritsCompletionCandidate t || IsInterfaceCompletionCandidate t))
                 |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... } "
@@ -1400,6 +1406,7 @@ type internal TypeCheckInfo
     /// Return 'false' if this is not a completion item valid in an interface file.
     let IsValidSignatureFileItem item =
         match item with
+        | Item.TypeVar _
         | Item.Types _
         | Item.ModuleOrNamespaces _ -> true
         | _ -> false
@@ -1429,7 +1436,7 @@ type internal TypeCheckInfo
 
     /// Get the auto-complete items at a location
     member _.GetDeclarations(parseResultsOpt, line, lineStr, partialName, completionContextAtPos, getAllEntities) =
-        let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
+        let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
             range0
@@ -1454,7 +1461,7 @@ type internal TypeCheckInfo
                 | None -> DeclarationListInfo.Empty
                 | Some (items, denv, ctx, m) ->
                     let items =
-                        if isInterfaceFile then
+                        if isSigFile then
                             items |> List.filter (fun x -> IsValidSignatureFileItem x.Item)
                         else
                             items
@@ -1486,7 +1493,7 @@ type internal TypeCheckInfo
 
     /// Get the symbols for auto-complete items at a location
     member _.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities) =
-        let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
+        let isSigFile = SourceFileImpl.IsSignatureFile mainInputFileName
 
         DiagnosticsScope.Protect
             range0
@@ -1511,7 +1518,7 @@ type internal TypeCheckInfo
                 | None -> List.Empty
                 | Some (items, denv, _, m) ->
                     let items =
-                        if isInterfaceFile then
+                        if isSigFile then
                             items |> List.filter (fun x -> IsValidSignatureFileItem x.Item)
                         else
                             items
@@ -1527,10 +1534,10 @@ type internal TypeCheckInfo
                         |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types (_, TType_app (tcref, _, _) :: _) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types (_, AbbrevOrAppTy tcref :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                                | Item.FakeInterfaceCtor (TType_app (tcref, _, _))
-                                | Item.DelegateCtor (TType_app (tcref, _, _)) -> 1000 + tcref.TyparsNoRange.Length
+                                | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
+                                | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup (_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
                                 | _ -> 0
@@ -1546,11 +1553,11 @@ type internal TypeCheckInfo
                         items
                         |> List.groupBy (fun d ->
                             match d.Item with
-                            | Item.Types (_, TType_app (tcref, _, _) :: _)
+                            | Item.Types (_, AbbrevOrAppTy tcref :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType (tcref :: _)
-                            | Item.FakeInterfaceCtor (TType_app (tcref, _, _))
-                            | Item.DelegateCtor (TType_app (tcref, _, _)) -> tcref.CompiledName
+                            | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
+                            | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.CompiledName
                             | Item.CtorGroup (_, cinfo :: _) -> cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 
@@ -1736,22 +1743,21 @@ type internal TypeCheckInfo
                     | [] -> None
                     | [ item ] -> GetF1Keyword g item.Item
                     | _ ->
-                        // handle new Type()
+                        // For "new Type()" it seems from the code below that multiple items are returned.
+                        // It combine the information from these items preferring a constructor if present.
                         let allTypes, constr, ty =
-                            List.fold
-                                (fun (allTypes, constr, ty) (item: CompletionItem) ->
-                                    match item.Item, constr, ty with
-                                    | Item.Types _ as t, _, None -> allTypes, constr, Some t
-                                    | Item.Types _, _, _ -> allTypes, constr, ty
-                                    | Item.CtorGroup _, None, _ -> allTypes, Some item.Item, ty
-                                    | _ -> false, None, None)
-                                (true, None, None)
-                                items
+                            ((true, None, None), items)
+                            ||> List.fold (fun (allTypes, constr, ty) (item: CompletionItem) ->
+                                match item.Item, constr, ty with
+                                | Item.Types _ as t, _, None -> allTypes, constr, Some t
+                                | Item.Types _, _, _ -> allTypes, constr, ty
+                                | Item.CtorGroup _, None, _ -> allTypes, Some item.Item, ty
+                                | _ -> false, None, None)
 
                         match allTypes, constr, ty with
-                        | true, Some (Item.CtorGroup _ as item), _ -> GetF1Keyword g item
-                        | true, _, Some ty -> GetF1Keyword g ty
-                        | _ -> None)
+                        | true, Some item, _ -> GetF1Keyword g item
+                        | true, _, Some item -> GetF1Keyword g item
+                        | _ -> GetF1Keyword g items.Head.Item)
             (fun msg ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetF1Keyword: '%s'" msg)
                 None)

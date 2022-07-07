@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System.IO
 open Microsoft.VisualStudio.FSharp.Editor
 open NUnit.Framework
-open VisualFSharp.UnitTests.Roslyn
+open VisualFSharp.UnitTests.Editor
 
 [<Category "Roslyn Services">]
 module QuickInfo =
@@ -13,7 +13,7 @@ module QuickInfo =
 let internal GetQuickInfo (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let code = File.ReadAllText(fileName)
-        let document, _ = RoslynTestHelpers.CreateDocument(fileName, code)
+        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
         return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
     } |> Async.RunSynchronously
 

@@ -257,10 +257,12 @@ val UnifyUniqueOverloading:
         OverallTy ->
             OperationResult<bool>
 
-/// Note that the type parameters have ben generalized. Assess the staticness of the type parameters
-/// and remove the global constraints where these type variables appear in the support of the constraint.
-val AddCxTyparsGeneralized:
-    DisplayEnv -> ConstraintSolverState -> range -> ctxtInfo: ContextInfo -> OptionalTrace -> Typars -> unit
+/// Re-assess the staticness of the type parameters
+val UpdateStaticReqOfTypar: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typar -> unit
+
+/// Remove the global constraints related to generalized type variables
+val EliminateConstraintsForGeneralizedTypars:
+    DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit
 

@@ -623,3 +623,7 @@ module HashIdentity =
                 NonStructuralComparison.(=) x y
         }
 
+
+// This test case caused an error due to a change in generalization
+module ``Caused error`` =
+    let checkReflexive f x y = (f x y = - f y x)

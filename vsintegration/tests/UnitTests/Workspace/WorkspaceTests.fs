@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+open VisualFSharp.UnitTests.Editor
 open NUnit.Framework
 
 [<TestFixture>]

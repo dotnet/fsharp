@@ -307,22 +307,19 @@ module FSharpExprConvert =
     let (|TTypeConvOp|_|) (cenv: SymbolEnv) ty = 
         let g = cenv.g
         match ty with
-        | TType_app (tcref, _, _) ->
-            match tcref with
-            | _ when tyconRefEq g tcref g.sbyte_tcr      -> Some mkCallToSByteOperator
-            | _ when tyconRefEq g tcref g.byte_tcr       -> Some mkCallToByteOperator
-            | _ when tyconRefEq g tcref g.int16_tcr      -> Some mkCallToInt16Operator
-            | _ when tyconRefEq g tcref g.uint16_tcr     -> Some mkCallToUInt16Operator
-            | _ when tyconRefEq g tcref g.int_tcr        -> Some mkCallToIntOperator
-            | _ when tyconRefEq g tcref g.int32_tcr      -> Some mkCallToInt32Operator
-            | _ when tyconRefEq g tcref g.uint32_tcr     -> Some mkCallToUInt32Operator
-            | _ when tyconRefEq g tcref g.int64_tcr      -> Some mkCallToInt64Operator
-            | _ when tyconRefEq g tcref g.uint64_tcr     -> Some mkCallToUInt64Operator
-            | _ when tyconRefEq g tcref g.float32_tcr    -> Some mkCallToSingleOperator
-            | _ when tyconRefEq g tcref g.float_tcr      -> Some mkCallToDoubleOperator
-            | _ when tyconRefEq g tcref g.nativeint_tcr  -> Some mkCallToIntPtrOperator
-            | _ when tyconRefEq g tcref g.unativeint_tcr -> Some mkCallToUIntPtrOperator
-            | _ -> None
+        | _ when typeEquiv g ty g.sbyte_ty      -> Some mkCallToSByteOperator
+        | _ when typeEquiv g ty g.byte_ty       -> Some mkCallToByteOperator
+        | _ when typeEquiv g ty g.int16_ty      -> Some mkCallToInt16Operator
+        | _ when typeEquiv g ty g.uint16_ty     -> Some mkCallToUInt16Operator
+        | _ when typeEquiv g ty g.int_ty        -> Some mkCallToIntOperator
+        | _ when typeEquiv g ty g.int32_ty      -> Some mkCallToInt32Operator
+        | _ when typeEquiv g ty g.uint32_ty     -> Some mkCallToUInt32Operator
+        | _ when typeEquiv g ty g.int64_ty      -> Some mkCallToInt64Operator
+        | _ when typeEquiv g ty g.uint64_ty     -> Some mkCallToUInt64Operator
+        | _ when typeEquiv g ty g.float32_ty    -> Some mkCallToSingleOperator
+        | _ when typeEquiv g ty g.float_ty      -> Some mkCallToDoubleOperator
+        | _ when typeEquiv g ty g.nativeint_ty  -> Some mkCallToIntPtrOperator
+        | _ when typeEquiv g ty g.unativeint_ty -> Some mkCallToUIntPtrOperator
         | _ -> None
 
     let ConvType cenv ty = FSharpType(cenv, ty)
@@ -793,10 +790,10 @@ module FSharpExprConvert =
                 let op2 = convertOp2 g m ty2 op1
                 ConvExprPrim cenv env op2
 
-            | TOp.ILAsm ([ ILConvertOp convertOp ], [TType_app (tcref, _, _)]), _, [arg] -> 
+            | TOp.ILAsm ([ ILConvertOp convertOp ], [ty2]), _, [arg] -> 
                 let ty = tyOfExpr g arg
                 let op =
-                    if tyconRefEq g tcref g.char_tcr then
+                    if typeEquiv g ty2 g.char_ty then
                         mkCallToCharOperator g m ty arg
                     else convertOp g m ty arg
                 ConvExprPrim cenv env op
