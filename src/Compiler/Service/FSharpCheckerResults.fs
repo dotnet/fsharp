@@ -1156,7 +1156,11 @@ type internal TypeCheckInfo
             // Completion at 'implement ..."
             | Some (CompletionContext.Inherit (InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> IsInheritsCompletionCandidate t || IsInterfaceCompletionCandidate t))
+                |> FilterRelevantItemsBy
+                    getItem
+                    None
+                    (getItem
+                     >> (fun t -> IsInheritsCompletionCandidate t || IsInterfaceCompletionCandidate t))
                 |> Option.map toCompletionItems
 
             // Completion at ' { XXX = ... } "
