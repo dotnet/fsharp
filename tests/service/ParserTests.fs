@@ -322,3 +322,14 @@ let ``Expr - Tuple 06`` () =
                            SynExpr.ArbitraryAfterError _
                            SynExpr.Const _ ], _, _) ] -> ()
     | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Expr - Tuple 07`` () =
+    let parseResults = getParseResults """
+let x = 1,
+"""
+    match getSingleModuleMemberDecls parseResults with
+    | [ SynModuleDecl.Let(_, [ (SynBinding(expr = expr)) ], range) ] ->
+        shouldEqual expr.Range.StartLine expr.Range.EndLine
+        shouldEqual range.StartLine range.EndLine
+    | _ -> failwith "Unexpected tree"
