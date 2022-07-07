@@ -4291,13 +4291,12 @@ module OperatorName =
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Expr (expr = SynExpr.App(funcExpr = SynExpr.App(funcExpr =
-                    SynExpr.Paren(SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotation "+")])), lpr, Some rpr, pr))))
+                    SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotationWithParen(lpr, "+", rpr))])))))
                 ])
             ])) ->
             assertRange (2, 0) (2, 1) lpr
             Assert.AreEqual("op_Addition", ident.idText)
             assertRange (2, 2) (2, 3) rpr
-            assertRange (2, 0) (2, 3) pr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
@@ -4312,7 +4311,7 @@ module OperatorName =
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Expr (expr = SynExpr.App(funcExpr =
-                    SynExpr.Paren(SynExpr.Ident ident, lpr, Some rpr, pr)))
+                    SynExpr.LongIdent(false, SynLongIdent([ ident ], _, [ Some(IdentTrivia.HasParenthesis(lpr, rpr)) ]), None, pr)))
                 ])
             ])) ->
             assertRange (2, 0) (2, 1) lpr
@@ -4333,7 +4332,7 @@ module OperatorName =
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Expr (expr = SynExpr.App(funcExpr =
-                    SynExpr.Paren(SynExpr.Ident ident, lpr, Some rpr, pr)))
+                    SynExpr.LongIdent(false, SynLongIdent([ ident ], _, [ Some(IdentTrivia.HasParenthesis(lpr, rpr)) ]), None, pr)))
                 ])
             ])) ->
             assertRange (2, 0) (2, 1) lpr
@@ -4569,7 +4568,7 @@ op_Addition a b
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Expr(expr =
                     SynExpr.App(funcExpr = SynExpr.App(isInfix = false
-                                                       funcExpr = SynExpr.Paren(SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotation "+")])), lpr, Some rpr, pr)
+                                                       funcExpr = SynExpr.LongIdent(longDotId = SynLongIdent([ident], _, [Some (IdentTrivia.OriginalNotationWithParen(lpr, "+", rpr))]))
                                                        argExpr = SynExpr.Ident a1)
                                 argExpr = SynExpr.Ident b1))
                 SynModuleDecl.Expr(expr =
@@ -4583,7 +4582,6 @@ op_Addition a b
             assertRange (2,0) (2,1) lpr
             Assert.AreEqual("op_Addition", ident.idText)
             assertRange (2,2) (2,3) rpr
-            assertRange (2,0) (2,3) pr
             Assert.AreEqual("a", a1.idText)
             Assert.AreEqual("b", b1.idText)
 
@@ -4632,12 +4630,8 @@ nameof(+)
                 SynModuleDecl.Expr(expr =
                                     SynExpr.App(isInfix = false
                                                 funcExpr = SynExpr.Ident nameofIdent
-                                                argExpr = SynExpr.Paren(
-                                                    SynExpr.LongIdent(longDotId = SynLongIdent([operatorIdent], _, [Some (IdentTrivia.OriginalNotation "+")])),
-                                                    lpr,
-                                                    Some rpr,
-                                                    pr
-                                                )
+                                                argExpr =
+                                                    SynExpr.LongIdent(longDotId = SynLongIdent([operatorIdent], _, [Some (IdentTrivia.OriginalNotationWithParen(lpr, "+", rpr))]))
                                     )
                     )
                 ])
@@ -4646,7 +4640,6 @@ nameof(+)
             assertRange (2,6) (2,7) lpr
             Assert.AreEqual("op_Addition", operatorIdent.idText)
             assertRange (2,8) (2,9) rpr
-            assertRange (2,6) (2,9) pr
         | _ ->
             Assert.Fail $"Could not get valid AST, got {ast}"
 
