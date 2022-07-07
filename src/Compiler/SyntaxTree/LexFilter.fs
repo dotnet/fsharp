@@ -181,7 +181,49 @@ let infixTokenLength token =
     | INFIX_STAR_STAR_OP d -> d.Length
     | COLON_QMARK_GREATER -> 3
     | _ -> assert false; 1
-    
+
+let canFollowInfixToken token =
+    match token with
+    | ABSTRACT
+    | AND
+    | AND_BANG _
+    | AS
+    | DONE
+    | DOWNTO
+    | ELIF
+    | ELSE
+    | END
+    | EXCEPTION
+    | EXTERN
+    | FINALLY
+    | IN
+    | INHERIT
+    | INLINE
+    | INTERFACE
+    | INTERNAL
+    | MEMBER
+    | MODULE
+    | MUTABLE
+    | NAMESPACE
+    | OF
+    | OPEN
+    | OR
+    | OVERRIDE
+    | PRIVATE
+    | PUBLIC
+    | REC
+    | STATIC
+    | THEN
+    | TO
+    | TYPE
+    | VAL
+    | VOID
+    | WHEN
+    | WITH
+
+    | LBRACK_LESS -> false
+    | _ -> true
+
 /// Matches against a left-parenthesis-like token that is valid in expressions.
 //
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
@@ -2118,7 +2160,8 @@ type LexFilterImpl (
 
         // The r.h.s. of an infix token begins a new block. 
         | _, ctxts when (isInfix token && 
-                            not (isSameLine()) && 
+                            not (isSameLine()) &&
+                            canFollowInfixToken (peekNextToken()) &&
                             // This doesn't apply to the use of any infix tokens in a pattern match or 'when' block
                             // For example
                             //

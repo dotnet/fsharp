@@ -3906,85 +3906,85 @@ declExpr:
   | declExpr INFIX_STAR_STAR_OP declExpr
      { mkSynInfix (rhs parseState 2) $1 $2 $3 }
 
-  | declExpr JOIN_IN OBLOCKEND_COMING_SOON
+  | declExpr JOIN_IN ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("in")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "@in" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr BAR_BAR OBLOCKEND_COMING_SOON
+  | declExpr BAR_BAR ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("||")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "||" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_BAR_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_BAR_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr OR OBLOCKEND_COMING_SOON
+  | declExpr OR ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("or")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "or" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr AMP OBLOCKEND_COMING_SOON
+  | declExpr AMP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("&")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "&" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr AMP_AMP OBLOCKEND_COMING_SOON
+  | declExpr AMP_AMP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("&&")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "&&" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_AMP_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_AMP_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr EQUALS OBLOCKEND_COMING_SOON
+  | declExpr EQUALS ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("=")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "=" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_COMPARE_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_COMPARE_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr DOLLAR OBLOCKEND_COMING_SOON
+  | declExpr DOLLAR ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("$")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "$" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr LESS OBLOCKEND_COMING_SOON
+  | declExpr LESS ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("<")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "<" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr GREATER OBLOCKEND_COMING_SOON
+  | declExpr GREATER ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression(">")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 ">" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_AT_HAT_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_AT_HAT_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr PERCENT_OP OBLOCKEND_COMING_SOON
+  | declExpr PERCENT_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr COLON_COLON OBLOCKEND_COMING_SOON
+  | declExpr COLON_COLON ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("::"))
        let identExpr = mkSynOperator (rhs parseState 2) "::"
        let tupExpr = SynExpr.Tuple (false, [$1;(arbExpr("declExprInfix", (rhs parseState 3).StartRange))], [rhs parseState 2], unionRanges $1.Range (rhs parseState 3).StartRange)
        SynExpr.App (ExprAtomicFlag.NonAtomic, true, identExpr, tupExpr, unionRanges $1.Range (rhs parseState 3).StartRange) }
 
-  | declExpr PLUS_MINUS_OP OBLOCKEND_COMING_SOON
+  | declExpr PLUS_MINUS_OP ends_coming_soon_or_recover 
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr MINUS OBLOCKEND_COMING_SOON
+  | declExpr MINUS ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("-")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "-" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr STAR OBLOCKEND_COMING_SOON
+  | declExpr STAR ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression("*")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 "*" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_STAR_DIV_MOD_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_STAR_DIV_MOD_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_STAR_STAR_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_STAR_STAR_OP ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
