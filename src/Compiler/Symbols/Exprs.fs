@@ -311,7 +311,6 @@ module FSharpExprConvert =
         | _ when typeEquiv g ty g.byte_ty       -> Some mkCallToByteOperator
         | _ when typeEquiv g ty g.int16_ty      -> Some mkCallToInt16Operator
         | _ when typeEquiv g ty g.uint16_ty     -> Some mkCallToUInt16Operator
-        | _ when typeEquiv g ty g.int_ty        -> Some mkCallToIntOperator
         | _ when typeEquiv g ty g.int32_ty      -> Some mkCallToInt32Operator
         | _ when typeEquiv g ty g.uint32_ty     -> Some mkCallToUInt32Operator
         | _ when typeEquiv g ty g.int64_ty      -> Some mkCallToInt64Operator

@@ -2082,8 +2082,6 @@ val mkCallToInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallToUInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntOperator: TcGlobals -> range -> TType -> Expr -> Expr
-
 val mkCallToInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallToUInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr

@@ -426,6 +426,6 @@ type HelpContextServiceTests() =
              "let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) ="
              "    'T.StaticProp$erty" ]
         let keywords = 
-            [   Some "System.Collections.Generic.List`1" ]
+            [   Some "Test.IStaticProperty`1.StaticProperty" ]
         TestF1Keywords(keywords, file)
 
