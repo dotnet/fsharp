@@ -897,7 +897,7 @@ type B =
     |]
 
     match parseResults.ParseTree with
-    | Members(SynMemberDefn.Member(range = range; memberDefn = SynBinding(xmlDoc = xmlDoc) as binding) :: _) ->
+    | Members([ SynMemberDefn.GetSetMember(Some (SynBinding(xmlDoc = xmlDoc) as binding), _, range, _); _ ]) ->
         assertRange (3, 4) (10, 37) range
         assertRange (3, 4) (8, 37) binding.RangeOfBindingWithRhs
         assertRange (3, 4) (4, 9) xmlDoc.Range

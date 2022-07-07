@@ -661,8 +661,9 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
-                    SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    SynTypeDefnRepr.ObjectModel(members=[
+                        _
+                        SynMemberDefn.GetSetMember(Some(SynBinding _), None, _, { WithKeyword = mWith }) ])
                     ) ])
              ]) ])) ->
             assertRange (4, 31) (4, 35) mWith
@@ -682,8 +683,9 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
-                    SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    SynTypeDefnRepr.ObjectModel(members=[
+                         _
+                         SynMemberDefn.GetSetMember(None, Some(SynBinding _), _, { WithKeyword = mWith }) ])
                     ) ])
              ]) ])) ->
             assertRange (4, 36) (4, 40) mWith
@@ -705,9 +707,9 @@ type Foo() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(typeRepr =
-                    SynTypeDefnRepr.ObjectModel(members=[ _
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
-                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
+                    SynTypeDefnRepr.ObjectModel(members=[
+                       _
+                       SynMemberDefn.GetSetMember(Some _, Some _, _, { WithKeyword = mWith; AndKeyword = Some mAnd }) ])
                     ) ])
              ]) ])) ->
             assertRange (5, 8) (5, 12) mWith
@@ -752,6 +754,70 @@ type A = B
             )
         ]) ])) ->
             assertRange (4, 0) (4, 4) mType
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with static member with get/set`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo =
+    static member ReadWrite2 
+        with set  x = lastUsed <- ("ReadWrite2", x)
+        and  get () = lastUsed <- ("ReadWrite2", 0); 4
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                    SynMemberDefn.GetSetMember(Some _, Some _, m, { WithKeyword = mWith
+                                                                    GetKeyword = Some mGet
+                                                                    AndKeyword = Some mAnd
+                                                                    SetKeyword = Some mSet })
+                ])) ]
+            )
+        ]) ])) ->
+            assertRange (4, 8) (4, 12) mWith
+            assertRange (4, 13) (4, 16) mSet
+            assertRange (5, 8) (5, 11) mAnd
+            assertRange (5, 13) (5, 16) mGet
+            assertRange (3, 4) (5, 54) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with member with set/get`` () =
+        let parseResults = 
+            getParseResults
+                """
+type A() =
+    member this.Z with set (_:int):unit = () and get():int = 1
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                    SynMemberDefn.ImplicitCtor _
+                    SynMemberDefn.GetSetMember(Some (SynBinding(headPat = SynPat.LongIdent(extraId = Some getIdent))),
+                                               Some (SynBinding(headPat = SynPat.LongIdent(extraId = Some setIdent))),
+                                               m,
+                                               { WithKeyword = mWith
+                                                 GetKeyword = Some mGet
+                                                 AndKeyword = Some mAnd
+                                                 SetKeyword = Some mSet })
+                ])) ]
+            )
+        ]) ])) ->
+            Assert.AreEqual("get", getIdent.idText)
+            Assert.AreEqual("set", setIdent.idText)
+            assertRange (3, 18) (3, 22) mWith
+            assertRange (3, 23) (3, 26) mSet
+            assertRange (3, 23) (3, 26) setIdent.idRange
+            assertRange (3, 45) (3, 48) mAnd
+            assertRange (3, 49) (3, 52) mGet
+            assertRange (3, 49) (3, 52) getIdent.idRange
+            assertRange (3, 4) (3, 62) m
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SyntaxExpressions =
@@ -1217,6 +1283,33 @@ global
             assertRange (1,0) (1, 3) mDynamicExpr
             assertRange (1,0) (1, 8) mSetExpr
         | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
+    [<Test>]
+    let ``SynExpr.Obj with setter`` () =
+        let ast =
+            getParseResults """
+[<AbstractClass>]
+type CFoo() =
+    abstract AbstractClassPropertySet: string with set
+
+{ new CFoo() with
+    override this.AbstractClassPropertySet with set (v:string) = () }
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Types _
+                        SynModuleDecl.Expr(expr = SynExpr.ObjExpr(members = [
+                            SynMemberDefn.GetSetMember(None, Some _, m, { WithKeyword = mWith; SetKeyword = Some mSet })
+                        ]))
+                    ])
+                ])) ->
+            assertRange (7, 43) (7, 47) mWith
+            assertRange (7, 48) (7, 51) mSet
+            assertRange (7,4) (7, 67) m
+        | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
+
 
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
@@ -2571,7 +2664,8 @@ type Crane =
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [SynMemberDefn.Member(memberDefn = SynBinding(range = mb)) as m]))])
+            SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members =
+                [SynMemberDefn.GetSetMember(memberDefnForSet = Some (SynBinding(range = mb))) as m]))])
         ]) ])) ->
             assertRange (3, 4) (4, 52) mb
             assertRange (3, 4) (4, 79) m.Range
@@ -2591,14 +2685,12 @@ type Bird =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
-                SynMemberDefn.Member(memberDefn = SynBinding(range = mb1)) as getter
-                SynMemberDefn.Member(memberDefn = SynBinding(range = mb2)) as setter
+                SynMemberDefn.GetSetMember(Some (SynBinding(range = mb1)), Some (SynBinding(range = mb2)), m, _)
             ]))])
         ]) ])) ->
             assertRange (3, 4) (5, 19) mb1
-            assertRange (3, 4) (6, 50) getter.Range
             assertRange (3, 4) (6, 23) mb2
-            assertRange (3, 4) (6, 50) setter.Range
+            assertRange (3, 4) (6, 50) m
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -2722,8 +2814,9 @@ type Y() =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
                 _
-                SynMemberDefn.Member(memberDefn = SynBinding(trivia={ EqualsRange = Some eqGetM }))
-                SynMemberDefn.Member(memberDefn = SynBinding(trivia={ EqualsRange = Some eqSetM }))
+                SynMemberDefn.GetSetMember(
+                    Some(SynBinding(trivia={ EqualsRange = Some eqGetM })),
+                    Some(SynBinding(trivia={ EqualsRange = Some eqSetM })), _, _)
             ]))])
         ]) ])) ->
             assertRange (4, 20) (4, 21) eqGetM
@@ -4603,10 +4696,11 @@ type X() =
                     SynTypeDefn.SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members =[
                         SynMemberDefn.ImplicitCtor _
                         SynMemberDefn.LetBindings _
-                        SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ; allowIntoPatternGet ])
-                                                                                                propertyKeyword = Some (PropertyKeyword.With mWith))))
-                        SynMemberDefn.Member(memberDefn = SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ; allowIntoPatternSet ])
-                                                                                                propertyKeyword = Some (PropertyKeyword.And mAnd))))
+                        SynMemberDefn.GetSetMember(
+                            Some (SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ; allowIntoPatternGet ])))),
+                            Some (SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = [ _ ; allowIntoPatternSet ])))),
+                            _,
+                            { WithKeyword = mWith; AndKeyword = Some mAnd })
                     ]))
                 ])
             ])
