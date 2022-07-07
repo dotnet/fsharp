@@ -10696,13 +10696,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let ilPropName = fspec.LogicalName
                             let ilMethName = "get_" + ilPropName
                             let access = ComputeMemberAccess isPropHidden
-                            let isStruct = tcref.IsFSharpStructOrEnumTycon && not tcref.IsEnumTycon
+                            let isStruct = tycon.IsFSharpStructOrEnumTycon && not tycon.IsEnumTycon
 
                             let attrs =
-                                if isStruct && not isStatic then
-                                    [ GenReadOnlyAttribute g ]
-                                else
-                                    []
+                                [
+                                    if isStruct && not isStatic then GenReadOnlyAttribute g
+                                ]
 
                             yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, attrs)
 
