@@ -6724,8 +6724,8 @@ FSharp.Compiler.Syntax.SynExpr+TraitCall: FSharp.Compiler.Syntax.SynMemberSig ge
 FSharp.Compiler.Syntax.SynExpr+TraitCall: FSharp.Compiler.Syntax.SynMemberSig traitSig
 FSharp.Compiler.Syntax.SynExpr+TraitCall: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+TraitCall: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+TraitCall: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypar] get_supportTys()
-FSharp.Compiler.Syntax.SynExpr+TraitCall: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypar] supportTys
+FSharp.Compiler.Syntax.SynExpr+TraitCall: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] get_supportTys()
+FSharp.Compiler.Syntax.SynExpr+TraitCall: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType] supportTys
 FSharp.Compiler.Syntax.SynExpr+TryFinally: FSharp.Compiler.Syntax.DebugPointAtFinally finallyDebugPoint
 FSharp.Compiler.Syntax.SynExpr+TryFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_finallyDebugPoint()
 FSharp.Compiler.Syntax.SynExpr+TryFinally: FSharp.Compiler.Syntax.DebugPointAtTry get_tryDebugPoint()
@@ -7008,7 +7008,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microso
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrImplicitYield(FSharp.Compiler.Syntax.DebugPointAtSequential, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypar], FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTypar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryFinally(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtFinally, FSharp.Compiler.SyntaxTrivia.SynExprTryFinallyTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryWith(FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause], FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtWith, FSharp.Compiler.SyntaxTrivia.SynExprTryWithTrivia)
