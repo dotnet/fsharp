@@ -10696,7 +10696,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let ilPropName = fspec.LogicalName
                             let ilMethName = "get_" + ilPropName
                             let access = ComputeMemberAccess isPropHidden
-                            let isStruct = tycon.IsFSharpStructOrEnumTycon && not tycon.IsEnumTycon
+                            let isStruct = isStructTyconRef tcref
 
                             let attrs =
                                 if isStruct && not isStatic then
