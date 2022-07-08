@@ -3702,7 +3702,10 @@ let (|SeqExpr|_|) g expr =
 // DEBUG layout
 //---------------------------------------------------------------------------
 module DebugPrint = 
-    let layoutRanges = ref false
+    let mutable layoutRanges = false
+    let mutable layoutTypes = false
+    let mutable layoutStamps = false
+    let mutable layoutValReprInfo = false
 
     let squareAngleL l = LeftL.leftBracketAngle ^^ l ^^ RightL.rightBracketAngle
 
@@ -3724,8 +3727,9 @@ module DebugPrint =
 
     let lvalopL x = 
         match x with 
-        | LAddrOf readonly -> wordL (tagText (sprintf "LAddrOf(%b)" readonly))
-        | LByrefGet -> wordL (tagText "LByrefGet")
+        | LAddrOf false -> wordL (tagText "&")
+        | LAddrOf true -> wordL (tagText "&!")
+        | LByrefGet -> wordL (tagText "*")
         | LSet -> wordL (tagText "LSet")
         | LByrefSet -> wordL (tagText "LByrefSet")
 
@@ -3743,8 +3747,8 @@ module DebugPrint =
             else stat
         stat
 
-    let stampL _n w = 
-        w
+    let stampL (n: Stamp) w = 
+        if layoutStamps then w ^^ wordL (tagText ("#" + string n)) else w
 
     let layoutTyconRef (tcref: TyconRef) = 
         wordL (tagText tcref.DisplayNameWithStaticParameters) |> stampL tcref.Stamp
@@ -3930,14 +3934,20 @@ module DebugPrint =
         match env.postfixConstraints with
         | [] -> auxTypeL env tau 
         | _ -> (auxTypeL env tau --- auxTyparConstraintsL env env.postfixConstraints) 
-    and layoutTyparDecls tps = angleBracketListL (List.map typarDeclL tps) 
+    and layoutTyparDecls tps =
+        match tps with
+        | [] -> emptyL
+        | _ -> angleBracketListL (List.map typarDeclL tps) 
 
     let rangeL m = wordL (tagText (stringOfRange m))
 
     let instL tyL tys =
-        match tys with
-        | [] -> emptyL
-        | tys -> sepL (tagText "@[") ^^ commaListL (List.map tyL tys) ^^ rightL (tagText "]")
+        if layoutTypes then
+            match tys with
+            | [] -> emptyL
+            | tys -> sepL (tagText "@[") ^^ commaListL (List.map tyL tys) ^^ rightL (tagText "]")
+        else
+            emptyL
 
     let valRefL (vr: ValRef) = 
         wordL (tagText vr.LogicalName) |> stampL vr.Stamp 
@@ -3951,9 +3961,9 @@ module DebugPrint =
 
     let layoutAttribs attribs = aboveListL (List.map layoutAttrib attribs)
 
-    let arityInfoL (ValReprInfo (tpNames, _, _) as tvd) = 
-        let ns = tvd.AritiesOfArgs in 
-        leftL (tagText "arity<") ^^ intL tpNames.Length ^^ sepL (tagText ">[") ^^ commaListL (List.map intL ns) ^^ rightL (tagText "]")
+    let valReprInfoL (ValReprInfo (tpNames, _, _) as tvd) = 
+        let ns = tvd.AritiesOfArgs
+        leftL (tagText "<") ^^ intL tpNames.Length ^^ sepL (tagText ">[") ^^ commaListL (List.map intL ns) ^^ rightL (tagText "]")
 
     let valL (v: Val) =
         let vsL = wordL (tagText (DecompileOpName v.LogicalName)) |> stampL v.Stamp
@@ -3961,10 +3971,10 @@ module DebugPrint =
         vsL
 
     let typeOfValL (v: Val) =
-        (valL v
+        valL v
           ^^ (if v.MustInline then wordL (tagText "inline ") else emptyL) 
           ^^ (if v.IsMutable then wordL(tagText "mutable ") else emptyL)
-          ^^ wordL (tagText ":")) -- typeL v.Type
+          ^^ (if layoutTypes then wordL (tagText ":") ^^ typeL v.Type else emptyL)
 
     let tslotparamL (TSlotParam(nmOpt, ty, inFlag, outFlag, _, _)) =
         (optionL (tagText >> wordL) nmOpt) ^^ 
@@ -3995,14 +4005,19 @@ module DebugPrint =
             [ wordL(tagText "compiled_name! = ") ^^ wordL (tagText (v.CompiledName g.CompilerGlobalState))
               wordL(tagText "membInfo-slotsig! = ") ^^ listL slotSigL membInfo.ImplementedSlotSigs ]
 
-    and valAtBindL g v =
+    and valAtBindL v =
         let vL = valL v
-        let mutL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
-        mutL --- 
-            aboveListL 
-                [ yield wordL(tagText ":") ^^ typeL v.Type
-                  match v.MemberInfo with None -> () | Some mem_info -> yield wordL(tagText "!") ^^ memberL g v mem_info
-                  match v.ValReprInfo with None -> () | Some arity_info -> yield wordL(tagText "#") ^^ arityInfoL arity_info]
+        let vL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
+        let vL =
+            if layoutTypes then
+                vL ^^ wordL(tagText ":") ^^ typeL v.Type
+            else
+                vL
+        let vL =
+            match v.ValReprInfo with
+            | Some info when layoutValReprInfo -> vL ^^ wordL(tagText "!") ^^ valReprInfoL info
+            | _ -> vL
+        vL
 
     let unionCaseRefL (ucr: UnionCaseRef) = wordL (tagText ucr.CaseName)
 
@@ -4042,8 +4057,335 @@ module DebugPrint =
             | Const.Zero -> "default"
         wordL (tagText str)
 
-    let rec tyconL g (tycon: Tycon) =
-        if tycon.IsModuleOrNamespace then entityL g tycon else
+
+    let layoutUnionCaseArgTypes argTys = sepListL (wordL(tagText "*")) (List.map typeL argTys)
+
+    let ucaseL prefixL (ucase: UnionCase) =
+        let nmL = wordL (tagText ucase.DisplayName)
+        match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
+        | [] -> (prefixL ^^ nmL)
+        | argTys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argTys
+
+    let layoutUnionCases ucases =
+        let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
+        List.map (ucaseL prefixL) ucases
+            
+    let layoutRecdField (fld: RecdField) =
+        let lhs = wordL (tagText fld.LogicalName)
+        let lhs = if fld.IsMutable then wordL(tagText "mutable") --- lhs else lhs
+        let lhs = if layoutTypes then lhs ^^ rightL(tagText ":") ^^ typeL fld.FormalType else lhs
+        lhs
+
+    let tyconReprL (repr, tycon: Tycon) = 
+        match repr with 
+        | TFSharpRecdRepr _ ->
+            tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL(tagText ";")) |> aboveListL
+
+        | TFSharpObjectRepr r -> 
+            match r.fsobjmodel_kind with 
+            | TFSharpDelegate _ ->
+                wordL(tagText "delegate ...")
+            | _ ->
+                let start = 
+                    match r.fsobjmodel_kind with
+                    | TFSharpClass -> "class" 
+                    | TFSharpInterface -> "interface" 
+                    | TFSharpStruct -> "struct" 
+                    | TFSharpEnum -> "enum" 
+                    | _ -> failwith "???"
+
+                let inherits = 
+                    match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
+                    | TFSharpClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
+                    | TFSharpInterface, _ -> 
+                        tycon.ImmediateInterfacesOfFSharpTycon
+                        |> List.filter (fun (_, compgen, _) -> not compgen)
+                        |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
+                    | _ -> []
+
+                let vsprs = 
+                    tycon.MembersOfFSharpTyconSorted 
+                        |> List.filter (fun v -> v.IsDispatchSlot) 
+                        |> List.map (fun vref -> valAtBindL vref.Deref)
+
+                let vals = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL(tagText "static") else emptyL) ^^ wordL(tagText "val") ^^ layoutRecdField f)
+
+                let alldecls = inherits @ vsprs @ vals
+
+                let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
+
+                if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
+
+        | TFSharpUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+        | TAsmRepr _ -> wordL(tagText "(# ... #)")
+        | TMeasureableRepr ty -> typeL ty
+        | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
+        | _ -> failwith "unreachable"
+
+    let rec bindingL (TBind(v, repr, _)) =
+        (valAtBindL v ^^ wordL(tagText "=")) @@-- exprL repr
+
+    and exprL expr =
+        exprWrapL false expr
+
+    and atomL expr =
+        // true means bracket if needed to be atomic expr 
+        exprWrapL true expr
+
+    and letRecL binds bodyL = 
+        let eqnsL = 
+            binds
+               |> List.mapHeadTail (fun bind -> wordL(tagText "rec") ^^ bindingL bind ^^ wordL(tagText "in"))
+                              (fun bind -> wordL(tagText "and") ^^ bindingL bind ^^ wordL(tagText "in")) 
+        (aboveListL eqnsL @@ bodyL) 
+
+    and letL bind bodyL = 
+        let eqnL = wordL(tagText "let") ^^ bindingL bind
+        (eqnL @@ bodyL) 
+
+    and exprWrapL isAtomic expr =
+        let wrap = bracketIfL isAtomic // wrap iff require atomic expr 
+        let lay =
+            match expr with
+            | Expr.Const (c, _, _) -> constL c
+
+            | Expr.Val (v, flags, _) -> 
+                 let xL = valL v.Deref 
+                 let xL =
+                     match flags with
+                     | PossibleConstrainedCall _ -> xL ^^ rightL(tagText "<constrained>")
+                     | CtorValUsedAsSelfInit -> xL ^^ rightL(tagText "<selfinit>")
+                     | CtorValUsedAsSuperInit -> xL ^^ rightL(tagText "<superinit>")
+                     | VSlotDirectCall -> xL ^^ rightL(tagText "<vdirect>")
+                     | NormalValUse -> xL 
+                 xL
+
+            | Expr.Sequential (expr1, expr2, flag, _) -> 
+                aboveListL [
+                    exprL expr1
+                    match flag with
+                    | NormalSeq -> ()
+                    | ThenDoSeq -> wordL (tagText "ThenDo")
+                    exprL expr2 
+                ]
+                |> wrap
+
+            | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
+                let formalsL = spaceListL (List.map valAtBindL argvs)
+                let bindingL = 
+                    match baseValOpt with
+                    | None -> wordL(tagText "fun") ^^ formalsL ^^ wordL(tagText "->")
+                    | Some basev -> wordL(tagText "fun") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ wordL(tagText "->")
+                (bindingL @@-- exprL body) |> wrap
+
+            | Expr.TyLambda (_, tps, body, _, _) -> 
+                ((wordL(tagText "FUN") ^^ layoutTyparDecls tps ^^ wordL(tagText "->")) ++ exprL body) |> wrap
+
+            | Expr.TyChoose (tps, body, _) -> 
+                ((wordL(tagText "CHOOSE") ^^ layoutTyparDecls tps ^^ wordL(tagText "->")) ++ exprL body) |> wrap
+
+            | Expr.App (f, _, tys, argTys, _) -> 
+                let flayout = atomL f
+                appL flayout tys argTys |> wrap
+
+            | Expr.LetRec (binds, body, _, _) -> 
+                letRecL binds (exprL body) |> wrap
+
+            | Expr.Let (bind, body, _, _) -> 
+                letL bind (exprL body) |> wrap
+
+            | Expr.Link rX -> 
+                exprL rX.Value |> wrap
+
+            | Expr.DebugPoint (DebugPointAtLeafExpr.Yes m, rX) -> 
+                aboveListL [ wordL(tagText "__debugPoint(") ^^ rangeL m ^^ wordL (tagText ")"); exprL rX ] |> wrap
+
+            | Expr.Match (_, _, dtree, targets, _, _) -> 
+                leftL(tagText "[") ^^ (decisionTreeL dtree @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL(tagText "]"))
+
+            | Expr.Op (TOp.UnionCase c, _, args, _) -> 
+                (unionCaseRefL c ++ spaceListL (List.map atomL args)) |> wrap
+
+            | Expr.Op (TOp.ExnConstr ecref, _, args, _) -> 
+                wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
+
+            | Expr.Op (TOp.Tuple _, _, xs, _) -> 
+                tupleL (List.map exprL xs)
+
+            | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _) -> 
+                let fields = tcref.TrueInstanceFieldsAsList
+                let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
+                let ctorL = 
+                    match ctor with
+                    | RecdExpr -> emptyL
+                    | RecdExprIsObjInit-> wordL(tagText "(new)")
+                leftL(tagText "{") ^^ aboveListL (List.map2 lay fields xs) ^^ rightL(tagText "}") ^^ ctorL
+
+            | Expr.Op (TOp.ValFieldSet rf, _, [rx;x], _) -> 
+                (atomL rx --- wordL(tagText ".")) ^^ (recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x)
+
+            | Expr.Op (TOp.ValFieldSet rf, _, [x], _) -> 
+                recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x
+
+            | Expr.Op (TOp.ValFieldGet rf, _, [rx], _) -> 
+                atomL rx ^^ rightL(tagText ".#") ^^ recdFieldRefL rf
+
+            | Expr.Op (TOp.ValFieldGet rf, _, [], _) -> 
+                recdFieldRefL rf
+
+            | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [rx], _) -> 
+                leftL(tagText "&") ^^ bracketL (atomL rx ^^ rightL(tagText ".!") ^^ recdFieldRefL rf)
+
+            | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [], _) -> 
+                leftL(tagText "&") ^^ (recdFieldRefL rf)
+
+            | Expr.Op (TOp.UnionCaseTagGet tycr, _, [x], _) -> 
+                wordL (tagText (tycr.LogicalName + ".tag")) ^^ atomL x
+
+            | Expr.Op (TOp.UnionCaseProof c, _, [x], _) -> 
+                wordL (tagText (c.CaseName + ".proof")) ^^ atomL x
+
+            | Expr.Op (TOp.UnionCaseFieldGet (c, i), _, [x], _) -> 
+                wordL (tagText (c.CaseName + "." + string i)) --- atomL x
+
+            | Expr.Op (TOp.UnionCaseFieldSet (c, i), _, [x;y], _) -> 
+                ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i)))) ^^ wordL(tagText ":=")) --- exprL y
+
+            | Expr.Op (TOp.TupleFieldGet (_, i), _, [x], _) -> 
+                wordL (tagText ("#" + string i)) --- atomL x
+
+            | Expr.Op (TOp.Coerce, [ty;_], [x], _) -> 
+                atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
+
+            | Expr.Op (TOp.Reraise, [_], [], _) -> 
+                wordL(tagText "Reraise")
+
+            | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
+                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
+                let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
+                let instrL = appL instrs tyargs args
+                let instrL = if layoutTypes then instrL ^^ wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes) else instrL
+                instrL |> wrap
+
+            | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
+                (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
+
+            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _enclTypeInst, _methInst, _), _tyargs, args, _) ->
+                let meth = ilMethRef.Name
+                (wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)) ---- 
+                    (if args.IsEmpty then wordL (tagText "()") else listL exprL args) 
+                        //if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
+                        //if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
+                        //if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
+                        
+                |> wrap
+
+            | Expr.Op (TOp.Array, [_], xs, _) -> 
+                leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
+
+            | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                let headerL = wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")
+                headerL @@-- exprL x2
+
+            | Expr.Op (TOp.IntegerForLoop _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
+                let headerL = wordL(tagText "for") ^^ exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")
+                headerL @@-- exprL x3
+
+            | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
+
+            | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
+            | Expr.Op (TOp.Bytes _, _, _, _) -> 
+                wordL(tagText "bytes++")
+
+            | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
+            | Expr.Op (TOp.RefAddrGet _, _tyargs, _args, _) -> wordL(tagText "GetRefLVal...")
+            | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
+            | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
+            | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
+            | Expr.Op (TOp.TryFinally _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-finally")) ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.TryWith _, _tyargs, args, _) -> wordL(tagText ("unexpected-try-with")) ---- aboveListL (List.map atomL args)
+            | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
+            | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
+            | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
+            | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
+
+            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
+                (leftL (tagText "{") 
+                 @@--
+                  ((wordL(tagText "new ") ++ typeL ty) 
+                   @@-- 
+                   aboveListL [exprL ccall
+                               match basev with 
+                               | None -> ()
+                               | Some b -> valAtBindL b
+                               yield! List.map tmethodL overrides
+                               yield! List.map iimplL iimpls]))
+                @@
+                rightL (tagText "}")
+
+            | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
+
+            | Expr.StaticOptimization (_tcs, csx, x, _) -> 
+                (wordL(tagText "opt") @@- (exprL x)) @@--
+                   (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
+           
+        // For tracking ranges through expr rewrites 
+        if layoutRanges then
+            aboveListL [
+                leftL(tagText "//") ^^ rangeL expr.Range
+                lay
+            ]
+        else
+            lay
+
+    and appL flayout tys args =
+        let z = flayout
+        let z = if isNil tys then z else z ^^ instL typeL tys
+        let z = if isNil args then z else z --- spaceListL (List.map atomL args)
+        z
+
+    and decisionTreeL x =
+        match x with 
+        | TDBind (bind, body) -> 
+            let bind = wordL(tagText "let") ^^ bindingL bind
+            (bind @@ decisionTreeL body) 
+        | TDSuccess (args, n) -> 
+            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL))
+        | TDSwitch (test, dcases, dflt, _) ->
+            (wordL(tagText "Switch") --- exprL test) @@--
+            (aboveListL (List.map dcaseL dcases) @@
+             match dflt with
+             | None -> emptyL
+             | Some dtree -> wordL(tagText "dflt:") --- decisionTreeL dtree)
+
+    and dcaseL (TCase (test, dtree)) = 
+        (dtestL test ^^ wordL(tagText "//")) --- decisionTreeL dtree
+
+    and dtestL x = 
+        match x with 
+        | DecisionTreeTest.UnionCase (c, tinst) -> wordL(tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
+        | DecisionTreeTest.ArrayLength (n, ty) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
+        | DecisionTreeTest.Const c -> wordL(tagText "is") ^^ constL c
+        | DecisionTreeTest.IsNull -> wordL(tagText "isnull")
+        | DecisionTreeTest.IsInst (_, ty) -> wordL(tagText "isinst") ^^ typeL ty
+        | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> wordL(tagText "query") ^^ exprL exp
+        | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
+ 
+    and targetL i (TTarget (argvs, body, _)) =
+        leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL body
+
+    and flatValsL vs = vs |> List.map valL
+
+    and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
+        (wordL(tagText "member") ^^ (wordL (tagText nm)) ^^ layoutTyparDecls tps ^^ tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText "="))
+        @@--
+          exprL e
+
+    and iimplL (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
+
+    let rec tyconL (tycon: Tycon) =
 
         let lhsL = wordL (tagText (match tycon.TypeOrMeasureKind with TyparKind.Measure -> "[<Measure>] type" | TyparKind.Type -> "type")) ^^ wordL (tagText tycon.DisplayName) ^^ layoutTyparDecls tycon.TyparsNoRange
         let lhsL = lhsL --- layoutAttribs tycon.Attribs
@@ -4064,64 +4406,8 @@ module DebugPrint =
                 emptyL 
             else 
                 let iimplsLs = iimpls |> List.map (fun (ty, _, _) -> wordL(tagText "interface") --- typeL ty)
-                let adhocLs = adhoc |> List.map (fun vref -> valAtBindL g vref.Deref)
+                let adhocLs = adhoc |> List.map (fun vref -> valAtBindL vref.Deref)
                 (wordL(tagText "with") @@-- aboveListL (iimplsLs @ adhocLs)) @@ wordL(tagText "end")
-
-        let layoutUnionCaseArgTypes argTys = sepListL (wordL(tagText "*")) (List.map typeL argTys)
-
-        let ucaseL prefixL (ucase: UnionCase) =
-            let nmL = wordL (tagText ucase.DisplayName)
-            match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
-            | [] -> (prefixL ^^ nmL)
-            | argTys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argTys
-
-        let layoutUnionCases ucases =
-            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
-            List.map (ucaseL prefixL) ucases
-            
-        let layoutRecdField (fld: RecdField) =
-            let lhs = wordL (tagText fld.LogicalName)
-            let lhs = if fld.IsMutable then wordL(tagText "mutable") --- lhs else lhs
-            (lhs ^^ rightL(tagText ":")) --- typeL fld.FormalType
-
-        let tyconReprL (repr, tycon: Tycon) = 
-            match repr with 
-            | TFSharpRecdRepr _ ->
-                tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL(tagText ";")) |> aboveListL
-            | TFSharpObjectRepr r -> 
-                match r.fsobjmodel_kind with 
-                | TFSharpDelegate _ ->
-                    wordL(tagText "delegate ...")
-                | _ ->
-                    let start = 
-                        match r.fsobjmodel_kind with
-                        | TFSharpClass -> "class" 
-                        | TFSharpInterface -> "interface" 
-                        | TFSharpStruct -> "struct" 
-                        | TFSharpEnum -> "enum" 
-                        | _ -> failwith "???"
-                    let inherits = 
-                       match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                       | TFSharpClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
-                       | TFSharpInterface, _ -> 
-                         tycon.ImmediateInterfacesOfFSharpTycon
-                           |> List.filter (fun (_, compgen, _) -> not compgen)
-                           |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
-                       | _ -> []
-                    let vsprs = 
-                        tycon.MembersOfFSharpTyconSorted 
-                            |> List.filter (fun v -> v.IsDispatchSlot) 
-                            |> List.map (fun vref -> valAtBindL g vref.Deref)
-                    let vals = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL(tagText "static") else emptyL) ^^ wordL(tagText "val") ^^ layoutRecdField f)
-                    let alldecls = inherits @ vsprs @ vals
-                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
-                    if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-            | TFSharpUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
-            | TAsmRepr _ -> wordL(tagText "(# ... #)")
-            | TMeasureableRepr ty -> typeL ty
-            | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
-            | _ -> failwith "unreachable"
-
         let reprL = 
             match tycon.TypeReprInfo with 
 #if !NO_TYPEPROVIDERS
@@ -4137,263 +4423,57 @@ module DebugPrint =
                 (lhsL ^^ wordL(tagText "=")) @@-- rhsL
         reprL
 
-    and bindingL g (TBind(v, repr, _)) =
-        (valAtBindL g v ^^ wordL(tagText "=")) @@-- exprL g repr
-
-    and exprL g expr = exprWrapL g false expr
-
-    and atomL g expr = exprWrapL g true expr // true means bracket if needed to be atomic expr 
-
-    and letRecL g binds bodyL = 
-        let eqnsL = 
-            binds
-               |> List.mapHeadTail (fun bind -> wordL(tagText "rec") ^^ bindingL g bind ^^ wordL(tagText "in"))
-                              (fun bind -> wordL(tagText "and") ^^ bindingL g bind ^^ wordL(tagText "in")) 
-        (aboveListL eqnsL @@ bodyL) 
-
-    and letL g bind bodyL = 
-        let eqnL = wordL(tagText "let") ^^ bindingL g bind
-        (eqnL @@ bodyL) 
-
-    and exprWrapL g isAtomic expr =
-        let atomL args = atomL g args
-        let exprL expr = exprL g expr
-        let valAtBindL v = valAtBindL g v
-        let targetL targets = targetL g targets
-        let wrap = bracketIfL isAtomic // wrap iff require atomic expr 
-        let lay =
-            match expr with
-            | Expr.Const (c, _, _) -> constL c
-            | Expr.Val (v, flags, _) -> 
-                 let xL = valL v.Deref 
-                 let xL =
-                     match flags with
-                       | PossibleConstrainedCall _ -> xL ^^ rightL(tagText "<constrained>")
-                       | CtorValUsedAsSelfInit -> xL ^^ rightL(tagText "<selfinit>")
-                       | CtorValUsedAsSuperInit -> xL ^^ rightL(tagText "<superinit>")
-                       | VSlotDirectCall -> xL ^^ rightL(tagText "<vdirect>")
-                       | NormalValUse -> xL 
-                 xL
-            | Expr.Sequential (expr1, expr2, flag, _) -> 
-                let flag = 
-                    match flag with
-                    | NormalSeq -> ";"
-                    | ThenDoSeq -> "; ThenDo" 
-                ((exprL expr1 ^^ rightL (tagText flag)) @@ exprL expr2) |> wrap
-            | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
-                let formalsL = spaceListL (List.map valAtBindL argvs) in
-                let bindingL = 
-                    match baseValOpt with
-                    | None -> wordL(tagText "lam") ^^ formalsL ^^ rightL(tagText ".")
-                    | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
-                (bindingL ++ exprL body) |> wrap
-            | Expr.TyLambda (_, tps, body, _, _) -> 
-                ((wordL(tagText "LAM") ^^ spaceListL (List.map typarL tps) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
-            | Expr.TyChoose (tps, body, _) -> 
-                ((wordL(tagText "CHOOSE") ^^ spaceListL (List.map typarL tps) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
-            | Expr.App (f, _, tys, argTys, _) -> 
-                let flayout = atomL f
-                appL g flayout tys argTys |> wrap
-            | Expr.LetRec (binds, body, _, _) -> 
-                letRecL g binds (exprL body) |> wrap
-            | Expr.Let (bind, body, _, _) -> 
-                letL g bind (exprL body) |> wrap
-            | Expr.Link rX -> 
-                (wordL(tagText "RecLink") --- atomL rX.Value) |> wrap
-            | Expr.DebugPoint (_, rX) -> 
-                (wordL(tagText "DebugPoint") --- atomL rX) |> wrap
-            | Expr.Match (_, _, dtree, targets, _, _) -> 
-                leftL(tagText "[") ^^ (decisionTreeL g dtree @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL(tagText "]"))
-            | Expr.Op (TOp.UnionCase c, _, args, _) -> 
-                (unionCaseRefL c ++ spaceListL (List.map atomL args)) |> wrap
-            | Expr.Op (TOp.ExnConstr ecref, _, args, _) -> 
-                wordL (tagText ecref.LogicalName) ^^ bracketL (commaListL (List.map atomL args))
-            | Expr.Op (TOp.Tuple _, _, xs, _) -> 
-                tupleL (List.map exprL xs)
-            | Expr.Op (TOp.Recd (ctor, tcref), _, xs, _) -> 
-                let fields = tcref.TrueInstanceFieldsAsList
-                let lay fs x = (wordL (tagText fs.rfield_id.idText) ^^ sepL(tagText "=")) --- (exprL x)
-                let ctorL = 
-                    match ctor with
-                    | RecdExpr -> emptyL
-                    | RecdExprIsObjInit-> wordL(tagText "(new)")
-                leftL(tagText "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL(tagText "}") ^^ ctorL
-            | Expr.Op (TOp.ValFieldSet rf, _, [rx;x], _) -> 
-                (atomL rx --- wordL(tagText ".")) ^^ (recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x)
-            | Expr.Op (TOp.ValFieldSet rf, _, [x], _) -> 
-                (recdFieldRefL rf ^^ wordL(tagText "<-") --- exprL x)
-            | Expr.Op (TOp.ValFieldGet rf, _, [rx], _) -> 
-                (atomL rx ^^ rightL(tagText ".#") ^^ recdFieldRefL rf)
-            | Expr.Op (TOp.ValFieldGet rf, _, [], _) -> 
-                recdFieldRefL rf
-            | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [rx], _) -> 
-                leftL(tagText "&") ^^ bracketL (atomL rx ^^ rightL(tagText ".!") ^^ recdFieldRefL rf)
-            | Expr.Op (TOp.ValFieldGetAddr (rf, _), _, [], _) -> 
-                leftL(tagText "&") ^^ (recdFieldRefL rf)
-            | Expr.Op (TOp.UnionCaseTagGet tycr, _, [x], _) -> 
-                wordL (tagText ("#" + tycr.LogicalName + ".tag")) ^^ atomL x
-            | Expr.Op (TOp.UnionCaseProof c, _, [x], _) -> 
-                wordL (tagText ("#" + c.CaseName + ".cast")) ^^ atomL x
-            | Expr.Op (TOp.UnionCaseFieldGet (c, i), _, [x], _) -> 
-                wordL (tagText ("#" + c.CaseName + "." + string i)) --- atomL x
-            | Expr.Op (TOp.UnionCaseFieldSet (c, i), _, [x;y], _) -> 
-                ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i)))) ^^ wordL(tagText ":=")) --- exprL y
-            | Expr.Op (TOp.TupleFieldGet (_, i), _, [x], _) -> 
-                wordL (tagText ("#" + string i)) --- atomL x
-            | Expr.Op (TOp.Coerce, [ty;_], [x], _) -> 
-                atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
-            | Expr.Op (TOp.Reraise, [_], [], _) -> 
-                wordL(tagText "Rethrow!")
-            | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
-                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
-                let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
-                (appL g instrs tyargs args ---
-                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes)) |> wrap
-            | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
-                (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
-            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, _), tyargs, args, _) ->
-                let meth = ilMethRef.Name
-                wordL(tagText "ILCall") ^^
-                   aboveListL 
-                      [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
-                        if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
-                        if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
-                        if not args.IsEmpty then yield listL exprL args ] 
-                    |> wrap
-            | Expr.Op (TOp.Array, [_], xs, _) -> 
-                leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
-            | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
-            | Expr.Op (TOp.IntegerForLoop _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
-                wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
-                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
-            | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
-                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
-            | Expr.Op (TOp.Bytes _, _, _, _) -> 
-                wordL(tagText "bytes++")
-            | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
-            | Expr.Op (TOp.RefAddrGet _, _tyargs, _args, _) -> wordL(tagText "GetRefLVal...")
-            | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
-            | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
-            | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
-            | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
-            | Expr.Op (TOp.TryWith _, _tyargs, _args, _) -> wordL(tagText "TOp.TryWith...")
-            | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
-            | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
-            | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
-            | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
-            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
-                (leftL (tagText "{") 
-                 @@--
-                  ((wordL(tagText "new ") ++ typeL ty) 
-                   @@-- 
-                   aboveListL [exprL ccall
-                               optionL valAtBindL basev
-                               aboveListL (List.map (tmethodL g) overrides)
-                               aboveListL (List.map (iimplL g) iimpls)]))
-                @@
-                rightL (tagText "}")
-
-            | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
-            | Expr.StaticOptimization (_tcs, csx, x, _) -> 
-                (wordL(tagText "opt") @@- (exprL x)) @@--
-                   (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
-           
-        // For tracking ranges through expr rewrites 
-        if layoutRanges.Value then
-            leftL(tagText "{") ^^ (rangeL expr.Range ^^ rightL(tagText ":")) ++ lay ^^ rightL(tagText "}")
+    and entityL (entity: Entity) =
+        if entity.IsModuleOrNamespace then
+            moduleOrNamespaceL entity
         else
-            lay
+            tyconL entity
 
-    and implFilesL g implFiles =
-        aboveListL (List.map (implFileL g) implFiles)
+    and mexprL mtyp defs =
+        let resL = mdefL defs
+        let resL = if layoutTypes then resL @@- (wordL(tagText ":") @@- moduleOrNamespaceTypeL mtyp) else resL
+        resL
 
-    and appL g flayout tys args =
-        let z = flayout
-        let z = if isNil tys then z else z ^^ instL typeL tys
-        let z = if isNil args then z else z --- spaceListL (List.map (atomL g) args)
-        z
+    and mdefsL defs =
+        wordL(tagText "Module Defs") @@-- aboveListL(List.map mdefL defs)
 
-    and implFileL g (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g implFileTy implFileContents]
-
-    and mexprL g mtyp defs =
-        mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
-
-    and mdefsL  g defs =
-        wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
-
-    and mdefL g x =
+    and mdefL x =
         match x with
-        | TMDefRec(_, _, tycons, mbinds, _) -> aboveListL ((tycons |> List.map (tyconL g)) @ (mbinds |> List.map (mbindL g)))
-        | TMDefLet(bind, _) -> letL g bind emptyL
-        | TMDefDo(e, _) -> exprL g e
+        | TMDefRec(_, _, tycons, mbinds, _) -> aboveListL ((tycons |> List.map tyconL) @ (mbinds |> List.map mbindL))
+        | TMDefLet(bind, _) -> letL bind emptyL
+        | TMDefDo(e, _) -> exprL e
         | TMDefOpens _ -> wordL (tagText "open ... ")
-        | TMDefs defs -> mdefsL g defs
+        | TMDefs defs -> mdefsL defs
 
-    and mbindL g x =
+    and mbindL x =
        match x with
-       | ModuleOrNamespaceBinding.Binding bind -> letL g bind emptyL
+       | ModuleOrNamespaceBinding.Binding bind -> letL bind emptyL
        | ModuleOrNamespaceBinding.Module(mspec, rhs) ->
-        (wordL (tagText (if mspec.IsNamespace then "namespace" else "module")) ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)) @@-- mdefL g rhs
+        let titleL = wordL (tagText (if mspec.IsNamespace then "namespace" else "module")) ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)
+        titleL @@-- mdefL rhs
 
-    and entityTypeL g (mtyp: ModuleOrNamespaceType) =
+    and moduleOrNamespaceTypeL (mtyp: ModuleOrNamespaceType) =
         aboveListL [qlistL typeOfValL mtyp.AllValsAndMembers
-                    qlistL (tyconL g) mtyp.AllEntities]
+                    qlistL tyconL mtyp.AllEntities]
 
-    and entityL g (ms: ModuleOrNamespace) =
+    and moduleOrNamespaceL (ms: ModuleOrNamespace) =
         let header = wordL(tagText "module") ^^ (wordL (tagText ms.DemangledModuleOrNamespaceName) |> stampL ms.Stamp) ^^ wordL(tagText ":")
         let footer = wordL(tagText "end")
-        let body = entityTypeL g ms.ModuleOrNamespaceType
+        let body = moduleOrNamespaceTypeL ms.ModuleOrNamespaceType
         (header @@-- body) @@ footer
 
-    and ccuL g (ccu: CcuThunk) = entityL g ccu.Contents
+    let rec implFilesL implFiles =
+        aboveListL (List.map implFileL implFiles)
 
-    and decisionTreeL g x =
-        match x with 
-        | TDBind (bind, body) -> 
-            let bind = wordL(tagText "let") ^^ bindingL g bind
-            (bind @@ decisionTreeL g body) 
-        | TDSuccess (args, n) -> 
-            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL g))
-        | TDSwitch (test, dcases, dflt, _) ->
-            (wordL(tagText "Switch") --- exprL g test) @@--
-            (aboveListL (List.map (dcaseL g) dcases) @@
-             match dflt with
-             | None -> emptyL
-             | Some dtree -> wordL(tagText "dflt:") --- decisionTreeL g dtree)
+    and implFileL (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
+        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL implFileTy implFileContents]
 
-    and dcaseL g (TCase (test, dtree)) = (dtestL g test ^^ wordL(tagText "//")) --- decisionTreeL g dtree
-
-    and dtestL g x = 
-        match x with 
-        | DecisionTreeTest.UnionCase (c, tinst) -> wordL(tagText "is") ^^ unionCaseRefL c ^^ instL typeL tinst
-        | DecisionTreeTest.ArrayLength (n, ty) -> wordL(tagText "length") ^^ intL n ^^ typeL ty
-        | DecisionTreeTest.Const c -> wordL(tagText "is") ^^ constL c
-        | DecisionTreeTest.IsNull -> wordL(tagText "isnull")
-        | DecisionTreeTest.IsInst (_, ty) -> wordL(tagText "isinst") ^^ typeL ty
-        | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> wordL(tagText "query") ^^ exprL g exp
-        | DecisionTreeTest.Error _ -> wordL (tagText "error recovery")
- 
-    and targetL g i (TTarget (argvs, body, _)) =
-        leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
-
-    and flatValsL vs = vs |> List.map valL
-
-    and tmethodL g (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
-        ((wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
-         (angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
-         (tupleL (List.map (List.map (valAtBindL g) >> tupleL) vs) ^^ rightL(tagText ".")))
-        @@--
-          (atomL g e) 
-
-    and iimplL g (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map (tmethodL g) tmeths) 
+    and ccuL (ccu: CcuThunk) =
+        entityL ccu.Contents
 
     let showType x = showL (typeL x)
 
-    let showExpr g x = showL (exprL g x)
+    let showExpr x = showL (exprL x)
 
     let traitL x = auxTraitL SimplifyTypes.typeSimplificationInfo0 x
 
@@ -5872,18 +5952,18 @@ and copyAndRemapAndBindModTy ctxt compgen tmenv mty =
     let tycons = allEntitiesOfModuleOrNamespaceTy mty
     let vs = allValsOfModuleOrNamespaceTy mty
     let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs
-    remapModTy ctxt compgen tmenvinner mty, tmenvinner
+    remapModTy compgen tmenvinner mty, tmenvinner
 
-and remapModTy ctxt _compgen tmenv mty = 
-    mapImmediateValsAndTycons (renameTycon ctxt.g tmenv) (renameVal tmenv) mty 
+and remapModTy _compgen tmenv mty = 
+    mapImmediateValsAndTycons (renameTycon tmenv) (renameVal tmenv) mty 
 
-and renameTycon g tyenv x = 
+and renameTycon tyenv x = 
     let tcref = 
         try
             let res = tyenv.tyconRefRemap[mkLocalTyconRef x]
             res
         with :? KeyNotFoundException -> 
-            errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL g x), x.Range))
+            errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL x), x.Range))
             mkLocalTyconRef x 
     tcref.Deref
 
@@ -5919,17 +5999,18 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
                 mkLocalValRef v
         vref.Deref
         
-    let lookupTycon g tycon = 
+    let lookupTycon tycon = 
         let tcref = 
             try 
                 let res = tmenvinner.tyconRefRemap[mkLocalTyconRef tycon]
                 res
             with :? KeyNotFoundException -> 
-                errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL g tycon), tycon.Range))
+                errorR(InternalError("couldn't remap internal tycon " + showL(DebugPrint.tyconL tycon), tycon.Range))
                 mkLocalTyconRef tycon
         tcref.Deref
+
     (tycons, tyconsR) ||> List.iter2 (fun tcd tcdR ->
-        let lookupTycon tycon = lookupTycon ctxt.g tycon
+        let lookupTycon tycon = lookupTycon tycon
         let tpsR, tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
         tcdR.entity_typars <- LazyWithContext.NotLazy tpsR
         tcdR.entity_attribs <- tcd.entity_attribs |> remapAttribs ctxt tmenvinner2
@@ -6009,7 +6090,7 @@ and remapAndRenameModDef ctxt compgen tmenv mdef =
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         // Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be copied and renamed. 
         let opensR = remapOpenDeclarations tmenv opens
-        let tyconsR = tycons |> List.map (renameTycon ctxt.g tmenv)
+        let tyconsR = tycons |> List.map (renameTycon tmenv)
         let mbindsR = mbinds |> List.map (remapAndRenameModBind ctxt compgen tmenv)
         TMDefRec(isRec, opensR, tyconsR, mbindsR, m)
     | TMDefLet(bind, m) ->
@@ -6033,7 +6114,7 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         let bind2 = remapAndRenameBind ctxt compgen tmenv bind v2
         ModuleOrNamespaceBinding.Binding bind2
     | ModuleOrNamespaceBinding.Module(mspec, def) ->
-        let mspec = renameTycon ctxt.g tmenv mspec
+        let mspec = renameTycon tmenv mspec
         let def = remapAndRenameModDef ctxt compgen tmenv def
         ModuleOrNamespaceBinding.Module(mspec, def)
 

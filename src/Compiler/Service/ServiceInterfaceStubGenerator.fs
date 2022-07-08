@@ -592,9 +592,12 @@ module InterfaceStubGenerator =
         | InterfaceData.Interface (_, None) -> []
         | InterfaceData.Interface (_, Some memberDefns) ->
             memberDefns
-            |> Seq.choose (function
-                | SynMemberDefn.Member (binding, _) -> Some binding
-                | _ -> None)
+            |> Seq.collect (function
+                | SynMemberDefn.Member (binding, _) -> [ binding ]
+                | SynMemberDefn.GetSetMember (Some getBinding, Some setBinding, _, _) -> [ getBinding; setBinding ]
+                | SynMemberDefn.GetSetMember (Some binding, None, _, _)
+                | SynMemberDefn.GetSetMember (None, Some binding, _, _) -> [ binding ]
+                | _ -> [])
             |> Seq.choose (|MemberNameAndRange|_|)
             |> Seq.toList
         | InterfaceData.ObjExpr (_, bindings) -> List.choose (|MemberNameAndRange|_|) bindings
@@ -817,6 +820,12 @@ module InterfaceStubGenerator =
                     else
                         Option.bind (List.tryPick walkSynMemberDefn) members
                 | SynMemberDefn.Member (binding, _range) -> walkBinding binding
+                | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                    match getBinding, setBinding with
+                    | None, None -> None
+                    | Some binding, None
+                    | None, Some binding -> walkBinding binding
+                    | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
                 | SynMemberDefn.ValField (_field, _range) -> None
                 | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings

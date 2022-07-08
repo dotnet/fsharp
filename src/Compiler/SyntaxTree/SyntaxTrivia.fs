@@ -233,3 +233,12 @@ type SynValSigTrivia =
 
 [<NoEquality; NoComparison>]
 type SynTypeFunTrivia = { ArrowRange: range }
+
+[<NoEquality; NoComparison>]
+type SynMemberGetSetTrivia =
+    {
+        WithKeyword: range
+        GetKeyword: range option
+        AndKeyword: range option
+        SetKeyword: range option
+    }

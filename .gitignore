@@ -70,10 +70,11 @@ ossreadme*.txt
 *.vbproj.user
 *.sln.DotSettings.user
 *.props.user
+launchSettings.json
 *.log
 *.jrs
 *.chk
-*.bak                                                     
+*.bak
 *.vserr
 *.err
 *.orig

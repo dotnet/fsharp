@@ -256,8 +256,7 @@ type T =
         with get () = x
         and set (value) = x <- value
 """
-        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36)
-                                                   (3, 4), (5, 36) ]
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36) ]
 
 
     [<Test>]
