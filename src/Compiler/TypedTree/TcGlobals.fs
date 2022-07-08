@@ -179,18 +179,6 @@ let tname_AsyncCallback = "System.AsyncCallback"
 let tname_IAsyncResult = "System.IAsyncResult"
 [<Literal>]
 let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
-//[<Literal>]
-//let tname_IAdditionOperators = "System.Numerics.IAdditionOperators`3"
-//[<Literal>]
-//let tname_INumberBase = "System.Numerics.INumberBase`1"
-//[<Literal>]
-//let tname_IExponentialFunctions = "System.Numerics.IExponentialFunctions`1"
-//[<Literal>]
-//let tname_IBinaryFloatingPointIeee754 = "System.Numerics.IBinaryFloatingPointIeee754`1"
-//[<Literal>]
-//let tname_IBinaryInteger = "System.Numerics.IBinaryInteger`1"
-//[<Literal>]
-//let tname_IBinaryInteger = "System.Numerics.IBinaryInteger`1"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"

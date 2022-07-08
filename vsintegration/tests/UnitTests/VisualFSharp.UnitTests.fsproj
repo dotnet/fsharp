@@ -73,13 +73,13 @@
       <Link>Editor\BraceMatchingServiceTests.fs</Link>
     </Compile>
     <Compile Include="EditorFormattingServiceTests.fs">
-		<Link>Editor\EditorFormattingServiceTests.fs</Link>
-	</Compile>
+        <Link>Editor\EditorFormattingServiceTests.fs</Link>
+    </Compile>
     <Compile Include="RoslynSourceTextTests.fs">
       <Link>Editor\RoslynSourceTextTests.fs</Link>
     </Compile>
     <Compile Include="IndentationServiceTests.fs">
-	  <Link>Editor\IndentationServiceTests.fs</Link>
+      <Link>Editor\IndentationServiceTests.fs</Link>
     </Compile>
     <Compile Include="BreakpointResolutionService.fs">
       <Link>Editor\BreakpointResolutionService.fs</Link>
