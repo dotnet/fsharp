@@ -68,7 +68,7 @@ let iLdcDouble i = AI_ldc(DT_R8, ILConst.R8 i)
 let iLdcSingle i = AI_ldc(DT_R4, ILConst.R4 i)
 
 /// Make a method that simply loads a field
-let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPropType) =
+let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPropType, customAttrs) =
     let ilFieldSpec = mkILFieldSpecInTy (ilTy, ilFieldName, ilPropType)
     let ilReturn = mkILReturn ilPropType
 
@@ -84,7 +84,7 @@ let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPro
 
             mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, body)
 
-    ilMethodDef.WithSpecialName
+    ilMethodDef.With(customAttrs = mkILCustomAttrs customAttrs).WithSpecialName
 
 /// Choose the constructor parameter names for fields
 let ChooseParamNames fieldNamesAndTypes =
@@ -600,11 +600,14 @@ type PtrsOK =
     | PtrTypesOK
     | PtrTypesNotOK
 
+let GenReadOnlyAttribute (g: TcGlobals) =
+    mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+
 let GenReadOnlyAttributeIfNecessary (g: TcGlobals) ty =
     let add = isInByrefTy g ty && g.attrib_IsReadOnlyAttribute.TyconRef.CanDeref
 
     if add then
-        let attr = mkILCustomAttribute (g.attrib_IsReadOnlyAttribute.TypeRef, [], [], [])
+        let attr = GenReadOnlyAttribute g
         Some attr
     else
         None
@@ -2094,7 +2097,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
+                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
+                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
                     yield! genToStringMethod ilTy
                 ]
 
@@ -9106,7 +9110,7 @@ and GenMethodForBinding
                         // Check if we're compiling the property as a .NET event
                         assert not (CompileAsEvent cenv.g v.Attribs)
 
-                        // Emit the property, but not if its a private method impl
+                        // Emit the property, but not if it's a private method impl
                         if mdef.Access <> ILMemberAccess.Private then
                             let vtyp = ReturnTypeOfPropertyVal g v
                             let ilPropTy = GenType cenv m eenvUnderMethTypeTypars.tyenv vtyp
@@ -10701,7 +10705,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             let ilPropName = fspec.LogicalName
                             let ilMethName = "get_" + ilPropName
                             let access = ComputeMemberAccess isPropHidden
-                            yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType)
+                            let isStruct = isStructTyconRef tcref
+
+                            let attrs =
+                                if isStruct && not isStatic then
+                                    [ GenReadOnlyAttribute g ]
+                                else
+                                    []
+
+                            yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, attrs)
 
                     // Generate property setter methods for the mutable fields
                     for useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec in fieldSummaries do
@@ -11225,7 +11237,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     let ilFieldName = ComputeFieldName exnc fld
 
                     let ilMethodDef =
-                        mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
+                        mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
 
                     let ilFieldDef =
                         mkILInstanceField (ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
