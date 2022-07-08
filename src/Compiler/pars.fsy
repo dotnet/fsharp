@@ -5619,27 +5619,7 @@ identExpr:
   | opName
      { let m = lhs parseState
        let ident, trivia = $1
-       let mLparen, mRparen, trivia =
-           match trivia with
-           | IdentTrivia.OriginalNotation text -> 
-               let mLparen = mkFileIndexRange m.FileIndex m.Start (mkPos m.StartLine (m.StartColumn + 1))
-               let mRparen = mkFileIndexRange m.FileIndex (mkPos m.EndLine (m.EndColumn - 1)) m.End
-               mLparen, mRparen, Some trivia
-           | IdentTrivia.OriginalNotationWithParen(lpr, text, rpr) ->
-               lpr, rpr, Some(IdentTrivia.OriginalNotation(text))
-           | IdentTrivia.HasParenthesis(lpr, rpr) ->
-               lpr, rpr, None
-
-       match trivia with
-       | None -> 
-           SynExpr.Paren(SynExpr.Ident(ident), mLparen, Some mRparen, m)
-       | Some trivia ->
-           SynExpr.Paren(
-               SynExpr.LongIdent(false, SynLongIdent([ident], [], [Some trivia]), None, m),
-               mLparen, 
-               Some mRparen, 
-               m
-           ) }
+       SynExpr.LongIdent(false, SynLongIdent([ident], [], [Some trivia]), None, m) }
 
 topSeparator: 
   | SEMICOLON { } 
