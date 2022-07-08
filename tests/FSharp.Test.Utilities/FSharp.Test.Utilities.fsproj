@@ -26,6 +26,7 @@
     <Compile Include="Compiler.fs" />
     <Compile Include="Peverifier.fs" />
     <Compile Include="DirectoryAttribute.fs" />
+    <Compile Include="ReflectionHelper.fs" />
   </ItemGroup>
 
   <ItemGroup>
