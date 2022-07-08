@@ -184,7 +184,7 @@ let mkSynThisPatVar (id: Ident) =
     SynPat.Named(SynIdent(id, None), true, None, id.idRange)
 
 let mkSynPatMaybeVar lidwd vis m =
-    SynPat.LongIdent(lidwd, None, None, None, SynArgPats.Pats [], vis, m)
+    SynPat.LongIdent(lidwd, None, None, SynArgPats.Pats [], vis, m)
 
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
@@ -985,3 +985,35 @@ let mkDynamicArgExpr expr =
         SynExpr.Const(con, con.Range ident.idRange)
     | SynExpr.Paren (expr = e) -> e
     | e -> e
+
+let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
+    match exprs with
+    | SynExpr.Tuple (false, innerExprs, innerCommas, _) :: rest ->
+        let innerExprs, innerCommas =
+            normalizeTupleExpr (List.rev innerExprs) (List.rev innerCommas)
+
+        innerExprs @ rest, innerCommas @ commas
+    | _ -> exprs, commas
+
+/// Remove all members that were captures as SynMemberDefn.GetSetMember
+let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
+    memberDefns
+    |> List.collect (fun md ->
+        match md with
+        | SynMemberDefn.GetSetMember (Some (SynBinding _ as getBinding),
+                                      Some (SynBinding _ as setBinding),
+                                      m,
+                                      {
+                                          GetKeyword = Some mGet
+                                          SetKeyword = Some mSet
+                                      }) ->
+            if Position.posLt mGet.Start mSet.Start then
+                [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
+            else
+                [ SynMemberDefn.Member(setBinding, m); SynMemberDefn.Member(getBinding, m) ]
+        | SynMemberDefn.GetSetMember (Some binding, None, m, _)
+        | SynMemberDefn.GetSetMember (None, Some binding, m, _) -> [ SynMemberDefn.Member(binding, m) ]
+        | SynMemberDefn.Interface (interfaceType, withKeyword, members, m) ->
+            let members = Option.map desugarGetSetMembers members
+            [ SynMemberDefn.Interface(interfaceType, withKeyword, members, m) ]
+        | md -> [ md ])

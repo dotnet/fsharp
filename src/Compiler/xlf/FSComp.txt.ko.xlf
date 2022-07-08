@@ -432,6 +432,11 @@
         <target state="translated">모든 컴파일 파일의 유추된 인터페이스를 관련 서명 파일로 인쇄합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsClearResultsCache">
+        <source>Clear the package manager results cache</source>
+        <target state="new">Clear the package manager results cache</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
@@ -510,6 +515,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">형식 정의에 예기치 않은 토큰이 있습니다. '{0}' 형식 뒤에 '='가 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -5818,8 +5828,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0o1, 0b1, 1l(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
+        <target state="new">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0o1, 0b1, 1l(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

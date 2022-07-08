@@ -663,7 +663,7 @@ module ParsedInput =
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
             | SynType.Tuple (_, ts, _) -> ts |> List.tryPick (fun (_, t) -> walkType t)
             | SynType.Array (_, t, _) -> walkType t
-            | SynType.Fun (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
@@ -874,6 +874,13 @@ module ParsedInput =
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
 
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
+
+            | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                match getBinding, setBinding with
+                | None, None -> None
+                | Some binding, None
+                | None, Some binding -> walkBinding binding
+                | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
 
             | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
                 List.tryPick walkAttribute attrs
@@ -1651,7 +1658,7 @@ module ParsedInput =
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
             | SynType.Paren (t, _) -> walkType t
-            | SynType.Fun (t1, t2, _)
+            | SynType.Fun (argType = t1; returnType = t2)
             | SynType.MeasureDivide (t1, t2, _) ->
                 walkType t1
                 walkType t2
@@ -1860,6 +1867,9 @@ module ParsedInput =
             match memb with
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
+            | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                Option.iter walkBinding getBinding
+                Option.iter walkBinding setBinding
             | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats (simplePats, _), _, _, _) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats

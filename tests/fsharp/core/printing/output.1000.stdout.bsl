@@ -1133,7 +1133,8 @@ type 'a T4063 = | AT4063 of 'a
 > type internal T2 =
   { x: int }
 
-> type internal T3
+> type internal T3 =
+  class end
 
 > type internal T4 =
   new: unit -> T4
@@ -1166,7 +1167,8 @@ type 'a T4063 = | AT4063 of 'a
 > type internal T2 =
   private { x: int }
 
-> type private T3
+> type private T3 =
+  class end
 
 > type private T4 =
   new: unit -> T4
@@ -1373,7 +1375,8 @@ val x1564_A3: int = 3
     | B
   type T2 =
     { x: int }
-  type T3
+  type T3 =
+    class end
   type T4 =
     new: unit -> T4
   type T5 =
@@ -1396,7 +1399,8 @@ val x1564_A3: int = 3
             | B
   type T12 =
     private { x: int }
-  type private T13
+  type private T13 =
+    class end
   type private T14 =
     new: unit -> T14
 module internal PrivateM =
@@ -1411,7 +1415,8 @@ module internal PrivateM =
     | B
   type T2 =
     { x: int }
-  type T3
+  type T3 =
+    class end
   type T4 =
     new: unit -> T4
   type T5 =
@@ -1434,7 +1439,8 @@ module internal PrivateM =
             | B
   type T12 =
     private { x: int }
-  type private T13
+  type private T13 =
+    class end
   type private T14 =
     new: unit -> T14
 
@@ -2615,37 +2621,37 @@ val x: optionRecord = { x = null }
     TwoFields2: obj
   }
 
-> type Int32 with
+> type System.Int32 with
   member ExtrinsicExtensionProperty: int
-type Int32 with
+type System.Int32 with
   member ExtrinsicExtensionMethod: unit -> int
 
 > val ``value with spaces in name`` : bool = true
 
 > val functionWhichTakesLongNameMixedParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
-  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-     dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+      int
 
 > val functionWhichTakesLongNameTupledParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
   bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int *
   ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesLongNameCurriedParameters:
-  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int
-  -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int
-  -> dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int ->
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int ->
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesMixedLengthCurriedParametersA:
-  a: 'a -> b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd
-    -> int
+  a: 'a ->
+    b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd -> int
 
 > val functionWhichTakesMixedLengthCurriedParametersB:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 'a -> b: 'b -> c: 'c -> d: 'd -> int

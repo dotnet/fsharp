@@ -4,6 +4,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>

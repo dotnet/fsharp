@@ -3367,6 +3367,24 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``classStructInterface-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/classStructInterface" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``typeAugmentation-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAugmentation" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``typeAliasPrimitives-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAliasPrimitives" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``functionTypes-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/functionTypes" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``unionWithFunctionType-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/unionWithFunctionType" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``mixCurriedTupled-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/mixCurriedTupled" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

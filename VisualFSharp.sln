@@ -13,6 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp", "VisualFShar
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{3881429D-A97A-49EB-B7AE-A82BA5FE9C77}"
+	ProjectSection(SolutionItems) = preProject
+		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}"
 EndProject
@@ -136,9 +139,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibraryProject", "vsintegra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TutorialProject", "vsintegration\ProjectTemplates\TutorialProject\TutorialProject.csproj", "{2937CBEC-262D-4C94-BE1D-291FAB72E3E8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\benchmarks\TaskPerfCSharp\TaskPerfCSharp.csproj", "{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\benchmarks\CompiledCodeBenchmarks\TaskPerf\TaskPerfCSharp\TaskPerfCSharp.csproj", "{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\benchmarks\TaskPerf\TaskPerf.fsproj", "{03596D51-754D-4644-8E23-84EC9532ABDC}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\benchmarks\CompiledCodeBenchmarks\TaskPerf\TaskPerf\TaskPerf.fsproj", "{03596D51-754D-4644-8E23-84EC9532ABDC}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.ComponentTests", "tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{0610FB97-7C15-422A-86FD-32335C6DF14D}"
 EndProject
@@ -154,11 +157,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpDebug", "vsinte
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{DFB6ADD7-3149-43D9-AFA0-FC4A818B472B}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{564E7DC5-11CB-4FCF-ABDD-23AD93AF3A61}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{564E7DC5-11CB-4FCF-ABDD-23AD93AF3A61}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroPerfCSharp", "tests\benchmarks\MicroPerf\CS\MicroPerfCSharp.csproj", "{208E36EE-665C-42D2-B767-C6DB03C4FEB2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicroPerfCSharp", "tests\benchmarks\CompiledCodeBenchmarks\MicroPerf\CS\MicroPerfCSharp.csproj", "{208E36EE-665C-42D2-B767-C6DB03C4FEB2}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MicroPerf", "tests\benchmarks\MicroPerf\MicroPerf.fsproj", "{EE08E954-AE91-4EFA-8595-10931D29E628}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MicroPerf", "tests\benchmarks\CompiledCodeBenchmarks\MicroPerf\MicroPerf.fsproj", "{EE08E954-AE91-4EFA-8595-10931D29E628}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MicroPerf", "MicroPerf", "{47112E07-9FF1-43E7-8021-F2A21D6A19A0}"
 EndProject

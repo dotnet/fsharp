@@ -56,6 +56,8 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: Codeql.Enabled
+    value: true
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
     - name: _DotNetValidationArtifactsCategory
       value: .NETCoreValidation
@@ -275,7 +277,7 @@ stages:
         - job: Windows
           pool:
             # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
             name: NetCore1ESPool-Public

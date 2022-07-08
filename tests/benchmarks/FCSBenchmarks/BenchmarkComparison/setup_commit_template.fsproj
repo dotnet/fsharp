@@ -18,8 +18,10 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <Reference Include="FSharp.Compiler.Service">
+      <HintPath>{TEMPLATE_FCS_PATH}</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

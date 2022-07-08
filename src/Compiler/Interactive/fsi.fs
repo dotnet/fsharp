@@ -47,6 +47,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
+open FSharp.Compiler.Interactive
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
@@ -989,6 +990,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
 
     do
+        if tcConfigB.clearResultsCache then
+            dependencyProvider.ClearResultsCache(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError rangeCmdArgs)
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
@@ -1646,6 +1649,30 @@ type internal FsiDynamicCompiler(
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
+    /// Check FSI entries for the presence of EntryPointAttribute and issue a warning if it's found
+    let CheckEntryPoint (tcGlobals: TcGlobals) (declaredImpls: CheckedImplFile list) =
+        let tryGetEntryPoint (TBind (var = value)) =
+            TryFindFSharpAttribute tcGlobals tcGlobals.attrib_EntryPointAttribute value.Attribs
+            |> Option.map (fun attrib -> value.DisplayName, attrib)
+
+        let rec findEntryPointInContents = function
+            | TMDefLet (binding = binding) -> tryGetEntryPoint binding
+            | TMDefs defs -> defs |> List.tryPick findEntryPointInContents
+            | TMDefRec (bindings = bindings) -> bindings |> List.tryPick findEntryPointInBinding
+            | _ -> None
+
+        and findEntryPointInBinding = function
+            | ModuleOrNamespaceBinding.Binding binding -> tryGetEntryPoint binding
+            | ModuleOrNamespaceBinding.Module (moduleOrNamespaceContents = contents) -> findEntryPointInContents contents
+
+        let entryPointBindings =
+            declaredImpls
+            |> Seq.where (fun implFile -> implFile.HasExplicitEntryPoint)
+            |> Seq.choose (fun implFile -> implFile.Contents |> findEntryPointInContents)
+
+        for name, attrib in entryPointBindings do
+            warning(Error(FSIstrings.SR.fsiEntryPointWontBeInvoked(name, name, name), attrib.Range))
+
     let ProcessInputs (ctok, diagnosticsLogger: DiagnosticsLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
@@ -1660,6 +1687,8 @@ type internal FsiDynamicCompiler(
         let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
         let newState, declaredImpls = ProcessCodegenResults(ctok, diagnosticsLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
+        
+        CheckEntryPoint istate.tcGlobals declaredImpls
 
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
 
@@ -2180,7 +2209,10 @@ type internal FsiInterruptControllerKillerThreadRequest =
     | ExitRequest
     | PrintInterruptRequest
 
-type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConsoleOutput: FsiConsoleOutput) =
+type internal FsiInterruptController(
+    fsiOptions: FsiCommandLineOptions,
+    controlledExecution: ControlledExecution,
+    fsiConsoleOutput: FsiConsoleOutput) =
 
     let mutable stdinInterruptState = StdinNormal
     let CTRL_C = 0
@@ -2212,7 +2244,12 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 
     member _.EventHandlers = ctrlEventHandlers
 
-    member controller.InstallKillThread(threadToKill:Thread, pauseMilliseconds:int) =
+    member _.ControlledExecution() = controlledExecution
+
+    member controller.InstallKillThread() =
+        // Compute how long to pause before a ThreadAbort is actually executed.
+        // A somewhat arbitrary choice.
+        let pauseMilliseconds = (if fsiOptions.Gui then 400 else 100)
 
         // Fsi Interrupt handler
         let raiseCtrlC() =
@@ -2231,8 +2268,11 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
                         if killThreadRequest = ThreadAbortRequest then
                             if progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())
                             killThreadRequest <- NoRequest
-                            threadToKill.Abort()
-                        ()),Name="ControlCAbortThread")
+                            let rec abortLoop n =
+                                if n > 0 then
+                                    if not (controlledExecution.TryAbort(TimeSpan.FromSeconds(30))) then abortLoop (n-1)
+                            abortLoop 3
+                        ()), Name="ControlCAbortThread")
                 killerThread.IsBackground <- true
                 killerThread.Start()
 
@@ -2825,24 +2865,35 @@ type FsiInteractionProcessor
     /// Execute a single parsed interaction on the parser/execute thread.
     let mainThreadProcessAction ctok action istate =
         try
-            let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-            if progress then fprintfn fsiConsoleOutput.Out "In mainThreadProcessAction...";
-            fsiInterruptController.InterruptAllowed <- InterruptCanRaiseException;
-            let res = action ctok tcConfig istate
-            fsiInterruptController.ClearInterruptRequest()
-            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
-            res
+            let mutable result = Unchecked.defaultof<'a * FsiInteractionStepStatus>
+            fsiInterruptController.ControlledExecution().Run(
+            fun () ->
+                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+                if progress then fprintfn fsiConsoleOutput.Out "In mainThreadProcessAction..."
+                fsiInterruptController.InterruptAllowed <- InterruptCanRaiseException;
+                let res = action ctok tcConfig istate
+                fsiInterruptController.ClearInterruptRequest()
+                fsiInterruptController.InterruptAllowed <- InterruptIgnored
+                result <- res)
+            result
         with
         | :? ThreadAbortException ->
-           fsiInterruptController.ClearInterruptRequest()
-           fsiInterruptController.InterruptAllowed <- InterruptIgnored;
-           (try Thread.ResetAbort() with _ -> ());
-           (istate,CtrlC)
+            fsiInterruptController.ClearInterruptRequest()
+            fsiInterruptController.InterruptAllowed <- InterruptIgnored
+            fsiInterruptController.ControlledExecution().ResetAbort()
+            (istate,CtrlC)
+
+        | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ->
+            fsiInterruptController.ClearInterruptRequest()
+            fsiInterruptController.InterruptAllowed <- InterruptIgnored
+            fsiInterruptController.ControlledExecution().ResetAbort()
+            (istate,CtrlC)
+
         |  e ->
-           fsiInterruptController.ClearInterruptRequest()
-           fsiInterruptController.InterruptAllowed <- InterruptIgnored;
-           stopProcessingRecovery e range0;
-           istate, CompletedWithReportedError e
+            fsiInterruptController.ClearInterruptRequest()
+            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
+            stopProcessingRecovery e range0;
+            istate, CompletedWithReportedError e
 
     let mainThreadProcessParsedInteractions ctok diagnosticsLogger (action, istate) cancellationToken =
       istate |> mainThreadProcessAction ctok (fun ctok tcConfig istate ->
@@ -3152,27 +3203,32 @@ let internal SpawnInteractiveServer
 /// Repeatedly drive the event loop (e.g. Application.Run()) but catching ThreadAbortException and re-running.
 ///
 /// This gives us a last chance to catch an abort on the main execution thread.
-let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleOutput: FsiConsoleOutput) =
+let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiInterruptController: FsiInterruptController, fsiConsoleOutput: FsiConsoleOutput) =
+
+    if progress then fprintfn fsiConsoleOutput.Out "GUI thread runLoop"
+    fsiInterruptController.InstallKillThread()
+
     let rec runLoop() =
-        if progress then fprintfn fsiConsoleOutput.Out "GUI thread runLoop";
+
         let restart =
             try
-              // BLOCKING POINT: The GUI Thread spends most (all) of its time this event loop
-              if progress then fprintfn fsiConsoleOutput.Out "MAIN:  entering event loop...";
-              fsi.EventLoopRun()
+                fsi.EventLoopRun()
             with
-            |  :? ThreadAbortException ->
+            | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ->
               // If this TAE handler kicks it's almost certainly too late to save the
               // state of the process - the state of the message loop may have been corrupted
-              fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiUnexpectedThreadAbortException());
-              (try Thread.ResetAbort() with _ -> ());
+              fsiInterruptController.ControlledExecution().ResetAbort()
               true
-              // Try again, just case we can restart
+            | :? ThreadAbortException ->
+              // If this TAE handler kicks it's almost certainly too late to save the
+              // state of the process - the state of the message loop may have been corrupted
+              fsiInterruptController.ControlledExecution().ResetAbort()
+              true
             | e ->
-              stopProcessingRecovery e range0;
-              true
-              // Try again, just case we can restart
-        if progress then fprintfn fsiConsoleOutput.Out "MAIN:  exited event loop...";
+                stopProcessingRecovery e range0
+                true
+        // Try again, just case we can restart
+        if progress then fprintfn fsiConsoleOutput.Out "MAIN:  exited event loop..."
         if restart then runLoop()
 
     runLoop();
@@ -3352,7 +3408,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef)
 
-    let fsiInterruptController = FsiInterruptController(fsiOptions, fsiConsoleOutput)
+    let controlledExecution = ControlledExecution(Thread.CurrentThread)
+
+    let fsiInterruptController = FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)
 
     let uninstallMagicAssemblyResolution = MagicAssemblyResolution.Install(tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput)
 
@@ -3612,14 +3670,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if fsiOptions.Interact then
             // page in the type check env
             fsiInteractionProcessor.LoadDummyInteraction(ctokStartup, diagnosticsLogger)
-            if progress then fprintfn fsiConsoleOutput.Out "MAIN: InstallKillThread!";
-
-            // Compute how long to pause before a ThreadAbort is actually executed.
-            // A somewhat arbitrary choice.
-            let pauseMilliseconds = (if fsiOptions.Gui then 400 else 100)
-
-            // Request that ThreadAbort interrupts be performed on this (current) thread
-            fsiInterruptController.InstallKillThread(Thread.CurrentThread, pauseMilliseconds)
             if progress then fprintfn fsiConsoleOutput.Out "MAIN: got initial state, creating form";
 
 #if !FX_NO_APP_DOMAINS
@@ -3629,12 +3679,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
                 | :? System.Exception as err -> x.ReportUnhandledExceptionSafe false err
                 | _ -> ())
 #endif
-
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
-
             fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
 
-            DriveFsiEventLoop (fsi, fsiConsoleOutput )
+            DriveFsiEventLoop (fsi, fsiInterruptController, fsiConsoleOutput)
 
         else // not interact
             if progress then fprintfn fsiConsoleOutput.Out "Run: not interact, loading initial files..."

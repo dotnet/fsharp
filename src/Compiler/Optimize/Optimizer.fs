@@ -194,7 +194,6 @@ let seqL xL xs = Seq.fold (fun z x -> z @@ xL x) emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z) xmap emptyL
 
 let rec exprValueInfoL g exprVal =
-    let exprL expr = exprL g expr
     match exprVal with
     | ConstValue (x, ty) -> NicePrint.layoutConst g ty x
     | UnknownValue -> wordL (tagText "?")

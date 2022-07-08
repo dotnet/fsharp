@@ -8,6 +8,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open System
 open System.Diagnostics
+open System.Reflection
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -365,7 +366,6 @@ type internal DiagnosticsThreadStatics =
 
 [<AutoOpen>]
 module DiagnosticsLoggerExtensions =
-    open System.Reflection
 
     // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
     // This uses a simple heuristic to detect it (the vsversion is < 16.0)
@@ -557,8 +557,6 @@ let stopProcessingRecovery exn m =
 let errorRecoveryNoRange exn =
     DiagnosticsThreadStatics.DiagnosticsLogger.ErrorRecoveryNoRange exn
 
-let report f = f ()
-
 let deprecatedWithError s m = errorR (Deprecated(s, m))
 
 let libraryOnlyError m = errorR (LibraryUseOnly m)
@@ -574,6 +572,7 @@ let mlCompatWarning s m =
 let mlCompatError s m =
     errorR (UserCompilerMessage(FSComp.SR.mlCompatError s, 62, m))
 
+[<DebuggerStepThrough>]
 let suppressErrorReporting f =
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
@@ -589,6 +588,7 @@ let suppressErrorReporting f =
     finally
         SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger
 
+[<DebuggerStepThrough>]
 let conditionallySuppressErrorReporting cond f =
     if cond then suppressErrorReporting f else f ()
 
@@ -633,6 +633,7 @@ let CheckNoErrorsAndGetWarnings res =
     | ErrorResult _ -> None
 
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue.
+[<DebuggerHidden; DebuggerStepThrough>]
 let (++) res f =
     match res with
     | OkResult ([], res) -> (* tailcall *) f res
@@ -643,24 +644,27 @@ let (++) res f =
     | ErrorResult (warns, err) -> ErrorResult(warns, err)
 
 /// Stop on first error. Accumulate warnings and continue.
+[<DebuggerHidden; DebuggerStepThrough>]
 let rec IterateD f xs =
     match xs with
     | [] -> CompleteD
     | h :: t -> f h ++ (fun () -> IterateD f t)
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let rec WhileD gd body =
     if gd () then
         body () ++ (fun () -> WhileD gd body)
     else
         CompleteD
 
-let MapD f xs =
-    let rec loop acc xs =
-        match xs with
-        | [] -> ResultD(List.rev acc)
-        | h :: t -> f h ++ (fun x -> loop (x :: acc) t)
+[<DebuggerHidden; DebuggerStepThrough>]
+let rec MapD_loop f acc xs =
+    match xs with
+    | [] -> ResultD(List.rev acc)
+    | h :: t -> f h ++ (fun x -> MapD_loop f (x :: acc) t)
 
-    loop [] xs
+[<DebuggerHidden; DebuggerStepThrough>]
+let MapD f xs = MapD_loop f [] xs
 
 type TrackErrorsBuilder() =
     member x.Bind(res, k) = res ++ k
@@ -676,12 +680,14 @@ type TrackErrorsBuilder() =
 let trackErrors = TrackErrorsBuilder()
 
 /// Stop on first error. Accumulate warnings and continue.
+[<DebuggerHidden; DebuggerStepThrough>]
 let OptionD f xs =
     match xs with
     | None -> CompleteD
     | Some h -> f h
 
 /// Stop on first error. Report index
+[<DebuggerHidden; DebuggerStepThrough>]
 let IterateIdxD f xs =
     let rec loop xs i =
         match xs with
@@ -691,6 +697,7 @@ let IterateIdxD f xs =
     loop xs 0
 
 /// Stop on first error. Accumulate warnings and continue.
+[<DebuggerHidden; DebuggerStepThrough>]
 let rec Iterate2D f xs ys =
     match xs, ys with
     | [], [] -> CompleteD
@@ -698,6 +705,7 @@ let rec Iterate2D f xs ys =
     | _ -> failwith "Iterate2D"
 
 /// Keep the warnings, propagate the error to the exception continuation.
+[<DebuggerHidden; DebuggerStepThrough>]
 let TryD f g =
     match f () with
     | ErrorResult (warns, err) ->
@@ -707,15 +715,19 @@ let TryD f g =
         }
     | res -> res
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let rec RepeatWhileD nDeep body =
     body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep + 1) body else CompleteD)
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOneD f l =
     MapD f l ++ (fun res -> ResultD(List.exists id res))
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let inline AtLeastOne2D f xs ys =
     List.zip xs ys |> AtLeastOneD(fun (x, y) -> f x y)
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let inline MapReduceD mapper zero reducer l =
     MapD mapper l
     ++ (fun res ->
@@ -725,6 +737,7 @@ let inline MapReduceD mapper zero reducer l =
             | _ -> List.reduce reducer res
         ))
 
+[<DebuggerHidden; DebuggerStepThrough>]
 let inline MapReduce2D mapper zero reducer xs ys =
     List.zip xs ys |> MapReduceD (fun (x, y) -> mapper x y) zero reducer
 
@@ -804,6 +817,7 @@ type StackGuard(maxDepth: int) =
 
     let mutable depth = 1
 
+    [<DebuggerHidden; DebuggerStepThrough>]
     member _.Guard(f) =
         depth <- depth + 1
 

@@ -32,7 +32,7 @@
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
-	<Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
+    <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
@@ -92,6 +92,7 @@
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
+    <Compile Include="EmittedIL\StructGettersReadOnly.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
@@ -122,6 +123,7 @@
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
+    
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />

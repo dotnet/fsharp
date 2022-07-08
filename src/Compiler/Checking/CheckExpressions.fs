@@ -2636,7 +2636,7 @@ module BindingNormalization =
             | SynPat.FromParseError(innerPat, _) ->
                 normPattern innerPat
 
-            | SynPat.LongIdent (SynLongIdent(longId, _, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -4537,7 +4537,7 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
     | SynType.AnonRecd(isStruct, args, m) ->
         TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m
 
-    | SynType.Fun(domainTy, resultTy, _) ->
+    | SynType.Fun(argType = domainTy; returnType = resultTy) ->
         TcFunctionType cenv newOk checkConstraints occ env tpenv domainTy resultTy
 
     | SynType.Array (rank , elemTy, m) ->
@@ -5710,6 +5710,12 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         )
 
     | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, members, extraImpls, mNewExpr, m) ->
+        let members = desugarGetSetMembers members
+        let extraImpls =
+            extraImpls
+            |> List.map (fun (SynInterfaceImpl(interfaceTy, withKeyword, bindings, members, m)) ->
+                SynInterfaceImpl(interfaceTy, withKeyword, bindings, desugarGetSetMembers members, m)
+            )
         TcNonControlFlowExpr env <| fun env ->
         let binds = unionBindingAndMembers binds members
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
@@ -8534,8 +8540,10 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
         TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic delayed
 
 and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed =
+#if !NO_TYPEPROVIDERS
     let g = cenv.g
     let ad = env.eAccessRights
+#endif
     let objTy =
         match minfos with
         | minfo :: _ -> minfo.ApparentEnclosingType

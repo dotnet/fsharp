@@ -3,6 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
+	<!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>NU1505</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
 	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
@@ -34,7 +41,7 @@
     <Compile Include="seq2.fs" />
 -->	
 	<ProjectReference Include="..\TaskPerfCSharp\TaskPerfCSharp.csproj" />
-    <ProjectReference Include="..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
      <!-- this must be manually enabled because CI fails because some post-build checks don't like the DLL-->
 	  <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />  -->

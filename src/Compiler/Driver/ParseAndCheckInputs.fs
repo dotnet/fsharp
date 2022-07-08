@@ -1211,7 +1211,7 @@ let CheckOneInput
                 let typeCheckOne =
                     if skipImplIfSigExists && hadSig then
                         (EmptyTopAttrs, CreateEmptyDummyImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
-                        |> Cancellable.ret
+                        |> cancellable.Return
                     else
                         CheckOneImplFile(
                             tcGlobals,
