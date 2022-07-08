@@ -348,12 +348,12 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 dprintfn "vref.DisplayName = %A was under applied" vref.DisplayName
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the
             // partially applied arguments to 'let' bindings
-            let topValInfo =
+            let valReprInfo =
                match vref.ValReprInfo with
                | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName, vref.Range))
                | Some a -> a
 
-            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags topValInfo
+            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags valReprInfo
             ConvExpr cenv env (MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m))
         else
             // Too many arguments? Chop

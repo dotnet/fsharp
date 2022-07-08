@@ -86,8 +86,8 @@ let isDelayedRepr (f: Val) e =
 
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
 // REVIEW: However these set an arity whereas the others don't
-let mkLocalNameTypeArity compgen m name ty topValInfo =
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+let mkLocalNameTypeArity compgen m name ty valReprInfo =
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
 //-------------------------------------------------------------------------
 // definitions: TLR, arity, arity-met, arity-short

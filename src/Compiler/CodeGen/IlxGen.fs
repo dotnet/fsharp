@@ -1054,7 +1054,7 @@ type ValStorage =
     /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
     | Method of
-        topValInfo: ValReprInfo *
+        valReprInfo: ValReprInfo *
         valRef: ValRef *
         ilMethSpec: ILMethodSpec *
         ilMethSpecWithWitnesses: ILMethodSpec *
@@ -1517,22 +1517,22 @@ let ComputeStorageForFSharpValue amap (g: TcGlobals) cloc optIntraAssemblyInfo o
     StaticPropertyWithField(ilFieldSpec, vref, hasLiteralAttr, ilTyForProperty, nm, ilTy, ilGetterMethRef, ilSetterMethRef, optShadowLocal)
 
 /// Compute the representation information for an F#-declared member
-let ComputeStorageForFSharpMember cenv topValInfo memberInfo (vref: ValRef) m =
+let ComputeStorageForFSharpMember cenv valReprInfo memberInfo (vref: ValRef) m =
     let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, _ =
         GetMethodSpecForMemberVal cenv memberInfo vref
 
-    Method(topValInfo, vref, mspec, mspecW, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
+    Method(valReprInfo, vref, mspec, mspecW, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
 
 /// Compute the representation information for an F#-declared function in a module or an F#-declared extension member.
 /// Note, there is considerable overlap with ComputeStorageForFSharpMember/GetMethodSpecForMemberVal and these could be
 /// rationalized.
-let ComputeStorageForFSharpFunctionOrFSharpExtensionMember (cenv: cenv) cloc topValInfo (vref: ValRef) m =
+let ComputeStorageForFSharpFunctionOrFSharpExtensionMember (cenv: cenv) cloc valReprInfo (vref: ValRef) m =
     let g = cenv.g
     let nm = vref.CompiledName g.CompilerGlobalState
     let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
 
     let tps, witnessInfos, curriedArgInfos, returnTy, retInfo =
-        GetTopValTypeInCompiledForm g topValInfo numEnclosingTypars vref.Type m
+        GetTopValTypeInCompiledForm g valReprInfo numEnclosingTypars vref.Type m
 
     let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars tps
     let methodArgTys, paramInfos = curriedArgInfos |> List.concat |> List.unzip
@@ -1553,16 +1553,16 @@ let ComputeStorageForFSharpFunctionOrFSharpExtensionMember (cenv: cenv) cloc top
 
             mkILStaticMethSpecInTy (ilLocTy, ExtraWitnessMethodName nm, (ilWitnessArgTys @ ilMethodArgTys), ilRetTy, ilMethodInst)
 
-    Method(topValInfo, vref, mspec, mspecW, m, [], tps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
+    Method(valReprInfo, vref, mspec, mspecW, m, [], tps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
 
 /// Determine if an F#-declared value, method or function is compiled as a method.
 let IsFSharpValCompiledAsMethod g (v: Val) =
     match v.ValReprInfo with
     | None -> false
-    | Some topValInfo ->
+    | Some valReprInfo ->
         not (isUnitTy g v.Type && not v.IsMemberOrModuleBinding && not v.IsMutable)
         && not v.IsCompiledAsStaticPropertyWithoutField
-        && match GetTopValTypeInFSharpForm g topValInfo v.Type v.Range with
+        && match GetTopValTypeInFSharpForm g valReprInfo v.Type v.Range with
            | [], [], _, _ when not v.IsMember -> false
            | _ -> true
 
@@ -1585,7 +1585,7 @@ let ComputeStorageForTopVal
     if isUnitTy g vref.Type && not vref.IsMemberOrModuleBinding && not vref.IsMutable then
         Null
     else
-        let topValInfo =
+        let valReprInfo =
             match vref.ValReprInfo with
             | None -> error (InternalError("ComputeStorageForTopVal: no arity found for " + showL (valRefL vref), vref.Range))
             | Some a -> a
@@ -1607,13 +1607,13 @@ let ComputeStorageForTopVal
             //
             // REVIEW: This call to GetTopValTypeInFSharpForm is only needed to determine if this is a (type) function or a value
             // We should just look at the arity
-            match GetTopValTypeInFSharpForm g topValInfo vref.Type vref.Range with
+            match GetTopValTypeInFSharpForm g valReprInfo vref.Type vref.Range with
             | [], [], returnTy, _ when not vref.IsMember ->
                 ComputeStorageForFSharpValue cenv g cloc optIntraAssemblyInfo optShadowLocal isInteractive returnTy vref m
             | _ ->
                 match vref.MemberInfo with
-                | Some memberInfo when not vref.IsExtensionMember -> ComputeStorageForFSharpMember cenv topValInfo memberInfo vref m
-                | _ -> ComputeStorageForFSharpFunctionOrFSharpExtensionMember cenv cloc topValInfo vref m
+                | Some memberInfo when not vref.IsExtensionMember -> ComputeStorageForFSharpMember cenv valReprInfo memberInfo vref m
+                | _ -> ComputeStorageForFSharpFunctionOrFSharpExtensionMember cenv cloc valReprInfo vref m
 
 /// Determine how an F#-declared value, function or member is represented, if it is in the assembly being compiled.
 let ComputeAndAddStorageForLocalTopVal (cenv, g, intraAssemblyFieldTable, isInteractive, optShadowLocal) cloc (v: Val) eenv =
@@ -4162,8 +4162,8 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         (let storage = StorageForValRef m vref eenv
 
          match storage with
-         | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
-             (let tps, argTys, _, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
+         | Method (valReprInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
+             (let tps, argTys, _, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
               tps.Length = tyargs.Length && argTys.Length <= curriedArgs.Length)
          | _ -> false)
         ->
@@ -4171,14 +4171,14 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
         let storage = StorageForValRef m vref eenv
 
         match storage with
-        | Method (topValInfo, vref, mspec, mspecW, _, ctps, mtps, curriedArgInfos, _, _, _, _) ->
+        | Method (valReprInfo, vref, mspec, mspecW, _, ctps, mtps, curriedArgInfos, _, _, _, _) ->
 
             let nowArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs
 
             let actualRetTy = applyTys cenv.g vref.Type (tyargs, nowArgs)
 
             let _, witnessInfos, curriedArgInfos, returnTy, _ =
-                GetTopValTypeInCompiledForm cenv.g topValInfo ctps.Length vref.Type m
+                GetTopValTypeInCompiledForm cenv.g valReprInfo ctps.Length vref.Type m
 
             let mspec =
                 let generateWitnesses = ComputeGenerateWitnesses g eenv
@@ -8121,10 +8121,10 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         CommitStartScope cgbuf startMarkOpt
         GenExpr cenv cgbuf eenv cctorBody discard
 
-    | Method (topValInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo) when not isStateVar ->
+    | Method (valReprInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo) when not isStateVar ->
 
         let methLambdaTypars, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaCurriedVars, methLambdaBody, methLambdaBodyTy =
-            IteratedAdjustArityOfLambda g cenv.amap topValInfo rhsExpr
+            IteratedAdjustArityOfLambda g cenv.amap valReprInfo rhsExpr
 
         let methLambdaVars = List.concat methLambdaCurriedVars
 
@@ -8148,7 +8148,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
              paramInfos,
              argTys,
              retInfo,
-             topValInfo,
+             valReprInfo,
              methLambdaCtorThisValOpt,
              methLambdaBaseValOpt,
              methLambdaTypars,
@@ -8177,7 +8177,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                  paramInfos,
                  argTys,
                  retInfo,
-                 topValInfo,
+                 valReprInfo,
                  methLambdaCtorThisValOpt,
                  methLambdaBaseValOpt,
                  methLambdaTypars,
@@ -8783,7 +8783,7 @@ and GenMethodForBinding
      paramInfos,
      argTys,
      retInfo,
-     topValInfo,
+     valReprInfo,
      ctorThisValOpt,
      baseValOpt,
      methLambdaTypars,
@@ -8868,7 +8868,7 @@ and GenMethodForBinding
         [
             (mkLocalValRef v,
              BranchCallMethod(
-                 topValInfo.AritiesOfArgs,
+                 valReprInfo.AritiesOfArgs,
                  curriedArgInfos,
                  methLambdaTypars,
                  selfMethodVars.Length,
@@ -9379,7 +9379,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
         CG.EmitInstr cgbuf (pop 0) (Push [ ilTy ]) (I_call(Normalcall, ilGetterMethSpec, None))
         CommitGetStorageSequel cenv cgbuf eenv m ty None storeSequel
 
-    | Method (topValInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
+    | Method (valReprInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
         // Get a toplevel value as a first-class value.
         // We generate a lambda expression and that simply calls
         // the toplevel method. However we optimize the case where we are
@@ -9387,7 +9387,7 @@ and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSeq
 
         // First build a lambda expression for the saturated use of the toplevel value...
         // REVIEW: we should NOT be doing this in the backend...
-        let expr, exprTy = AdjustValForExpectedArity g m vref NormalValUse topValInfo
+        let expr, exprTy = AdjustValForExpectedArity g m vref NormalValUse valReprInfo
 
         // Then reduce out any arguments (i.e. apply the sequel immediately if we can...)
         match storeSequel with
