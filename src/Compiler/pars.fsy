@@ -1950,7 +1950,7 @@ classDefnMember:
         let expr = $7
         let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
         let vis = $2 
-        let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
+        let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
         let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
@@ -2716,7 +2716,7 @@ cPrototype:
                 SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                 mRhs)
         (fun attrs _ ->
-            let bindingPat = SynPat.LongIdent (SynLongIdent([nm], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let bindingPat = SynPat.LongIdent (SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding =
@@ -3088,7 +3088,7 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
 
   | tuplePatternElements  %prec pat_tuple 
       { SynPat.Tuple(false, List.rev $1, lhs parseState) }
@@ -3128,43 +3128,43 @@ namePatPair:
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls
       { let vis, lid = $1
-        SynPat.LongIdent (lid, None, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
+        SynPat.LongIdent (lid, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
 
   | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs %prec pat_app
       { let vis, lid = $1
         let args, argsM = $3
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
         let args, argsM = $4
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
         let args, argsM = $4
         let m = unionRanges (rhs2 parseState 1 2) argsM
-        SynPat.LongIdent (lid, None, None, Some $2, args, vis, m) }
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
 
   | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
       { let vis, lid = $1
         let args, argsM = $2
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
         let args, argsM = $3
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
 
   | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
       { let vis, lid = $1
         let args, argsM = $3
         let m = unionRanges (rhs parseState 1) argsM
-        SynPat.LongIdent (lid, None, None, None, args, vis, m) }
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
 
   | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst 
       { SynPat.IsInst($2, lhs parseState) }
@@ -3330,7 +3330,7 @@ parenPattern:
         SynPat.Attrib($2, $1, lhsm) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
 
   | constrPattern { $1 }
 
@@ -4862,7 +4862,7 @@ objExprBindings:
         let memberDefns =
             $2 |> 
             (List.choose (function 
-                              | SynMemberDefn.Member _ as memberDefn -> Some memberDefn
+                              | (SynMemberDefn.Member _ | SynMemberDefn.GetSetMember _ ) as memberDefn -> Some memberDefn 
                               | SynMemberDefn.AutoProperty(range = m) -> errorR(Error(FSComp.SR.parsIllegalMemberVarInObjectImplementation(), m)); None
                               | x -> errorR(Error(FSComp.SR.parsMemberIllegalInObjectImplementation(), x.Range)); None)) 
         mWithKwd, [], memberDefns }

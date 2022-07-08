@@ -356,15 +356,13 @@ let rec CombineRefutations g r1 r2 =
 
 let ShowCounterExample g denv m refuted =
     try
-        let exprL expr = exprL g expr
         let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | RefutedInvestigation(path, discrim) -> [RefuteDiscrimSet g m path discrim])
         let counterExample, enumCoversKnown =
             match refutations with
             | [] -> raise CannotRefute
             | (r, eck) :: t ->
-                if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (LayoutRender.showL (exprL r)) eck
-                List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                    CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
+                ((r, eck), t) ||> List.fold (fun (rAcc, eckAcc) (r, eck) ->
+                    CombineRefutations g rAcc r, eckAcc || eck) 
         let text = LayoutRender.showL (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text, failingWhenClause, enumCoversKnown)
