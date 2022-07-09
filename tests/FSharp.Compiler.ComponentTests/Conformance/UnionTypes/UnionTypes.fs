@@ -534,15 +534,15 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 883, Line 6, Col 14, Line 6, Col 29, "Invalid namespace, module, type or union case name");
-            (Error 53, Line 6, Col 14, Line 6, Col 29, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 6, Col 14, Line 6, Col 29, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
             (Error 883, Line 8, Col 12, Line 8, Col 27, "Invalid namespace, module, type or union case name");
-            (Error 53, Line 8, Col 12, Line 8, Col 27, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 8, Col 12, Line 8, Col 27, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
             (Error 883, Line 11, Col 14, Line 11, Col 29, "Invalid namespace, module, type or union case name");
             (Error 883, Line 14, Col 12, Line 14, Col 27, "Invalid namespace, module, type or union case name");
-            (Error 53, Line 16, Col 14, Line 16, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
-            (Error 53, Line 18, Col 12, Line 18, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers");
-            (Error 53, Line 20, Col 12, Line 20, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
-            (Error 53, Line 22, Col 14, Line 22, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 16, Col 14, Line 16, Col 15, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 18, Col 12, Line 18, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 20, Col 12, Line 20, Col 15, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 22, Col 14, Line 22, Col 17, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx

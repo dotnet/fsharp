@@ -378,6 +378,8 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
 
 exception NotUpperCaseConstructor of range: range
 
+exception NotUpperCaseConstructorWithoutRQA of range: range
+
 let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
     // type names '[]' etc. are used in fslib
     if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
@@ -464,7 +466,7 @@ module TcRecdUnionAndEnumDeclarations =
         if g.langVersion.SupportsFeature(LanguageFeature.LowercaseDUWhenRequireQualifiedAccess) then
 
             if not (String.isLeadingIdentifierCharacterUpperCase name) && not hasRQAAttribute && name <> opNameCons && name <> opNameNil then
-                errorR(NotUpperCaseConstructor(id.idRange))
+                errorR(NotUpperCaseConstructorWithoutRQA(id.idRange))
         else
             if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
                 errorR(NotUpperCaseConstructor(id.idRange))

@@ -76,3 +76,5 @@ val CheckOneSigFile:
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
 exception NotUpperCaseConstructor of range: range
+
+exception NotUpperCaseConstructorWithoutRQA of range : range

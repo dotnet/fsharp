@@ -1,7 +1,7 @@
-﻿// #Conformance #TypesAndModules #Unions 
-// This testcase verifies that lower-case discriminated union are not allowed
-//<Expects status="error"></Expects>
-#light
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+
+
 
 type DU1 = | ``not.allowed``
 
