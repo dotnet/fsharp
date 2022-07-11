@@ -697,6 +697,11 @@
         <target state="translated">Это выражение использует неявное преобразование "{0}" для преобразования типа "{1}" в тип "{2}". См. сведения на странице https://aka.ms/fsharp-implicit-convs. Это предупреждение можно отключить, используя параметр '#nowarn \"3391\"</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">Атрибут "InlineIfLambda" может использоваться только в параметрах встраиваемых функций методов, типом которых является функция или делегат F#.</target>

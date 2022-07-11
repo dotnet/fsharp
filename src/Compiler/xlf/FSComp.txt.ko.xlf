@@ -697,6 +697,11 @@
         <target state="translated">이 식은 암시적 변환 '{0}'을 사용하여 '{1}' 형식을 '{2}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조. ’#Nowarn \ "3391\"을 (를) 사용하여 이 경고를 사용 하지 않도록 설정할 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">'InlineIfLambda' 특성은 형식이 함수 또는 F# 대리자 형식인 메서드의 인라인 함수 매개 변수에만 사용할 수 있습니다.</target>

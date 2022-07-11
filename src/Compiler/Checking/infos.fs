@@ -1562,6 +1562,13 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
+    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member x.IsSetterInitOnly =
+        match x.SetterMethod.ILMethodRef.ReturnType with
+        | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+        | _ -> false
+    /// tcref.CompiledRepresentationForNamedType.BasicQualifiedName = "System.ReadOnlySpan`1"
+
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
 
@@ -1686,6 +1693,14 @@ type PropInfo =
         | FSProp(_, _, _, x) -> Option.isSome x
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
+#endif
+
+    member x.IsSetterInitOnly =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.IsSetterInitOnly
+        | FSProp _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp _ -> false
 #endif
 
     /// Indicates if this is an extension member

@@ -697,6 +697,11 @@
         <target state="translated">Bu ifade '{1}' türünü '{2}' türüne dönüştürmek için '{0}' örtük dönüştürmesini kullanır. https://aka.ms/fsharp-implicit-convs adresine bakın. Bu uyarı '#nowarn \"3391\" kullanılarak devre dışı bırakılabilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">'InlineIfLambda' özniteliği yalnızca işlev veya F# temsilci türündeki yöntemlerin satır içine alınmış işlev parametrelerinde kullanılabilir.</target>
