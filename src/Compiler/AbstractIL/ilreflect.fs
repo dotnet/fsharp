@@ -1200,10 +1200,16 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
         parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)
 
     match res with
-    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
+    | Null ->
+        error (
+            Error(
+                FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName),
+                range0
+            )
+        )
     | NonNull res -> res
 
-let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo MaybeNull =
+let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo MaybeNull =
     if parentTI.IsGenericType then
         TypeBuilder.GetConstructor(parentTI, consInfo)
     else
@@ -1326,7 +1332,7 @@ let setArrayMethInfo n ty =
     | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
     | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
     | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 0 @@> ty
-    | _ -> invalidArg "n"  "not expecting array dimension > 4"
+    | _ -> invalidArg "n" "not expecting array dimension > 4"
 
 //----------------------------------------------------------------------------
 // emitInstr cenv

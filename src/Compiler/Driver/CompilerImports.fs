@@ -97,7 +97,7 @@ let MakeILResource rName bytes =
         MetadataIndex = NoMetadataIdx
     }
 
-let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x = 
+let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
     let file = PathMap.apply g.pathMap file
 
     let bytes, bytesB = pickleObjWithDanglingCcus inMem file g scope p x
@@ -125,25 +125,31 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
             MetadataIndex = NoMetadataIdx
         }
 
-    let resourceB = 
-        if bytesB.AsMemory().Length > 0 then 
-            Some 
-              { Name = rNameB
-                Location = ILResourceLocation.Local(byteStorageB)
-                Access = ILResourceAccess.Public
-                CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-                MetadataIndex = NoMetadataIdx 
-              }
+    let resourceB =
+        if bytesB.AsMemory().Length > 0 then
+            Some
+                {
+                    Name = rNameB
+                    Location = ILResourceLocation.Local(byteStorageB)
+                    Access = ILResourceAccess.Public
+                    CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                    MetadataIndex = NoMetadataIdx
+                }
         else
             None
 
     (bytesB :> IDisposable).Dispose()
 
     resource, resourceB
-          
+
 let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> =
-    let memA = byteReaderA()
-    let memB = (match byteReaderB with None -> ByteMemory.Empty.AsReadOnly() | Some br -> br())
+    let memA = byteReaderA ()
+
+    let memB =
+        (match byteReaderB with
+         | None -> ByteMemory.Empty.AsReadOnly()
+         | Some br -> br ())
+
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo memA memB
 
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, fileName, inMem) =
@@ -156,6 +162,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
             FSharpSignatureDataResourceName2
         else
             FSharpSignatureDataResourceName
+
     let rNameB = FSharpSignatureDataResourceNameB
 
     let includeDir =
@@ -172,17 +179,22 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
         tcGlobals
         ccu
         (rName + ccu.AssemblyName)
-        (rNameB+ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
         pickleCcuInfo
         {
-            mspec=mspec
-            compileTimeWorkingDir=includeDir
+            mspec = mspec
+            compileTimeWorkingDir = includeDir
             usesQuotations = ccu.UsesFSharp20PlusQuotations
         }
 
 let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
-    let memA = byteReaderA()
-    let memB = (match byteReaderB with None -> ByteMemory.Empty.AsReadOnly() | Some br -> br())
+    let memA = byteReaderA ()
+
+    let memB =
+        (match byteReaderB with
+         | None -> ByteMemory.Empty.AsReadOnly()
+         | Some br -> br ())
+
     unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo memA memB
 
 let WriteOptimizationData (tcGlobals, fileName, inMem, ccu: CcuThunk, modulInfo) =
@@ -196,11 +208,19 @@ let WriteOptimizationData (tcGlobals, fileName, inMem, ccu: CcuThunk, modulInfo)
 
     let rNameB = FSharpOptimizationDataResourceNameB
 
-    PickleToResource inMem fileName tcGlobals ccu (rName + ccu.AssemblyName) (rNameB+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
+    PickleToResource
+        inMem
+        fileName
+        tcGlobals
+        ccu
+        (rName + ccu.AssemblyName)
+        (rNameB + ccu.AssemblyName)
+        Optimizer.p_CcuOptimizationInfo
+        modulInfo
 
 let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) =
     if tcConfig.GenerateSignatureData then
-        let resource1, resource2 = 
+        let resource1, resource2 =
             WriteSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles =
@@ -216,7 +236,13 @@ let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generat
 
             bytes.CopyTo fileStream
 
-        let resources = [ yield resource1; match resource2 with None -> () | Some r -> yield r ]
+        let resources =
+            [
+                yield resource1
+                match resource2 with
+                | None -> ()
+                | Some r -> yield r
+            ]
 
         let sigAttr =
             mkSignatureDataVersionAttr tcGlobals (parseILVersion FSharpBinaryMetadataFormatRevision)
@@ -251,8 +277,18 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data
             else
                 data
-        let r1, r2 = WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData)
-        let resources = [ yield r1; match r2 with None -> () | Some r -> yield r ]
+
+        let r1, r2 =
+            WriteOptimizationData(tcGlobals, outfile, isIncrementalBuild, ccu, optData)
+
+        let resources =
+            [
+                yield r1
+                match r2 with
+                | None -> ()
+                | Some r -> yield r
+            ]
+
         resources
     else
         []
@@ -910,14 +946,20 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
                         if IsSignatureDataResource iresource then
                             let ccuName = GetSignatureDataResourceName iresource
                             let readerA = fun () -> iresource.GetBytes()
+
                             let readerB =
-                                resources |> List.tryPick (fun iresourceB ->
+                                resources
+                                |> List.tryPick (fun iresourceB ->
                                     if IsSignatureDataResourceB iresourceB then
                                         let ccuNameB = GetSignatureDataResourceName iresourceB
+
                                         if ccuName = ccuNameB then
-                                            Some (fun () -> iresourceB.GetBytes() )
-                                        else None
-                                    else None)
+                                            Some(fun () -> iresourceB.GetBytes())
+                                        else
+                                            None
+                                    else
+                                        None)
+
                             (ccuName, (readerA, readerB))
                 ]
 
@@ -927,11 +969,13 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
 
                     if not (FileSystem.FileExistsShim sigFileName) then
                         error (Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
+
                     let readerA () =
                         FileSystem
                             .OpenFileForReadShim(sigFileName, useMemoryMappedFile = true, shouldShadowCopy = true)
                             .AsByteMemory()
                             .AsReadOnly()
+
                     [ (ilShortAssemName, (readerA, None)) ]
                 else
                     sigDataReaders
@@ -940,21 +984,28 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
 
         member _.GetRawFSharpOptimizationData(m, ilShortAssemName, fileName) =
             let resources = ilModule.Resources.AsList()
+
             let optDataReaders =
                 [
                     for r in resources do
                         if IsOptimizationDataResource r then
                             let ccuName = GetOptimizationDataResourceName r
                             let readerA = (fun () -> r.GetBytes())
+
                             let readerB =
-                                resources |> List.tryPick (fun iresourceB ->
+                                resources
+                                |> List.tryPick (fun iresourceB ->
                                     if IsOptimizationDataResourceB iresourceB then
                                         let ccuNameB = GetOptimizationDataResourceName iresourceB
+
                                         if ccuName = ccuNameB then
-                                            Some (fun () -> iresourceB.GetBytes() )
-                                        else None
-                                    else None)
-                            (ccuName, (readerA, readerB)) 
+                                            Some(fun () -> iresourceB.GetBytes())
+                                        else
+                                            None
+                                    else
+                                        None)
+
+                            (ccuName, (readerA, readerB))
                 ]
 
             // Look for optimization data in a file
@@ -963,13 +1014,17 @@ type RawFSharpAssemblyDataBackedByFileOnDisk(ilModule: ILModuleDef, ilAssemblyRe
                     let optDataFile = Path.ChangeExtension(fileName, "optdata")
 
                     if not (FileSystem.FileExistsShim optDataFile) then
-                        error (Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore (optDataFile, FileSystem.GetFullPathShim optDataFile), m))
+                        error (
+                            Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore (optDataFile, FileSystem.GetFullPathShim optDataFile), m)
+                        )
+
                     let readerA () =
                         FileSystem
                             .OpenFileForReadShim(optDataFile, useMemoryMappedFile = true, shouldShadowCopy = true)
                             .AsByteMemory()
                             .AsReadOnly()
-                    [ (ilShortAssemName, (readerA, None))]
+
+                    [ (ilShortAssemName, (readerA, None)) ]
                 else
                     optDataReaders
 
@@ -1008,38 +1063,57 @@ type RawFSharpAssemblyData(ilModule: ILModuleDef, ilAssemblyRefs) =
 
         member _.GetRawFSharpSignatureData(_, _, _) =
             let resources = ilModule.Resources.AsList()
+
             let sigDataReaders =
-                [ for iresource in resources do
-                    if IsSignatureDataResource iresource then
-                        let ccuName = GetSignatureDataResourceName iresource
-                        let readerA = fun () -> iresource.GetBytes()
-                        let readerB =
-                            resources |> List.tryPick (fun iresourceB ->
-                                if IsSignatureDataResourceB iresourceB then
-                                    let ccuNameB = GetSignatureDataResourceName iresourceB
-                                    if ccuName = ccuNameB then
-                                        Some (fun () -> iresourceB.GetBytes() )
-                                    else None
-                                else None)
-                        (ccuName, (readerA, readerB)) ]
+                [
+                    for iresource in resources do
+                        if IsSignatureDataResource iresource then
+                            let ccuName = GetSignatureDataResourceName iresource
+                            let readerA = fun () -> iresource.GetBytes()
+
+                            let readerB =
+                                resources
+                                |> List.tryPick (fun iresourceB ->
+                                    if IsSignatureDataResourceB iresourceB then
+                                        let ccuNameB = GetSignatureDataResourceName iresourceB
+
+                                        if ccuName = ccuNameB then
+                                            Some(fun () -> iresourceB.GetBytes())
+                                        else
+                                            None
+                                    else
+                                        None)
+
+                            (ccuName, (readerA, readerB))
+                ]
+
             sigDataReaders
 
-         member _.GetRawFSharpOptimizationData(_, _, _) =
+        member _.GetRawFSharpOptimizationData(_, _, _) =
             let resources = ilModule.Resources.AsList()
+
             let optDataReaders =
-                [ for iresource in resources do
-                    if IsOptimizationDataResource iresource then
-                        let ccuName = GetOptimizationDataResourceName iresource
-                        let readerA = (fun () -> iresource.GetBytes())
-                        let readerB =
-                            resources |> List.tryPick (fun iresourceB ->
-                                if IsOptimizationDataResourceB iresourceB then
-                                    let ccuNameB = GetOptimizationDataResourceName iresourceB
-                                    if ccuName = ccuNameB then
-                                        Some (fun () -> iresourceB.GetBytes() )
-                                    else None
-                                else None)
-                        (ccuName, (readerA, readerB)) ]
+                [
+                    for iresource in resources do
+                        if IsOptimizationDataResource iresource then
+                            let ccuName = GetOptimizationDataResourceName iresource
+                            let readerA = (fun () -> iresource.GetBytes())
+
+                            let readerB =
+                                resources
+                                |> List.tryPick (fun iresourceB ->
+                                    if IsOptimizationDataResourceB iresourceB then
+                                        let ccuNameB = GetOptimizationDataResourceName iresourceB
+
+                                        if ccuName = ccuNameB then
+                                            Some(fun () -> iresourceB.GetBytes())
+                                        else
+                                            None
+                                    else
+                                        None)
+
+                            (ccuName, (readerA, readerB))
+                ]
 
             optDataReaders
 
@@ -2023,7 +2097,7 @@ and [<Sealed>] TcImports
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, fileName)
             |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) ->
                 let data =
-                    GetSignatureData (fileName, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
+                    GetSignatureData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -2067,9 +2141,9 @@ and [<Sealed>] TcImports
                     lazy
                         (match Map.tryFind ccuName optDatas with
                          | None -> None
-                         | Some (readerA, readerB) -> 
+                         | Some (readerA, readerB) ->
                              let data =
-                                 GetOptimizationData (fileName, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB)
+                                 GetOptimizationData(fileName, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB)
 
                              let fixupThunk () =
                                  data.OptionalFixup(fun nm -> availableToOptionalCcu (tcImports.FindCcu(ctok, m, nm, lookupOnly = false)))

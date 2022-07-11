@@ -230,7 +230,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = WeakReference< byte[] MaybeNull>(null)
+    let weakBytes = WeakReference<byte[] MaybeNull>(null)
 
     member _.FileName = fileName
 
@@ -935,7 +935,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     if lowMem then
         (fun f x -> f x)
     else
-        let mutable cache : ConcurrentDictionary<int32, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
+        let mutable cache: ConcurrentDictionary<int32, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
         let mutable count = 0
 #if STATISTICS
         addReport (fun oc ->
@@ -964,7 +964,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     if lowMem then
         (fun f x -> f x)
     else
-        let mutable cache : ConcurrentDictionary<_, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
+        let mutable cache: ConcurrentDictionary<_, _> MaybeNull = null // TODO NULLNESS: this explicit annotation should not be needed
         let mutable count = 0
 #if STATISTICS
         addReport (fun oc ->

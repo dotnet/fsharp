@@ -77,11 +77,8 @@ module QuickParse =
         | true, true, _ when name.Length > 4 -> isValidStrippedName (name.AsSpan(1, name.Length - 4)) 0
         | true, _, true when name.Length > 2 -> isValidStrippedName (name.AsSpan(1, name.Length - 2)) 0
         | _ -> false
-    
-    let GetCompleteIdentifierIslandImpl (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
-        match lineStr with 
-        | Null -> None
-        | NonNull lineStr -> 
+
+    let GetCompleteIdentifierIslandImplAux (lineStr: string) (index: int) : (string * int * bool) option =
         if index < 0 || index >= lineStr.Length then
             None
         else
@@ -175,6 +172,11 @@ module QuickParse =
                         let pos = r + MagicalAdjustmentConstant
                         Some(ident, pos, false))
 
+    let GetCompleteIdentifierIslandImpl (lineStr: string MaybeNull) (index: int) : (string * int * bool) option =
+        match lineStr with
+        | Null -> None
+        | NonNull lineStr -> GetCompleteIdentifierIslandImplAux lineStr index
+
     /// Given a string and a position in that string, find an identifier as
     /// expected by `GotoDefinition`. This will work when the cursor is
     /// immediately before the identifier, within the identifier, or immediately
@@ -212,10 +214,7 @@ module QuickParse =
     let private defaultName = [], ""
 
     /// Get the partial long name of the identifier to the left of index.
-    let GetPartialLongName (lineStr: string MaybeNull, index: int) =
-        match lineStr with
-        | Null -> defaultName
-        | NonNull lineStr ->
+    let GetPartialLongNameAux (lineStr: string, index: int) =
         if index < 0 then
             defaultName
         elif index >= lineStr.Length then
@@ -267,16 +266,18 @@ module QuickParse =
             let result = InResidue(index, index)
             result
 
+    let GetPartialLongName (lineStr: string MaybeNull, index: int) =
+        match lineStr with
+        | Null -> defaultName
+        | NonNull lineStr -> GetPartialLongNameAux(lineStr, index)
+
     type private EatCommentCallContext =
         | SkipWhiteSpaces of ident: string * current: string list * throwAwayNext: bool
         | StartIdentifier of current: string list * throwAway: bool
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-    let GetPartialLongNameEx (lineStr: string MaybeNull, index: int) : PartialLongName =
-        match lineStr with
-        | Null -> PartialLongName.Empty(index)
-        | NonNull lineStr ->
+    let GetPartialLongNameAux (lineStr: string, index: int) : PartialLongName =
         if index < 0 then
             PartialLongName.Empty(index)
         elif index >= lineStr.Length then
@@ -419,6 +420,11 @@ module QuickParse =
                 { partialLongName with
                     QualifyingIdents = plid
                 }
+
+    let GetPartialLongNameEx (lineStr: string MaybeNull, index: int) : PartialLongName =
+        match lineStr with
+        | Null -> PartialLongName.Empty(index)
+        | NonNull lineStr -> GetPartialLongNameAux(lineStr, index)
 
     let TokenNameEquals (tokenInfo: FSharpTokenInfo) (token2: string) =
         String.Compare(tokenInfo.TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0

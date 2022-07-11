@@ -93,8 +93,11 @@ type public Fsc() as this =
 
     let mutable toolPath: string =
         let locationOfThisDll =
-            try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with _ -> None
+            try
+                Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
+            with _ ->
+                None
+
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""

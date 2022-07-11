@@ -174,10 +174,10 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | ConstraintSolverTupleDiffLengths (_, _, _, m, _)
         | ConstraintSolverInfiniteTypes (_, _, _, _, m, _)
         | ConstraintSolverMissingConstraint (_, _, _, m, _)
-        | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
-        | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
-        | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
-        | ConstraintSolverNonNullnessWarningWithType(_, _, _, m, _)
+        | ConstraintSolverNullnessWarningEquivWithTypes (_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithTypes (_, _, _, _, _, m, _)
+        | ConstraintSolverNullnessWarningWithType (_, _, _, m, _)
+        | ConstraintSolverNonNullnessWarningWithType (_, _, _, m, _)
         | ConstraintSolverTypesNotInEqualityRelation (_, _, _, m, _, _)
         | ConstraintSolverError (_, m, _)
         | ConstraintSolverTypesNotInSubsumptionRelation (_, _, _, m, _)
@@ -435,10 +435,19 @@ let SeeAlsoE () = Message("SeeAlso", "%s")
 let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
 let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-let ConstraintSolverNullnessWarningEquivWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
-let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
-let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
-let ConstraintSolverNonNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNonNullnessWarningWithType", "%s")
+
+let ConstraintSolverNullnessWarningEquivWithTypesE () =
+    DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
+
+let ConstraintSolverNullnessWarningWithTypesE () =
+    DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
+
+let ConstraintSolverNullnessWarningWithTypeE () =
+    DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
+
+let ConstraintSolverNonNullnessWarningWithTypeE () =
+    DeclareResourceString("ConstraintSolverNonNullnessWarningWithType", "%s")
+
 let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
 let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
@@ -646,39 +655,41 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
 
-        | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+        | ConstraintSolverNullnessWarningEquivWithTypes (denv, ty1, ty2, nullness1, nullness2, m, m2) ->
 
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+            os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString()))
+            |> ignore
 
             if m.StartLine <> m2.StartLine then
-                os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+        | ConstraintSolverNullnessWarningWithTypes (denv, ty1, ty2, nullness1, nullness2, m, m2) ->
 
             let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+            os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString()))
+            |> ignore
 
             if m.StartLine <> m2.StartLine then
-                os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNullnessWarningWithType(denv, ty, _, m, m2) ->
+        | ConstraintSolverNullnessWarningWithType (denv, ty, _, m, m2) ->
 
             let t = NicePrint.minimalStringOfType denv ty
-            os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
+            os.Append(ConstraintSolverNullnessWarningWithTypeE().Format(t)) |> ignore
 
             if m.StartLine <> m2.StartLine then
-                os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
-        | ConstraintSolverNonNullnessWarningWithType(denv, ty, _, m, m2) ->
+        | ConstraintSolverNonNullnessWarningWithType (denv, ty, _, m, m2) ->
 
             let t = NicePrint.minimalStringOfType denv ty
-            os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format (t)) |> ignore
+            os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format(t)) |> ignore
 
             if m.StartLine <> m2.StartLine then
-                os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+                os.Append(SeeAlsoE().Format(stringOfRange m)) |> ignore
 
         | ConstraintSolverMissingConstraint (denv, tpr, tpc, m, m2) ->
             os.AppendString(
@@ -847,7 +858,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
                 let retTy =
                     knownReturnType
-                    |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked(), KnownAmbivalentToNull))
+                    |> Option.defaultValue (TType.TType_var(Typar.NewUnlinked(), KnownAmbivalentToNull))
 
                 let argRepr =
                     callerArgs.ArgumentNamesAndTypes

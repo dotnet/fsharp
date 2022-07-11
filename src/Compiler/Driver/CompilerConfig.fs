@@ -188,11 +188,14 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+    abstract GetRawFSharpSignatureData:
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData:
-        range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+        range * ilShortAssemName: string * fileName: string ->
+            (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders

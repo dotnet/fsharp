@@ -1593,7 +1593,7 @@ type TyparConstraint =
     | SupportsNull of range: range
 
     /// A constraint that a type doesn't support nullness
-    | NotSupportsNull of range 
+    | NotSupportsNull of range
 
     /// A constraint that a type has a member with the given signature
     | MayResolveMember of constraintInfo: TraitConstraintInfo * range: range
@@ -2910,7 +2910,7 @@ type RecdFieldRef =
     member TyconRef: TyconRef
 
 [<RequireQualifiedAccess>]
-type NullnessInfo = 
+type NullnessInfo =
 
     /// we know that there is an extra null value in the type
     | WithNull
@@ -2922,7 +2922,7 @@ type NullnessInfo =
     | AmbivalentToNull
 
 [<RequireQualifiedAccess>]
-type Nullness = 
+type Nullness =
     | Known of NullnessInfo
     | Variable of NullnessVar
 
@@ -2938,7 +2938,6 @@ type NullnessVar =
     member Set: Nullness -> unit
     member Unset: unit -> unit
     member Solution: Nullness
-    
 
 /// Represents a type in the typed abstract syntax
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]

@@ -49,9 +49,15 @@ src/FSharp.Core/SI.fs
 
 # uses nullness features
 
-**/illib.fsi
 **/DependencyProvider.fsi
-**/option.fsi
+src/FSharp.Core/array.fs
+src/FSharp.Core/option.fsi
+src/FSharp.Core/option.fs
+src/fsi/console.fs
+src/FSharp.Build/FSharpCommandLineBuilder.fs
+src/Compiler/Utilities/sformat.fs
+src/Compiler/Utilities/illib.fsi
+src/Compiler/Utilities/illib.fs
 
 # Fantomas limitations on implementation files  (to investigate)
 

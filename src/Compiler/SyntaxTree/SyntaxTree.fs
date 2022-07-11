@@ -340,7 +340,7 @@ type SynTypeConstraint =
         | WhereTyparIsReferenceType (range = range)
         | WhereTyparIsUnmanaged (range = range)
         | WhereTyparSupportsNull (range = range)
-        | WhereTyparNotSupportsNull(range=range)
+        | WhereTyparNotSupportsNull (range = range)
         | WhereTyparIsComparable (range = range)
         | WhereTyparIsEquatable (range = range)
         | WhereTyparDefaultsToType (range = range)
@@ -423,7 +423,7 @@ type SynType =
 
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
-    | WithNull of innerType: SynType * ambivalent: bool * range:range
+    | WithNull of innerType: SynType * ambivalent: bool * range: range
 
     | Paren of innerType: SynType * range: range
 
@@ -439,11 +439,11 @@ type SynType =
         | SynType.Anon (range = m)
         | SynType.WithGlobalConstraints (range = m)
         | SynType.StaticConstant (range = m)
-        | SynType.StaticConstantNull (range=m)
+        | SynType.StaticConstantNull (range = m)
         | SynType.StaticConstantExpr (range = m)
         | SynType.StaticConstantNamed (range = m)
         | SynType.HashConstraint (range = m)
-        | SynType.WithNull (range=m)
+        | SynType.WithNull (range = m)
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m) -> m
