@@ -606,9 +606,9 @@ let inline BindInternalValsToUnknown cenv vs env =
     ignore vs
     env
 
-let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
+let BindTypar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
-let BindTypeVarsToUnknown (tps: Typar list) env = 
+let BindTyparsToUnknown (tps: Typar list) env = 
     if isNil tps then env else
     // The optimizer doesn't use the type values it could track. 
     // However here we mutate to provide better names for generalized type parameters 
@@ -617,7 +617,7 @@ let BindTypeVarsToUnknown (tps: Typar list) env =
     (tps, nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp then 
                 tp.typar_id <- ident (nm, tp.Range))      
-    List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
+    List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
@@ -2245,8 +2245,8 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
                     | Some resultElemTy, None ->
-                        let iety = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
-                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy iety resultExpr
+                        let enumerableTy = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
+                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy enumerableTy resultExpr
                     | None, Some (resultElemTy, qTy) ->
                         mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
@@ -2425,7 +2425,7 @@ and OptimizeMethods cenv env baseValOpt methods =
 
 and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) = 
     let env = {env with latestBoundId=Some tmethod.Id; functionVal = None}
-    let env = BindTypeVarsToUnknown tps env
+    let env = BindTyparsToUnknown tps env
     let env = BindInternalValsToUnknown cenv vs env
     let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
     let eR, einfo = OptimizeExpr cenv env e
@@ -2508,11 +2508,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
     // Special cases 
     match op, tyargs, args with 
-    | TOp.Coerce, [toty;fromty], [arg] -> 
+    | TOp.Coerce, [tgtTy; srcTy], [arg] -> 
         let argR, einfo = OptimizeExpr cenv env arg
-        if typeEquiv g toty fromty then argR, einfo 
+        if typeEquiv g tgtTy srcTy then argR, einfo 
         else 
-          mkCoerceExpr(argR, toty, m, fromty), 
+          mkCoerceExpr(argR, tgtTy, m, srcTy), 
           { TotalSize=einfo.TotalSize + 1
             FunctionSize=einfo.FunctionSize + 1
             HasEffect = true  
@@ -3742,7 +3742,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
-        let env = BindTypeVarsToUnknown tps env
+        let env = BindTyparsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
@@ -3977,7 +3977,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | DecisionTreeTest.ArrayLength _, _ -> None
     | DecisionTreeTest.Const c1, StripConstValue c2 -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
-    | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None
+    | DecisionTreeTest.IsInst (_srcTy1, _tgtTy1), _ -> None
     // These should not occur in optimization
     | DecisionTreeTest.ActivePatternCase _, _ -> None
     | _ -> None
@@ -3989,8 +3989,8 @@ and OptimizeSwitch cenv env (e, cases, dflt, m) =
     // Replace IsInst tests by calls to the helper for type tests, which may then get optimized
     let e, cases =
         match cases with
-        | [ TCase(DecisionTreeTest.IsInst (_srcTy, tgTy), success)] ->
-            let testExpr = mkCallTypeTest g m tgTy e
+        | [ TCase(DecisionTreeTest.IsInst (_srcTy, tgtTy), success)] ->
+            let testExpr = mkCallTypeTest g m tgtTy e
             let testCases = [TCase(DecisionTreeTest.Const(Const.Bool true), success)]
             testExpr, testCases
         | _ -> e, cases

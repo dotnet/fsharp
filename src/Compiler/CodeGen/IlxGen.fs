@@ -164,7 +164,7 @@ type AttributeDecoder(namedArgs) =
 
     let findTyconRef x =
         match NameMap.tryFind x nameMap with
-        | Some (AttribExpr (_, Expr.App (_, _, [ TType_app (tr, _, _) ], _, _))) -> Some tr
+        | Some (AttribExpr (_, Expr.App (_, _, [ TType_app (tcref, _, _) ], _, _))) -> Some tcref
         | _ -> None
 
     member _.FindInt16 x dflt =
@@ -575,7 +575,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member eenv.ForTycon(tycon: Tycon) = eenv.ForTypars tycon.TyparsNoRange
 
     /// Get the environment for generating a reference to items within a type definition
-    member eenv.ForTyconRef(tycon: TyconRef) = eenv.ForTycon tycon.Deref
+    member eenv.ForTyconRef(tcref: TyconRef) = eenv.ForTycon tcref.Deref
 
 //--------------------------------------------------------------------------
 // Generate type references
@@ -2171,16 +2171,16 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                 )
 
             let tcref = mkLocalTyconRef tycon
-            let typ = generalizedTyconRef g tcref
+            let ty = generalizedTyconRef g tcref
             let tcaug = tcref.TypeContents
 
             tcaug.tcaug_interfaces <-
                 [
                     (g.mk_IStructuralComparable_ty, true, m)
                     (g.mk_IComparable_ty, true, m)
-                    (mkAppTy g.system_GenericIComparable_tcref [ typ ], true, m)
+                    (mkAppTy g.system_GenericIComparable_tcref [ ty ], true, m)
                     (g.mk_IStructuralEquatable_ty, true, m)
-                    (mkAppTy g.system_GenericIEquatable_tcref [ typ ], true, m)
+                    (mkAppTy g.system_GenericIEquatable_tcref [ ty ], true, m)
                 ]
 
             let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
@@ -2209,7 +2209,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let ilInterfaceTys =
                 [
-                    for ity, _, _ in tcaug.tcaug_interfaces -> GenType cenv m (TypeReprEnv.Empty.ForTypars tps) ity
+                    for intfTy, _, _ in tcaug.tcaug_interfaces -> GenType cenv m (TypeReprEnv.Empty.ForTypars tps) intfTy
                 ]
 
             let ilTypeDef =
@@ -2973,7 +2973,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             match op, args, tyargs with
             | TOp.ExnConstr c, _, _ -> GenAllocExn cenv cgbuf eenv (c, args, m) sequel
             | TOp.UnionCase c, _, _ -> GenAllocUnionCase cenv cgbuf eenv (c, tyargs, args, m) sequel
-            | TOp.Recd (isCtor, tycon), _, _ -> GenAllocRecd cenv cgbuf eenv isCtor (tycon, tyargs, args, m) sequel
+            | TOp.Recd (isCtor, tcref), _, _ -> GenAllocRecd cenv cgbuf eenv isCtor (tcref, tyargs, args, m) sequel
             | TOp.AnonRecd anonInfo, _, _ -> GenAllocAnonRecd cenv cgbuf eenv (anonInfo, tyargs, args, m) sequel
             | TOp.AnonRecdGet (anonInfo, n), [ e ], _ -> GenGetAnonRecdField cenv cgbuf eenv (anonInfo, e, tyargs, n, m) sequel
             | TOp.TupleFieldGet (tupInfo, n), [ e ], _ -> GenGetTupleField cenv cgbuf eenv (tupInfo, e, tyargs, n, m) sequel
@@ -3000,10 +3000,10 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
               [] -> GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, e3, m) sequel
             | TOp.TryFinally (spTry, spFinally),
               [ Expr.Lambda (_, _, _, [ _ ], e1, _, _); Expr.Lambda (_, _, _, [ _ ], e2, _, _) ],
-              [ resty ] -> GenTryFinally cenv cgbuf eenv (e1, e2, m, resty, spTry, spFinally) sequel
+              [ resTy ] -> GenTryFinally cenv cgbuf eenv (e1, e2, m, resTy, spTry, spFinally) sequel
             | TOp.TryWith (spTry, spWith),
               [ Expr.Lambda (_, _, _, [ _ ], e1, _, _); Expr.Lambda (_, _, _, [ vf ], ef, _, _); Expr.Lambda (_, _, _, [ vh ], eh, _, _) ],
-              [ resty ] -> GenTryWith cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resty, spTry, spWith) sequel
+              [ resTy ] -> GenTryWith cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resTy, spTry, spWith) sequel
             | TOp.ILCall (isVirtual, _, isStruct, isCtor, valUseFlag, _, noTailCall, ilMethRef, enclTypeInst, methInst, returnTypes),
               args,
               [] ->
@@ -3014,8 +3014,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
                     (isVirtual, isStruct, isCtor, valUseFlag, noTailCall, ilMethRef, enclTypeInst, methInst, args, returnTypes, m)
                     sequel
             | TOp.RefAddrGet _readonly, [ e ], [ ty ] -> GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel
-            | TOp.Coerce, [ e ], [ tgty; srcty ] -> GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel
-            | TOp.Reraise, [], [ rtnty ] -> GenReraise cenv cgbuf eenv (rtnty, m) sequel
+            | TOp.Coerce, [ e ], [ tgtTy; srcTy ] -> GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel
+            | TOp.Reraise, [], [ retTy ] -> GenReraise cenv cgbuf eenv (retTy, m) sequel
             | TOp.TraitCall traitInfo, args, [] -> GenTraitCall cenv cgbuf eenv (traitInfo, args, m) expr sequel
             | TOp.LValueOp (LSet, v), [ e ], [] -> GenSetVal cenv cgbuf eenv (v, e, m) sequel
             | TOp.LValueOp (LByrefGet, v), [], [] -> GenGetByref cenv cgbuf eenv (v, m) sequel
@@ -3285,17 +3285,17 @@ and GenGetTupleField cenv cgbuf eenv (tupInfo, e, tys, n, m) sequel =
         if ar <= 0 then
             failwith "getCompiledTupleItem"
         elif ar < maxTuple then
-            let tcr' = mkCompiledTupleTyconRef g tupInfo ar
-            let ty = GenNamedTyApp cenv m eenv.tyenv tcr' tys
+            let tcref = mkCompiledTupleTyconRef g tupInfo ar
+            let ty = GenNamedTyApp cenv m eenv.tyenv tcref tys
             mkGetTupleItemN g m n ty tupInfo e tys[n]
         else
             let tysA, tysB = List.splitAfter goodTupleFields tys
             let tyB = mkCompiledTupleTy g tupInfo tysB
-            let tys' = tysA @ [ tyB ]
-            let tcr' = mkCompiledTupleTyconRef g tupInfo (List.length tys')
-            let ty' = GenNamedTyApp cenv m eenv.tyenv tcr' tys'
-            let n' = (min n goodTupleFields)
-            let elast = mkGetTupleItemN g m n' ty' tupInfo e tys'[n']
+            let tysC = tysA @ [ tyB ]
+            let tcref = mkCompiledTupleTyconRef g tupInfo (List.length tysC)
+            let tyR = GenNamedTyApp cenv m eenv.tyenv tcref tysC
+            let nR = min n goodTupleFields
+            let elast = mkGetTupleItemN g m nR tyR tupInfo e tysC[nR]
 
             if n < goodTupleFields then
                 elast
@@ -3682,18 +3682,18 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
         else
             GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel
 
-and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
+and GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel =
     let g = cenv.g
     // Is this an upcast?
     if
-        TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty
+        TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy
         &&
         // Do an extra check - should not be needed
-        TypeFeasiblySubsumesType 0 g cenv.amap m tgty NoCoerce srcty
+        TypeFeasiblySubsumesType 0 g cenv.amap m tgtTy NoCoerce srcTy
     then
-        if isInterfaceTy g tgty then
+        if isInterfaceTy g tgtTy then
             GenExpr cenv cgbuf eenv e Continue
-            let ilToTy = GenType cenv m eenv.tyenv tgty
+            let ilToTy = GenType cenv m eenv.tyenv tgtTy
             // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
             // is required, but we still push the coerced type on to the code gen buffer.
             CG.EmitInstrs cgbuf (pop 1) (Push [ ilToTy ]) []
@@ -3703,18 +3703,18 @@ and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
     else
         GenExpr cenv cgbuf eenv e Continue
 
-        if not (isObjTy g srcty) then
-            let ilFromTy = GenType cenv m eenv.tyenv srcty
+        if not (isObjTy g srcTy) then
+            let ilFromTy = GenType cenv m eenv.tyenv srcTy
             CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box ilFromTy)
 
-        if not (isObjTy g tgty) then
-            let ilToTy = GenType cenv m eenv.tyenv tgty
+        if not (isObjTy g tgtTy) then
+            let ilToTy = GenType cenv m eenv.tyenv tgtTy
             CG.EmitInstr cgbuf (pop 1) (Push [ ilToTy ]) (I_unbox_any ilToTy)
 
         GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenReraise cenv cgbuf eenv (rtnty, m) sequel =
-    let ilReturnTy = GenType cenv m eenv.tyenv rtnty
+and GenReraise cenv cgbuf eenv (retTy, m) sequel =
+    let ilReturnTy = GenType cenv m eenv.tyenv retTy
     CG.EmitInstr cgbuf (pop 0) Push0 I_rethrow
     // [See comment related to I_throw].
     // Rethrow does not return. Required to push dummy value on the stack.
@@ -4538,14 +4538,14 @@ and GenNamedLocalTyFuncCall cenv (cgbuf: CodeGenBuffer) eenv ty cloinfo tyargs m
     actualRetTy
 
 /// Generate an indirect call, converting to an ILX callfunc instruction
-and GenCurriedArgsAndIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
+and GenCurriedArgsAndIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
 
     // Generate the curried arguments to the indirect call
     GenExprs cenv cgbuf eenv curriedArgs
-    GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel
+    GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel
 
 /// Generate an indirect call, converting to an ILX callfunc instruction
-and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
+and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
     let g = cenv.g
 
     // Fold in the new types into the environment as we generate the formal types.
@@ -4553,7 +4553,7 @@ and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
         // keep only non-erased type arguments when computing indirect call
         let tyargs = DropErasedTyargs tyargs
 
-        let typars, formalFuncTy = tryDestForallTy g functy
+        let typars, formalFuncTy = tryDestForallTy g funcTy
 
         let feenv = eenv.tyenv.Add typars
 
@@ -4568,7 +4568,7 @@ and GenIndirectCall cenv cgbuf eenv (functy, tyargs, curriedArgs, m) sequel =
 
         List.foldBack (fun tyarg acc -> Apps_tyapp(GenType cenv m eenv.tyenv tyarg, acc)) tyargs (appBuilder ilxRetApps)
 
-    let actualRetTy = applyTys g functy (tyargs, curriedArgs)
+    let actualRetTy = applyTys g funcTy (tyargs, curriedArgs)
     let ilActualRetTy = GenType cenv m eenv.tyenv actualRetTy
 
     // Check if any byrefs are involved to make sure we don't tailcall
@@ -4710,14 +4710,14 @@ and eligibleForFilter (cenv: cenv) expr =
     && not isTrivial
     && check expr
 
-and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler: Val, handlerExpr, m, resty, spTry, spWith) sequel =
+and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler: Val, handlerExpr, m, resTy, spTry, spWith) sequel =
     let g = cenv.g
 
     // Save the stack - gross because IL flushes the stack at the exn. handler
     // note: eenvinner notes spill vars are live
     LocalScope "trystack" cgbuf (fun scopeMarks ->
         let whereToSaveOpt, eenvinner, stack, tryMarks, afterHandler =
-            GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry)
+            GenTry cenv cgbuf eenv scopeMarks (e1, m, resTy, spTry)
 
         let seh =
             if cenv.options.generateFilterBlocks || eligibleForFilter cenv filterExpr then
@@ -4824,13 +4824,13 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
             GenSequel cenv eenv.cloc cgbuf sequel
         | None -> GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel)
 
-and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFinally) sequel =
+and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFinally) sequel =
     // Save the stack - needed because IL flushes the stack at the exn. handler
     // note: eenvinner notes spill vars are live
     LocalScope "trystack" cgbuf (fun scopeMarks ->
 
         let whereToSaveOpt, eenvinner, stack, tryMarks, afterHandler =
-            GenTry cenv cgbuf eenv scopeMarks (bodyExpr, m, resty, spTry)
+            GenTry cenv cgbuf eenv scopeMarks (bodyExpr, m, resTy, spTry)
 
         // Now the catch/finally block
         let startOfHandler = CG.GenerateMark cgbuf "startOfHandler"
@@ -7520,8 +7520,8 @@ and GenDecisionTreeSwitch
                         CG.EmitInstr cgbuf (pop 1) (Push [ g.ilg.typ_Object ]) (I_box ilFromTy)
 
                     BI_brfalse
-                | DecisionTreeTest.IsInst (_srcty, tgty) ->
-                    let e = mkCallTypeTest g m tgty e
+                | DecisionTreeTest.IsInst (_srcTy, tgtTy) ->
+                    let e = mkCallTypeTest g m tgtTy e
                     GenExpr cenv cgbuf eenv e Continue
                     BI_brtrue
                 | _ -> failwith "internal error: GenDecisionTreeSwitch"
@@ -9472,7 +9472,7 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
     let j, realloc =
         if cenv.options.localOptimizationsEnabled then
             cgbuf.ReallocLocal(
-                (fun i (_, ty', isFixed') -> not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')),
+                (fun i (_, ty2, isFixed2) -> not isFixed2 && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty2)),
                 ranges,
                 ty,
                 isFixed
@@ -10470,7 +10470,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                             for slotsig in memberInfo.ImplementedSlotSigs do
 
-                                if isInterfaceTy g slotsig.ImplementedType then
+                                if isInterfaceTy g slotsig.DeclaringType then
 
                                     match vref.ValReprInfo with
                                     | Some _ ->

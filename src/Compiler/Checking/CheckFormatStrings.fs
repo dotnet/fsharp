@@ -22,9 +22,9 @@ let copyAndFixupFormatTypar m tp =
 
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
 
-let mkFlexibleFormatTypar m tys dflt = 
+let mkFlexibleFormatTypar m tys dfltTy = 
     let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, SynTypar(mkSynId m "fmt",TyparStaticReq.HeadType,true),false,TyparDynamicReq.Yes,[],false,false)
-    tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
+    tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dfltTy,m)]
     copyAndFixupFormatTypar m tp
 
 let mkFlexibleIntFormatTypar (g: TcGlobals) m = 
@@ -449,19 +449,19 @@ let parseFormatStringInternal
                   | Some '+' -> 
                       collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
-                      let xty = NewInferenceType g
-                      percentATys.Add(xty)
-                      parseLoop ((posi, xty) :: acc)  (i, fragLine, fragCol+1) fragments
+                      let aTy = NewInferenceType g
+                      percentATys.Add(aTy)
+                      parseLoop ((posi, aTy) :: acc)  (i, fragLine, fragCol+1) fragments
                   | Some n ->
                       failwith (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString()))
 
               | 'a' ->
                   checkOtherFlags ch
-                  let xty = NewInferenceType g 
-                  let fty = mkFunTy g printerArgTy (mkFunTy g xty printerResidueTy)
+                  let aTy = NewInferenceType g 
+                  let fTy = mkFunTy g printerArgTy (mkFunTy g aTy printerResidueTy)
                   collectSpecifierLocation fragLine fragCol 2
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, fragLine, fragCol+1) fragments
+                  parseLoop ((Option.map ((+)1) posi, aTy) ::  (posi, fTy) :: acc) (i, fragLine, fragCol+1) fragments
 
               | 't' ->
                   checkOtherFlags ch

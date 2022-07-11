@@ -60,7 +60,7 @@ symbols
 |> Array.filter (fun (v, _) -> v.GenericParameters.Count = 0)
 |> Array.filter (fun (v, _) -> v.CurriedParameterGroups.Count = 0)
 |> Array.filter (fun (v, _) -> not v.FullType.IsGenericParameter)
-|> Array.map (fun (v, vUse) -> getTypeText v, v, vUse)
+|> Array.map (fun (v, vUse) -> getTypeText v, v, vUse.ToString())
 |> Array.filter (fun (vTypeText, v, _) -> 
     match vTypeText with 
     | "System.String" -> false
@@ -77,6 +77,7 @@ symbols
 |> Array.map (fun (key, g) ->
     key, 
     (g 
+     |> Array.distinctBy (fun (_, _, vUse) -> vUse)
      |> Array.groupBy (fun (_, v, _) -> v.DisplayName)
      |> Array.sortByDescending (snd >> Array.length)))
 |> Array.filter (fun (_, g) -> g.Length > 1)
@@ -87,7 +88,7 @@ symbols
     for (nm, entries) in g do
        printfn "    %s (%d times)" nm (Array.length entries)
        for (_, _, vUse) in entries do
-           printfn "        %s" (vUse.ToString())
+           printfn "        %s" vUse
     printfn "")
 
 (*

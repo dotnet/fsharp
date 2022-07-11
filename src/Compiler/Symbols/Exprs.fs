@@ -348,12 +348,12 @@ module FSharpExprConvert =
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm ([ I_ldflda fspec ], retTypes), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], retTypes, m)
             | TOp.ILAsm ([ I_ldsflda fspec ], retTypes), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, retTypes, m)
-            | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemty]  -> 
+            | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemTy]  -> 
                 match shape.Rank, idxs with 
-                | 1, [idx1] -> mkCallArrayGet g m elemty arr idx1
-                | 2, [idx1; idx2] -> mkCallArray2DGet g m elemty arr idx1 idx2
-                | 3, [idx1; idx2; idx3] -> mkCallArray3DGet g m elemty arr idx1 idx2 idx3
-                | 4, [idx1; idx2; idx3; idx4] -> mkCallArray4DGet g m elemty arr idx1 idx2 idx3 idx4
+                | 1, [idx1] -> mkCallArrayGet g m elemTy arr idx1
+                | 2, [idx1; idx2] -> mkCallArray2DGet g m elemTy arr idx1 idx2
+                | 3, [idx1; idx2; idx3] -> mkCallArray3DGet g m elemTy arr idx1 idx2 idx3
+                | 4, [idx1; idx2; idx3; idx4] -> mkCallArray4DGet g m elemTy arr idx1 idx2 idx3 idx4
                 | _ -> expr
             | _ -> expr
         | _ -> expr
@@ -618,7 +618,7 @@ module FSharpExprConvert =
                     let bodyR = ConvExpr cenv env body
                     FSharpObjectExprOverride(sgn, tpsR, vslR, bodyR) ]
             let overridesR = ConvertMethods overrides 
-            let iimplsR = List.map (fun (ity, impls) -> ConvType cenv ity, ConvertMethods impls) iimpls
+            let iimplsR = iimpls |> List.map (fun (intfTy, impls) -> ConvType cenv intfTy, ConvertMethods impls)
 
             E.ObjectExpr(ConvType cenv ty, basecallR, overridesR, iimplsR)
 
@@ -702,8 +702,8 @@ module FSharpExprConvert =
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
-            | TOp.ILAsm ([ ], [tty]), _, [arg] -> 
-                match tty with
+            | TOp.ILAsm ([ ], [tgtTy]), _, [arg] -> 
+                match tgtTy with
                 | TTypeConvOp cenv convOp ->
                     let ty = tyOfExpr g arg
                     let op = convOp g m ty arg
@@ -992,7 +992,7 @@ module FSharpExprConvert =
                 let parent = ILTypeRef.Create(e.Scope, e.Enclosing.Tail, e.Enclosing.Head)
                 Import.ImportILTypeRef cenv.amap m parent, Some e.Name
                 
-        let enclosingType = generalizedTyconRef g tcref
+        let enclosingTy = generalizedTyconRef g tcref
         
         let makeCall minfo =
             ConvObjectModelCallLinear cenv env (isNewObj, minfo, enclTypeArgs, methTypeArgs, [], callArgs) id   
@@ -1000,7 +1000,7 @@ module FSharpExprConvert =
         let makeFSCall isMember (vr: ValRef) =
             let memOrVal =
                 if isMember then
-                    let minfo = MethInfo.FSMeth(g, enclosingType, vr, None)
+                    let minfo = MethInfo.FSMeth(g, enclosingTy, vr, None)
                     FSharpMemberOrFunctionOrValue(cenv, minfo)
                 else
                     FSharpMemberOrFunctionOrValue(cenv, vr)
@@ -1117,7 +1117,7 @@ module FSharpExprConvert =
             if tcref.IsILTycon then 
                 try 
                     let mdef = resolveILMethodRefWithRescope unscopeILType tcref.ILTyconRawMetadata ilMethRef 
-                    let minfo = MethInfo.CreateILMeth(cenv.amap, m, enclosingType, mdef)                     
+                    let minfo = MethInfo.CreateILMeth(cenv.amap, m, enclosingTy, mdef)                     
                     FSharpMemberOrFunctionOrValue(cenv, minfo) |> makeCall |> Some
                 with _ -> 
                     None
@@ -1155,12 +1155,12 @@ module FSharpExprConvert =
                 let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
                 let retTy = 
                     match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
-                    | None -> if isCtor then  enclosingType else g.unit_ty
+                    | None -> if isCtor then enclosingTy else g.unit_ty
                     | Some ty -> ty
 
                 let linkageType = 
                     let ty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argTys) retTy
-                    let ty = if isStatic then ty else mkFunTy g enclosingType ty 
+                    let ty = if isStatic then ty else mkFunTy g enclosingTy ty 
                     mkForallTyIfNeeded (typars1 @ typars2) ty
 
                 let argCount = List.sum (List.map List.length argTys)  + (if isStatic then 0 else 1)
@@ -1325,9 +1325,9 @@ module FSharpExprConvert =
                     let env = { env with suppressWitnesses = true }
                     ConvExpr cenv env eq 
                 E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
-        | DecisionTreeTest.IsInst (_srcty, tgty) -> 
+        | DecisionTreeTest.IsInst (_srcTy, tgtTy) -> 
             let e1R = ConvExpr cenv env inpExpr
-            E.IfThenElse (E.TypeTest (ConvType cenv tgty, e1R)  |> Mk cenv m g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
+            E.IfThenElse (E.TypeTest (ConvType cenv tgtTy, e1R)  |> Mk cenv m g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
         | DecisionTreeTest.ActivePatternCase _ -> wfail("unexpected Test.ActivePatternCase test in quoted expression", m)
         | DecisionTreeTest.ArrayLength _ -> wfail("FSharp.Compiler.Service cannot yet return array pattern matching", m)
         | DecisionTreeTest.Error m -> wfail("error recovery", m)
