@@ -39,6 +39,8 @@ type LanguageFeature =
     | BetterExceptionPrinting
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
+    | ErrorOnDeprecatedRequireQualifiedAccess
+    | LowercaseDUWhenRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion =

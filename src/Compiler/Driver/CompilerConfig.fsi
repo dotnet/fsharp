@@ -103,7 +103,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: cache: TimeStampCache -> DateTime option
 
 type AssemblyReference =
-    | AssemblyReference of range * string * IProjectReference option
+    | AssemblyReference of range: range * text: string * projectReference: IProjectReference option
 
     member Range: range
 
@@ -258,6 +258,8 @@ type TcConfigBuilder =
         mutable useHighEntropyVA: bool
 
         mutable inputCodePage: int option
+
+        mutable clearResultsCache: bool
 
         mutable embedResources: string list
 
@@ -572,6 +574,8 @@ type TcConfig =
 
     member inputCodePage: int option
 
+    member clearResultsCache: bool
+
     member embedResources: string list
 
     member diagnosticsOptions: FSharpDiagnosticOptions
@@ -862,6 +866,4 @@ val FSharpScriptFileSuffixes: string list
 /// File suffixes where #light is the default
 val FSharpIndentationAwareSyntaxFileSuffixes: string list
 
-val doNotRequireNamespaceOrModuleSuffixes: string list
-
-val mlCompatSuffixes: string list
+val FSharpMLCompatFileSuffixes: string list

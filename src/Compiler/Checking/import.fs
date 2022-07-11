@@ -188,9 +188,9 @@ let rec ImportILType (env: ImportMap) m tinst ty =
 
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
-        let elementType = ImportILType env m tinst ty
+        let elemTy = ImportILType env m tinst ty
         let nullness = ImportNullness env.g
-        mkArrayTy env.g n nullness elementType m
+        mkArrayTy env.g n nullness elemTy m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
@@ -362,10 +362,10 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref,[t1;t2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
-                        | TType_app (tcref,[t1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
+                        | TType_app (tcref,[ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
+                        | TType_app (tcref,[ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
                         | TType_app (tcref,[], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref,[], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
+                        | TType_app (tcref,[], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
                         | TType_app (tcref, _, _) -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name),m))
                             Measure.One
@@ -554,13 +554,13 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
+                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n (Namespace true)) enc tgs)
                 Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n, info: Lazy<_>) -> 
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
-    let kind = match enc with [] -> Namespace | _ -> ModuleOrType
+    let kind = match enc with [] -> Namespace true | _ -> ModuleOrType
     Construct.NewModuleOrNamespaceType kind entities []
       
 /// Import a table of IL types as a ModuleOrNamespaceType.

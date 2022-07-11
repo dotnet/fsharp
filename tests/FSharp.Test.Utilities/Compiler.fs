@@ -265,6 +265,11 @@ module rec Compiler =
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 
+    let CsFromPath (path: string) : CompilationUnit =
+        csFromString (SourceFromPath path)
+        |> CS
+        |> withName (Path.GetFileNameWithoutExtension(path))
+
     let Fsx (source: string) : CompilationUnit =
         fsFromString (FsxSourceCode source) |> FS
 
@@ -272,10 +277,13 @@ module rec Compiler =
         fsFromString (SourceFromPath path) |> FS
 
     let Fs (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        fsFromString (FsSource source) |> FS
+
+    let Fsi (source: string) : CompilationUnit =
+        fsFromString (FsiSource source) |> FS
 
     let FSharp (source: string) : CompilationUnit =
-        fsFromString (SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some source })) |> FS
+        Fs source
 
     let FsFromPath (path: string) : CompilationUnit =
         fsFromString (SourceFromPath path)
@@ -432,6 +440,18 @@ module rec Compiler =
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
 
+    //--refonly[+|-]
+    let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withNoRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly-" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refout:<file>                          Produce a reference assembly with the specified file path.
+    let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit
+
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }
@@ -449,7 +469,7 @@ module rec Compiler =
                 match platform with
                 | ExecutionPlatform.Anycpu -> "anycpu"
                 | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
-                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.Itanium -> "Itanium"
                 | ExecutionPlatform.X64 -> "x64"
                 | ExecutionPlatform.X86 -> "x86"
                 | ExecutionPlatform.Arm -> "arm"
@@ -463,6 +483,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
+
+    let withCulture culture (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--preferreduilang:%s{culture}" ] "preferreduilang is only supported for F#" cUnit
 
     let rec private asMetadataReference (cUnit: CompilationUnit) reference =
         match reference with
@@ -608,16 +631,27 @@ module rec Compiler =
         | _ ->
             failwith "Compilation has errors."
 
-    let compileGuid (cUnit: CompilationUnit) : Guid =
-        let bytes =
-            compile cUnit
-            |> shouldSucceed
-            |> getAssemblyInBytes
+    let getAssembly = getAssemblyInBytes >> Assembly.Load
 
-        use reader1 = new PEReader(bytes.ToImmutableArray())
-        let reader1 = reader1.GetMetadataReader()
+    let withPeReader func compilationResult =
+        let bytes = getAssemblyInBytes compilationResult
+        use reader = new PEReader(bytes.ToImmutableArray())
+        func reader
 
-        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+    let withMetadataReader func =
+        withPeReader (fun reader -> reader.GetMetadataReader() |> func)
+
+    let compileGuid cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
+
+    let compileAssembly cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> getAssembly
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""
@@ -876,6 +910,7 @@ module rec Compiler =
     type PdbVerificationOption =
     | VerifyImportScopes of ImportScope list list
     | VerifySequencePoints of (Line * Col * Line * Col) list
+    | VerifyDocuments of string list
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -941,12 +976,30 @@ module rec Compiler =
         if sequencePoints <> expectedSequencePoints then
             failwith $"Expected sequence points are different from PDB.\nExpected: %A{expectedSequencePoints}\nActual: %A{sequencePoints}"
 
+    let private verifyDocuments (reader: MetadataReader) expectedDocuments =
+
+        let documents = 
+            [ for doc in reader.Documents do
+                if not doc.IsNil then
+                    let di = reader.GetDocument doc
+                    let nmh = di.Name
+                    if not nmh.IsNil then
+                        let name = reader.GetString nmh
+                        name ]
+            |> List.sort
+        
+        let expectedDocuments = expectedDocuments |> List.sort
+
+        if documents <> expectedDocuments then
+            failwith $"Expected documents are different from PDB.\nExpected: %A{expectedDocuments}\nActual: %A{documents}"
+
 
     let private verifyPdbOptions reader options =
         for option in options do
             match option with
             | VerifyImportScopes scopes -> verifyPdbImportTables reader scopes
             | VerifySequencePoints sp -> verifySequencePoints reader sp
+            | VerifyDocuments docs -> verifyDocuments reader docs
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     let private verifyPortablePdb (result: CompilationOutput) options : unit =

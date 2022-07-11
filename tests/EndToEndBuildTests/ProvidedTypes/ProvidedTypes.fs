@@ -5339,7 +5339,7 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
                      fst,
                      simpleIndexCompare gpidx,
                      isSorted ILTableNames.GenericParamConstraint,
-                     (snd >>  seekReadTypeDefOrRef numtypars AsObject (*ok*) [| |]))
+                     (snd >>  seekReadTypeDefOrRef numtypars AsObject [| |]))
 
             and seekReadTypeDefAsType boxity (ginst:ILTypes) idx = cacheTypeDefAsType seekReadTypeDefAsTypeUncached (TypeDefAsTypIdx (boxity,ginst,idx))
 

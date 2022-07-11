@@ -24,15 +24,15 @@ type FSharpEmbedResXSource() =
 namespace {0}
 
 open System.Reflection
+open System.Globalization
 
 module internal {1} =
     type private C (_dummy:System.Int32) = class end
-    let mutable Culture = System.Globalization.CultureInfo.CurrentUICulture
     let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(0).GetType().GetTypeInfo().Assembly)
-    let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)"
+    let GetString(name:System.String) : System.String = ResourceManager.GetString(name, CultureInfo.CurrentUICulture)"
 
     let boilerplateGetObject =
-        "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, Culture)"
+        "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, CultureInfo.CurrentUICulture)"
 
     let generateSource (resx: string) (fullModuleName: string) (generateLegacy: bool) (generateLiteral: bool) =
         try
@@ -41,9 +41,11 @@ module internal {1} =
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
 
             // simple up-to-date check
-            if File.Exists(resx)
-               && File.Exists(sourcePath)
-               && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath) then
+            if
+                File.Exists(resx)
+                && File.Exists(sourcePath)
+                && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath)
+            then
                 printMessage (sprintf "Skipping generation: '%s' since it is up-to-date." sourcePath)
                 Some(sourcePath)
             else
@@ -118,8 +120,7 @@ module internal {1} =
                 File.WriteAllText(sourcePath, body.ToString())
                 printMessage <| sprintf "Done: %s" sourcePath
                 Some(sourcePath)
-        with
-        | e ->
+        with e ->
             printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
             None
 

@@ -51,8 +51,8 @@ type public Fsi() as this =
         let locationOfThisDll =
             try
                 Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
-            with
-            | _ -> None
+            with _ ->
+                None
 
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
@@ -361,8 +361,7 @@ type public Fsi() as this =
 
                 try
                     invokeCompiler baseCallDelegate
-                with
-                | e ->
+                with e ->
                     Debug.Assert(
                         false,
                         "HostObject received by Fsi task did not have a Compile method or the compile method threw an exception. "

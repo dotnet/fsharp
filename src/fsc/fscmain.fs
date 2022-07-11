@@ -26,8 +26,10 @@ let main (argv) =
 
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
-        if Environment.Is64BitProcess
-           && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib" then
+        if
+            Environment.Is64BitProcess
+            && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib"
+        then
             "fscAnyCpu.exe"
         else
             "fsc.exe"
@@ -81,8 +83,8 @@ let main (argv) =
                 member _.Exit(n) =
                     try
                         exit n
-                    with
-                    | _ -> ()
+                    with _ ->
+                        ()
 
                     failwithf "%s" (FSComp.SR.elSysEnvExitDidntExit ())
             }
@@ -104,7 +106,7 @@ let main (argv) =
         CompileFromCommandLineArguments(
             ctok,
             argv,
-            legacyReferenceResolver (*bannerAlreadyPrinted*) ,
+            legacyReferenceResolver,
             false,
             ReduceMemoryFlag.No,
             CopyFSharpCoreFlag.Yes,
@@ -116,8 +118,7 @@ let main (argv) =
 
         0
 
-    with
-    | e ->
+    with e ->
         // Last-chance error recovery (note, with a poor error range)
         errorRecovery e Range.range0
         1

@@ -150,11 +150,9 @@ let mkDerefThis g m (thisv: Val) thise =
     else thise
 
 let mkCompareTestConjuncts g m exprs =
-    match exprs with 
-    | [] -> mkZero g m
-    | [h] -> h
-    | l -> 
-        let a, b = List.frontAndBack l 
+    match List.tryFrontAndBack exprs with 
+    | None -> mkZero g m
+    | Some (a,b) -> 
         (a, b) ||> List.foldBack (fun e acc -> 
             let nv, ne = mkCompGenLocal m "n" g.int_ty
             mkCompGenLet m nv e
@@ -167,11 +165,9 @@ let mkCompareTestConjuncts g m exprs =
                     acc)))
 
 let mkEqualsTestConjuncts g m exprs =
-    match exprs with 
-    | [] -> mkOne g m
-    | [h] -> h
-    | l -> 
-        let a, b = List.frontAndBack l 
+    match List.tryFrontAndBack exprs with 
+    | None -> mkOne g m
+    | Some (a,b) ->
         List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
@@ -892,8 +888,8 @@ let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData =
             slotImplMethod(final, tcref, slotsig)
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
-    let topValInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    Construct.NewVal (methn, m, None, valTy, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    let valReprInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
+    Construct.NewVal (methn, m, None, valTy, Immutable, true, valReprInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range

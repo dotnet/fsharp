@@ -192,6 +192,11 @@
         <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
+        <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
+        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
@@ -220,6 +225,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">여러 제네릭 인스턴스화가 포함된 인터페이스</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
+        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
+        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
@@ -472,6 +482,11 @@
         <target state="new">Enable nullness declarations and checks</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsClearResultsCache">
+        <source>Clear the package manager results cache</source>
+        <target state="new">Clear the package manager results cache</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
@@ -550,6 +565,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">형식 정의에 예기치 않은 토큰이 있습니다. '{0}' 형식 뒤에 '='가 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="new">Expecting expression</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -657,6 +677,11 @@
         <target state="translated">이 기능은 이 F# 버전에서 지원되지 않습니다. 이 기능을 사용하기 위해 /langversion:preview를 추가해야 할 수도 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">잘못된 익명 레코드입니다. {0} 필드가 있어야 합니다.</target>
@@ -675,6 +700,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">익명 레코드 형식 선언이 잘못되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -5053,8 +5083,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsPlatform">
-        <source>Limit which platforms this code can run on: x86, Itanium, x64, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="translated">이 코드를 실행할 수 있는 플랫폼을 x86, Itanium, x64, anycpu32bitpreferred 또는 anycpu로 제한합니다. 기본값은 anycpu입니다.</target>
+        <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
+        <target state="needs-review-translation">이 코드를 실행할 수 있는 플랫폼을 x86, Itanium, x64, anycpu32bitpreferred 또는 anycpu로 제한합니다. 기본값은 anycpu입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5348,8 +5378,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
-        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
-        <target state="translated">인식할 수 없는 플랫폼 '{0}'입니다. 올바른 값은 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다.</target>
+        <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
+        <target state="needs-review-translation">인식할 수 없는 플랫폼 '{0}'입니다. 올바른 값은 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' 및 'anycpu'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5863,8 +5893,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0o1, 0b1, 1l(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
+        <target state="new">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0o1, 0b1, 1l(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

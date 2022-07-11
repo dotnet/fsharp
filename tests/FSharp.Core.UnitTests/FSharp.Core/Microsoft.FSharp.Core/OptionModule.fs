@@ -117,6 +117,7 @@ type OptionModule() =
 
         Assert.False( Option.contains None None)
         Assert.True( Option.contains None (Some None))
+
     [<Fact>]
     member this.OfToNullable() =
         Assert.True( Option.ofNullable (System.Nullable<int>()) = None)

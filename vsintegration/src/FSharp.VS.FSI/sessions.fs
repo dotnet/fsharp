@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Runtime.InteropServices
 open System.Threading
 
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
@@ -138,7 +139,12 @@ let determineFsiPath () =
         exe, arg, false, false
     else
         let fsiExeName () = 
-            if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
+            if SessionsProperties.useAnyCpuVersion then
+                "fsiAnyCpu.exe"
+            elif RuntimeInformation.ProcessArchitecture = Architecture.Arm64 then
+                "fsiArm64.exe"
+            else
+                "fsi.exe"
 
         // Use the VS-extension-installed development path if available, relative to the location of this assembly
         let determineFsiRelativePath1 () =

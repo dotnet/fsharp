@@ -166,7 +166,6 @@ type WriteCodeFragment() =
                     _outputFile <- outputFileItem
                     true
 
-            with
-            | e ->
+            with e ->
                 printf "Error writing code fragment: %s" (e.ToString())
                 false

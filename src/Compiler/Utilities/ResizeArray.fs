@@ -206,7 +206,9 @@ module internal ResizeArray =
 
         for i = 0 to length arr - 1 do
             let x = arr[i]
-            if f x then res.Add(x)
+
+            if f x then
+                res.Add(x)
 
         res
 

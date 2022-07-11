@@ -5,7 +5,7 @@ namespace Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Option = 
+module Option =
 
     [<CompiledName("GetValue")>]
     let get option =
@@ -56,13 +56,13 @@ module Option =
         | Some _ -> 1
 
     [<CompiledName("Fold")>]
-    let fold<'T,'State> folder (state:'State) (option: 'T option) =
+    let fold<'T, 'State> folder (state: 'State) (option: 'T option) =
         match option with
         | None -> state
         | Some x -> folder state x
 
     [<CompiledName("FoldBack")>]
-    let foldBack<'T,'State> folder (option: option<'T>) (state:'State) =
+    let foldBack<'T, 'State> folder (option: option<'T>) (state: 'State) =
         match option with
         | None -> state
         | Some x -> folder x state
@@ -95,18 +95,18 @@ module Option =
     let map mapping option =
         match option with
         | None -> None
-        | Some x -> Some (mapping x)
+        | Some x -> Some(mapping x)
 
     [<CompiledName("Map2")>]
-    let map2 mapping option1 option2 = 
+    let map2 mapping option1 option2 =
         match option1, option2 with
-        | Some x, Some y -> Some (mapping x y)
+        | Some x, Some y -> Some(mapping x y)
         | _ -> None
 
     [<CompiledName("Map3")>]
-    let map3 mapping option1 option2 option3 = 
+    let map3 mapping option1 option2 option3 =
         match option1, option2, option3 with
-        | Some x, Some y, Some z -> Some (mapping x y z)
+        | Some x, Some y, Some z -> Some(mapping x y z)
         | _ -> None
 
     [<CompiledName("Bind")>]
@@ -130,13 +130,13 @@ module Option =
     [<CompiledName("ToArray")>]
     let toArray option =
         match option with
-        | None -> [| |]
+        | None -> [||]
         | Some x -> [| x |]
 
     [<CompiledName("ToList")>]
     let toList option =
         match option with
-        | None -> [ ]
+        | None -> []
         | Some x -> [ x ]
 
     [<CompiledName("ToNullable")>]
@@ -146,7 +146,7 @@ module Option =
         | Some v -> System.Nullable(v)
 
     [<CompiledName("OfNullable")>]
-    let ofNullable (value:System.Nullable<'T>) =
+    let ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
             Some value.Value
         else
@@ -229,13 +229,13 @@ module ValueOption =
         | ValueSome _ -> 1
 
     [<CompiledName("Fold")>]
-    let fold<'T,'State> folder (state:'State) (voption: voption<'T>) =
+    let fold<'T, 'State> folder (state: 'State) (voption: voption<'T>) =
         match voption with
         | ValueNone -> state
         | ValueSome x -> folder state x
 
     [<CompiledName("FoldBack")>]
-    let foldBack<'T,'State> folder (voption: voption<'T>) (state:'State) =
+    let foldBack<'T, 'State> folder (voption: voption<'T>) (state: 'State) =
         match voption with
         | ValueNone -> state
         | ValueSome x -> folder x state
@@ -268,18 +268,18 @@ module ValueOption =
     let map mapping voption =
         match voption with
         | ValueNone -> ValueNone
-        | ValueSome x -> ValueSome (mapping x)
+        | ValueSome x -> ValueSome(mapping x)
 
     [<CompiledName("Map2")>]
-    let map2 mapping voption1 voption2 = 
+    let map2 mapping voption1 voption2 =
         match voption1, voption2 with
-        | ValueSome x, ValueSome y -> ValueSome (mapping x y)
+        | ValueSome x, ValueSome y -> ValueSome(mapping x y)
         | _ -> ValueNone
 
     [<CompiledName("Map3")>]
-    let map3 mapping voption1 voption2 voption3 = 
+    let map3 mapping voption1 voption2 voption3 =
         match voption1, voption2, voption3 with
-        | ValueSome x, ValueSome y, ValueSome z -> ValueSome (mapping x y z)
+        | ValueSome x, ValueSome y, ValueSome z -> ValueSome(mapping x y z)
         | _ -> ValueNone
 
     [<CompiledName("Bind")>]
@@ -298,18 +298,22 @@ module ValueOption =
     let filter predicate voption =
         match voption with
         | ValueNone -> ValueNone
-        | ValueSome x -> if predicate x then ValueSome x else ValueNone
+        | ValueSome x ->
+            if predicate x then
+                ValueSome x
+            else
+                ValueNone
 
     [<CompiledName("ToArray")>]
     let toArray voption =
         match voption with
-        | ValueNone -> [| |]
+        | ValueNone -> [||]
         | ValueSome x -> [| x |]
 
     [<CompiledName("ToList")>]
     let toList voption =
         match voption with
-        | ValueNone -> [ ]
+        | ValueNone -> []
         | ValueSome x -> [ x ]
 
     [<CompiledName("ToNullable")>]
@@ -319,7 +323,7 @@ module ValueOption =
         | ValueSome v -> System.Nullable(v)
 
     [<CompiledName("OfNullable")>]
-    let ofNullable (value:System.Nullable<'T>) =
+    let ofNullable (value: System.Nullable<'T>) =
         if value.HasValue then
             ValueSome value.Value
         else

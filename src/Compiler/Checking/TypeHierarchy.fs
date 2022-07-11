@@ -100,8 +100,8 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
-            for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                ImportProvidedType amap m ity
+            for intfTy in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                ImportProvidedType amap m intfTy
 #endif
         | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
             // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
@@ -111,12 +111,12 @@ let GetImmediateInterfacesOfMetadataType g amap m skipUnref ty (tcref: TyconRef)
             // succeeded with more reported. There are pathological corner cases where this
             // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
             // assume those are present.
-            for ity in tdef.Implements do
-                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m ity then
-                    RescopeAndImportILType scoref amap m tinst ity
+            for intfTy in tdef.Implements do
+                if skipUnref = SkipUnrefInterfaces.No || CanRescopeAndImportILType scoref amap m intfTy then
+                    RescopeAndImportILType scoref amap m tinst intfTy
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-            for ity in tcref.ImmediateInterfaceTypesOfFSharpTycon do
-               instType (mkInstForAppTy g ty) ity ]
+            for intfTy in tcref.ImmediateInterfaceTypesOfFSharpTycon do
+               instType (mkInstForAppTy g ty) intfTy ]
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
@@ -171,10 +171,10 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
 and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
     [
         // Report any interfaces that don't derive from IComparable<_> or IEquatable<_>
-        for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
-            if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m ity) &&
-               not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m ity) then
-                ity
+        for intfTy in GetImmediateInterfacesOfType skipUnref g amap m reprTy do
+            if not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIComparable_tcref skipUnref g amap m intfTy) &&
+               not (ExistsHeadTypeInInterfaceHierarchy g.system_GenericIEquatable_tcref skipUnref g amap m intfTy) then
+                intfTy
 
         // NOTE: we should really only report the IComparable<A<'m>> interface for measure-annotated types
         // if the original type supports IComparable<A> somewhere in the hierarchy, likeiwse IEquatable<A<'m>>.
@@ -189,15 +189,15 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
     ]
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
-and ExistsHeadTypeInInterfaceHierarchy target skipUnref g amap m ity =
-    ExistsInInterfaceHierarchy (function AppTy g (tcref,_) -> tyconRefEq g tcref target | _ -> false) skipUnref g amap m ity
+and ExistsHeadTypeInInterfaceHierarchy target skipUnref g amap m intfTy =
+    ExistsInInterfaceHierarchy (function AppTy g (tcref,_) -> tyconRefEq g tcref target | _ -> false) skipUnref g amap m intfTy
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
-and ExistsInInterfaceHierarchy p skipUnref g amap m ity =
-    match ity with
+and ExistsInInterfaceHierarchy p skipUnref g amap m intfTy =
+    match intfTy with
     | AppTy g (tcref, tinst) ->
-        p ity ||
-        (GetImmediateInterfacesOfMetadataType g amap m skipUnref ity tcref tinst 
+        p intfTy ||
+        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst 
          |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
@@ -378,16 +378,16 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.DefaultsTo (priority, instType tprefInst ty, m)
            | TyparConstraint.SupportsNull _ ->
                TyparConstraint.SupportsNull m
-           | TyparConstraint.IsEnum (uty, _) ->
-               TyparConstraint.IsEnum (instType tprefInst uty, m)
+           | TyparConstraint.IsEnum (underlyingTy, _) ->
+               TyparConstraint.IsEnum (instType tprefInst underlyingTy, m)
            | TyparConstraint.SupportsComparison _ ->
                TyparConstraint.SupportsComparison m
            | TyparConstraint.NotSupportsNull _ -> 
                TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ ->
                TyparConstraint.SupportsEquality m
-           | TyparConstraint.IsDelegate(aty, bty, _) ->
-               TyparConstraint.IsDelegate (instType tprefInst aty, instType tprefInst bty, m)
+           | TyparConstraint.IsDelegate(argTys, retTy, _) ->
+               TyparConstraint.IsDelegate (instType tprefInst argTys, instType tprefInst retTy, m)
            | TyparConstraint.IsNonNullableStruct _ ->
                TyparConstraint.IsNonNullableStruct m
            | TyparConstraint.IsUnmanaged _ ->

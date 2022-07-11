@@ -27,10 +27,7 @@ type internal QueueList<'T>(firstElementsIn: 'T list, lastElementsRevIn: 'T list
 
     // Compute the last elements on demand.
     let lastElements () =
-        if push then
-            []
-        else
-            List.rev lastElementsRev
+        if push then [] else List.rev lastElementsRev
 
     static let empty = QueueList<'T>([], [], 0)
 

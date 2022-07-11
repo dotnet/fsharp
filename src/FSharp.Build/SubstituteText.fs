@@ -85,8 +85,8 @@ type SubstituteText() =
                                     Directory.CreateDirectory(directory) |> ignore
 
                                 File.WriteAllText(targetPath, contents)
-                            with
-                            | _ -> ()
+                            with _ ->
+                                ()
 
                     copiedFiles.Add(item)
 

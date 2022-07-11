@@ -71,7 +71,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     /// <example id="set-count">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn $"The new set is: {set}"
+    /// printfn $"The set has {set.Count} elements"
     /// </code>
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
@@ -471,8 +471,8 @@ module Set =
     /// The reverse of the set is [3; 2; 1]</c>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> set: Set<'T> -> 'State
-        when 'T: comparison
+    val fold<'T, 'State> :
+        folder: ('State -> 'T -> 'State) -> state: 'State -> set: Set<'T> -> 'State when 'T: comparison
 
     /// <summary>Applies the given accumulating function to all the elements of the set.</summary>
     ///
@@ -492,8 +492,8 @@ module Set =
     /// The set is [1; 2; 3]</c>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> set: Set<'T> -> state: 'State -> 'State
-        when 'T: comparison
+    val foldBack<'T, 'State> :
+        folder: ('T -> 'State -> 'State) -> set: Set<'T> -> state: 'State -> 'State when 'T: comparison
 
     /// <summary>Tests if all elements of the collection satisfy the given predicate.
     /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and "j0...jN"

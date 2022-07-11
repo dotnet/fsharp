@@ -84,8 +84,7 @@ module internal Utils =
     let guard (f) =
         try
             f ()
-        with
-        | e ->
+        with e ->
             warning (
                 Failure(
                     sprintf
@@ -205,8 +204,8 @@ type internal ReadLineConsole() =
                 |> Seq.iter (fun option -> optionsCache.Add(option))
 
                 optionsCache.Root <- root
-            with
-            | _ -> optionsCache.Clear()
+            with _ ->
+                optionsCache.Clear()
 
             optionsCache, true
         else
@@ -218,10 +217,7 @@ type internal ReadLineConsole() =
         | _ -> "^?"
 
     member x.GetCharacterSize(c) =
-        if Char.IsControl(c) then
-            x.MapCharacter(c).Length
-        else
-            1
+        if Char.IsControl(c) then x.MapCharacter(c).Length else 1
 
     static member TabSize = 4
 
@@ -232,12 +228,7 @@ type internal ReadLineConsole() =
 
             if currLeft < x.Inset then
                 if currLeft = 0 then
-                    Console.Write(
-                        if prompt then
-                            x.Prompt2
-                        else
-                            String(' ', x.Inset)
-                    )
+                    Console.Write(if prompt then x.Prompt2 else String(' ', x.Inset))
 
                 Utils.guard (fun () ->
                     Console.CursorTop <- min Console.CursorTop (Console.BufferHeight - 1)
@@ -264,8 +255,10 @@ type internal ReadLineConsole() =
             checkLeftEdge false
 
         let writeChar (c) =
-            if Console.CursorTop = Console.BufferHeight - 1
-               && Console.CursorLeft = Console.BufferWidth - 1 then
+            if
+                Console.CursorTop = Console.BufferHeight - 1
+                && Console.CursorLeft = Console.BufferWidth - 1
+            then
                 //printf "bottom right!\n"
                 anchor <- { anchor with top = (anchor).top - 1 }
 
@@ -385,11 +378,7 @@ type internal ReadLineConsole() =
             optionsCache <- opts
 
             if (opts.Count > 0) then
-                let part =
-                    if shift then
-                        opts.Previous()
-                    else
-                        opts.Next()
+                let part = if shift then opts.Previous() else opts.Next()
 
                 setInput (opts.Root + part)
             else if (prefix) then
@@ -425,11 +414,7 @@ type internal ReadLineConsole() =
             // REVIEW: is this F6 rewrite required? 0x1A looks like Ctrl-Z.
             // REVIEW: the Ctrl-Z code is not recognised as EOF by the lexer.
             // REVIEW: looks like a relic of the port of readline, which is currently removable.
-            let c =
-                if (key.Key = ConsoleKey.F6) then
-                    '\x1A'
-                else
-                    key.KeyChar
+            let c = if (key.Key = ConsoleKey.F6) then '\x1A' else key.KeyChar
 
             insertChar (c)
 

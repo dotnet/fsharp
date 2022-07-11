@@ -45,6 +45,7 @@ type public Fsc() as this =
     let mutable optimize: bool = true
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
+    let mutable outputRefAssembly: string MaybeNull = null
     let mutable pathMap: string MaybeNull = null
     let mutable pdbFile: string MaybeNull = null
     let mutable platform: string MaybeNull = null
@@ -54,6 +55,7 @@ type public Fsc() as this =
     let mutable provideCommandLineArgs: bool = false
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
+    let mutable refOnly: bool = false
     let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution: bool = false
     let mutable sources: ITaskItem[] = [||]
@@ -68,8 +70,8 @@ type public Fsc() as this =
         let locationOfThisDll =
             try
                 Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with
-            | _ -> None
+            with _ ->
+                None
 
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
@@ -205,6 +207,8 @@ type public Fsc() as this =
             | "ANYCPU", _, _ -> "anycpu"
             | "X86", _, _ -> "x86"
             | "X64", _, _ -> "x64"
+            | "ARM", _, _ -> "arm"
+            | "ARM64", _, _ -> "arm64"
             | _ -> null
         )
 
@@ -326,6 +330,12 @@ type public Fsc() as this =
         // Sources - these have to go last
         builder.AppendFileNamesIfNotNull(sources, " ")
         capturedFilenames <- builder.CapturedFilenames()
+
+        // Ref assemblies
+        builder.AppendSwitchIfNotNull("--refout:", outputRefAssembly)
+
+        if refOnly then
+            builder.AppendSwitch("--refonly")
 
         builder
 
@@ -449,6 +459,11 @@ type public Fsc() as this =
         with get () = outputAssembly
         and set (s) = outputAssembly <- s
 
+    // --refout <string>: Name the output ref file
+    member _.OutputRefAssembly
+        with get () = outputRefAssembly
+        and set (s) = outputRefAssembly <- s
+
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
     member _.PathMap
         with get () = pathMap
@@ -495,6 +510,11 @@ type public Fsc() as this =
     member _.ReferencePath
         with get () = referencePath
         and set (s) = referencePath <- s
+
+    // --refonly
+    member _.RefOnly
+        with get () = refOnly
+        and set (b) = refOnly <- b
 
     // --resource <string>: Embed the specified managed resources (.resource).
     //   Produce .resource files from .resx files using resgen.exe or resxc.exe.
@@ -680,8 +700,7 @@ type public Fsc() as this =
 
                 try
                     invokeCompiler baseCallDelegate
-                with
-                | e ->
+                with e ->
                     Debug.Fail(
                         "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "
                         + (e.ToString())

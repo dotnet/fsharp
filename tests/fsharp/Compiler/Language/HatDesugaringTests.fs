@@ -4,7 +4,7 @@ open NUnit.Framework
 open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
-[<TestFixture>]
+[<TestFixture; SetUICulture("en-US"); SetCulture("en-US")>]
 module HatDesugaringTests =
 
     [<Test>]

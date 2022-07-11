@@ -343,9 +343,11 @@ type Range(code1: int64, code2: int64) =
     member m.DebugCode =
         let name = m.FileName
 
-        if name = unknownFileName
-           || name = startupFileName
-           || name = commandLineArgsFileName then
+        if
+            name = unknownFileName
+            || name = startupFileName
+            || name = commandLineArgsFileName
+        then
             name
         else
 
@@ -363,8 +365,8 @@ type Range(code1: int64, code2: int64) =
                     |> Seq.take (m.EndLine - m.StartLine + 1)
                     |> String.concat "\n"
                     |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
-            with
-            | e -> e.ToString()
+            with e ->
+                e.ToString()
 
     member m.ToShortString() =
         sprintf "(%d,%d--%d,%d)" m.StartLine m.StartColumn m.EndLine m.EndColumn
@@ -460,20 +462,26 @@ module Range =
         else
 
         // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
-        if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then
+        if
+            m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2
+        then
             m1
         else
 
             let start =
-                if (m1.StartLine > m2.StartLine
-                    || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then
+                if
+                    (m1.StartLine > m2.StartLine
+                     || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn))
+                then
                     m2
                 else
                     m1
 
             let finish =
-                if (m1.EndLine > m2.EndLine
-                    || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then
+                if
+                    (m1.EndLine > m2.EndLine
+                     || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn))
+                then
                     m1
                 else
                     m2
@@ -542,5 +550,5 @@ module Range =
                 match nonEmptyLine with
                 | Some (i, s) -> mkRange file (mkPos (i + 1) 0) (mkPos (i + 1) s.Length)
                 | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
-        with
-        | _ -> mkRange file (mkPos 1 0) (mkPos 1 80)
+        with _ ->
+            mkRange file (mkPos 1 0) (mkPos 1 80)

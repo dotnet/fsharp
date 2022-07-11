@@ -172,7 +172,7 @@ let (|ModuleValueOrMemberUse|_|) g expr =
         match stripExpr expr with
         | Expr.App (InnerExprPat(Expr.Val (vref, vFlags, _) as f), fty, tyargs, actualArgs, _m) when vref.IsMemberOrModuleBinding ->
             Some(vref, vFlags, f, fty, tyargs, actualArgs @ args)
-        | Expr.App (f, _fty, [], actualArgs, _) ->
+        | Expr.App (f, _fTy, [], actualArgs, _) ->
             loop f (actualArgs @ args)
         | Expr.Val (vref, vFlags, _m) as f when (match vref.DeclaringEntity with ParentNone -> false | _ -> true) ->
             let fty = tyOfExpr g f
@@ -292,8 +292,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // Recognize applications of module functions.
     match expr with
     // Detect expression tree exprSplices
-    | Expr.App (InnerExprPat(Expr.Val (vf, _, _)), _, _, x0 :: rest, m)
-           when isSplice g vf ->
+    | Expr.App (InnerExprPat(Expr.Val (vref, _, _)), _, _, x0 :: rest, m)
+           when isSplice g vref ->
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr g expr
 
@@ -305,7 +305,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let hole = QP.mkHole(ConvType cenv env m ty, idx)
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg))
 
-    | ModuleValueOrMemberUse g (vref, vFlags, _f, _fty, tyargs, curriedArgs)
+    | ModuleValueOrMemberUse g (vref, vFlags, _f, _fTy, tyargs, curriedArgs)
         when not (isSplice g vref) ->
         let m = expr.Range
 
@@ -348,12 +348,12 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 dprintfn "vref.DisplayName = %A was under applied" vref.DisplayName
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the
             // partially applied arguments to 'let' bindings
-            let topValInfo =
+            let valReprInfo =
                match vref.ValReprInfo with
                | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName, vref.Range))
                | Some a -> a
 
-            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags topValInfo
+            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags valReprInfo
             ConvExpr cenv env (MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m))
         else
             // Too many arguments? Chop
@@ -419,16 +419,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg)) callR laterArgs
 
     // Blast type application nodes and expression application nodes apart so values are left with just their type arguments
-    | Expr.App (f, fty, (_ :: _ as tyargs), (_ :: _ as args), m) ->
-        let rfty = applyForallTy g fty tyargs
-        ConvExpr cenv env (primMkApp (primMkApp (f, fty) tyargs [] m, rfty) [] args m)
+    | Expr.App (f, fTy, (_ :: _ as tyargs), (_ :: _ as args), m) ->
+        let reducedTy = applyForallTy g fTy tyargs
+        ConvExpr cenv env (primMkApp (primMkApp (f, fTy) tyargs [] m, reducedTy) [] args m)
 
     // Uses of possibly-polymorphic values
-    | Expr.App (InnerExprPat(Expr.Val (vref, _vFlags, m)), _fty, tyargs, [], _) ->
+    | Expr.App (InnerExprPat(Expr.Val (vref, _vFlags, m)), _fTy, tyargs, [], _) ->
         ConvValRef true cenv env m vref tyargs
 
     // Simple applications
-    | Expr.App (f, _fty, tyargs, args, m) ->
+    | Expr.App (f, _fTy, tyargs, args, m) ->
         if not (List.isEmpty tyargs) then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m))
         List.fold (fun fR arg -> QP.mkApp (fR, ConvExpr cenv env arg)) (ConvExpr cenv env f) args
 
@@ -828,12 +828,12 @@ and ConvLValueExprCore cenv env expr =
         | TOp.UnionCaseFieldGetAddr (ucref, n, _), [e], _ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm ([ I_ldflda(fspec) ], _), _, _ -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm ([ I_ldsflda(fspec) ], _), _, _ -> ConvLdfld  cenv env m fspec tyargs args
-        | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemty] ->
+        | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemTy] ->
             match shape.Rank, idxs with
-            | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemty arr idx1)
-            | 2, [idx1; idx2] -> ConvExpr cenv env (mkCallArray2DGet cenv.g m elemty arr idx1 idx2)
-            | 3, [idx1; idx2; idx3] -> ConvExpr cenv env (mkCallArray3DGet cenv.g m elemty arr idx1 idx2 idx3)
-            | 4, [idx1; idx2; idx3; idx4] -> ConvExpr cenv env (mkCallArray4DGet cenv.g m elemty arr idx1 idx2 idx3 idx4)
+            | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemTy arr idx1)
+            | 2, [idx1; idx2] -> ConvExpr cenv env (mkCallArray2DGet cenv.g m elemTy arr idx1 idx2)
+            | 3, [idx1; idx2; idx3] -> ConvExpr cenv env (mkCallArray3DGet cenv.g m elemTy arr idx1 idx2 idx3)
+            | 4, [idx1; idx2; idx3; idx4] -> ConvExpr cenv env (mkCallArray4DGet cenv.g m elemTy arr idx1 idx2 idx3 idx4)
             | _ -> ConvExpr cenv env expr
         | _ -> ConvExpr cenv env expr
     | _ -> ConvExpr cenv env expr
@@ -937,15 +937,15 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     elif v.IsCtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
         QP.mkThisVar(ConvType cenv env m v.Type)
     else
-        let vty = v.Type
+        let vTy = v.Type
         match v.DeclaringEntity with
         | ParentNone ->
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(), m))
               let idx = cenv.exprSplices.Count
-              let liftExpr = mkCallLiftValueWithName cenv.g m vty v.LogicalName (exprForValRef m vref)
+              let liftExpr = mkCallLiftValueWithName cenv.g m vTy v.LogicalName (exprForValRef m vref)
               cenv.exprSplices.Add((liftExpr, m))
-              QP.mkHole(ConvType cenv env m vty, idx)
+              QP.mkHole(ConvType cenv env m vTy, idx)
 
         | Parent _ ->
             // First-class use or use of type function
@@ -1106,9 +1106,9 @@ and ConvDecisionTree cenv env tgs typR x =
                         let eqR = ConvExpr cenv env eq
                         QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 
-                | DecisionTreeTest.IsInst (_srcty, tgty) ->
+                | DecisionTreeTest.IsInst (_srcTy, tgtTy) ->
                     let e1R = ConvExpr cenv env e1
-                    QP.mkCond (QP.mkTypeTest (ConvType cenv env m tgty, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
+                    QP.mkCond (QP.mkTypeTest (ConvType cenv env m tgtTy, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
 
                 | DecisionTreeTest.ActivePatternCase _ ->
                     wfail(InternalError( "DecisionTreeTest.ActivePatternCase test in quoted expression", m))

@@ -144,12 +144,9 @@ module ImmutableArray =
 
     let tryFind predicate (arr: ImmutableArray<'T>) =
         let rec loop i =
-            if i >= arr.Length then
-                None
-            else if predicate arr[i] then
-                Some arr[i]
-            else
-                loop (i + 1)
+            if i >= arr.Length then None
+            else if predicate arr[i] then Some arr[i]
+            else loop (i + 1)
 
         loop 0
 

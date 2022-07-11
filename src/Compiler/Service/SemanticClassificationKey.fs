@@ -22,9 +22,12 @@ type SemanticClassificationView(mmf: MemoryMappedFile, length) =
 
     member this.ForEach(f: SemanticClassificationItem -> unit) =
         use view = mmf.CreateViewAccessor(0L, length)
-        let mutable reader = BlobReader(view.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
+
+        let mutable reader =
+            BlobReader(view.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
 
         reader.Offset <- 0
+
         while reader.Offset < reader.Length do
             let item = this.ReadItem(&reader)
             f item
@@ -32,32 +35,34 @@ type SemanticClassificationView(mmf: MemoryMappedFile, length) =
 [<Sealed>]
 type SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
     let mutable isDisposed = false
-    let checkDispose() =
+
+    let checkDispose () =
         if isDisposed then
             raise (ObjectDisposedException("SemanticClassificationKeyStore"))
 
     member _.GetView() =
-        checkDispose()
+        checkDispose ()
         SemanticClassificationView(mmf, length)
 
     interface IDisposable with
 
-            member _.Dispose() =
-                isDisposed <- true
-                mmf.Dispose()
+        member _.Dispose() =
+            isDisposed <- true
+            mmf.Dispose()
 
 [<Sealed>]
 type SemanticClassificationKeyStoreBuilder() =
 
     let b = BlobBuilder()
 
-    member _.WriteAll (semanticClassification: SemanticClassificationItem[]) =
+    member _.WriteAll(semanticClassification: SemanticClassificationItem[]) =
         use ptr = fixed semanticClassification
         b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
 
     member _.TryBuildAndReset() =
         if b.Count > 0 then
             let length = int64 b.Count
+
             let mmf =
                 let mmf =
                     MemoryMappedFile.CreateNew(
@@ -65,7 +70,9 @@ type SemanticClassificationKeyStoreBuilder() =
                         length,
                         MemoryMappedFileAccess.ReadWrite,
                         MemoryMappedFileOptions.None,
-                        HandleInheritability.None)
+                        HandleInheritability.None
+                    )
+
                 use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                 b.WriteContentTo stream
                 mmf

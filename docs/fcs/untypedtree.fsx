@@ -115,7 +115,7 @@ let rec visitPattern = function
       printfn "  .. underscore pattern"
   | SynPat.Named(name, _, _, _) ->
       printfn "  .. named as '%s'" name.idText
-  | SynPat.LongIdent(LongIdentWithDots(ident, _), _, _, _, _, _) ->
+  | SynPat.LongIdent(LongIdentWithDots(ident, _), _, _, _, _, _, _) ->
       let names = String.concat "." [ for i in ident -> i.idText ]
       printfn "  .. identifier: %s" names
   | pat -> printfn "  .. other pattern: %A" pat
@@ -140,12 +140,14 @@ let rec visitExpression e =
       visitExpression trueBranch
       falseBranchOpt |> Option.iter visitExpression 
 
-  | SynExpr.LetOrUse(_, _, bindings, body, _) ->
+  | SynExpr.LetOrUse(_, _, bindings, body, _, _) ->
       // Visit bindings (there may be multiple 
       // for 'let .. = .. and .. = .. in ...'
       printfn "LetOrUse with the following bindings:"
       for binding in bindings do
-        let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, data, headPat, retInfo, equalsRange, init, m, debugPoint)) = binding
+        let (SynBinding(
+          access, kind, isInline, isMutable, attrs, xmlDoc, data,
+          headPat, retInfo, init, equalsRange, debugPoint, trivia)) = binding
         visitPattern headPat
         visitExpression init
       // Visit the body expression
@@ -175,8 +177,9 @@ let visitDeclarations decls =
         // Let binding as a declaration is similar to let binding
         // as an expression (in visitExpression), but has no body
         for binding in bindings do
-          let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, 
-                          valData, pat, retInfo, equalsRange, body, m, sp)) = binding
+          let (SynBinding(
+            access, kind, isInline, isMutable, attrs, xmlDoc, 
+            valData, pat, retInfo, body, equalsRange, debugPoint, trivia)) = binding
           visitPattern pat 
           visitExpression body         
     | _ -> printfn " - not supported declaration: %A" declaration
@@ -191,7 +194,7 @@ with multiple `namespace Foo` declarations:
 /// does not explicitly define it..
 let visitModulesAndNamespaces modulesOrNss =
   for moduleOrNs in modulesOrNss do
-    let (SynModuleOrNamespace(lid, isRec, isMod, decls, xml, attrs, _, m)) = moduleOrNs
+    let (SynModuleOrNamespace(lid, isRec, isMod, decls, xml, attrs, accessibility, range)) = moduleOrNs
     printfn "Namespace or module: %A" lid
     visitDeclarations decls
 (**
@@ -235,7 +238,7 @@ in the previous step:
 match tree with
 | ParsedInput.ImplFile(implFile) ->
     // Extract declarations and walk over them
-    let (ParsedImplFileInput(fn, script, name, _, _, modules, _)) = implFile
+    let (ParsedImplFileInput(fn, script, name, _, _, modules, _, _)) = implFile
     visitModulesAndNamespaces modules
 | _ -> failwith "F# Interface file (*.fsi) not supported."
 (**

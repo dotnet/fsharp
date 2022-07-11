@@ -1119,4 +1119,7 @@
   <data name="TargetInvocationExceptionWrapper" xml:space="preserve">
     <value>internal error: {0}</value>
   </data>
+  <data name="NotUpperCaseConstructorWithoutRQA" xml:space="preserve">
+    <value>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</value>
+  </data>
 </root>
