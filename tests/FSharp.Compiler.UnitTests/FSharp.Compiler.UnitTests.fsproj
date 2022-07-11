@@ -36,6 +36,75 @@
     <Compile Include="..\..\tests\service\Symbols.fs">
       <Link>CompilerService\Symbols.fs</Link>
     </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\TypeTests.fs">
+      <Link>SyntaxTree\TypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ExpressionTests.fs">
+      <Link>SyntaxTree\ExpressionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\StringTests.fs">
+      <Link>SyntaxTree\StringTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ModuleOrNamespaceTests.fs">
+      <Link>SyntaxTree\ModuleOrNamespaceTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ModuleOrNamespaceSigTests.fs">
+      <Link>SyntaxTree\ModuleOrNamespaceSigTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\SignatureTypeTests.fs">
+      <Link>SyntaxTree\SignatureTypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\MeasureTests.fs">
+      <Link>SyntaxTree\MeasureTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\MatchClauseTests.fs">
+      <Link>SyntaxTree\MatchClauseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\SourceIdentifierTests.fs">
+      <Link>SyntaxTree\SourceIdentifierTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\NestedModuleTests.fs">
+      <Link>SyntaxTree\NestedModuleTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\BindingTests.fs">
+      <Link>SyntaxTree\BindingTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ParsedHashDirectiveTests.fs">
+      <Link>SyntaxTree\ParsedHashDirectiveTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\LambdaTests.fs">
+      <Link>SyntaxTree\LambdaTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\IfThenElseTests.fs">
+      <Link>SyntaxTree\IfThenElseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\UnionCaseTests.fs">
+      <Link>SyntaxTree\UnionCaseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\EnumCaseTests.fs">
+      <Link>SyntaxTree\EnumCaseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\PatternTests.fs">
+      <Link>SyntaxTree\PatternTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ExceptionTests.fs">
+      <Link>SyntaxTree\ExceptionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\MemberFlagTests.fs">
+      <Link>SyntaxTree\MemberFlagTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ComputationExpressionTests.fs">
+      <Link>SyntaxTree\ComputationExpressionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\ConditionalDirectiveTests.fs">
+      <Link>SyntaxTree\ConditionalDirectiveTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\CodeCommentTests.fs">
+      <Link>SyntaxTree\CodeCommentTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\SyntaxTreeTests\OperatorNameTests.fs">
+      <Link>SyntaxTree\OperatorNameTests.fs</Link>
+    </Compile>
     <Compile Include="..\..\tests\service\EditorTests.fs">
       <Link>CompilerService\EditorTests.fs</Link>
     </Compile>
