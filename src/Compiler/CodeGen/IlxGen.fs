@@ -10323,65 +10323,67 @@ and GenToStringMethod cenv eenv ilThisTy m =
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
-    [ if not g.useReflectionFreeCodeGen then
-        match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
-        | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
-          Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
-            // The type returned by the 'sprintf' call
-            let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
 
-            // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
-            let newFormatMethSpec =
-                mkILMethSpec (
-                    newFormatMethSpec.MethodRef,
-                    AsObject,
-                    [ // 'T -> string'
-                        funcTy
-                        // rest follow from 'StringFormat<T>'
-                        GenUnitTy cenv eenv m
-                        g.ilg.typ_String
-                        g.ilg.typ_String
-                        ilThisTy
-                    ],
-                    []
-                )
+    [
+        if not g.useReflectionFreeCodeGen then
+            match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
+            | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
+              Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
+                // The type returned by the 'sprintf' call
+                let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
 
-            // Instantiate with our own type
-            let sprintfMethSpec =
-                mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
+                // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
+                let newFormatMethSpec =
+                    mkILMethSpec (
+                        newFormatMethSpec.MethodRef,
+                        AsObject,
+                        [ // 'T -> string'
+                            funcTy
+                            // rest follow from 'StringFormat<T>'
+                            GenUnitTy cenv eenv m
+                            g.ilg.typ_String
+                            g.ilg.typ_String
+                            ilThisTy
+                        ],
+                        []
+                    )
 
-            // Here's the body of the method. Call printf, then invoke the function it returns
-            let callInstrs =
-                EraseClosures.mkCallFunc
-                    cenv.ilxPubCloEnv
-                    (fun _ -> 0us)
-                    eenv.tyenv.Count
-                    Normalcall
-                    (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
+                // Instantiate with our own type
+                let sprintfMethSpec =
+                    mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
 
-            let ilInstrs =
-                [ // load the hardwired format string
-                    I_ldstr "%+A"
-                    // make the printf format object
-                    mkNormalNewobj newFormatMethSpec
-                    // call sprintf
-                    mkNormalCall sprintfMethSpec
-                    // call the function returned by sprintf
-                    mkLdarg0
-                    if ilThisTy.Boxity = ILBoxity.AsValue then
-                        mkNormalLdobj ilThisTy
-                    yield! callInstrs
-                ]
+                // Here's the body of the method. Call printf, then invoke the function it returns
+                let callInstrs =
+                    EraseClosures.mkCallFunc
+                        cenv.ilxPubCloEnv
+                        (fun _ -> 0us)
+                        eenv.tyenv.Count
+                        Normalcall
+                        (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
 
-            let ilMethodBody =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
+                let ilInstrs =
+                    [ // load the hardwired format string
+                        I_ldstr "%+A"
+                        // make the printf format object
+                        mkNormalNewobj newFormatMethSpec
+                        // call sprintf
+                        mkNormalCall sprintfMethSpec
+                        // call the function returned by sprintf
+                        mkLdarg0
+                        if ilThisTy.Boxity = ILBoxity.AsValue then
+                            mkNormalLdobj ilThisTy
+                        yield! callInstrs
+                    ]
 
-            let mdef =
-                mkILNonGenericVirtualMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+                let ilMethodBody =
+                    mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
 
-            let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
-            yield mdef
-        | _ -> ()
+                let mdef =
+                    mkILNonGenericVirtualMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+
+                let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
+                yield mdef
+            | _ -> ()
     ]
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
@@ -10523,6 +10525,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
             let tyconRepr = tycon.TypeReprInfo
 
+            let reprAccess = ComputeMemberAccess hiddenRepr
+
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
                 tycon.Attribs
@@ -10533,7 +10537,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
 
             let generateDebugDisplayAttribute =
-                not g.compilingFSharpCore && tycon.IsUnionTycon && isNil debugDisplayAttrs
+                not g.useReflectionFreeCodeGen
+                && not g.compilingFSharpCore
+                && tycon.IsUnionTycon
+                && isNil debugDisplayAttrs
 
             let generateDebugProxies =
                 not (tyconRefEq g tcref g.unit_tcr_canon)
@@ -10563,17 +10570,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         |> GenAttrs cenv eenv
                     yield! ilDebugDisplayAttributes
                 ]
-
-            let reprAccess = ComputeMemberAccess hiddenRepr
-
-            // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
-            let debugDisplayAttrs, normalAttrs = tycon.Attribs |> List.partition (IsMatchingFSharpAttribute g g.attrib_DebuggerDisplayAttribute)
-            let securityAttrs, normalAttrs = normalAttrs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
-            let generateDebugDisplayAttribute =
-                not g.useReflectionFreeCodeGen &&
-                not g.compilingFSharpCore &&
-                tycon.IsUnionTycon &&
-                isNil debugDisplayAttrs
 
             let ilTypeDefKind =
                 match tyconRepr with

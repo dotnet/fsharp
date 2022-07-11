@@ -1070,18 +1070,15 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 
             CompilerOption("pathmap", tagPathMap, OptionStringList(AddPathMapping tcConfigB), None, Some(FSComp.SR.optsPathMap ()))
 
-            CompilerOption(
-                "crossoptimize",
-                tagNone,
-                OptionSwitch(crossOptimizeSwitch tcConfigB),
-                None,
-                Some(FSComp.SR.optsCrossoptimize ())
-            )
+            CompilerOption
+                ("crossoptimize", tagNone, OptionSwitch(crossOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsCrossoptimize ()))
 
-          CompilerOption
-           ("reflectionfree", tagNone,
-            OptionUnit (fun () -> tcConfigB.useReflectionFreeCodeGen <- true), None,
-            Some (FSComp.SR.optsReflectionFree()))
+                CompilerOption
+                ("reflectionfree",
+                 tagNone,
+                 OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
+                 None,
+                 Some(FSComp.SR.optsReflectionFree ()))
         ]
 
     if isFsi then debug @ codegen else debug @ embed @ codegen
