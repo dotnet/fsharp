@@ -638,11 +638,13 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
         // of objects. We use System.Runtime.Serialization.FormatterServices.GetUninitializedObject to do
         // the fake allocation - this creates an "empty" object, even if the object doesn't have
         // a constructor. It is not usable in partial trust code.
-        if runningOnMono
-           && ty.IsClass
-           && not ty.IsAbstract
-           && not ty.IsGenericType
-           && not ty.IsGenericTypeDefinition then
+        if
+            runningOnMono
+            && ty.IsClass
+            && not ty.IsAbstract
+            && not ty.IsGenericType
+            && not ty.IsGenericTypeDefinition
+        then
             try
                 System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty
                 |> ignore
@@ -972,7 +974,9 @@ let convFieldSpec cenv emEnv fspec =
         nonQueryableTypeGetField parentTI fieldB
     else
     // Prior type.
-    if typeIsNotQueryable parentTI then
+    if
+        typeIsNotQueryable parentTI
+    then
         let parentT = getTypeConstructor parentTI
         let fieldInfo = queryableTypeGetField emEnv parentT fref
         nonQueryableTypeGetField parentTI fieldInfo
@@ -1009,10 +1013,12 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
             | Some a ->
                 if
                     // obvious case
-                    p.IsAssignableFrom a then
+                    p.IsAssignableFrom a
+                then
                     true
                 elif
-                    p.IsGenericType && a.IsGenericType
+                    p.IsGenericType
+                    && a.IsGenericType
                     // non obvious due to contravariance: Action<T> where T: IFoo accepts Action<FooImpl> (for FooImpl: IFoo)
                     && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition())
                 then
@@ -1124,8 +1130,10 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
 let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo MaybeNull =
-    if (parentTI.IsGenericType
-        && not (equalTypes parentTI (getTypeConstructor parentTI))) then
+    if
+        (parentTI.IsGenericType
+         && not (equalTypes parentTI (getTypeConstructor parentTI)))
+    then
         TypeBuilder.GetMethod(parentTI, methInfo)
     else
         methInfo
@@ -1141,7 +1149,9 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
             nonQueryableTypeGetMethod parentTI methB
         else
         // Prior type.
-        if typeIsNotQueryable parentTI then
+        if
+            typeIsNotQueryable parentTI
+        then
             let parentT = getTypeConstructor parentTI
             let methInfo = queryableTypeGetMethod cenv emEnv parentT mref
             nonQueryableTypeGetMethod parentTI methInfo
@@ -1216,7 +1226,9 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
             nonQueryableTypeGetConstructor parentTI consB
         else
         // Prior type.
-        if typeIsNotQueryable parentTI then
+        if
+            typeIsNotQueryable parentTI
+        then
             let parentT = getTypeConstructor parentTI
             let ctorG = queryableTypeGetConstructor cenv emEnv parentT mref
             nonQueryableTypeGetConstructor parentTI ctorG
@@ -2134,9 +2146,11 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
         match fdef.LiteralValue with
         | None -> emEnv
         | Some initial ->
-            if not fieldT.IsEnum
-               // it is ok to init fields with type = enum that are defined in other assemblies
-               || not fieldT.Assembly.IsDynamic then
+            if
+                not fieldT.IsEnum
+                // it is ok to init fields with type = enum that are defined in other assemblies
+                || not fieldT.Assembly.IsDynamic
+            then
                 fieldB.SetConstant(initial.AsObject())
                 emEnv
             else
@@ -2267,9 +2281,10 @@ let typeAttributesOfTypeLayout cenv emEnv x =
         if p.Size = None && p.Pack = None then
             None
         else
-            match cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute",
-                  cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind"
-                with
+            match
+                cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute",
+                cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind"
+            with
             | Some tref1, Some tref2 ->
                 Some(
                     convCustomAttr
@@ -2564,7 +2579,8 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
 
                     match emEnv.emTypMap.TryFind typeRef with
                     | Some (_, tb, _, _) ->
-                        if not (tb.IsCreated()) then tb.CreateTypeAndLog() |> ignore
+                        if not (tb.IsCreated()) then
+                            tb.CreateTypeAndLog() |> ignore
 
                         tb.Assembly
                     | None -> null)
@@ -2590,7 +2606,8 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
     traverseTypeRef tref
 
 let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef: ILTypeDef) =
-    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name
+    if verbose2 then
+        dprintf "buildTypeDefPass4 %s\n" tdef.Name
 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     createTypeRef (visited, created) emEnv tref

@@ -39,7 +39,7 @@ type IlxUnionHasHelpers =
     | SpecialFSharpListHelpers
     | SpecialFSharpOptionHelpers
 
-type IlxUnionRef = IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* hasHelpers: *)  * IlxUnionHasHelpers
+type IlxUnionRef = IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* hasHelpers: *) * IlxUnionHasHelpers
 
 type IlxUnionSpec =
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs

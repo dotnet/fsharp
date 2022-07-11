@@ -232,8 +232,10 @@ let GenerateIlxCode
     ) =
 
     let mainMethodInfo =
-        if (tcConfig.target = CompilerTarget.Dll)
-           || (tcConfig.target = CompilerTarget.Module) then
+        if
+            (tcConfig.target = CompilerTarget.Dll)
+            || (tcConfig.target = CompilerTarget.Module)
+        then
             None
         else
             Some topAttrs.mainMethodAttrs

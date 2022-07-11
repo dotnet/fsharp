@@ -334,11 +334,13 @@ type BackgroundCompiler
                     // these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The ramification
                     // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
-                    if (try
+                    if
+                        (try
                             Path.GetFileNameWithoutExtension(nm)
-                        with _ ->
-                            "")
-                       <> GetFSharpCoreLibraryName() then
+                         with _ ->
+                             "")
+                        <> GetFSharpCoreLibraryName()
+                    then
                         { new IProjectReference with
                             member x.EvaluateRawContents() =
                                 node {
