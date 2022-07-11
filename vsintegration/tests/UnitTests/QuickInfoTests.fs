@@ -434,7 +434,7 @@ namespace FsTest
 module Test =
     let fu$$nc x = ()
 """>]
-let ``Automation.LetBindings.InsideType.Instance`` code =
+let ``Automation.LetBindings.Module`` code =
     let expectedSignature = "val func: x: 'a -> unit"
     let tooltip = GetQuickInfoTextFromCode code
     StringAssert.StartsWith(expectedSignature, tooltip)
