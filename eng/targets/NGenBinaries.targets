@@ -29,25 +29,36 @@
     <PropertyGroup>
       <PathToNGen32>$(windir)\Microsoft.NET\Framework\v4.0.30319\ngen.exe</PathToNGen32>
       <PathToNGen64>$(windir)\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</PathToNGen64>
+      <PathToNGenArm>$(windir)\Microsoft.NET\FrameworkArm64\v4.0.30319\ngen.exe</PathToNGenArm>
     </PropertyGroup>
 
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /nologo /silent /ExeConfig:"$(TargetPath)"' 
-          Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
+          Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND '$(PlatformTarget)' != 'arm64' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true" />
 
     <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /nologo /silent'
-          Condition = " Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND (!Exists('$(TargetPath).config') OR '$(OutputType)' != 'Exe') AND '$(IsAdministrator)' == 'true' "
+          Condition = " Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND '$(PlatformTarget)' != 'arm64' AND (!Exists('$(TargetPath).config') OR '$(OutputType)' != 'Exe') AND '$(IsAdministrator)' == 'true' "
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true"/>
 
     <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /nologo /silent /ExeConfig:"$(TargetPath)"' 
-          Condition = "Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
+          Condition = "Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND '$(PlatformTarget)' != 'arm64' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true" />
 
     <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /nologo /silent'
-          Condition = " Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND (!Exists('$(TargetPath).config') OR '$(OutputType)' != 'Exe') AND '$(IsAdministrator)' == 'true' "
+          Condition = " Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND '$(PlatformTarget)' != 'arm64' AND (!Exists('$(TargetPath).config') OR '$(OutputType)' != 'Exe') AND '$(IsAdministrator)' == 'true' "
+          ConsoleToMSBuild="true"
+          IgnoreStandardErrorWarningFormat="true"/>
+
+    <Exec Command='"$(PathToNGenArm64)" install "$(TargetPath)" /nologo /silent /ExeConfig:"$(TargetPath)"' 
+          Condition = "Exists('$(PathToNGenArm64)') AND '$(PlatformTarget)' == 'arm64' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
+          ConsoleToMSBuild="true"
+          IgnoreStandardErrorWarningFormat="true" />
+
+    <Exec Command='"$(PathToNGenArm64)" install "$(TargetPath)" /nologo /silent'
+          Condition = " Exists('$(PathToNGenArm64)') AND '$(PlatformTarget)' == 'arm64' AND (!Exists('$(TargetPath).config') OR '$(OutputType)' != 'Exe') AND '$(IsAdministrator)' == 'true' "
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true"/>
 
@@ -61,10 +72,12 @@
     <PropertyGroup>
       <PathToSN32>$(WindowsSDK_ExecutablePath_x86)\sn.exe</PathToSN32>
       <PathToSN64>$(WindowsSDK_ExecutablePath_x64)\sn.exe</PathToSN64>
+      <PathToSNArm64>$(WindowsSDK_ExecutablePath_Arm64)\sn.exe</PathToSNArm64>
     </PropertyGroup>
 
     <Exec Command='"$(PathToSN32)" /q /Vr "$(TargetPath)"' Condition = "Exists('$(PathToSN32)') AND '$(DelaySign)' == 'true' AND Exists('$(TargetPath)') AND '$(IsAdministrator)' == 'true'" ConsoleToMsBuild='true' />
     <Exec Command='"$(PathToSN64)" /q /Vr "$(TargetPath)"' Condition = "Exists('$(PathToSN64)') AND '$(DelaySign)' == 'true' AND Exists('$(TargetPath)') AND '$(IsAdministrator)' == 'true'" ConsoleToMsBuild='true' />
+    <Exec Command='"$(PathToSNArm64)" /q /Vr "$(TargetPath)"' Condition = "Exists('$(PathToSNArm64)') AND '$(DelaySign)' == 'true' AND Exists('$(TargetPath)') AND '$(IsAdministrator)' == 'true'" ConsoleToMsBuild='true' />
   </Target>
 
 </Project>

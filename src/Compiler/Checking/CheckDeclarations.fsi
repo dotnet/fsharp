@@ -75,6 +75,6 @@ val CheckOneSigFile:
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
-exception ParameterlessStructCtor of range: range
-
 exception NotUpperCaseConstructor of range: range
+
+exception NotUpperCaseConstructorWithoutRQA of range: range

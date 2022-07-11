@@ -25,14 +25,8 @@ open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Control
-#if STANDALONE
-[<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
-type FactAttribute() = inherit Attribute()
-#else
 open Xunit
 open System.Runtime.CompilerServices
-
-#endif
 
 // Delegates to task, except 'Run' which is deliberately not inlined, hence no chance
 // of static compilation of state machines.  
@@ -171,7 +165,7 @@ type ITaskThing =
 type SmokeTestsForCompilation() =
 
     [<Fact>]
-    member __.tinyTask() =
+    member _.tinyTask() =
         taskDynamic {
             return 1
         }
@@ -180,7 +174,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
-    member __.tbind() =
+    member _.tbind() =
         taskDynamic {
             let! x = Task.FromResult(1)
             return 1 + x
@@ -190,7 +184,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
-    member __.tnested() =
+    member _.tnested() =
         taskDynamic {
             let! x = taskDynamic { return 1 }
             return x
@@ -200,7 +194,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
-    member __.tcatch0() =
+    member _.tcatch0() =
         taskDynamic {
             try 
                return 1
@@ -212,7 +206,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
-    member __.tcatch1() =
+    member _.tcatch1() =
         taskDynamic {
             try 
                let! x = Task.FromResult 1
@@ -226,7 +220,7 @@ type SmokeTestsForCompilation() =
 
 
     [<Fact>]
-    member __.t3() =
+    member _.t3() =
         let t2() =
             taskDynamic {
                 System.Console.WriteLine("hello")
@@ -243,7 +237,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
-    member __.t3b() =
+    member _.t3b() =
         taskDynamic {
             System.Console.WriteLine("hello")
             let! x = Task.FromResult(1)
@@ -255,7 +249,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> 2 then failwith "failed"
 
     [<Fact>]
-    member __.t3c() =
+    member _.t3c() =
         taskDynamic {
             System.Console.WriteLine("hello")
             do! Task.Delay(100)
@@ -268,7 +262,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     // This tests an exception match
-    member __.t67() =
+    member _.t67() =
         taskDynamic {
             try
                 do! Task.Delay(0)
@@ -284,7 +278,7 @@ type SmokeTestsForCompilation() =
 
     [<Fact>]
     // This tests compiling an incomplete exception match
-    member __.t68() =
+    member _.t68() =
         taskDynamic {
             try
                 do! Task.Delay(0)
@@ -297,7 +291,7 @@ type SmokeTestsForCompilation() =
             if t.Result <> () then failwith "failed"
 
     [<Fact>]
-    member __.testCompileAsyncWhileLoop() =
+    member _.testCompileAsyncWhileLoop() =
         taskDynamic {
             let mutable i = 0
             while i < 5 do
@@ -321,7 +315,7 @@ module Helpers =
 
 type Basics() = 
     [<Fact>]
-    member __.testShortCircuitResult() =
+    member _.testShortCircuitResult() =
         printfn "Running testShortCircuitResult..."
         let t =
             taskDynamic {
@@ -334,7 +328,7 @@ type Basics() =
         require (t.Result = 3) "wrong result"
 
     [<Fact>]
-    member __.testDelay() =
+    member _.testDelay() =
         printfn "Running testDelay..."
         let mutable x = 0
         let t =
@@ -348,7 +342,7 @@ type Basics() =
         t.Wait()
 
     [<Fact>]
-    member __.testNoDelay() =
+    member _.testNoDelay() =
         printfn "Running testNoDelay..."
         let mutable x = 0
         let t =
@@ -361,7 +355,7 @@ type Basics() =
         t.Wait()
 
     [<Fact>]
-    member __.testNonBlocking() =
+    member _.testNonBlocking() =
         printfn "Running testNonBlocking..."
         let sw = Stopwatch()
         sw.Start()
@@ -375,7 +369,7 @@ type Basics() =
         t.Wait()
 
     [<Fact>]
-    member __.testCatching1() =
+    member _.testCatching1() =
         printfn "Running testCatching1..."
         let mutable x = 0
         let mutable y = 0
@@ -399,7 +393,7 @@ type Basics() =
         require (x = 0) "ran past failure"
 
     [<Fact>]
-    member __.testCatching2() =
+    member _.testCatching2() =
         printfn "Running testCatching2..."
         let mutable x = 0
         let mutable y = 0
@@ -422,7 +416,7 @@ type Basics() =
         require (x = 0) "ran past failure"
 
     [<Fact>]
-    member __.testNestedCatching() =
+    member _.testNestedCatching() =
         printfn "Running testNestedCatching..."
         let mutable counter = 1
         let mutable caughtInner = 0
@@ -459,7 +453,7 @@ type Basics() =
         require (caughtOuter = 2) "didn't catch outer"
 
     [<Fact>]
-    member __.testWhileLoopSync() =
+    member _.testWhileLoopSync() =
         printfn "Running testWhileLoopSync..."
         let t =
             taskDynamic {
@@ -473,7 +467,7 @@ type Basics() =
         require (t.Result = 10) "didn't do sync while loop properly - wrong result"
 
     [<Fact>]
-    member __.testWhileLoopAsyncZeroIteration() =
+    member _.testWhileLoopAsyncZeroIteration() =
         printfn "Running testWhileLoopAsyncZeroIteration..."
         for i in 1 .. 5 do 
             let t =
@@ -488,7 +482,7 @@ type Basics() =
             require (t.Result = 0) "didn't do while loop properly"
 
     [<Fact>]
-    member __.testWhileLoopAsyncOneIteration() =
+    member _.testWhileLoopAsyncOneIteration() =
         printfn "Running testWhileLoopAsyncOneIteration..."
         for i in 1 .. 5 do 
             let t =
@@ -503,7 +497,7 @@ type Basics() =
             require (t.Result = 1) "didn't do while loop properly"
 
     [<Fact>]
-    member __.testWhileLoopAsync() =
+    member _.testWhileLoopAsync() =
         printfn "Running testWhileLoopAsync..."
         for i in 1 .. 5 do 
             let t =
@@ -518,7 +512,7 @@ type Basics() =
             require (t.Result = 10) "didn't do while loop properly"
 
     [<Fact>]
-    member __.testTryFinallyHappyPath() =
+    member _.testTryFinallyHappyPath() =
         printfn "Running testTryFinallyHappyPath..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -534,7 +528,7 @@ type Basics() =
             t.Wait()
             require ran "never ran"
     [<Fact>]
-    member __.testTryFinallySadPath() =
+    member _.testTryFinallySadPath() =
         printfn "Running testTryFinallySadPath..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -555,7 +549,7 @@ type Basics() =
             require ran "never ran"
 
     [<Fact>]
-    member __.testTryFinallyCaught() =
+    member _.testTryFinallyCaught() =
         printfn "Running testTryFinallyCaught..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -577,13 +571,13 @@ type Basics() =
             require ran "never ran"
     
     [<Fact>]
-    member __.testUsing() =
+    member _.testUsing() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = false
             let t =
                 taskDynamic {
-                    use d = { new IDisposable with member __.Dispose() = disposed <- true }
+                    use d = { new IDisposable with member _.Dispose() = disposed <- true }
                     require (not disposed) "disposed way early"
                     do! Task.Delay(100)
                     require (not disposed) "disposed kinda early"
@@ -593,7 +587,7 @@ type Basics() =
 
 #if NETCOREAPP
     [<Fact>]
-    member __.testUsingAsyncDisposableSync() =
+    member _.testUsingAsyncDisposableSync() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
@@ -601,7 +595,7 @@ type Basics() =
                 taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
-                            member __.DisposeAsync() = 
+                            member _.DisposeAsync() = 
                                 taskDynamic { 
                                    System.Console.WriteLine "incrementing"
                                    disposed <- disposed + 1 }
@@ -618,7 +612,7 @@ type Basics() =
             require (disposed <= 1) "too many dispose on B"
 
     [<Fact>]
-    member __.testUsingAsyncDisposableAsync() =
+    member _.testUsingAsyncDisposableAsync() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
@@ -626,7 +620,7 @@ type Basics() =
                 taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
-                            member __.DisposeAsync() = 
+                            member _.DisposeAsync() = 
                                 taskDynamic { 
                                     do! Task.Delay(10)
                                     disposed <- disposed + 1 
@@ -642,7 +636,7 @@ type Basics() =
             require (disposed <= 1) "too many dispose on B"
 
     [<Fact>]
-    member __.testUsingAsyncDisposableExnAsync() =
+    member _.testUsingAsyncDisposableExnAsync() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
@@ -650,7 +644,7 @@ type Basics() =
                 taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
-                            member __.DisposeAsync() = 
+                            member _.DisposeAsync() = 
                                 taskDynamic { 
                                     do! Task.Delay(10)
                                     disposed <- disposed + 1 
@@ -667,7 +661,7 @@ type Basics() =
                 require (disposed <= 1) "too many dispose on B"
 
     [<Fact>]
-    member __.testUsingAsyncDisposableExnSync() =
+    member _.testUsingAsyncDisposableExnSync() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
@@ -675,7 +669,7 @@ type Basics() =
                 taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
-                            member __.DisposeAsync() = 
+                            member _.DisposeAsync() = 
                                 taskDynamic { 
                                     disposed <- disposed + 1 
                                     do! Task.Delay(10)
@@ -692,7 +686,7 @@ type Basics() =
                 require (disposed <= 1) "too many dispose on B"
 
     [<Fact>]
-    member __.testUsingAsyncDisposableDelayExnSync() =
+    member _.testUsingAsyncDisposableDelayExnSync() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
             let mutable disposed = 0
@@ -700,7 +694,7 @@ type Basics() =
                 taskDynamic {
                     use d = 
                         { new IAsyncDisposable with 
-                            member __.DisposeAsync() = 
+                            member _.DisposeAsync() = 
                                 taskDynamic { 
                                     disposed <- disposed + 1 
                                     do! Task.Delay(10)
@@ -720,7 +714,7 @@ type Basics() =
 #endif
 
     [<Fact>]
-    member __.testUsingFromTask() =
+    member _.testUsingFromTask() =
         printfn "Running testUsingFromTask..."
         let mutable disposedInner = false
         let mutable disposed = false
@@ -729,9 +723,9 @@ type Basics() =
                 use! d =
                     taskDynamic {
                         do! Task.Delay(50)
-                        use i = { new IDisposable with member __.Dispose() = disposedInner <- true }
+                        use i = { new IDisposable with member _.Dispose() = disposedInner <- true }
                         require (not disposed && not disposedInner) "disposed inner early"
-                        return { new IDisposable with member __.Dispose() = disposed <- true }
+                        return { new IDisposable with member _.Dispose() = disposed <- true }
                     }
                 require disposedInner "did not dispose inner after task completion"
                 require (not disposed) "disposed way early"
@@ -742,7 +736,7 @@ type Basics() =
         require disposed "never disposed C"
 
     [<Fact>]
-    member __.testUsingSadPath() =
+    member _.testUsingSadPath() =
         printfn "Running testUsingSadPath..."
         let mutable disposedInner = false
         let mutable disposed = false
@@ -752,10 +746,10 @@ type Basics() =
                     use! d =
                         taskDynamic {
                             do! Task.Delay(50)
-                            use i = { new IDisposable with member __.Dispose() = disposedInner <- true }
+                            use i = { new IDisposable with member _.Dispose() = disposedInner <- true }
                             failtest "uhoh"
                             require (not disposed && not disposedInner) "disposed inner early"
-                            return { new IDisposable with member __.Dispose() = disposed <- true }
+                            return { new IDisposable with member _.Dispose() = disposed <- true }
                         }
                     ()
                 with
@@ -771,7 +765,7 @@ type Basics() =
         require (not disposed) "disposed thing that never should've existed"
 
     [<Fact>]
-    member __.testForLoopA() =
+    member _.testForLoopA() =
         printfn "Running testForLoopA..."
         let list = ["a"; "b"; "c"] |> Seq.ofList
         let t =
@@ -788,7 +782,7 @@ type Basics() =
         t.Wait()
 
     [<Fact>]
-    member __.testForLoopComplex() =
+    member _.testForLoopComplex() =
         printfn "Running testForLoopComplex..."
         let mutable disposed = false
         let wrapList =
@@ -796,26 +790,26 @@ type Basics() =
             let getEnumerator() =
                 let raw = raw.GetEnumerator()
                 { new IEnumerator<string> with
-                    member __.MoveNext() =
+                    member _.MoveNext() =
                         require (not disposed) "moved next after disposal"
                         raw.MoveNext()
-                    member __.Current =
+                    member _.Current =
                         require (not disposed) "accessed current after disposal"
                         raw.Current
-                    member __.Current =
+                    member _.Current =
                         require (not disposed) "accessed current (boxed) after disposal"
                         box raw.Current
-                    member __.Dispose() =
+                    member _.Dispose() =
                         require (not disposed) "disposed twice"
                         disposed <- true
                         raw.Dispose()
-                    member __.Reset() =
+                    member _.Reset() =
                         require (not disposed) "reset after disposal"
                         raw.Reset()
                 }
             { new IEnumerable<string> with
-                member __.GetEnumerator() : IEnumerator<string> = getEnumerator()
-                member __.GetEnumerator() : IEnumerator = upcast getEnumerator()
+                member _.GetEnumerator() : IEnumerator<string> = getEnumerator()
+                member _.GetEnumerator() : IEnumerator = upcast getEnumerator()
             }
         let t =
             taskDynamic {
@@ -847,7 +841,7 @@ type Basics() =
         require (t.Result = 1) "wrong result"
 
     [<Fact>]
-    member __.testForLoopSadPath() =
+    member _.testForLoopSadPath() =
         printfn "Running testForLoopSadPath..."
         for i in 1 .. 5 do 
             let wrapList = ["a"; "b"; "c"]
@@ -863,7 +857,7 @@ type Basics() =
             require (t.Result = 1) "wrong result"
 
     [<Fact>]
-    member __.testForLoopSadPathComplex() =
+    member _.testForLoopSadPathComplex() =
         printfn "Running testForLoopSadPathComplex..."
         for i in 1 .. 5 do 
             let mutable disposed = false
@@ -872,26 +866,26 @@ type Basics() =
                 let getEnumerator() =
                     let raw = raw.GetEnumerator()
                     { new IEnumerator<string> with
-                        member __.MoveNext() =
+                        member _.MoveNext() =
                             require (not disposed) "moved next after disposal"
                             raw.MoveNext()
-                        member __.Current =
+                        member _.Current =
                             require (not disposed) "accessed current after disposal"
                             raw.Current
-                        member __.Current =
+                        member _.Current =
                             require (not disposed) "accessed current (boxed) after disposal"
                             box raw.Current
-                        member __.Dispose() =
+                        member _.Dispose() =
                             require (not disposed) "disposed twice"
                             disposed <- true
                             raw.Dispose()
-                        member __.Reset() =
+                        member _.Reset() =
                             require (not disposed) "reset after disposal"
                             raw.Reset()
                     }
                 { new IEnumerable<string> with
-                    member __.GetEnumerator() : IEnumerator<string> = getEnumerator()
-                    member __.GetEnumerator() : IEnumerator = upcast getEnumerator()
+                    member _.GetEnumerator() : IEnumerator<string> = getEnumerator()
+                    member _.GetEnumerator() : IEnumerator = upcast getEnumerator()
                 }
             let mutable caught = false
             let t =
@@ -918,7 +912,7 @@ type Basics() =
             require disposed "never disposed A"
     
     [<Fact>]
-    member __.testExceptionAttachedToTaskWithoutAwait() =
+    member _.testExceptionAttachedToTaskWithoutAwait() =
         for i in 1 .. 5 do 
             let mutable ranA = false
             let mutable ranB = false
@@ -951,7 +945,7 @@ type Basics() =
             require caught "didn't catch"
 
     [<Fact>]
-    member __.testExceptionAttachedToTaskWithAwait() =
+    member _.testExceptionAttachedToTaskWithAwait() =
         printfn "running testExceptionAttachedToTaskWithAwait"
         for i in 1 .. 5 do 
             let mutable ranA = false
@@ -986,7 +980,7 @@ type Basics() =
             require caught "didn't catch"
     
     [<Fact>]
-    member __.testExceptionThrownInFinally() =
+    member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
         for i in 1 .. 5 do 
             let mutable ranInitial = false
@@ -1014,7 +1008,7 @@ type Basics() =
             require (ranFinally = 1) "didn't run finally exactly once"
 
     [<Fact>]
-    member __.test2ndExceptionThrownInFinally() =
+    member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
             let mutable ranInitial = false
@@ -1043,7 +1037,7 @@ type Basics() =
             require (ranFinally = 1) "didn't run finally exactly once"
     
     [<Fact>]
-    member __.testFixedStackWhileLoop() =
+    member _.testFixedStackWhileLoop() =
         printfn "running testFixedStackWhileLoop"
         for i in 1 .. 100 do 
             let t =
@@ -1064,7 +1058,7 @@ type Basics() =
             require (t.Result = BIG) "didn't get to big number"
 
     [<Fact>]
-    member __.testFixedStackForLoop() =
+    member _.testFixedStackForLoop() =
         for i in 1 .. 100 do 
             printfn "running testFixedStackForLoop"
             let mutable ran = false
@@ -1085,7 +1079,7 @@ type Basics() =
             require ran "didn't run all"
 
     [<Fact>]
-    member __.testTypeInference() =
+    member _.testTypeInference() =
         let t1 : string Task =
             taskDynamic {
                 return "hello"
@@ -1098,7 +1092,7 @@ type Basics() =
         t2.Wait()
 
     [<Fact>]
-    member __.testNoStackOverflowWithImmediateResult() =
+    member _.testNoStackOverflowWithImmediateResult() =
         printfn "running testNoStackOverflowWithImmediateResult"
         let longLoop =
             taskDynamic {
@@ -1110,7 +1104,7 @@ type Basics() =
         longLoop.Wait()
     
     [<Fact>]
-    member __.testNoStackOverflowWithYieldResult() =
+    member _.testNoStackOverflowWithYieldResult() =
         printfn "running testNoStackOverflowWithYieldResult"
         let longLoop =
             taskDynamic {
@@ -1127,7 +1121,7 @@ type Basics() =
         longLoop.Wait()
 
     [<Fact>]
-    member __.testSmallTailRecursion() =
+    member _.testSmallTailRecursion() =
         printfn "running testSmallTailRecursion"
         let rec loop n =
             taskDynamic {
@@ -1145,7 +1139,7 @@ type Basics() =
         shortLoop.Wait()
     
     [<Fact>]
-    member __.testTryOverReturnFrom() =
+    member _.testTryOverReturnFrom() =
         printfn "running testTryOverReturnFrom"
         let inner() =
             taskDynamic {
@@ -1164,7 +1158,7 @@ type Basics() =
         require (t.Result = 2) "didn't catch"
 
     [<Fact>]
-    member __.testTryFinallyOverReturnFromWithException() =
+    member _.testTryFinallyOverReturnFromWithException() =
         printfn "running testTryFinallyOverReturnFromWithException"
         let inner() =
             taskDynamic {
@@ -1188,7 +1182,7 @@ type Basics() =
         require (m = 1) "didn't run finally"
     
     [<Fact>]
-    member __.testTryFinallyOverReturnFromWithoutException() =
+    member _.testTryFinallyOverReturnFromWithoutException() =
         printfn "running testTryFinallyOverReturnFromWithoutException"
         let inner() =
             taskDynamic {
@@ -1211,21 +1205,21 @@ type Basics() =
         require (m = 1) "didn't run finally"
 
     // no need to call this, we just want to check that it compiles w/o warnings
-    member __.testTrivialReturnCompiles (x : 'a) : 'a Task =
+    member _.testTrivialReturnCompiles (x : 'a) : 'a Task =
         taskDynamic {
             do! Task.Yield()
             return x
         }
 
     // no need to call this, we just want to check that it compiles w/o warnings
-    member __.testTrivialTransformedReturnCompiles (x : 'a) (f : 'a -> 'b) : 'b Task =
+    member _.testTrivialTransformedReturnCompiles (x : 'a) (f : 'a -> 'b) : 'b Task =
         taskDynamic {
             do! Task.Yield()
             return f x
         }
 
     [<Fact>]
-    member __.testAsyncsMixedWithTasks() =
+    member _.testAsyncsMixedWithTasks() =
         let t =
             taskDynamic {
                 do! Task.Delay(1)
@@ -1242,7 +1236,7 @@ type Basics() =
 
     [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
-    member __.testDefaultInferenceForReturnFrom() =
+    member _.testDefaultInferenceForReturnFrom() =
         let t = taskDynamic { return Some "x" }
         taskDynamic {
             let! r = t
@@ -1255,7 +1249,7 @@ type Basics() =
 
     [<Fact>]
     // no need to call this, just check that it compiles
-    member __.testCompilerInfersArgumentOfReturnFrom() =
+    member _.testCompilerInfersArgumentOfReturnFrom() =
         taskDynamic {
             if true then return 1
             else return! failwith ""
@@ -1267,7 +1261,7 @@ type Basics() =
 type BasicsNotInParallel() = 
 
     [<Fact; >]
-    member __.testTaskUsesSyncContext() =
+    member _.testTaskUsesSyncContext() =
         printfn "Running testBackgroundTask..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -1297,7 +1291,7 @@ type BasicsNotInParallel() =
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
                  
     [<Fact; >]
-    member __.testBackgroundTaskEscapesSyncContext() =
+    member _.testBackgroundTaskEscapesSyncContext() =
         printfn "Running testBackgroundTask..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -1318,7 +1312,7 @@ type BasicsNotInParallel() =
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
 
     [<Fact; >]
-    member __.testBackgroundTaskStaysOnSameThreadIfAlreadyOnBackground() =
+    member _.testBackgroundTaskStaysOnSameThreadIfAlreadyOnBackground() =
         printfn "Running testBackgroundTask..."
         for i in 1 .. 5 do 
             let mutable ran = false
@@ -1340,60 +1334,3 @@ type BasicsNotInParallel() =
                     require ran "never ran")
             taskOuter.Wait()
                  
-#if STANDALONE 
-module M = 
-  [<EntryPoint>]
-  let main argv =
-    printfn "Running tests..."
-    try
-        Basics().testShortCircuitResult()
-        Basics().testDelay()
-        Basics().testNoDelay()
-        Basics().testNonBlocking()
-        
-        Basics().testCatching1()
-        Basics().testCatching2()
-        Basics().testNestedCatching()
-        Basics().testWhileLoopSync()
-        Basics().testWhileLoopAsyncZeroIteration()
-        Basics().testWhileLoopAsyncOneIteration()
-        Basics().testWhileLoopAsync()
-        Basics().testTryFinallyHappyPath()
-        Basics().testTryFinallySadPath()
-        Basics().testTryFinallyCaught()
-        Basics().testUsing()
-        Basics().testUsingFromTask()
-        Basics().testUsingSadPath()
-        Basics().testForLoopA()
-        Basics().testForLoopSadPath()
-        Basics().testForLoopSadPathComplex()
-        Basics().testExceptionAttachedToTaskWithoutAwait()
-        Basics().testExceptionAttachedToTaskWithAwait()
-        Basics().testExceptionThrownInFinally()
-        Basics().test2ndExceptionThrownInFinally()
-        Basics().testFixedStackWhileLoop()
-        Basics().testFixedStackForLoop()
-        Basics().testTypeInference()
-        Basics().testNoStackOverflowWithImmediateResult()
-        Basics().testNoStackOverflowWithYieldResult()
-        ////// we don't support TCO, so large tail recursions will stack overflow
-        ////// or at least use O(n) heap. but small ones should at least function OK.
-        //testSmallTailRecursion()
-        Basics().testTryOverReturnFrom()
-        Basics().testTryFinallyOverReturnFromWithException()
-        Basics().testTryFinallyOverReturnFromWithoutException()
-        Basics().testAsyncsMixedWithTasks()
-        printfn "Passed all tests!"
-    with exn ->
-        eprintfn "************************************"
-        eprintfn "Exception: %O" exn
-        printfn "Test failed... exiting..."
-        eprintfn "************************************"
-        exit 1
-        
-    printfn "Tests passed ok..., sleeping a bit in case there are background delayed exceptions"
-    Thread.Sleep(500)
-    printfn "Exiting..."
-    //System.Console.ReadLine()
-    0
-#endif

@@ -1040,7 +1040,8 @@ and KeyCollection<'Key, 'Value when 'Key: comparison>(parent: Map<'Key, 'Value>)
             parent.ContainsKey x
 
         member _.CopyTo(arr, index) =
-            if isNull arr then nullArg "arr"
+            if isNull arr then
+                nullArg "arr"
 
             if index < 0 then
                 invalidArg "index" "index must be positive"
@@ -1090,7 +1091,8 @@ and ValueCollection<'Key, 'Value when 'Key: comparison>(parent: Map<'Key, 'Value
             parent.Exists(fun _ value -> Unchecked.equals value x)
 
         member _.CopyTo(arr, index) =
-            if isNull arr then nullArg "arr"
+            if isNull arr then
+                nullArg "arr"
 
             if index < 0 then
                 invalidArg "index" "index must be positive"

@@ -265,6 +265,11 @@ module rec Compiler =
     let CsSource source =
         SourceCodeFileKind.Cs({FileName="test.cs"; SourceText=Some source })
 
+    let CsFromPath (path: string) : CompilationUnit =
+        csFromString (SourceFromPath path)
+        |> CS
+        |> withName (Path.GetFileNameWithoutExtension(path))
+
     let Fsx (source: string) : CompilationUnit =
         fsFromString (FsxSourceCode source) |> FS
 
@@ -435,6 +440,18 @@ module rec Compiler =
     let withNoInterfaceData (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--nointerfacedata" ] "withNoInterfaceData is only supported for F#" cUnit
 
+    //--refonly[+|-]
+    let withRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly+" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refonly[+|-]
+    let withNoRefOnly (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refonly-" ] "withRefOnly is only supported for F#" cUnit
+
+    //--refout:<file>                          Produce a reference assembly with the specified file path.
+    let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit
+
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }
@@ -466,6 +483,9 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
+
+    let withCulture culture (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--preferreduilang:%s{culture}" ] "preferreduilang is only supported for F#" cUnit
 
     let rec private asMetadataReference (cUnit: CompilationUnit) reference =
         match reference with
@@ -611,16 +631,27 @@ module rec Compiler =
         | _ ->
             failwith "Compilation has errors."
 
-    let compileGuid (cUnit: CompilationUnit) : Guid =
-        let bytes =
-            compile cUnit
-            |> shouldSucceed
-            |> getAssemblyInBytes
+    let getAssembly = getAssemblyInBytes >> Assembly.Load
 
-        use reader1 = new PEReader(bytes.ToImmutableArray())
-        let reader1 = reader1.GetMetadataReader()
+    let withPeReader func compilationResult =
+        let bytes = getAssemblyInBytes compilationResult
+        use reader = new PEReader(bytes.ToImmutableArray())
+        func reader
 
-        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+    let withMetadataReader func =
+        withPeReader (fun reader -> reader.GetMetadataReader() |> func)
+
+    let compileGuid cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
+
+    let compileAssembly cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> getAssembly
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""

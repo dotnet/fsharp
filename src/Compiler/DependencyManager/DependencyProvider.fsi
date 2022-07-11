@@ -1,8 +1,9 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Helper members to integrate DependencyManagers into F# codebase
 namespace FSharp.Compiler.DependencyManager
 
+open System
 open System.Runtime.InteropServices
 open Internal.Utilities.Library
 
@@ -53,6 +54,9 @@ type IDependencyManagerProvider =
     /// The help messages for this dependency manager inster
     abstract HelpMessages: string[]
 
+    /// Clear the results cache
+    abstract ClearResultsCache: unit -> unit
+
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
     abstract ResolveDependencies:
         scriptDir: string *
@@ -80,7 +84,7 @@ type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 /// provided each time the TryFindDependencyManagerByKey and TryFindDependencyManagerInPath are
 /// executed, which are assumed to be invariant over the lifetime of the DependencyProvider.
 type DependencyProvider =
-    interface System.IDisposable
+    interface IDisposable
 
     /// Construct a new DependencyProvider with no dynamic load handlers (only for compilation/analysis)
     new: unit -> DependencyProvider
@@ -88,11 +92,24 @@ type DependencyProvider =
     /// Construct a new DependencyProvider with only native resolution
     new: nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
+    /// Construct a new DependencyProvider with only native resolution and specify caching
+    new: nativeProbingRoots: NativeResolutionProbe * useResultsCache: bool -> DependencyProvider
+
     /// Construct a new DependencyProvider with managed and native resolution
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
+    /// Construct a new DependencyProvider with managed and native resolution and specify caching
+    new:
+        assemblyProbingPaths: AssemblyResolutionProbe *
+        nativeProbingRoots: NativeResolutionProbe *
+        useResultsCache: bool ->
+            DependencyProvider
+
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
+
+    /// Clear the DependencyManager results caches
+    member ClearResultsCache: string seq * string * ResolvingErrorReport -> unit
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string

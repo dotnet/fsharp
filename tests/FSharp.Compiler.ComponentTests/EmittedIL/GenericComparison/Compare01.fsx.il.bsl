@@ -28,22 +28,22 @@
 }
 .mresource public FSharpSignatureData.Compare01
 {
-  // Offset: 0x00000000 Length: 0x00000258
+  // Offset: 0x00000000 Length: 0x00000248
   // WARNING: managed resource file FSharpSignatureData.Compare01 created
 }
 .mresource public FSharpOptimizationData.Compare01
 {
-  // Offset: 0x00000260 Length: 0x000000B2
+  // Offset: 0x00000250 Length: 0x000000B2
   // WARNING: managed resource file FSharpOptimizationData.Compare01 created
 }
 .module Compare01.exe
-// MVID: {624F9D3B-7932-7F19-A745-03833B9D4F62}
+// MVID: {629EFC18-7932-7F19-A745-038318FC9E62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03860000
+// Image base: 0x006A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,42 +58,29 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f4() cil managed
     {
-      // Code size       36 (0x24)
+      // Code size       23 (0x17)
       .maxstack  4
       .locals init (int32 V_0,
-               int32 V_1,
-               int32 V_2)
+               int32 V_1)
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       IL_0002:  nop
       IL_0003:  nop
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.1
-      IL_0006:  br.s       IL_001b
+      IL_0006:  br.s       IL_000e
 
-      IL_0008:  ldc.i4.1
-      IL_0009:  ldc.i4.1
-      IL_000a:  cgt
-      IL_000c:  stloc.2
-      IL_000d:  ldloc.2
-      IL_000e:  brfalse.s  IL_0014
+      IL_0008:  ldc.i4.m1
+      IL_0009:  stloc.0
+      IL_000a:  ldloc.1
+      IL_000b:  ldc.i4.1
+      IL_000c:  add
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.1
+      IL_000f:  ldc.i4     0x989681
+      IL_0014:  blt.s      IL_0008
 
-      IL_0010:  ldloc.2
-      IL_0011:  nop
-      IL_0012:  br.s       IL_0016
-
-      IL_0014:  ldc.i4.m1
-      IL_0015:  nop
-      IL_0016:  stloc.0
-      IL_0017:  ldloc.1
-      IL_0018:  ldc.i4.1
-      IL_0019:  add
-      IL_001a:  stloc.1
-      IL_001b:  ldloc.1
-      IL_001c:  ldc.i4     0x989681
-      IL_0021:  blt.s      IL_0008
-
-      IL_0023:  ret
+      IL_0016:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f4
 
   } // end of class CompareMicroPerfAndCodeGenerationTests
@@ -117,4 +104,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Compare01_fsx\Compare01.res
+// WARNING: Created Win32 resource file C:\dev\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\GenericComparison\Compare01_fsx\Compare01.res
